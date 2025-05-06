@@ -57,7 +57,9 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
     private final EntityModel<E> superTypeModel;
     private final Map<Class<? extends E>, EntityModel<? extends E>> concreteModels;
-    private final Set<QualifiedName> supportedCommands;
+    private final Set<QualifiedName> supportedCommandNames = new HashSet<>();
+    private final Set<QualifiedName> supportedInstanceCommandNames = new HashSet<>();
+    private final Set<QualifiedName> supportedCreationalCommandNames = new HashSet<>();
 
     private PolymorphicEntityModel(
             EntityModel<E> abstractDelegate,
@@ -65,10 +67,14 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     ) {
         this.superTypeModel = abstractDelegate;
         this.concreteModels = new HashMap<>();
-        this.supportedCommands = new HashSet<>(superTypeModel.supportedCommands());
+        this.supportedCommandNames.addAll(superTypeModel.supportedCommands());
+        this.supportedInstanceCommandNames.addAll(superTypeModel.supportedInstanceCommands());
+        this.supportedCreationalCommandNames.addAll(superTypeModel.supportedCreationalCommands());
         for (EntityModel<? extends E> polymorphicModel : concreteModels) {
             this.concreteModels.put(polymorphicModel.entityType(), polymorphicModel);
-            this.supportedCommands.addAll(polymorphicModel.supportedCommands());
+            this.supportedCommandNames.addAll(polymorphicModel.supportedCommands());
+            this.supportedInstanceCommandNames.addAll(polymorphicModel.supportedInstanceCommands());
+            this.supportedCreationalCommandNames.addAll(polymorphicModel.supportedCreationalCommands());
         }
 
     }
@@ -103,61 +109,25 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
     @Override
     public Set<QualifiedName> supportedCommands() {
-        return supportedCommands;
+        return supportedCommandNames;
     }
 
     @Override
     public Set<QualifiedName> supportedCreationalCommands() {
-        HashSet<QualifiedName> qualifiedNames = new HashSet<>(superTypeModel.supportedCreationalCommands());
-        for (EntityModel<? extends E> concreteModel : concreteModels.values()) {
-            qualifiedNames.addAll(concreteModel.supportedCreationalCommands());
-        }
-        return qualifiedNames;
+        return supportedCreationalCommandNames;
     }
-
-
 
     @Override
     public Set<QualifiedName> supportedInstanceCommands() {
-        HashSet<QualifiedName> qualifiedNames = new HashSet<>(superTypeModel.supportedInstanceCommands());
-        for (EntityModel<? extends E> concreteModel : concreteModels.values()) {
-            qualifiedNames.addAll(concreteModel.supportedInstanceCommands());
-        }
-        return qualifiedNames;
-    }
-
-    @Override
-    public MessageStream.Single<CommandResultMessage<?>> handleInstance(CommandMessage<?> message,
-                                                                        E entity,
-                                                                        ProcessingContext context) {
-        EntityModel<E> concreteModel = modelFor(entity);
-        if (concreteModel.supportedInstanceCommands().contains(message.type().qualifiedName())) {
-            return concreteModel.handleInstance(message, entity, context);
-        }
-        if(superTypeModel.supportedInstanceCommands().contains(message.type().qualifiedName())) {
-            return superTypeModel.handleInstance(message, entity, context);
-        }
-        if(supportedCreationalCommands().contains(message.type().qualifiedName())) {
-            return MessageStream.failed(new IllegalStateException(
-                    "Entity already exists while handling %s for entity %s".formatted(
-                            message.type().qualifiedName(), entity
-                    )
-            ));
-        }
-
-        return MessageStream.failed(new IllegalArgumentException(
-                "No command handler found for command " + message.type().qualifiedName() + " on entity " + entity
-        ));
-    }
-
-    @Override
-    public Class<E> entityType() {
-        return superTypeModel.entityType();
+        return supportedInstanceCommandNames;
     }
 
     @Override
     public MessageStream.Single<CommandResultMessage<?>> handleCreate(CommandMessage<?> message,
                                                                       ProcessingContext context) {
+        if (isInstanceCommand(message) && !isCreationalCommand(message)) {
+            return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
+        }
         for(EntityModel<? extends E> concreteModel : concreteModels.values()) {
             if (concreteModel.supportedCreationalCommands().contains(message.type().qualifiedName())) {
                 return concreteModel.handleCreate(message, context);
@@ -166,9 +136,38 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         if(superTypeModel.supportedCreationalCommands().contains(message.type().qualifiedName())) {
             return superTypeModel.handleCreate(message, context);
         }
-        return MessageStream.failed(
-                new IllegalArgumentException("No creational command handler found for " + message.type().qualifiedName())
-        );
+        return MessageStream.failed(new MissingCommandHandlerException(message, entityType()));
+    }
+
+    @Override
+    public MessageStream.Single<CommandResultMessage<?>> handleInstance(CommandMessage<?> message,
+                                                                        E entity,
+                                                                        ProcessingContext context) {
+        if (isCreationalCommand(message) && !isInstanceCommand(message)) {
+            return MessageStream.failed(new EntityExistsForCreationalCommandHandler(message, entity));
+        }
+        EntityModel<E> concreteModel = modelFor(entity);
+        if (concreteModel.supportedInstanceCommands().contains(message.type().qualifiedName())) {
+            return concreteModel.handleInstance(message, entity, context);
+        }
+        if(superTypeModel.supportedInstanceCommands().contains(message.type().qualifiedName())) {
+            return superTypeModel.handleInstance(message, entity, context);
+        }
+
+        return MessageStream.failed(new MissingCommandHandlerException(message, entityType()));
+    }
+
+    @Override
+    public Class<E> entityType() {
+        return superTypeModel.entityType();
+    }
+
+    private boolean isCreationalCommand(CommandMessage<?> message) {
+        return supportedCreationalCommandNames.contains(message.type().qualifiedName());
+    }
+
+    private boolean isInstanceCommand(CommandMessage<?> message) {
+        return supportedInstanceCommandNames.contains(message.type().qualifiedName());
     }
 
     @Override
