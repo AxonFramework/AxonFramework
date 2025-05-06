@@ -58,8 +58,6 @@ class EventAppenderParameterResolverFactoryTest {
 
     @Test
     void doesNotInjectIntoGenericParameter() throws Exception {
-        ProcessingContext processingContext = new StubProcessingContext();
-
         Method method = getClass().getMethod("methodWithOtherParameter", Object.class);
         ParameterResolver<?> instance = testSubject.createInstance(method, method.getParameters(), 0);
         assertNull(instance);
