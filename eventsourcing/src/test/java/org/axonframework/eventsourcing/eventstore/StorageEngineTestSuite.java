@@ -102,7 +102,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void sourcingEventsReturnsConsistencyMarkerPairedWithNoEventMessageAsFinalEntryInTheMessageStream() throws Exception {
+    void sourcingEventsReturnsConsistencyMarkerWithNoEventMessageAsFinalEntryInTheMessageStream() throws Exception {
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
                                  taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
@@ -114,18 +114,24 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .get(5, TimeUnit.SECONDS);
 
         StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
-                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
-                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
-                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) != null
-                            && entry.message().equals(NoEventMessage.INSTANCE));
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(entry -> {
+                        assertNotNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY));
+                        assertEquals(NoEventMessage.INSTANCE, entry.message());
+                    })
+                    .verifyComplete();
 
         StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA)).asFlux())
-                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
-                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
-                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
-                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
-                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) != null
-                            && entry.message().equals(NoEventMessage.INSTANCE));
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(entry -> {
+                        assertNotNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY));
+                        assertEquals(NoEventMessage.INSTANCE, entry.message());
+                    })
+                    .verifyComplete();
     }
 
     @Test
