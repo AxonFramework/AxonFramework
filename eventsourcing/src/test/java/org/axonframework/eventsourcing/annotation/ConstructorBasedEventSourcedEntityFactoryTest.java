@@ -25,6 +25,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ConstructorBasedEventSourcedEntityFactoryTest {
 
+    @Test
+    void nullEntityTypeThrowsException() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> new ConstructorBasedEventSourcedEntityFactory<>(null));
+    }
+
     @Nested
     public class WithFirstEventMessage {
 

@@ -21,6 +21,7 @@ package org.axonframework.modelling.entity;
  * {@link #CREATE_IF_MISSING} policy is used, which means that a new entity will be created if it does not exist yet.
  *
  * @author Marc Gathier
+ * @author Mitchell Herrijgers
  * @since 4.3
  */
 public enum EntityCreationPolicy {

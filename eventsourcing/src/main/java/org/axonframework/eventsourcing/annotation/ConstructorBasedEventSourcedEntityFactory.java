@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventMessage;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -43,8 +44,8 @@ public class ConstructorBasedEventSourcedEntityFactory<E> implements EventSource
      *
      * @param entityType The type of the entity to create.
      */
-    public ConstructorBasedEventSourcedEntityFactory(Class<E> entityType) {
-        this.entityType = entityType;
+    public ConstructorBasedEventSourcedEntityFactory(@Nonnull Class<E> entityType) {
+        this.entityType = Objects.requireNonNull(entityType, "entityType must not be null");
     }
 
     @Override

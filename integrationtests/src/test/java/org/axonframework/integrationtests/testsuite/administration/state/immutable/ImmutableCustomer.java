@@ -31,7 +31,6 @@ public record ImmutableCustomer(
         String emailAddress
 ) implements ImmutablePerson {
 
-    @EventSourcingHandler
     public ImmutableCustomer(CustomerCreated event) {
         this(event.identifier(), event.lastNames(), event.firstNames(), event.emailAddress());
     }

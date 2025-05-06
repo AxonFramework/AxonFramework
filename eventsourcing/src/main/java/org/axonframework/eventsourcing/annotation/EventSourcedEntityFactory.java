@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.EventMessage;
 
 /**
@@ -37,7 +36,7 @@ public interface EventSourcedEntityFactory<ID, E> {
     /**
      * Creates a new instance of an entity of the given {@code entityType} and {@code id}.
      *
-     * @param id         The identifier of the entity to create.
+     * @param id The identifier of the entity to create.
      * @return A new instance of the entity.
      */
     E createEmptyEntity(@Nonnull ID id);
