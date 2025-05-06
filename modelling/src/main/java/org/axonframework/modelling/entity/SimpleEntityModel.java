@@ -204,9 +204,9 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
             return matchingChildren.getFirst().handle(message, entity, context);
         }
         if (matchingChildren.size() > 1) {
-            return MessageStream.failed(new ChildAmbiguityException(entityType, message, matchingChildren));
+            return MessageStream.failed(new ChildAmbiguityException(message, entity));
         }
-        return MessageStream.failed(new ChildMissingException(entityType, message, childrenWithCommandHandler));
+        return MessageStream.failed(new ChildEntityMissingException(message, entity));
     }
 
     @Override

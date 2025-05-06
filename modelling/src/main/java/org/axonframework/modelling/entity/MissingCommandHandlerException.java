@@ -21,8 +21,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * Exception indicating that no command handler was found for a command of a certain type in an entity. This can happen
- * when the {@link EntityModel#handleCreate(CommandMessage, ProcessingContext)} or
- * {@link EntityModel#handleInstance(CommandMessage, Object, ProcessingContext)} methods are called, without them being
+ * when the {@link EntityModel#handle(CommandMessage, Object, ProcessingContext)} method is called, without them being
  * able to handle the command.
  *
  * @author Mitchell Herrijgers
@@ -38,7 +37,7 @@ public class MissingCommandHandlerException extends RuntimeException {
      */
     public MissingCommandHandlerException(CommandMessage<?> message, Class<?> entityType) {
         super(String.format(
-                "No command handler was found for command of type [%s] in entity [%s]",
+                "No command handler was found for command of type [%s] for entity [%s]",
                 message.type(),
                 entityType.getName()
         ));

@@ -68,11 +68,11 @@ public class AnnotationTestDefinitions {
 
     public interface MessageForwardingMode {
 
-        default void initialize(@javax.annotation.Nonnull Member member,
-                                @javax.annotation.Nonnull EntityModel childEntity) {
+        default void initialize(@Nonnull Member member,
+                                @Nonnull EntityModel childEntity) {
         }
 
-        <E> boolean matches(@javax.annotation.Nonnull Message<?> message, @javax.annotation.Nonnull E candidate);
+        <E> boolean matches(@Nonnull Message<?> message, @Nonnull E candidate);
     }
 
     @Documented
@@ -104,8 +104,8 @@ public class AnnotationTestDefinitions {
         }
 
         @Override
-        public void initialize(@javax.annotation.Nonnull Member member,
-                               @javax.annotation.Nonnull EntityModel childEntity) {
+        public void initialize(@Nonnull Member member,
+                               @Nonnull EntityModel childEntity) {
             this.childEntity = childEntity;
             this.routingKey = AnnotationUtils.findAnnotationAttributes((AnnotatedElement) member,
                                                                        EntityMember.class)
@@ -116,8 +116,8 @@ public class AnnotationTestDefinitions {
         }
 
         @Override
-        public <E> boolean matches(@javax.annotation.Nonnull Message<?> message,
-                                   @javax.annotation.Nonnull E candidate) {
+        public <E> boolean matches(@Nonnull Message<?> message,
+                                   @Nonnull E candidate) {
             Property routingProperty = routingProperties.computeIfAbsent(message.getPayloadType(),
                                                                          this::resolveProperty);
             if (routingProperty == null || routingProperty == NO_PROPERTY) {

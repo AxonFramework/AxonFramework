@@ -151,7 +151,7 @@ class SimpleEntityModelTest {
             MessageStreamTestUtils.assertCompletedExceptionally(
                     entityModel.handleInstance(command, entity, context),
                     ChildAmbiguityException.class,
-                    "Multiple child entities of entity [class org.axonframework.modelling.entity.SimpleEntityModelTest$TestEntity] are able to handle command"
+                    "Multiple child entities found for command of type [SharedChildCommand#0.0.1]. State of parent entity ["
             );
         }
 
@@ -205,7 +205,7 @@ class SimpleEntityModelTest {
             MessageStreamTestUtils.assertCompletedExceptionally(
                     entityModel.handleInstance(command, entity, context),
                     MissingCommandHandlerException.class,
-                    "No command handler was found for command of type [UnknownCommand#0.0.1] in entity [org.axonframework.modelling.entity.SimpleEntityModelTest$TestEntity]"
+                    "No command handler was found for command of type [UnknownCommand#0.0.1] for entity ["
             );
         }
 
@@ -271,7 +271,7 @@ class SimpleEntityModelTest {
             MessageStreamTestUtils.assertCompletedExceptionally(
                     entityModel.handleCreate(command, context),
                     MissingCommandHandlerException.class,
-                    "No command handler was found for command of type [UnknownCommand#0.0.1] in entity"
+                    "No command handler was found for command of type [UnknownCommand#0.0.1] for entity ["
             );
         }
 

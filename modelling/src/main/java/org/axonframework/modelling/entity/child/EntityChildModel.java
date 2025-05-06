@@ -110,7 +110,8 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
      * @param <P>              The type of the parent entity.
      * @return A {@link ListEntityChildModel.Builder} for the child entity.
      */
-    static <C, P> ListEntityChildModel.Builder<C, P> list(Class<P> parentClass, EntityModel<C> childEntityModel) {
+    static <C, P> ListEntityChildModel.Builder<C, P> list(@Nonnull Class<P> parentClass,
+                                                          @Nonnull EntityModel<C> childEntityModel) {
         return ListEntityChildModel.forEntityModel(
                 Objects.requireNonNull(parentClass, "parentClass may not be null"),
                 Objects.requireNonNull(childEntityModel, "childEntityModel may not be null")
