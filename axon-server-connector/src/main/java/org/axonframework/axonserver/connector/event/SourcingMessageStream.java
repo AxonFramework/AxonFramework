@@ -79,7 +79,6 @@ class SourcingMessageStream implements MessageStream<EventMessage<?>> {
 
         if (previous == null && current != null && current.hasConsistencyMarker()) {
             logger.warn("First and only entry of the source result stream is a consistency marker.");
-            // TODO Exceptional case?
             return Optional.empty();
         } else if (previous == null) {
             logger.debug("The source result stream never contained any entries. Try a different sourcing condition.");
@@ -100,7 +99,7 @@ class SourcingMessageStream implements MessageStream<EventMessage<?>> {
     private SimpleEntry<EventMessage<?>> convertToEntry(SequencedEvent event,
                                                         long consistencyMarker) {
         EventMessage<byte[]> eventMessage = converter.convertEvent(event.getEvent());
-        TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence());
+        TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence() + 1);
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
         context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(consistencyMarker));
         return new SimpleEntry<>(eventMessage, context);

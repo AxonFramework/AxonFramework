@@ -77,7 +77,7 @@ class StreamingMessageStream implements MessageStream<EventMessage<?>> {
 
     private SimpleEntry<EventMessage<?>> convertToEntry(SequencedEvent event) {
         EventMessage<byte[]> eventMessage = converter.convertEvent(event.getEvent());
-        TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence());
+        TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence() + 1);
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
         return new SimpleEntry<>(eventMessage, context);
     }
