@@ -183,12 +183,23 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
         MessageStream<EventMessage<?>> sourcingStream = testSubject.source(testCondition)
-                                                                   .whenComplete(() -> completed.set(true))                                                                                                                     ;
+                                                                   .whenComplete(() -> completed.set(true));
+        await("Await first entry availability")
+                .pollDelay(Duration.ofMillis(50))
+                .atMost(Duration.ofMillis(500))
+                .until(sourcingStream::hasNextAvailable);
         Optional<Entry<EventMessage<?>>> entry = sourcingStream.next();
         assertTrue(entry.isPresent());
         assertMarkerEntry(entry.get());
+        await("Await end of stream")
+                .pollDelay(Duration.ofMillis(50))
+                .atMost(Duration.ofMillis(500))
+                .until(() -> !sourcingStream.hasNextAvailable());
 
-        await("Awaiting until sourcing completes").untilTrue(completed);
+        await("Awaiting until sourcing completes")
+                .pollDelay(Duration.ofMillis(50))
+                .atMost(Duration.ofMillis(500))
+                .untilTrue(completed);
     }
 
     private static void assertMarkerEntry(Entry<EventMessage<?>> entry) {
