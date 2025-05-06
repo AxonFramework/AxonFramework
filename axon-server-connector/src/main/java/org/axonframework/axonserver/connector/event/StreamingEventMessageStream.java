@@ -44,7 +44,7 @@ import java.util.Optional;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class StreamingMessageStream implements MessageStream<EventMessage<?>> {
+class StreamingEventMessageStream implements MessageStream<EventMessage<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -59,8 +59,8 @@ class StreamingMessageStream implements MessageStream<EventMessage<?>> {
      * @param converter The {@code EventConverter} used to convert {@code StreamEventsResponses} into
      *                  {@link EventMessage EventMessages} for this {@link MessageStream} implementation.
      */
-    StreamingMessageStream(@Nonnull ResultStream<StreamEventsResponse> stream,
-                           @Nonnull EventConverter converter) {
+    StreamingEventMessageStream(@Nonnull ResultStream<StreamEventsResponse> stream,
+                                @Nonnull EventConverter converter) {
         this.stream = Objects.requireNonNull(stream, "The result stream cannot be null.");
         this.converter = Objects.requireNonNull(converter, "The converter cannot be null.");
     }

@@ -124,7 +124,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
 
         SourceEventsRequest sourcingRequest = ConditionConverter.convertSourcingCondition(condition);
         ResultStream<SourceEventsResponse> sourcingStream = eventChannel().source(sourcingRequest);
-        return new SourcingMessageStream(sourcingStream, converter);
+        return new SourcingEventMessageStream(sourcingStream, converter);
     }
 
     @Override
@@ -135,7 +135,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
 
         StreamEventsRequest streamingRequest = ConditionConverter.convertStreamingCondition(condition);
         ResultStream<StreamEventsResponse> stream = eventChannel().stream(streamingRequest);
-        return new StreamingMessageStream(stream, converter);
+        return new StreamingEventMessageStream(stream, converter);
     }
 
     @Override
