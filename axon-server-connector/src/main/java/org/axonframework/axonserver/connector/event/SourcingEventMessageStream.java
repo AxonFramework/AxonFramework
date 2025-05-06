@@ -22,6 +22,7 @@ import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.NoEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
@@ -75,7 +76,6 @@ class SourcingEventMessageStream implements MessageStream<EventMessage<?>> {
     public Optional<Entry<EventMessage<?>>> next() {
         SourceEventsResponse current = stream.nextIfAvailable();
         SourceEventsResponse previous = previousReference.getAndSet(current);
-        long consistencyMarker;
 
         if (previous == null && current != null && current.hasConsistencyMarker()) {
             logger.warn("First and only entry of the source result stream is a consistency marker.");
@@ -88,21 +88,23 @@ class SourcingEventMessageStream implements MessageStream<EventMessage<?>> {
             return Optional.empty();
         } else if (current.hasConsistencyMarker()) {
             logger.debug("Peeked consistency marker (final response) from the source result stream.");
-            consistencyMarker = current.getConsistencyMarker();
-        } else {
-            logger.debug("Set consistency marker to sequence of current response.");
-            consistencyMarker = previous.getEvent().getSequence();
+            return convertToMarkerEntry(current);
         }
-        return Optional.of(convertToEntry(previous.getEvent(), consistencyMarker));
+        return getConvertToEventEntry(previous.getEvent());
     }
 
-    private SimpleEntry<EventMessage<?>> convertToEntry(SequencedEvent event,
-                                                        long consistencyMarker) {
+    private Optional<Entry<EventMessage<?>>> getConvertToEventEntry(SequencedEvent event) {
         EventMessage<byte[]> eventMessage = converter.convertEvent(event.getEvent());
         TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence() + 1);
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
-        context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(consistencyMarker));
-        return new SimpleEntry<>(eventMessage, context);
+        return Optional.of(new SimpleEntry<>(eventMessage, context));
+    }
+
+    private static Optional<Entry<EventMessage<?>>> convertToMarkerEntry(SourceEventsResponse current) {
+        Context context = ConsistencyMarker.addToContext(
+                Context.empty(), new GlobalIndexConsistencyMarker(current.getConsistencyMarker())
+        );
+        return Optional.of(new SimpleEntry<>(NoEventMessage.INSTANCE, context));
     }
 
     @Override
