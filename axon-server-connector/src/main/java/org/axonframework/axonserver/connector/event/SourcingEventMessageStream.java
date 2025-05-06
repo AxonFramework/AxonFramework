@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A {@link MessageStream} implementation backed by a {@link ResultStream} of
@@ -56,7 +55,6 @@ class SourcingEventMessageStream implements MessageStream<EventMessage<?>> {
 
     private final ResultStream<SourceEventsResponse> stream;
     private final EventConverter converter;
-    private final AtomicReference<SourceEventsResponse> previousReference = new AtomicReference<>();
 
     /**
      * Constructs a {@code SourcingMessageStream} with the given {@code stream} and {@code converter}.
@@ -74,23 +72,15 @@ class SourcingEventMessageStream implements MessageStream<EventMessage<?>> {
 
     @Override
     public Optional<Entry<EventMessage<?>>> next() {
-        SourceEventsResponse current = stream.nextIfAvailable();
-        SourceEventsResponse previous = previousReference.getAndSet(current);
-
-        if (previous == null && current != null && current.hasConsistencyMarker()) {
-            logger.warn("First and only entry of the source result stream is a consistency marker.");
-            return Optional.empty();
-        } else if (previous == null) {
-            logger.debug("The source result stream never contained any entries. Try a different sourcing condition.");
-            return Optional.empty();
-        } else if (previous.hasConsistencyMarker()) {
+        SourceEventsResponse next = stream.nextIfAvailable();
+        if (next == null) {
             logger.debug("Reached the end of the source result stream.");
             return Optional.empty();
-        } else if (current.hasConsistencyMarker()) {
-            logger.debug("Peeked consistency marker (final response) from the source result stream.");
-            return convertToMarkerEntry(current);
+        } else if (next.hasConsistencyMarker()) {
+            logger.debug("Reached the consistency marker message of the source result stream.");
+            return convertToMarkerEntry(next.getConsistencyMarker());
         }
-        return getConvertToEventEntry(previous.getEvent());
+        return getConvertToEventEntry(next.getEvent());
     }
 
     private Optional<Entry<EventMessage<?>>> getConvertToEventEntry(SequencedEvent event) {
@@ -100,9 +90,9 @@ class SourcingEventMessageStream implements MessageStream<EventMessage<?>> {
         return Optional.of(new SimpleEntry<>(eventMessage, context));
     }
 
-    private static Optional<Entry<EventMessage<?>>> convertToMarkerEntry(SourceEventsResponse current) {
+    private static Optional<Entry<EventMessage<?>>> convertToMarkerEntry(long marker) {
         Context context = ConsistencyMarker.addToContext(
-                Context.empty(), new GlobalIndexConsistencyMarker(current.getConsistencyMarker())
+                Context.empty(), new GlobalIndexConsistencyMarker(marker)
         );
         return Optional.of(new SimpleEntry<>(NoEventMessage.INSTANCE, context));
     }
