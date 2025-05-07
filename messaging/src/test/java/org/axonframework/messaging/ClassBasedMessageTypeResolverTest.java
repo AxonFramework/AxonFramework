@@ -27,78 +27,162 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ClassBasedMessageTypeResolverTest {
 
-    @Test
-    void shouldUseDefaultVersionWhenCreatedWithDefaultConstructor() {
-        // given
-        QualifiedName expectedName = new QualifiedName(String.class);
-        ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver();
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Nested
+    class Resolve {
 
-        // when
-        MessageType result = resolver.resolveOrThrow("Test");
+        @Test
+        void shouldUseDefaultVersionWhenCreatedWithDefaultConstructor() {
+            // given
+            QualifiedName expectedName = new QualifiedName(String.class);
+            ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver();
 
-        // then
-        assertEquals(expectedName, result.qualifiedName());
-        assertEquals(MessageType.DEFAULT_VERSION, result.version());
+            // when
+            MessageType result = resolver.resolve("Test").get();
+
+            // then
+            assertEquals(expectedName, result.qualifiedName());
+            assertEquals(MessageType.DEFAULT_VERSION, result.version());
+        }
+
+        @Test
+        void shouldUseCustomVersionWhenProvidedInConstructor() {
+            // given
+            QualifiedName expectedName = new QualifiedName(Integer.class);
+            String customVersion = "1.0.0";
+            ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver(customVersion);
+
+            // when
+            MessageType result = resolver.resolve(42).get();
+
+            // then
+            assertEquals(expectedName, result.qualifiedName());
+            assertEquals(customVersion, result.version());
+        }
+
+        @Test
+        void shouldResolvePrimitiveTypeToCorrespondingWrapperClass() {
+            // given
+            QualifiedName expectedName = new QualifiedName(Integer.class);
+            ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver();
+
+            // when
+            MessageType result = resolver.resolve(42).get();
+
+            // then
+            assertEquals(expectedName, result.qualifiedName());
+            assertEquals(MessageType.DEFAULT_VERSION, result.version());
+        }
+
+        @Test
+        void shouldResolveCustomClassWithProvidedVersion() {
+            // given
+            QualifiedName expectedName = new QualifiedName(TestPayload.class);
+            String customVersion = "custom-rev";
+            ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver(customVersion);
+
+            // when
+            MessageType result = resolver.resolve(new TestPayload()).get();
+
+            // then
+            assertEquals(expectedName, result.qualifiedName());
+            assertEquals(customVersion, result.version());
+        }
+
+        @Test
+        void shouldKeepMessageTypeIfPayloadIsAMessageAndDoNotApplyResolverVersion() {
+            // given
+            String customVersion = "custom-rev";
+            ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver(customVersion);
+
+            // when
+            MessageType type = new MessageType("TestPayload");
+            var payload = new GenericMessage<>(type, new TestPayload());
+            MessageType result = resolver.resolve(payload).get();
+
+            // then
+            assertEquals(type, result);
+            assertEquals(MessageType.DEFAULT_VERSION, result.version());
+        }
     }
 
-    @Test
-    void shouldUseCustomVersionWhenProvidedInConstructor() {
-        // given
-        QualifiedName expectedName = new QualifiedName(Integer.class);
-        String customVersion = "1.0.0";
-        ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver(customVersion);
 
-        // when
-        MessageType result = resolver.resolveOrThrow(42);
+    @Nested
+    class ResolveOrThrow {
 
-        // then
-        assertEquals(expectedName, result.qualifiedName());
-        assertEquals(customVersion, result.version());
-    }
+        @Test
+        void shouldUseDefaultVersionWhenCreatedWithDefaultConstructor() {
+            // given
+            QualifiedName expectedName = new QualifiedName(String.class);
+            ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver();
 
-    @Test
-    void shouldResolvePrimitiveTypeToCorrespondingWrapperClass() {
-        // given
-        QualifiedName expectedName = new QualifiedName(Integer.class);
-        ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver();
+            // when
+            MessageType result = resolver.resolveOrThrow("Test");
 
-        // when
-        MessageType result = resolver.resolveOrThrow(42);
+            // then
+            assertEquals(expectedName, result.qualifiedName());
+            assertEquals(MessageType.DEFAULT_VERSION, result.version());
+        }
 
-        // then
-        assertEquals(expectedName, result.qualifiedName());
-        assertEquals(MessageType.DEFAULT_VERSION, result.version());
-    }
+        @Test
+        void shouldUseCustomVersionWhenProvidedInConstructor() {
+            // given
+            QualifiedName expectedName = new QualifiedName(Integer.class);
+            String customVersion = "1.0.0";
+            ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver(customVersion);
 
-    @Test
-    void shouldResolveCustomClassWithProvidedVersion() {
-        // given
-        QualifiedName expectedName = new QualifiedName(TestPayload.class);
-        String customVersion = "custom-rev";
-        ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver(customVersion);
+            // when
+            MessageType result = resolver.resolveOrThrow(42);
 
-        // when
-        MessageType result = resolver.resolveOrThrow(new TestPayload());
+            // then
+            assertEquals(expectedName, result.qualifiedName());
+            assertEquals(customVersion, result.version());
+        }
 
-        // then
-        assertEquals(expectedName, result.qualifiedName());
-        assertEquals(customVersion, result.version());
-    }
+        @Test
+        void shouldResolvePrimitiveTypeToCorrespondingWrapperClass() {
+            // given
+            QualifiedName expectedName = new QualifiedName(Integer.class);
+            ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver();
 
-    @Test
-    void shouldKeepMessageTypeIfPayloadIsAMessageAndDoNotApplyResolverVersion() {
-        // given
-        String customVersion = "custom-rev";
-        ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver(customVersion);
+            // when
+            MessageType result = resolver.resolveOrThrow(42);
 
-        // when
-        MessageType type = new MessageType("TestPayload");
-        var payload = new GenericMessage<>(type, new TestPayload());
-        MessageType result = resolver.resolveOrThrow(payload);
+            // then
+            assertEquals(expectedName, result.qualifiedName());
+            assertEquals(MessageType.DEFAULT_VERSION, result.version());
+        }
 
-        // then
-        assertEquals(type, result);
-        assertEquals(MessageType.DEFAULT_VERSION, result.version());
+        @Test
+        void shouldResolveCustomClassWithProvidedVersion() {
+            // given
+            QualifiedName expectedName = new QualifiedName(TestPayload.class);
+            String customVersion = "custom-rev";
+            ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver(customVersion);
+
+            // when
+            MessageType result = resolver.resolveOrThrow(new TestPayload());
+
+            // then
+            assertEquals(expectedName, result.qualifiedName());
+            assertEquals(customVersion, result.version());
+        }
+
+        @Test
+        void shouldKeepMessageTypeIfPayloadIsAMessageAndDoNotApplyResolverVersion() {
+            // given
+            String customVersion = "custom-rev";
+            ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver(customVersion);
+
+            // when
+            MessageType type = new MessageType("TestPayload");
+            var payload = new GenericMessage<>(type, new TestPayload());
+            MessageType result = resolver.resolveOrThrow(payload);
+
+            // then
+            assertEquals(type, result);
+            assertEquals(MessageType.DEFAULT_VERSION, result.version());
+        }
     }
 
     private static class TestPayload {
