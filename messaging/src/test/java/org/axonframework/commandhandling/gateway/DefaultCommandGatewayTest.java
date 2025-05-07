@@ -24,6 +24,7 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -40,7 +41,7 @@ class DefaultCommandGatewayTest {
 
     private DefaultCommandGateway testSubject;
     private CommandBus mockCommandBus;
-    private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER = payloadType -> new MessageType(payloadType.getSimpleName());
+    private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER = payloadType -> Optional.of(new MessageType(payloadType.getSimpleName()));
 
     @BeforeEach
     void setUp() {
