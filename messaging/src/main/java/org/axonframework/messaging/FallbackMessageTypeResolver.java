@@ -67,16 +67,16 @@ public class FallbackMessageTypeResolver implements MessageTypeResolver {
      * is delegated to the fallback resolver.
      */
     @Override
-    public MessageType resolve(Class<?> payloadType) {
+    public MessageType resolveOrThrow(Class<?> payloadType) {
         if (delegateFailureCache.contains(payloadType)) {
-            return fallback.resolve(payloadType);
+            return fallback.resolveOrThrow(payloadType);
         }
 
         try {
-            return delegate.resolve(payloadType);
+            return delegate.resolveOrThrow(payloadType);
         } catch (MessageTypeNotResolvedException e) {
             delegateFailureCache.add(payloadType);
-            return fallback.resolve(payloadType);
+            return fallback.resolveOrThrow(payloadType);
         }
     }
 }

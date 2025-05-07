@@ -34,7 +34,7 @@ class ClassBasedMessageTypeResolverTest {
         ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver();
 
         // when
-        MessageType result = resolver.resolve("Test");
+        MessageType result = resolver.resolveOrThrow("Test");
 
         // then
         assertEquals(expectedName, result.qualifiedName());
@@ -49,7 +49,7 @@ class ClassBasedMessageTypeResolverTest {
         ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver(customVersion);
 
         // when
-        MessageType result = resolver.resolve(42);
+        MessageType result = resolver.resolveOrThrow(42);
 
         // then
         assertEquals(expectedName, result.qualifiedName());
@@ -63,7 +63,7 @@ class ClassBasedMessageTypeResolverTest {
         ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver();
 
         // when
-        MessageType result = resolver.resolve(42);
+        MessageType result = resolver.resolveOrThrow(42);
 
         // then
         assertEquals(expectedName, result.qualifiedName());
@@ -78,7 +78,7 @@ class ClassBasedMessageTypeResolverTest {
         ClassBasedMessageTypeResolver resolver = new ClassBasedMessageTypeResolver(customVersion);
 
         // when
-        MessageType result = resolver.resolve(new TestPayload());
+        MessageType result = resolver.resolveOrThrow(new TestPayload());
 
         // then
         assertEquals(expectedName, result.qualifiedName());
@@ -94,7 +94,7 @@ class ClassBasedMessageTypeResolverTest {
         // when
         MessageType type = new MessageType("TestPayload");
         var payload = new GenericMessage<>(type, new TestPayload());
-        MessageType result = resolver.resolve(payload);
+        MessageType result = resolver.resolveOrThrow(payload);
 
         // then
         assertEquals(type, result);

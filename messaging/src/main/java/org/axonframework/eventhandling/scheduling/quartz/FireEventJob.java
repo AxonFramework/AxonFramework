@@ -114,6 +114,6 @@ public class FireEventJob implements Job {
                 ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
                                             ((EventMessage<?>) event).getPayload(),
                                             ((EventMessage<?>) event).getMetaData())
-                : new GenericEventMessage<>(messageTypeResolver.resolve(event), event);
+                : new GenericEventMessage<>(messageTypeResolver.resolveOrThrow(event), event);
     }
 }

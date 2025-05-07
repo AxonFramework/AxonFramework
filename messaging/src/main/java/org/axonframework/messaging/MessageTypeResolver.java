@@ -18,6 +18,8 @@ package org.axonframework.messaging;
 
 import org.axonframework.common.ObjectUtils;
 
+import java.util.Optional;
+
 /**
  * Functional interface describing a resolver from {@link Message#getPayload() Message payload} to it's
  * {@link MessageType type}. Used to set the {@link Message#type() type} when putting the given payload on its
@@ -39,11 +41,11 @@ public interface MessageTypeResolver {
      * @return The {@link MessageType type} for the given {@code payload}.
      * @throws MessageTypeNotResolvedException if the {@link MessageType type} could not be resolved.
      */
-    default MessageType resolve(Object payload) {
+    default MessageType resolveOrThrow(Object payload) {
         if (payload instanceof Message<?>) {
             return ((Message<?>) payload).type();
         }
-        return resolve(ObjectUtils.nullSafeTypeOf(payload));
+        return resolveOrThrow(ObjectUtils.nullSafeTypeOf(payload));
     }
 
     /**
@@ -54,5 +56,5 @@ public interface MessageTypeResolver {
      * @return The {@link MessageType type} for the given {@code payloadType}.
      * @throws MessageTypeNotResolvedException if the {@link MessageType type} could not be resolved.
      */
-    MessageType resolve(Class<?> payloadType);
+    MessageType resolveOrThrow(Class<?> payloadType);
 }

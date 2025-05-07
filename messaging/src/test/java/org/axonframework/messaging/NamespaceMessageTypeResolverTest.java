@@ -33,7 +33,7 @@ class NamespaceMessageTypeResolverTest {
                 .throwsIfUnknown();
 
         // when
-        var result = resolver.resolve(String.class);
+        var result = resolver.resolveOrThrow(String.class);
 
         // then
         var expected = new MessageType("test.string", "1.0.0");
@@ -50,7 +50,7 @@ class NamespaceMessageTypeResolverTest {
 
         // when/then
         var exception = assertThrows(MessageTypeNotResolvedException.class,
-                                     () -> resolver.resolve(Integer.class));
+                                     () -> resolver.resolveOrThrow(Integer.class));
         assertEquals("No MessageType found for payload type [java.lang.Integer]", exception.getMessage());
     }
 
@@ -64,7 +64,7 @@ class NamespaceMessageTypeResolverTest {
                 .fallback(defaultResolver);
 
         // when
-        var result = resolver.resolve(Integer.class);
+        var result = resolver.resolveOrThrow(Integer.class);
 
         // then
         assertEquals(new QualifiedName(Integer.class), result.qualifiedName());
@@ -81,8 +81,8 @@ class NamespaceMessageTypeResolverTest {
                 .fallback(defaultResolver);
 
         // when
-        var stringResult = resolver.resolve(String.class);
-        var intResult = resolver.resolve(Integer.class);
+        var stringResult = resolver.resolveOrThrow(String.class);
+        var intResult = resolver.resolveOrThrow(Integer.class);
 
         // then
         var expectedString = new MessageType("custom.string", "1.0.0");
@@ -102,9 +102,9 @@ class NamespaceMessageTypeResolverTest {
                 .throwsIfUnknown();
 
         // when
-        var stringResult = resolver.resolve(String.class);
-        var intResult = resolver.resolve(Integer.class);
-        var doubleResult = resolver.resolve(Double.class);
+        var stringResult = resolver.resolveOrThrow(String.class);
+        var intResult = resolver.resolveOrThrow(Integer.class);
+        var doubleResult = resolver.resolveOrThrow(Double.class);
 
         // then
         assertEquals("test.string", stringResult.qualifiedName().toString());
@@ -146,11 +146,11 @@ class NamespaceMessageTypeResolverTest {
 
         // then - resolver1 doesn't know about Integer
         assertThrows(MessageTypeNotResolvedException.class,
-                     () -> resolver1.resolve(Integer.class));
+                     () -> resolver1.resolveOrThrow(Integer.class));
 
         // then - resolver2 knows both types
-        assertEquals("test.string", resolver2.resolve(String.class).qualifiedName().toString());
-        assertEquals("test.integer", resolver2.resolve(Integer.class).qualifiedName().toString());
+        assertEquals("test.string", resolver2.resolveOrThrow(String.class).qualifiedName().toString());
+        assertEquals("test.integer", resolver2.resolveOrThrow(Integer.class).qualifiedName().toString());
     }
 
     @Test
@@ -166,7 +166,7 @@ class NamespaceMessageTypeResolverTest {
                 .throwsIfUnknown();
 
         // when
-        MessageType result = resolver.resolve(message);
+        MessageType result = resolver.resolveOrThrow(message);
 
         // then - should return the message's type, not apply resolver for String
         assertEquals(originalType, result);
@@ -182,7 +182,7 @@ class NamespaceMessageTypeResolverTest {
                 .throwsIfUnknown();
 
         // when
-        var result = resolver.resolve(String.class);
+        var result = resolver.resolveOrThrow(String.class);
 
         // then
         assertEquals(version, result.version());

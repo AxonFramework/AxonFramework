@@ -58,7 +58,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
     }
 
     @Override
-    public MessageType resolve(Class<?> payloadType) {
+    public MessageType resolveOrThrow(Class<?> payloadType) {
         var messageType = mappings.get(payloadType);
         if (messageType == null) {
             throw new MessageTypeNotResolvedException(

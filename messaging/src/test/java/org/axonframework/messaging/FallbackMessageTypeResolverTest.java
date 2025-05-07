@@ -30,16 +30,16 @@ class FallbackMessageTypeResolverTest {
         MessageTypeResolver fallback = mock(MessageTypeResolver.class);
         FallbackMessageTypeResolver resolver = new FallbackMessageTypeResolver(delegate, fallback);
         var expectedType = new MessageType("test.type", "1.0.0");
-        when(delegate.resolve(String.class)).thenThrow(new MessageTypeNotResolvedException("Test exception"));
-        when(fallback.resolve(String.class)).thenReturn(expectedType);
+        when(delegate.resolveOrThrow(String.class)).thenThrow(new MessageTypeNotResolvedException("Test exception"));
+        when(fallback.resolveOrThrow(String.class)).thenReturn(expectedType);
         
         // when
-        var result = resolver.resolve(String.class);
+        var result = resolver.resolveOrThrow(String.class);
         
         // then
         assertEquals(expectedType, result);
-        verify(delegate).resolve(String.class);
-        verify(fallback).resolve(String.class);
+        verify(delegate).resolveOrThrow(String.class);
+        verify(fallback).resolveOrThrow(String.class);
     }
     
     @Test
@@ -49,15 +49,15 @@ class FallbackMessageTypeResolverTest {
         var fallback = mock(MessageTypeResolver.class);
         var resolver = new FallbackMessageTypeResolver(delegate, fallback);
         var expectedType = new MessageType("test.type", "1.0.0");
-        when(delegate.resolve(String.class)).thenReturn(expectedType);
+        when(delegate.resolveOrThrow(String.class)).thenReturn(expectedType);
         
         // when
-        var result = resolver.resolve(String.class);
+        var result = resolver.resolveOrThrow(String.class);
         
         // then
         assertEquals(expectedType, result);
-        verify(delegate).resolve(String.class);
-        verify(fallback, never()).resolve(any());
+        verify(delegate).resolveOrThrow(String.class);
+        verify(fallback, never()).resolveOrThrow(any());
     }
     
     @Test
@@ -67,23 +67,23 @@ class FallbackMessageTypeResolverTest {
         var fallback = mock(MessageTypeResolver.class);
         var resolver = new FallbackMessageTypeResolver(delegate, fallback);
         var expectedType = new MessageType("test.type", "1.0.0");
-        when(delegate.resolve(String.class)).thenThrow(new MessageTypeNotResolvedException("Test exception"));
-        when(fallback.resolve(String.class)).thenReturn(expectedType);
+        when(delegate.resolveOrThrow(String.class)).thenThrow(new MessageTypeNotResolvedException("Test exception"));
+        when(fallback.resolveOrThrow(String.class)).thenReturn(expectedType);
         
         // when
-        var result1 = resolver.resolve(String.class);
+        var result1 = resolver.resolveOrThrow(String.class);
         
         // then
         assertEquals(expectedType, result1);
-        verify(delegate).resolve(String.class);
-        verify(fallback).resolve(String.class);
+        verify(delegate).resolveOrThrow(String.class);
+        verify(fallback).resolveOrThrow(String.class);
         
         // when
-        var result2 = resolver.resolve(String.class);
+        var result2 = resolver.resolveOrThrow(String.class);
         
         // then
         assertEquals(expectedType, result2);
-        verify(delegate).resolve(String.class);
-        verify(fallback, times(2)).resolve(String.class);
+        verify(delegate).resolveOrThrow(String.class);
+        verify(fallback, times(2)).resolveOrThrow(String.class);
     }
 }
