@@ -21,6 +21,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -218,19 +219,17 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                        UnitOfWork unitOfWork,
                                        Collection<Segment> processingSegments) throws Exception {
-        final Context.ResourceKey<List<? extends EventMessage<?>>> MESSAGES_KEY =
+        Context.ResourceKey<List<? extends EventMessage<?>>> messagesKey =
                 Context.ResourceKey.withLabel("MESSAGES");
 
         spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages).runCallable(() -> {
-            // Store the messages in the UnitOfWork context
             unitOfWork.onPreInvocation(ctx -> {
-                ctx.putResource(MESSAGES_KEY, eventMessages);
+                ctx.putResource(messagesKey, eventMessages);
                 return CompletableFuture.completedFuture(null);
             });
 
-            // Register the actual processing in the Invocation phase
             unitOfWork.onInvocation(processingContext -> {
-                List<? extends EventMessage<?>> messages = processingContext.getResource(MESSAGES_KEY);
+                List<? extends EventMessage<?>> messages = processingContext.getResource(messagesKey);
                 CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
 
                 for (EventMessage<?> message : messages) {
@@ -238,25 +237,35 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                     result = result.thenCompose(v ->
                                                         spanFactory.createProcessEventSpan(this instanceof StreamingEventProcessor, message)
                                                                    .runSupplierAsync(() -> {
-                                                                       // Process the message directly (without interceptors for now)
-                                                                       MessageMonitor.MonitorCallback monitorCallback =
-                                                                               messageMonitor.onMessageIngested(message);
-
                                                                        try {
-                                                                           for (Segment processingSegment : processingSegments) {
-                                                                               if (canHandle(message, processingSegment)) {
-                                                                                   try {
-                                                                                       // Process the message directly
-                                                                                       eventHandlerInvoker.handle(message, null, processingSegment);
-                                                                                       monitorCallback.reportSuccess();
-                                                                                   } catch (Exception exception) {
-                                                                                       monitorCallback.reportFailure(exception);
-                                                                                       throw exception;
-                                                                                   }
-                                                                               } else {
-                                                                                   reportIgnored(message);
-                                                                               }
-                                                                           }
+                                                                           // Monitor callback for this message
+                                                                           MessageMonitor.MonitorCallback monitorCallback =
+                                                                                   messageMonitor.onMessageIngested(message);
+
+                                                                           // Create an interceptor chain for this message
+                                                                           DefaultInterceptorChain<EventMessage<?>, ?> chain =
+                                                                                   new DefaultInterceptorChain<>(
+                                                                                           null,
+                                                                                           interceptors,
+                                                                                           (msg) -> {
+                                                                                               try {
+                                                                                                   for (Segment segment : processingSegments) {
+                                                                                                       if (canHandle(msg, segment)) {
+                                                                                                           eventHandlerInvoker.handle(msg, processingContext, segment);
+                                                                                                       } else {
+                                                                                                           reportIgnored(msg);
+                                                                                                       }
+                                                                                                   }
+                                                                                                   monitorCallback.reportSuccess();
+                                                                                                   return MessageStream.empty();
+                                                                                               } catch (Exception exception) {
+                                                                                                   monitorCallback.reportFailure(exception);
+                                                                                                   throw exception;
+                                                                                               }
+                                                                                           });
+
+                                                                           // Process the message through the interceptor chain
+                                                                           chain.proceed(message, processingContext);
                                                                            return CompletableFuture.completedFuture(null);
                                                                        } catch (Exception e) {
                                                                            CompletableFuture<Void> failedFuture = new CompletableFuture<>();
@@ -269,12 +278,11 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                 return result;
             });
 
-            // Execute the UnitOfWork to run all the registered phases
             return unitOfWork.execute().exceptionally(e -> {
                 try {
                     errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
                 } catch (Exception ex) {
-                    throw new RuntimeException(ex); // todo: handle it somehow!
+                    throw new RuntimeException(ex); // todo: handle error in another way
                 }
                 return null;
             });
