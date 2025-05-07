@@ -226,7 +226,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void concurrentTransactionsForNonOverlappingIndicesBothCommit() throws Exception {
+    void concurrentTransactionsForNonOverlappingTagsBothCommitWithExpectedConsistencyMarkerResponse() throws Exception {
         AppendCondition firstCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
         AppendCondition secondCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, OTHER_CRITERIA);
 
@@ -234,7 +234,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 testSubject.appendEvents(firstCondition, taggedEventMessage("event-0", TEST_CRITERIA_TAGS))
                            .get(1, TimeUnit.SECONDS);
         AppendTransaction secondTx =
-                testSubject.appendEvents(secondCondition, taggedEventMessage("event-0", TEST_CRITERIA_TAGS))
+                testSubject.appendEvents(secondCondition, taggedEventMessage("event-0", OTHER_CRITERIA_TAGS))
                            .get(1, TimeUnit.SECONDS);
 
         CompletableFuture<ConsistencyMarker> firstCommit = firstTx.commit();
@@ -243,10 +243,12 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
         assertDoesNotThrow(() -> secondCommit.get(1, TimeUnit.SECONDS));
 
-        ConsistencyMarker actualIndex = firstCommit.get(5, TimeUnit.SECONDS);
-        assertNotNull(actualIndex);
-        assertEquals(GlobalIndexConsistencyMarker.position(actualIndex) + 1,
-                     GlobalIndexConsistencyMarker.position(secondCommit.get(5, TimeUnit.SECONDS)));
+        ConsistencyMarker firstMarker = firstCommit.get(5, TimeUnit.SECONDS);
+        ConsistencyMarker secondMarker = secondCommit.get(5, TimeUnit.SECONDS);
+        assertNotNull(firstMarker);
+        assertNotNull(secondMarker);
+        assertEquals(GlobalIndexConsistencyMarker.position(firstMarker) + 1,
+                     GlobalIndexConsistencyMarker.position(secondMarker));
     }
 
     @Test
