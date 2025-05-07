@@ -16,74 +16,77 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class FallbackMessageTypeResolverTest {
 
-    @Test
-    void shouldUseFallbackWhenDelegateThrowsException() {
-        // given
-        MessageTypeResolver delegate = mock(MessageTypeResolver.class);
-        MessageTypeResolver fallback = mock(MessageTypeResolver.class);
-        FallbackMessageTypeResolver resolver = new FallbackMessageTypeResolver(delegate, fallback);
-        var expectedType = new MessageType("test.type", "1.0.0");
-        when(delegate.resolveOrThrow(String.class)).thenThrow(new MessageTypeNotResolvedException("Test exception"));
-        when(fallback.resolveOrThrow(String.class)).thenReturn(expectedType);
-        
-        // when
-        var result = resolver.resolveOrThrow(String.class);
-        
-        // then
-        assertEquals(expectedType, result);
-        verify(delegate).resolveOrThrow(String.class);
-        verify(fallback).resolveOrThrow(String.class);
+    @Nested
+    class Resolve {
+
+        @Test
+        void shouldUseFallbackWhenDelegateDoNotResolve() {
+            // given
+            var expectedType = new MessageType("test.type", "1.0.0");
+            MessageTypeResolver delegate = (pt) -> Optional.empty();
+            MessageTypeResolver fallback = (pt) -> Optional.of(expectedType);
+            FallbackMessageTypeResolver resolver = new FallbackMessageTypeResolver(delegate, fallback);
+
+            // when
+            var result = resolver.resolve(String.class);
+
+            // then
+            assertTrue(result.isPresent());
+            assertEquals(expectedType, result.get());
+        }
+
+        @Test
+        void shouldUseDelegateWhenItSucceeds() {
+            // given
+            var expectedType = new MessageType("test.type", "1.0.0");
+            MessageTypeResolver delegate = (pt) -> Optional.of(expectedType);
+            MessageTypeResolver fallback = (pt) -> Optional.empty();
+            var resolver = new FallbackMessageTypeResolver(delegate, fallback);
+
+            // when
+            var result = resolver.resolve(String.class);
+
+            // then
+            assertTrue(result.isPresent());
+            assertEquals(expectedType, result.get());
+        }
     }
-    
-    @Test
-    void shouldUseDelegateWhenItSucceeds() {
-        // given
-        var delegate = mock(MessageTypeResolver.class);
-        var fallback = mock(MessageTypeResolver.class);
-        var resolver = new FallbackMessageTypeResolver(delegate, fallback);
-        var expectedType = new MessageType("test.type", "1.0.0");
-        when(delegate.resolveOrThrow(String.class)).thenReturn(expectedType);
-        
-        // when
-        var result = resolver.resolveOrThrow(String.class);
-        
-        // then
-        assertEquals(expectedType, result);
-        verify(delegate).resolveOrThrow(String.class);
-        verify(fallback, never()).resolveOrThrow(any());
-    }
-    
-    @Test
-    void shouldCacheFailuresAndSkipDelegateOnSubsequentCalls() {
-        // given
-        var delegate = mock(MessageTypeResolver.class);
-        var fallback = mock(MessageTypeResolver.class);
-        var resolver = new FallbackMessageTypeResolver(delegate, fallback);
-        var expectedType = new MessageType("test.type", "1.0.0");
-        when(delegate.resolveOrThrow(String.class)).thenThrow(new MessageTypeNotResolvedException("Test exception"));
-        when(fallback.resolveOrThrow(String.class)).thenReturn(expectedType);
-        
-        // when
-        var result1 = resolver.resolveOrThrow(String.class);
-        
-        // then
-        assertEquals(expectedType, result1);
-        verify(delegate).resolveOrThrow(String.class);
-        verify(fallback).resolveOrThrow(String.class);
-        
-        // when
-        var result2 = resolver.resolveOrThrow(String.class);
-        
-        // then
-        assertEquals(expectedType, result2);
-        verify(delegate).resolveOrThrow(String.class);
-        verify(fallback, times(2)).resolveOrThrow(String.class);
+
+    @Nested
+    class ResolveOrThrow {
+
+        @Test
+        void shouldNotThrowIfFallbackResolves() {
+            // given
+            var expectedType = new MessageType("test.type", "1.0.0");
+            MessageTypeResolver delegate = (pt) -> Optional.empty();
+            MessageTypeResolver fallback = (pt) -> Optional.of(expectedType);
+            FallbackMessageTypeResolver resolver = new FallbackMessageTypeResolver(delegate, fallback);
+
+            // when
+            var result = assertDoesNotThrow(() -> resolver.resolveOrThrow(String.class));
+
+            // then
+            assertEquals(expectedType, result);
+        }
+
+        @Test
+        void shouldThrowIfFallbackDoNotResolve() {
+            // given
+            MessageTypeResolver delegate = (pt) -> Optional.empty();
+            MessageTypeResolver fallback = (pt) -> Optional.empty();
+            FallbackMessageTypeResolver resolver = new FallbackMessageTypeResolver(delegate, fallback);
+
+            // when/then
+            assertThrows(MessageTypeNotResolvedException.class, () -> resolver.resolveOrThrow(String.class));
+        }
     }
 }

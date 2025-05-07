@@ -51,7 +51,7 @@ class NamespaceMessageTypeResolverTest {
         // when/then
         var exception = assertThrows(MessageTypeNotResolvedException.class,
                                      () -> resolver.resolveOrThrow(Integer.class));
-        assertEquals("No MessageType found for payload type [java.lang.Integer]", exception.getMessage());
+        assertEquals("Cannot resolve MessageType for the payload type [java.lang.Integer]", exception.getMessage());
     }
 
     @Test
