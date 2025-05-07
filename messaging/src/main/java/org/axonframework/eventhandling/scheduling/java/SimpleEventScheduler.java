@@ -261,7 +261,7 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
                     ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
                                                 ((EventMessage<?>) event).getPayload(),
                                                 ((EventMessage<?>) event).getMetaData())
-                    : new GenericEventMessage<>(messageTypeResolver.resolve(event), event);
+                    : new GenericEventMessage<>(messageTypeResolver.resolveOrThrow(event), event);
         }
     }
 }

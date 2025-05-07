@@ -118,7 +118,7 @@ public class DefaultQueryGateway implements QueryGateway {
      */
     @Deprecated
     private <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {
-        return new GenericQueryResponseMessage<>(messageTypeResolver.resolve(exception.getClass()),
+        return new GenericQueryResponseMessage<>(messageTypeResolver.resolveOrThrow(exception.getClass()),
                                                  exception,
                                                  declaredType);
     }
@@ -136,7 +136,7 @@ public class DefaultQueryGateway implements QueryGateway {
         return query instanceof Message<?>
                 ? new GenericStreamingQueryMessage<>((Message<Q>) query,
                                                      responseType)
-                : new GenericStreamingQueryMessage<>(messageTypeResolver.resolve(query),
+                : new GenericStreamingQueryMessage<>(messageTypeResolver.resolveOrThrow(query),
                                                      query,
                                                      responseType);
     }
@@ -157,7 +157,7 @@ public class DefaultQueryGateway implements QueryGateway {
         return query instanceof Message<?>
                 ? new GenericQueryMessage<>((Message<Q>) query,
                                             responseType)
-                : new GenericQueryMessage<>(messageTypeResolver.resolve(query),
+                : new GenericQueryMessage<>(messageTypeResolver.resolveOrThrow(query),
                                             query,
                                             responseType);
     }
@@ -187,7 +187,7 @@ public class DefaultQueryGateway implements QueryGateway {
                 ? new GenericSubscriptionQueryMessage<>((Message<Q>) query,
                                                         initialResponseType,
                                                         updateResponseType)
-                : new GenericSubscriptionQueryMessage<>(messageTypeResolver.resolve(query),
+                : new GenericSubscriptionQueryMessage<>(messageTypeResolver.resolveOrThrow(query),
                                                         query,
                                                         initialResponseType,
                                                         updateResponseType);
