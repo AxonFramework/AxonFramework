@@ -110,7 +110,7 @@ val AxonSerializersModule = SerializersModule {
         subclass(MultipleInstancesResponseTypeSerializer)
         subclass(ArrayResponseTypeSerializer)
     }
-    contextual(MetaData::class) { MetaDataSerializer }
+    contextual(MetaData::class) { ComposedMetaDataSerializer }
 }
 
 /**
