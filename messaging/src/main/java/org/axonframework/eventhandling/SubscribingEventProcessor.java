@@ -139,7 +139,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
             // Create a new UnitOfWork instead of LegacyBatchingUnitOfWork
             UnitOfWork unitOfWork = new UnitOfWork();
 
-            // Attach transaction if needed
             if (transactionManager != null && transactionManager != NoTransactionManager.INSTANCE) {
                 unitOfWork.onPreInvocation(ctx -> {
                     Transaction transaction = transactionManager.startTransaction();
