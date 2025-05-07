@@ -54,7 +54,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
      * @return The builder instance for method chaining.
      */
     public static NamespaceMessageTypeResolverBuilder namespace(@Nonnull String namespace) {
-        return new NamespaceMessageTypeResolverBuilder(namespace, Map.of(), null);
+        return new NamespaceMessageTypeResolverBuilder(namespace, Map.of());
     }
 
     @Override
@@ -74,8 +74,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
      */
     public record NamespaceMessageTypeResolverBuilder(
             String namespace,
-            Map<Class<?>, MessageType> mappings,
-            MessageTypeResolver defaultResolver
+            Map<Class<?>, MessageType> mappings
     ) {
 
         /**
@@ -85,7 +84,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
          * @return The builder instance for method chaining.
          */
         public NamespaceMessageTypeResolverBuilder namespace(@Nonnull String namespace) {
-            return new NamespaceMessageTypeResolverBuilder(namespace, this.mappings, defaultResolver);
+            return new NamespaceMessageTypeResolverBuilder(namespace, this.mappings);
         }
 
         /**
@@ -109,7 +108,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
             Map<Class<?>, MessageType> newMappings = new HashMap<>(mappings);
             newMappings.put(payloadType, new MessageType(namespace, localName, version));
 
-            return new NamespaceMessageTypeResolverBuilder(this.namespace, newMappings, defaultResolver);
+            return new NamespaceMessageTypeResolverBuilder(this.namespace, newMappings);
         }
 
         /**
