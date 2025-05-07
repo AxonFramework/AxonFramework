@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.testsuite.administration.state.immuta
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.integrationtests.testsuite.administration.AnnotationTestDefinitions;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateEmployee;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
@@ -36,9 +35,7 @@ public record ImmutableEmployee(
         String lastNames,
         String firstNames,
         String emailAddress,
-        @AnnotationTestDefinitions.EntityMember
         ImmutableSalaryInformation salaryInformation,
-        @AnnotationTestDefinitions.EntityMember
         List<ImmutableTask> taskList
 ) implements ImmutablePerson {
 
