@@ -19,20 +19,15 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 
 import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 
 /**
  * Implementation of {@link MessageTypeResolver} that combines two resolvers in a fallback pattern. When the primary
  * resolver fails to resolve a {@link MessageType} for a payload type, this implementation will delegate to a secondary
  * fallback resolver.
  * <p>
- * This allows for composing resolution strategies where certain payload types might be resolved by specialized resolvers,
- * falling back to more generic approaches when specialized resolution fails.
- * <p>
- * This implementation includes an optimization that caches payload types for which the primary resolver has failed.
- * For subsequent resolution attempts with the same payload type, the primary resolver is skipped, and resolution
- * is directly delegated to the fallback resolver.
+ * This allows for composing resolution strategies where certain payload types might be resolved by specialized
+ * resolvers, falling back to more generic approaches when specialized resolution fails.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -41,11 +36,9 @@ public class FallbackMessageTypeResolver implements MessageTypeResolver {
 
     private final MessageTypeResolver delegate;
     private final MessageTypeResolver fallback;
-    private final Set<Class<?>> delegateFailureCache = ConcurrentHashMap.newKeySet();
 
     /**
-     * Initializes a new instance with the given primary {@code delegate} and {@code fallback}
-     * resolvers.
+     * Initializes a new instance with the given primary {@code delegate} and {@code fallback} resolvers.
      *
      * @param delegate The primary resolver to attempt resolution with first, not {@code null}.
      * @param fallback The fallback resolver to use when the delegate fails, not {@code null}.
@@ -58,25 +51,9 @@ public class FallbackMessageTypeResolver implements MessageTypeResolver {
         this.fallback = fallback;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * First checks if the payload type is in the cache of previously failed resolutions. If it is, directly uses the
-     * fallback resolver. Otherwise, attempts to resolve the {@link MessageType} using the delegate resolver. If the
-     * delegate throws a {@link MessageTypeNotResolvedException}, the payload type is added to the cache and resolution
-     * is delegated to the fallback resolver.
-     */
     @Override
-    public MessageType resolveOrThrow(Class<?> payloadType) {
-        if (delegateFailureCache.contains(payloadType)) {
-            return fallback.resolveOrThrow(payloadType);
-        }
-
-        try {
-            return delegate.resolveOrThrow(payloadType);
-        } catch (MessageTypeNotResolvedException e) {
-            delegateFailureCache.add(payloadType);
-            return fallback.resolveOrThrow(payloadType);
-        }
+    public Optional<MessageType> resolve(Class<?> payloadType) {
+        return delegate.resolve(payloadType)
+                       .or(() -> fallback.resolve(payloadType));
     }
 }

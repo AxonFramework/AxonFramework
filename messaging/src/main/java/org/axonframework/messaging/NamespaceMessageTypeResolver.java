@@ -21,6 +21,7 @@ import jakarta.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Implementation of the {@link MessageTypeResolver} that maintains a mapping of payload types to their corresponding
@@ -58,13 +59,9 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
     }
 
     @Override
-    public MessageType resolveOrThrow(Class<?> payloadType) {
+    public Optional<MessageType> resolve(Class<?> payloadType) {
         var messageType = mappings.get(payloadType);
-        if (messageType == null) {
-            throw new MessageTypeNotResolvedException(
-                    "No MessageType found for payload type [" + payloadType.getName() + "]");
-        }
-        return messageType;
+        return Optional.ofNullable(messageType);
     }
 
     /**
