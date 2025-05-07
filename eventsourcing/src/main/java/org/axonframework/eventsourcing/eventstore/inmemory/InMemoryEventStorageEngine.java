@@ -73,12 +73,11 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     private static final boolean WITH_MARKER = true;
     private static final boolean WITHOUT_MARKER = false;
 
-    private final NavigableMap<Long, TaggedEventMessage<? extends EventMessage<?>>> eventStorage = new ConcurrentSkipListMap<>();
-    private final ReentrantLock appendLock = new ReentrantLock();
-
-    private final Set<MapBackedMessageStream> openStreams = new CopyOnWriteArraySet<>();
-
+    private final NavigableMap<Long, TaggedEventMessage<? extends EventMessage<?>>> eventStorage =
+            new ConcurrentSkipListMap<>();
     private final long offset;
+    private final ReentrantLock appendLock = new ReentrantLock();
+    private final Set<MapBackedMessageStream> openStreams = new CopyOnWriteArraySet<>();
 
     /**
      * Initializes an in-memory {@link EventStorageEngine}.
@@ -108,13 +107,14 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
         return CompletableFuture.completedFuture(new AppendTransaction() {
 
-            private final AtomicBoolean finished = new AtomicBoolean(WITHOUT_MARKER);
+            private final AtomicBoolean finished = new AtomicBoolean(false);
 
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
-                if (finished.getAndSet(WITH_MARKER)) {
+                if (finished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
+
                 appendLock.lock();
                 try {
                     if (containsConflicts(condition)) {
@@ -145,7 +145,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
             @Override
             public void rollback() {
-                finished.set(WITH_MARKER);
+                finished.set(true);
             }
         });
     }
