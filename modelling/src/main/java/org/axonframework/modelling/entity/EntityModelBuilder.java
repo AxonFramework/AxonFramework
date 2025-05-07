@@ -47,7 +47,7 @@ public interface EntityModelBuilder<E> {
                                          @Nonnull EntityCommandHandler<E> messageHandler);
 
     /**
-     * Adds a child {@link EntityChildModel} to this model. The child model will be used to handle commands for the
+     * Adds a {@link EntityChildModel} to this model. The child model will be used to handle commands for the
      * child entity. You can build a tree of entities by adding child models to the parent model. Children command
      * handlers take precedence over the parent command handlers. Event handlers will be invoked on both the parent and
      * child models, but the child models will be invoked first.

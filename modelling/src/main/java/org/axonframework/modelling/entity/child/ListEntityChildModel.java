@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.entity.ChildAmbiguityException;
 import org.axonframework.modelling.entity.ChildEntityMissingException;
 import org.axonframework.modelling.entity.EntityModel;
 

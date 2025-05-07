@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity;
+package org.axonframework.modelling.entity.child;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.entity.child.EntityChildModel;
+
+import static org.axonframework.common.Assert.parameterNotNull;
 
 /**
  * Exception indicating that multiple child entities of a parent entity are able to handle the same command. This
@@ -38,8 +40,11 @@ public class ChildAmbiguityException extends RuntimeException {
      * @param commandMessage The {@link CommandMessage} that was handled.
      * @param parentEntity   The parent entity instance that was expected to handle the command.
      */
-    public ChildAmbiguityException(CommandMessage<?> commandMessage, Object parentEntity) {
+    public ChildAmbiguityException(@Nonnull CommandMessage<?> commandMessage, @Nonnull Object parentEntity) {
         super("Multiple child entities found for command of type [%s]. State of parent entity [%s]: [%s]"
-                      .formatted(commandMessage.type(), parentEntity.getClass().getName(), parentEntity));
+                      .formatted(
+                              parameterNotNull(commandMessage, "commandMessage").type(),
+                              parameterNotNull(parentEntity, "parentEntity").getClass().getName(), parentEntity)
+        );
     }
 }

@@ -19,6 +19,7 @@ package org.axonframework.modelling.entity;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageStream;
@@ -27,13 +28,13 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
+import org.axonframework.modelling.entity.child.ChildAmbiguityException;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -214,7 +215,7 @@ class SimpleEntityModelTest {
 
         MessageStreamTestUtils.assertCompletedExceptionally(
                 entityModel.handle(command, entity, context),
-                MissingCommandHandlerException.class,
+                NoHandlerForCommandException.class,
                 "No command handler was found for command of type [UnknownCommand#0.0.1] for entity ["
         );
     }

@@ -109,7 +109,7 @@ public record ImmutableEmployee(
         );
     }
 
-    @EventSourcingHandler
+    @Override
     public ImmutableEmployee on(EmailAddressChanged event) {
         return new ImmutableEmployee(
                 identifier,

@@ -18,6 +18,7 @@ package org.axonframework.integrationtests.testsuite.administration.state.immuta
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.events.EmailAddressChanged;
@@ -45,4 +46,7 @@ public interface ImmutablePerson {
 
         appender.append(new EmailAddressChanged(command.identifier(), command.emailAddress()));
     }
+
+    @EventSourcingHandler
+    ImmutablePerson on(EmailAddressChanged event);
 }

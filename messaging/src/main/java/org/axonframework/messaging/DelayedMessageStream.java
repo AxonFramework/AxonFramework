@@ -89,7 +89,7 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
      * available.
      */
     public static <M extends Message<?>> MessageStream.Single<M> createSingle(
-            CompletableFuture<MessageStream.Single<M>> delegate) {
+            @Nonnull CompletableFuture<MessageStream.Single<M>> delegate) {
         CompletableFuture<MessageStream.Single<M>> safeDelegate = delegate
                 .exceptionallyCompose(CompletableFuture::failedFuture)
                 .thenApply(ms -> Objects.requireNonNullElse(ms, MessageStream.empty().cast()));

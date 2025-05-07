@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
@@ -48,7 +50,7 @@ import java.util.Set;
  * <p>
  * Events are delegates to both the super type and the concrete type.
  *
- * @param <E> the type of entity this model represents.
+ * @param <E> The type of polymorphic entity this model represents.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
@@ -59,17 +61,16 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     private final Set<QualifiedName> supportedCommands;
 
     private PolymorphicEntityModel(
-            EntityModel<E> abstractDelegate,
+            EntityModel<E> superTypeModel,
             List<EntityModel<? extends E>> concreteModels
     ) {
-        this.superTypeModel = abstractDelegate;
+        this.superTypeModel = superTypeModel;
         this.concreteModels = new HashMap<>();
-        this.supportedCommands = new HashSet<>(superTypeModel.supportedCommands());
+        this.supportedCommands = new HashSet<>(this.superTypeModel.supportedCommands());
         for (EntityModel<? extends E> polymorphicModel : concreteModels) {
             this.concreteModels.put(polymorphicModel.entityType(), polymorphicModel);
             this.supportedCommands.addAll(polymorphicModel.supportedCommands());
         }
-
     }
 
     /**
@@ -87,8 +88,8 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
     @Override
     public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-        superTypeModel.evolve(entity, event, context);
-        return modelFor(entity).evolve(entity, event, context);
+        var superTypeEvolvedEntity = superTypeModel.evolve(entity, event, context);
+        return modelFor(entity).evolve(superTypeEvolvedEntity, event, context);
     }
 
     /**
@@ -106,9 +107,12 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     }
 
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                E entity,
-                                                                ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                                @Nonnull E entity,
+                                                                @Nonnull ProcessingContext context) {
+        Assert.parameterNotNull(message, "message");
+        Assert.parameterNotNull(entity, "entity");
+        Assert.parameterNotNull(context, "context");
 
         EntityModel<E> concreteModel = modelFor(entity);
         if (concreteModel.supportedCommands().contains(message.type().qualifiedName())) {
@@ -117,7 +121,7 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         if(superTypeModel.supportedCommands().contains(message.type().qualifiedName())) {
             return superTypeModel.handle(message, entity, context);
         }
-        return MessageStream.failed(new MissingCommandHandlerException(message, entityType()));
+        return MessageStream.failed(new NoHandlerForCommandException(message, entityType()));
     }
 
     @Override
@@ -143,7 +147,7 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
      *
      * @param <E> The type of the entity this model represents.
      */
-    public static class Builder<E> implements PolymorphicEntityModelBuilder<E> {
+    private static class Builder<E> implements PolymorphicEntityModelBuilder<E> {
 
         private final SimpleEntityModel.Builder<E> superTypeBuilder;
         private final List<EntityModel<? extends E>> polymorphicModels = new ArrayList<>();

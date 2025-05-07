@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
 
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -47,8 +48,8 @@ public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntity
             @Nonnull Function<P, F> getter,
             @Nonnull BiConsumer<P, F> setter
     ) {
-        this.getter = Objects.requireNonNull(getter, "getter may not be null");
-        this.setter = Objects.requireNonNull(setter, "setter may not be null");
+        this.getter = Assert.parameterNotNull(getter, "getter");
+        this.setter = Assert.parameterNotNull(setter, "setter");
     }
 
     @Override
@@ -58,7 +59,8 @@ public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntity
     }
 
     @Override
-    public F getChildValue(P parentEntity) {
+    public F getChildValue(@Nonnull P parentEntity) {
+        Assert.parameterNotNull(parentEntity, "parentEntity");
         return getter.apply(parentEntity);
     }
 }

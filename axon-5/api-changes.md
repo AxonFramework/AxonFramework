@@ -558,6 +558,29 @@ public static void main(String[] args) {
 }
 ```
 
+## Aggregates to Entities
+
+Axon Framework 5 elevates the concept of Entities to the top level, as aggregate no longer accurately
+describes the concept. With the introduction of DCB, more fluid boundaries of entities are possible.
+
+### Declarative modelling first
+
+While aggregates only worked through reflection, entities are now declaratively defined. You can start one simply
+by calling `EntityModel.forEntityType(entityType)` and declare command handlers, event handlers, and
+child entities. 
+
+
+### Exception mapping
+With the change from Aggregate to Entity, we have also changed some of the exceptions. If you depends on these
+exceptions, you will need to change your code. The following table shows the changes:
+
+| Old Exception                                                          | New Exception                                                    |
+|------------------------------------------------------------------------|------------------------------------------------------------------|
+| `org.axonframework.modelling.command.AggregateEntityNotFoundException` | `org.axonframework.modelling.entity.ChildEntityMissingException` |
+
+
+
+
 ## Test Fixtures
 
 The `axon-test` module of Axon Framework has historically provided two different test fixtures:

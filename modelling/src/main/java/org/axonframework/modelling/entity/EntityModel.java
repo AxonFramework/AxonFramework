@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.entity;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.DescribableComponent;
@@ -57,7 +58,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      * {@link CommandResultMessage} or an error message.
      */
     MessageStream.Single<CommandResultMessage<?>> handle(
-            CommandMessage<?> message, E entity, ProcessingContext context
+            @Nonnull CommandMessage<?> message, @Nonnull E entity, @Nonnull ProcessingContext context
     );
 
     /**

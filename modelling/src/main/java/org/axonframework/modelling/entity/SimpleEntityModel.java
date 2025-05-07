@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
@@ -27,6 +29,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
+import org.axonframework.modelling.entity.child.ChildAmbiguityException;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
 import java.util.ArrayList;
@@ -107,8 +110,12 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
     }
 
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message, E entity,
-                                                                ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message, @Nonnull E entity,
+                                                                @Nonnull ProcessingContext context) {
+
+        Assert.parameterNotNull(message, "message");
+        Assert.parameterNotNull(entity, "entity");
+        Assert.parameterNotNull(context, "context");
         try {
             var childrenWithCommandHandlers = children.values().stream()
                                                       .filter(childEntity -> childEntity
@@ -127,7 +134,7 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
             return MessageStream.failed(e);
         }
 
-        return MessageStream.failed(new MissingCommandHandlerException(message, entityType));
+        return MessageStream.failed(new NoHandlerForCommandException(message, entityType));
     }
 
     private MessageStream.Single<CommandResultMessage<?>> handleForChildren(
@@ -178,7 +185,7 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
      *
      * @param <E> The type of the entity for which the model is being constructed.
      */
-    public static class Builder<E> implements EntityModelBuilder<E> {
+    private static class Builder<E> implements EntityModelBuilder<E> {
 
         private final Class<E> entityType;
         private final Map<QualifiedName, EntityCommandHandler<E>> commandHandlers = new HashMap<>();

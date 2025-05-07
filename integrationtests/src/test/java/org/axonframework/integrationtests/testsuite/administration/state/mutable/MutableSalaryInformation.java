@@ -23,8 +23,8 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Give
 import org.axonframework.integrationtests.testsuite.administration.events.RaiseGiven;
 
 public class MutableSalaryInformation {
-    Double salary;
-    String role;
+    private Double salary;
+    private String role;
 
     public MutableSalaryInformation(Double salary, String role) {
         this.salary = salary;

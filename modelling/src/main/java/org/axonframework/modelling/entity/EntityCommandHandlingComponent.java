@@ -34,7 +34,7 @@ import java.util.Set;
 
 /**
  * A {@link CommandHandlingComponent} that handles commands for an entity. It will resolve the identifier of the entity
- * through the provided {@link EntityIdResolver}, load if from the provided {@link Repository} and delegate the handling
+ * through the provided {@link EntityIdResolver}, load it from the provided {@link Repository} and delegate the handling
  * of the command to the {@link EntityModel} of the entity.
  *
  * @param <ID> The type of the identifier of the entity.

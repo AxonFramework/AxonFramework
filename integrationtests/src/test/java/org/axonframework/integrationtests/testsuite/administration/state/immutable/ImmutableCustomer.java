@@ -52,8 +52,7 @@ public record ImmutableCustomer(
         );
     }
 
-
-    @EventSourcingHandler
+    @Override
     public ImmutableCustomer on(EmailAddressChanged event) {
         return new ImmutableCustomer(
                 identifier,

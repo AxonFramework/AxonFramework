@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -55,8 +56,8 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
     ) {
         this.parentClass = parentClass;
         this.fieldName = fieldName;
-        Objects.requireNonNull(parentClass, "parentClass may not be null");
-        Objects.requireNonNull(fieldName, "fieldName may not be null");
+        Assert.parameterNotNull(parentClass, "parentClass");
+        Assert.parameterNotNull(fieldName, "fieldName");
         this.field = StreamSupport
                 .stream(ReflectionUtils.fieldsOf(parentClass).spliterator(), false)
                 .filter(f -> f.getName().equals(fieldName))
@@ -127,7 +128,8 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
 
     @SuppressWarnings("unchecked")
     @Override
-    public F getChildValue(P parentEntity) {
+    public F getChildValue(@Nonnull P parentEntity) {
+        Assert.parameterNotNull(parentEntity, "parentEntity");
         try {
             if (optionalGetter != null) {
                 return (F) optionalGetter.invoke(parentEntity);
