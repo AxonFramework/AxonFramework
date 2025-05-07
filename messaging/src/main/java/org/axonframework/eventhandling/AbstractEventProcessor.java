@@ -18,12 +18,14 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -35,6 +37,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.Nonnull;
 
@@ -205,6 +208,77 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                     exception);
             throw exception;
         }
+    }
+
+    protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
+                                             UnitOfWork unitOfWork) throws Exception {
+        processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT);
+    }
+
+    protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
+                                       UnitOfWork unitOfWork,
+                                       Collection<Segment> processingSegments) throws Exception {
+        final Context.ResourceKey<List<? extends EventMessage<?>>> MESSAGES_KEY =
+                Context.ResourceKey.withLabel("MESSAGES");
+
+        spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages).runCallable(() -> {
+            // Store the messages in the UnitOfWork context
+            unitOfWork.onPreInvocation(ctx -> {
+                ctx.putResource(MESSAGES_KEY, eventMessages);
+                return CompletableFuture.completedFuture(null);
+            });
+
+            // Register the actual processing in the Invocation phase
+            unitOfWork.onInvocation(processingContext -> {
+                List<? extends EventMessage<?>> messages = processingContext.getResource(MESSAGES_KEY);
+                CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
+
+                for (EventMessage<?> message : messages) {
+                    // Create a span for processing this event
+                    result = result.thenCompose(v ->
+                                                        spanFactory.createProcessEventSpan(this instanceof StreamingEventProcessor, message)
+                                                                   .runSupplierAsync(() -> {
+                                                                       // Process the message directly (without interceptors for now)
+                                                                       MessageMonitor.MonitorCallback monitorCallback =
+                                                                               messageMonitor.onMessageIngested(message);
+
+                                                                       try {
+                                                                           for (Segment processingSegment : processingSegments) {
+                                                                               if (canHandle(message, processingSegment)) {
+                                                                                   try {
+                                                                                       // Process the message directly
+                                                                                       eventHandlerInvoker.handle(message, null, processingSegment);
+                                                                                       monitorCallback.reportSuccess();
+                                                                                   } catch (Exception exception) {
+                                                                                       monitorCallback.reportFailure(exception);
+                                                                                       throw exception;
+                                                                                   }
+                                                                               } else {
+                                                                                   reportIgnored(message);
+                                                                               }
+                                                                           }
+                                                                           return CompletableFuture.completedFuture(null);
+                                                                       } catch (Exception e) {
+                                                                           CompletableFuture<Void> failedFuture = new CompletableFuture<>();
+                                                                           failedFuture.completeExceptionally(e);
+                                                                           return failedFuture;
+                                                                       }
+                                                                   }));
+                }
+
+                return result;
+            });
+
+            // Execute the UnitOfWork to run all the registered phases
+            return unitOfWork.execute().exceptionally(e -> {
+                try {
+                    errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex); // todo: handle it somehow!
+                }
+                return null;
+            });
+        });
     }
 
     /**
