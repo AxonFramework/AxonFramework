@@ -19,18 +19,22 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
@@ -54,6 +58,8 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
 
     private volatile Registration eventBusRegistration;
 
+    private static final Context.ResourceKey<Transaction> TRANSACTION_KEY =
+            Context.ResourceKey.withLabel("TRANSACTION");
     /**
      * Instantiate a {@link SubscribingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
@@ -130,9 +136,34 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      */
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
-            LegacyBatchingUnitOfWork<? extends EventMessage<?>> unitOfWork =
-                    new LegacyBatchingUnitOfWork<>(eventMessages);
-            unitOfWork.attachTransaction(transactionManager);
+            // Create a new UnitOfWork instead of LegacyBatchingUnitOfWork
+            UnitOfWork unitOfWork = new UnitOfWork();
+
+            // Attach transaction if needed
+            if (transactionManager != null && transactionManager != NoTransactionManager.INSTANCE) {
+                unitOfWork.onPreInvocation(ctx -> {
+                    Transaction transaction = transactionManager.startTransaction();
+                    ctx.putResource(TRANSACTION_KEY, transaction);
+                    return CompletableFuture.completedFuture(null);
+                });
+
+                unitOfWork.onCommit(ctx -> {
+                    Transaction transaction = ctx.getResource(TRANSACTION_KEY);
+                    if (transaction != null) {
+                        transaction.commit();
+                    }
+                    return CompletableFuture.completedFuture(null);
+                });
+
+                unitOfWork.onError((ctx, phase, error) -> {
+                    Transaction transaction = ctx.getResource(TRANSACTION_KEY);
+                    if (transaction != null) {
+                        transaction.rollback();
+                    }
+                });
+            }
+
+            // Process the messages in the unit of work
             processInUnitOfWork(eventMessages, unitOfWork);
         } catch (RuntimeException e) {
             throw e;
