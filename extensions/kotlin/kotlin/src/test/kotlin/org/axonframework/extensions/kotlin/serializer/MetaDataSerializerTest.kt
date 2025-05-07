@@ -219,6 +219,28 @@ class MetaDataSerializerTest {
     }
 
     @Test
+    fun `should not escape quotes in complex nested structures in MetaData`() {
+        val complexStructure = mapOf(
+            "string" to "value",
+            "number" to 42,
+            "boolean" to true,
+            "null" to null,
+            "list" to listOf(1, 2, 3),
+            "nestedMap" to mapOf(
+                "a" to "valueA",
+                "b" to listOf("x", "y", "z"),
+                "c" to mapOf("nested" to "deepValue")
+            )
+        )
+
+        val metaData = MetaData.with("complexValue", complexStructure)
+
+        val serialized = jsonSerializer.serialize(metaData, String::class.java)
+        val json = """{"complexValue":{"string":"value","number":42,"boolean":true,"null":null,"list":[1,2,3],"nestedMap":{"a":"valueA","b":["x","y","z"],"c":{"nested":"deepValue"}}}}"""
+        assertEquals(json, serialized.data);
+    }
+
+    @Test
     fun `do not handle custom objects`() {
         data class Person(val name: String, val age: Int)
 
@@ -235,7 +257,7 @@ class MetaDataSerializerTest {
     fun `should throw exception when deserializing malformed JSON`() {
         val serializedType = SimpleSerializedType(MetaData::class.java.name, null)
 
-        val syntaxErrorJson = """{"key": value}"""  // missing quotes around value
+        val syntaxErrorJson = """{"key": value"""  // missing closing bracket around value
         val syntaxErrorObject = SimpleSerializedObject(syntaxErrorJson, String::class.java, serializedType)
 
         assertThrows<SerializationException> {
