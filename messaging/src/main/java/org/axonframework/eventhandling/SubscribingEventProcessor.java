@@ -26,7 +26,6 @@ import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -58,8 +57,9 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
 
     private volatile Registration eventBusRegistration;
 
-    private static final Context.ResourceKey<Transaction> TRANSACTION_KEY =
-            Context.ResourceKey.withLabel("TRANSACTION");
+    private final Context.ResourceKey<Transaction> transactionKey =
+            Context.ResourceKey.withLabel("transaction");
+
     /**
      * Instantiate a {@link SubscribingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
@@ -136,39 +136,32 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      */
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
-            // Create a new UnitOfWork instead of LegacyBatchingUnitOfWork
-            UnitOfWork unitOfWork = new UnitOfWork();
-
-            if (transactionManager != null && transactionManager != NoTransactionManager.INSTANCE) {
-                unitOfWork.onPreInvocation(ctx -> {
-                    Transaction transaction = transactionManager.startTransaction();
-                    ctx.putResource(TRANSACTION_KEY, transaction);
-                    return CompletableFuture.completedFuture(null);
-                });
-
-                unitOfWork.onCommit(ctx -> {
-                    Transaction transaction = ctx.getResource(TRANSACTION_KEY);
-                    if (transaction != null) {
-                        transaction.commit();
-                    }
-                    return CompletableFuture.completedFuture(null);
-                });
-
-                unitOfWork.onError((ctx, phase, error) -> {
-                    Transaction transaction = ctx.getResource(TRANSACTION_KEY);
-                    if (transaction != null) {
-                        transaction.rollback();
-                    }
-                });
-            }
-
-            // Process the messages in the unit of work
+            var unitOfWork = new UnitOfWork();
+            attachTransactionToUnitOfWork(unitOfWork);
             processInUnitOfWork(eventMessages, unitOfWork);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new EventProcessingException("Exception occurred while processing events", e);
         }
+    }
+
+    private void attachTransactionToUnitOfWork(UnitOfWork unitOfWork) {
+        // todo legacy UnitOfWork.attachTransaction rollbacks in case of error here
+        unitOfWork.runOnPreInvocation(ctx -> {
+            var transaction = transactionManager.startTransaction();
+            ctx.putResource(transactionKey, transaction);
+        });
+
+        unitOfWork.runOnCommit(ctx -> {
+            var transaction = ctx.getResource(transactionKey);
+            transaction.commit();
+        });
+
+        unitOfWork.onError((ctx, phase, error) -> {
+            var transaction = ctx.getResource(transactionKey);
+            transaction.rollback();
+        });
     }
 
     /**
