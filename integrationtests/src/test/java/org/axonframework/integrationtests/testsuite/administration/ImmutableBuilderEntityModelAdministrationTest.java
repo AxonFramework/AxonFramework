@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.testsuite.administration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
@@ -45,7 +46,6 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
-import org.axonframework.modelling.entity.EntityCreationPolicy;
 import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.PolymorphicEntityModel;
 import org.axonframework.modelling.entity.SimpleEntityModel;
@@ -170,8 +170,9 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 ImmutablePerson.class,
                 configuration.getComponent(EventStore.class),
                 new EventSourcedEntityFactory<>() {
+                    @Nonnull
                     @Override
-                    public ImmutablePerson createEntityBasedOnFirstEventMessage(
+                    public ImmutablePerson createFromFirstEvent(
                             @Nonnull PersonIdentifier personIdentifier,
                             @Nonnull EventMessage<?> eventMessage) {
                         if (eventMessage.getPayload() instanceof EmployeeCreated employeeCreated) {
@@ -184,6 +185,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                 format("Unknown event type: %s", eventMessage.getPayloadType().getName()));
                     }
 
+                    @Nullable
                     @Override
                     public ImmutablePerson createEmptyEntity(@Nonnull PersonIdentifier personIdentifier) {
                         return null;

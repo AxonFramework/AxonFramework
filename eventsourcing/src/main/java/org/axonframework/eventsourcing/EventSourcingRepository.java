@@ -169,7 +169,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
 
     private void createEntityBasedOnFirstEvent(ID identifier, EventSourcedEntity<ID, E> entity,
                                                MessageStream.Entry<? extends EventMessage<?>> entry) {
-        E createdEntity = entityFactory.createEntityBasedOnFirstEventMessage(identifier, entry.message());
+        E createdEntity = entityFactory.createFromFirstEvent(identifier, entry.message());
         verifyNonNullEntityCreation(createdEntity, identifier);
         entity.applyStateChange(e -> createdEntity);
     }
@@ -194,7 +194,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         eventStore.transaction(processingContext)
                   .onAppend(event -> {
                       if (entity.entity() == null) {
-                          entity.applyStateChange(e -> entityFactory.createEntityBasedOnFirstEventMessage(
+                          entity.applyStateChange(e -> entityFactory.createFromFirstEvent(
                                   entity.identifier(), event));
                       } else {
                           entity.evolve(event, entityEvolver, processingContext);

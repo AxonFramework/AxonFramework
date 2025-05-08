@@ -17,27 +17,27 @@
 package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.ReflectionUtils;
-import org.axonframework.eventhandling.EventMessage;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ConstructorUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * {@link EventSourcedEntityFactory} implementation which uses a constructor to create a new instance of an entity. The
- * constructor can either have a single argument of the same type as the identifier, a single argument of the first
- * event payload type, or no arguments at all. Note that arguments can not be combined, so a constructor with both an ID
- * and an event payload is not supported.
+ * constructor can either have a single argument of the same type as the identifier, or no arguments at all.
  *
- * @param <E> The type of the entity to create.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ConstructorBasedEventSourcedEntityFactory<E> implements EventSourcedEntityFactory<Object, E> {
+public class ConstructorBasedEventSourcedEntityFactory<E>
+        implements EventSourcedEntityFactory<Object, E>, DescribableComponent {
 
-    private final Class<?> entityType;
+    private final Class<E> entityType;
 
     /**
      * Instantiate a constructor-based {@link EventSourcedEntityFactory} for the given {@code entityType}.
@@ -45,83 +45,25 @@ public class ConstructorBasedEventSourcedEntityFactory<E> implements EventSource
      * @param entityType The type of the entity to create.
      */
     public ConstructorBasedEventSourcedEntityFactory(@Nonnull Class<E> entityType) {
-        this.entityType = Objects.requireNonNull(entityType, "entityType must not be null");
+        this.entityType = Objects.requireNonNull(entityType, "The entityType must not be null.");
     }
+
+    private final Map<Class<? extends Object>, Function<Object, E>> constructorCache = new ConcurrentHashMap<>();
 
     @Override
-    public E createEntityBasedOnFirstEventMessage(@Nonnull Object id,
-                                                  @Nonnull EventMessage<?> firstEventMessage) {
-        try {
-            Optional<Constructor<?>> constructorWithEventPayload = Arrays
-                    .stream(entityType.getDeclaredConstructors())
-                    .filter(constructor -> constructor.getParameterCount() == 1)
-                    .filter(constructor -> constructor.getParameterTypes()[0].isInstance(firstEventMessage.getPayload()))
-                    .findFirst();
-            if (constructorWithEventPayload.isPresent()) {
-                Constructor<?> constructor = constructorWithEventPayload.get();
-                ReflectionUtils.ensureAccessible(constructor);
-                //noinspection unchecked
-                return (E) constructor.newInstance(firstEventMessage.getPayload());
-            }
-
-            // Okay, and with EventMessage?
-            Optional<Constructor<?>> constructorWithEventMessage = Arrays
-                    .stream(entityType.getDeclaredConstructors())
-                    .filter(constructor -> constructor.getParameterCount() == 1)
-                    .filter(constructor -> EventMessage.class.isAssignableFrom(constructor.getParameterTypes()[0]))
-                    .findFirst();
-            if (constructorWithEventMessage.isPresent()) {
-                Constructor<?> constructor = constructorWithEventMessage.get();
-                ReflectionUtils.ensureAccessible(constructor);
-                //noinspection unchecked
-                return (E) constructor.newInstance(firstEventMessage);
-            }
-
-            return createEmptyEntity(id);
-        } catch (Exception e) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            }
-            throw new RuntimeException(e);
-        }
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("constructorCache", constructorCache);
     }
 
+    @Nullable
     @Override
     public E createEmptyEntity(@Nonnull Object id) {
-        try {
-            // Okay, with ID
-            Optional<Constructor<?>> constructorWithId = Arrays
-                    .stream(entityType.getDeclaredConstructors())
-                    .filter(constructor -> constructor.getParameterCount() == 1)
-                    .filter(constructor -> constructor.getParameterTypes()[0].isInstance(id))
-                    .findFirst();
-            if (constructorWithId.isPresent()) {
-                Constructor<?> constructor = constructorWithId.get();
-                ReflectionUtils.ensureAccessible(constructor);
-                //noinspection unchecked
-                return (E) constructor.newInstance(id);
-            }
 
-            // Finally, try the zero-argument constructor
-            Optional<Constructor<?>> zeroArgConstructor = Arrays
-                    .stream(entityType.getDeclaredConstructors())
-                    .filter(constructor -> constructor.getParameterCount() == 0)
-                    .findFirst();
-            if (zeroArgConstructor.isPresent()) {
-                Constructor<?> constructor = zeroArgConstructor.get();
-                ReflectionUtils.ensureAccessible(constructor);
-                //noinspection unchecked
-                return (E) constructor.newInstance();
-            }
-
-            // If we reach this point, we have no constructor that matches the ID or event message
-            // Throw an exception
-            throw new IllegalArgumentException(
-                    "No suitable constructor found for entity of type [%s] with ID of type [%s]"
-                            .formatted(entityType.getName(), id.getClass().getName())
-            );
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        //noinspection unchecked
+        Class<Object> idClass = (Class<Object>) id.getClass();
+        return constructorCache
+                .computeIfAbsent(idClass,
+                                 (i) -> ConstructorUtils.factoryForTypeWithOptionalArgument(entityType, idClass))
+                .apply(id);
     }
 }

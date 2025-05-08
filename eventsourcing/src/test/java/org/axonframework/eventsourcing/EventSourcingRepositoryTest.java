@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -71,15 +73,17 @@ class EventSourcingRepositoryTest {
                 String.class,
                 eventStore,
                 new EventSourcedEntityFactory<>() {
+                    @Nullable
                     @Override
                     public String createEmptyEntity(@NotNull String s) {
                         // Simulate no-arg constructor
                         return s + "()";
                     }
 
+                    @Nonnull
                     @Override
-                    public String createEntityBasedOnFirstEventMessage(@NotNull String s,
-                                                                       @NotNull EventMessage<?> firstEventMessage) {
+                    public String createFromFirstEvent(@NotNull String s,
+                                                       @NotNull EventMessage<?> firstEventMessage) {
                         // Simulate constructor with first event payload
                         return s + "(" + firstEventMessage.getPayload() + ")";
                     }
