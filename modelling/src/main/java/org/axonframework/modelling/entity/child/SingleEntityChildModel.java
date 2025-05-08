@@ -18,81 +18,64 @@ package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import org.axonframework.modelling.entity.EntityModel;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * An {@link EntityChildModel} that handles commands and events for a single child entity. It will use the provided
  * {@link ChildEntityFieldDefinition} to resolve the child entity from the parent entity. Once the entity is resolved,
  * it will delegate the command- and event-handling to the child entity model.
  * <p>
- * If the child entity is not present in the parent entity, an {@link IllegalArgumentException} will be thrown.
+ * If the child entity is not present in the parent entity, an {@link ChildEntityNotFoundException} will be thrown.
  *
  * @param <C> The type of the child entity.
  * @param <P> The type of the parent entity.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
+public class SingleEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
 
-    private final EntityModel<C> childEntityModel;
     private final ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
-    private SingleEntityChildModel(EntityModel<C> childEntityModel,
-                                   ChildEntityFieldDefinition<P, C> childEntityFieldDefinition
+    private SingleEntityChildModel(@Nonnull EntityModel<C> childEntityModel,
+                                   @Nonnull ChildEntityFieldDefinition<P, C> childEntityFieldDefinition,
+                                   @Nonnull ChildEntityMatcher<C, CommandMessage<?>> commandTargetMatcher,
+                                   @Nonnull ChildEntityMatcher<C, EventMessage<?>> eventTargetMatcher
     ) {
-        this.childEntityModel = childEntityModel;
-        this.childEntityFieldDefinition = childEntityFieldDefinition;
+        super(
+                childEntityModel,
+                commandTargetMatcher,
+                eventTargetMatcher
+        );
+        this.childEntityFieldDefinition = Objects.requireNonNull(
+                childEntityFieldDefinition,
+                "The childEntityFieldDefinition may not be null."
+        );
     }
 
     @Override
-    public Set<QualifiedName> supportedCommands() {
-        return childEntityModel.supportedCommands();
-    }
-
-    @Override
-    public boolean canHandle(@Nonnull CommandMessage<?> message, @Nonnull P parentEntity,
-                             @Nonnull ProcessingContext context) {
-        C childEntity = childEntityFieldDefinition.getChildValue(parentEntity);
-        return childEntity != null;
-    }
-
-
-    @Override
-    public P evolve(@Nonnull P entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-        C childEntity = childEntityFieldDefinition.getChildValue(entity);
+    protected List<C> getChildEntities(P entity) {
+        C childEntity = childEntityFieldDefinition
+                .getChildValue(entity);
         if (childEntity != null) {
-            C evolvedEntity = childEntityModel.evolve(childEntity, event, context);
-            return childEntityFieldDefinition.evolveParentBasedOnChildEntities(entity, evolvedEntity);
+            return List.of(childEntity);
         }
-        return entity;
+        return List.of();
     }
 
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                                @Nonnull P entity,
-                                                                @Nonnull ProcessingContext context) {
-        C childEntity = childEntityFieldDefinition.getChildValue(entity);
-        if (childEntity == null) {
-            return MessageStream.failed(new IllegalArgumentException(
-                    "No child entity found for command " + message.type().qualifiedName()
-                            + " on parent entity " + entity
-            ));
+    protected P applyEvolvedChildEntities(P entity, List<C> evolvedChildEntities) {
+        if (evolvedChildEntities.isEmpty()) {
+            return childEntityFieldDefinition.evolveParentBasedOnChildEntities(entity, null);
         }
-        return childEntityModel.handleInstance(message, childEntity, context);
-    }
-
-    @Override
-    public Class<C> entityType() {
-        return childEntityModel.entityType();
+        if (evolvedChildEntities.size() > 1) {
+            throw new IllegalStateException("The SingleEntityChildModel field should only return a single child entity.");
+        }
+        return childEntityFieldDefinition.evolveParentBasedOnChildEntities(entity, evolvedChildEntities.getFirst());
     }
 
     @Override
@@ -130,17 +113,15 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
      * @param <C> The type of the child entity.
      * @param <P> The type of the parent entity.
      */
-    public static class Builder<C, P> {
+    public static class Builder<C, P> extends AbstractEntityChildModel.Builder<C, P, Builder<C, P>> {
 
-        private final EntityModel<C> childEntityModel;
         private ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
         @SuppressWarnings("unused") // Uses for generics
         private Builder(@Nonnull Class<P> parentClass,
                         @Nonnull EntityModel<C> childEntityModel
         ) {
-            Objects.requireNonNull(parentClass, "parentClass may not be null");
-            this.childEntityModel = Objects.requireNonNull(childEntityModel, "childEntityModel may not be null");
+            super(parentClass, childEntityModel);
         }
 
         /**
@@ -153,7 +134,7 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
          */
         public Builder<C, P> childEntityFieldDefinition(@Nonnull ChildEntityFieldDefinition<P, C> fieldDefinition) {
             this.childEntityFieldDefinition = Objects.requireNonNull(fieldDefinition,
-                                                                     "fieldDefinition may not be null");
+                                                                     "The fieldDefinition may not be null.");
             return this;
         }
 
@@ -164,9 +145,10 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
          * @return A new {@link SingleEntityChildModel} instance with the configured properties.
          */
         public SingleEntityChildModel<C, P> build() {
-            Assert.notNull(childEntityFieldDefinition, () -> "Child entity field definition is required");
             return new SingleEntityChildModel<>(childEntityModel,
-                                                childEntityFieldDefinition
+                                                childEntityFieldDefinition,
+                                                commandTargetMatcher,
+                                                eventTargetMatcher
             );
         }
     }

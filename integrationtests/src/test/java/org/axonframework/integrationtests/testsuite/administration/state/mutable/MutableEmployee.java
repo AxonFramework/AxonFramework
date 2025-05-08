@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.testsuite.administration.state.mutabl
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.integrationtests.testsuite.administration.AnnotationTestDefinitions;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateEmployee;
 import org.axonframework.integrationtests.testsuite.administration.events.EmployeeCreated;
@@ -31,9 +30,7 @@ import java.util.stream.Collectors;
 
 public class MutableEmployee extends MutablePerson {
 
-    @AnnotationTestDefinitions.EntityMember
     private MutableSalaryInformation salary;
-    @AnnotationTestDefinitions.EntityMember
     private List<MutableTask> taskList = new ArrayList<>();
 
     @CommandHandler
@@ -43,8 +40,6 @@ public class MutableEmployee extends MutablePerson {
         }
         eventAppender.append(new EmployeeCreated(
                 command.identifier(),
-                command.lastNames(),
-                command.firstNames(),
                 command.emailAddress(),
                 command.role(),
                 command.initialSalary()
@@ -66,8 +61,6 @@ public class MutableEmployee extends MutablePerson {
     @EventSourcingHandler
     public void on(EmployeeCreated event) {
         this.identifier = event.identifier();
-        this.lastNames = event.lastNames();
-        this.firstNames = event.firstNames();
         this.emailAddress = event.emailAddress();
         this.salary = new MutableSalaryInformation(event.initialSalary(), event.role());
     }

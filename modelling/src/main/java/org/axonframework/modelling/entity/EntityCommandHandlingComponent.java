@@ -35,7 +35,7 @@ import java.util.function.Function;
 
 /**
  * A {@link CommandHandlingComponent} that handles commands for an entity. It will resolve the identifier of the entity
- * through the provided {@link EntityIdResolver}, load if from the provided {@link Repository} and delegate the handling
+ * through the provided {@link EntityIdResolver}, load it from the provided {@link Repository} and delegate the handling
  * of the command to the {@link EntityModel} of the entity.
  *
  * @param <ID> The type of the identifier of the entity.
@@ -64,11 +64,11 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
             @Nonnull EntityIdResolver<ID> idResolver,
             @Nonnull Function<CommandMessage<?>, EntityCreationPolicy> creationPolicyProvider
     ) {
-        this.repository = Objects.requireNonNull(repository, "repository may not be null");
-        this.entityModel = Objects.requireNonNull(entityModel, "entityModel may not be null");
-        this.idResolver = Objects.requireNonNull(idResolver, "idResolver may not be null");
+        this.repository = Objects.requireNonNull(repository, "The repository may not be null.");
+        this.entityModel = Objects.requireNonNull(entityModel, "The entityModel may not be null.");
+        this.idResolver = Objects.requireNonNull(idResolver, "The idResolver may not be null.");
         this.creationPolicyProvider = Objects.requireNonNull(creationPolicyProvider,
-                                                             "creationPolicyProvider may not be null");
+                                                             "The creationPolicyProvider may not be null.");
 
     }
 

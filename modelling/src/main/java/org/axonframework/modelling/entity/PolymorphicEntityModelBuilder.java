@@ -27,7 +27,7 @@ import org.axonframework.modelling.entity.child.EntityChildModel;
  * Command handlers of concrete types take precedence over the parent entity's command handlers. Event handlers are
  * invoked on both, with the super entity's event handlers being invoked first.
  *
- * @param <E>
+ * @param <E> The type of the polymorphic entity this model represents.
  * @author Mitchell Herrijgers
  * @see PolymorphicEntityModel
  * @since 5.0.0

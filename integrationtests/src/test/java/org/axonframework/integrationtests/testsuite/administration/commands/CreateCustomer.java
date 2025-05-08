@@ -22,7 +22,5 @@ import org.axonframework.modelling.annotation.TargetEntityId;
 public record CreateCustomer(
         @TargetEntityId
         PersonIdentifier identifier,
-        String lastNames,
-        String firstNames,
         String emailAddress
 ) {}

@@ -30,16 +30,12 @@ public class MutableCustomer extends MutablePerson {
             throw new IllegalStateException("Customer is existing entity");
         }
         appender.append(new CustomerCreated(command.identifier(),
-                                            command.lastNames(),
-                                            command.firstNames(),
                                             command.emailAddress()));
     }
 
     @EventSourcingHandler
     public void on(CustomerCreated event) {
         this.identifier = event.identifier();
-        this.lastNames = event.lastNames();
-        this.firstNames = event.firstNames();
         this.emailAddress = event.emailAddress();
     }
 }

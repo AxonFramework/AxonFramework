@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.entity.child;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 
 /**
@@ -36,5 +37,5 @@ public interface ChildEntityMatcher<E, M extends Message<?>> {
      * @param message The message to test.
      * @return {@code true} if the entity should be invoked for the message, {@code false} otherwise.
      */
-    boolean matches(E entity, M message);
+    boolean matches(@Nonnull E entity, @Nonnull M message);
 }

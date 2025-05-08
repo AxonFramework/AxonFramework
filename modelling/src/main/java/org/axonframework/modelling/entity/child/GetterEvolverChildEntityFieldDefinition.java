@@ -47,17 +47,18 @@ public class GetterEvolverChildEntityFieldDefinition<P, F> implements ChildEntit
             @Nonnull Function<P, F> getter,
             @Nonnull BiFunction<P, F, P> evolver
     ) {
-        this.getter = Objects.requireNonNull(getter, "getter may not be null");
-        this.evolver = Objects.requireNonNull(evolver, "evolver may not be null");
+        this.getter = Objects.requireNonNull(getter, "The getter may not be null.");
+        this.evolver = Objects.requireNonNull(evolver, "The evolver may not be null.");
+    }
+
+    @Nonnull
+    @Override
+    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F entities) {
+        return evolver.apply(parentEntity, entities);
     }
 
     @Override
-    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F result) {
-        return evolver.apply(parentEntity, result);
-    }
-
-    @Override
-    public F getChildValue(P parentEntity) {
+    public F getChildValue(@Nonnull P parentEntity) {
         return getter.apply(parentEntity);
     }
 }

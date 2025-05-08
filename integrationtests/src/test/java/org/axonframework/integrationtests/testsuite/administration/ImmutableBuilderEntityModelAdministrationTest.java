@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
@@ -50,7 +51,6 @@ import org.axonframework.modelling.entity.PolymorphicEntityModel;
 import org.axonframework.modelling.entity.SimpleEntityModel;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildModel;
-import org.jetbrains.annotations.NotNull;
 
 import static java.lang.String.format;
 
@@ -172,8 +172,8 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 new EventSourcedEntityFactory<>() {
                     @Override
                     public ImmutablePerson createEntityBasedOnFirstEventMessage(
-                            @NotNull PersonIdentifier personIdentifier,
-                            @NotNull EventMessage<?> eventMessage) {
+                            @Nonnull PersonIdentifier personIdentifier,
+                            @Nonnull EventMessage<?> eventMessage) {
                         if (eventMessage.getPayload() instanceof EmployeeCreated employeeCreated) {
                             return new ImmutableEmployee(employeeCreated);
                         }
@@ -185,7 +185,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                     }
 
                     @Override
-                    public ImmutablePerson createEmptyEntity(@NotNull PersonIdentifier personIdentifier) {
+                    public ImmutablePerson createEmptyEntity(@Nonnull PersonIdentifier personIdentifier) {
                         return null;
                     }
                 },

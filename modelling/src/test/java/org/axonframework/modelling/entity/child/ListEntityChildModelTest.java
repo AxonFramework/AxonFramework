@@ -26,8 +26,7 @@ import org.axonframework.messaging.MessageStreamTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.StubProcessingContext;
-import org.axonframework.modelling.entity.ChildAmbiguityException;
-import org.axonframework.modelling.entity.ChildEntityMissingException;
+import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.child.mock.RecordingChildEntity;
 import org.axonframework.modelling.entity.child.mock.RecordingEntity;
@@ -106,7 +105,7 @@ class ListEntityChildModelTest {
 
             MessageStreamTestUtils.assertCompletedExceptionally(
                     testSubject.handle(commandMessage, parentEntity, context),
-                    ChildEntityMissingException.class,
+                    ChildEntityNotFoundException.class,
                     "No available child entity found for command of type [Command#0.0.1]. State of parent entity ["
             );
         }
@@ -119,7 +118,7 @@ class ListEntityChildModelTest {
 
             MessageStreamTestUtils.assertCompletedExceptionally(
                     testSubject.handle(commandMessage, parentEntity, context),
-                    ChildEntityMissingException.class,
+                    ChildEntityNotFoundException.class,
                     "No available child entity found for command of type [Command#0.0.1]. State of parent entity ["
             );
         }
@@ -231,13 +230,21 @@ class ListEntityChildModelTest {
         }
 
         @Test
-        void throwWhenParentEntityEvolverReturnsNull() {
+        void evolvedChildEntitiesToNullAreRemovedFromParent() {
             RecordingChildEntity childEntity = new RecordingChildEntity("42");
-            reset(childEntityFieldDefinition);
             when(childEntityFieldDefinition.getChildValue(any())).thenReturn(List.of(childEntity));
-            when(childEntityFieldDefinition.evolveParentBasedOnChildEntities(any(), any())).thenReturn(null);
 
-            assertThrows(IllegalArgumentException.class, () ->  testSubject.evolve(parentEntity, event, context));
+            // Reset the standard evolve, to evolve to null
+            reset(childEntityEntityModel);
+            when(childEntityEntityModel.evolve(any(), any(), any())).thenAnswer(answ -> null);
+
+            RecordingParentEntity result = testSubject.evolve(parentEntity, event, context);
+
+            assertEquals("parent evolve: []", result.getEvolves().getFirst());
+            verify(childEntityFieldDefinition).getChildValue(parentEntity);
+            verify(childEntityFieldDefinition).evolveParentBasedOnChildEntities(
+                    eq(parentEntity), argThat(List::isEmpty));
+            verify(childEntityEntityModel).evolve(childEntity, event, context);
         }
     }
 
@@ -249,7 +256,7 @@ class ListEntityChildModelTest {
         @Test
         void canNotCompleteBuilderWithoutFieldDefinition() {
             var builder = SingleEntityChildModel.forEntityModel(RecordingParentEntity.class, childEntityEntityModel);
-            assertThrows(IllegalArgumentException.class, builder::build);
+            assertThrows(NullPointerException.class, builder::build);
         }
 
         @Test

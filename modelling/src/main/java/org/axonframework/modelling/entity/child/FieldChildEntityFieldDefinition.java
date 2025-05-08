@@ -26,6 +26,8 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.stream.StreamSupport;
 
+import static org.axonframework.common.StringUtils.capitalize;
+
 /**
  * A {@link ChildEntityFieldDefinition} that uses a field to access the child entity. If getters or setters are
  * available, it will use those instead.
@@ -53,15 +55,13 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
             @Nonnull Class<P> parentClass,
             @Nonnull String fieldName
     ) {
-        this.parentClass = parentClass;
-        this.fieldName = fieldName;
-        Objects.requireNonNull(parentClass, "parentClass may not be null");
-        Objects.requireNonNull(fieldName, "fieldName may not be null");
+        this.parentClass = Objects.requireNonNull(parentClass, "The parentClass may not be null.");
+        this.fieldName = Objects.requireNonNull(fieldName, "The fieldName may not be null.");
         this.field = StreamSupport
                 .stream(ReflectionUtils.fieldsOf(parentClass).spliterator(), false)
                 .filter(f -> f.getName().equals(fieldName))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(String.format("Field '%s' not found in class %s",
+                .orElseThrow(() -> new IllegalArgumentException(String.format("Field [%s] not found in class [%s]",
                                                                           fieldName,
                                                                           parentClass.getName())));
         ReflectionUtils.ensureAccessible(field);
@@ -102,23 +102,24 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
         }
     }
 
+    @Nonnull
     @SuppressWarnings("unchecked")
     @Override
-    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F result) {
+    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F entities) {
         try {
             if (optionalSetter != null) {
-                Object invokeResult = optionalSetter.invoke(parentEntity, result);
+                Object invokeResult = optionalSetter.invoke(parentEntity, entities);
                 if (invokeResult != null) {
-                    if(invokeResult.getClass() != parentClass) {
+                    if(!parentClass.isAssignableFrom(invokeResult.getClass())) {
                         throw new IllegalArgumentException(
-                                String.format("Evolve method '%s' must return the same type as the parent entity",
-                                              optionalSetter.getName()));
+                                String.format("Evolve method [%s] must return a type compatible with entity type [%s]",
+                                              optionalSetter.getName(), parentClass.getName()));
                     }
                     // Is an evolve method
                     return (P) invokeResult;
                 }
             }
-            field.set(parentEntity, result);
+            field.set(parentEntity, entities);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -127,7 +128,7 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
 
     @SuppressWarnings("unchecked")
     @Override
-    public F getChildValue(P parentEntity) {
+    public F getChildValue(@Nonnull P parentEntity) {
         try {
             if (optionalGetter != null) {
                 return (F) optionalGetter.invoke(parentEntity);
@@ -136,13 +137,6 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private String capitalize(String string) {
-        if (string == null || string.isEmpty()) {
-            return string;
-        }
-        return Character.toUpperCase(string.charAt(0)) + string.substring(1);
     }
 
     @Override

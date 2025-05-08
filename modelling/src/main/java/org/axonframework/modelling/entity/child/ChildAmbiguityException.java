@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity;
+package org.axonframework.modelling.entity.child;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.entity.child.EntityChildModel;
 
 /**
- * Exception indicating that there was no child entity available to handle a command. This happens when one or multiple
- * children declare the command as supported via {@link EntityChildModel#supportedCommands()}, but none of them return
- * true for {@link EntityChildModel#canHandle(CommandMessage, Object, ProcessingContext)}. This indicates that the
- * command is not valid for the current state of the child entity.
+ * Exception indicating that multiple child entities of a parent entity are able to handle the same command. This
+ * happens if multiple {@link EntityChildModel#supportedCommands()} contain the same
+ * {@link org.axonframework.messaging.QualifiedName}, as well as both child entities returning true for
+ * {@link EntityChildModel#canHandle(CommandMessage, Object, ProcessingContext)}, indicating that they have an active
+ * child entity that can handle the command.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ChildEntityMissingException extends RuntimeException {
+public class ChildAmbiguityException extends RuntimeException {
 
     /**
      * Creates a new exception with the given {@code commandMessage} and {@code parentEntity}.
@@ -37,9 +38,10 @@ public class ChildEntityMissingException extends RuntimeException {
      * @param commandMessage The {@link CommandMessage} that was handled.
      * @param parentEntity   The parent entity instance that was expected to handle the command.
      */
-    public ChildEntityMissingException(CommandMessage<?> commandMessage,
-                                       Object parentEntity) {
-        super("No available child entity found for command of type [%s]. State of parent entity [%s]: [%s]"
-                      .formatted(commandMessage.type(), parentEntity.getClass().getName(), parentEntity));
+    public ChildAmbiguityException(@Nonnull CommandMessage<?> commandMessage, @Nonnull Object parentEntity) {
+        super("Multiple child entities found for command of type [%s]. State of parent entity [%s]: [%s]".formatted(
+                commandMessage.type(),
+                parentEntity.getClass().getName(), parentEntity)
+        );
     }
 }

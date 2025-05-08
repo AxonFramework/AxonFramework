@@ -47,18 +47,19 @@ public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntity
             @Nonnull Function<P, F> getter,
             @Nonnull BiConsumer<P, F> setter
     ) {
-        this.getter = Objects.requireNonNull(getter, "getter may not be null");
-        this.setter = Objects.requireNonNull(setter, "setter may not be null");
+        this.getter = Objects.requireNonNull(getter, "The getter may not be null.");
+        this.setter = Objects.requireNonNull(setter, "The setter may not be null.");
     }
 
+    @Nonnull
     @Override
-    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F result) {
-        setter.accept(parentEntity, result);
+    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F entities) {
+        setter.accept(parentEntity, entities);
         return parentEntity;
     }
 
     @Override
-    public F getChildValue(P parentEntity) {
+    public F getChildValue(@Nonnull P parentEntity) {
         return getter.apply(parentEntity);
     }
 }

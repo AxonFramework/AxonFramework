@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
@@ -49,7 +50,7 @@ import java.util.Set;
  * <p>
  * Events are delegates to both the super type and the concrete type.
  *
- * @param <E> the type of entity this model represents.
+ * @param <E> The type of polymorphic entity this model represents.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
@@ -62,13 +63,14 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     private final Set<QualifiedName> supportedCreationalCommandNames = new HashSet<>();
 
     private PolymorphicEntityModel(
-            EntityModel<E> abstractDelegate,
+            EntityModel<E> superTypeModel,
             List<EntityModel<? extends E>> concreteModels
     ) {
-        this.superTypeModel = abstractDelegate;
+        this.superTypeModel = Objects.requireNonNull(superTypeModel, "The superTypeModel may not be null.");
+        Objects.requireNonNull(concreteModels, "The concreteModels may not be null.");
         this.concreteModels = new HashMap<>();
         this.supportedCommandNames.addAll(superTypeModel.supportedCommands());
-        this.supportedInstanceCommandNames.addAll(superTypeModel.supportedInstanceCommands());
+        this.supportedInstanceCommandNames.addAll(this.superTypeModel.supportedInstanceCommands());
         this.supportedCreationalCommandNames.addAll(superTypeModel.supportedCreationalCommands());
         for (EntityModel<? extends E> polymorphicModel : concreteModels) {
             this.concreteModels.put(polymorphicModel.entityType(), polymorphicModel);
@@ -76,7 +78,6 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
             this.supportedInstanceCommandNames.addAll(polymorphicModel.supportedInstanceCommands());
             this.supportedCreationalCommandNames.addAll(polymorphicModel.supportedCreationalCommands());
         }
-
     }
 
     /**
@@ -94,8 +95,8 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
     @Override
     public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-        superTypeModel.evolve(entity, event, context);
-        return modelFor(entity).evolve(entity, event, context);
+        var superTypeEvolvedEntity = superTypeModel.evolve(entity, event, context);
+        return modelFor(entity).evolve(superTypeEvolvedEntity, event, context);
     }
 
     /**
@@ -107,21 +108,25 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         return (EntityModel<T>) concreteModels.get(entity.getClass());
     }
 
+    @Nonnull
     @Override
     public Set<QualifiedName> supportedCommands() {
         return supportedCommandNames;
     }
 
     @Override
+    @Nonnull
     public Set<QualifiedName> supportedCreationalCommands() {
         return supportedCreationalCommandNames;
     }
 
     @Override
+    @Nonnull
     public Set<QualifiedName> supportedInstanceCommands() {
         return supportedInstanceCommandNames;
     }
 
+    @Nonnull
     @Override
     public MessageStream.Single<CommandResultMessage<?>> handleCreate(CommandMessage<?> message,
                                                                       ProcessingContext context) {
@@ -136,7 +141,7 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         if(superTypeModel.supportedCreationalCommands().contains(message.type().qualifiedName())) {
             return superTypeModel.handleCreate(message, context);
         }
-        return MessageStream.failed(new MissingCommandHandlerException(message, entityType()));
+        return MessageStream.failed(new NoHandlerForCommandException(message, entityType()));
     }
 
     @Override
@@ -154,9 +159,10 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
             return superTypeModel.handleInstance(message, entity, context);
         }
 
-        return MessageStream.failed(new MissingCommandHandlerException(message, entityType()));
+        return MessageStream.failed(new NoHandlerForCommandException(message, entityType()));
     }
 
+    @Nonnull
     @Override
     public Class<E> entityType() {
         return superTypeModel.entityType();
@@ -188,9 +194,9 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
      *
      * @param <E> The type of the entity this model represents.
      */
-    public static class Builder<E> implements PolymorphicEntityModelBuilder<E> {
+    private static class Builder<E> implements PolymorphicEntityModelBuilder<E> {
 
-        private final SimpleEntityModel.Builder<E> superTypeBuilder;
+        private final EntityModelBuilder<E> superTypeBuilder;
         private final List<EntityModel<? extends E>> polymorphicModels = new ArrayList<>();
 
         private Builder(Class<E> entityType) {
@@ -231,10 +237,10 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         @Override
         @Nonnull
         public Builder<E> addConcreteType(@Nonnull EntityModel<? extends E> entityModel) {
-            Objects.requireNonNull(entityModel, "entityModel may not be null");
+            Objects.requireNonNull(entityModel, "The entityModel may not be null.");
             if (polymorphicModels.stream().anyMatch(p -> p.entityType().equals(entityModel.entityType()))) {
-                throw new IllegalArgumentException("Concrete type " + entityModel.entityType()
-                                                           + " already registered for this model");
+                throw new IllegalArgumentException("Concrete type [%s] already registered for this model.".formatted(
+                        entityModel.entityType().getName()));
             }
             polymorphicModels.add(entityModel);
             return this;

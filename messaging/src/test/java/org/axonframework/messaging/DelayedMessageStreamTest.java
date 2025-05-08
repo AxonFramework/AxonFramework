@@ -44,7 +44,6 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
         return DelayedMessageStream.create(CompletableFuture.completedFuture(testStream));
     }
 
-
     @Override
     MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
         return DelayedMessageStream.createSingle(CompletableFuture.completedFuture(MessageStream.just(message)));

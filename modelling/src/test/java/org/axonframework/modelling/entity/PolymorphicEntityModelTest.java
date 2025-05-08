@@ -50,6 +50,7 @@ class PolymorphicEntityModelTest {
     public static final QualifiedName CONCRETE_ONE_CREATIONAL_COMMAND = new QualifiedName("ConcreteOneCreationalCommand");
     public static final QualifiedName CONCRETE_TWO_CREATIONAL_COMMAND = new QualifiedName("ConcreteTwoCreationalCommand");
 
+    public static final QualifiedName SUPER_TYPE_EVENT = new QualifiedName("SuperTypeEvent");
     public static final QualifiedName CONCRETE_ONE_EVENT = new QualifiedName("ConcreteOneEvent");
     public static final QualifiedName CONCRETE_TWO_EVENT = new QualifiedName("ConcreteTwoEvent");
 
@@ -274,6 +275,33 @@ class PolymorphicEntityModelTest {
         inOrder.verify(entityEvolver).evolve(eq(entity), eq(eventMessage), eq(context));
         inOrder.verify(concreteTestEntityTwoEntityModel).evolve(eq(entity), eq(eventMessage), eq(context));
         inOrder.verify(concreteTestEntityOneEntityModel, times(0)).evolve(any(), any(), any());
+    }
+
+    @Test
+    void superTypeEvolverCanBeUsedToMorphTheConcreteType() {
+        reset(entityEvolver, concreteTestEntityOneEntityModel, concreteTestEntityTwoEntityModel);
+        when(entityEvolver.evolve(argThat(c -> c instanceof ConcreteTestEntityOne), any(), any())).thenReturn(new ConcreteTestEntityTwo());
+        when(concreteTestEntityOneEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(concreteTestEntityTwoEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(SUPER_TYPE_EVENT), "event");
+        ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
+        ProcessingContext context = new StubProcessingContext();
+        AbstractTestEntity result = polymorphicModel.evolve(entity, eventMessage, context);
+        assertInstanceOf(ConcreteTestEntityTwo.class, result);
+    }
+
+
+    @Test
+    void concreteTypeEvolverCanBeUsedToMorphTheConcreteType() {
+        reset(entityEvolver, concreteTestEntityOneEntityModel, concreteTestEntityTwoEntityModel);
+        when(entityEvolver.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(concreteTestEntityOneEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> new ConcreteTestEntityTwo());
+        when(concreteTestEntityTwoEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(SUPER_TYPE_EVENT), "event");
+        ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
+        ProcessingContext context = new StubProcessingContext();
+        AbstractTestEntity result = polymorphicModel.evolve(entity, eventMessage, context);
+        assertInstanceOf(ConcreteTestEntityTwo.class, result);
     }
 
     @Test

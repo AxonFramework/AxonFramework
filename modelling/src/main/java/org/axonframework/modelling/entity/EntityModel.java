@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.entity;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.DescribableComponent;
@@ -24,7 +25,6 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -44,6 +44,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      *
      * @return The {@link Class} of the entity this model describes.
      */
+    @Nonnull
     Class<E> entityType();
 
     /**
@@ -59,6 +60,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      * @return A stream with a message containing the result of the command handling, which may be a
      * {@link CommandResultMessage} or an error message.
      */
+    @Nonnull
     MessageStream.Single<CommandResultMessage<?>> handleCreate(
             CommandMessage<?> message, ProcessingContext context
     );
@@ -78,8 +80,9 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      * @return A stream with a message containing the result of the command handling, which may be a
      * {@link CommandResultMessage} or an error message.
      */
+    @Nonnull
     MessageStream.Single<CommandResultMessage<?>> handleInstance(
-            CommandMessage<?> message, E entity, ProcessingContext context
+            @Nonnull CommandMessage<?> message, @Nonnull E entity, @Nonnull ProcessingContext context
     );
 
     /**
@@ -89,6 +92,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */
+    @Nonnull
     Set<QualifiedName> supportedCreationalCommands();
 
     /**
@@ -98,22 +102,18 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */
+    @Nonnull
     Set<QualifiedName> supportedInstanceCommands();
 
     /**
      * Returns the set of all {@link QualifiedName QualifiedNames} that this model supports for command handlers, both
      * creational and instance commands. This is the union of the {@link #supportedCreationalCommands()} and
-     * {@link #supportedInstanceCommands()} methods. Implementations may override this method to provide a more
-     * efficient implementation.
+     * {@link #supportedInstanceCommands()} methods.
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */
-    default Set<QualifiedName> supportedCommands() {
-        Set<QualifiedName> commands = new HashSet<>();
-        commands.addAll(supportedCreationalCommands());
-        commands.addAll(supportedInstanceCommands());
-        return commands;
-    }
+    @Nonnull
+    Set<QualifiedName> supportedCommands();
 
     /**
      * Starts a new {@link EntityModelBuilder} for the given entity type. The builder can be used to add command
@@ -123,6 +123,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      * @param <E>        The type of the entity to create a model for.
      * @return A new {@link EntityModelBuilder} for the given entity type.
      */
+    @Nonnull
     static <E> EntityModelBuilder<E> forEntityType(Class<E> entityType) {
         return SimpleEntityModel.forEntityClass(entityType);
     }
