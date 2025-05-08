@@ -300,14 +300,6 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                ));
     }
 
-    private static ConsistencyMarker combineAggregateMarkers(Stream<AggregateSource> resultStream) {
-        return resultStream.map(AggregateSource::markerReference)
-                           .map(AtomicReference::get)
-                           .map(marker -> (ConsistencyMarker) marker)
-                           .reduce(ConsistencyMarker::upperBound)
-                           .orElseThrow();
-    }
-
     private AggregateSource aggregateSourceForCriterion(SourcingCondition condition, EventCriterion criterion) {
         AtomicReference<AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
         var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
@@ -320,6 +312,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                                                            event.getSequenceNumber(),
                                                                            event.getType(),
                                                                            markerReference))
+                             // Defaults the marker when the aggregate stream was empty
                              .whenComplete(() -> markerReference.compareAndSet(
                                      null, new AggregateBasedConsistencyMarker(aggregateIdentifier, 0)
                              ))
@@ -333,6 +326,14 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                                     AtomicReference<AggregateBasedConsistencyMarker> markerReference) {
         markerReference.set(new AggregateBasedConsistencyMarker(aggregateIdentifier, sequenceNumber));
         return buildContext(aggregateIdentifier, sequenceNumber, aggregateType);
+    }
+
+    private static ConsistencyMarker combineAggregateMarkers(Stream<AggregateSource> resultStream) {
+        return resultStream.map(AggregateSource::markerReference)
+                           .map(AtomicReference::get)
+                           .map(marker -> (ConsistencyMarker) marker)
+                           .reduce(ConsistencyMarker::upperBound)
+                           .orElseThrow();
     }
 
     @Override
