@@ -208,7 +208,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                 eventHandlerInvoker.handle(message, processingContext, processingSegment);
             }
             monitorCallback.reportSuccess();
-            return null;
+            return MessageStream.empty();
         } catch (Exception exception) {
             monitorCallback.reportFailure(exception);
             throw exception;
