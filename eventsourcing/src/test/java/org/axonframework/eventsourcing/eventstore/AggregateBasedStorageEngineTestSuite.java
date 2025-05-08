@@ -559,9 +559,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     protected abstract EventMessage<String> convertPayload(EventMessage<?> original);
 
     private static boolean assertMarkerEntry(Entry<EventMessage<?>> entry) {
-        ConsistencyMarker marker = entry.getResource(ConsistencyMarker.RESOURCE_KEY);
-        System.out.println(marker);
-        return marker instanceof AggregateBasedConsistencyMarker
+        return entry.getResource(ConsistencyMarker.RESOURCE_KEY) instanceof AggregateBasedConsistencyMarker
                 && entry.message().equals(NoEventMessage.INSTANCE);
     }
 
