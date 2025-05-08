@@ -110,8 +110,8 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
                                   if (me.entity() == null) {
                                       if (creationPolicy == EntityCreationPolicy.NEVER) {
                                           return MessageStream.failed(new IllegalStateException(
-                                                  "No entity found for command " + command.type().qualifiedName()
-                                                          + " with id " + id
+                                                  "No entity found for command [%s] with id [%s]".formatted(
+                                                          command.type().qualifiedName(), id)
                                           ));
                                       }
                                       return entityModel.handleCreate(command, context).first();

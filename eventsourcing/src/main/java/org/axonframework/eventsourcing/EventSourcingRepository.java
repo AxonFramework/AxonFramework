@@ -176,9 +176,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
 
     private void verifyNonNullEntityCreation(E createdEntity, ID identifier) {
         if (createdEntity == null) {
-            throw new IllegalStateException(
-                    "The entity factory returned a null entity for identifier: "
-                            + identifier);
+            throw new IllegalStateException("The entity factory returned a null entity for identifier: [%s]".formatted(
+                    identifier));
         }
     }
 

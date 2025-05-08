@@ -74,11 +74,11 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         this.entityType = requireNonNull(entityType, "The entityType may not be null.");
         this.entityEvolver = entityEvolver;
         this.instanceCommandHandlers.putAll(requireNonNull(instanceCommandHandlers,
-                                                           "The instanceCommandHandlers may not be null"));
+                                                           "The instanceCommandHandlers may not be null."));
         this.creationalCommandHandlers.putAll(requireNonNull(creationalCommandHandlers,
-                                                             "The creationalCommandHandlers may not be null"));
+                                                             "The creationalCommandHandlers may not be null."));
 
-        requireNonNull(children, "children may not be null")
+        requireNonNull(children, "The children may not be null.")
                 .forEach(child -> this.children.put(child.entityType(), child));
 
         // To prevent constantly creating new sets, we create specific sets for the command names

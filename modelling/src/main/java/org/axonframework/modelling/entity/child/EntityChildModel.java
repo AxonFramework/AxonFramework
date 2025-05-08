@@ -85,6 +85,7 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
      *
      * @return The {@link EntityModel} of the child entity this model describes.
      */
+    @Nonnull
     EntityModel<C> entityModel();
 
     /**

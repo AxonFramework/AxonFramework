@@ -78,6 +78,7 @@ public class SingleEntityChildModel<C, P> extends AbstractEntityChildModel<C, P>
         return childEntityFieldDefinition.evolveParentBasedOnChildEntities(entity, evolvedChildEntities.getFirst());
     }
 
+    @Nonnull
     @Override
     public EntityModel<C> entityModel() {
         return childEntityModel;

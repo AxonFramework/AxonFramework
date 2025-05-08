@@ -113,7 +113,6 @@ public record ImmutableEmployee(
                 taskList
         );
     }
-
     public ImmutableEmployee evolveSalaryInformation(ImmutableSalaryInformation immutableSalaryInformation) {
         return new ImmutableEmployee(
                 identifier,
