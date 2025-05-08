@@ -57,9 +57,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
 
     private volatile Registration eventBusRegistration;
 
-    private final Context.ResourceKey<Transaction> transactionKey =
-            Context.ResourceKey.withLabel("transaction");
-
     /**
      * Instantiate a {@link SubscribingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
@@ -146,8 +143,9 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
         }
     }
 
+    // todo: exclude to some utitlity class!
     private void attachTransactionToUnitOfWork(UnitOfWork unitOfWork) {
-        // todo legacy UnitOfWork.attachTransaction rollbacks in case of error here
+        var transactionKey = Context.ResourceKey.<Transaction>withLabel("transaction");
         unitOfWork.runOnPreInvocation(ctx -> {
             var transaction = transactionManager.startTransaction();
             ctx.putResource(transactionKey, transaction);
@@ -162,6 +160,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
             var transaction = ctx.getResource(transactionKey);
             transaction.rollback();
         });
+        // todo legacy UnitOfWork.attachTransaction rollbacks in case of error here
     }
 
     /**

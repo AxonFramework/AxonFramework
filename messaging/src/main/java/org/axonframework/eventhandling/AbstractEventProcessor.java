@@ -151,7 +151,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @param unitOfWork    The Unit of Work that has been prepared to process the messages
      * @throws Exception when an exception occurred during processing of the batch
      */
-    @Deprecated(since = "5.0.0", forRemoval = true)
+    @Deprecated(since = "5.0.0")
     protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                              LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
         processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT);
@@ -167,7 +167,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @param processingSegments The segments for which the events should be processed in this unit of work
      * @throws Exception when an exception occurred during processing of the batch
      */
-    @Deprecated(since = "5.0.0", forRemoval = true)
+    @Deprecated(since = "5.0.0")
     protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                        LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
                                        Collection<Segment> processingSegments) throws Exception {
