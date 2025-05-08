@@ -119,7 +119,7 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
                                                       .filter(childEntity -> childEntity
                                                               .supportedCommands()
                                                               .contains(message.type().qualifiedName()))
-                                                      .collect(Collectors.toList());
+                                                      .toList();
             if (!childrenWithCommandHandlers.isEmpty()) {
                 return handleForChildren(childrenWithCommandHandlers, message, entity, context);
             }

@@ -27,10 +27,20 @@ import org.axonframework.modelling.entity.child.EntityChildModel;
  * true for {@link EntityChildModel#canHandle(CommandMessage, Object, ProcessingContext)}. This indicates that the
  * command is not valid for the current state of the child entity.
  *
+ * @author Steven van Beelen
  * @author Mitchell Herrijgers
- * @since 5.0.0
+ * @since 3.3
  */
 public class ChildEntityNotFoundException extends RuntimeException {
+
+    /**
+     * Creates a new exception with the given {@code message}.
+     *
+     * @param message The message describing the cause of the exception
+     */
+    public ChildEntityNotFoundException(String message) {
+        super(message);
+    }
 
     /**
      * Creates a new exception with the given {@code commandMessage} and {@code parentEntity}.
