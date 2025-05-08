@@ -112,7 +112,6 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
                     }
                     return child;
                 })
-                // TODO: Test null filtering
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         if (!evolvedChildEntity.get()) {

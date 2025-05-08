@@ -32,6 +32,7 @@ import org.axonframework.modelling.entity.child.mock.RecordingChildEntity;
 import org.axonframework.modelling.entity.child.mock.RecordingParentEntity;
 import org.junit.jupiter.api.*;
 
+import java.util.Objects;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -151,6 +152,29 @@ class SingleEntityChildModelTest {
             verify(childEntityFieldDefinition).evolveParentBasedOnChildEntities(
                     eq(parentEntity),
                     argThat(a -> a.getEvolves().contains("child evolve: myPayload"))
+            );
+            verify(childEntityEntityModel).evolve(childEntity, event, context);
+        }
+
+        @Test
+        void childEntityCanBeEvolvedToNull() {
+            RecordingChildEntity childEntity = new RecordingChildEntity();
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(childEntity);
+            when(childEntityEntityModel.evolve(any(), any(), any())).thenReturn(null);
+            when(childEntityFieldDefinition.evolveParentBasedOnChildEntities(any(), any())).thenAnswer(answ -> {
+                RecordingParentEntity parent = answ.getArgument(0);
+                RecordingChildEntity child = answ.getArgument(1);
+                return parent.evolve("parent evolve: " + child);
+            });
+
+            RecordingParentEntity result = testSubject.evolve(parentEntity, event, context);
+
+            assertEquals("parent evolve: null", result.getEvolves().getFirst());
+
+            verify(childEntityFieldDefinition).getChildValue(parentEntity);
+            verify(childEntityFieldDefinition).evolveParentBasedOnChildEntities(
+                    eq(parentEntity),
+                    argThat(Objects::isNull)
             );
             verify(childEntityEntityModel).evolve(childEntity, event, context);
         }

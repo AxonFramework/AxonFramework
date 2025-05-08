@@ -223,6 +223,24 @@ class ListEntityChildModelTest {
             verify(childEntityEntityModel, times(0)).evolve(nonMatchingEntity1, event, context);
             verify(childEntityEntityModel, times(0)).evolve(nonMatchingEntity2, event, context);
         }
+
+        @Test
+        void evolvedChildEntitiesToNullAreRemovedFromParent() {
+            RecordingChildEntity childEntity = new RecordingChildEntity("42");
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(List.of(childEntity));
+
+            // Reset the standard evolve, to evolve to null
+            reset(childEntityEntityModel);
+            when(childEntityEntityModel.evolve(any(), any(), any())).thenAnswer(answ -> null);
+
+            RecordingParentEntity result = testSubject.evolve(parentEntity, event, context);
+
+            assertEquals("parent evolve: []", result.getEvolves().getFirst());
+            verify(childEntityFieldDefinition).getChildValue(parentEntity);
+            verify(childEntityFieldDefinition).evolveParentBasedOnChildEntities(
+                    eq(parentEntity), argThat(List::isEmpty));
+            verify(childEntityEntityModel).evolve(childEntity, event, context);
+        }
     }
 
     @SuppressWarnings("DataFlowIssue")
