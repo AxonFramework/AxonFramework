@@ -85,6 +85,11 @@ public interface EventStorageEngine extends DescribableComponent {
      * Creates a <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      * <p>
+     * The final entry of the stream <b>always</b> contains a {@link ConsistencyMarker} in the
+     * {@link MessageStream.Entry} it's resources, paired with a {@link org.axonframework.eventhandling.NoEventMessage}.
+     * This {@code ConsistencyMarker} should be used to construct the {@link AppendCondition} when
+     * {@link #appendEvents(AppendCondition, List) appending events}.
+     * <p>
      * The {@code condition} dictates the sequence to load based on the {@link SourcingCondition#criteria()}.
      * Additionally, an optional {@link SourcingCondition#start()} and {@link SourcingCondition#end()} position may be
      * provided.
