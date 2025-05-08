@@ -24,6 +24,7 @@ import reactor.test.StepVerifier;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -971,5 +972,34 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         assertNotNull(first.getNow(null));
 
         verify(mock).close();
+    }
+
+    @Test
+    void filterKeepsEntriesForWhichTrueIsReturned() {
+        M firstMessage = createRandomMessage();
+        MessageStream<M> testSubject = completedTestSubject(List.of(firstMessage, createRandomMessage()));
+
+        MessageStream<M> result = testSubject.filter(entry -> entry.message().equals(firstMessage));
+
+        Optional<Entry<M>> next = result.next();
+        assertTrue(next.isPresent());
+        assertEquals(firstMessage, next.get().message());
+        assertFalse(result.next().isPresent());
+        assertTrue(result.isCompleted());
+    }
+
+    @Test
+    void filterRemovesEntriesForWhichFalseIsReturned() {
+        M firstMessage = createRandomMessage();
+        M secondMessage = createRandomMessage();
+        MessageStream<M> testSubject = completedTestSubject(List.of(firstMessage, secondMessage));
+
+        MessageStream<M> result = testSubject.filter(entry -> !entry.message().equals(secondMessage));
+
+        Optional<Entry<M>> next = result.next();
+        assertTrue(next.isPresent());
+        assertEquals(firstMessage, next.get().message());
+        assertFalse(result.next().isPresent());
+        assertTrue(result.isCompleted());
     }
 }
