@@ -177,6 +177,33 @@ class PolymorphicEntityModelTest {
     }
 
     @Test
+    void superTypeEvolverCanBeUsedToMorphTheConcreteType() {
+        reset(entityEvolver, concreteTestEntityOneEntityModel, concreteTestEntityTwoEntityModel);
+        when(entityEvolver.evolve(argThat(c -> c instanceof ConcreteTestEntityOne), any(), any())).thenReturn(new ConcreteTestEntityTwo());
+        when(concreteTestEntityOneEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(concreteTestEntityTwoEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(SUPER_TYPE_EVENT), "event");
+        ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
+        ProcessingContext context = new StubProcessingContext();
+        AbstractTestEntity result = polymorphicModel.evolve(entity, eventMessage, context);
+        assertInstanceOf(ConcreteTestEntityTwo.class, result);
+    }
+
+
+    @Test
+    void concreteTypeEvolverCanBeUsedToMorphTheConcreteType() {
+        reset(entityEvolver, concreteTestEntityOneEntityModel, concreteTestEntityTwoEntityModel);
+        when(entityEvolver.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(concreteTestEntityOneEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> new ConcreteTestEntityTwo());
+        when(concreteTestEntityTwoEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(SUPER_TYPE_EVENT), "event");
+        ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
+        ProcessingContext context = new StubProcessingContext();
+        AbstractTestEntity result = polymorphicModel.evolve(entity, eventMessage, context);
+        assertInstanceOf(ConcreteTestEntityTwo.class, result);
+    }
+
+    @Test
     void returnsSuperTypeAsEntityType() {
         assertEquals(AbstractTestEntity.class, polymorphicModel.entityType());
     }
