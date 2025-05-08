@@ -478,22 +478,8 @@ class TrackingEventProcessorTest {
     void tokenIsStoredWhenEventIsRead() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         //noinspection resource
-        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
-            @Override
-            public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @NotNull InterceptorChain interceptorChain) throws Exception {
-                unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-                return interceptorChain.proceedSync();
-            }
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
 
-            @Override
-            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @NotNull M message, @NotNull ProcessingContext context,
-                    @NotNull InterceptorChain<M, R> interceptorChain) {
-                context.runOnAfterCommit(ctx -> countDownLatch.countDown());
-                return interceptorChain.proceed(message, context);
-            }
-        });
         eventBus.publish(createEvent());
         testSubject.start();
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
@@ -530,10 +516,7 @@ class TrackingEventProcessorTest {
             return i.callRealMethod();
         }).when(tokenStore).extendClaim(anyString(), anyInt());
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
         testSubject.start();
         eventBus.publish(createEvents(2));
         assertTrue(
@@ -574,10 +557,7 @@ class TrackingEventProcessorTest {
         }).when(tokenStore).extendClaim(anyString(), anyInt());
 
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
         testSubject.start();
         eventBus.publish(createEvents(2));
         assertTrue(
@@ -618,10 +598,7 @@ class TrackingEventProcessorTest {
         }).when(tokenStore).extendClaim(anyString(), anyInt());
 
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
         testSubject.start();
         eventBus.publish(createEvents(2));
         assertTrue(
@@ -684,10 +661,7 @@ class TrackingEventProcessorTest {
             return interceptorChain.proceedSync();
         }));
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
         testSubject.start();
 
         eventBus.publish(createEvent());
@@ -867,10 +841,7 @@ class TrackingEventProcessorTest {
             return interceptorChain.proceedSync();
         }));
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
         testSubject.start();
         // Give it a bit of time to start
         Thread.sleep(200);
@@ -912,10 +883,7 @@ class TrackingEventProcessorTest {
         CountDownLatch countDownLatch = new CountDownLatch(2);
 
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
 
         testSubject.start();
         // Give it a bit of time to start
@@ -2197,10 +2165,7 @@ class TrackingEventProcessorTest {
     void existingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(3);
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
         eventBus.publish(createEvent(0));
         eventBus.publish(createEvent(1));
         eventBus.publish(createEvent(2));
@@ -2217,11 +2182,8 @@ class TrackingEventProcessorTest {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch finished = new CountDownLatch(2);
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> started.countDown());
-            unitOfWork.onCleanup(uow -> finished.countDown());
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(started::countDown, finished::countDown));
+
         eventBus.publish(createEvent(0));
 
         doAnswer(i -> i.callRealMethod()).when(tokenStore).storeToken(any(), anyString(), anyInt());
@@ -2236,6 +2198,30 @@ class TrackingEventProcessorTest {
         assertTrue(finished.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
         TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
         assertFalse(ReplayToken.isReplay(trackingToken), "Not a replay token: " + trackingToken);
+    }
+
+    private MessageHandlerInterceptor<? super EventMessage<?>> eventHandlerInterceptorAfterCommit(
+            Runnable... runnables) {
+        return new MessageHandlerInterceptor<>() {
+            @Override
+            public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+                for (var runnable : runnables) {
+                    unitOfWork.onCleanup(uow -> runnable.run());
+                }
+                return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @NotNull M message, @NotNull ProcessingContext context,
+                    @NotNull InterceptorChain<M, R> interceptorChain) {
+                for (var runnable : runnables) {
+                    context.runOnAfterCommit(uow -> runnable.run());
+                }
+                return interceptorChain.proceed(message, context);
+            }
+        };
     }
 
     private void waitForStatus(String description,
