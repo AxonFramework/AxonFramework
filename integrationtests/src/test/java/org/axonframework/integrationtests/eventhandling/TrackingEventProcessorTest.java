@@ -689,6 +689,7 @@ class TrackingEventProcessorTest {
                 context.onCommit(uow -> {
                     throw new MockException();
                 });
+//                context.onCommit(uow -> CompletableFuture.failedFuture(new MockException()));
                 return interceptorChain.proceed(message, context);
             }
         });
@@ -2282,7 +2283,7 @@ class TrackingEventProcessorTest {
                     @NotNull M message, @NotNull ProcessingContext context,
                     @NotNull InterceptorChain<M, R> interceptorChain) {
                 for (var runnable : runnables) {
-                    context.runOnAfterCommit(uow -> runnable.run());
+                    context.doFinally(uow -> runnable.run());
                 }
                 return interceptorChain.proceed(message, context);
             }
