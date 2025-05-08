@@ -558,6 +558,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
 
             var unitOfWork = new UnitOfWork();
+            attachTransactionToUnitOfWork(unitOfWork);
             unitOfWork.onPreInvocation(ctx -> {
                 ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
                 ctx.putResource(lastTokenResourceKey, finalLastToken);
