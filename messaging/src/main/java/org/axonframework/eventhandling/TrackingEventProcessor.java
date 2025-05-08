@@ -171,42 +171,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 //            @Override
 //            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
 //                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
-//                if (!(unitOfWork instanceof LegacyBatchingUnitOfWork)
-//                        || ((LegacyBatchingUnitOfWork<?>) unitOfWork).isFirstMessage()) {
-//                    Instant startTime = now();
-//                    TrackingToken lastToken = unitOfWork.getResource(lastTokenResourceKey.label());
-//                    if (storeTokenBeforeProcessing) {
-//                        tokenStore.storeToken(lastToken,
-//                                              builder.name,
-//                                              unitOfWork.getResource(segmentIdResourceKey.label()));
-//                    } else {
-//                        tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey.label()));
-//                    }
-//                    unitOfWork.onPrepareCommit(uow -> {
-//                        if (!storeTokenBeforeProcessing) {
-//                            tokenStore.storeToken(lastToken,
-//                                                  builder.name,
-//                                                  unitOfWork.getResource(segmentIdResourceKey.label()));
-//                        } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
-//                            tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey.label()));
-//                        }
-//                    });
-//                }
-//                return interceptorChain.proceedSync();
-//            }
-//
-//            @Override
-//            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-//                    @Nonnull M message, @Nonnull ProcessingContext context,
-//                    @Nonnull InterceptorChain<M, R> interceptorChain) {
-//                return null; // todo: implement!
-//            }
-//        });
-
-//        registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
-//            @Override
-//            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-//                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
 //                return interceptorChain.proceedSync();
 //            }
 //
@@ -593,7 +557,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 }
             }
 
-            UnitOfWork unitOfWork = new UnitOfWork();
+            var unitOfWork = new UnitOfWork();
             unitOfWork.onPreInvocation(ctx -> {
                 ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
                 ctx.putResource(lastTokenResourceKey, finalLastToken);
