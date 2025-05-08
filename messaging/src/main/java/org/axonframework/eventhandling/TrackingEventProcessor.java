@@ -24,17 +24,20 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -111,8 +114,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final AtomicBoolean workLauncherRunning = new AtomicBoolean(false);
     private final ConcurrentMap<Integer, TrackerStatus> activeSegments = new ConcurrentSkipListMap<>();
     private final ConcurrentMap<Integer, Long> segmentReleaseDeadlines = new ConcurrentSkipListMap<>();
-    private final String segmentIdResourceKey;
-    private final String lastTokenResourceKey;
+    private final Context.ResourceKey<Integer> segmentIdResourceKey;
+    private final Context.ResourceKey<TrackingToken> lastTokenResourceKey;
     private final AtomicInteger availableThreads;
     private final long tokenClaimInterval;
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
@@ -153,8 +156,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.maxThreadCount = config.getMaxThreadCount();
         this.threadFactory = config.getThreadFactory(builder.name);
         this.workerTerminationTimeout = config.getWorkerTerminationTimeout();
-        this.segmentIdResourceKey = "Processor[" + builder.name + "]/SegmentId";
-        this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
+        this.segmentIdResourceKey = Context.ResourceKey.withLabel("Processor[" + builder.name + "]/SegmentId");
+        this.lastTokenResourceKey = Context.ResourceKey.withLabel("Processor[" + builder.name + "]/Token");
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
 
@@ -162,21 +165,21 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             if (!(unitOfWork instanceof LegacyBatchingUnitOfWork)
                     || ((LegacyBatchingUnitOfWork<?>) unitOfWork).isFirstMessage()) {
                 Instant startTime = now();
-                TrackingToken lastToken = unitOfWork.getResource(lastTokenResourceKey);
+                TrackingToken lastToken = unitOfWork.getResource(lastTokenResourceKey.label());
                 if (storeTokenBeforeProcessing) {
                     tokenStore.storeToken(lastToken,
                                           builder.name,
-                                          unitOfWork.getResource(segmentIdResourceKey));
+                                          unitOfWork.getResource(segmentIdResourceKey.label()));
                 } else {
-                    tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
+                    tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey.label()));
                 }
                 unitOfWork.onPrepareCommit(uow -> {
                     if (!storeTokenBeforeProcessing) {
                         tokenStore.storeToken(lastToken,
                                               builder.name,
-                                              unitOfWork.getResource(segmentIdResourceKey));
+                                              unitOfWork.getResource(segmentIdResourceKey.label()));
                     } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
-                        tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
+                        tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey.label()));
                     }
                 });
             }
@@ -488,8 +491,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
             LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyBatchingUnitOfWork<>(batch);
             unitOfWork.attachTransaction(transactionManager);
-            unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
-            unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);
+            unitOfWork.resources().put(segmentIdResourceKey.label(), segment.getSegmentId());
+            unitOfWork.resources().put(lastTokenResourceKey.label(), finalLastToken);
             processInUnitOfWork(batch, unitOfWork, processingSegments);
 
             TrackerStatus previousStatus = activeSegments.get(segment.getSegmentId());
@@ -508,6 +511,26 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             Thread.currentThread().interrupt();
         }
+    }
+
+    // todo: exclude to some utitlity class!
+    private void attachTransactionToUnitOfWork(UnitOfWork unitOfWork) {
+        var transactionKey = Context.ResourceKey.<Transaction>withLabel("transaction");
+        unitOfWork.runOnPreInvocation(ctx -> {
+            var transaction = transactionManager.startTransaction();
+            ctx.putResource(transactionKey, transaction);
+        });
+
+        unitOfWork.runOnCommit(ctx -> {
+            var transaction = ctx.getResource(transactionKey);
+            transaction.commit();
+        });
+
+        unitOfWork.onError((ctx, phase, error) -> {
+            var transaction = ctx.getResource(transactionKey);
+            transaction.rollback();
+        });
+        // todo legacy UnitOfWork.attachTransaction rollbacks in case of error here
     }
 
     private void ignoreEvent(BlockingStream<TrackedEventMessage<?>> eventStream,
