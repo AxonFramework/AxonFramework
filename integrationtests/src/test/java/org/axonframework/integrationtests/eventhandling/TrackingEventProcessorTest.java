@@ -630,11 +630,29 @@ class TrackingEventProcessorTest {
                                             .build();
         CountDownLatch countDownLatch = new CountDownLatch(2);
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            Thread.sleep(50);
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
+            @Override
+            public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+                unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+                Thread.sleep(50);
+                return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @NotNull M message, @NotNull ProcessingContext context,
+                    @NotNull InterceptorChain<M, R> interceptorChain) {
+                context.runOnAfterCommit(uow -> countDownLatch.countDown());
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                return interceptorChain.proceed(message, context);
+            }
+        });
+
         testSubject.start();
 
         eventBus.publish(createEvents(2));
@@ -654,12 +672,26 @@ class TrackingEventProcessorTest {
     void tokenIsNotStoredWhenUnitOfWorkIsRolledBack() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCommit(uow -> {
-                throw new MockException();
-            });
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
+            @Override
+            public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+                unitOfWork.onCommit(uow -> {
+                    throw new MockException();
+                });
+                return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @NotNull M message, @NotNull ProcessingContext context,
+                    @NotNull InterceptorChain<M, R> interceptorChain) {
+                context.onCommit(uow -> {
+                    throw new MockException();
+                });
+                return interceptorChain.proceed(message, context);
+            }
+        });
         //noinspection resource
         testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
         testSubject.start();
@@ -871,14 +903,30 @@ class TrackingEventProcessorTest {
                                             .build();
 
         //noinspection Duplicates,resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCommit(uow -> {
-                if (uow.getMessage().equals(events.get(1))) {
-                    throw new MockException();
-                }
-            });
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
+            @Override
+            public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+                unitOfWork.onCommit(uow -> {
+                    if (uow.getMessage().equals(events.get(1))) {
+                        throw new MockException();
+                    }
+                });
+                return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @NotNull M message, @NotNull ProcessingContext context,
+                    @NotNull InterceptorChain<M, R> interceptorChain) {
+                context.runOnCommit(uow -> {
+                    if (message.equals(events.get(1))) {
+                        throw new MockException();
+                    }
+                });
+                return interceptorChain.proceed(message, context);
+            }
+        });
 
         CountDownLatch countDownLatch = new CountDownLatch(2);
 
@@ -2182,7 +2230,8 @@ class TrackingEventProcessorTest {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch finished = new CountDownLatch(2);
         //noinspection resource
-        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(started::countDown, finished::countDown));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(started::countDown,
+                                                                                  finished::countDown));
 
         eventBus.publish(createEvent(0));
 
