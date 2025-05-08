@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
@@ -199,6 +200,92 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 //                    @Nonnull M message, @Nonnull ProcessingContext context,
 //                    @Nonnull InterceptorChain<M, R> interceptorChain) {
 //                return null; // todo: implement!
+//            }
+//        });
+
+//        registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
+//            @Override
+//            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+//                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
+//                return interceptorChain.proceedSync();
+//            }
+//
+//            @Override
+//            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+//                    @Nonnull M message,
+//                    @Nonnull ProcessingContext processingContext,
+//                    @Nonnull InterceptorChain<M, R> interceptorChain) {
+//
+//                // Get segmentId and lastToken from processingContext
+//                Integer segmentId = processingContext.getResource(segmentIdResourceKey);
+//                TrackingToken lastToken = processingContext.getResource(lastTokenResourceKey);
+//
+//                if (segmentId != null && lastToken != null) {
+//                    Instant startTime = now();
+//
+//                    // Only do this for the first message of a batch
+//                    if (isFirstMessageOfBatch(message, processingContext)) {
+//                        try {
+//                            if (storeTokenBeforeProcessing) {
+//                                tokenStore.storeToken(lastToken, builder.name, segmentId);
+//                            } else {
+//                                tokenStore.extendClaim(getName(), segmentId);
+//                            }
+//                        } catch (Exception e) {
+//                            // If token operations fail, fail the processing
+//                            return MessageStream.failed(e);
+//                        }
+//                    }
+//
+//                    // Return a MessageStream that will handle the token update on commit if needed
+//                    MessageStream<R> resultStream = interceptorChain.proceed(message, processingContext);
+//
+//                    // Only for the last message in the batch, register a commit handler
+//                    if (isLastMessageOfBatch(message, processingContext)) {
+//                        // Register a commit handler in the processingContext to store the token if needed
+//                        processingContext.onPrepareCommit(ctx -> {
+//                            try {
+//                                if (!storeTokenBeforeProcessing) {
+//                                    tokenStore.storeToken(lastToken, builder.name, segmentId);
+//                                } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
+//                                    tokenStore.extendClaim(getName(), segmentId);
+//                                }
+//                            } catch (Exception e) {
+//                                return CompletableFuture.failedFuture(e);
+//                            }
+//                            return CompletableFuture.completedFuture(null);
+//                        });
+//                    }
+//
+//                    return resultStream;
+//                }
+//
+//                // If we don't have segmentId or lastToken, just proceed
+//                return interceptorChain.proceed(message, processingContext);
+//            }
+//
+//            private <M extends Message<?>> boolean isFirstMessageOfBatch(M message,
+//                                                                         ProcessingContext processingContext) {
+//                // Logic to determine if this is the first message of a batch
+//                // This could be improved with a batch context resource
+//                Context.ResourceKey<Boolean> processedFirstMessageKey =
+//                        Context.ResourceKey.withLabel("processedFirstMessage");
+//                if (processingContext.getResource(processedFirstMessageKey) == null) {
+//                    processingContext.putResource(processedFirstMessageKey, true);
+//                    return true;
+//                }
+//                return false;
+//            }
+//
+//            private <M extends Message<?>> boolean isLastMessageOfBatch(M message,
+//                                                                        ProcessingContext processingContext) {
+//                // Logic to determine if this is the last message of a batch
+//                // In TrackingEventProcessor, we have access to the batch, so this could be enhanced
+//                Context.ResourceKey<Boolean> lastMessageProcessedKey =
+//                        Context.ResourceKey.withLabel("lastMessageProcessingKey");
+//                // Simple implementation - mark each message as potentially the last one
+//                processingContext.putResource(lastMessageProcessedKey, true);
+//                return true;
 //            }
 //        });
     }
@@ -506,16 +593,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 }
             }
 
-//            LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyBatchingUnitOfWork<>(batch);
-//            unitOfWork.attachTransaction(transactionManager);
-//            unitOfWork.resources().put(segmentIdResourceKey.label(), segment.getSegmentId());
-//            unitOfWork.resources().put(lastTokenResourceKey.label(), finalLastToken);
-//            processInUnitOfWork(batch, unitOfWork, processingSegments);
-
-
             UnitOfWork unitOfWork = new UnitOfWork();
-
-            // Store resources in preInvocation phase
             unitOfWork.onPreInvocation(ctx -> {
                 ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
                 ctx.putResource(lastTokenResourceKey, finalLastToken);
