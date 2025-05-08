@@ -88,6 +88,7 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
     @Override
     public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+        // TODO: TEST
         var superTypeEvolvedEntity = superTypeModel.evolve(entity, event, context);
         return modelFor(entity).evolve(superTypeEvolvedEntity, event, context);
     }

@@ -51,10 +51,10 @@ class EntityCommandHandlingComponentTest {
     @Mock
     private EntityIdResolver<String> idResolver;
 
-    CommandMessage<?> commandMessage = mock(CommandMessage.class);
-    String entityId = "myEntityId456";
-    ManagedEntity<String, TestEntity> managedEntity = mock(ManagedEntity.class);
-    TestEntity mockEntity = mock(TestEntity.class);
+    private final CommandMessage<?> commandMessage = mock(CommandMessage.class);
+    private final String entityId = "myEntityId456";
+    private final ManagedEntity<String, TestEntity> managedEntity = mock(ManagedEntity.class);
+    private final TestEntity mockEntity = mock(TestEntity.class);
 
     private EntityCommandHandlingComponent<String, TestEntity> testComponent;
 

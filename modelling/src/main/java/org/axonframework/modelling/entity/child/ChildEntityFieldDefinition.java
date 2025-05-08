@@ -53,7 +53,7 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @return The evolved parent entity.
      */
     @Nonnull
-    P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F entities);
+    P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nullable F entities);
 
     /**
      * Returns the type of the field.
