@@ -144,10 +144,11 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         return MessageStream.failed(new NoHandlerForCommandException(message, entityType()));
     }
 
+    @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handleInstance(CommandMessage<?> message,
-                                                                        E entity,
-                                                                        ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handleInstance(@Nonnull CommandMessage<?> message,
+                                                                        @Nonnull E entity,
+                                                                        @Nonnull ProcessingContext context) {
         if (isCreationalCommand(message) && !isInstanceCommand(message)) {
             return MessageStream.failed(new EntityExistsForCreationalCommandHandler(message, entity));
         }

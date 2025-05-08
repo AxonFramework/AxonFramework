@@ -288,7 +288,7 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         public EntityModelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
                                                               @Nonnull CommandHandler messageHandler) {
             requireNonNull(qualifiedName, "The qualifiedName may not be null.");
-            requireNonNull(messageHandler, "Tghe messageHandler may not be null.");
+            requireNonNull(messageHandler, "The messageHandler may not be null.");
             if (creationalCommandHandlers.containsKey(qualifiedName)) {
                 throw new IllegalArgumentException(
                         "Creational command handler with name " + qualifiedName + " already registered.");

@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 
@@ -26,6 +25,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+
+import static org.axonframework.common.ConstructorUtils.factoryForTypeWithOptionalArgument;
 
 /**
  * {@link EventSourcedEntityFactory} implementation which uses a constructor to create a new instance of an entity. The
@@ -63,7 +64,7 @@ public class ConstructorBasedEventSourcedEntityFactory<E>
         Class<Object> idClass = (Class<Object>) id.getClass();
         return constructorCache
                 .computeIfAbsent(idClass,
-                                 (i) -> ConstructorUtils.factoryForTypeWithOptionalArgument(entityType, idClass))
+                                 (i) -> factoryForTypeWithOptionalArgument(entityType, idClass))
                 .apply(id);
     }
 }
