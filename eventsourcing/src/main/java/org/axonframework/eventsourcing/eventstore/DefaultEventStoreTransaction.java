@@ -101,6 +101,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                          }
                          receivedEvent.set(true);
                      })
+                     .filter(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
                      .whenComplete(() -> updateAppendPosition(receivedEvent, markerReference));
     }
 
