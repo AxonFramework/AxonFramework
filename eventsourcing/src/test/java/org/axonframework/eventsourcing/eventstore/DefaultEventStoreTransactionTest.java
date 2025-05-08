@@ -23,8 +23,8 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
@@ -37,7 +37,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
@@ -52,7 +51,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 class DefaultEventStoreTransactionTest {
 
     private static final String TEST_AGGREGATE_ID = "someId";
-    public static final Tag AGGREGATE_ID_TAG = new Tag("aggregateIdentifier", TEST_AGGREGATE_ID);
+    private static final Tag AGGREGATE_ID_TAG = new Tag("aggregateIdentifier", TEST_AGGREGATE_ID);
     private static final EventCriteria TEST_AGGREGATE_CRITERIA =
             EventCriteria.havingTags(AGGREGATE_ID_TAG);
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey =
@@ -99,9 +98,9 @@ class DefaultEventStoreTransactionTest {
             // then
             assertNull(beforeCommitEvents.get().first().asCompletableFuture().join());
             StepVerifier.create(afterCommitEvents.get().asFlux())
-                        .assertNext(entry -> assertPositionAndEvent(entry, 0, event1))
-                        .assertNext(entry -> assertPositionAndEvent(entry, 1, event2))
-                        .assertNext(entry -> assertPositionAndEvent(entry, 2, event3))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 1, event1))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 2, event2))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 3, event3))
                         .verifyComplete();
             assertEquals(
                     GlobalIndexConsistencyMarker.position(new GlobalIndexConsistencyMarker(2)),
@@ -138,8 +137,8 @@ class DefaultEventStoreTransactionTest {
 
             // then: after commit - both events should be visible
             StepVerifier.create(afterCommitEvents.get().asFlux())
-                        .assertNext(entry -> assertPositionAndEvent(entry, 0, event1))
-                        .assertNext(entry -> assertPositionAndEvent(entry, 1, event2))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 1, event1))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 2, event2))
                         .verifyComplete();
         }
 
@@ -391,7 +390,8 @@ class DefaultEventStoreTransactionTest {
     }
 
     private static void assertPositionAndEvent(MessageStream.Entry<? extends EventMessage<?>> actual,
-                                               long expectedPosition, EventMessage<?> expectedEvent) {
+                                               long expectedPosition,
+                                               EventMessage<?> expectedEvent) {
         Optional<TrackingToken> actualToken = TrackingToken.fromContext(actual);
         assertTrue(actualToken.isPresent());
         OptionalLong actualPosition = actualToken.get().position();
