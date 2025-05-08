@@ -151,6 +151,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @param unitOfWork    The Unit of Work that has been prepared to process the messages
      * @throws Exception when an exception occurred during processing of the batch
      */
+    @Deprecated(since = "5.0.0", forRemoval = true)
     protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                              LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
         processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT);
@@ -166,6 +167,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @param processingSegments The segments for which the events should be processed in this unit of work
      * @throws Exception when an exception occurred during processing of the batch
      */
+    @Deprecated(since = "5.0.0", forRemoval = true)
     protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                        LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
                                        Collection<Segment> processingSegments) throws Exception {
@@ -180,7 +182,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                                           interceptors,
                                           m -> processMessageInUnitOfWork(processingSegments, m, null, monitorCallback))
                                           .proceedSync());
-            }, rollbackConfiguration);
+            }, rollbackConfiguration); // TODO - RollbackConfiguration in the new UnitOfWork?
 
             if (resultMessage.isExceptional()) {
                 Throwable e = resultMessage.exceptionResult();
@@ -231,7 +233,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             for (EventMessage<?> message : messages) {
                 result = result.thenCompose(v -> spanFactory
                         .createProcessEventSpan(this instanceof StreamingEventProcessor, message)
-                        .runSupplierAsync(processMessage(processingSegments, processingContext, message))
+                        .runSupplierAsync(() -> processMessage(processingSegments, processingContext, message))
                 );
             }
 
@@ -243,37 +245,34 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                        try {
                            errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
                        } catch (Exception ex) {
-                           throw new RuntimeException(ex); // todo: handle error in another way
+                           throw new RuntimeException(ex);
                        }
                        return null;
                    }));
     }
 
-    private Supplier<CompletableFuture<Void>> processMessage(Collection<Segment> processingSegments,
-                                                             ProcessingContext processingContext,
-                                                             EventMessage<?> message) {
-        return () -> {
-            try {
-                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(message);
+    private CompletableFuture<Void> processMessage(Collection<Segment> processingSegments,
+                                                   ProcessingContext processingContext,
+                                                   EventMessage<?> message
+    ) {
+        try {
+            var monitorCallback = messageMonitor.onMessageIngested(message);
 
-                DefaultInterceptorChain<EventMessage<?>, ?> chain =
-                        new DefaultInterceptorChain<>(
-                                null,
-                                interceptors,
-                                (msg) -> processMessageInUnitOfWork(processingSegments,
-                                                                    msg,
-                                                                    processingContext,
-                                                                    monitorCallback));
-                return chain.proceed(message, processingContext)
-                            .ignoreEntries()
-                            .asCompletableFuture()
-                            .thenApply(e -> null);
-            } catch (Exception e) {
-                CompletableFuture<Void> failedFuture = new CompletableFuture<>();
-                failedFuture.completeExceptionally(e);
-                return failedFuture;
-            }
-        };
+            DefaultInterceptorChain<EventMessage<?>, ?> chain =
+                    new DefaultInterceptorChain<>(
+                            null,
+                            interceptors,
+                            (msg) -> processMessageInUnitOfWork(processingSegments,
+                                                                msg,
+                                                                processingContext,
+                                                                monitorCallback));
+            return chain.proceed(message, processingContext)
+                        .ignoreEntries()
+                        .asCompletableFuture()
+                        .thenApply(e -> null);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     /**
