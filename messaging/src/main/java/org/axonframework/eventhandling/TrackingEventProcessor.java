@@ -166,41 +166,41 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
 
-        registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
-            @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
-                if (!(unitOfWork instanceof LegacyBatchingUnitOfWork)
-                        || ((LegacyBatchingUnitOfWork<?>) unitOfWork).isFirstMessage()) {
-                    Instant startTime = now();
-                    TrackingToken lastToken = unitOfWork.getResource(lastTokenResourceKey.label());
-                    if (storeTokenBeforeProcessing) {
-                        tokenStore.storeToken(lastToken,
-                                              builder.name,
-                                              unitOfWork.getResource(segmentIdResourceKey.label()));
-                    } else {
-                        tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey.label()));
-                    }
-                    unitOfWork.onPrepareCommit(uow -> {
-                        if (!storeTokenBeforeProcessing) {
-                            tokenStore.storeToken(lastToken,
-                                                  builder.name,
-                                                  unitOfWork.getResource(segmentIdResourceKey.label()));
-                        } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
-                            tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey.label()));
-                        }
-                    });
-                }
-                return interceptorChain.proceedSync();
-            }
-
-            @Override
-            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message, @Nonnull ProcessingContext context,
-                    @Nonnull InterceptorChain<M, R> interceptorChain) {
-                return null; // todo: implement!
-            }
-        });
+//        registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
+//            @Override
+//            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+//                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
+//                if (!(unitOfWork instanceof LegacyBatchingUnitOfWork)
+//                        || ((LegacyBatchingUnitOfWork<?>) unitOfWork).isFirstMessage()) {
+//                    Instant startTime = now();
+//                    TrackingToken lastToken = unitOfWork.getResource(lastTokenResourceKey.label());
+//                    if (storeTokenBeforeProcessing) {
+//                        tokenStore.storeToken(lastToken,
+//                                              builder.name,
+//                                              unitOfWork.getResource(segmentIdResourceKey.label()));
+//                    } else {
+//                        tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey.label()));
+//                    }
+//                    unitOfWork.onPrepareCommit(uow -> {
+//                        if (!storeTokenBeforeProcessing) {
+//                            tokenStore.storeToken(lastToken,
+//                                                  builder.name,
+//                                                  unitOfWork.getResource(segmentIdResourceKey.label()));
+//                        } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
+//                            tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey.label()));
+//                        }
+//                    });
+//                }
+//                return interceptorChain.proceedSync();
+//            }
+//
+//            @Override
+//            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+//                    @Nonnull M message, @Nonnull ProcessingContext context,
+//                    @Nonnull InterceptorChain<M, R> interceptorChain) {
+//                return null; // todo: implement!
+//            }
+//        });
     }
 
     /**
@@ -506,10 +506,43 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 }
             }
 
-            LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyBatchingUnitOfWork<>(batch);
-            unitOfWork.attachTransaction(transactionManager);
-            unitOfWork.resources().put(segmentIdResourceKey.label(), segment.getSegmentId());
-            unitOfWork.resources().put(lastTokenResourceKey.label(), finalLastToken);
+//            LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyBatchingUnitOfWork<>(batch);
+//            unitOfWork.attachTransaction(transactionManager);
+//            unitOfWork.resources().put(segmentIdResourceKey.label(), segment.getSegmentId());
+//            unitOfWork.resources().put(lastTokenResourceKey.label(), finalLastToken);
+//            processInUnitOfWork(batch, unitOfWork, processingSegments);
+
+
+            UnitOfWork unitOfWork = new UnitOfWork();
+
+            // Store resources in preInvocation phase
+            unitOfWork.onPreInvocation(ctx -> {
+                ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
+                ctx.putResource(lastTokenResourceKey, finalLastToken);
+
+                // Store token before processing if configured to do so
+                if (storeTokenBeforeProcessing) {
+                    tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
+                } else {
+                    tokenStore.extendClaim(getName(), segment.getSegmentId());
+                }
+
+                return CompletableFuture.completedFuture(null);
+            });
+
+            // Handle token storage on commit
+            Instant startTime = now();
+            unitOfWork.onPrepareCommit(ctx -> {
+                if (!storeTokenBeforeProcessing) {
+                    var token = ctx.getResource(lastTokenResourceKey);
+                    tokenStore.storeToken(token, getName(), ctx.getResource(segmentIdResourceKey));
+                } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
+                    tokenStore.extendClaim(getName(), ctx.getResource(segmentIdResourceKey));
+                }
+                return CompletableFuture.completedFuture(null);
+            });
+
+            // Process the batch of events
             processInUnitOfWork(batch, unitOfWork, processingSegments);
 
             TrackerStatus previousStatus = activeSegments.get(segment.getSegmentId());
