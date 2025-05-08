@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.modelling;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.EntityEvolver;
 
 import java.util.Set;
 
@@ -32,7 +31,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface EventSourcedComponent<E> extends EntityEvolver<E> {
+public interface EntityEvolvingComponent<E> extends EntityEvolver<E> {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.

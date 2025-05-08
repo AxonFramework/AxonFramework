@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
+import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
@@ -155,10 +155,10 @@ public abstract class AbstractStudentTestSuite {
 
     /**
      * Returns the {@link EntityEvolver} for the {@link Student} model. Defaults to using the
-     * {@link AnnotationBasedEventSourcedComponent} to use the annotations placed.
+     * {@link AnnotationBasedEntityEvolvingComponent} to use the annotations placed.
      */
     protected EntityEvolver<Student> studentEvolver(Configuration config) {
-        return new AnnotationBasedEventSourcedComponent<>(Student.class);
+        return new AnnotationBasedEntityEvolvingComponent<>(Student.class);
     }
 
     protected void changeStudentName(String studentId, String name) {

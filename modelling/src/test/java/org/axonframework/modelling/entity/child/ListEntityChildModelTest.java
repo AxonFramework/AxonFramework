@@ -57,8 +57,8 @@ class ListEntityChildModelTest {
     private final ListEntityChildModel<RecordingChildEntity, RecordingParentEntity> testSubject = ListEntityChildModel
             .forEntityModel(RecordingParentEntity.class, childEntityEntityModel)
             .childEntityFieldDefinition(childEntityFieldDefinition)
-            .commandTargetMatcher((child, msg) -> child.getId().contains(COMMAND_MATCHING_ID))
-            .eventTargetMatcher((child, msg) -> child.getId().contains(EVENT_MATCHING_ID))
+            .commandTargetMatcher((msg, child) -> child.getId().contains(COMMAND_MATCHING_ID))
+            .eventTargetMatcher((msg, child) -> child.getId().contains(EVENT_MATCHING_ID))
             .build();
 
     private final StubProcessingContext context = new StubProcessingContext();

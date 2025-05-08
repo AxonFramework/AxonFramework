@@ -18,6 +18,7 @@ package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
+import org.axonframework.modelling.entity.annotation.ChildEntityMatcherDefinition;
 
 /**
  * Functional interface to test whether a given entity should be invoked for a given message.
@@ -33,9 +34,9 @@ public interface ChildEntityMatcher<E, M extends Message<?>> {
     /**
      * Tests whether the given {@code entity} should be invoked for the given {@code message}.
      *
-     * @param entity  The entity to test.
-     * @param message The message to test.
+     * @param message   The message to test.
+     * @param candidate The entity to test.
      * @return {@code true} if the entity should be invoked for the message, {@code false} otherwise.
      */
-    boolean matches(@Nonnull E entity, @Nonnull M message);
+    boolean matches(@Nonnull M message, @Nonnull E candidate);
 }

@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.annotation;
+package org.axonframework.eventsourcing.annotation.reflection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 
 /**
  * Definition for a constructor-based {@link EventSourcedEntityFactory} for an {@link EventSourcedEntity} annotated
  * class. This is the default implementation of the {@link EventSourcedEntityFactoryDefinition} for the
  * {@link EventSourcedEntity} annotation.
  * <p>
- * The {@link ConstructorBasedEventSourcedEntityFactory} that is constructed through this class scans the
+ * The {@link ReflectionEventSourcedEntityFactory} that is constructed through this class scans the
  * {@link EventSourcedEntity} annotated class for a constructor that matches the given {@code idType} or zero-argument
  * constructor. If no such constructor is found, an {@link IllegalArgumentException} is thrown at runtime.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ConstructorBasedEventSourcedEntityFactoryDefinition
+public class ReflectionEventSourcedEntityFactoryDefinition
         implements EventSourcedEntityFactoryDefinition<Object, Object> {
 
     @Override
@@ -40,6 +43,6 @@ public class ConstructorBasedEventSourcedEntityFactoryDefinition
             @Nonnull Class<Object> idType,
             @Nonnull Configuration configuration
     ) {
-        return new ConstructorBasedEventSourcedEntityFactory(entityType);
+        return new ReflectionEventSourcedEntityFactory<>(entityType, idType, configuration);
     }
 }

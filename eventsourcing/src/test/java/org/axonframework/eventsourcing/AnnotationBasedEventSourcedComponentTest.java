@@ -26,7 +26,9 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
+import org.axonframework.modelling.StateEvolvingException;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -36,14 +38,14 @@ import java.time.ZoneId;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link AnnotationBasedEventSourcedComponent}.
+ * Test class validating the {@link AnnotationBasedEntityEvolvingComponent}.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 class AnnotationBasedEventSourcedComponentTest {
 
-    private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEventSourcedComponent<>(TestState.class);
+    private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolvingComponent<>(TestState.class);
 
     private final ProcessingContext processingContext = ProcessingContext.NONE;
 
@@ -162,7 +164,7 @@ class AnnotationBasedEventSourcedComponentTest {
         @Test
         void doNotHandleNotDeclaredEventType() {
             // given
-            var eventSourcedComponent = new AnnotationBasedEventSourcedComponent<>(HandlingJustStringState.class);
+            var eventSourcedComponent = new AnnotationBasedEntityEvolvingComponent<>(HandlingJustStringState.class);
             var state = new HandlingJustStringState();
             var event = domainEvent(0);
 
@@ -208,7 +210,7 @@ class AnnotationBasedEventSourcedComponentTest {
             }
         }
 
-        private static final EntityEvolver<RecordState> ENTITY_EVOLVER = new AnnotationBasedEventSourcedComponent<>(
+        private static final EntityEvolver<RecordState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolvingComponent<>(
                 RecordState.class);
 
         @Test
@@ -244,7 +246,7 @@ class AnnotationBasedEventSourcedComponentTest {
         @Test
         void throwsStateEvolvingExceptionOnExceptionInsideEventHandler() {
             // given
-            var testSubject = new AnnotationBasedEventSourcedComponent<>(ErrorThrowingState.class);
+            var testSubject = new AnnotationBasedEntityEvolvingComponent<>(ErrorThrowingState.class);
             var state = new ErrorThrowingState();
             var event = domainEvent(0);
 

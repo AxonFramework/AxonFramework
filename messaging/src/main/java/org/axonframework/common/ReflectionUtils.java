@@ -38,7 +38,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.lang.String.format;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.common.StringUtils.decapitalize;
 
 /**
  * Utility class for working with Java Reflection API.
@@ -75,14 +77,14 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Returns the value of the given {@code field} in the given {@code object}. If necessary, the field is
-     * made accessible, assuming the security manager allows it.
+     * Returns the value of the given {@code field} in the given {@code object}. If necessary, the field is made
+     * accessible, assuming the security manager allows it.
      *
      * @param field  The field containing the value
      * @param object The object to retrieve the field's value from
      * @return the value of the {@code field} in the {@code object}
-     * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be
-     *                               made accessible
+     * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be made
+     *                               accessible
      */
     @SuppressWarnings("unchecked")
     public static <R> R getFieldValue(Field field, Object object) {
@@ -113,10 +115,9 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Returns the class on which the method with given {@code methodName} and parameters of type
-     * {@code parameterTypes} is declared. The given {@code instanceClass} is the instance on which the
-     * method can be called. If the method is not available on the given {@code instanceClass}, {@code null}
-     * is returned.
+     * Returns the class on which the method with given {@code methodName} and parameters of type {@code parameterTypes}
+     * is declared. The given {@code instanceClass} is the instance on which the method can be called. If the method is
+     * not available on the given {@code instanceClass}, {@code null} is returned.
      *
      * @param instanceClass  The class on which to look for the method
      * @param methodName     The name of the method
@@ -143,10 +144,9 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Indicates whether the two given objects are <em>not the same</em>, override an equals method that indicates
-     * they are <em>not equal</em>, or implements {@link Comparable} which indicates the two are not equal. If this
-     * method cannot safely indicate two objects are not equal, it returns
-     * {@code false}.
+     * Indicates whether the two given objects are <em>not the same</em>, override an equals method that indicates they
+     * are <em>not equal</em>, or implements {@link Comparable} which indicates the two are not equal. If this method
+     * cannot safely indicate two objects are not equal, it returns {@code false}.
      *
      * @param value      One of the values to compare
      * @param otherValue other value to compare
@@ -198,8 +198,8 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Checks whether the given {@code member} is public and non-final. These members do no need to be set
-     * accessible using reflection.
+     * Checks whether the given {@code member} is public and non-final. These members do no need to be set accessible
+     * using reflection.
      *
      * @param member The member to check
      * @return {@code true} if the member is public and non-final, otherwise {@code false}.
@@ -364,8 +364,7 @@ public abstract class ReflectionUtils {
      * Indicates whether the given field has the "transient" modifier
      *
      * @param field the field to inspect
-     * @return {@code true} if the field is marked transient, otherwise {@code false
-     * }
+     * @return {@code true} if the field is marked transient, otherwise {@code false }
      */
     public static boolean isTransient(Field field) {
         return Modifier.isTransient(field.getModifiers());
@@ -466,8 +465,8 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Returns the generic type of value of the given {@code member}, either by returning the generic type of {@link
-     * Field} or generic return type of a {@link Method}.
+     * Returns the generic type of value of the given {@code member}, either by returning the generic type of
+     * {@link Field} or generic return type of a {@link Method}.
      *
      * @param member the member to get generic type of
      * @return the generic type of value of the {@code member}
@@ -504,8 +503,8 @@ public abstract class ReflectionUtils {
 
 
     /**
-     * Returns a discernible signature without including the classname. This will contain the method name and the parameter
-     * types, such as: {@code thisIfMyMethod(java.lang.String myString, com.acme.MyGreatObject)}.
+     * Returns a discernible signature without including the classname. This will contain the method name and the
+     * parameter types, such as: {@code thisIfMyMethod(java.lang.String myString, com.acme.MyGreatObject)}.
      *
      * @param executable The executable to make a signature of.
      * @return The discernible signature.
@@ -515,6 +514,32 @@ public abstract class ReflectionUtils {
                              executable.getName(),
                              Arrays.stream(executable.getParameterTypes()).map(Class::getName)
                                    .collect(Collectors.joining(",")));
+    }
+
+    /**
+     * Returns the name of the field represented by the given {@code member}. If the member is a method, it will return
+     * the name of the field it represents. For example, if the member is a getter method for a field named "getFoo",
+     * "isFoo", or "foo", it will return "foo". If the member is a field, it will return the name of the field.
+     *
+     * @param member The member to get the field name for.
+     * @return The name of the field represented by the given member.
+     */
+    public static String fieldNameFromMember(Member member) {
+        if (member instanceof Field field) {
+            return field.getName();
+        }
+        if (member instanceof java.lang.reflect.Method method) {
+            String methodName = method.getName();
+            if (methodName.startsWith("get")) {
+                return decapitalize(methodName.substring(3));
+            } else if (methodName.startsWith("is")) {
+                return decapitalize(methodName.substring(2));
+            }
+            return methodName;
+        }
+        throw new AxonConfigurationException(
+                format("Member [%s] is not a field or method", member)
+        );
     }
 
     private ReflectionUtils() {

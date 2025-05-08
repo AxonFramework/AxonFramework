@@ -92,5 +92,18 @@ public abstract class StringUtils {
         }
         return Character.toUpperCase(string.charAt(0)) + string.substring(1);
     }
+
+    /**
+     * Return the given {@code string}, with its first character converted to lowercase.
+     *
+     * @param string The input string to adjust to a version with the first character as lowercase.
+     * @return The input string, with first character in lowercase.
+     */
+    public static String decapitalize(@Nullable String string) {
+        if (string == null || string.isEmpty()) {
+            return string;
+        }
+        return Character.toLowerCase(string.charAt(0)) + string.substring(1);
+    }
 }
 

@@ -77,7 +77,7 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
         }
         return getChildEntities(parentEntity)
                 .stream()
-                .anyMatch(child -> commandTargetMatcher.matches(child, message));
+                .anyMatch(child -> commandTargetMatcher.matches(message, child));
     }
 
     @Nonnull
@@ -87,7 +87,7 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
                                                                 @Nonnull ProcessingContext context) {
         List<C> matchingChildEntities = getChildEntities(parentEntity)
                 .stream()
-                .filter(child -> commandTargetMatcher.matches(child, message))
+                .filter(child -> commandTargetMatcher.matches(message, child))
                 .toList();
         if (matchingChildEntities.isEmpty()) {
             return MessageStream.failed(new ChildEntityNotFoundException(message, parentEntity));
@@ -106,7 +106,7 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
         var evolvedEntities = getChildEntities(entity)
                 .stream()
                 .map(child -> {
-                    if (eventTargetMatcher.matches(child, event)) {
+                    if (eventTargetMatcher.matches(event, child)) {
                         evolvedChildEntity.set(true);
                         return childEntityModel.evolve(child, event, context);
                     }
@@ -131,8 +131,8 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
     protected abstract static class Builder<C, P, R extends Builder<C, P, R>> {
 
         protected final EntityModel<C> childEntityModel;
-        protected ChildEntityMatcher<C, CommandMessage<?>> commandTargetMatcher = (child, command) -> true;
-        protected ChildEntityMatcher<C, EventMessage<?>> eventTargetMatcher = (child, event) -> true;
+        protected ChildEntityMatcher<C, CommandMessage<?>> commandTargetMatcher = (command, child) -> true;
+        protected ChildEntityMatcher<C, EventMessage<?>> eventTargetMatcher = (event, child) -> true;
 
         @SuppressWarnings("unused") // Is used for generics
         protected Builder(@Nonnull Class<P> parentClass,

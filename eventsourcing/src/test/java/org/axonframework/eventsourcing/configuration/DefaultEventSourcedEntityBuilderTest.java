@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.modelling.EntityEvolver;
-import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
+import org.axonframework.modelling.SimpleEntityEvolvingComponent;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.messaging.MessageType;
@@ -210,8 +210,8 @@ class DefaultEventSourcedEntityBuilderTest {
         MockComponentDescriptor descriptor = new MockComponentDescriptor();
         result.describeTo(descriptor);
 
-        assertInstanceOf(SimpleEventSourcedComponent.class, descriptor.getProperty("entityEvolver"));
-        SimpleEventSourcedComponent<?> resultEvolver = descriptor.getProperty("entityEvolver");
+        assertInstanceOf(SimpleEntityEvolvingComponent.class, descriptor.getProperty("entityEvolver"));
+        SimpleEntityEvolvingComponent<?> resultEvolver = descriptor.getProperty("entityEvolver");
 
         MockComponentDescriptor evolverDescriptor = new MockComponentDescriptor();
         resultEvolver.describeTo(evolverDescriptor);

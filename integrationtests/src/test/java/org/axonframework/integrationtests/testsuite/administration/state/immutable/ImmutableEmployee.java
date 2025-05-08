@@ -19,6 +19,7 @@ package org.axonframework.integrationtests.testsuite.administration.state.immuta
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.entity.annotation.EntityMember;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateEmployee;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
@@ -33,7 +34,9 @@ import java.util.stream.Collectors;
 public record ImmutableEmployee(
         PersonIdentifier identifier,
         String emailAddress,
+        @EntityMember()
         ImmutableSalaryInformation salaryInformation,
+        @EntityMember(routingKey = "taskId")
         List<ImmutableTask> taskList
 ) implements ImmutablePerson {
 
@@ -113,6 +116,7 @@ public record ImmutableEmployee(
                 taskList
         );
     }
+
     public ImmutableEmployee evolveSalaryInformation(ImmutableSalaryInformation immutableSalaryInformation) {
         return new ImmutableEmployee(
                 identifier,
