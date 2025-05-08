@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -195,9 +196,11 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         });
     }
 
-    private Object processMessageInUnitOfWork(Collection<Segment> processingSegments, EventMessage<?> message,
+    private Object processMessageInUnitOfWork(Collection<Segment> processingSegments,
+                                              EventMessage<?> message,
                                               ProcessingContext processingContext,
-                                              MessageMonitor.MonitorCallback monitorCallback) throws Exception {
+                                              MessageMonitor.MonitorCallback monitorCallback
+    ) throws Exception {
         try {
             for (Segment processingSegment : processingSegments) {
                 eventHandlerInvoker.handle(message, processingContext, processingSegment);
@@ -205,8 +208,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             monitorCallback.reportSuccess();
             return null;
         } catch (Exception exception) {
-            monitorCallback.reportFailure(
-                    exception);
+            monitorCallback.reportFailure(exception);
             throw exception;
         }
     }
@@ -219,74 +221,59 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                        UnitOfWork unitOfWork,
                                        Collection<Segment> processingSegments) throws Exception {
-        Context.ResourceKey<List<? extends EventMessage<?>>> messagesKey =
-                Context.ResourceKey.withLabel("MESSAGES");
+        var eventsBatchKey = Context.ResourceKey.<List<? extends EventMessage<?>>>withLabel("messagesBatch");
+        unitOfWork.runOnPreInvocation(ctx -> ctx.putResource(eventsBatchKey, eventMessages));
 
-        spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages).runCallable(() -> {
-            unitOfWork.onPreInvocation(ctx -> {
-                ctx.putResource(messagesKey, eventMessages);
-                return CompletableFuture.completedFuture(null);
-            });
+        unitOfWork.onInvocation(processingContext -> {
+            List<? extends EventMessage<?>> messages = processingContext.getResource(eventsBatchKey);
+            CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
 
-            unitOfWork.onInvocation(processingContext -> {
-                List<? extends EventMessage<?>> messages = processingContext.getResource(messagesKey);
-                CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
+            for (EventMessage<?> message : messages) {
+                result = result.thenCompose(v -> spanFactory
+                        .createProcessEventSpan(this instanceof StreamingEventProcessor, message)
+                        .runSupplierAsync(processMessage(processingSegments, processingContext, message))
+                );
+            }
 
-                for (EventMessage<?> message : messages) {
-                    // Create a span for processing this event
-                    result = result.thenCompose(v ->
-                                                        spanFactory.createProcessEventSpan(this instanceof StreamingEventProcessor, message)
-                                                                   .runSupplierAsync(() -> {
-                                                                       try {
-                                                                           // Monitor callback for this message
-                                                                           MessageMonitor.MonitorCallback monitorCallback =
-                                                                                   messageMonitor.onMessageIngested(message);
-
-                                                                           // Create an interceptor chain for this message
-                                                                           DefaultInterceptorChain<EventMessage<?>, ?> chain =
-                                                                                   new DefaultInterceptorChain<>(
-                                                                                           null,
-                                                                                           interceptors,
-                                                                                           (msg) -> {
-                                                                                               try {
-                                                                                                   for (Segment segment : processingSegments) {
-                                                                                                       if (canHandle(msg, segment)) {
-                                                                                                           eventHandlerInvoker.handle(msg, processingContext, segment);
-                                                                                                       } else {
-                                                                                                           reportIgnored(msg);
-                                                                                                       }
-                                                                                                   }
-                                                                                                   monitorCallback.reportSuccess();
-                                                                                                   return MessageStream.empty();
-                                                                                               } catch (Exception exception) {
-                                                                                                   monitorCallback.reportFailure(exception);
-                                                                                                   throw exception;
-                                                                                               }
-                                                                                           });
-
-                                                                           // Process the message through the interceptor chain
-                                                                           chain.proceed(message, processingContext);
-                                                                           return CompletableFuture.completedFuture(null);
-                                                                       } catch (Exception e) {
-                                                                           CompletableFuture<Void> failedFuture = new CompletableFuture<>();
-                                                                           failedFuture.completeExceptionally(e);
-                                                                           return failedFuture;
-                                                                       }
-                                                                   }));
-                }
-
-                return result;
-            });
-
-            return unitOfWork.execute().exceptionally(e -> {
-                try {
-                    errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex); // todo: handle error in another way
-                }
-                return null;
-            });
+            return result;
         });
+
+        spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages)
+                   .runSupplierAsync(() -> unitOfWork.execute().exceptionally(e -> {
+                       try {
+                           errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
+                       } catch (Exception ex) {
+                           throw new RuntimeException(ex); // todo: handle error in another way
+                       }
+                       return null;
+                   }));
+    }
+
+    private Supplier<CompletableFuture<Void>> processMessage(Collection<Segment> processingSegments,
+                                                             ProcessingContext processingContext,
+                                                             EventMessage<?> message) {
+        return () -> {
+            try {
+                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(message);
+
+                DefaultInterceptorChain<EventMessage<?>, ?> chain =
+                        new DefaultInterceptorChain<>(
+                                null,
+                                interceptors,
+                                (msg) -> processMessageInUnitOfWork(processingSegments,
+                                                                    msg,
+                                                                    processingContext,
+                                                                    monitorCallback));
+                return chain.proceed(message, processingContext)
+                            .ignoreEntries()
+                            .asCompletableFuture()
+                            .thenApply(e -> null);
+            } catch (Exception e) {
+                CompletableFuture<Void> failedFuture = new CompletableFuture<>();
+                failedFuture.completeExceptionally(e);
+                return failedFuture;
+            }
+        };
     }
 
     /**
