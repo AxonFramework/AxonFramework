@@ -576,7 +576,7 @@ exceptions, you will need to change your code. The following table shows the cha
 
 | Old Exception                                                          | New Exception                                                    |
 |------------------------------------------------------------------------|------------------------------------------------------------------|
-| `org.axonframework.modelling.command.AggregateEntityNotFoundException` | `org.axonframework.modelling.entity.ChildEntityMissingException` |
+| `org.axonframework.modelling.command.AggregateEntityNotFoundException` | `org.axonframework.modelling.entity.ChildEntityNotFoundException` |
 
 
 

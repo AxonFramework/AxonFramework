@@ -20,8 +20,6 @@ import org.axonframework.integrationtests.testsuite.administration.common.Person
 
 public record EmployeeCreated(
         PersonIdentifier identifier,
-        String lastNames,
-        String firstNames,
         String emailAddress,
         String role,
         Double initialSalary

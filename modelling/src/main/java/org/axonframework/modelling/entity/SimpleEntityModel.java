@@ -20,8 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
@@ -66,10 +66,10 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
                               @Nonnull Map<QualifiedName, EntityCommandHandler<E>> commandHandlers,
                               @Nonnull List<EntityChildModel<?, E>> children,
                               @Nullable EntityEvolver<E> entityEvolver) {
-        this.entityType = Objects.requireNonNull(entityType, "entityType may not be null");
+        this.entityType = Objects.requireNonNull(entityType, "The entityType may not be null.");
         this.entityEvolver = entityEvolver;
-        this.commandHandlers.putAll(Objects.requireNonNull(commandHandlers, "commandHandlers may not be null"));
-        Objects.requireNonNull(children, "children may not be null")
+        this.commandHandlers.putAll(Objects.requireNonNull(commandHandlers, "The commandHandlers may not be null."));
+        Objects.requireNonNull(children, "The children may not be null.")
                .forEach(child -> this.children.put(child.entityType(), child));
 
         // To prevent constantly creating new sets, we create a single set and add all command handlers and children to it.
@@ -87,11 +87,12 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
      * @return A {@link Builder} instance configured for the specified entity type.
      */
     @Nonnull
-    public static <E> Builder<E> forEntityClass(@Nonnull Class<E> entityType) {
+    public static <E> EntityModelBuilder<E> forEntityClass(@Nonnull Class<E> entityType) {
         Objects.requireNonNull(entityType, "entityType may not be null");
         return new Builder<>(entityType);
     }
 
+    @Nonnull
     @Override
     public Set<QualifiedName> supportedCommands() {
         return supportedCommandNames;
@@ -109,13 +110,10 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         return entityEvolver.evolve(currentEntity, event, context);
     }
 
+    @Nonnull
     @Override
     public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message, @Nonnull E entity,
                                                                 @Nonnull ProcessingContext context) {
-
-        Assert.parameterNotNull(message, "message");
-        Assert.parameterNotNull(entity, "entity");
-        Assert.parameterNotNull(context, "context");
         try {
             var childrenWithCommandHandlers = children.values().stream()
                                                       .filter(childEntity -> childEntity
@@ -157,9 +155,10 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         if (matchingChildren.size() > 1) {
             return MessageStream.failed(new ChildAmbiguityException(message, entity));
         }
-        return MessageStream.failed(new ChildEntityMissingException(message, entity));
+        return MessageStream.failed(new ChildEntityNotFoundException(message, entity));
     }
 
+    @Nonnull
     @Override
     public Class<E> entityType() {
         return entityType;
@@ -203,8 +202,12 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
             Objects.requireNonNull(qualifiedName, "qualifiedName may not be null");
             Objects.requireNonNull(messageHandler, "messageHandler may not be null");
             if (commandHandlers.containsKey(qualifiedName)) {
-                throw new IllegalArgumentException(
-                        "Command handler with name " + qualifiedName + " already registered");
+                throw new DuplicateCommandHandlerSubscriptionException(
+                        "Duplicate subscription for command [%s] detected. Registration of handler [%s] conflicts with previously registered handler [%s].".formatted(
+                                qualifiedName,
+                                commandHandlers.get(qualifiedName),
+                                messageHandler)
+                );
             }
             commandHandlers.put(qualifiedName, messageHandler);
             return this;

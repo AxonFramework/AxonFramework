@@ -60,9 +60,9 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
             @Nonnull EntityModel<E> entityModel,
             @Nonnull EntityIdResolver<ID> idResolver
     ) {
-        this.repository = Objects.requireNonNull(repository, "repository may not be null");
-        this.entityModel = Objects.requireNonNull(entityModel, "entityModel may not be null");
-        this.idResolver = Objects.requireNonNull(idResolver, "idResolver may not be null");
+        this.repository = Objects.requireNonNull(repository, "The repository may not be null.");
+        this.entityModel = Objects.requireNonNull(entityModel, "The entityModel may not be null.");
+        this.idResolver = Objects.requireNonNull(idResolver, "The idResolver may not be null.");
     }
 
     @Override

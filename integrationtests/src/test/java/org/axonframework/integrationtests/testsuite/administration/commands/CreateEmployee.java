@@ -22,8 +22,6 @@ import org.axonframework.modelling.annotation.TargetEntityId;
 public record CreateEmployee(
         @TargetEntityId
         PersonIdentifier identifier,
-        String lastNames,
-        String firstNames,
         String emailAddress,
         String role,
         Double initialSalary

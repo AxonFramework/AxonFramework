@@ -26,6 +26,7 @@ import org.axonframework.messaging.MessageStreamTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.child.mock.RecordingChildEntity;
 import org.axonframework.modelling.entity.child.mock.RecordingParentEntity;
@@ -87,8 +88,8 @@ class SingleEntityChildModelTest {
 
             MessageStreamTestUtils.assertCompletedExceptionally(
                     testSubject.handle(commandMessage, parentEntity, context),
-                    IllegalArgumentException.class,
-                    "No child entity found for command Command on parent entity ParentEntity"
+                    ChildEntityNotFoundException.class,
+                    "No available child entity found for command of type [Command#0.0.1]. State of parent entity ["
             );
         }
 
@@ -163,7 +164,7 @@ class SingleEntityChildModelTest {
         @Test
         void canNotCompleteBuilderWithoutFieldDefinition() {
             var builder = SingleEntityChildModel.forEntityModel(RecordingParentEntity.class, childEntityEntityModel);
-            assertThrows(IllegalArgumentException.class, builder::build);
+            assertThrows(NullPointerException.class, builder::build);
         }
 
         @Test

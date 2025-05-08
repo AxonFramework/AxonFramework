@@ -93,18 +93,6 @@ public abstract class Assert {
     }
 
     /**
-     * Assert that the given {@code value} is not {@code null}. If not, an IllegalArgumentException is thrown.
-     *
-     * @param value         The value not to be {@code null}.
-     * @param parameterName The name of the parameter to be used in the exception message.
-     * @param <T>           The type of the value.
-     * @return The provided {@code value}.
-     */
-    public static <T> T parameterNotNull(T value, String parameterName) {
-        return nonNull(value, () -> "Parameter '" + parameterName + "' may not be null.");
-    }
-
-    /**
      * Assert that the given {@code value} will result to {@code true} through the {@code assertion} {@link Predicate}.
      * If not, the {@code exceptionSupplier} provides an exception to be thrown.
      *

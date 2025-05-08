@@ -45,6 +45,7 @@ import java.util.stream.StreamSupport;
  * @see TargetEntityId
  * @see EntityIdResolver
  * @since 5.0.0
+ * @param <T> The type of the identifier to resolve.
  */
 public class AnnotationBasedEntityIdResolver<T> implements EntityIdResolver<T> {
 
@@ -65,6 +66,7 @@ public class AnnotationBasedEntityIdResolver<T> implements EntityIdResolver<T> {
         if (identifiers.isEmpty()) {
             throw new NoEntityIdFoundInPayload(payload.getClass());
         }
+        //noinspection unchecked
         return (T) identifiers.getFirst();
     }
 

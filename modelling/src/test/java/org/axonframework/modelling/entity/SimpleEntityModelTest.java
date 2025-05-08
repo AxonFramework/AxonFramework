@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity;
 
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
@@ -279,7 +280,7 @@ class SimpleEntityModelTest {
     @DisplayName("Builder verifications")
     class BuilderVerifications {
 
-        SimpleEntityModel.Builder<TestEntity> builder = SimpleEntityModel
+        EntityModelBuilder<TestEntity> builder = SimpleEntityModel
                 .forEntityClass(TestEntity.class);
 
         @Test
@@ -295,8 +296,9 @@ class SimpleEntityModelTest {
         @Test
         void canNotAddSecondCommandHandlerForSameQualifiedName() {
             builder.commandHandler(PARENT_ONLY_COMMAND, parentEntityCommandHandler);
-            assertThrows(IllegalArgumentException.class, () -> builder.commandHandler(PARENT_ONLY_COMMAND,
-                                                                                      parentEntityCommandHandler));
+            assertThrows(DuplicateCommandHandlerSubscriptionException.class,
+                         () -> builder.commandHandler(PARENT_ONLY_COMMAND,
+                                                      parentEntityCommandHandler));
         }
 
         @Test

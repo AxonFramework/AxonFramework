@@ -163,9 +163,9 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 configuration.getComponent(EventStore.class),
                 (type, id) -> {
                     if (id.type() == PersonType.EMPLOYEE) {
-                        return new ImmutableEmployee(null, null, null, null, null, new ArrayList<>());
+                        return new ImmutableEmployee(null, null, null, new ArrayList<>());
                     } else if (id.type() == PersonType.CUSTOMER) {
-                        return new ImmutableCustomer(null, null, null, null);
+                        return new ImmutableCustomer(null, null);
                     }
                     throw new IllegalArgumentException("Unknown type: " + id.type());
                 },

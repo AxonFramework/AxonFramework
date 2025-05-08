@@ -43,8 +43,6 @@ public abstract class AbstractAdministrationTestSuite {
 
     private static final CreateEmployee CREATE_EMPLOYEE_1_COMMAND = new CreateEmployee(
             new PersonIdentifier(PersonType.EMPLOYEE, "1234"),
-            "Herrijgers",
-            "Mitchell",
             "mitchell.herrijgers@axoniq.io",
             "Bug Creator",
             3000.0);
@@ -52,8 +50,6 @@ public abstract class AbstractAdministrationTestSuite {
 
     private static final CreateCustomer CREATE_CUSTOMER_1_COMMAND = new CreateCustomer(
             new PersonIdentifier(PersonType.CUSTOMER, "shomer"),
-            "Simpson",
-            "Homer",
             "homer@the-simpsons.io"
     );
 

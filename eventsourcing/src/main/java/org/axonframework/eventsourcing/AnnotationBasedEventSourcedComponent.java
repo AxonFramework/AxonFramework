@@ -78,9 +78,6 @@ public class AnnotationBasedEventSourcedComponent<E> implements EventSourcedComp
     public E evolve(@Nonnull E entity,
                     @Nonnull EventMessage<?> event,
                     @Nonnull ProcessingContext context) {
-        requireNonNull(entity, "The entity must not be null.");
-        requireNonNull(event, "The event message must not be null.");
-
         try {
             var listenerType = entity.getClass();
             var handler = inspector.getHandlers(listenerType)

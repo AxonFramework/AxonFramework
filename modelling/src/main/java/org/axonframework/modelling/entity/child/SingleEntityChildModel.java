@@ -19,11 +19,11 @@ package org.axonframework.modelling.entity.child;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import org.axonframework.modelling.entity.EntityModel;
 
 import java.util.Objects;
@@ -34,7 +34,7 @@ import java.util.Set;
  * {@link ChildEntityFieldDefinition} to resolve the child entity from the parent entity. Once the entity is resolved,
  * it will delegate the command- and event-handling to the child entity model.
  * <p>
- * If the child entity is not present in the parent entity, an {@link IllegalArgumentException} will be thrown.
+ * If the child entity is not present in the parent entity, an {@link ChildEntityNotFoundException} will be thrown.
  *
  * @param <C> The type of the child entity.
  * @param <P> The type of the parent entity.
@@ -46,13 +46,17 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
     private final EntityModel<C> childEntityModel;
     private final ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
-    private SingleEntityChildModel(EntityModel<C> childEntityModel,
-                                   ChildEntityFieldDefinition<P, C> childEntityFieldDefinition
+    private SingleEntityChildModel(@Nonnull EntityModel<C> childEntityModel,
+                                   @Nonnull ChildEntityFieldDefinition<P, C> childEntityFieldDefinition
     ) {
-        this.childEntityModel = childEntityModel;
-        this.childEntityFieldDefinition = childEntityFieldDefinition;
+        this.childEntityModel = Objects.requireNonNull(childEntityModel, "The childEntityModel may not be null.");
+        this.childEntityFieldDefinition = Objects.requireNonNull(
+                childEntityFieldDefinition,
+                "The childEntityFieldDefinition may not be null."
+        );
     }
 
+    @Nonnull
     @Override
     public Set<QualifiedName> supportedCommands() {
         return childEntityModel.supportedCommands();
@@ -76,20 +80,19 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
         return entity;
     }
 
+    @Nonnull
     @Override
     public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                                @Nonnull P entity,
+                                                                @Nonnull P parentEntity,
                                                                 @Nonnull ProcessingContext context) {
-        C childEntity = childEntityFieldDefinition.getChildValue(entity);
+        C childEntity = childEntityFieldDefinition.getChildValue(parentEntity);
         if (childEntity == null) {
-            return MessageStream.failed(new IllegalArgumentException(
-                    "No child entity found for command " + message.type().qualifiedName()
-                            + " on parent entity " + entity
-            ));
+            return MessageStream.failed(new ChildEntityNotFoundException(message, parentEntity));
         }
         return childEntityModel.handle(message, childEntity, context);
     }
 
+    @Nonnull
     @Override
     public Class<C> entityType() {
         return childEntityModel.entityType();
@@ -134,8 +137,8 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
         private Builder(@Nonnull Class<P> parentClass,
                         @Nonnull EntityModel<C> childEntityModel
         ) {
-            Objects.requireNonNull(parentClass, "parentClass may not be null");
-            this.childEntityModel = Objects.requireNonNull(childEntityModel, "childEntityModel may not be null");
+            Objects.requireNonNull(parentClass, "The parentClass may not be null.");
+            this.childEntityModel = Objects.requireNonNull(childEntityModel, "The childEntityModel may not be null.");
         }
 
         /**
@@ -148,7 +151,7 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
          */
         public Builder<C, P> childEntityFieldDefinition(@Nonnull ChildEntityFieldDefinition<P, C> fieldDefinition) {
             this.childEntityFieldDefinition = Objects.requireNonNull(fieldDefinition,
-                                                                     "fieldDefinition may not be null");
+                                                                     "The fieldDefinition may not be null.");
             return this;
         }
 
@@ -159,7 +162,6 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
          * @return A new {@link SingleEntityChildModel} instance with the configured properties.
          */
         public SingleEntityChildModel<C, P> build() {
-            Assert.notNull(childEntityFieldDefinition, () -> "Child entity field definition is required");
             return new SingleEntityChildModel<>(childEntityModel,
                                                 childEntityFieldDefinition
             );

@@ -21,8 +21,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
-import static org.axonframework.common.Assert.parameterNotNull;
-
 /**
  * Exception indicating that there was no child entity available to handle a command. This happens when one or multiple
  * children declare the command as supported via {@link EntityChildModel#supportedCommands()}, but none of them return
@@ -32,7 +30,7 @@ import static org.axonframework.common.Assert.parameterNotNull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ChildEntityMissingException extends RuntimeException {
+public class ChildEntityNotFoundException extends RuntimeException {
 
     /**
      * Creates a new exception with the given {@code commandMessage} and {@code parentEntity}.
@@ -40,12 +38,10 @@ public class ChildEntityMissingException extends RuntimeException {
      * @param commandMessage The {@link CommandMessage} that was handled.
      * @param parentEntity   The parent entity instance that was expected to handle the command.
      */
-    public ChildEntityMissingException(@Nonnull CommandMessage<?> commandMessage,
-                                       @Nonnull Object parentEntity) {
+    public ChildEntityNotFoundException(@Nonnull CommandMessage<?> commandMessage,
+                                        @Nonnull Object parentEntity) {
         super("No available child entity found for command of type [%s]. State of parent entity [%s]: [%s]"
-                      .formatted(
-                              parameterNotNull(commandMessage, "commandMessage").type(),
-                              parameterNotNull(parentEntity, "parentEntity").getClass().getName(), parentEntity)
+                      .formatted(commandMessage.type(), parentEntity.getClass().getName(), parentEntity)
         );
     }
 }

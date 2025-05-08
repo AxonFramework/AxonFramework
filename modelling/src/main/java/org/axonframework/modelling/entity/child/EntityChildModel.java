@@ -45,6 +45,7 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */
+    @Nonnull
     Set<QualifiedName> supportedCommands();
 
     /**
@@ -62,12 +63,13 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
      * Handles the given {@link CommandMessage} for the given child entity, using the provided parent entity.
      *
      * @param message The {@link CommandMessage} to handle.
-     * @param entity  The child entity instance to handle the command for.
+     * @param parentEntity  The child entity instance to handle the command for.
      * @param context The {@link ProcessingContext} for the command.
      * @return The result of the command handling, which may be a {@link CommandResultMessage} or an error message.
      */
+    @Nonnull
     MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                         @Nonnull P entity,
+                                                         @Nonnull P parentEntity,
                                                          @Nonnull ProcessingContext context);
 
     /**
@@ -75,6 +77,7 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
      *
      * @return The {@link Class} of the child entity this model describes.
      */
+    @Nonnull
     Class<C> entityType();
 
     /**
@@ -86,12 +89,10 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
      * @param <P>              The type of the parent entity.
      * @return A {@link SingleEntityChildModel.Builder} for the child entity.
      */
+    @Nonnull
     static <C, P> SingleEntityChildModel.Builder<C, P> single(@Nonnull Class<P> parentClass,
                                                               @Nonnull EntityModel<C> childEntityModel) {
-        return SingleEntityChildModel.forEntityModel(
-                Objects.requireNonNull(parentClass, "parentClass may not be null"),
-                Objects.requireNonNull(childEntityModel, "childEntityModel may not be null")
-        );
+        return SingleEntityChildModel.forEntityModel(parentClass, childEntityModel);
     }
 
     /**
@@ -103,11 +104,9 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
      * @param <P>              The type of the parent entity.
      * @return A {@link ListEntityChildModel.Builder} for the child entity.
      */
+    @Nonnull
     static <C, P> ListEntityChildModel.Builder<C, P> list(@Nonnull Class<P> parentClass,
                                                           @Nonnull EntityModel<C> childEntityModel) {
-        return ListEntityChildModel.forEntityModel(
-                Objects.requireNonNull(parentClass, "parentClass may not be null"),
-                Objects.requireNonNull(childEntityModel, "childEntityModel may not be null")
-        );
+        return ListEntityChildModel.forEntityModel(parentClass, childEntityModel);
     }
 }

@@ -26,8 +26,6 @@ import org.axonframework.integrationtests.testsuite.administration.events.EmailA
 
 public record ImmutableCustomer(
         PersonIdentifier identifier,
-        String lastNames,
-        String firstNames,
         String emailAddress
 ) implements ImmutablePerson {
 
@@ -37,8 +35,6 @@ public record ImmutableCustomer(
             throw new IllegalStateException("Customer already created");
         }
         appender.append(new CustomerCreated(command.identifier(),
-                                            command.lastNames(),
-                                            command.firstNames(),
                                             command.emailAddress()));
     }
 
@@ -46,8 +42,6 @@ public record ImmutableCustomer(
     public ImmutableCustomer on(CustomerCreated event) {
         return new ImmutableCustomer(
                 event.identifier(),
-                event.lastNames(),
-                event.firstNames(),
                 event.emailAddress()
         );
     }
@@ -56,8 +50,6 @@ public record ImmutableCustomer(
     public ImmutableCustomer on(EmailAddressChanged event) {
         return new ImmutableCustomer(
                 identifier,
-                lastNames,
-                firstNames,
                 event.emailAddress()
         );
     }

@@ -21,7 +21,6 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
@@ -64,7 +63,8 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
             EntityModel<E> superTypeModel,
             List<EntityModel<? extends E>> concreteModels
     ) {
-        this.superTypeModel = superTypeModel;
+        this.superTypeModel = Objects.requireNonNull(superTypeModel, "The superTypeModel may not be null.");
+        Objects.requireNonNull(concreteModels, "The concreteModels may not be null.");
         this.concreteModels = new HashMap<>();
         this.supportedCommands = new HashSet<>(this.superTypeModel.supportedCommands());
         for (EntityModel<? extends E> polymorphicModel : concreteModels) {
@@ -101,19 +101,17 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         return (EntityModel<T>) concreteModels.get(entity.getClass());
     }
 
+    @Nonnull
     @Override
     public Set<QualifiedName> supportedCommands() {
         return supportedCommands;
     }
 
+    @Nonnull
     @Override
     public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
                                                                 @Nonnull E entity,
                                                                 @Nonnull ProcessingContext context) {
-        Assert.parameterNotNull(message, "message");
-        Assert.parameterNotNull(entity, "entity");
-        Assert.parameterNotNull(context, "context");
-
         EntityModel<E> concreteModel = modelFor(entity);
         if (concreteModel.supportedCommands().contains(message.type().qualifiedName())) {
             return concreteModel.handle(message, entity, context);
@@ -124,6 +122,7 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         return MessageStream.failed(new NoHandlerForCommandException(message, entityType()));
     }
 
+    @Nonnull
     @Override
     public Class<E> entityType() {
         return superTypeModel.entityType();
@@ -149,7 +148,7 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
      */
     private static class Builder<E> implements PolymorphicEntityModelBuilder<E> {
 
-        private final SimpleEntityModel.Builder<E> superTypeBuilder;
+        private final EntityModelBuilder<E> superTypeBuilder;
         private final List<EntityModel<? extends E>> polymorphicModels = new ArrayList<>();
 
         private Builder(Class<E> entityType) {
@@ -182,10 +181,10 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         @Override
         @Nonnull
         public Builder<E> addConcreteType(@Nonnull EntityModel<? extends E> entityModel) {
-            Objects.requireNonNull(entityModel, "entityModel may not be null");
+            Objects.requireNonNull(entityModel, "The entityModel may not be null.");
             if (polymorphicModels.stream().anyMatch(p -> p.entityType().equals(entityModel.entityType()))) {
-                throw new IllegalArgumentException("Concrete type " + entityModel.entityType()
-                                                           + " already registered for this model");
+                throw new IllegalArgumentException("Concrete type [%s] already registered for this model.".formatted(
+                        entityModel.entityType().getName()));
             }
             polymorphicModels.add(entityModel);
             return this;

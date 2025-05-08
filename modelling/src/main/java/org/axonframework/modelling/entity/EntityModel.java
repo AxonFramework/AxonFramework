@@ -44,6 +44,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      *
      * @return The {@link Class} of the entity this model describes.
      */
+    @Nonnull
     Class<E> entityType();
 
     /**
@@ -57,6 +58,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      * @return A stream with a message containing the result of the command handling, which may be a
      * {@link CommandResultMessage} or an error message.
      */
+    @Nonnull
     MessageStream.Single<CommandResultMessage<?>> handle(
             @Nonnull CommandMessage<?> message, @Nonnull E entity, @Nonnull ProcessingContext context
     );
@@ -66,6 +68,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */
+    @Nonnull
     Set<QualifiedName> supportedCommands();
 
     /**
@@ -76,6 +79,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      * @param <E>        The type of the entity to create a model for.
      * @return A new {@link EntityModelBuilder} for the given entity type.
      */
+    @Nonnull
     static <E> EntityModelBuilder<E> forEntityType(Class<E> entityType) {
         return SimpleEntityModel.forEntityClass(entityType);
     }

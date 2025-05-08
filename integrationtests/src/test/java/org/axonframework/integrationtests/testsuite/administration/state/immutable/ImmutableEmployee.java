@@ -32,8 +32,6 @@ import java.util.stream.Collectors;
 
 public record ImmutableEmployee(
         PersonIdentifier identifier,
-        String lastNames,
-        String firstNames,
         String emailAddress,
         ImmutableSalaryInformation salaryInformation,
         List<ImmutableTask> taskList
@@ -46,8 +44,6 @@ public record ImmutableEmployee(
         }
         eventAppender.append(new EmployeeCreated(
                 command.identifier(),
-                command.lastNames(),
-                command.firstNames(),
                 command.emailAddress(),
                 command.role(),
                 command.initialSalary()
@@ -70,8 +66,6 @@ public record ImmutableEmployee(
     public ImmutableEmployee on(EmployeeCreated event) {
         return new ImmutableEmployee(
                 event.identifier(),
-                event.lastNames(),
-                event.firstNames(),
                 event.emailAddress(),
                 new ImmutableSalaryInformation(event.initialSalary(), event.role()),
                 new ArrayList<>()
@@ -84,8 +78,6 @@ public record ImmutableEmployee(
         newTaskList.add(new ImmutableTask(event.taskId(), false));
         return new ImmutableEmployee(
                 identifier,
-                lastNames,
-                firstNames,
                 emailAddress,
                 salaryInformation,
                 newTaskList
@@ -101,8 +93,6 @@ public record ImmutableEmployee(
             List<ImmutableTask> taskList) {
         return new ImmutableEmployee(
                 identifier,
-                lastNames,
-                firstNames,
                 emailAddress,
                 salaryInformation,
                 taskList
@@ -113,8 +103,6 @@ public record ImmutableEmployee(
     public ImmutableEmployee on(EmailAddressChanged event) {
         return new ImmutableEmployee(
                 identifier,
-                lastNames,
-                firstNames,
                 event.emailAddress(),
                 salaryInformation,
                 taskList
@@ -124,8 +112,6 @@ public record ImmutableEmployee(
     public ImmutableEmployee evolveSalaryInformation(ImmutableSalaryInformation immutableSalaryInformation) {
         return new ImmutableEmployee(
                 identifier,
-                lastNames,
-                firstNames,
                 emailAddress,
                 immutableSalaryInformation,
                 taskList

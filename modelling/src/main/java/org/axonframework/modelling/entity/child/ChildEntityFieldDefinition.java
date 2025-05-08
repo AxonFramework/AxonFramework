@@ -17,16 +17,17 @@
 package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Functional interface describing how to get the child entity, and apply the evolved child entity (or entities in case
- * of a collection) to the parent entity. The function can simply set a field or return a new instance of the parent
- * entity with the evolved child entity. The value returned from this function will be used as the new parent entity and
- * must return a non-null value.
+ * Functional interface describing how to get the child entity (or entity collection), and apply the evolved child
+ * entity (or entities in case of a collection) to the parent entity. The function can simply set a field or return a
+ * new instance of the parent entity with the evolved child entity. The value returned from this function will be used
+ * as the new parent entity and must return a non-null value.
  * <p>
  * There are three default ways to create an implementation:
  * <ul>
@@ -43,13 +44,16 @@ import java.util.function.Function;
 public interface ChildEntityFieldDefinition<P, F> {
 
     /**
-     * Evolves the parent entity based on the provided child.
+     * Evolves the parent entity based on the provided child value. This can be a single entity,
+     * or a collection of entities. The evolver can return a new version of the parent entity, or
+     * it can simply set the field on the parent entity.
      *
      * @param parentEntity The parent entity to evolve.
-     * @param result       The child entity to use for evolution.
+     * @param entities       The child entity to use for evolution.
      * @return The evolved parent entity.
      */
-    P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F result);
+    @Nonnull
+    P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F entities);
 
     /**
      * Returns the type of the field.
@@ -57,6 +61,7 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param parentEntity The parent entity to get the child entities from.
      * @return The type of the field.
      */
+    @Nullable
     F getChildValue(@Nonnull P parentEntity);
 
     /**
@@ -70,6 +75,7 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param <F>         The type of the field.
      * @return A new {@link FieldChildEntityFieldDefinition} for the given field name.
      */
+    @Nonnull
     static <P, F> ChildEntityFieldDefinition<P, F> forFieldName(
             @Nonnull Class<P> parentClass,
             @Nonnull String fieldName
@@ -105,6 +111,7 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param <F>     The type of the field.
      * @return A new {@link GetterEvolverChildEntityFieldDefinition} for the given getter and setter.
      */
+    @Nonnull
     static <P, F> ChildEntityFieldDefinition<P, F> forGetterEvolver(
             @Nonnull Function<P, F> getter,
             @Nonnull BiFunction<P, F, P> evolver
@@ -122,6 +129,7 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param <F>    The type of the field.
      * @return A new {@link GetterSetterChildEntityFieldDefinition} for the given getter and setter.
      */
+    @Nonnull
     static <P, F> ChildEntityFieldDefinition<P, F> forGetterSetter(
             @Nonnull Function<P, F> getter,
             @Nonnull BiConsumer<P, F> setter

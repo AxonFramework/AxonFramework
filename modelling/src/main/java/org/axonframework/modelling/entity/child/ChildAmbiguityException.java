@@ -20,8 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import static org.axonframework.common.Assert.parameterNotNull;
-
 /**
  * Exception indicating that multiple child entities of a parent entity are able to handle the same command. This
  * happens if multiple {@link EntityChildModel#supportedCommands()} contain the same
@@ -41,10 +39,9 @@ public class ChildAmbiguityException extends RuntimeException {
      * @param parentEntity   The parent entity instance that was expected to handle the command.
      */
     public ChildAmbiguityException(@Nonnull CommandMessage<?> commandMessage, @Nonnull Object parentEntity) {
-        super("Multiple child entities found for command of type [%s]. State of parent entity [%s]: [%s]"
-                      .formatted(
-                              parameterNotNull(commandMessage, "commandMessage").type(),
-                              parameterNotNull(parentEntity, "parentEntity").getClass().getName(), parentEntity)
+        super("Multiple child entities found for command of type [%s]. State of parent entity [%s]: [%s]".formatted(
+                commandMessage.type(),
+                parentEntity.getClass().getName(), parentEntity)
         );
     }
 }

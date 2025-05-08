@@ -29,10 +29,6 @@ public interface ImmutablePerson {
     @EntityId
     PersonIdentifier identifier();
 
-    String lastNames();
-
-    String firstNames();
-
     String emailAddress();
 
     @CommandHandler
