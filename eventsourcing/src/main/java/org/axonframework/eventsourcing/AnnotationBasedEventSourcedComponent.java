@@ -78,15 +78,17 @@ public class AnnotationBasedEventSourcedComponent<E> implements EventSourcedComp
     public E evolve(@Nonnull E entity,
                     @Nonnull EventMessage<?> event,
                     @Nonnull ProcessingContext context) {
-        requireNonNull(entity, "The entity must not be null.");
-        requireNonNull(event, "The event message must not be null.");
-
         try {
-            var eventHandler = new AnnotatedEventHandlingComponent<>(entity, inspector);
-            var eventHandlerResult = eventHandler.handle(event, context)
-                                                 .asCompletableFuture()
-                                                 .join();
-            return entityFromStreamResultOrUpdatedExisting(eventHandlerResult, entity);
+            var listenerType = entity.getClass();
+            var handler = inspector.getHandlers(listenerType)
+                               .filter(h -> h.canHandle(event, context))
+                               .findFirst();
+            if (handler.isPresent()) {
+                var interceptor = inspector.chainedInterceptor(listenerType);
+                var result = interceptor.handle(event, context, entity, handler.get());
+                return entityFromStreamResultOrUpdatedExisting(result.first().asCompletableFuture().join(), entity);
+            }
+            return entity;
         } catch (Exception e) {
             throw new StateEvolvingException(
                     "Failed to apply event [" + event.type() + "] in order to evolve [" + entity.getClass() + "] state",

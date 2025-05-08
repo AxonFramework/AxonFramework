@@ -270,18 +270,6 @@ class AnnotationBasedEventSourcedComponentTest {
                          () -> ENTITY_EVOLVER.evolve(null, event, processingContext),
                          "Model may not be null");
         }
-
-        @Test
-        void rejectsNullEvent() {
-            // given
-            var state = new TestState();
-
-            // when-then
-            //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
-                         () -> ENTITY_EVOLVER.evolve(state, null, processingContext),
-                         "Event Message may not be null");
-        }
     }
 
     private static DomainEventMessage<?> domainEvent(int seq) {

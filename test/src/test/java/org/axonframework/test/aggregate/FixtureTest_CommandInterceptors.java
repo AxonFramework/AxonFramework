@@ -29,12 +29,12 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
-import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -274,7 +274,7 @@ class FixtureTest_CommandInterceptors {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new DoWithEntityWithoutInterceptorCommand(AGGREGATE_IDENTIFIER))
                .expectNoEvents()
-               .expectException(AggregateEntityNotFoundException.class);
+               .expectException(ChildEntityNotFoundException.class);
     }
 
     @Test

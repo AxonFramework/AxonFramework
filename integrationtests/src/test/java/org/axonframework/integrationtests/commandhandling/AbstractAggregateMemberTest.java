@@ -18,7 +18,14 @@ package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.modelling.command.*;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.CreationPolicy;
+import org.axonframework.modelling.command.EntityId;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
@@ -72,7 +79,7 @@ public class AbstractAggregateMemberTest {
     public void sendCommandToNoneExistEntity_ShouldThrowAggregateEntityNotFoundException(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "none-exist-id"))
-                .expectException(AggregateEntityNotFoundException.class);
+                .expectException(ChildEntityNotFoundException.class);
     }
 
     private static abstract class Person {

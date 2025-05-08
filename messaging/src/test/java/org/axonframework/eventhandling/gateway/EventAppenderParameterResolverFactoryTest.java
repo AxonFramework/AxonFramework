@@ -56,9 +56,22 @@ class EventAppenderParameterResolverFactoryTest {
         assertInstanceOf(ProcessingContextEventAppender.class, injectedParameter);
     }
 
+    @Test
+    void doesNotInjectIntoGenericParameter() throws Exception {
+        Method method = getClass().getMethod("methodWithOtherParameter", Object.class);
+        ParameterResolver<?> instance = testSubject.createInstance(method, method.getParameters(), 0);
+        assertNull(instance);
+    }
+
 
     public void methodWithEventAppenderParameter(
             EventAppender eventAppender
+    ) {
+        // This method is used to test the EventAppenderParameterResolverFactory
+    }
+
+    public void methodWithOtherParameter(
+            Object otherParameter
     ) {
         // This method is used to test the EventAppenderParameterResolverFactory
     }

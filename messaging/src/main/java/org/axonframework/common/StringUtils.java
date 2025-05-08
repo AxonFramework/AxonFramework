@@ -16,6 +16,8 @@
 
 package org.axonframework.common;
 
+import jakarta.annotation.Nullable;
+
 import java.util.Objects;
 
 /**
@@ -76,6 +78,19 @@ public abstract class StringUtils {
      */
     public static String lowerCaseFirstCharacterOf(String s) {
         return s.substring(0, 1).toLowerCase() + s.substring(1);
+    }
+
+    /**
+     * Return the given {@code string}, with its first character uppercase.
+     *
+     * @param string The input string to adjust to a version with the first character as uppercase.
+     * @return The input string, with first character in uppercase.
+     */
+    public static String capitalize(@Nullable String string) {
+        if (string == null || string.isEmpty()) {
+            return string;
+        }
+        return Character.toUpperCase(string.charAt(0)) + string.substring(1);
     }
 }
 

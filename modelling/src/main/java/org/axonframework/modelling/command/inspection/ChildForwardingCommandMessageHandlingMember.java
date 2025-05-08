@@ -24,7 +24,7 @@ import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberCha
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.NoMoreInterceptors;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.AggregateEntityNotFoundException;
+import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 
 import java.util.List;
 import java.util.Optional;
@@ -115,7 +115,7 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     public Object handleSync(@Nonnull Message<?> message, @Nullable P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
         if (childEntity == null) {
-            throw new AggregateEntityNotFoundException(
+            throw new ChildEntityNotFoundException(
                     "Aggregate cannot handle command [" + message.type()
                             + "], as there is no entity instance within the aggregate to forward it to."
             );
