@@ -169,10 +169,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
 
         registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
-
-            final Context.ResourceKey<Boolean> processedFirstMessageKey =
-                    Context.ResourceKey.withLabel("processedFirstMessage");
-
             @Override
             public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
                                  @Nonnull InterceptorChain interceptorChain) throws Exception {
@@ -184,75 +180,26 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     @Nonnull M message,
                     @Nonnull ProcessingContext processingContext,
                     @Nonnull InterceptorChain<M, R> interceptorChain) {
-
-                // Get segmentId and lastToken from processingContext
-                Integer segmentId = processingContext.getResource(segmentIdResourceKey);
-                TrackingToken lastToken = processingContext.getResource(lastTokenResourceKey);
-
-                if (segmentId != null && lastToken != null) {
-                    Instant startTime = now();
-
-                    // Only do this for the first message of a batch
-                    if (!isFirstMessageOfBatch(message, processingContext)) {
-                        try {
-                            if (storeTokenBeforeProcessing) {
-                                tokenStore.storeToken(lastToken, builder.name, segmentId);
-                            } else {
-                                tokenStore.extendClaim(getName(), segmentId);
-                            }
-                        } catch (Exception e) {
-                            // If token operations fail, fail the processing
-                            return MessageStream.failed(e);
+                var batchFirstMessage = processingContext.getResource(batchFirstMessageResourceKey);
+                var isBatchFirstMessage = message.equals(batchFirstMessage);
+                if (isBatchFirstMessage) { // TODO - can we move this logic to onPreInvocation instead of interceptor???
+                    var startTime = now();
+                    var lastToken = processingContext.getResource(lastTokenResourceKey);
+                    var segmentId = processingContext.getResource(segmentIdResourceKey);
+                    if (storeTokenBeforeProcessing) {
+                        tokenStore.storeToken(lastToken, builder.name, segmentId);
+                    } else {
+                        tokenStore.extendClaim(getName(), segmentId);
+                    }
+                    processingContext.runOnPrepareCommit(uow -> {
+                        if (!storeTokenBeforeProcessing) {
+                            tokenStore.storeToken(lastToken, builder.name, segmentId);
+                        } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
+                            tokenStore.extendClaim(getName(), segmentId);
                         }
-                    }
-
-                    // Return a MessageStream that will handle the token update on commit if needed
-                    MessageStream<R> resultStream = interceptorChain.proceed(message, processingContext);
-
-                    // Only for the last message in the batch, register a commit handler
-                    if (isLastMessageOfBatch(message, processingContext)) {
-                        // Register a commit handler in the processingContext to store the token if needed
-                        processingContext.onPrepareCommit(ctx -> {
-                            try {
-                                if (!storeTokenBeforeProcessing) {
-                                    tokenStore.storeToken(lastToken, builder.name, segmentId);
-                                } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
-                                    tokenStore.extendClaim(getName(), segmentId);
-                                }
-                            } catch (Exception e) {
-                                return CompletableFuture.failedFuture(e);
-                            }
-                            return CompletableFuture.completedFuture(null);
-                        });
-                    }
-
-                    return resultStream;
+                    });
                 }
-
-                // If we don't have segmentId or lastToken, just proceed
                 return interceptorChain.proceed(message, processingContext);
-            }
-
-            private <M extends Message<?>> boolean isFirstMessageOfBatch(M message,
-                                                                         ProcessingContext processingContext) {
-                // Logic to determine if this is the first message of a batch
-                // This could be improved with a batch context resource
-                if (processingContext.getResource(processedFirstMessageKey) == null) {
-                    processingContext.putResource(processedFirstMessageKey, true);
-                    return true;
-                }
-                return false;
-            }
-
-            private <M extends Message<?>> boolean isLastMessageOfBatch(M message,
-                                                                        ProcessingContext processingContext) {
-                // Logic to determine if this is the last message of a batch
-                // In TrackingEventProcessor, we have access to the batch, so this could be enhanced
-                Context.ResourceKey<Boolean> lastMessageProcessedKey =
-                        Context.ResourceKey.withLabel("lastMessageProcessingKey");
-                // Simple implementation - mark each message as potentially the last one
-                processingContext.putResource(lastMessageProcessedKey, true);
-                return true;
             }
         });
     }
