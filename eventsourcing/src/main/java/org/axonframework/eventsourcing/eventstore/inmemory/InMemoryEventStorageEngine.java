@@ -123,6 +123,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                             events.stream()
                                   .map(event -> {
                                       long next = nextIndex();
+                                      long marker = next + 1;
                                       eventStorage.put(next, event);
 
                                       if (logger.isDebugEnabled()) {
@@ -131,7 +132,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                                                        next,
                                                        event.event().getTimestamp());
                                       }
-                                      return (ConsistencyMarker) new GlobalIndexConsistencyMarker(next);
+                                      return (ConsistencyMarker) new GlobalIndexConsistencyMarker(marker);
                                   })
                                   .reduce(ConsistencyMarker::upperBound);
 
