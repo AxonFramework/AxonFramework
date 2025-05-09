@@ -24,6 +24,7 @@ import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.Tag;
 import io.axoniq.axonserver.grpc.event.dcb.TagsAndNamesCriterion;
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventCriterion;
@@ -45,6 +46,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
+@Internal
 public abstract class ConditionConverter {
 
     /**

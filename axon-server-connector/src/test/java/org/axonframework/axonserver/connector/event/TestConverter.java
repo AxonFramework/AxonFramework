@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
  *
  * @author Allard Buijze
  */
-class TestConverter implements Converter {
+public class TestConverter implements Converter {
 
     @Override
     public boolean canConvert(Class<?> sourceType, Class<?> targetType) {
