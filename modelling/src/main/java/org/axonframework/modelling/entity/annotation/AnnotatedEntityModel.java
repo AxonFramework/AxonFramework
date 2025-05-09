@@ -30,6 +30,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
@@ -37,8 +38,13 @@ import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.EntityModelBuilder;
 import org.axonframework.modelling.entity.PolymorphicEntityModel;
 import org.axonframework.modelling.entity.PolymorphicEntityModelBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -72,6 +78,8 @@ import static org.axonframework.messaging.annotation.AnnotatedHandlerInspector.i
  * @since 5.0.0
  */
 public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableComponent {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Class<E> entityType;
     private final EntityModel<E> entityModel;
@@ -148,20 +156,56 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
 
     private void initializeCommandHandlers(EntityModelBuilder<E> builder, AnnotatedHandlerInspector<E> inspected) {
         inspected.getHandlers(entityType)
+                 .filter(h -> h.canHandleMessageType(CommandMessage.class) || h.canHandleMessageType(EventMessage.class))
+                 .filter(h -> h.unwrap(Method.class).map(m -> !Modifier.isAbstract(m.getModifiers())).orElse(false))
                  .forEach(handler -> {
                      QualifiedName qualifiedName = messageTypeResolver.resolve(handler.payloadType()).qualifiedName();
-                     payloadTypes.put(qualifiedName, handler.payloadType());
+                     if (handler instanceof CommandMessageHandlingMember<? super E> cmhm) {
+                         if (cmhm.isFactoryHandler()) {
+                             builder.creationalCommandHandler(qualifiedName, ((command, context) -> handler
+                                     .handle(command, context, null)
+                                     .<CommandResultMessage<?>>mapMessage(
+                                             GenericCommandResultMessage::new)
+                                     .first()));
+                             return;
+                         }
+                         builder.commandHandler(qualifiedName, ((command, entity, context) -> handler
+                                 .handle(command, context, entity)
+                                 .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
+                                 .first()));
+                     }
+                     addPayloadTypeFromHandler(qualifiedName, handler);
                  });
     }
 
-    public Class<?> getPayloadType(QualifiedName qualifiedName) {
+    private void addPayloadTypeFromHandler(QualifiedName qualifiedName, MessageHandlingMember<?> handler) {
+        if (payloadTypes.containsKey(qualifiedName) && !payloadTypes.get(qualifiedName).equals(handler.payloadType())) {
+            throw new IllegalStateException(
+                    "The scanned message handler methods expect different payload types for the same message type. Message of qualified name ["
+                            + qualifiedName + "] declares both [" + payloadTypes.get(qualifiedName) + "] and ["
+                            + handler.payloadType() + "] as wanted representations");
+        }
+        payloadTypes.put(qualifiedName, handler.payloadType());
+    }
+
+    /**
+     * Returns the {@link Class} of the expected representation for handlers of the given {@code qualifiedName}.
+     *
+     * @param qualifiedName The {@link QualifiedName} of the handler to look for.
+     * @return The {@link Class} of the expected representation for handlers of the given {@code qualifiedName}, or
+     * {@code null} if no such representation is found.
+     */
+    public Class<?> getExpectedRepresentation(QualifiedName qualifiedName) {
+        if (payloadTypes.containsKey(qualifiedName)) {
+            return payloadTypes.get(qualifiedName);
+        }
         for (AnnotatedEntityModel<?> child : children) {
-            Class<?> payloadType = child.getPayloadType(qualifiedName);
-            if(payloadType != null) {
+            Class<?> payloadType = child.getExpectedRepresentation(qualifiedName);
+            if (payloadType != null) {
                 return payloadType;
             }
         }
-        return payloadTypes.get(qualifiedName);
+        return null;
     }
 
     private void initializeChildren(EntityModelBuilder<E> builder) {
@@ -183,7 +227,7 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
         childEntityDefinitions.forEach(definition -> definition
                 .createChildDefinition(entityType, this::createChildEntityModel, field)
                 .ifPresent(child -> {
-                    if(child.entityModel() instanceof AnnotatedEntityModel<?> annotatedChild) {
+                    if (child.entityModel() instanceof AnnotatedEntityModel<?> annotatedChild) {
                         children.add(annotatedChild);
                     }
                     builder.addChild(child);

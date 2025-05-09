@@ -96,7 +96,6 @@ public record ImmutableEmployee(
         return taskList;
     }
 
-    @EventSourcingHandler
     public ImmutableEmployee evolveTaskList(
             List<ImmutableTask> taskList) {
         return new ImmutableEmployee(
