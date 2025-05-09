@@ -167,41 +167,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 "Processor[" + builder.name + "]/Token/Batch/FirstMessage");
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
-
-        registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
-            @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
-                return interceptorChain.proceedSync();
-            }
-
-            @Override
-            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message,
-                    @Nonnull ProcessingContext processingContext,
-                    @Nonnull InterceptorChain<M, R> interceptorChain) {
-                var batchFirstMessage = processingContext.getResource(batchFirstMessageResourceKey);
-                var isBatchFirstMessage = message.equals(batchFirstMessage);
-                if (isBatchFirstMessage) { // TODO - can we move this logic to onPreInvocation instead of interceptor???
-                    var startTime = now();
-                    var lastToken = processingContext.getResource(lastTokenResourceKey);
-                    var segmentId = processingContext.getResource(segmentIdResourceKey);
-                    if (storeTokenBeforeProcessing) {
-                        tokenStore.storeToken(lastToken, builder.name, segmentId);
-                    } else {
-                        tokenStore.extendClaim(getName(), segmentId);
-                    }
-                    processingContext.runOnPrepareCommit(uow -> {
-                        if (!storeTokenBeforeProcessing) {
-                            tokenStore.storeToken(lastToken, builder.name, segmentId);
-                        } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
-                            tokenStore.extendClaim(getName(), segmentId);
-                        }
-                    });
-                }
-                return interceptorChain.proceed(message, processingContext);
-            }
-        });
     }
 
     /**
@@ -516,7 +481,21 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 if (batchFirstMessage != null) {
                     ctx.putResource(batchFirstMessageResourceKey, batchFirstMessage);
                 }
+                if (storeTokenBeforeProcessing) {
+                    tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
+                } else {
+                    tokenStore.extendClaim(getName(), segment.getSegmentId());
+                }
             });
+            var startTime = now();
+            unitOfWork.runOnPrepareCommit(ctx -> {
+                if (!storeTokenBeforeProcessing) {
+                    tokenStore.storeToken(ctx.getResource(lastTokenResourceKey), getName(), ctx.getResource(segmentIdResourceKey));
+                } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
+                    tokenStore.extendClaim(getName(), ctx.getResource(segmentIdResourceKey));
+                }
+            });
+
             processInUnitOfWork(batch, unitOfWork, processingSegments).join();
 
             TrackerStatus previousStatus = activeSegments.get(segment.getSegmentId());
