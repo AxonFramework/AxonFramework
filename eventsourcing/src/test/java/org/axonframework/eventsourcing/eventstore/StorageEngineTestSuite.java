@@ -243,6 +243,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void concurrentTransactionsForNonOverlappingTagsBothCommitWithExpectedConsistencyMarkerResponse() throws Exception {
+        // given...
+        Set<ConsistencyMarker> expected =
+                Set.of(new GlobalIndexConsistencyMarker(1), new GlobalIndexConsistencyMarker(2));
         AppendCondition firstCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
         AppendCondition secondCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, OTHER_CRITERIA);
 
@@ -252,43 +255,51 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         AppendTransaction secondTx =
                 testSubject.appendEvents(secondCondition, taggedEventMessage("event-0", OTHER_CRITERIA_TAGS))
                            .get(1, TimeUnit.SECONDS);
-
+        // when...
         CompletableFuture<ConsistencyMarker> firstCommit = firstTx.commit();
         CompletableFuture<ConsistencyMarker> secondCommit = secondTx.commit();
-
-        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
-        assertDoesNotThrow(() -> secondCommit.get(1, TimeUnit.SECONDS));
-
-        ConsistencyMarker firstMarker = firstCommit.get(5, TimeUnit.SECONDS);
-        ConsistencyMarker secondMarker = secondCommit.get(5, TimeUnit.SECONDS);
+        // then...expecting an unordered set of markers, as the commit order is not consistent for an async system.
+        assertDoesNotThrow(() -> firstCommit.get(5, TimeUnit.SECONDS));
+        assertDoesNotThrow(() -> secondCommit.get(5, TimeUnit.SECONDS));
+        ConsistencyMarker firstMarker = firstCommit.get(50, TimeUnit.MILLISECONDS);
+        ConsistencyMarker secondMarker = secondCommit.get(50, TimeUnit.MILLISECONDS);
         assertNotNull(firstMarker);
         assertNotNull(secondMarker);
-        assertEquals(GlobalIndexConsistencyMarker.position(firstMarker) + 1,
-                     GlobalIndexConsistencyMarker.position(secondMarker));
+        Set<ConsistencyMarker> result = Set.of(firstMarker, secondMarker);
+        assertEquals(expected, result);
     }
 
     @Test
     void concurrentTransactionsForOverlappingTagsThrowAnAppendEventsTransactionRejectedException() throws Exception {
         // given...
+        int exceptionCounter = 0;
         AppendCondition firstCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
-        AppendCondition secondCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, OTHER_CRITERIA);
+        AppendCondition secondCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
         AppendTransaction firstTx =
                 testSubject.appendEvents(firstCondition, taggedEventMessage("event-0", TEST_CRITERIA_TAGS))
                            .get(1, TimeUnit.SECONDS);
         AppendTransaction secondTx =
-                testSubject.appendEvents(secondCondition, taggedEventMessage("event-0", TEST_CRITERIA_TAGS))
+                testSubject.appendEvents(secondCondition, taggedEventMessage("event-1", TEST_CRITERIA_TAGS))
                            .get(1, TimeUnit.SECONDS);
         // when...
         CompletableFuture<ConsistencyMarker> firstCommit = firstTx.commit();
         CompletableFuture<ConsistencyMarker> secondCommit = secondTx.commit();
-        // then...
-        // First commit is slightly faster, so should succeed
-        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
-        await("Await exceptional completion of second commit")
-                .atMost(Duration.ofMillis(500))
-                .pollDelay(Duration.ofMillis(50))
-                .until(secondCommit::isCompletedExceptionally);
-        assertInstanceOf(AppendEventsTransactionRejectedException.class, secondCommit.exceptionNow().getClass());
+        // then... try-catch for both. One should fail, but which differs, because it's an async process.
+        try {
+            firstCommit.get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            exceptionCounter++;
+            assertInstanceOf(AppendEventsTransactionRejectedException.class, e.getCause(),
+                             () -> "Exception [" + e.getClass() + "] is not expected. Message:" + e.getMessage());
+        }
+        try {
+            secondCommit.get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            exceptionCounter++;
+            assertInstanceOf(AppendEventsTransactionRejectedException.class, e.getCause(),
+                             () -> "Exception [" + e.getClass() + "] is not expected. Message:" + e.getMessage());
+        }
+        assertEquals(1, exceptionCounter);
     }
 
     @Test
@@ -504,13 +515,14 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        TrackingToken actualTokenAtToken = testSubject.tokenAt(Instant.now().plus(1, ChronoUnit.DAYS))
+        TrackingToken tokenAt = testSubject.tokenAt(Instant.now().plus(1, ChronoUnit.DAYS))
                                                       .get(5, TimeUnit.SECONDS);
-        TrackingToken actualHeadToken = testSubject.headToken()
+        TrackingToken headToken = testSubject.headToken()
                                                    .get(5, TimeUnit.SECONDS);
 
-        assertNotNull(actualTokenAtToken);
-        assertEquals(actualHeadToken, actualTokenAtToken);
+        assertNotNull(tokenAt);
+        assertNotNull(headToken);
+        assertEquals(headToken, tokenAt);
     }
 
     private static TaggedEventMessage<EventMessage<String>> taggedEventMessage(String payload, Set<Tag> tags) {
