@@ -41,6 +41,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -107,6 +108,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final TokenStore tokenStore;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder;
     private final TransactionManager transactionManager;
+    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
     private final int batchSize;
     private final int segmentsSize;
     private final boolean autoStart;
@@ -156,6 +158,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
         this.segmentsSize = config.getInitialSegmentsCount();
         this.transactionManager = builder.transactionManager;
+        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(transactionManager);
 
         this.availableThreads = new AtomicInteger(config.getMaxThreadCount());
         this.maxThreadCount = config.getMaxThreadCount();
@@ -472,8 +475,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 }
             }
 
-            var unitOfWork = new UnitOfWork();
-            attachTransactionToUnitOfWork(unitOfWork);
+            var unitOfWork = transactionalUnitOfWorkFactory.create();
             unitOfWork.runOnPreInvocation(ctx -> {
                 ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
                 ctx.putResource(lastTokenResourceKey, finalLastToken);
@@ -514,26 +516,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             Thread.currentThread().interrupt();
         }
-    }
-
-    // todo: exclude to some utitlity class!
-    private void attachTransactionToUnitOfWork(UnitOfWork unitOfWork) {
-        var transactionKey = Context.ResourceKey.<Transaction>withLabel("transaction");
-        unitOfWork.runOnPreInvocation(ctx -> {
-            var transaction = transactionManager.startTransaction();
-            ctx.putResource(transactionKey, transaction);
-        });
-
-        unitOfWork.runOnCommit(ctx -> {
-            var transaction = ctx.getResource(transactionKey);
-            transaction.commit();
-        });
-
-        unitOfWork.onError((ctx, phase, error) -> {
-            var transaction = ctx.getResource(transactionKey);
-            transaction.rollback();
-        });
-        // todo legacy UnitOfWork.attachTransaction rollbacks in case of error here
     }
 
     private void ignoreEvent(BlockingStream<TrackedEventMessage<?>> eventStream,
