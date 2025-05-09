@@ -28,6 +28,7 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -53,7 +54,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
 
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
-    private final TransactionManager transactionManager;
+    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
 
     private volatile Registration eventBusRegistration;
 
@@ -70,7 +71,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
         super(builder);
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
-        this.transactionManager = builder.transactionManager;
+        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
     }
 
     /**
@@ -133,34 +134,13 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      */
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
-            var unitOfWork = new UnitOfWork();
-            attachTransactionToUnitOfWork(unitOfWork);
+            var unitOfWork = transactionalUnitOfWorkFactory.create();
             processInUnitOfWork(eventMessages, unitOfWork);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new EventProcessingException("Exception occurred while processing events", e);
         }
-    }
-
-    // todo: exclude to some utitlity class!
-    private void attachTransactionToUnitOfWork(UnitOfWork unitOfWork) {
-        var transactionKey = Context.ResourceKey.<Transaction>withLabel("transaction");
-        unitOfWork.runOnPreInvocation(ctx -> {
-            var transaction = transactionManager.startTransaction();
-            ctx.putResource(transactionKey, transaction);
-        });
-
-        unitOfWork.runOnCommit(ctx -> {
-            var transaction = ctx.getResource(transactionKey);
-            transaction.commit();
-        });
-
-        unitOfWork.onError((ctx, phase, error) -> {
-            var transaction = ctx.getResource(transactionKey);
-            transaction.rollback();
-        });
-        // todo legacy UnitOfWork.attachTransaction rollbacks in case of error here
     }
 
     /**

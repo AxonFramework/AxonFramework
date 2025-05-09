@@ -31,6 +31,7 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +82,7 @@ class WorkPackage {
     private final String name;
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
+    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
     private final ExecutorService executorService;
     private final EventFilter eventFilter;
     private final BatchProcessor batchProcessor;
@@ -118,6 +120,7 @@ class WorkPackage {
         this.name = builder.name;
         this.tokenStore = builder.tokenStore;
         this.transactionManager = builder.transactionManager;
+        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(transactionManager);
         this.executorService = builder.executorService;
         this.eventFilter = builder.eventFilter;
         this.batchProcessor = builder.batchProcessor;
@@ -314,8 +317,7 @@ class WorkPackage {
                          segment.getSegmentId(), name, eventBatch.size());
             try {
                 processingEvents.set(true);
-                var unitOfWork = new UnitOfWork();
-                attachTransactionToUnitOfWork(unitOfWork);
+                var unitOfWork = transactionalUnitOfWorkFactory.create();
                 unitOfWork.runOnPreInvocation(ctx -> {
                     ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
                     ctx.putResource(lastTokenResourceKey, lastConsumedToken);
@@ -340,25 +342,6 @@ class WorkPackage {
                 extendClaimIfThresholdIsMet();
             }
         }
-    }
-
-    private void attachTransactionToUnitOfWork(UnitOfWork unitOfWork) {
-        var transactionKey = Context.ResourceKey.<Transaction>withLabel("transaction");
-        unitOfWork.runOnPreInvocation(ctx -> {
-            var transaction = transactionManager.startTransaction();
-            ctx.putResource(transactionKey, transaction);
-        });
-
-        unitOfWork.runOnCommit(ctx -> {
-            var transaction = ctx.getResource(transactionKey);
-            transaction.commit();
-        });
-
-        unitOfWork.onError((ctx, phase, error) -> {
-            var transaction = ctx.getResource(transactionKey);
-            transaction.rollback();
-        });
-        // todo legacy UnitOfWork.attachTransaction rollbacks in case of error here
     }
 
     /**
