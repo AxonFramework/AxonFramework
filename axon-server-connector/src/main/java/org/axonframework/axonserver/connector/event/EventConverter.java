@@ -69,7 +69,6 @@ class EventConverter implements DescribableComponent {
      * @return A {@code TaggedEvent} based on the given {@code taggedEvent}.
      */
     TaggedEvent convertTaggedEventMessage(@Nonnull TaggedEventMessage<?> taggedEvent) {
-        Objects.requireNonNull(taggedEvent, "The tagged event message cannot be null.");
         return TaggedEvent.newBuilder()
                           .setEvent(convertEventMessage(taggedEvent.event()))
                           .addAllTag(convertTags(taggedEvent.tags()))
@@ -141,7 +140,6 @@ class EventConverter implements DescribableComponent {
      * @return An {@code EventMessage} based on the given {@code event}.
      */
     EventMessage<byte[]> convertEvent(@Nonnull Event event) {
-        Objects.requireNonNull(event, "The event cannot be null.");
         return new GenericEventMessage<>(event.getIdentifier(),
                                          new MessageType(event.getName(), event.getVersion()),
                                          event.getPayload().toByteArray(),
