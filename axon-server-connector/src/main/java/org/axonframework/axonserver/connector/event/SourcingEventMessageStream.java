@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * into {@link EventMessage EventMessages} as it moves along.
  * <p>
  * Note that Axon Server regards the {@code ResultStream} as finite. At the end, this {@code MessageStream}
- * implementation will receive the {@link ConsistencyMarker} form the given {@code ResultStream}. Due to this, the
+ * implementation will receive the {@link ConsistencyMarker} from the given {@code ResultStream}. Due to this, the
  * {@link ConsistencyMarker#RESOURCE_KEY resource} will be empty when requested early, but present once this stream
  * {@link #isCompleted() completed}.
  *
