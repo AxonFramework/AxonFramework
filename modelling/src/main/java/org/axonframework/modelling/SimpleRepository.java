@@ -20,8 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.Repository;
 import org.axonframework.modelling.repository.ManagedEntity;
+import org.axonframework.modelling.repository.Repository;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -39,24 +39,24 @@ import static java.util.Objects.requireNonNull;
  * When an entity is successfully loaded, it's scheduled to automatically be persisted when the
  * {@link ProcessingContext} is committed.
  * <p>
- * Both the {@link #load(Object, ProcessingContext)} and {@link #loadOrCreate(Object, ProcessingContext)} use the
+ * The {@link #load(Object, ProcessingContext)} uses the
  * {@link SimpleRepositoryEntityLoader} to load the entity. If you wish to create an entity when it does not exist, you can return
  * a value when you have found none.
  *
- * @param <I> The type of the identifier of the entity.
- * @param <T> The type of the entity.
+ * @param <ID> The type of the identifier of the entity.
+ * @param <E> The type of the entity.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class SimpleRepository<I, T> implements Repository.LifecycleManagement<I, T> {
+public class SimpleRepository<ID, E> implements Repository.LifecycleManagement<ID, E> {
 
-    private final ResourceKey<Map<I, CompletableFuture<ManagedEntity<I, T>>>> managedEntitiesKey =
+    private final ResourceKey<Map<ID, CompletableFuture<ManagedEntity<ID, E>>>> managedEntitiesKey =
             ResourceKey.withLabel("SimpleRepository.ManagedEntities");
 
-    private final Class<I> idType;
-    private final Class<T> entityType;
-    private final SimpleRepositoryEntityLoader<I, T> loader;
-    private final SimpleRepositoryEntityPersister<I, T> persister;
+    private final Class<ID> idType;
+    private final Class<E> entityType;
+    private final SimpleRepositoryEntityLoader<ID, E> loader;
+    private final SimpleRepositoryEntityPersister<ID, E> persister;
 
     /**
      * Constructs a new simple {@link Repository} for entities of type {@code entityType} with identifiers of type
@@ -69,10 +69,10 @@ public class SimpleRepository<I, T> implements Repository.LifecycleManagement<I,
      * @param persister  The component capable of persisting entities.
      */
     public SimpleRepository(
-            @Nonnull Class<I> idType,
-            @Nonnull Class<T> entityType,
-            @Nonnull SimpleRepositoryEntityLoader<I, T> loader,
-            @Nonnull SimpleRepositoryEntityPersister<I,T> persister
+            @Nonnull Class<ID> idType,
+            @Nonnull Class<E> entityType,
+            @Nonnull SimpleRepositoryEntityLoader<ID, E> loader,
+            @Nonnull SimpleRepositoryEntityPersister<ID, E> persister
     ) {
         this.idType = requireNonNull(idType, "The entityIdClass may not be null");
         this.entityType = requireNonNull(entityType, "The entityClass may not be null");
@@ -81,14 +81,14 @@ public class SimpleRepository<I, T> implements Repository.LifecycleManagement<I,
     }
 
     @Override
-    public ManagedEntity<I, T> attach(@Nonnull ManagedEntity<I, T> entity,
-                                      @Nonnull ProcessingContext context) {
+    public ManagedEntity<ID, E> attach(@Nonnull ManagedEntity<ID, E> entity,
+                                       @Nonnull ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
                 entity.identifier(),
                 id -> {
-                    SimpleEntity<I, T> simpleEntity = SimpleEntity.mapToSimpleEntity(entity);
+                    SimpleEntity<ID, E> simpleEntity = SimpleEntity.mapToSimpleEntity(entity);
                     attachEntitySaveToContext(id, simpleEntity, context);
                     return CompletableFuture.completedFuture(simpleEntity);
                 }
@@ -97,18 +97,18 @@ public class SimpleRepository<I, T> implements Repository.LifecycleManagement<I,
 
     @Nonnull
     @Override
-    public Class<T> entityType() {
+    public Class<E> entityType() {
         return entityType;
     }
 
     @Nonnull
     @Override
-    public Class<I> idType() {
+    public Class<ID> idType() {
         return idType;
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<I, T>> load(@Nonnull I id, @Nonnull ProcessingContext context) {
+    public CompletableFuture<ManagedEntity<ID, E>> load(@Nonnull ID id, @Nonnull ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -116,28 +116,22 @@ public class SimpleRepository<I, T> implements Repository.LifecycleManagement<I,
                 identifier -> loader
                         .load(identifier, context)
                         .thenApply((entity) -> {
-                            SimpleEntity<I, T> managedEntity = new SimpleEntity<>(id, entity);
+                            SimpleEntity<ID, E> managedEntity = new SimpleEntity<>(id, entity);
                             attachEntitySaveToContext(id, managedEntity, context);
                             return managedEntity;
                         })
         );
     }
 
-    private void attachEntitySaveToContext(I id, ManagedEntity<I, T> managedEntity, ProcessingContext context) {
+    private void attachEntitySaveToContext(ID id, ManagedEntity<ID, E> managedEntity, ProcessingContext context) {
         context.onPrepareCommit(uow -> persister.persist(id, managedEntity.entity(), uow));
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<I, T>> loadOrCreate(@Nonnull I identifier,
-                                                               @Nonnull ProcessingContext processingContext) {
-        return load(identifier, processingContext);
-    }
-
-    @Override
-    public ManagedEntity<I, T> persist(@Nonnull I id, @Nonnull T entity, @Nonnull ProcessingContext context) {
+    public ManagedEntity<ID, E> persist(@Nonnull ID id, @Nonnull E entity, @Nonnull ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
         if (managedEntities.containsKey(id)) {
-            ManagedEntity<I, T> managedEntity = managedEntities.get(id).join();
+            ManagedEntity<ID, E> managedEntity = managedEntities.get(id).join();
             managedEntity.applyStateChange(oldState -> entity);
             return managedEntity;
         } else {

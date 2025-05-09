@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -183,9 +184,9 @@ class AnnotatedEventSourcedEntityBuilderTest {
     static class CustomEventSourcedEntityFactory
             implements EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> {
 
+        @Nullable
         @Override
-        public CustomEntityFactoryCourse createEntity(@Nonnull Class<CustomEntityFactoryCourse> entityType,
-                                                      @Nonnull CourseId courseId) {
+        public CustomEntityFactoryCourse createEmptyEntity(@Nonnull AnnotatedEventSourcedEntityBuilderTest.CourseId courseId) {
             return new CustomEntityFactoryCourse(courseId);
         }
     }

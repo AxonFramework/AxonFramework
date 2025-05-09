@@ -17,10 +17,12 @@
 package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -33,21 +35,36 @@ import static org.axonframework.common.ConstructorUtils.factoryForTypeWithOption
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ConstructorBasedEventSourcedEntityFactory
-        implements EventSourcedEntityFactory<Object, Object>, DescribableComponent {
+public class ConstructorBasedEventSourcedEntityFactory<E>
+        implements EventSourcedEntityFactory<Object, E>, DescribableComponent {
 
-    private final Map<Class<?>, Function<Object, Object>> constructorCache = new ConcurrentHashMap<>();
+    private final Class<E> entityType;
 
-    @Override
-    public Object createEntity(@Nonnull Class<Object> entityType, @Nonnull Object id) {
-        return constructorCache
-                .computeIfAbsent(id.getClass(),
-                                 (i) -> factoryForTypeWithOptionalArgument(entityType, i))
-                .apply(id);
+    /**
+     * Instantiate a constructor-based {@link EventSourcedEntityFactory} for the given {@code entityType}.
+     *
+     * @param entityType The type of the entity to create.
+     */
+    public ConstructorBasedEventSourcedEntityFactory(@Nonnull Class<E> entityType) {
+        this.entityType = Objects.requireNonNull(entityType, "The entityType must not be null.");
     }
+
+    private final Map<Class<? extends Object>, Function<Object, E>> constructorCache = new ConcurrentHashMap<>();
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("constructorCache", constructorCache);
+    }
+
+    @Nullable
+    @Override
+    public E createEmptyEntity(@Nonnull Object id) {
+
+        //noinspection unchecked
+        Class<Object> idClass = (Class<Object>) id.getClass();
+        return constructorCache
+                .computeIfAbsent(idClass,
+                                 (i) -> factoryForTypeWithOptionalArgument(entityType, idClass))
+                .apply(id);
     }
 }

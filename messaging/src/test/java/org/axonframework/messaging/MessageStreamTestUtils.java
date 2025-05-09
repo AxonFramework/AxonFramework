@@ -42,7 +42,7 @@ public class MessageStreamTestUtils {
         var exception = assertThrows(CompletionException.class, cf::join);
         assertInstanceOf(expectedExceptionType, exception.getCause());
         assertTrue(exception.getCause().getMessage().contains(expectedMessagePart),
-                   "Expected message to contain [%s], but was [%s]".formatted(expectedMessagePart,
+                   "Expected message to contain [%s],\n but was [%s]".formatted(expectedMessagePart,
                                                                                 exception.getCause().getMessage()));
     }
 }

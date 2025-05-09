@@ -26,8 +26,8 @@ public class MutableCustomer extends MutablePerson {
 
     @CommandHandler
     public void handle(CreateCustomer command, EventAppender appender) {
-        if (identifier != null) {
-            throw new IllegalStateException("Customer already created");
+        if(identifier != null) {
+            throw new IllegalStateException("Customer is existing entity");
         }
         appender.append(new CustomerCreated(command.identifier(),
                                             command.emailAddress()));
