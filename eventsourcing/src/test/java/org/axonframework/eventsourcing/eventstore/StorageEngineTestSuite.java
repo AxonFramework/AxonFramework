@@ -499,13 +499,14 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        TrackingToken actualTokenAtToken = testSubject.tokenAt(Instant.now().plus(1, ChronoUnit.DAYS))
+        TrackingToken tokenAt = testSubject.tokenAt(Instant.now().plus(1, ChronoUnit.DAYS))
                                                       .get(5, TimeUnit.SECONDS);
-        TrackingToken actualHeadToken = testSubject.headToken()
+        TrackingToken headToken = testSubject.headToken()
                                                    .get(5, TimeUnit.SECONDS);
 
-        assertNotNull(actualTokenAtToken);
-        assertEquals(actualHeadToken, actualTokenAtToken);
+        assertNotNull(tokenAt);
+        assertNotNull(headToken);
+        assertEquals(headToken, tokenAt);
     }
 
     private static TaggedEventMessage<EventMessage<String>> taggedEventMessage(String payload, Set<Tag> tags) {
