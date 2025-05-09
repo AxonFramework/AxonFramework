@@ -86,7 +86,7 @@ public interface EventStorageEngine extends DescribableComponent {
      * {@code condition}.
      * <p>
      * The final entry of the stream <b>always</b> contains a {@link ConsistencyMarker} in the
-     * {@link MessageStream.Entry} it's resources, paired with a {@link org.axonframework.eventhandling.NoEventMessage}.
+     * {@link MessageStream.Entry}'s resources, paired with a {@link org.axonframework.eventhandling.NoEventMessage}.
      * This {@code ConsistencyMarker} should be used to construct the {@link AppendCondition} when
      * {@link #appendEvents(AppendCondition, List) appending events}.
      * <p>
