@@ -163,7 +163,7 @@ class EntityCommandHandlingComponentTest {
 
             MessageStreamTestUtils.assertCompletedExceptionally(componentResult,
                                                                 IllegalStateException.class,
-            "No entity found for command java.lang.Integer with id " + entityId
+            "No entity found for command [java.lang.Integer] with id [" + entityId + "]"
             );
         }
 
