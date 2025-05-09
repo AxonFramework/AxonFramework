@@ -103,7 +103,7 @@ class DefaultEventStoreTransactionTest {
                         .assertNext(entry -> assertPositionAndEvent(entry, 3, event3))
                         .verifyComplete();
             assertEquals(
-                    GlobalIndexConsistencyMarker.position(new GlobalIndexConsistencyMarker(2)),
+                    GlobalIndexConsistencyMarker.position(new GlobalIndexConsistencyMarker(3)),
                     GlobalIndexConsistencyMarker.position(consistencyMarker.get())
             );
         }
@@ -279,7 +279,7 @@ class DefaultEventStoreTransactionTest {
 
             // then
             assertEquals(
-                    GlobalIndexConsistencyMarker.position(new GlobalIndexConsistencyMarker(3)),
+                    GlobalIndexConsistencyMarker.position(new GlobalIndexConsistencyMarker(4)),
                     GlobalIndexConsistencyMarker.position(result.get())
             );
         }
