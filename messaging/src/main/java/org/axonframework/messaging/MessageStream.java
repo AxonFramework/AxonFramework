@@ -339,7 +339,7 @@ public interface MessageStream<M extends Message<?>> {
     Optional<Throwable> error();
 
     /**
-     * Indicates whether this stream has been completed. A completed stream will never return anymore
+     * Indicates whether this stream has been completed. A completed stream will never return any more
      * {@link Entry entries} from {@link #next()}, and {@link #hasNextAvailable()} will always return {@code false}. If
      * the stream completed with an error, {@link #error()} will report so.
      *
