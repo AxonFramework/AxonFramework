@@ -586,7 +586,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             });
 
             // Process the batch of events
-            processInUnitOfWork(batch, unitOfWork, processingSegments);
+            processInUnitOfWork(batch, unitOfWork, processingSegments).join();
 
             TrackerStatus previousStatus = activeSegments.get(segment.getSegmentId());
             TrackerStatus updatedStatus =

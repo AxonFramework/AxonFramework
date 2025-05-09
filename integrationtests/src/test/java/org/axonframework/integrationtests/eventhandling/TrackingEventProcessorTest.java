@@ -500,6 +500,7 @@ class TrackingEventProcessorTest {
         );
     }
 
+    // TODO - adjust this test: CurrentUnitOfWork used
     @Test
     void tokenIsExtendedAtStartAndStoredAtEndOfEventBatch_WithStoringTokensAfterProcessingSetting()
             throws Exception {
@@ -534,6 +535,7 @@ class TrackingEventProcessorTest {
         );
     }
 
+    // TODO - adjust this test: CurrentUnitOfWork used
     @Test
     void tokenStoredAtEndOfEventBatchAndNotExtendedWhenUsingANoTransactionManager() throws Exception {
         TrackingEventProcessorConfiguration tepConfig =
