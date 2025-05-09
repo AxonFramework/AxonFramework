@@ -93,16 +93,14 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         }
 
         AtomicReference<ConsistencyMarker> markerReference = new AtomicReference<>(appendCondition.consistencyMarker());
-        AtomicBoolean receivedEvent = new AtomicBoolean(false);
         return source.onNext(entry -> {
                          ConsistencyMarker marker;
                          if ((marker = entry.getResource(ConsistencyMarker.RESOURCE_KEY)) != null) {
                              markerReference.set(marker);
                          }
-                         receivedEvent.set(true);
                      })
                      .filter(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
-                     .whenComplete(() -> updateAppendPosition(receivedEvent, markerReference));
+                     .whenComplete(() -> updateAppendPosition(markerReference));
     }
 
     /**
@@ -110,16 +108,10 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      * multiple times, the lowest consistency marker that we received from those streams (usually the first), is the
      * safest one to use.
      */
-    private void updateAppendPosition(AtomicBoolean receivedEvent, AtomicReference<ConsistencyMarker> markerReference) {
+    private void updateAppendPosition(AtomicReference<ConsistencyMarker> markerReference) {
         processingContext.updateResource(
                 appendPositionKey,
                 current -> {
-                    if (!receivedEvent.get()) {
-                        // We sourced the entire stream without receiving an event.
-                        // This means that we read the entire event stream up until now, with a consistency marker up to the current head.
-                        // As such, any existing ConsistencyMarker will always be the lower bound, and can be maintained.
-                        return current;
-                    }
                     if (current == null || current == ConsistencyMarker.ORIGIN) {
                         // This is the first time we are sourcing events, as such will be the correct ConsistencyMarker.
                         return markerReference.get();
