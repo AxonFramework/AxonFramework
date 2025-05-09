@@ -139,4 +139,11 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
     public int hashCode() {
         return Objects.hashCode(aggregatePositions);
     }
+
+    @Override
+    public String toString() {
+        return "AggregateBasedConsistencyMarker{" +
+                "aggregatePositions=" + aggregatePositions +
+                '}';
+    }
 }
