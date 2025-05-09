@@ -282,8 +282,8 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         List<AggregateSource> aggregateSources = condition.criteria()
                                                           .flatten()
                                                           .stream()
-                                                          .map(criteria -> this.aggregateSourceForCriterion(
-                                                                  condition, criteria
+                                                          .map(criterion -> this.aggregateSourceForCriterion(
+                                                                  condition, criterion
                                                           ))
                                                           .toList();
 
