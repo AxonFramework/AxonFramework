@@ -217,12 +217,12 @@ public abstract class AbstractEventProcessor implements EventProcessor {
 
     protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                              UnitOfWork unitOfWork) throws Exception {
-        processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT);
+        processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT).join();
     }
 
-    protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                       UnitOfWork unitOfWork,
-                                       Collection<Segment> processingSegments) throws Exception {
+    protected CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
+                                                          UnitOfWork unitOfWork,
+                                                          Collection<Segment> processingSegments) throws Exception {
         var eventsBatchKey = Context.ResourceKey.<List<? extends EventMessage<?>>>withLabel("messagesBatch");
         unitOfWork.runOnPreInvocation(ctx -> ctx.putResource(eventsBatchKey, eventMessages));
 
@@ -240,15 +240,15 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             return result;
         });
 
-        spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages)
-                   .runSupplierAsync(() -> unitOfWork.execute().exceptionally(e -> {
-                       try {
-                           errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
-                       } catch (Exception ex) {
-                           throw new RuntimeException(ex);
-                       }
-                       return null;
-                   }));
+        return spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages)
+                          .runSupplierAsync(() -> unitOfWork.execute().exceptionally(e -> {
+                              try {
+                                  errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
+                              } catch (Exception ex) {
+                                  throw new RuntimeException(ex);
+                              }
+                              return null;
+                          }));
     }
 
     private CompletableFuture<Void> processMessage(Collection<Segment> processingSegments,
