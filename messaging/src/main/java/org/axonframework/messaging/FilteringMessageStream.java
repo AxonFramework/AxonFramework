@@ -37,7 +37,7 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
     private final Predicate<Entry<M>> filter;
 
     /**
-     * Construct an {@link MessageStream stream} that invokes the given {@code filter} {@link Predicate} each time a new
+     * Construct a {@link MessageStream stream} that invokes the given {@code filter} {@link Predicate} each time a new
      * {@link Entry entry} is consumed by the given {@code delegate}.
      *
      * @param delegate The delegate {@link MessageStream stream} from which each consumed {@link Entry entry} is given
