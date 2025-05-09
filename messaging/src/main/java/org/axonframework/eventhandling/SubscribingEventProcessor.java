@@ -19,18 +19,22 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
@@ -50,7 +54,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
 
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
-    private final TransactionManager transactionManager;
+    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
 
     private volatile Registration eventBusRegistration;
 
@@ -67,7 +71,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
         super(builder);
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
-        this.transactionManager = builder.transactionManager;
+        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
     }
 
     /**
@@ -130,9 +134,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      */
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
-            LegacyBatchingUnitOfWork<? extends EventMessage<?>> unitOfWork =
-                    new LegacyBatchingUnitOfWork<>(eventMessages);
-            unitOfWork.attachTransaction(transactionManager);
+            var unitOfWork = transactionalUnitOfWorkFactory.create();
             processInUnitOfWork(eventMessages, unitOfWork);
         } catch (RuntimeException e) {
             throw e;

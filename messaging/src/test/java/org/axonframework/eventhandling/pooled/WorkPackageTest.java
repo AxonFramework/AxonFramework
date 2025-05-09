@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -527,16 +528,26 @@ class WorkPackageTest {
 
         private final List<EventMessage<?>> processedEvents = new ArrayList<>();
 
+//        @Override
+//        public void processBatch(List<? extends EventMessage<?>> eventMessages,
+//                                 LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+//                                 Collection<Segment> processingSegments) {
+//            if (batchProcessorPredicate.test(eventMessages)) {
+//                unitOfWork.executeWithResult(() -> {
+//                    unitOfWork.commit();
+//                    processedEvents.addAll(eventMessages);
+//                    // We don't care about the result to perform our tests. Just return null.
+//                    return null;
+//                });
+//            }
+//        }
+
         @Override
-        public void processBatch(List<? extends EventMessage<?>> eventMessages,
-                                 LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 Collection<Segment> processingSegments) {
+        public void processBatch(List<? extends EventMessage<?>> eventMessages, UnitOfWork unitOfWork,
+                                 Collection<Segment> processingSegments) throws Exception {
             if (batchProcessorPredicate.test(eventMessages)) {
-                unitOfWork.executeWithResult(() -> {
-                    unitOfWork.commit();
+                unitOfWork.runOnInvocation(ctx -> {
                     processedEvents.addAll(eventMessages);
-                    // We don't care about the result to perform our tests. Just return null.
-                    return null;
                 });
             }
         }

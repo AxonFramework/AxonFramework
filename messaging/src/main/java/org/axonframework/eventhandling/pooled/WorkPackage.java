@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -26,9 +27,12 @@ import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,6 +82,7 @@ class WorkPackage {
     private final String name;
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
+    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
     private final ExecutorService executorService;
     private final EventFilter eventFilter;
     private final BatchProcessor batchProcessor;
@@ -87,8 +92,8 @@ class WorkPackage {
     private final Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
     private Runnable batchProcessedCallback;
     private final Clock clock;
-    private final String segmentIdResourceKey;
-    private final String lastTokenResourceKey;
+    private final Context.ResourceKey<Integer> segmentIdResourceKey;
+    private final Context.ResourceKey<TrackingToken> lastTokenResourceKey;
 
     private TrackingToken lastDeliveredToken; // For use only by event delivery threads, like Coordinator
     private TrackingToken lastConsumedToken;
@@ -115,6 +120,7 @@ class WorkPackage {
         this.name = builder.name;
         this.tokenStore = builder.tokenStore;
         this.transactionManager = builder.transactionManager;
+        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(transactionManager);
         this.executorService = builder.executorService;
         this.eventFilter = builder.eventFilter;
         this.batchProcessor = builder.batchProcessor;
@@ -124,8 +130,8 @@ class WorkPackage {
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.segmentStatusUpdater = builder.segmentStatusUpdater;
         this.clock = builder.clock;
-        this.segmentIdResourceKey = "Processor[" + builder.name + "]/SegmentId";
-        this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
+        this.segmentIdResourceKey = Context.ResourceKey.withLabel("Processor[" + builder.name + "]/SegmentId");
+        this.lastTokenResourceKey = Context.ResourceKey.withLabel("Processor[" + builder.name + "]/Token");
 
         this.lastConsumedToken = builder.initialToken;
         this.nextClaimExtension = new AtomicLong(now() + claimExtensionThreshold);
@@ -311,12 +317,14 @@ class WorkPackage {
                          segment.getSegmentId(), name, eventBatch.size());
             try {
                 processingEvents.set(true);
-                LegacyUnitOfWork<TrackedEventMessage<?>> unitOfWork = new LegacyBatchingUnitOfWork<>(eventBatch);
-                unitOfWork.attachTransaction(transactionManager);
-                unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
-                unitOfWork.resources().put(lastTokenResourceKey, lastConsumedToken);
-                unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
-                unitOfWork.afterCommit(
+                var unitOfWork = transactionalUnitOfWorkFactory.create();
+                unitOfWork.runOnPreInvocation(ctx -> {
+                    ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
+                    ctx.putResource(lastTokenResourceKey, lastConsumedToken);
+                });
+
+                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
+                unitOfWork.runOnAfterCommit(
                         u -> {
                             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
                             batchProcessedCallback.run();
@@ -501,20 +509,26 @@ class WorkPackage {
     @FunctionalInterface
     interface BatchProcessor {
 
-        /**
-         * Processes a given batch of {@code eventMessages}. These {@code eventMessages} will be processed within the
-         * given {@code unitOfWork}. The collection of {@link Segment} instances defines the segments for which the
-         * {@code eventMessages} should be processed.
-         *
-         * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
-         * @param unitOfWork         the {@link LegacyUnitOfWork} that has been prepared to process the {@code eventMessages}
-         * @param processingSegments the {@link Segment}s for which the {@code eventMessages} should be processed in the
-         *                           given {@code unitOfWork}
-         * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
-         */
+//        /**
+//         * Processes a given batch of {@code eventMessages}. These {@code eventMessages} will be processed within the
+//         * given {@code unitOfWork}. The collection of {@link Segment} instances defines the segments for which the
+//         * {@code eventMessages} should be processed.
+//         *
+//         * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
+//         * @param unitOfWork         the {@link LegacyUnitOfWork} that has been prepared to process the {@code eventMessages}
+//         * @param processingSegments the {@link Segment}s for which the {@code eventMessages} should be processed in the
+//         *                           given {@code unitOfWork}
+//         * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
+//         */
+//        @Deprecated(since = "5.0.0")
+//        void processBatch(List<? extends EventMessage<?>> eventMessages,
+//                          LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+//                          Collection<Segment> processingSegments) throws Exception;
+
         void processBatch(List<? extends EventMessage<?>> eventMessages,
-                          LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                          UnitOfWork unitOfWork,
                           Collection<Segment> processingSegments) throws Exception;
+
     }
 
     /**

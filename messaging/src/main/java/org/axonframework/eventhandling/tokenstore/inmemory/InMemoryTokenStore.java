@@ -79,6 +79,7 @@ public class InMemoryTokenStore implements TokenStore {
             CurrentUnitOfWork.get().afterCommit(uow -> tokens.put(new ProcessAndSegment(processorName, segment),
                                                                   getOrDefault(token, NULL_TOKEN)));
         } else {
+            // TODO - fix: always go this path!
             tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
         }
     }
