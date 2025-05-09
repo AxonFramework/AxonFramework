@@ -126,7 +126,8 @@ class ConditionConverterTest {
     @Test
     void convertStreamingConditionConstructsSourceEventRequestAsExpected() {
         // given...
-        StreamingCondition testCondition = StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(START)).or(
+        StreamingCondition testCondition = StreamingCondition.conditionFor(
+                new GlobalSequenceTrackingToken(START),
                 EventCriteria.havingTags(
                                      Tag.of("key1OnCriterion1", "value1OnCriterion1"),
                                      Tag.of("key2OnCriterion1", "value2OnCriterion1")

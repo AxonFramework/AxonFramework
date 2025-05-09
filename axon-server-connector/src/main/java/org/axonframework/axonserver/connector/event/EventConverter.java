@@ -20,6 +20,7 @@ import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.event.dcb.Event;
 import io.axoniq.axonserver.grpc.event.dcb.TaggedEvent;
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
@@ -45,7 +46,8 @@ import java.util.stream.Collectors;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class EventConverter implements DescribableComponent {
+@Internal
+public class EventConverter implements DescribableComponent {
 
     private final Converter converter;
 
@@ -56,7 +58,7 @@ class EventConverter implements DescribableComponent {
      * @param converter The converter used to {@link Converter#convert(Object, Class)} the
      *                  {@link EventMessage#getPayload()} and {@link EventMessage#getMetaData()} for the {@link Event}.
      */
-    EventConverter(@Nonnull Converter converter) {
+    public EventConverter(@Nonnull Converter converter) {
         this.converter = Objects.requireNonNull(converter, "The converter cannot be null.");
     }
 
@@ -68,8 +70,7 @@ class EventConverter implements DescribableComponent {
      * @param taggedEvent The tagged event message to convert into a {@link TaggedEvent}.
      * @return A {@code TaggedEvent} based on the given {@code taggedEvent}.
      */
-    TaggedEvent convertTaggedEventMessage(@Nonnull TaggedEventMessage<?> taggedEvent) {
-        Objects.requireNonNull(taggedEvent, "The tagged event message cannot be null.");
+    public TaggedEvent convertTaggedEventMessage(@Nonnull TaggedEventMessage<?> taggedEvent) {
         return TaggedEvent.newBuilder()
                           .setEvent(convertEventMessage(taggedEvent.event()))
                           .addAllTag(convertTags(taggedEvent.tags()))
@@ -140,8 +141,7 @@ class EventConverter implements DescribableComponent {
      * @param event The event to convert into an {@link EventMessage}.
      * @return An {@code EventMessage} based on the given {@code event}.
      */
-    EventMessage<byte[]> convertEvent(@Nonnull Event event) {
-        Objects.requireNonNull(event, "The event cannot be null.");
+    public EventMessage<byte[]> convertEvent(@Nonnull Event event) {
         return new GenericEventMessage<>(event.getIdentifier(),
                                          new MessageType(event.getName(), event.getVersion()),
                                          event.getPayload().toByteArray(),

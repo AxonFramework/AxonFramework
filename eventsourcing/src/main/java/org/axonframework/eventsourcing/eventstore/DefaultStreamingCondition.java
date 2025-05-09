@@ -19,9 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.TrackingToken;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import static java.util.Objects.requireNonNull;
 
 /**

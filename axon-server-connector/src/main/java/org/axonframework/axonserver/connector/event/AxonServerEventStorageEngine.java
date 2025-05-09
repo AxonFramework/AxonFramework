@@ -98,23 +98,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
                   appendTransaction.append(taggedEvent);
               });
 
-        return CompletableFuture.completedFuture(new AppendTransaction() {
-            @Override
-            public CompletableFuture<ConsistencyMarker> commit() {
-                return appendTransaction.commit()
-                                        .exceptionallyCompose(throwable -> CompletableFuture.failedFuture(
-                                                new AppendEventsTransactionRejectedException(throwable.getMessage())
-                                        ))
-                                        .thenApply(appendResponse -> new GlobalIndexConsistencyMarker(
-                                                appendResponse.getConsistencyMarker()
-                                        ));
-            }
-
-            @Override
-            public void rollback() {
-                appendTransaction.rollback();
-            }
-        });
+        return CompletableFuture.completedFuture(new AxonServerAppendTransaction(appendTransaction));
     }
 
     @Override
@@ -180,5 +164,33 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
         descriptor.describeProperty("converter", converter);
+    }
+
+    private record AxonServerAppendTransaction(
+            DcbEventChannel.AppendEventsTransaction appendTransaction
+    ) implements AppendTransaction {
+
+        @Override
+        public CompletableFuture<ConsistencyMarker> commit() {
+            logger.debug("Committing append event transaction...");
+            return appendTransaction.commit()
+                                    .exceptionallyCompose(throwable -> {
+                                        logger.warn("Committing append transaction failed.", throwable);
+                                        return CompletableFuture.failedFuture(
+                                                new AppendEventsTransactionRejectedException(throwable.getMessage())
+                                        );
+                                    })
+                                    .thenApply(appendResponse -> {
+                                        long marker = appendResponse.getConsistencyMarker();
+                                        logger.debug("Committing append transaction succeeded with marker [{}].",
+                                                     marker);
+                                        return new GlobalIndexConsistencyMarker(marker);
+                                    });
+        }
+
+        @Override
+        public void rollback() {
+            appendTransaction.rollback();
+        }
     }
 }

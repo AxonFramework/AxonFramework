@@ -20,6 +20,7 @@ import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.event.dcb.SequencedEvent;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.NoEventMessage;
@@ -42,14 +43,15 @@ import java.util.Optional;
  * into {@link EventMessage EventMessages} as it moves along.
  * <p>
  * Note that Axon Server regards the {@code ResultStream} as finite. At the end, this {@code MessageStream}
- * implementation will receive the {@link ConsistencyMarker} form the given {@code ResultStream}. Due to this, the
+ * implementation will receive the {@link ConsistencyMarker} from the given {@code ResultStream}. Due to this, the
  * {@link ConsistencyMarker#RESOURCE_KEY resource} will be empty when requested early, but present once this stream
  * {@link #isCompleted() completed}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SourcingEventMessageStream implements MessageStream<EventMessage<?>> {
+@Internal
+public class SourcingEventMessageStream implements MessageStream<EventMessage<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -64,8 +66,8 @@ class SourcingEventMessageStream implements MessageStream<EventMessage<?>> {
      * @param converter The {@code EventConverter} used to convert {@code SourceEventsResponses} into
      *                  {@link EventMessage EventMessages} for this {@link MessageStream} implementation.
      */
-    SourcingEventMessageStream(@Nonnull ResultStream<SourceEventsResponse> stream,
-                               @Nonnull EventConverter converter) {
+    public SourcingEventMessageStream(@Nonnull ResultStream<SourceEventsResponse> stream,
+                                      @Nonnull EventConverter converter) {
         this.stream = Objects.requireNonNull(stream, "The source result stream cannot be null.");
         this.converter = Objects.requireNonNull(converter, "The converter cannot be null.");
     }

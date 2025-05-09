@@ -319,11 +319,11 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        MessageStream<EventMessage<?>> result = testSubject.tailToken()
-                                                           .thenApply(StreamingCondition::startingFrom)
-                                                           .thenApply(sc -> sc.or(TEST_CRITERIA))
-                                                           .thenApply(testSubject::stream)
-                                                           .get(5, TimeUnit.SECONDS);
+        MessageStream<EventMessage<?>> result =
+                testSubject.tailToken()
+                           .thenApply(position -> StreamingCondition.conditionFor(position, TEST_CRITERIA))
+                           .thenApply(testSubject::stream)
+                           .get(5, TimeUnit.SECONDS);
 
         StepVerifier.create(result.asFlux())
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventOne.event()))
@@ -357,8 +357,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                                                        .thenApply(r -> r.getResource(TrackingToken.RESOURCE_KEY))
                                                        .get(5, TimeUnit.SECONDS);
 
-        StreamingCondition testCondition = StreamingCondition.startingFrom(tokenOfFirstMessage)
-                                                             .or(TEST_CRITERIA);
+        StreamingCondition testCondition = StreamingCondition.conditionFor(tokenOfFirstMessage, TEST_CRITERIA);
 
         StepVerifier.create(testSubject.stream(testCondition).asFlux())
                     // we've skipped the first one by changing the starting point
@@ -381,8 +380,8 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        StreamingCondition testCondition = StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(10))
-                                                             .or(TEST_CRITERIA);
+        StreamingCondition testCondition =
+                StreamingCondition.conditionFor(new GlobalSequenceTrackingToken(10), TEST_CRITERIA);
 
         MessageStream<EventMessage<?>> result = testSubject.stream(testCondition);
 
@@ -516,9 +515,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .get(5, TimeUnit.SECONDS);
 
         TrackingToken tokenAt = testSubject.tokenAt(Instant.now().plus(1, ChronoUnit.DAYS))
-                                                      .get(5, TimeUnit.SECONDS);
+                                           .get(5, TimeUnit.SECONDS);
         TrackingToken headToken = testSubject.headToken()
-                                                   .get(5, TimeUnit.SECONDS);
+                                             .get(5, TimeUnit.SECONDS);
 
         assertNotNull(tokenAt);
         assertNotNull(headToken);
