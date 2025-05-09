@@ -273,13 +273,15 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             firstCommit.get(5, TimeUnit.SECONDS);
         } catch (Exception e) {
             exceptionCounter++;
-            assertInstanceOf(AppendEventsTransactionRejectedException.class, e.getCause());
+            assertInstanceOf(AppendEventsTransactionRejectedException.class, e.getCause(),
+                             () -> "Exception [" + e.getClass() + "] is not expected. Message:" + e.getMessage());
         }
         try {
             secondCommit.get(5, TimeUnit.SECONDS);
         } catch (Exception e) {
             exceptionCounter++;
-            assertInstanceOf(AppendEventsTransactionRejectedException.class, e.getCause());
+            assertInstanceOf(AppendEventsTransactionRejectedException.class, e.getCause(),
+                             () -> "Exception [" + e.getClass() + "] is not expected. Message:" + e.getMessage());
         }
         assertEquals(1, exceptionCounter);
     }
