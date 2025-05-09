@@ -18,8 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.QualifiedName;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Set;
 
@@ -50,6 +49,7 @@ class DefaultStreamingConditionTest {
 
     @Test
     void throwsExceptionWhenConstructingWithNullCriteria() {
+        //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> new DefaultStreamingCondition(TEST_POSITION, null));
     }
 
@@ -61,7 +61,8 @@ class DefaultStreamingConditionTest {
 
     @Test
     void withCriteriaCombinesGivenWithExistingCriteria() {
-        EventCriteria testCriteria = EventCriteria.havingTags(new Tag("other-key", "other-value")).andBeingOneOfTypes("test-type");
+        EventCriteria testCriteria = EventCriteria.havingTags(new Tag("other-key", "other-value"))
+                                                  .andBeingOneOfTypes("test-type");
 
         StreamingCondition result = testSubject.or(testCriteria);
 
