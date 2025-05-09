@@ -59,7 +59,7 @@ class RoutingKeyChildEntityMatcher<E> implements ChildEntityMatcher<E, Message<?
 
     @Override
     public boolean matches(@Nonnull Message<?> message, @Nonnull E candidate) {
-        var payloadType = entity.getPayloadType(message.type().qualifiedName());
+        var payloadType = entity.getExpectedRepresentation(message.type().qualifiedName());
         if(payloadType == null) {
             return false;
         }

@@ -150,18 +150,42 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
         inspected.getHandlers(entityType)
                  .forEach(handler -> {
                      QualifiedName qualifiedName = messageTypeResolver.resolve(handler.payloadType()).qualifiedName();
+                     if (handler instanceof CommandMessageHandlingMember<? super E> cmhm) {
+                         if (cmhm.isFactoryHandler()) {
+                             builder.creationalCommandHandler(qualifiedName, ((command, context) -> handler
+                                     .handle(command, context, null)
+                                     .<CommandResultMessage<?>>mapMessage(
+                                             GenericCommandResultMessage::new)
+                                     .first()));
+                             return;
+                         }
+                         builder.commandHandler(qualifiedName, ((command, entity, context) -> handler
+                                 .handle(command, context, entity)
+                                 .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
+                                 .first()));
+                     }
                      payloadTypes.put(qualifiedName, handler.payloadType());
                  });
     }
 
-    public Class<?> getPayloadType(QualifiedName qualifiedName) {
+    /**
+     * Returns the {@link Class} of the expected representation for handlers of the given {@code qualifiedName}.
+     *
+     * @param qualifiedName The {@link QualifiedName} of the handler to look for.
+     * @return The {@link Class} of the expected representation for handlers of the given {@code qualifiedName}, or
+     * {@code null} if no such representation is found.
+     */
+    public Class<?> getExpectedRepresentation(QualifiedName qualifiedName) {
+        if (payloadTypes.containsKey(qualifiedName)) {
+            return payloadTypes.get(qualifiedName);
+        }
         for (AnnotatedEntityModel<?> child : children) {
-            Class<?> payloadType = child.getPayloadType(qualifiedName);
-            if(payloadType != null) {
+            Class<?> payloadType = child.getExpectedRepresentation(qualifiedName);
+            if (payloadType != null) {
                 return payloadType;
             }
         }
-        return payloadTypes.get(qualifiedName);
+        return null;
     }
 
     private void initializeChildren(EntityModelBuilder<E> builder) {
@@ -183,7 +207,7 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
         childEntityDefinitions.forEach(definition -> definition
                 .createChildDefinition(entityType, this::createChildEntityModel, field)
                 .ifPresent(child -> {
-                    if(child.entityModel() instanceof AnnotatedEntityModel<?> annotatedChild) {
+                    if (child.entityModel() instanceof AnnotatedEntityModel<?> annotatedChild) {
                         children.add(annotatedChild);
                     }
                     builder.addChild(child);
