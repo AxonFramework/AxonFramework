@@ -64,6 +64,15 @@ public class GlobalIndexConsistencyMarker extends AbstractConsistencyMarker<Glob
         return other.position > this.position ? other : this;
     }
 
+    /**
+     * Returns the position of this global index consistency marker.
+     *
+     * @return The position of this global index consistency marker.
+     */
+    public long position() {
+        return this.position;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {

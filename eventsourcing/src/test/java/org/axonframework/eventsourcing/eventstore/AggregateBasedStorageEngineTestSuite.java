@@ -29,7 +29,14 @@ import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -94,8 +101,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     protected abstract ESE buildStorageEngine() throws Exception;
 
     /**
-     * Will translate position to global sequence index. It differs among the EventStore implementations. For
-     * example: AxonServer starts the global stream from 0, whereas JPA implementations starts from 1.
+     * Will translate position to global sequence index. It differs among the EventStore implementations. For example:
+     * AxonServer starts the global stream from 0, whereas JPA implementations starts from 1.
      *
      * @param position the event order to translate, first is 1
      * @return the global sequence index for given event storage engine
@@ -294,8 +301,10 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
         Set<String> actual = new HashSet<>();
         AtomicReference<ConsistencyMarker> lastMarker = new AtomicReference<>();
+        SourcingCondition testCondition =
+                SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
 
-        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA))).asFlux())
+        StepVerifier.create(testSubject.source(testCondition).asFlux())
                     //there is no predefined order between aggregates. We just expect 6 entries.
                     .thenConsumeWhile(e -> {
                         lastMarker.set(e.getResource(ConsistencyMarker.RESOURCE_KEY));
@@ -340,9 +349,11 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
         Set<String> actual = new HashSet<>();
         MessageStream<EventMessage<?>> source;
+        SourcingCondition testCondition =
+                SourcingCondition.conditionFor(1, 2, TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
+
         try {
-            source = testSubject.source(SourcingCondition.conditionFor(1, 2,
-                                                                       TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA)));
+            source = testSubject.source(testCondition);
         } catch (IllegalArgumentException e) {
             throw new TestAbortedException("Multi-aggregate streams not supported", e);
         }
@@ -534,7 +545,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                 && TEST_AGGREGATE_TYPE.equals(e.getResource(LegacyResources.AGGREGATE_TYPE_KEY));
     }
 
-    protected boolean validConsistencyMarker(ConsistencyMarker consistencyMarker, String aggregateIdentifier,
+    protected boolean validConsistencyMarker(ConsistencyMarker consistencyMarker,
+                                             String aggregateIdentifier,
                                              int aggregateSequence) {
         return consistencyMarker instanceof AggregateBasedConsistencyMarker cm
                 && cm.positionOf(aggregateIdentifier) == aggregateSequence;

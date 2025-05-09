@@ -277,20 +277,18 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
-        var allCriteriaStream = condition
-                .criteria()
-                .flatten()
-                .stream()
-                .map(criteria -> this.eventsForCriterion(condition, criteria))
-                .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
+        var allCriteriaStream = condition.criteria()
+                                         .flatten()
+                                         .stream()
+                                         .map(criteria -> this.eventsForCriterion(condition, criteria))
+                                         .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
 
-        var consistencyMarker = new AtomicReference<ConsistencyMarker>();
+        AtomicReference<ConsistencyMarker> markerReference = new AtomicReference<>();
         return allCriteriaStream.map(e -> {
-            var newMarker = consistencyMarker
-                    .accumulateAndGet(
-                            e.getResource(ConsistencyMarker.RESOURCE_KEY),
-                            (m1, m2) -> m1 == null ? m2 : m1.upperBound(m2)
-                    );
+            ConsistencyMarker newMarker = markerReference.accumulateAndGet(
+                    e.getResource(ConsistencyMarker.RESOURCE_KEY),
+                    (m1, m2) -> m1 == null ? m2 : m1.upperBound(m2)
+            );
             return e.withResource(ConsistencyMarker.RESOURCE_KEY, newMarker);
         });
     }
@@ -311,14 +309,14 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     private static Context domainEventContext(DomainEventData<?> event) {
-        return Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
-                      .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
-                      .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, event.getSequenceNumber())
-                      .withResource(
-                              ConsistencyMarker.RESOURCE_KEY,
-                              new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
-                                                                  event.getSequenceNumber())
-                      );
+        Context legacyContext =
+                Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
+                       .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
+                       .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, event.getSequenceNumber());
+        return ConsistencyMarker.addToContext(
+                legacyContext,
+                new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(), event.getSequenceNumber())
+        );
     }
 
     @Override

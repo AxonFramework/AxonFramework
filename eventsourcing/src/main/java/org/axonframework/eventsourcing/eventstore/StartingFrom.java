@@ -23,7 +23,7 @@ import javax.annotation.Nullable;
 
 /**
  * An implementation of the {@link StreamingCondition} that will start
- * {@link StreamableEventSource#open(String, StreamingCondition) streaming} from the given {@code position}.
+ * {@link StreamableEventSource#open(StreamingCondition) streaming} from the given {@code position}.
  *
  * @param position The {@link TrackingToken} describing the position to start streaming from.
  * @author Steven van Beelen
