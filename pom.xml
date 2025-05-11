@@ -80,7 +80,7 @@
         <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.6.13.Final</hibernate-core.6.version>
+        <hibernate-core.6.version>6.6.14.Final</hibernate-core.6.version>
         <mysql-connector-java.version>9.3.0</mysql-connector-java.version>
         <postgresql.version>42.7.5</postgresql.version>
         <!-- Jakarta -->
@@ -124,7 +124,7 @@
         <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
-        <jobrunr.version>7.5.0</jobrunr.version>
+        <jobrunr.version>7.5.1</jobrunr.version>
         <quartz.version>2.4.0</quartz.version>
         <!-- Spring -->
         <spring.version>5.3.39</spring.version>
