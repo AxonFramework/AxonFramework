@@ -33,12 +33,12 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.modelling.command.AggregateInvocationException;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -444,7 +444,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                                        .map(c -> c.canForward(command, aggregateRoot))
                                        .orElse(true))
                        .findFirst()
-                       .orElseThrow(() -> new AggregateEntityNotFoundException(
+                       .orElseThrow(() -> new ChildEntityNotFoundException(
                                "Aggregate cannot handle command [" + command.type()
                                        + "], as there is no entity instance within the aggregate to forward it to."
                        ))

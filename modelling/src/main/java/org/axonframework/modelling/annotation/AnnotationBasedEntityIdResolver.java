@@ -45,15 +45,16 @@ import java.util.stream.StreamSupport;
  * @see TargetEntityId
  * @see EntityIdResolver
  * @since 5.0.0
+ * @param <T> The type of the identifier to resolve.
  */
-public class AnnotationBasedEntityIdResolver implements EntityIdResolver<Object> {
+public class AnnotationBasedEntityIdResolver<T> implements EntityIdResolver<T> {
 
     private static final Class<TargetEntityId> IDENTIFIER_ANNOTATION = TargetEntityId.class;
     private final Map<Class<?>, List<Member>> cache = new ConcurrentHashMap<>();
 
     @Nonnull
     @Override
-    public Object resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+    public T resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
         Object payload = message.getPayload();
         List<Object> identifiers = getIdentifiers(payload)
                 .stream()
@@ -65,7 +66,8 @@ public class AnnotationBasedEntityIdResolver implements EntityIdResolver<Object>
         if (identifiers.isEmpty()) {
             throw new NoEntityIdFoundInPayload(payload.getClass());
         }
-        return identifiers.getFirst();
+        //noinspection unchecked
+        return (T) identifiers.getFirst();
     }
 
     /**
