@@ -572,7 +572,7 @@ child entities.
 ### Immutable entities
 Event-sourced entities can now be created in an immutable fashion, which was not possible before Axon Framework 5.0.0. This allows you to create entities out of Java records or Kotlin data classes.
 
-The first command is handled by a static method, responsible for verifying the command and creating the entity. Using the first event the entity is created using the constructor defining the payload or `EventMessage`. Commands after this will be handled by methods on the instance of the entity. 
+The first command is handled by a static method, responsible for verifying the command and creating the entity. Using the first event, the entity is created using the constructor defining the payload or `EventMessage`. Commands after this will be handled by methods on the instance of the entity. 
 
 To evolve, or change the state, of an entity, `@EventSourcingHandlers` or `EntityEvolvers` can return a new instance of the entity based on an event. This entity will then be used for the next command or next event.
 
