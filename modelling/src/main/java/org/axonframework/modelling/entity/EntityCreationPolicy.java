@@ -20,6 +20,11 @@ package org.axonframework.modelling.entity;
  * Determines how entities should be loaded or created when handling a command. By default, the
  * {@link #CREATE_IF_MISSING} policy is used, which means that a new entity will be created if it does not exist yet.
  *
+ * <h4>Before 5.0.0</h4>
+ * This enum was called {@code org.axonframework.modelling.command.AggregateCreationPolicy} and was used to
+ * determine the creation policy of aggregates. It has been renamed to reflect the move to entities in Axon 5.0.0.
+ * In all other aspects, it remains the same
+ *
  * @author Marc Gathier
  * @author Mitchell Herrijgers
  * @since 4.3
