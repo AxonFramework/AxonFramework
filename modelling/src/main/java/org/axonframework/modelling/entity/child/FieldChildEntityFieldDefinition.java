@@ -105,10 +105,10 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
     @Nonnull
     @SuppressWarnings("unchecked")
     @Override
-    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F entities) {
+    public P evolveParentBasedOnChildInput(@Nonnull P parentEntity, @Nonnull F childInput) {
         try {
             if (optionalSetter != null) {
-                Object invokeResult = optionalSetter.invoke(parentEntity, entities);
+                Object invokeResult = optionalSetter.invoke(parentEntity, childInput);
                 if (invokeResult != null) {
                     if(!parentClass.isAssignableFrom(invokeResult.getClass())) {
                         throw new IllegalArgumentException(
@@ -119,7 +119,7 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
                     return (P) invokeResult;
                 }
             }
-            field.set(parentEntity, entities);
+            field.set(parentEntity, childInput);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

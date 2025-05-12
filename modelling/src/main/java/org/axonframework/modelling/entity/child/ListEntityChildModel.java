@@ -65,7 +65,7 @@ public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
 
     @Override
     protected P applyEvolvedChildEntities(P entity, List<C> evolvedChildEntities) {
-        return childEntityFieldDefinition.evolveParentBasedOnChildEntities(entity, evolvedChildEntities);
+        return childEntityFieldDefinition.evolveParentBasedOnChildInput(entity, evolvedChildEntities);
     }
 
     @Override

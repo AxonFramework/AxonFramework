@@ -36,7 +36,7 @@ public class ChildEntityNotFoundException extends RuntimeException {
     /**
      * Creates a new exception with the given {@code message}.
      *
-     * @param message The message describing the cause of the exception
+     * @param message The message describing the cause of the exception.
      */
     public ChildEntityNotFoundException(String message) {
         super(message);

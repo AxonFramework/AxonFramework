@@ -53,8 +53,8 @@ public class GetterEvolverChildEntityFieldDefinition<P, F> implements ChildEntit
 
     @Nonnull
     @Override
-    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F entities) {
-        return evolver.apply(parentEntity, entities);
+    public P evolveParentBasedOnChildInput(@Nonnull P parentEntity, @Nonnull F childInput) {
+        return evolver.apply(parentEntity, childInput);
     }
 
     @Override

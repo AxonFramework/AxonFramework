@@ -128,7 +128,7 @@ class SingleEntityChildModelTest {
             RecordingParentEntity result = testSubject.evolve(parentEntity, event, context);
 
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityFieldDefinition, never()).evolveParentBasedOnChildEntities(any(), any());
+            verify(childEntityFieldDefinition, never()).evolveParentBasedOnChildInput(any(), any());
 
             assertEquals(parentEntity, result);
             assertTrue(parentEntity.getEvolves().isEmpty());
@@ -143,7 +143,7 @@ class SingleEntityChildModelTest {
                 EventMessage<String> event = answ.getArgument(1);
                 return child.evolve("child evolve: " + event.getPayload());
             });
-            when(childEntityFieldDefinition.evolveParentBasedOnChildEntities(any(), any())).thenAnswer(answ -> {
+            when(childEntityFieldDefinition.evolveParentBasedOnChildInput(any(), any())).thenAnswer(answ -> {
                 RecordingParentEntity parent = answ.getArgument(0);
                 RecordingChildEntity child = answ.getArgument(1);
                 return parent.evolve("parent evolve: " + child.getEvolves());
@@ -154,7 +154,7 @@ class SingleEntityChildModelTest {
             assertEquals("parent evolve: [child evolve: myPayload]", result.getEvolves().getFirst());
 
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityFieldDefinition).evolveParentBasedOnChildEntities(
+            verify(childEntityFieldDefinition).evolveParentBasedOnChildInput(
                     eq(parentEntity),
                     argThat(a -> a.getEvolves().contains("child evolve: myPayload"))
             );
@@ -166,7 +166,7 @@ class SingleEntityChildModelTest {
             RecordingChildEntity childEntity = new RecordingChildEntity();
             when(childEntityFieldDefinition.getChildValue(any())).thenReturn(childEntity);
             when(childEntityEntityModel.evolve(any(), any(), any())).thenReturn(null);
-            when(childEntityFieldDefinition.evolveParentBasedOnChildEntities(any(), any())).thenAnswer(answ -> {
+            when(childEntityFieldDefinition.evolveParentBasedOnChildInput(any(), any())).thenAnswer(answ -> {
                 RecordingParentEntity parent = answ.getArgument(0);
                 RecordingChildEntity child = answ.getArgument(1);
                 return parent.evolve("parent evolve: " + child);
@@ -177,7 +177,7 @@ class SingleEntityChildModelTest {
             assertEquals("parent evolve: null", result.getEvolves().getFirst());
 
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityFieldDefinition).evolveParentBasedOnChildEntities(
+            verify(childEntityFieldDefinition).evolveParentBasedOnChildInput(
                     eq(parentEntity),
                     argThat(Objects::isNull)
             );
