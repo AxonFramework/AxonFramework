@@ -17,30 +17,18 @@
 package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.SerializationException;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.UnknownSerializedType;
+import org.axonframework.serialization.*;
 
-import java.io.IOException;
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -57,6 +45,8 @@ public class JacksonSerializer implements Serializer {
     private final RevisionResolver revisionResolver;
     private final Converter converter;
     private final ObjectMapper objectMapper;
+    private final Set<String> unknownClasses = new ConcurrentSkipListSet<>();
+    private final boolean cacheUnknownClasses;
 
     /**
      * Instantiate a Builder to be able to create a {@link JacksonSerializer}.
@@ -117,6 +107,7 @@ public class JacksonSerializer implements Serializer {
         if (converter instanceof ChainingConverter) {
             registerConverters((ChainingConverter) converter);
         }
+        this.cacheUnknownClasses = builder.cacheUnknownClasses;
     }
 
     /**
@@ -213,9 +204,14 @@ public class JacksonSerializer implements Serializer {
         if (SimpleSerializedType.emptyType().equals(type)) {
             return Void.class;
         }
+        String className = resolveClassName(type);
+        if (cacheUnknownClasses && unknownClasses.contains(className)) {
+            return UnknownSerializedType.class;
+        }
         try {
-            return objectMapper.getTypeFactory().findClass(resolveClassName(type));
+            return objectMapper.getTypeFactory().findClass(className);
         } catch (ClassNotFoundException e) {
+            unknownClasses.add(className);
             return UnknownSerializedType.class;
         }
     }
@@ -267,6 +263,7 @@ public class JacksonSerializer implements Serializer {
      */
     public static class Builder {
 
+        private boolean cacheUnknownClasses = true;
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private Converter converter = new ChainingConverter();
         private ObjectMapper objectMapper = new ObjectMapper();
@@ -340,6 +337,19 @@ public class JacksonSerializer implements Serializer {
          */
         public Builder lenientDeserialization() {
             lenientDeserialization = true;
+            return this;
+        }
+
+        /**
+         * Indicated whether to cache the names for classes which couldn't be resolved to a class. Defaults to {@code true}.
+         * <p>
+         * It is recommended to disable this in case the class loading is dynamic, and classes that are not available
+         * at one point in time, may become available at any time later.
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder cacheUnknownClasses(boolean cacheUnknownClasses) {
+            this.cacheUnknownClasses = cacheUnknownClasses;
             return this;
         }
 

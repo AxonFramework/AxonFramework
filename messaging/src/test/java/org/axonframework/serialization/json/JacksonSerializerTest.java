@@ -24,15 +24,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.ContentTypeConverter;
-import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.UnknownSerializedType;
-import org.junit.jupiter.api.*;
+import org.axonframework.serialization.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.time.Instant;
@@ -149,6 +143,34 @@ class JacksonSerializerTest {
 
         assertEquals("first", actualJson.get("value").asText());
         assertEquals("nested", actualJson.path("nested").path("value").asText());
+    }
+
+    @Test
+    void readUnknownSerializedTypeCachesLookupResults() {
+        ObjectMapper spiedMapper = spy(objectMapper);
+        testSubject = JacksonSerializer.builder().objectMapper(spiedMapper).build();
+        SerializedObject<String> serialized = new SimpleSerializedObject<>("{\"data\" : \"value\"}", String.class, "my.nonexistent.Class", null);
+
+        for (int i = 0; i < 10; i++) {
+            Class<?> actual = testSubject.classForType(serialized.getType());
+            assertEquals(UnknownSerializedType.class, actual);
+        }
+
+        verify(spiedMapper, times(1)).getTypeFactory();
+    }
+
+    @Test
+    void readUnknownSerializedTypeWithCachingDisabled() {
+        ObjectMapper spiedMapper = spy(objectMapper);
+        testSubject = JacksonSerializer.builder().cacheUnknownClasses(false).objectMapper(spiedMapper).build();
+        SerializedObject<String> serialized = new SimpleSerializedObject<>("{\"data\" : \"value\"}", String.class, "my.nonexistent.Class", null);
+
+        for (int i = 0; i < 10; i++) {
+            Class<?> actual = testSubject.classForType(serialized.getType());
+            assertEquals(UnknownSerializedType.class, actual);
+        }
+
+        verify(spiedMapper, times(10)).getTypeFactory();
     }
 
     @Test
