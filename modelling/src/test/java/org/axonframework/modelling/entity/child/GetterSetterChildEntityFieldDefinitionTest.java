@@ -44,8 +44,8 @@ class GetterSetterChildEntityFieldDefinitionTest {
         parentEntity.setRecordingChildEntity(childEntity);
 
         RecordingChildEntity newChildEntity = new RecordingChildEntity("1234567");
-        ParentEntity evolvedParentEntity = testSubject.evolveParentBasedOnChildEntities(parentEntity,
-                                                                                        newChildEntity);
+        ParentEntity evolvedParentEntity = testSubject.evolveParentBasedOnChildInput(parentEntity,
+                                                                                     newChildEntity);
 
         assertEquals(newChildEntity, evolvedParentEntity.getRecordingChildEntity());
     }

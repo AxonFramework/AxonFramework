@@ -70,12 +70,12 @@ public class SingleEntityChildModel<C, P> extends AbstractEntityChildModel<C, P>
     @Override
     protected P applyEvolvedChildEntities(P entity, List<C> evolvedChildEntities) {
         if (evolvedChildEntities.isEmpty()) {
-            return childEntityFieldDefinition.evolveParentBasedOnChildEntities(entity, null);
+            return childEntityFieldDefinition.evolveParentBasedOnChildInput(entity, null);
         }
         if (evolvedChildEntities.size() > 1) {
             throw new IllegalStateException("The SingleEntityChildModel field should only return a single child entity.");
         }
-        return childEntityFieldDefinition.evolveParentBasedOnChildEntities(entity, evolvedChildEntities.getFirst());
+        return childEntityFieldDefinition.evolveParentBasedOnChildInput(entity, evolvedChildEntities.getFirst());
     }
 
     @Override

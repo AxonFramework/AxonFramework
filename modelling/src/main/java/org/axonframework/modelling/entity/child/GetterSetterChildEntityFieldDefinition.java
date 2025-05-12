@@ -53,8 +53,8 @@ public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntity
 
     @Nonnull
     @Override
-    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F entities) {
-        setter.accept(parentEntity, entities);
+    public P evolveParentBasedOnChildInput(@Nonnull P parentEntity, @Nonnull F childInput) {
+        setter.accept(parentEntity, childInput);
         return parentEntity;
     }
 

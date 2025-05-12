@@ -44,16 +44,16 @@ import java.util.function.Function;
 public interface ChildEntityFieldDefinition<P, F> {
 
     /**
-     * Evolves the parent entity based on the provided child value. This can be a single entity,
-     * or a collection of entities. The evolver can return a new version of the parent entity, or
-     * it can simply set the field on the parent entity.
+     * Evolves the parent entity based on the provided child value. This can be a single entity, or a collection of
+     * entities. The evolver can return a new version of the parent entity, or it can simply set the field on the parent
+     * entity.
      *
      * @param parentEntity The parent entity to evolve.
-     * @param entities       The child entity to use for evolution.
+     * @param childInput   The child entity to use for evolution.
      * @return The evolved parent entity.
      */
     @Nonnull
-    P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nullable F entities);
+    P evolveParentBasedOnChildInput(@Nonnull P parentEntity, @Nullable F childInput);
 
     /**
      * Returns the type of the field.

@@ -46,7 +46,7 @@ class FieldChildEntityFieldDefinitionTest {
 
         RecordingChildEntity newChildEntity = new RecordingChildEntity("1234567");
         ParentEntityWithOnlyField evolvedParentEntity = testSubject
-                .evolveParentBasedOnChildEntities(parentEntity, newChildEntity);
+                .evolveParentBasedOnChildInput(parentEntity, newChildEntity);
 
         assertEquals(newChildEntity, evolvedParentEntity.randomNameForRetrievingChildEntityToAvoidGetterLogic());
     }
@@ -75,7 +75,7 @@ class FieldChildEntityFieldDefinitionTest {
 
         RecordingChildEntity newChildEntity = new RecordingChildEntity("1234567");
         ParentEntityWithGetterAndSetter evolvedParentEntity = testSubject
-                .evolveParentBasedOnChildEntities(parentEntity, newChildEntity);
+                .evolveParentBasedOnChildInput(parentEntity, newChildEntity);
 
         assertEquals(newChildEntity, evolvedParentEntity.getChildEntity());
         assertTrue(parentEntity.setterCalled.get());
@@ -102,7 +102,7 @@ class FieldChildEntityFieldDefinitionTest {
 
         RecordingChildEntity newChildEntity = new RecordingChildEntity("1234567");
         ParentEntityWithEvolveMethod evolvedParentEntity = testSubject
-                .evolveParentBasedOnChildEntities(parentEntity, newChildEntity);
+                .evolveParentBasedOnChildInput(parentEntity, newChildEntity);
 
         assertEquals(newChildEntity, evolvedParentEntity.childEntity());
         assertTrue(evolvedParentEntity.evolved);

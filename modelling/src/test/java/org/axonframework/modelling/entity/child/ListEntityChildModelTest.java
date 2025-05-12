@@ -167,7 +167,7 @@ class ListEntityChildModelTest {
                 EventMessage<String> event = answ.getArgument(1);
                 return child.evolve("child evolve: " + event.getPayload());
             });
-            when(childEntityFieldDefinition.evolveParentBasedOnChildEntities(any(), any())).thenAnswer(answ -> {
+            when(childEntityFieldDefinition.evolveParentBasedOnChildInput(any(), any())).thenAnswer(answ -> {
                 RecordingParentEntity parent = answ.getArgument(0);
                 List<RecordingChildEntity> child = answ.getArgument(1);
                 return parent.evolve(
@@ -184,7 +184,7 @@ class ListEntityChildModelTest {
             RecordingParentEntity result = testSubject.evolve(parentEntity, event, context);
 
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityFieldDefinition, never()).evolveParentBasedOnChildEntities(any(), any());
+            verify(childEntityFieldDefinition, never()).evolveParentBasedOnChildInput(any(), any());
 
             assertEquals(parentEntity, result);
             assertTrue(parentEntity.getEvolves().isEmpty());
@@ -199,7 +199,7 @@ class ListEntityChildModelTest {
 
             assertEquals("parent evolve: [[child evolve: myPayload]]", result.getEvolves().getFirst());
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityFieldDefinition).evolveParentBasedOnChildEntities(
+            verify(childEntityFieldDefinition).evolveParentBasedOnChildInput(
                     eq(parentEntity), argThat(a -> a.getFirst().getEvolves().contains("child evolve: myPayload")));
             verify(childEntityEntityModel).evolve(childEntity, event, context);
         }
@@ -237,7 +237,7 @@ class ListEntityChildModelTest {
 
             assertEquals("parent evolve: []", result.getEvolves().getFirst());
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityFieldDefinition).evolveParentBasedOnChildEntities(
+            verify(childEntityFieldDefinition).evolveParentBasedOnChildInput(
                     eq(parentEntity), argThat(List::isEmpty));
             verify(childEntityEntityModel).evolve(childEntity, event, context);
         }
