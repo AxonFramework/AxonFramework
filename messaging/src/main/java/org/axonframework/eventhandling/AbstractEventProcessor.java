@@ -186,7 +186,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                               } catch (RuntimeException ex) {
                                   throw ex;
                               } catch (Exception ex) {
-                                  throw new RuntimeException(ex);
+                                  throw new EventProcessingException("Exception occurred while processing events", ex);
                               }
                               return null;
                           }));
