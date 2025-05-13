@@ -36,8 +36,8 @@ public interface PolymorphicEntityModelBuilder<E> extends EntityModelBuilder<E> 
 
     @Nonnull
     @Override
-    PolymorphicEntityModelBuilder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
-                                                    @Nonnull EntityCommandHandler<E> messageHandler);
+    PolymorphicEntityModelBuilder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                            @Nonnull EntityCommandHandler<E> messageHandler);
 
     @Nonnull
     @Override

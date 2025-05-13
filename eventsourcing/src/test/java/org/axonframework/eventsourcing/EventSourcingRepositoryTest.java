@@ -20,8 +20,8 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.Tag;
@@ -68,7 +68,12 @@ class EventSourcingRepositoryTest {
                 String.class,
                 String.class,
                 eventStore,
-                (entityType, id) -> id,
+                (id, event) -> {
+                    if(event != null) {
+                        return id + "(" + event.getPayload() + ")";
+                    }
+                    return id + "()";
+                },
                 identifier -> TEST_CRITERIA,
                 (entity, event, context) -> entity + "-" + event.getPayload()
         );
@@ -90,7 +95,7 @@ class EventSourcingRepositoryTest {
         verify(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
 
-        assertEquals("test-0-1", result.resultNow().entity());
+        assertEquals("test(0)-0-1", result.resultNow().entity());
     }
 
     @Test
@@ -181,10 +186,10 @@ class EventSourcingRepositoryTest {
         //noinspection unchecked
         ArgumentCaptor<Consumer<EventMessage<?>>> callback = ArgumentCaptor.forClass(Consumer.class);
         verify(eventStoreTransaction).onAppend(callback.capture());
-        assertEquals("test-0-1", result.resultNow().entity());
+        assertEquals("test(0)-0-1", result.resultNow().entity());
 
         callback.getValue().accept(new GenericEventMessage<>(new MessageType("event"), "live"));
-        assertEquals("test-0-1-live", result.resultNow().entity());
+        assertEquals("test(0)-0-1-live", result.resultNow().entity());
     }
 
     @Test
@@ -195,13 +200,34 @@ class EventSourcingRepositoryTest {
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
 
         CompletableFuture<ManagedEntity<String, String>> result =
-                testSubject.loadOrCreate("test", processingContext);
+                testSubject.load("test", processingContext);
 
-        assertEquals("test-0-1", result.resultNow().entity());
+        assertEquals("test(0)-0-1", result.resultNow().entity());
     }
 
     @Test
-    void loadOrCreateShouldCreateWhenNoEventsAreReturned() {
+    void loadShouldReturnNullEntityWhenNoEventsAreReturned() {
+        StubProcessingContext processingContext = new StubProcessingContext();
+        doReturn(MessageStream.empty())
+                .when(eventStoreTransaction)
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+
+        CompletableFuture<ManagedEntity<String, String>> loaded =
+                testSubject.load("test", processingContext);
+
+        assertTrue(loaded.isDone());
+        assertFalse(loaded.isCompletedExceptionally());
+        verify(eventStore, times(2)).transaction(processingContext);
+        verify(eventStoreTransaction).onAppend(any());
+        verify(eventStoreTransaction)
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+
+        assertNull(loaded.resultNow().entity());
+    }
+
+
+    @Test
+    void loadOrCreateShouldReturnNoEventMessageConstructorEntityWhenNoEventsAreReturned() {
         StubProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.empty())
                 .when(eventStoreTransaction)
@@ -217,7 +243,7 @@ class EventSourcingRepositoryTest {
         verify(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
 
-        assertEquals("test", loaded.resultNow().entity());
+        assertEquals("test()", loaded.resultNow().entity());
     }
 
     private static boolean conditionPredicate(SourcingCondition condition) {

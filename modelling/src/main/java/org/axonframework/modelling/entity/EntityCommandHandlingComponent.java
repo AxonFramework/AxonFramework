@@ -76,13 +76,24 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
                                                                 @Nonnull ProcessingContext context) {
         try {
             ID id = idResolver.resolve(command, context);
-            return DelayedMessageStream.createSingle(
-                    repository.load(id, context)
-                              .thenApply(me -> entityModel.handle(command, me.entity(), context).first()));
+            QualifiedName messageName = command.type().qualifiedName();
+            var isCreationalHandler = entityModel.supportedCreationalCommands().contains(messageName);
+            var isInstanceHandler = entityModel.supportedInstanceCommands().contains(messageName);
+
+            var loadFuture = isInstanceHandler && !isCreationalHandler ?
+                    repository.loadOrCreate(id, context) :
+                    repository.load(id, context);
+            return DelayedMessageStream.createSingle(loadFuture.thenApply(me -> {
+                if (me.entity() != null) {
+                    return entityModel.handleInstance(command, me.entity(), context).first();
+                }
+                return entityModel.handleCreate(command, context).first();
+            }));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }
     }
+
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {

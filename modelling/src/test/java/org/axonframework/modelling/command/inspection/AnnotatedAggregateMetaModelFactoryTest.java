@@ -363,14 +363,6 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    void illegalFactoryMethodThrowsExceptionClass() {
-        assertThrows(
-                AxonConfigurationException.class,
-                () -> AnnotatedAggregateMetaModelFactory
-                        .inspectAggregate(SomeIllegalAnnotatedFactoryMethodClass.class));
-    }
-
-    @Test
     void typedAggregateIdentifier() {
         assertThrows(
                 AxonConfigurationException.class,

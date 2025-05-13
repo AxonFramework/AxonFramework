@@ -29,13 +29,8 @@ public record ImmutableCustomer(
         String emailAddress
 ) implements ImmutablePerson {
 
-    @CommandHandler
-    public void handle(CreateCustomer command, EventAppender appender) {
-        if (identifier != null) {
-            throw new IllegalStateException("Customer already created");
-        }
-        appender.append(new CustomerCreated(command.identifier(),
-                                            command.emailAddress()));
+    public ImmutableCustomer(CustomerCreated event) {
+        this(event.identifier(), event.emailAddress());
     }
 
     @EventSourcingHandler
@@ -46,7 +41,13 @@ public record ImmutableCustomer(
         );
     }
 
-    @Override
+    @CommandHandler
+    public static void handle(CreateCustomer command, EventAppender appender) {
+        appender.append(new CustomerCreated(command.identifier(),
+                                            command.emailAddress()));
+    }
+
+    @EventSourcingHandler
     public ImmutableCustomer on(EmailAddressChanged event) {
         return new ImmutableCustomer(
                 identifier,

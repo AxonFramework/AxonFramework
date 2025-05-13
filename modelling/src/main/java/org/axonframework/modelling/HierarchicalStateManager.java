@@ -65,7 +65,7 @@ public class HierarchicalStateManager implements StateManager {
         Class<I> idClass = (Class<I>) id.getClass();
         Repository<I, T> repository = repository(type, idClass);
         if (repository != null) {
-            return repository.load(id, context);
+            return repository.loadOrCreate(id, context);
         }
         throw new MissingRepositoryException(id.getClass(), type);
     }
