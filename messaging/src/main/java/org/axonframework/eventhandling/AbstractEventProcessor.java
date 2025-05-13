@@ -143,7 +143,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     /**
-     * Process a batch of events. The messages are processed in a new {@link LegacyUnitOfWork}. Before each message is
+     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is
      * handled the event processor creates an interceptor chain containing all registered
      * {@link MessageHandlerInterceptor interceptors}.
      *
@@ -151,14 +151,13 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @param unitOfWork    The Unit of Work that has been prepared to process the messages
      * @throws Exception when an exception occurred during processing of the batch
      */
-    @Deprecated(since = "5.0.0")
     protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                             LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
-        processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT);
+                                             UnitOfWork unitOfWork) throws Exception {
+        processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT).join();
     }
 
     /**
-     * Process a batch of events. The messages are processed in a new {@link LegacyUnitOfWork}. Before each message is
+     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is
      * handled the event processor creates an interceptor chain containing all registered
      * {@link MessageHandlerInterceptor interceptors}.
      *
@@ -167,59 +166,6 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @param processingSegments The segments for which the events should be processed in this unit of work
      * @throws Exception when an exception occurred during processing of the batch
      */
-    @Deprecated(since = "5.0.0")
-    protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                       LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                       Collection<Segment> processingSegments) throws Exception {
-        // TODO - Change UnitOfWork to ProcessingContext
-        spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages).runCallable(() -> {
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
-                EventMessage<?> message = unitOfWork.getMessage();
-                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(message);
-                return spanFactory.createProcessEventSpan(this instanceof StreamingEventProcessor, message)
-                                  .runCallable(() -> new DefaultInterceptorChain<>(
-                                          unitOfWork,
-                                          interceptors,
-                                          m -> processMessageInUnitOfWork(processingSegments, m, null, monitorCallback))
-                                          .proceedSync());
-            }, rollbackConfiguration); // TODO - RollbackConfiguration in the new UnitOfWork?
-
-            if (resultMessage.isExceptional()) {
-                Throwable e = resultMessage.exceptionResult();
-                if (unitOfWork.isRolledBack()) {
-                    errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
-                } else {
-                    logger.info(
-                            "Exception occurred while processing a message, but unit of work was committed. {}",
-                            e.getClass().getName());
-                }
-            }
-            return null;
-        });
-    }
-
-    private Object processMessageInUnitOfWork(Collection<Segment> processingSegments,
-                                              EventMessage<?> message,
-                                              ProcessingContext processingContext,
-                                              MessageMonitor.MonitorCallback monitorCallback
-    ) throws Exception {
-        try {
-            for (Segment processingSegment : processingSegments) {
-                eventHandlerInvoker.handle(message, processingContext, processingSegment);
-            }
-            monitorCallback.reportSuccess();
-            return MessageStream.empty();
-        } catch (Exception exception) {
-            monitorCallback.reportFailure(exception);
-            throw exception;
-        }
-    }
-
-    protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                             UnitOfWork unitOfWork) throws Exception {
-        processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT).join();
-    }
-
     protected CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                                           UnitOfWork unitOfWork,
                                                           Collection<Segment> processingSegments) throws Exception {
@@ -249,6 +195,23 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                               }
                               return null;
                           }));
+    }
+
+    private Object processMessageInUnitOfWork(Collection<Segment> processingSegments,
+                                              EventMessage<?> message,
+                                              ProcessingContext processingContext,
+                                              MessageMonitor.MonitorCallback monitorCallback
+    ) throws Exception {
+        try {
+            for (Segment processingSegment : processingSegments) {
+                eventHandlerInvoker.handle(message, processingContext, processingSegment);
+            }
+            monitorCallback.reportSuccess();
+            return MessageStream.empty();
+        } catch (Exception exception) {
+            monitorCallback.reportFailure(exception);
+            throw exception;
+        }
     }
 
     private CompletableFuture<Void> processMessage(Collection<Segment> processingSegments,
