@@ -29,7 +29,9 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.annotation.QueryHandler;
@@ -579,10 +581,23 @@ class InterceptorConfigurationTest {
             @Override
             public Object handle(LegacyUnitOfWork<? extends T> unitOfWork,
                                  InterceptorChain interceptorChain) throws Exception {
+                var message = unitOfWork.getMessage();
+                interceptMessage(message);
+                return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(@NotNull M message,
+                                                                                          @NotNull ProcessingContext context,
+                                                                                          @NotNull InterceptorChain<M, R> interceptorChain) {
+                interceptMessage(message);
+                return interceptorChain.proceed(message, context);
+            }
+
+            private void interceptMessage(T message) {
                 invocation.countDown();
                 axonConfiguration.tags();
-                handlingOutcome.add(name + ": " + unitOfWork.getMessage());
-                return interceptorChain.proceedSync();
+                handlingOutcome.add(name + ": " + message);
             }
         }
 
@@ -693,17 +708,30 @@ class InterceptorConfigurationTest {
             @Override
             public Object handle(LegacyUnitOfWork<?> unitOfWork,
                                  InterceptorChain interceptorChain) throws Exception {
-                if (unitOfWork.getMessage() instanceof CommandMessage) {
+                var message = unitOfWork.getMessage();
+                interceptMessage(message);
+                return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends Message<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(@NotNull M message,
+                                                                                                   @NotNull ProcessingContext context,
+                                                                                                   @NotNull InterceptorChain<M, R> interceptorChain) {
+                interceptMessage(message);
+                return interceptorChain.proceed(message, context);
+            }
+
+            private void interceptMessage(Message<?> message) {
+                if (message instanceof CommandMessage) {
                     commandInvocation.countDown();
                     commandHandlingOutcome.add(name);
-                } else if (unitOfWork.getMessage() instanceof QueryMessage) {
+                } else if (message instanceof QueryMessage) {
                     queryInvocation.countDown();
                     queryHandlingOutcome.add(name);
                 } else {
                     eventInvocation.countDown();
                     eventHandlingOutcome.add(name);
                 }
-                return interceptorChain.proceedSync();
             }
         }
 

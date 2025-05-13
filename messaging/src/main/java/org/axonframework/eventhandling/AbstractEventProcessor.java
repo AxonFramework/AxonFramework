@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.Nonnull;
 
@@ -180,7 +181,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         return spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages)
                           .runSupplierAsync(() -> unitOfWork.execute().exceptionally(e -> {
                               try {
-                                  errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
+                                  var cause = e instanceof CompletionException ? e.getCause() : e;
+                                  errorHandler.handleError(new ErrorContext(getName(), cause, eventMessages));
                               } catch (Exception ex) {
                                   throw new RuntimeException(ex);
                               }

@@ -58,6 +58,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -317,15 +318,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     logger.info("Segment is owned by another node. Releasing thread to process another segment...");
                     releaseSegment(segment.getSegmentId());
                 } catch (Exception e) {
+                    var cause = e instanceof CancellationException ? e.getCause() : e;
                     // Make sure to start with a clean event stream. The exception may have caused an illegal state
                     if (errorWaitTime == 1) {
-                        logger.warn("Error occurred. Starting retry mode.", e);
+                        logger.warn("Error occurred. Starting retry mode.", cause);
                     }
                     logger.warn("Releasing claim on token and preparing for retry in {}s", errorWaitTime);
                     TrackerStatus trackerStatus = activeSegments.get(segment.getSegmentId());
                     if (!trackerStatus.isErrorState()) {
                         TrackerStatus errorStatus =
-                                activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.markError(e));
+                                activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.markError(cause));
                         trackerStatusChangeListener.onEventTrackerStatusChange(
                                 singletonMap(segment.getSegmentId(), errorStatus)
                         );
