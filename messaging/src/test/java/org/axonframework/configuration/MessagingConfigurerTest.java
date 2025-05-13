@@ -92,7 +92,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         MessageTypeResolver expected = NamespaceMessageTypeResolver
                 .namespace("namespace")
                 .message(String.class, "test.message", "1.0.0")
-                .throwsIfUnknown();
+                .noFallback();
 
         Configuration result = testSubject.registerMessageTypeResolver(c -> expected)
                                           .build();
@@ -108,7 +108,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         NamespaceMessageTypeResolver.Builder builder2 = builder1
                 .message(Integer.class, "test.integer", "1.0.0");
 
-        var instance1 = builder1.throwsIfUnknown();
+        var instance1 = builder1.noFallback();
         var instance2 = builder2.fallback(new ClassBasedMessageTypeResolver());
 
         assertTrue(instance1.resolve(String.class).isPresent());
