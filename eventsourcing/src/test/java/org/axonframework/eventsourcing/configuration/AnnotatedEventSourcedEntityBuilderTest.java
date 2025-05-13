@@ -28,6 +28,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 
@@ -187,8 +188,8 @@ class AnnotatedEventSourcedEntityBuilderTest {
 
         @Override
         public @Nullable CustomEntityFactoryCourse create(
-                @Nonnull AnnotatedEventSourcedEntityBuilderTest.CourseId courseId,
-                @Nullable EventMessage<?> firstEventMessage) {
+                @Nonnull CourseId courseId,
+                @Nullable EventMessage<?> firstEventMessage, @Nonnull ProcessingContext context) {
             return new CustomEntityFactoryCourse(courseId);
         }
     }

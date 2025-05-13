@@ -82,6 +82,9 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
         @Override
         public boolean matches(Message<?> message, ProcessingContext processingContext) {
+            if(message == null) {
+                return false;
+            }
             return !(parameterType.isPrimitive() || (boolean) metaDataValue.get(REQUIRED_PROPERTY))
                     || (
                     message.getMetaData().containsKey(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString())

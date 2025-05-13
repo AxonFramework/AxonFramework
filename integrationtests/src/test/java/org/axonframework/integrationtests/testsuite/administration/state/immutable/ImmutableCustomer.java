@@ -19,6 +19,7 @@ package org.axonframework.integrationtests.testsuite.administration.state.immuta
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.reflection.EntityFactoryMethod;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateCustomer;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.events.CustomerCreated;
@@ -29,7 +30,8 @@ public record ImmutableCustomer(
         String emailAddress
 ) implements ImmutablePerson {
 
-    public ImmutableCustomer(CustomerCreated event) {
+    @EntityFactoryMethod
+    public ImmutableCustomer(CustomerCreated event, PersonIdentifier identifier) {
         this(event.identifier(), event.emailAddress());
     }
 
