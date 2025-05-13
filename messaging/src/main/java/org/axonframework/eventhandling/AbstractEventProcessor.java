@@ -183,6 +183,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                               try {
                                   var cause = e instanceof CompletionException ? e.getCause() : e;
                                   errorHandler.handleError(new ErrorContext(getName(), cause, eventMessages));
+                              } catch (RuntimeException ex) {
+                                  throw ex;
                               } catch (Exception ex) {
                                   throw new RuntimeException(ex);
                               }
