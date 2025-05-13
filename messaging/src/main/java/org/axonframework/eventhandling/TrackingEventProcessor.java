@@ -58,8 +58,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -318,7 +318,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     logger.info("Segment is owned by another node. Releasing thread to process another segment...");
                     releaseSegment(segment.getSegmentId());
                 } catch (Exception e) {
-                    var cause = e instanceof CancellationException ? e.getCause() : e;
+                    var cause = e instanceof CompletionException ? e.getCause() : e;
                     // Make sure to start with a clean event stream. The exception may have caused an illegal state
                     if (errorWaitTime == 1) {
                         logger.warn("Error occurred. Starting retry mode.", cause);

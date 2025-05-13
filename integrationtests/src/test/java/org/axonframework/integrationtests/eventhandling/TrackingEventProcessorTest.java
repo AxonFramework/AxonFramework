@@ -401,7 +401,7 @@ class TrackingEventProcessorTest {
             EventTrackerStatus status = testSubject.processingStatus().get(segmentId);
             assertNotNull(status);
             assertTrue(status.isErrorState());
-            assertEquals(CompletionException.class, status.getError().getClass());
+            assertEquals(MockException.class, status.getError().getClass());
         });
 
         errorFlag.set(false);
