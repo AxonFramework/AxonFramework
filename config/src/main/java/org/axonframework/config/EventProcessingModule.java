@@ -128,7 +128,6 @@ public class EventProcessingModule
     protected final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
     protected final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
     protected final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
-    protected final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
     protected final Map<String, Component<SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueues = new HashMap<>();
     protected final Map<String, Component<EnqueuePolicy<EventMessage<?>>>> deadLetterPolicies = new HashMap<>();
@@ -161,10 +160,6 @@ public class EventProcessingModule
             "tokenStore",
             c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)
     );
-    private final Component<RollbackConfiguration> defaultRollbackConfiguration = new Component<>(
-            () -> configuration,
-            "rollbackConfiguration",
-            c -> c.getComponent(RollbackConfiguration.class, () -> RollbackConfigurationType.ANY_THROWABLE));
     private final Component<SagaStore> sagaStore = new Component<>(
             () -> configuration,
             "sagaStore",
@@ -469,14 +464,6 @@ public class EventProcessingModule
         return sequencingPolicies.containsKey(processingGroup)
                 ? sequencingPolicies.get(processingGroup).get()
                 : defaultSequencingPolicy.get();
-    }
-
-    @Override
-    public RollbackConfiguration rollbackConfiguration(String processorName) {
-        validateConfigInitialization();
-        return rollbackConfigurations.containsKey(processorName)
-                ? rollbackConfigurations.get(processorName).get()
-                : defaultRollbackConfiguration.get();
     }
 
     @Override
@@ -807,15 +794,6 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerMessageMonitorFactory(String eventProcessorName,
                                                                    MessageMonitorFactory messageMonitorFactory) {
         this.messageMonitorFactories.put(eventProcessorName, messageMonitorFactory);
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerRollbackConfiguration(String name,
-                                                                   Function<LegacyConfiguration, RollbackConfiguration> rollbackConfigurationBuilder) {
-        this.rollbackConfigurations.put(name, new Component<>(() -> configuration,
-                                                              "rollbackConfiguration",
-                                                              rollbackConfigurationBuilder));
         return this;
     }
 
