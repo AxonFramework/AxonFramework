@@ -23,10 +23,14 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -94,6 +98,15 @@ class EventProcessingModuleWithInterceptorsTest {
                 unitOfWork.transformMessage(event -> event
                         .andMetaData(Collections.singletonMap("myMetaDataKey", "myMetaDataValue")));
                 return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @NotNull M message, @NotNull ProcessingContext context,
+                    @NotNull InterceptorChain<M, R> interceptorChain) {
+                //noinspection unchecked
+                var eventWithMetaData = (M) message.andMetaData(Collections.singletonMap("myMetaDataKey", "myMetaDataValue"));
+                return interceptorChain.proceed(eventWithMetaData, context);
             }
         }
 
