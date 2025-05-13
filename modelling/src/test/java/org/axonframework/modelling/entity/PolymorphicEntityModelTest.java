@@ -113,7 +113,7 @@ class PolymorphicEntityModelTest {
                 .addConcreteType(concreteTestEntityOneEntityModel)
                 .addConcreteType(concreteTestEntityTwoEntityModel)
                 .entityEvolver(entityEvolver)
-                .commandHandler(SUPER_TYPE_INSTANCE_COMMAND, entityInstanceCommandHandler)
+                .instanceCommandHandler(SUPER_TYPE_INSTANCE_COMMAND, entityInstanceCommandHandler)
                 .creationalCommandHandler(SUPER_TYPE_CREATIONAL_COMMAND, entityCreationalCommandHandler)
                 .build();
     }

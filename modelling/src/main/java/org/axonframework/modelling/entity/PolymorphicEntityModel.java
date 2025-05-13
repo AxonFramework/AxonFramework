@@ -206,9 +206,9 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
         @Nonnull
         @Override
-        public Builder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
-                                         @Nonnull EntityCommandHandler<E> messageHandler) {
-            superTypeBuilder.commandHandler(qualifiedName, messageHandler);
+        public Builder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                 @Nonnull EntityCommandHandler<E> messageHandler) {
+            superTypeBuilder.instanceCommandHandler(qualifiedName, messageHandler);
             return this;
         }
 

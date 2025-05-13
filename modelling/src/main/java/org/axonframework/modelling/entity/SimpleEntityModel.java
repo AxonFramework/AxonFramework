@@ -266,8 +266,8 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
 
         @Nonnull
         @Override
-        public Builder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
-                                         @Nonnull EntityCommandHandler<E> messageHandler) {
+        public Builder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                 @Nonnull EntityCommandHandler<E> messageHandler) {
             requireNonNull(qualifiedName, "The qualifiedName may not be null.");
             requireNonNull(messageHandler, "The messageHandler may not be null.");
             if (commandHandlers.containsKey(qualifiedName)) {

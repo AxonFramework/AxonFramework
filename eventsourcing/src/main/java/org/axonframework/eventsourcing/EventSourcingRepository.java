@@ -131,7 +131,6 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         ).thenApply(Function.identity());
     }
 
-
     @Override
     public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
                                                                 @Nonnull ProcessingContext processingContext) {
@@ -149,7 +148,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         if (entity.entity() == null) {
             E createdEntity = entityFactory.create(identifier, null);
             if (createdEntity == null) {
-                throw new IllegalStateException(("The entity factory returned a null entity while loadOrCreate was called for identifier: [%s]. Adjust your EventSourcedEntityFactory to return a non-null entity when no first event message is present and using loadOrCreate.").formatted(
+                throw new IllegalStateException(("The EventSourcedEntityFactory returned a null entity while loadOrCreate was called for identifier: [%s]. Adjust your EventSourcedEntityFactory to return a non-null entity when no first event message is present and using loadOrCreate.").formatted(
                         identifier));
             }
             return new EventSourcedEntity<>(identifier, createdEntity);
@@ -188,7 +187,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
                                                MessageStream.Entry<? extends EventMessage<?>> entry) {
         E createdEntity = entityFactory.create(identifier, entry.message());
         if (createdEntity == null) {
-            throw new IllegalStateException(("The entity factory returned a null entity while the first event message was non-null for identifier: [%s]. Adjust your EventSourcedEntityFactory to always return a non-null entity when an event message is present.").formatted(
+            throw new IllegalStateException(("The EventSourcedEntityFactory returned a null entity while the first event message was non-null for identifier: [%s]. Adjust your EventSourcedEntityFactory to always return a non-null entity when an event message is present.").formatted(
                     identifier));
         }
         entity.applyStateChange(e -> createdEntity);

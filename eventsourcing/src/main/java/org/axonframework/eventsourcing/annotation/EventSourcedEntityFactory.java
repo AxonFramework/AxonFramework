@@ -48,13 +48,13 @@ import java.util.function.Supplier;
  * <ul>
  *     <li>
  *         Mutable entities: these entities are created with a no-argument constructor. All command handlers of the
- *         entity should be {@link EntityModelBuilder#commandHandler(QualifiedName, EntityCommandHandler) instance
+ *         entity should be {@link EntityModelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance
  *         command handlers}. Use {@link #fromNoArgument(Supplier)} to create a factory for this type of entity.
  *     </li>
  *     <li>
  *         Mutable entities with non-null identifier: these entities are created with a constructor that takes the
  *         identifier as parameter. All command handlers of the entity should be
- *         {@link EntityModelBuilder#commandHandler(QualifiedName, EntityCommandHandler) instance command handlers}.
+ *         {@link EntityModelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handlers}.
  *         Use {@link #fromIdentifier(Function)} to create a factory for this type of entity.
  *     </li>
  *     <li>
@@ -62,7 +62,7 @@ import java.util.function.Supplier;
  *         the identifier and the event message as parameters. The entity should have a combination of
  *         {@link EntityModelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command handlers} to
  *         create the entity if no events exist for it, and
- *         {@link EntityModelBuilder#commandHandler(QualifiedName, EntityCommandHandler) instance command handlers} to
+ *         {@link EntityModelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handlers} to
  *         handle commands when it does exist. If a command could potentially handle both cases, it would need to be
  *         registered as both a creational and instance command handler.
  *         Use {@link #fromEventMessage(BiFunction)} to create a factory for this type of entity.
@@ -94,7 +94,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * of command handler should be invoked when the entity does not exist. If this is a
      * {@link EntityModelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command handler},
      * this should return {@code null}. If this is a
-     * {@link EntityModelBuilder#commandHandler(QualifiedName, EntityCommandHandler) instance command handler}, this
+     * {@link EntityModelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handler}, this
      * should return an empty representation of the entity.
      * <p>
      * It is recommended to use {@link #fromNoArgument(Supplier)}, {@link #fromIdentifier(Function)} or
@@ -114,7 +114,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * <p>
      * Should be used when your entity is mutable, and you want to create it with a no-argument constructor. All command
      * handlers of your entity should be
-     * {@link EntityModelBuilder#commandHandler(QualifiedName, EntityCommandHandler) instance command handler}. If you
+     * {@link EntityModelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handler}. If you
      * would like the identifier to be passed to the constructor, use {@link #fromIdentifier(Function)} instead.
      *
      * @param creator A {@link Supplier} that creates the entity. This should be a no-argument constructor.
@@ -132,7 +132,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * <p>
      * Should be used when your entity is mutable, and you want to create it with a constructor that takes the
      * identifier as parameter. All command handlers of your entity should be
-     * {@link EntityModelBuilder#commandHandler(QualifiedName, EntityCommandHandler) instance command handler}.
+     * {@link EntityModelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handler}.
      *
      * @param creator A {@link Function} that creates the entity. This should be a constructor with the identifier as
      *                parameter.
@@ -153,7 +153,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * combination of
      * {@link EntityModelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command handlers} to
      * create the entity if no events exist for it, and
-     * {@link EntityModelBuilder#commandHandler(QualifiedName, EntityCommandHandler) instance command handlers} to
+     * {@link EntityModelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handlers} to
      * handle commands when it does exist. If a command could potentially handle both cases, it would need to be
      * registered as both a creational and instance command handler.
      *

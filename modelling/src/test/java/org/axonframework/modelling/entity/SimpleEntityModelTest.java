@@ -94,8 +94,8 @@ class SimpleEntityModelTest {
         entityModel = SimpleEntityModel
                 .forEntityClass(TestEntity.class)
                 .entityEvolver(parentEntityEvolver)
-                .commandHandler(SHARED_COMMAND, parentInstanceCommandHandler)
-                .commandHandler(PARENT_ONLY_INSTANCE_COMMAND, parentInstanceCommandHandler)
+                .instanceCommandHandler(SHARED_COMMAND, parentInstanceCommandHandler)
+                .instanceCommandHandler(PARENT_ONLY_INSTANCE_COMMAND, parentInstanceCommandHandler)
                 .creationalCommandHandler(PARENT_ONLY_CREATIONAL_COMMAND, parentCreationalCommandHandler)
                 .addChild(childModelMockOne)
                 .addChild(childModelMockTwo)
@@ -297,8 +297,8 @@ class SimpleEntityModelTest {
     void withoutEntityEvolverWillStillEvolveChildren() {
         entityModel = SimpleEntityModel
                 .forEntityClass(TestEntity.class)
-                .commandHandler(SHARED_COMMAND, parentInstanceCommandHandler)
-                .commandHandler(PARENT_ONLY_INSTANCE_COMMAND, parentInstanceCommandHandler)
+                .instanceCommandHandler(SHARED_COMMAND, parentInstanceCommandHandler)
+                .instanceCommandHandler(PARENT_ONLY_INSTANCE_COMMAND, parentInstanceCommandHandler)
                 .addChild(childModelMockOne)
                 .addChild(childModelMockTwo)
                 .build();
@@ -393,20 +393,20 @@ class SimpleEntityModelTest {
 
         @Test
         void canNotAddCommandHandlerForNullQualifiedName() {
-            assertThrows(NullPointerException.class, () -> builder.commandHandler(null, parentInstanceCommandHandler));
+            assertThrows(NullPointerException.class, () -> builder.instanceCommandHandler(null, parentInstanceCommandHandler));
         }
 
         @Test
         void canNotAddNullCommandHandlerForQualifiedName() {
-            assertThrows(NullPointerException.class, () -> builder.commandHandler(PARENT_ONLY_INSTANCE_COMMAND, null));
+            assertThrows(NullPointerException.class, () -> builder.instanceCommandHandler(PARENT_ONLY_INSTANCE_COMMAND, null));
         }
 
         @Test
         void canNotAddSecondCommandHandlerForSameQualifiedName() {
-            builder.commandHandler(PARENT_ONLY_INSTANCE_COMMAND, parentInstanceCommandHandler);
+            builder.instanceCommandHandler(PARENT_ONLY_INSTANCE_COMMAND, parentInstanceCommandHandler);
             assertThrows(DuplicateCommandHandlerSubscriptionException.class,
-                         () -> builder.commandHandler(PARENT_ONLY_INSTANCE_COMMAND,
-                                                      parentInstanceCommandHandler));
+                         () -> builder.instanceCommandHandler(PARENT_ONLY_INSTANCE_COMMAND,
+                                                              parentInstanceCommandHandler));
         }
 
         @Test

@@ -64,8 +64,8 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
         EntityModel<ImmutableTask> taskModel = SimpleEntityModel
                 .forEntityClass(ImmutableTask.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableTask.class))
-                .commandHandler(typeResolver.resolve(CompleteTaskCommand.class).qualifiedName(),
-                                (command, entity, context) -> {
+                .instanceCommandHandler(typeResolver.resolve(CompleteTaskCommand.class).qualifiedName(),
+                                        (command, entity, context) -> {
                                     EventAppender eventAppender = EventAppender.forContext(context, configuration);
                                     entity.handle((CompleteTaskCommand) command.getPayload(), eventAppender);
                                     return MessageStream.empty().cast();
@@ -76,8 +76,8 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
         EntityModel<ImmutableSalaryInformation> salaryInformationModel = SimpleEntityModel
                 .forEntityClass(ImmutableSalaryInformation.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableSalaryInformation.class))
-                .commandHandler(typeResolver.resolve(GiveRaise.class).qualifiedName(),
-                                (command, entity, context) -> {
+                .instanceCommandHandler(typeResolver.resolve(GiveRaise.class).qualifiedName(),
+                                        (command, entity, context) -> {
                                     EventAppender eventAppender = EventAppender.forContext(context,
                                                                                            configuration);
                                     entity.handle((GiveRaise) command.getPayload(), eventAppender);
@@ -97,8 +97,8 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                                                        eventAppender);
                                               return MessageStream.empty().cast();
                                           }))
-                .commandHandler(typeResolver.resolve(AssignTaskCommand.class).qualifiedName(),
-                                ((command, entity, context) -> {
+                .instanceCommandHandler(typeResolver.resolve(AssignTaskCommand.class).qualifiedName(),
+                                        ((command, entity, context) -> {
                                     EventAppender eventAppender = EventAppender.forContext(context, configuration);
                                     entity.handle((AssignTaskCommand) command.getPayload(), eventAppender);
                                     return MessageStream.empty().cast();
@@ -154,8 +154,8 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .addConcreteType(employeeModel)
                 .addConcreteType(customerModel)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutablePerson.class))
-                .commandHandler(typeResolver.resolve(ChangeEmailAddress.class).qualifiedName(),
-                                (command, entity, context) -> {
+                .instanceCommandHandler(typeResolver.resolve(ChangeEmailAddress.class).qualifiedName(),
+                                        (command, entity, context) -> {
                                     EventAppender eventAppender = EventAppender.forContext(context, configuration);
                                     entity.handle((ChangeEmailAddress) command.getPayload(), eventAppender);
                                     return MessageStream.empty().cast();

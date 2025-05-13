@@ -44,8 +44,8 @@ public interface EntityModelBuilder<E> {
      * @return This builder for further configuration.
      */
     @Nonnull
-    EntityModelBuilder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
-                                         @Nonnull EntityCommandHandler<E> messageHandler);
+    EntityModelBuilder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                 @Nonnull EntityCommandHandler<E> messageHandler);
 
     /**
      * Adds a {@link CommandHandler} to this model for the given {@link QualifiedName} that is in charge of creation of
@@ -53,7 +53,7 @@ public interface EntityModelBuilder<E> {
      * <p>
      * Note that this handler will only be invoked when the root entity is created, and in no other situation. If you
      * want to handle both creation and existing entities, it's possible to register a command handler for the same
-     * {@link QualifiedName} for both this method and {@link #commandHandler(QualifiedName, EntityCommandHandler)}. This
+     * {@link QualifiedName} for both this method and {@link #instanceCommandHandler(QualifiedName, EntityCommandHandler)}. This
      * command handler will be ignored when the model is used as child entity.
      *
      * @param qualifiedName  The {@link QualifiedName} of the command this handler handles.

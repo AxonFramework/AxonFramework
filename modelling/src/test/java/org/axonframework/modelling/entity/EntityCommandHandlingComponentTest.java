@@ -65,8 +65,8 @@ class EntityCommandHandlingComponentTest {
                                       ((command, c) -> resultMessage("creational")))
             .creationalCommandHandler(mixedMessageType.qualifiedName(),
                                       ((command, c) -> resultMessage("creational-mixed")))
-            .commandHandler(instanceMessageType.qualifiedName(), ((command, entity, c) -> resultMessage("instance")))
-            .commandHandler(mixedMessageType.qualifiedName(), ((command, entity, c) -> resultMessage("instance-mixed")))
+            .instanceCommandHandler(instanceMessageType.qualifiedName(), ((command, entity, c) -> resultMessage("instance")))
+            .instanceCommandHandler(mixedMessageType.qualifiedName(), ((command, entity, c) -> resultMessage("instance-mixed")))
             .build();
 
     @Mock
