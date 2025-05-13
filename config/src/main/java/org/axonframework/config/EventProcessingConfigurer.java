@@ -536,17 +536,6 @@ public interface EventProcessingConfigurer {
                                                             MessageMonitorFactory messageMonitorFactory);
 
     /**
-     * Registers a {@link Function} that builds the {@link RollbackConfiguration} for given processor {@code name}.
-     * Defaults to a {@link org.axonframework.messaging.unitofwork.RollbackConfigurationType#ANY_THROWABLE}
-     *
-     * @param name                         a {@link String} specifying the name of an {@link EventProcessor}
-     * @param rollbackConfigurationBuilder a {@link Function} that builds a {@link RollbackConfiguration}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerRollbackConfiguration(String name,
-                                                            Function<LegacyConfiguration, RollbackConfiguration> rollbackConfigurationBuilder);
-
-    /**
      * Registers a {@link TransactionManager} for a {@link EventProcessor} of the given {@code name}.
      *
      * @param name                      a {@link String} specifying the name of an {@link EventProcessor}
