@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -161,14 +160,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                                           UnitOfWork unitOfWork,
                                                           Collection<Segment> processingSegments) throws Exception {
-        var eventsBatchKey = Context.ResourceKey.<List<? extends EventMessage<?>>>withLabel("messagesBatch");
-        unitOfWork.runOnPreInvocation(ctx -> ctx.putResource(eventsBatchKey, eventMessages));
-
         unitOfWork.onInvocation(processingContext -> {
-            List<? extends EventMessage<?>> messages = processingContext.getResource(eventsBatchKey);
             CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
 
-            for (EventMessage<?> message : messages) {
+            for (EventMessage<?> message : eventMessages) {
                 result = result.thenCompose(v -> spanFactory
                         .createProcessEventSpan(this instanceof StreamingEventProcessor, message)
                         .runSupplierAsync(() -> processMessage(processingSegments, processingContext, message))
