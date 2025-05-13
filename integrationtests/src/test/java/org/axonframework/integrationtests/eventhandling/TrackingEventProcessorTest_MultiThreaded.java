@@ -33,6 +33,13 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -306,10 +313,22 @@ class TrackingEventProcessorTest_MultiThreaded {
     void multiThreadTokenIsStoredWhenEventIsRead() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
+            @Override
+            public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+                unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+                return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @NotNull M message, @NotNull ProcessingContext context,
+                    @NotNull InterceptorChain<M, R> interceptorChain) {
+                context.doFinally(uow -> countDownLatch.countDown());
+                return interceptorChain.proceed(message, context);
+            }
+        });
         testSubject.start();
         eventBus.publish(createEvents(2));
         assertTrue(countDownLatch.await(5, SECONDS), "Expected Unit of Work to have reached clean up phase");
@@ -448,19 +467,47 @@ class TrackingEventProcessorTest_MultiThreaded {
         List<? extends EventMessage<?>> events = createEvents(2);
         CountDownLatch countDownLatch = new CountDownLatch(2);
         //noinspection Duplicates,resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCommit(uow -> {
-                if (uow.getMessage().equals(events.get(1))) {
-                    throw new MockException();
-                }
-            });
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {
+            @Override
+            public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+                unitOfWork.onCommit(uow -> {
+                    if (uow.getMessage().equals(events.get(1))) {
+                        throw new MockException();
+                    }
+                });
+                return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @NotNull M message, @NotNull ProcessingContext context,
+                    @NotNull InterceptorChain<M, R> interceptorChain) {
+                context.runOnCommit(uow -> {
+                    if (message.equals(events.get(1))) {
+                        throw new MockException();
+                    }
+                });
+                return interceptorChain.proceed(message, context);
+            }
+        });
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync();
-        }));
+        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
+            @Override
+            public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+                unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+                return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @NotNull M message, @NotNull ProcessingContext context,
+                    @NotNull InterceptorChain<M, R> interceptorChain) {
+                context.doFinally(uow -> countDownLatch.countDown());
+                return interceptorChain.proceed(message, context);
+            }
+        });
         testSubject.start();
         eventBus.publish(events);
         assertTrue(countDownLatch.await(5, SECONDS), "Expected Unit of Work to have reached clean up phase");

@@ -15,10 +15,13 @@
  */
 package org.axonframework.messaging.timeout;
 
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,6 +41,8 @@ import javax.annotation.Nonnull;
 public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<Message<?>> {
 
     private static final String TRANSACTION_TIME_LIMIT_RESOURCE_KEY = "_transactionTimeLimit";
+    private static final Context.ResourceKey<AxonTimeLimitedTask> TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY =
+            Context.ResourceKey.withLabel(TRANSACTION_TIME_LIMIT_RESOURCE_KEY);
 
     private final String componentName;
     private final int timeout;
@@ -105,14 +110,7 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         LegacyUnitOfWork<?> root = unitOfWork.root();
         if (!root.resources().containsKey(TRANSACTION_TIME_LIMIT_RESOURCE_KEY)) {
-            AxonTimeLimitedTask taskTimeout = new AxonTimeLimitedTask(
-                    "UnitOfWork of " + componentName,
-                    timeout,
-                    warningThreshold,
-                    warningInterval,
-                    executorService,
-                    logger
-            );
+            AxonTimeLimitedTask taskTimeout = taskTimeout();
             root.resources().put(TRANSACTION_TIME_LIMIT_RESOURCE_KEY, taskTimeout);
             taskTimeout.start();
             unitOfWork.afterCommit(u -> taskTimeout.complete());
@@ -120,5 +118,31 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
         }
 
         return interceptorChain.proceedSync();
+    }
+
+    @Override
+    public <M extends Message<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
+                                                                                           @Nonnull ProcessingContext context,
+                                                                                           @Nonnull InterceptorChain<M, R> interceptorChain) {
+        if (!context.containsResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY)) {
+            AxonTimeLimitedTask taskTimeout = taskTimeout();
+            context.putResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY, taskTimeout);
+            taskTimeout.start();
+            context.runOnAfterCommit(u -> taskTimeout.complete());
+            context.onError((ctx, phase, error) -> taskTimeout.complete());
+        }
+
+        return interceptorChain.proceed(message, context);
+    }
+
+    private AxonTimeLimitedTask taskTimeout() {
+        return new AxonTimeLimitedTask(
+                "UnitOfWork of " + componentName,
+                timeout,
+                warningThreshold,
+                warningInterval,
+                executorService,
+                logger
+        );
     }
 }
