@@ -22,6 +22,7 @@ import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.CriteriaResolver;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
@@ -69,11 +70,11 @@ public abstract class AbstractStudentTestSuite {
     @BeforeEach
     void setUp() {
         studentEntity = EventSourcedEntityBuilder.entity(String.class, Student.class)
-                                                 .entityFactory(c -> Student::new)
+                                                 .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(Student::new))
                                                  .criteriaResolver(this::studentCriteriaResolver)
                                                  .entityEvolver(this::studentEvolver);
         courseEntity = EventSourcedEntityBuilder.entity(String.class, Course.class)
-                                                .entityFactory(c -> Course::new)
+                                                .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(Course::new))
                                                 .criteriaResolver(this::courseCriteriaResolver)
                                                 .entityEvolver(this::courseEvolver);
 

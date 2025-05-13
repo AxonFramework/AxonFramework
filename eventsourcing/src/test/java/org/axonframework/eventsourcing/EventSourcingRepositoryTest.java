@@ -16,13 +16,10 @@
 
 package org.axonframework.eventsourcing;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
@@ -34,7 +31,6 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -72,21 +68,11 @@ class EventSourcingRepositoryTest {
                 String.class,
                 String.class,
                 eventStore,
-                new EventSourcedEntityFactory<>() {
-                    @Nullable
-                    @Override
-                    public String createEmptyEntity(@NotNull String s) {
-                        // Simulate no-arg constructor
-                        return s + "()";
+                (id, event) -> {
+                    if(event != null) {
+                        return id + "(" + event.getPayload() + ")";
                     }
-
-                    @Nonnull
-                    @Override
-                    public String createFromFirstEvent(@NotNull String s,
-                                                       @NotNull EventMessage<?> firstEventMessage) {
-                        // Simulate constructor with first event payload
-                        return s + "(" + firstEventMessage.getPayload() + ")";
-                    }
+                    return id + "()";
                 },
                 identifier -> TEST_CRITERIA,
                 (entity, event, context) -> entity + "-" + event.getPayload()
@@ -228,6 +214,27 @@ class EventSourcingRepositoryTest {
 
         CompletableFuture<ManagedEntity<String, String>> loaded =
                 testSubject.load("test", processingContext);
+
+        assertTrue(loaded.isDone());
+        assertFalse(loaded.isCompletedExceptionally());
+        verify(eventStore, times(2)).transaction(processingContext);
+        verify(eventStoreTransaction).onAppend(any());
+        verify(eventStoreTransaction)
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+
+        assertNull(loaded.resultNow().entity());
+    }
+
+
+    @Test
+    void loadOrCreateShouldReturnNoEventMessageConstructorEntityWhenNoEventsAreReturned() {
+        StubProcessingContext processingContext = new StubProcessingContext();
+        doReturn(MessageStream.empty())
+                .when(eventStoreTransaction)
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+
+        CompletableFuture<ManagedEntity<String, String>> loaded =
+                testSubject.loadOrCreate("test", processingContext);
 
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());

@@ -20,6 +20,7 @@ package org.axonframework.integrationtests.testsuite.student;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.Tag;
@@ -48,7 +49,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
     protected void registerAdditionalEntities(StatefulCommandHandlingModule.EntityPhase entityConfigurer) {
         EventSourcedEntityBuilder<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentSlice =
                 EventSourcedEntityBuilder.entity(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
-                                         .entityFactory(c -> StudentMentorAssignment::new)
+                                         .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(StudentMentorAssignment::new))
                                          .criteriaResolver(c -> id -> EventCriteria.either(
                                                  EventCriteria.havingTags(new Tag("Student", id.menteeId())),
                                                  EventCriteria.havingTags(new Tag("Student", id.mentorId()))

@@ -26,6 +26,21 @@ public class MessageStreamTestUtils {
         // Prevent instantiation
     }
 
+
+    /**
+     * Asserts that the given {@code stream} completed exceptionally with the given {@code expectedExceptionType}
+     * @param stream The {@link MessageStream} to assert.
+     * @param expectedExceptionType The expected type of the exception.
+     */
+    public static void assertCompletedExceptionally(
+            MessageStream<?> stream,
+            Class<? extends Throwable> expectedExceptionType
+    ) {
+        CompletableFuture<? extends MessageStream.Entry<?>> cf = stream.first().asCompletableFuture();
+        var exception = assertThrows(CompletionException.class, cf::join);
+        assertInstanceOf(expectedExceptionType, exception.getCause());
+    }
+
     /**
      * Asserts that the given {@code stream} completed exceptionally with the given {@code expectedExceptionType} and
      * {@code expectedMessage}.

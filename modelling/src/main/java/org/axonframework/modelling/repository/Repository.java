@@ -67,6 +67,17 @@ public sealed interface Repository<ID, E>
                                                  @Nonnull ProcessingContext processingContext);
 
     /**
+     * Loads an entity from the repository.
+     *
+     * @param identifier        The identifier of the entity to load.
+     * @param processingContext The processing context in which to manage the lifecycle of the entity.
+     * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or a newly
+     * constructed entity instance based on the {@code factoryMethod}.
+     */
+    CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
+                                                 @Nonnull ProcessingContext processingContext);
+
+    /**
      * Persists the given {@code entity} in this repository
      *
      * @param identifier        The identifier of the entity.

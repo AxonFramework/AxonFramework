@@ -146,7 +146,7 @@ public abstract class AbstractAdministrationTestSuite {
         try {
             runnable.run();
         } catch (CompletionException e) {
-            Assertions.assertTrue(e.getCause().getMessage().contains(expectedMessage), () -> "Expected message to contain: " + expectedMessage + ", but got: " + e.getCause().getMessage());
+            Assertions.assertTrue(e.getCause().getMessage().toLowerCase().contains(expectedMessage.toLowerCase()), () -> "Expected message to contain: " + expectedMessage + ", but got: " + e.getCause().getMessage());
             return;
         } catch (Exception e) {
             Assertions.fail("Expected CompletionException, but got: " + e.getClass().getSimpleName());

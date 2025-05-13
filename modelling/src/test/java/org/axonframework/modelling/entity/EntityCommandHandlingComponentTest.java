@@ -22,10 +22,9 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageStreamTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
@@ -37,173 +36,196 @@ import org.mockito.junit.jupiter.*;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static org.axonframework.messaging.MessageStreamTestUtils.assertCompletedExceptionally;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class EntityCommandHandlingComponentTest {
 
+    private final StubProcessingContext context = new StubProcessingContext();
+    private final MessageType creationalMessageType = new MessageType("CreationalCommand");
+    private final CommandMessage<?> creationalCommandMessage = new GenericCommandMessage<>(creationalMessageType,
+                                                                                           "command");
+    private final MessageType instanceMessageType = new MessageType("InstanceCommand");
+    private final CommandMessage<?> instanceCommandMessage = new GenericCommandMessage<>(instanceMessageType,
+                                                                                         "command");
+    private final MessageType mixedMessageType = new MessageType("MixedCommand");
+    private final CommandMessage<?> mixedCommandMessage = new GenericCommandMessage<>(mixedMessageType, "command");
+    private final String entityId = "myEntityId456";
+
     @Mock
     private Repository.LifecycleManagement<String, TestEntity> repository;
 
-    @Mock
-    private EntityModel<TestEntity> entityModel;
+    // We create a SimpleEntityModel, and rely on its API. If not, we basically have to mock every piece of behavior.
+    @Spy
+    private EntityModel<TestEntity> entityModel = EntityModel
+            .forEntityType(TestEntity.class)
+            .creationalCommandHandler(creationalMessageType.qualifiedName(),
+                                      ((command, c) -> resultMessage("creational")))
+            .creationalCommandHandler(mixedMessageType.qualifiedName(),
+                                      ((command, c) -> resultMessage("creational-mixed")))
+            .commandHandler(instanceMessageType.qualifiedName(), ((command, entity, c) -> resultMessage("instance")))
+            .commandHandler(mixedMessageType.qualifiedName(), ((command, entity, c) -> resultMessage("instance-mixed")))
+            .build();
 
     @Mock
     private EntityIdResolver<String> idResolver;
 
-    private final CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(Integer.class), "command");
-    private final String entityId = "myEntityId456";
-    private final ManagedEntity<String, TestEntity> managedEntity = mock(ManagedEntity.class);
-    private final TestEntity mockEntity = mock(TestEntity.class);
-    private EntityCreationPolicy creationPolicy = EntityCreationPolicy.CREATE_IF_MISSING;
-
+    @InjectMocks
     private EntityCommandHandlingComponent<String, TestEntity> testComponent;
 
     @BeforeEach
     void setUp() {
-        testComponent = new EntityCommandHandlingComponent<>(
-                repository,
-                entityModel,
-                idResolver,
-                cm -> creationPolicy
-        );
-        lenient().when(idResolver.resolve(eq(commandMessage), any())).thenReturn(entityId);
-        lenient().when(repository.load(eq(entityId), any()))
-                 .thenReturn(CompletableFuture.completedFuture(managedEntity));
-
-        CommandResultMessage<?> instanceResultMessage = new GenericCommandResultMessage<>(new MessageType(String.class),
-                                                                                          "instance");
-        MessageStream.Single<CommandResultMessage<?>> instanceResult = MessageStream.just(instanceResultMessage);
-        CommandResultMessage<?> creationalResultMessage = new GenericCommandResultMessage<>(new MessageType(String.class),
-                                                                                            "creational");
-        MessageStream.Single<CommandResultMessage<?>> creationalResult = MessageStream.just(creationalResultMessage);
-        lenient().when(entityModel.handleInstance(eq(commandMessage), eq(mockEntity), any()))
-                 .thenReturn(instanceResult);
-        lenient().when(entityModel.handleCreate(any(), any())).thenReturn(creationalResult);
+        lenient().when(idResolver.resolve(any(), any())).thenReturn(entityId);
     }
 
     @Test
-    void returnsQualifiedNamesFromEntityModel() {
-        Set<QualifiedName> supportedCommands = Set.of(
-                new QualifiedName("command1"),
-                new QualifiedName("command3"),
-                new QualifiedName("command5")
-        );
-        when(entityModel.supportedCommands()).thenReturn(supportedCommands);
-
+    void returnsSupportedCommandFromModel() {
         Set<QualifiedName> result = testComponent.supportedCommands();
-        Assertions.assertEquals(supportedCommands, result);
+        Assertions.assertEquals(Set.of(
+                creationalMessageType.qualifiedName(),
+                instanceMessageType.qualifiedName(),
+                mixedMessageType.qualifiedName()
+        ), result);
     }
 
     @Nested
-    class CreateIfMissing {
+    class OnlyCreationalCommandHandler {
 
-        @BeforeEach
-        void setUpPolicy() {
-            creationPolicy = EntityCreationPolicy.CREATE_IF_MISSING;
+        @Test
+        void executesCreationalCommandHandlerAfterLoadGivesNullResult() {
+            setupLoadEntity(null);
+
+            CommandResultMessage<?> resultMessage = testComponent.handle(creationalCommandMessage, context)
+                                                                 .first().asCompletableFuture().join().message();
+
+            verify(entityModel).handleCreate(eq(creationalCommandMessage), any());
+            assertEquals("creational", resultMessage.getPayload());
         }
 
         @Test
-        void willInvokeCreationalCommandHandlerWhenRepositoryReturnsNull() {
-            when(managedEntity.entity()).thenReturn(null);
+        void resultsInExceptionWhenLoadReturnsNonNullEntity() {
+            setupLoadEntity(new TestEntity());
 
-            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
-                    commandMessage, mock(ProcessingContext.class));
-            verify(entityModel).handleCreate(eq(commandMessage), any());
-            assertEquals("creational", componentResult.first().asCompletableFuture().join().message().getPayload());
+            MessageStream.Single<CommandResultMessage<?>> result = testComponent.handle(creationalCommandMessage,
+                                                                                        context);
+
+            verify(entityModel, times(0)).handleCreate(eq(creationalCommandMessage), any());
+            assertCompletedExceptionally(result, EntityExistsForCreationalCommandHandler.class);
         }
 
+
         @Test
-        void willInvokeInstanceCommandHandlerWhenRepositoryReturnsEntity() {
-            when(managedEntity.entity()).thenReturn(mockEntity);
+        void failureToLoadEntityWillResultInFailedMessageStream() {
+            when(repository.load(eq(entityId), any())).thenReturn(CompletableFuture.failedFuture(new RuntimeException(
+                    "Failed to load entity")));
+
 
             MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
-                    commandMessage, mock(ProcessingContext.class));
+                    creationalCommandMessage,
+                    context);
 
-            verify(entityModel).handleInstance(eq(commandMessage), eq(mockEntity), any());
-            Assertions.assertEquals("instance", componentResult.asCompletableFuture().join().message().getPayload());
+            var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
+            assertEquals("Failed to load entity", exception.getCause().getMessage());
         }
     }
-
     @Nested
-    class Always {
-
-        @BeforeEach
-        void setUpPolicy() {
-            creationPolicy = EntityCreationPolicy.ALWAYS;
-        }
-
-        @Test
-        void willNotTryToLoadEntityAndAlwaysCallCreationalHandler() {
-
-            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
-                    commandMessage, mock(ProcessingContext.class));
-
-            verify(entityModel).handleCreate(eq(commandMessage), any());
-            verifyNoInteractions(repository);
-            assertEquals("creational", componentResult.asCompletableFuture().join().message().getPayload());
-        }
-    }
-
-    @Nested
-    class Never {
-
-        @BeforeEach
-        void setUpPolicy() {
-            creationPolicy = EntityCreationPolicy.NEVER;
-        }
+    class OnlyInstanceCommandHandler {
 
         @Test
         void willThrowExceptionIfEntityDoesNotExist() {
-            when(managedEntity.entity()).thenReturn(null);
+            setupLoadOrCreateEntity(null);
 
-            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
-                    commandMessage, mock(ProcessingContext.class));
+            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(instanceCommandMessage,
+                                                                                                 context);
 
-            MessageStreamTestUtils.assertCompletedExceptionally(componentResult,
-                                                                IllegalStateException.class,
-            "No entity found for command [java.lang.Integer] with id [" + entityId + "]"
-            );
+            assertCompletedExceptionally(componentResult, EntityMissingForInstanceCommandHandler.class);
         }
 
         @Test
         void willCallInstanceCommandHandlerWhenEntityExists() {
-            when(managedEntity.entity()).thenReturn(mockEntity);
+            TestEntity testEntity = new TestEntity();
+            setupLoadOrCreateEntity(testEntity);
 
             MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
-                    commandMessage, mock(ProcessingContext.class));
+                    instanceCommandMessage, context);
 
-            verify(entityModel).handleInstance(eq(commandMessage), eq(mockEntity), any());
+            verify(entityModel).handleInstance(eq(instanceCommandMessage), eq(testEntity), any());
             Assertions.assertEquals("instance", componentResult.asCompletableFuture().join().message().getPayload());
+        }
+
+
+        @Test
+        void failureToLoadOrCreateEntityWillResultInFailedMessageStream() {
+            when(repository.loadOrCreate(eq(entityId),
+                                         any())).thenReturn(CompletableFuture.failedFuture(new RuntimeException(
+                    "Failed to load entity")));
+
+
+            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(instanceCommandMessage,
+                                                                                                 context);
+
+            var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
+            assertEquals("Failed to load entity", exception.getCause().getMessage());
+        }
+
+    }
+
+    @Nested
+    class BothCreateAndInstance {
+
+
+        @Test
+        void willInvokeCreationalCommandHandlerWhenRepositoryReturnsNull() {
+            setupLoadEntity(null);
+
+            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
+                    mixedCommandMessage, context);
+            verify(entityModel).handleCreate(mixedCommandMessage, context);
+            assertEquals("creational-mixed",
+                         componentResult.first().asCompletableFuture().join().message().getPayload());
+        }
+
+        @Test
+        void willInvokeInstanceCommandHandlerWhenRepositoryReturnsEntity() {
+            TestEntity entity = new TestEntity();
+            setupLoadEntity(entity);
+
+            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
+                    mixedCommandMessage, context);
+
+            verify(entityModel).handleInstance(mixedCommandMessage, entity, context);
+            Assertions.assertEquals("instance-mixed",
+                                    componentResult.asCompletableFuture().join().message().getPayload());
+        }
+
+        @Test
+        void failureToLoadEntityWillResultInFailedMessageStream() {
+            when(repository.load(eq(entityId), any())).thenReturn(CompletableFuture.failedFuture(new RuntimeException(
+                    "Failed to load entity")));
+
+
+            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(mixedCommandMessage,
+                                                                                                 context);
+
+            var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
+            assertEquals("Failed to load entity", exception.getCause().getMessage());
         }
     }
 
     @Test
     void failureToResolveIdWillResultInFailedMessageStream() {
-        when(idResolver.resolve(eq(commandMessage), any())).thenThrow(new RuntimeException("Failed to resolve ID"));
+        when(idResolver.resolve(eq(creationalCommandMessage), any())).thenThrow(new RuntimeException(
+                "Failed to resolve ID"));
 
 
-        MessageStream.Single<? extends CommandResultMessage<?>> componentResult = testComponent.handle(commandMessage,
-                                                                                                       mock(ProcessingContext.class));
+        MessageStream.Single<? extends CommandResultMessage<?>> componentResult = testComponent.handle(
+                creationalCommandMessage,
+                context);
 
         var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
         assertEquals("Failed to resolve ID", exception.getCause().getMessage());
-    }
-
-    @Test
-    void failureToLoadEntityWillResultInFailedMessageStream() {
-        when(idResolver.resolve(eq(commandMessage), any())).thenReturn(entityId);
-        when(managedEntity.entity()).thenReturn(mockEntity);
-        when(repository.load(eq(entityId), any())).thenReturn(CompletableFuture.failedFuture(new RuntimeException(
-                "Failed to load entity")));
-
-
-        MessageStream.Single<? extends CommandResultMessage<?>> componentResult = testComponent.handle(commandMessage,
-                                                                                                       mock(ProcessingContext.class));
-
-        var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
-        assertEquals("Failed to load entity", exception.getCause().getMessage());
     }
 
     @Test
@@ -219,5 +241,22 @@ class EntityCommandHandlingComponentTest {
 
     private static class TestEntity {
         // Test entity class for generic type resolution
+    }
+
+    private void setupLoadOrCreateEntity(TestEntity entity) {
+        ManagedEntity<String, TestEntity> managedEntity = mock(ManagedEntity.class);
+        when(managedEntity.entity()).thenReturn(entity);
+        when(repository.loadOrCreate(eq(entityId), any())).thenReturn(CompletableFuture.completedFuture(managedEntity));
+    }
+
+
+    private void setupLoadEntity(TestEntity entity) {
+        ManagedEntity<String, TestEntity> managedEntity = mock(ManagedEntity.class);
+        when(managedEntity.entity()).thenReturn(entity);
+        when(repository.load(eq(entityId), any())).thenReturn(CompletableFuture.completedFuture(managedEntity));
+    }
+
+    private static MessageStream.Single<CommandResultMessage<?>> resultMessage(String creational) {
+        return MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class), creational));
     }
 }

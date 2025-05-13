@@ -49,4 +49,5 @@ public interface ManagedEntity<ID, E> {
      * @return The state of the entity after the change.
      */
     E applyStateChange(UnaryOperator<E> change);
+
 }

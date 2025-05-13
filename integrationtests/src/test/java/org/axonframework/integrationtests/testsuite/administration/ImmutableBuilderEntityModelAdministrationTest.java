@@ -16,11 +16,8 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -169,28 +166,16 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 PersonIdentifier.class,
                 ImmutablePerson.class,
                 configuration.getComponent(EventStore.class),
-                new EventSourcedEntityFactory<>() {
-                    @Nonnull
-                    @Override
-                    public ImmutablePerson createFromFirstEvent(
-                            @Nonnull PersonIdentifier personIdentifier,
-                            @Nonnull EventMessage<?> eventMessage) {
-                        if (eventMessage.getPayload() instanceof EmployeeCreated employeeCreated) {
-                            return new ImmutableEmployee(employeeCreated);
-                        }
-                        if (eventMessage.getPayload() instanceof CustomerCreated customerCreated) {
-                            return new ImmutableCustomer(customerCreated);
-                        }
-                        throw new IllegalArgumentException(
-                                format("Unknown event type: %s", eventMessage.getPayloadType().getName()));
+                EventSourcedEntityFactory.fromEventMessage((identifier, eventMessage) -> {
+                    if (eventMessage.getPayload() instanceof EmployeeCreated employeeCreated) {
+                        return new ImmutableEmployee(employeeCreated);
                     }
-
-                    @Nullable
-                    @Override
-                    public ImmutablePerson createEmptyEntity(@Nonnull PersonIdentifier personIdentifier) {
-                        return null;
+                    if (eventMessage.getPayload() instanceof CustomerCreated customerCreated) {
+                        return new ImmutableCustomer(customerCreated);
                     }
-                },
+                    throw new IllegalArgumentException(
+                            format("Unknown event type: %s", eventMessage.getPayloadType().getName()));
+                }),
                 s -> EventCriteria.havingTags("Person", s.key()),
                 personModel
         );

@@ -45,7 +45,7 @@ import static java.util.Objects.requireNonNull;
  * {@link EventStore}.
  *
  * @param <ID> The type of identifier used to identify the event sourced entity.
- * @param <E> The type of the event sourced entity to load.
+ * @param <E>  The type of the event sourced entity to load.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 0.1
@@ -126,32 +126,49 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
 
         return managedEntities.computeIfAbsent(
                 identifier,
-                id -> eventStore
-                        .transaction(processingContext)
-                        .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id)))
-                        .reduce(new EventSourcedEntity<>(identifier, (E) null),
-                                (entity, entry) -> {
-                                    if (entity.entity() == null) {
-                                        createEntityBasedOnFirstEvent(identifier, entity, entry);
-                                    }
-                                    entity.evolve(entry.message(), entityEvolver, processingContext);
-                                    return entity;
-                                })
-                        .whenComplete((entity, exception) -> {
-                            if (exception == null) {
-                                updateActiveEntity(entity, processingContext);
-                            }
-                        })
-                        .thenApply((managedEntity) -> createEmptyEntity(identifier, managedEntity))
+                id -> doLoad(identifier, processingContext)
+                        .whenComplete((entity, exception) -> updateActiveEntity(entity, processingContext, exception))
         ).thenApply(Function.identity());
     }
 
-    private EventSourcedEntity<ID, E> createEmptyEntity(ID identifier, EventSourcedEntity<ID, E> managedEntity) {
-        if(managedEntity.entity() == null) {
-            E createdEntity = entityFactory.createEmptyEntity(identifier);
-            managedEntity.applyStateChange(e -> createdEntity);
+
+    @Override
+    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
+                                                                @Nonnull ProcessingContext processingContext) {
+        var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
+
+        return managedEntities.computeIfAbsent(
+                identifier,
+                id -> doLoad(identifier, processingContext)
+                        .thenApply((entity) -> createEntityIfNullFromLoad(identifier, entity))
+                        .whenComplete((entity, exception) -> updateActiveEntity(entity, processingContext, exception))
+        ).thenApply(Function.identity());
+    }
+
+    private EventSourcedEntity<ID, E> createEntityIfNullFromLoad(ID identifier, EventSourcedEntity<ID, E> entity) {
+        if (entity.entity() == null) {
+            E createdEntity = entityFactory.create(identifier, null);
+            if (createdEntity == null) {
+                throw new IllegalStateException(("The entity factory returned a null entity while loadOrCreate was called for identifier: [%s]. Adjust your EventSourcedEntityFactory to return a non-null entity when no first event message is present and using loadOrCreate.").formatted(
+                        identifier));
+            }
+            return new EventSourcedEntity<>(identifier, createdEntity);
         }
-        return managedEntity;
+        return entity;
+    }
+
+    private CompletableFuture<EventSourcedEntity<ID, E>> doLoad(ID identifier, ProcessingContext processingContext) {
+        return eventStore
+                .transaction(processingContext)
+                .source(SourcingCondition.conditionFor(criteriaResolver.resolve(identifier)))
+                .reduce(new EventSourcedEntity<>(identifier, null),
+                        (entity, entry) -> {
+                            if (entity.entity() == null) {
+                                createEntityBasedOnFirstEvent(identifier, entity, entry);
+                            }
+                            entity.evolve(entry.message(), entityEvolver, processingContext);
+                            return entity;
+                        });
     }
 
     @Override
@@ -169,15 +186,18 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
 
     private void createEntityBasedOnFirstEvent(ID identifier, EventSourcedEntity<ID, E> entity,
                                                MessageStream.Entry<? extends EventMessage<?>> entry) {
-        E createdEntity = entityFactory.createFromFirstEvent(identifier, entry.message());
-        verifyNonNullEntityCreation(createdEntity, identifier);
+        E createdEntity = entityFactory.create(identifier, entry.message());
+        if (createdEntity == null) {
+            throw new IllegalStateException(("The entity factory returned a null entity while the first event message was non-null for identifier: [%s]. Adjust your EventSourcedEntityFactory to always return a non-null entity when an event message is present.").formatted(
+                    identifier));
+        }
         entity.applyStateChange(e -> createdEntity);
     }
 
-    private void verifyNonNullEntityCreation(E createdEntity, ID identifier) {
-        if (createdEntity == null) {
-            throw new IllegalStateException("The entity factory returned a null entity for identifier: [%s]".formatted(
-                    identifier));
+    private void updateActiveEntity(EventSourcedEntity<ID, E> entity, ProcessingContext processingContext,
+                                    Throwable exception) {
+        if (exception == null) {
+            updateActiveEntity(entity, processingContext);
         }
     }
 
@@ -194,7 +214,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         eventStore.transaction(processingContext)
                   .onAppend(event -> {
                       if (entity.entity() == null) {
-                          entity.applyStateChange(e -> entityFactory.createFromFirstEvent(
+                          entity.applyStateChange(e -> entityFactory.create(
                                   entity.identifier(), event));
                       } else {
                           entity.evolve(event, entityEvolver, processingContext);

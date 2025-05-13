@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Map;
 import java.util.Objects;
@@ -40,6 +41,8 @@ public class ConstructorBasedEventSourcedEntityFactory<E>
 
     private final Class<E> entityType;
 
+    private final Map<Class<?>, Function<Object, E>> constructorCache = new ConcurrentHashMap<>();
+
     /**
      * Instantiate a constructor-based {@link EventSourcedEntityFactory} for the given {@code entityType}.
      *
@@ -49,22 +52,19 @@ public class ConstructorBasedEventSourcedEntityFactory<E>
         this.entityType = Objects.requireNonNull(entityType, "The entityType must not be null.");
     }
 
-    private final Map<Class<? extends Object>, Function<Object, E>> constructorCache = new ConcurrentHashMap<>();
-
-    @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("constructorCache", constructorCache);
-    }
-
     @Nullable
     @Override
-    public E createEmptyEntity(@Nonnull Object id) {
-
+    public E create(@Nonnull Object id, @Nullable EventMessage<?> firstEventMessage) {
         //noinspection unchecked
         Class<Object> idClass = (Class<Object>) id.getClass();
         return constructorCache
                 .computeIfAbsent(idClass,
                                  (i) -> factoryForTypeWithOptionalArgument(entityType, idClass))
                 .apply(id);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("constructorCache", constructorCache);
     }
 }

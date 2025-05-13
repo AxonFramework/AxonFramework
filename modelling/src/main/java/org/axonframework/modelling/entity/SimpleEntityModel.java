@@ -131,7 +131,6 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
             return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
         }
         try {
-
             CommandHandler commandHandler = creationalCommandHandlers.get(message.type().qualifiedName());
             if (commandHandler != null) {
                 return commandHandler.handle(message, context);

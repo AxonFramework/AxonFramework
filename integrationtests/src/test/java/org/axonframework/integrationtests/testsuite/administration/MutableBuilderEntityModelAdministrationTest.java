@@ -21,6 +21,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
@@ -158,14 +159,14 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 PersonIdentifier.class,
                 MutablePerson.class,
                 configuration.getComponent(EventStore.class),
-                (id) -> {
+                EventSourcedEntityFactory.fromIdentifier(id -> {
                     if (id.type() == PersonType.EMPLOYEE) {
                         return new MutableEmployee();
                     } else if (id.type() == PersonType.CUSTOMER) {
                         return new MutableCustomer();
                     }
                     throw new IllegalArgumentException("Unknown type: " + id.type());
-                },
+                }),
                 s -> EventCriteria.havingTags("Person", s.key()),
                 personModel
         );

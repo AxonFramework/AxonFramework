@@ -88,6 +88,14 @@ public class AccessSerializingRepository<ID, E>
                          () -> delegate.load(identifier, processingContext));
     }
 
+    @Override
+    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
+                                                                @Nonnull ProcessingContext processingContext) {
+        return awaitTurn(identifier,
+                         processingContext,
+                         () -> delegate.loadOrCreate(identifier, processingContext));
+    }
+
     private CompletableFuture<ManagedEntity<ID, E>> awaitTurn(
             ID identifier,
             ProcessingContext processingContext,

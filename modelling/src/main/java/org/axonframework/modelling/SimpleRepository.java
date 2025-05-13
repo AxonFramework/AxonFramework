@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
 
@@ -125,6 +126,12 @@ public class SimpleRepository<ID, E> implements Repository.LifecycleManagement<I
 
     private void attachEntitySaveToContext(ID id, ManagedEntity<ID, E> managedEntity, ProcessingContext context) {
         context.onPrepareCommit(uow -> persister.persist(id, managedEntity.entity(), uow));
+    }
+
+    @Override
+    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
+                                                                @Nonnull ProcessingContext processingContext) {
+        return load(identifier, processingContext);
     }
 
     @Override

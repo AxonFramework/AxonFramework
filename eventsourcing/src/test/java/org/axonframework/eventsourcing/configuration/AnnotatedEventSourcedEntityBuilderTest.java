@@ -20,8 +20,9 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.CriteriaResolver;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
@@ -184,9 +185,10 @@ class AnnotatedEventSourcedEntityBuilderTest {
     static class CustomEventSourcedEntityFactory
             implements EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> {
 
-        @Nullable
         @Override
-        public CustomEntityFactoryCourse createEmptyEntity(@Nonnull AnnotatedEventSourcedEntityBuilderTest.CourseId courseId) {
+        public @Nullable CustomEntityFactoryCourse create(
+                @Nonnull AnnotatedEventSourcedEntityBuilderTest.CourseId courseId,
+                @Nullable EventMessage<?> firstEventMessage) {
             return new CustomEntityFactoryCourse(courseId);
         }
     }

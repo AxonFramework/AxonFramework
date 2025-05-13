@@ -28,7 +28,7 @@ import org.axonframework.modelling.entity.child.EntityChildModel;
  * command is not valid for the current state of the child entity.
  *
  * <h4>Before 5.0.0</h4>
- * This enum was called {@code org.axonframework.modelling.command.AggregateEntityNotFoundException} and was thrown when
+ * This exception was called {@code org.axonframework.modelling.command.AggregateEntityNotFoundException} and was thrown when
  * no child entity was available for an aggregate. It has been renamed to reflect the move to entities in Axon 5.0.0. In
  * all other aspects, it remains the same.
  *
