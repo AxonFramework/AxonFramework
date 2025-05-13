@@ -133,7 +133,7 @@ class AbstractEventProcessorTest {
         private static class Builder extends AbstractEventProcessor.Builder {
 
             public Builder() {
-                super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
+                super();
             }
 
             @Override

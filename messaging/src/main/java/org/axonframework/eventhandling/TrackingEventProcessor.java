@@ -960,7 +960,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         private Boolean storeTokenBeforeProcessing;
 
         public Builder() {
-            super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
+            super();
         }
 
         @Override
@@ -972,15 +972,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         @Override
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
             super.eventHandlerInvoker(eventHandlerInvoker);
-            return this;
-        }
-
-        /**
-         * {@inheritDoc}. Defaults to a {@link RollbackConfigurationType#ANY_THROWABLE})
-         */
-        @Override
-        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
-            super.rollbackConfiguration(rollbackConfiguration);
             return this;
         }
 

@@ -126,7 +126,6 @@ class PooledStreamingEventProcessorTest {
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
                                              .eventHandlerInvoker(stubEventHandler)
-                                             .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
                                              .errorHandler(PropagatingErrorHandler.instance())
                                              .messageSource(stubMessageSource)
                                              .tokenStore(tokenStore)
