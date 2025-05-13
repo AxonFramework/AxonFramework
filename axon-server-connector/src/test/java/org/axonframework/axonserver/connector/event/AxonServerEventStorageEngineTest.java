@@ -24,14 +24,10 @@ import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,28 +40,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServerEventStorageEngine> {
 
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
     private static final String CONTEXT = "default";
-    private static final String DEFAULT_SERVER_IMAGE = "axoniq/axonserver";
 
     @Container
     private static final AxonServerContainer container =
-            new AxonServerContainer(getDockerImageName()).withDevMode(true);
-
-    private static DockerImageName getDockerImageName() {
-        String envVariable = System.getenv("AXON_SERVER_IMAGE");
-        if (envVariable != null) {
-            logger.debug("AXON_SERVER_IMAGE ENVIRONMENT VARIABLE FOUND");
-            return DockerImageName.parse(envVariable).asCompatibleSubstituteFor(DEFAULT_SERVER_IMAGE);
-        }
-        String systemProperty = System.getProperty("AXON_SERVER_IMAGE");
-        if (systemProperty != null) {
-            logger.debug("AXON_SERVER_IMAGE SYSTEM PROPERTY FOUND");
-            return DockerImageName.parse(systemProperty).asCompatibleSubstituteFor(DEFAULT_SERVER_IMAGE);
-        }
-        return DockerImageName.parse(DEFAULT_SERVER_IMAGE).asCompatibleSubstituteFor(DEFAULT_SERVER_IMAGE);
-    }
+            new AxonServerContainer("axoniq/axonserver:2025.1.0-SNAPSHOT").withDevMode(true);
 
     private static AxonServerConnection connection;
 
