@@ -358,13 +358,18 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
+        WorkPackage.BatchProcessor batchProcessor = (eventMessages, unitOfWork, processingSegments) -> processInUnitOfWork(
+                eventMessages,
+                unitOfWork,
+                processingSegments
+        ).join();
         return WorkPackage.builder()
                           .name(name)
                           .tokenStore(tokenStore)
                           .transactionManager(transactionManager)
                           .executorService(workerExecutor)
                           .eventFilter(this::canHandle)
-                          .batchProcessor(this::processInUnitOfWork)
+                          .batchProcessor(batchProcessor)
                           .segment(segment)
                           .initialToken(initialToken)
                           .batchSize(batchSize)

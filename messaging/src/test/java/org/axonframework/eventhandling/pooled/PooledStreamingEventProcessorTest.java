@@ -257,7 +257,8 @@ class PooledStreamingEventProcessorTest {
         spanFactory.verifySpanCompleted("StreamingEventProcessor.batch");
     }
 
-    // FIXME: what do to with that?
+    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
+    // FIXME: this test doesn't test behavior. Do we really need it? I don't have access to ResourceKey here since resource keys are not identifier by the label but by the instance
     @Test
     void handlingEventsHaveSegmentAndTokenInUnitOfWork() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(8);

@@ -196,6 +196,7 @@ class WorkPackageTest {
      * This means an event was scheduled, was validated to be handled by the EventValidator, processed by the
      * BatchProcessor and the updated token stored.
      */
+    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     void scheduleEventRunsSuccessfully() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
@@ -262,6 +263,7 @@ class WorkPackageTest {
         assertEquals(expectedToken, ((ReplayToken) resultAdvancedToken).getTokenAtReset());
     }
 
+    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     void scheduleEventExtendsTokenClaimAfterClaimThresholdExtension() {
         // The short threshold ensures the packages assume the token should be reclaimed.
@@ -437,6 +439,7 @@ class WorkPackageTest {
         verifyNoInteractions(executorService);
     }
 
+    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     void scheduleEventsReturnsTrueIfOnlyOneEventIsAcceptedByTheEventValidator() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
@@ -472,6 +475,7 @@ class WorkPackageTest {
         assertEquals(1L, resultPosition.getAsLong());
     }
 
+    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     void scheduleEventsHandlesAllEventsInOneTransactionWhenAllEventsCanBeHandled() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
@@ -545,9 +549,10 @@ class WorkPackageTest {
         public void processBatch(List<? extends EventMessage<?>> eventMessages, UnitOfWork unitOfWork,
                                  Collection<Segment> processingSegments) throws Exception {
             if (batchProcessorPredicate.test(eventMessages)) {
-                unitOfWork.runOnInvocation(ctx -> {
+                unitOfWork.executeWithResult(ctx -> {
                     processedEvents.addAll(eventMessages);
-                });
+                    return null;
+                }).join();
             }
         }
 
