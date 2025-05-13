@@ -37,6 +37,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
@@ -254,6 +255,35 @@ class PooledStreamingEventProcessorTest {
                 )
         );
         spanFactory.verifySpanCompleted("StreamingEventProcessor.batch");
+    }
+
+    // FIXME: what do to with that?
+    @Test
+    void handlingEventsHaveSegmentAndTokenInUnitOfWork() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(8);
+        mockEventHandlerInvoker();
+        doAnswer(
+                answer -> {
+                    Map<String, Object> resources = CurrentUnitOfWork.get().resources();
+                    boolean containsSegment = resources.containsKey("Processor[" + PROCESSOR_NAME + "]/SegmentId");
+                    boolean containsToken = resources.containsKey("Processor[" + PROCESSOR_NAME + "]/Token");
+                    if (!containsSegment) {
+                        logger.error("UoW didn't contain the segment!");
+                        return null;
+                    }
+                    if (!containsToken) {
+                        logger.error("UoW didn't contain the token!");
+                        return null;
+                    }
+                    countDownLatch.countDown();
+                    return null;
+                }
+        ).when(stubEventHandler).handle(any(), any(), any());
+
+        List<EventMessage<Integer>> events = createEvents(8);
+        events.forEach(stubMessageSource::publishMessage);
+        testSubject.start();
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
     }
 
     @Test
