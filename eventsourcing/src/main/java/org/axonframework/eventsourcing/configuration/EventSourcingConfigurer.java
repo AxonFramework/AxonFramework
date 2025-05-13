@@ -21,7 +21,7 @@ import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Component;
 import org.axonframework.configuration.ComponentDecorator;
-import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -42,8 +42,8 @@ import java.util.function.Consumer;
 /**
  * The event sourcing {@link ApplicationConfigurer} of Axon Framework's configuration API.
  * <p>
- * Provides register operations for {@link #registerEventStorageEngine(ComponentFactory)} the event storage engine} and
- * {@link #registerEventStore(ComponentFactory) event store} infrastructure components.
+ * Provides register operations for {@link #registerEventStorageEngine(ComponentBuilder)} the event storage engine} and
+ * {@link #registerEventStore(ComponentBuilder) event store} infrastructure components.
  * <p>
  * This configurer registers the following defaults:
  * <ul>
@@ -123,7 +123,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @param tagResolverFactory The factory building the {@link TagResolver}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public EventSourcingConfigurer registerTagResolver(@Nonnull ComponentFactory<TagResolver> tagResolverFactory) {
+    public EventSourcingConfigurer registerTagResolver(@Nonnull ComponentBuilder<TagResolver> tagResolverFactory) {
         delegate.componentRegistry(cr -> cr.registerComponent(TagResolver.class, tagResolverFactory));
         return this;
     }
@@ -138,7 +138,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerEventStorageEngine(
-            @Nonnull ComponentFactory<EventStorageEngine> eventStorageEngineFactory
+            @Nonnull ComponentBuilder<EventStorageEngine> eventStorageEngineFactory
     ) {
         delegate.componentRegistry(
                 cr -> cr.registerComponent(EventStorageEngine.class, eventStorageEngineFactory)
@@ -155,7 +155,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @param eventStoreFactory The factory building the {@link EventStore}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public EventSourcingConfigurer registerEventStore(@Nonnull ComponentFactory<EventStore> eventStoreFactory) {
+    public EventSourcingConfigurer registerEventStore(@Nonnull ComponentBuilder<EventStore> eventStoreFactory) {
         delegate.componentRegistry(cr -> cr.registerComponent(EventStore.class, eventStoreFactory));
         return this;
     }
@@ -170,7 +170,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerSnapshotter(
-            @Nonnull ComponentFactory<Snapshotter> snapshotterFactory
+            @Nonnull ComponentBuilder<Snapshotter> snapshotterFactory
     ) {
         delegate.componentRegistry(cr -> cr.registerComponent(Snapshotter.class, snapshotterFactory));
         return this;

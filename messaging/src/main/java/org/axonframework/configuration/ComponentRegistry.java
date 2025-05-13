@@ -23,7 +23,7 @@ import org.axonframework.configuration.Component.Identifier;
 /**
  * The starting point when configuring any Axon Framework application.
  * <p>
- * Provides utilities to {@link #registerComponent(Class, ComponentFactory) register components},
+ * Provides utilities to {@link #registerComponent(Class, ComponentBuilder) register components},
  * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, check if a component
  * {@link #hasComponent(Class) exists}, register {@link #registerEnhancer(ConfigurationEnhancer) enhancers} for the
  * entire configurer, and {@link #registerModule(Module) modules}.
@@ -38,36 +38,36 @@ public interface ComponentRegistry extends DescribableComponent {
      * Registers a {@link Component} that should be made available to other {@link Component components} or
      * {@link Module modules} in the {@link Configuration} that this {@code Configurer} will result in.
      * <p>
-     * The given {@code factory} function gets the {@link Configuration configuration} as input, and is expected to
+     * The given {@code builder} function gets the {@link Configuration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
      * {@code type}.
      *
      * @param type    The declared type of the component to build, typically an interface.
-     * @param factory The factory building the component.
-     * @param <C>     The type of component the {@code factory} builds.
+     * @param builder The builder building the component.
+     * @param <C>     The type of component the {@code builder} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @throws ComponentOverrideException If the override policy is set to
      *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
      *                                    with the same type is already defined.
      */
     default <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
-                                                    @Nonnull ComponentFactory<C> factory) {
+                                                    @Nonnull ComponentBuilder<C> builder) {
         return registerComponent(ComponentDefinition.ofType(type)
-                                                    .withFactory(factory));
+                                                    .withBuilder(builder));
     }
 
     /**
      * Registers a {@link Component} that should be made available to other {@link Component components} or
      * {@link Module modules} in the {@link Configuration} that this {@code Configurer} will result in.
      * <p>
-     * The given {@code factory} function gets the {@link Configuration configuration} as input, and is expected to
+     * The given {@code builder} function gets the {@link Configuration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
      * {@code type} and {@code name} combination.
      *
      * @param type    The declared type of the component to build, typically an interface.
      * @param name    The name of the component to build.
-     * @param factory The factory building the component.
-     * @param <C>     The type of component the {@code factory} builds.
+     * @param builder The builder building the component.
+     * @param <C>     The type of component the {@code builder} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @throws ComponentOverrideException If the override policy is set to
      *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
@@ -75,9 +75,9 @@ public interface ComponentRegistry extends DescribableComponent {
      */
     default <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name,
-                                                    @Nonnull ComponentFactory<? extends C> factory) {
+                                                    @Nonnull ComponentBuilder<? extends C> builder) {
         return registerComponent(ComponentDefinition.ofTypeAndName(type, name)
-                                                    .withFactory(factory));
+                                                    .withBuilder(builder));
     }
 
     /**
@@ -94,7 +94,7 @@ public interface ComponentRegistry extends DescribableComponent {
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on <b>all</b>
-     * {@link #registerComponent(Class, ComponentFactory) registered} components of the given {@code type}, regardless
+     * {@link #registerComponent(Class, ComponentBuilder) registered} components of the given {@code type}, regardless
      * of component name.
      * <p>
      * Decorators are invoked based on the given {@code order}. Decorators with a lower {@code order} will be executed
@@ -120,7 +120,7 @@ public interface ComponentRegistry extends DescribableComponent {
 
     /**
      * Registers a {@link ComponentDecorator decorator} that will act on
-     * {@link #registerComponent(Class, String, ComponentFactory) registered} components of the given {@code type}
+     * {@link #registerComponent(Class, String, ComponentBuilder) registered} components of the given {@code type}
      * <b>and</b> {@code name} combination.
      * <p>
      * Decorators are invoked based on the given {@code order}. Decorators with a lowe {@code order} will be executed

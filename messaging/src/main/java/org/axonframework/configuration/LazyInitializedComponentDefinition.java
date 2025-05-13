@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 
 import java.util.Objects;
@@ -24,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Implementation of {@link Component} and {@link ComponentDefinition} that instantiates a component using a configured
- * factory method.
+ * builder.
  * <p>
  * For internal use only. Instead, use static methods on {@link ComponentDefinition} to instantiate definitions.
  *
@@ -33,21 +34,22 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Allard Buijze
  * @since 5.0.0
  */
+@Internal
 class LazyInitializedComponentDefinition<C, A extends C> extends AbstractComponent<C, A> {
 
-    private final ComponentFactory<A> factory;
+    private final ComponentBuilder<A> builder;
     private final AtomicReference<A> instanceReference = new AtomicReference<>();
 
     /**
      * Create the definition for a component with given {@code identifier} and given {@code instance}.
      *
      * @param identifier The identifier of the component.
-     * @param factory    The function used to create an instance of this component.
+     * @param builder    The function used to create an instance of this component.
      */
     LazyInitializedComponentDefinition(@Nonnull Component.Identifier<C> identifier,
-                                       @Nonnull ComponentFactory<A> factory) {
+                                       @Nonnull ComponentBuilder<A> builder) {
         super(identifier);
-        this.factory = Objects.requireNonNull(factory, "The factory must not be null.");
+        this.builder = Objects.requireNonNull(builder, "The builder must not be null.");
     }
 
     @Override
@@ -59,7 +61,7 @@ class LazyInitializedComponentDefinition<C, A extends C> extends AbstractCompone
 
         synchronized (this) {
             if (instanceReference.get() == null) {
-                instanceReference.set(factory.build(configuration));
+                instanceReference.set(builder.build(configuration));
             }
         }
 
@@ -78,7 +80,7 @@ class LazyInitializedComponentDefinition<C, A extends C> extends AbstractCompone
         if (instance != null) {
             descriptor.describeProperty("instance", instance);
         } else {
-            descriptor.describeProperty("factory", factory);
+            descriptor.describeProperty("builder", builder);
         }
     }
 }

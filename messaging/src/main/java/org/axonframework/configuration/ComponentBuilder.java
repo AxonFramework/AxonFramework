@@ -27,7 +27,7 @@ import jakarta.annotation.Nonnull;
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface ComponentFactory<C> {
+public interface ComponentBuilder<C> {
 
     /**
      * Builds a component of type {@code C} using the given {@code config} during construction.
