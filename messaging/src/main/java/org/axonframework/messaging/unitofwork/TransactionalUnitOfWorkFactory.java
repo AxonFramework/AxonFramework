@@ -46,7 +46,7 @@ public class TransactionalUnitOfWorkFactory {
             var transaction = ctx.getResource(transactionKey);
             transaction.rollback();
         });
-        // TODO - legacy UnitOfWork.attachTransaction rollbacks in case of error here
+
         return unitOfWork;
     }
 }

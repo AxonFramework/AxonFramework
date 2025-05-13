@@ -22,7 +22,6 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -297,10 +296,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }
 
         /**
-         * Sets the {@link ErrorHandler} invoked when an {@link LegacyUnitOfWork} is rolled back during processing.
+         * Sets the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during processing.
          * Defaults to a {@link PropagatingErrorHandler}.
          *
-         * @param errorHandler the {@link ErrorHandler} invoked when an {@link LegacyUnitOfWork} is rolled back during
+         * @param errorHandler the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during
          *                     processing
          * @return the current Builder instance, for fluent interfacing
          */
