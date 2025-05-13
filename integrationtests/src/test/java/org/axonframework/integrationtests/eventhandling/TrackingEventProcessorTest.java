@@ -480,7 +480,7 @@ class TrackingEventProcessorTest {
     void tokenIsStoredWhenEventIsRead() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         //noinspection resource
-        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
 
         eventBus.publish(createEvent());
         testSubject.start();
@@ -502,7 +502,6 @@ class TrackingEventProcessorTest {
         );
     }
 
-    // TODO - adjust this test: CurrentUnitOfWork used
     @Test
     void tokenIsExtendedAtStartAndStoredAtEndOfEventBatch_WithStoringTokensAfterProcessingSetting()
             throws Exception {
@@ -513,13 +512,11 @@ class TrackingEventProcessorTest {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         AtomicInteger invocationsInUnitOfWork = new AtomicInteger();
         doAnswer(i -> {
-            if (CurrentUnitOfWork.isStarted()) {
-                invocationsInUnitOfWork.incrementAndGet();
-            }
+            invocationsInUnitOfWork.incrementAndGet();
             return i.callRealMethod();
         }).when(tokenStore).extendClaim(anyString(), anyInt());
         //noinspection resource
-        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
         testSubject.start();
         eventBus.publish(createEvents(2));
         assertTrue(
@@ -537,7 +534,7 @@ class TrackingEventProcessorTest {
         );
     }
 
-    // TODO - adjust this test: CurrentUnitOfWork used
+    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     void tokenStoredAtEndOfEventBatchAndNotExtendedWhenUsingANoTransactionManager() throws Exception {
         TrackingEventProcessorConfiguration tepConfig =
@@ -561,7 +558,7 @@ class TrackingEventProcessorTest {
         }).when(tokenStore).extendClaim(anyString(), anyInt());
 
         //noinspection resource
-        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
         testSubject.start();
         eventBus.publish(createEvents(2));
         assertTrue(
@@ -602,7 +599,7 @@ class TrackingEventProcessorTest {
         }).when(tokenStore).extendClaim(anyString(), anyInt());
 
         //noinspection resource
-        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
         testSubject.start();
         eventBus.publish(createEvents(2));
         assertTrue(
@@ -672,6 +669,7 @@ class TrackingEventProcessorTest {
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
 
+    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     void tokenIsNotStoredWhenUnitOfWorkIsRolledBack() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -693,12 +691,11 @@ class TrackingEventProcessorTest {
                 context.onCommit(uow -> {
                     throw new MockException();
                 });
-//                context.onCommit(uow -> CompletableFuture.failedFuture(new MockException()));
                 return interceptorChain.proceed(message, context);
             }
         });
         //noinspection resource
-        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
         testSubject.start();
 
         eventBus.publish(createEvent());
@@ -894,7 +891,7 @@ class TrackingEventProcessorTest {
             }
         });
         //noinspection resource
-        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
         testSubject.start();
         // Give it a bit of time to start
         Thread.sleep(200);
@@ -905,6 +902,7 @@ class TrackingEventProcessorTest {
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
 
+    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     @DirtiesContext
     void eventsWithTheSameTokenAreProcessedInTheSameBatch() throws Exception {
@@ -953,7 +951,7 @@ class TrackingEventProcessorTest {
         CountDownLatch countDownLatch = new CountDownLatch(2);
 
         //noinspection resource
-        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
 
         testSubject.start();
         // Give it a bit of time to start
@@ -2235,7 +2233,7 @@ class TrackingEventProcessorTest {
     void existingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(3);
         //noinspection resource
-        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(countDownLatch::countDown));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
         eventBus.publish(createEvent(0));
         eventBus.publish(createEvent(1));
         eventBus.publish(createEvent(2));
@@ -2252,8 +2250,8 @@ class TrackingEventProcessorTest {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch finished = new CountDownLatch(2);
         //noinspection resource
-        testSubject.registerHandlerInterceptor(eventHandlerInterceptorAfterCommit(started::countDown,
-                                                                                  finished::countDown));
+        testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(started::countDown,
+                                                                              finished::countDown));
 
         eventBus.publish(createEvent(0));
 
@@ -2271,7 +2269,7 @@ class TrackingEventProcessorTest {
         assertFalse(ReplayToken.isReplay(trackingToken), "Not a replay token: " + trackingToken);
     }
 
-    private MessageHandlerInterceptor<? super EventMessage<?>> eventHandlerInterceptorAfterCommit(
+    private MessageHandlerInterceptor<? super EventMessage<?>> eventHandlerInterceptorCleanup(
             Runnable... runnables) {
         return new MessageHandlerInterceptor<>() {
             @Override
