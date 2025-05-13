@@ -123,7 +123,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final ConcurrentMap<Integer, Long> segmentReleaseDeadlines = new ConcurrentSkipListMap<>();
     private final Context.ResourceKey<Integer> segmentIdResourceKey;
     private final Context.ResourceKey<TrackingToken> lastTokenResourceKey;
-    private final Context.ResourceKey<EventMessage<?>> batchFirstMessageResourceKey;
     private final AtomicInteger availableThreads;
     private final long tokenClaimInterval;
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
@@ -167,8 +166,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.workerTerminationTimeout = config.getWorkerTerminationTimeout();
         this.segmentIdResourceKey = Context.ResourceKey.withLabel("Processor[" + builder.name + "]/SegmentId");
         this.lastTokenResourceKey = Context.ResourceKey.withLabel("Processor[" + builder.name + "]/Token");
-        this.batchFirstMessageResourceKey = Context.ResourceKey.withLabel(
-                "Processor[" + builder.name + "]/Token/Batch/FirstMessage");
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
     }
@@ -481,10 +478,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             unitOfWork.runOnPreInvocation(ctx -> {
                 ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
                 ctx.putResource(lastTokenResourceKey, finalLastToken);
-                var batchFirstMessage = batch.getFirst();
-                if (batchFirstMessage != null) {
-                    ctx.putResource(batchFirstMessageResourceKey, batchFirstMessage);
-                }
                 if (storeTokenBeforeProcessing) {
                     tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
                 } else {
