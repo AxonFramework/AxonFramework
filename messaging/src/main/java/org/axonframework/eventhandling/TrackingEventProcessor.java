@@ -24,7 +24,6 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -32,17 +31,8 @@ import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Context;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -173,7 +163,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     /**
      * Instantiate a Builder to be able to create a {@link TrackingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link NoOpMessageMonitor}, the {@link TrackingEventProcessorConfiguration} to a
      * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call, and the
@@ -935,7 +924,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     /**
      * Builder class to instantiate a {@link TrackingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link NoOpMessageMonitor}, the {@link EventProcessorSpanFactory} defaults to a
      * {@link DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory} and the

@@ -39,8 +39,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -52,6 +51,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -164,7 +164,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      * <p>
      * Upon initialization of this builder, the following fields are defaulted:
      * <ul>
-     *     <li>The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}.</li>
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
@@ -321,7 +320,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
 
         // TODO - Use a ProcessingContext instead of a direct transaction
-        transactionManager.executeInTransaction(() -> {
+        var unitOfWork = new TransactionalUnitOfWorkFactory(transactionManager).create();
+        unitOfWork.executeWithResult((processingContext) -> {
             // Find all segments and fetch all tokens
             int[] segments = tokenStore.fetchSegments(getName());
             logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
@@ -338,7 +338,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
                              segments[i]
                      ));
             logger.info("Processor [{}] successfully reset tokens for segments [{}].", name, segments);
-        });
+            return CompletableFuture.completedFuture(null);
+        }).exceptionally(e -> e instanceof CompletionException ? e.getCause() : e).join();
     }
 
     /**
@@ -414,7 +415,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      * <p>
      * Upon initialization of this builder, the following fields are defaulted:
      * <ul>
-     *     <li>The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}.</li>
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
