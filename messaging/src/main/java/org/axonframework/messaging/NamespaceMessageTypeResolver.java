@@ -44,7 +44,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
     private NamespaceMessageTypeResolver(
             @Nonnull Map<Class<?>, MessageType> mappings
     ) {
-        Objects.requireNonNull(mappings, "Mappings may not be null");
+        Objects.requireNonNull(mappings, "Mappings may not be null.");
         this.mappings = mappings;
     }
 
@@ -55,11 +55,13 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
      * @return The builder instance for method chaining.
      */
     public static Builder namespace(@Nonnull String namespace) {
+        Objects.requireNonNull(namespace, "Namespace may not be null.");
         return new Builder(namespace, Map.of());
     }
 
     @Override
-    public Optional<MessageType> resolve(Class<?> payloadType) {
+    public Optional<MessageType> resolve(@Nonnull Class<?> payloadType) {
+        Objects.requireNonNull(payloadType, "Payload Type may not be null.");
         var messageType = mappings.get(payloadType);
         return Optional.ofNullable(messageType);
     }
@@ -81,6 +83,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
          * @return The builder instance for method chaining.
          */
         public Builder namespace(@Nonnull String namespace) {
+            Objects.requireNonNull(namespace, "Namespace may not be null.");
             return new Builder(namespace, this.mappings);
         }
 
@@ -95,8 +98,11 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
          * @throws IllegalArgumentException If a mapping for the given {@code payloadType} already exists. Mappings are
          *                                  global, not in the scope of certain namespace.
          */
-        public Builder message(@Nonnull Class<?> payloadType, @Nonnull String localName,
-                               @Nonnull String version) {
+        public Builder message(@Nonnull Class<?> payloadType, @Nonnull String localName, @Nonnull String version) {
+            Objects.requireNonNull(payloadType, "Payload Type may not be null.");
+            Objects.requireNonNull(localName, "Local Name may not be null.");
+            Objects.requireNonNull(version, "Version may not be null.");
+
             if (mappings.containsKey(payloadType)) {
                 throw new IllegalArgumentException(
                         "A MessageType is already defined for payload type [" + payloadType.getName() + "]");
@@ -125,7 +131,8 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
          * @param resolver The resolver to use as fallback when this resolver cannot resolve a payload type.
          * @return A {@link MessageTypeResolver} with fallback behavior.
          */
-        public MessageTypeResolver fallback(MessageTypeResolver resolver) {
+        public MessageTypeResolver fallback(@Nonnull MessageTypeResolver resolver) {
+            Objects.requireNonNull(resolver, "Message Type Resolver may not be null.");
             if (mappings.isEmpty()) {
                 return resolver;
             }
