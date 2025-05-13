@@ -29,7 +29,7 @@ import java.util.Optional;
  * <p>
  * The resolver will throw a {@link MessageTypeNotResolvedException} when encountering a payload type for which no
  * mapping has been defined. If fallback behavior is desired, use the
- * {@link NamespaceMessageTypeResolverBuilder#fallback(MessageTypeResolver)} method during configuration to provide an
+ * {@link Builder#fallback(MessageTypeResolver)} method during configuration to provide an
  * alternative resolver.
  * <p>
  * Use the {@link #namespace(String)} static method to start building a resolver with a default namespace.
@@ -54,8 +54,8 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
      * @param namespace The namespace to use for message types created after this call.
      * @return The builder instance for method chaining.
      */
-    public static NamespaceMessageTypeResolverBuilder namespace(@Nonnull String namespace) {
-        return new NamespaceMessageTypeResolverBuilder(namespace, Map.of());
+    public static Builder namespace(@Nonnull String namespace) {
+        return new Builder(namespace, Map.of());
     }
 
     @Override
@@ -69,7 +69,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
      * <p>
      * Allows for a fluent API to configure message type mappings under a common namespace.
      */
-    public record NamespaceMessageTypeResolverBuilder(
+    public record Builder(
             String namespace,
             Map<Class<?>, MessageType> mappings
     ) {
@@ -80,8 +80,8 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
          * @param namespace The namespace to use for message types created after this call.
          * @return The builder instance for method chaining.
          */
-        public NamespaceMessageTypeResolverBuilder namespace(@Nonnull String namespace) {
-            return new NamespaceMessageTypeResolverBuilder(namespace, this.mappings);
+        public Builder namespace(@Nonnull String namespace) {
+            return new Builder(namespace, this.mappings);
         }
 
         /**
@@ -95,8 +95,8 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
          * @throws IllegalArgumentException If a mapping for the given {@code payloadType} already exists. Mappings are
          *                                  global, not in the scope of certain namespace.
          */
-        public NamespaceMessageTypeResolverBuilder message(@Nonnull Class<?> payloadType, @Nonnull String localName,
-                                                           @Nonnull String version) {
+        public Builder message(@Nonnull Class<?> payloadType, @Nonnull String localName,
+                               @Nonnull String version) {
             if (mappings.containsKey(payloadType)) {
                 throw new IllegalArgumentException(
                         "A MessageType is already defined for payload type [" + payloadType.getName() + "]");
@@ -105,7 +105,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
             Map<Class<?>, MessageType> newMappings = new HashMap<>(mappings);
             newMappings.put(payloadType, new MessageType(namespace, localName, version));
 
-            return new NamespaceMessageTypeResolverBuilder(this.namespace, newMappings);
+            return new Builder(this.namespace, newMappings);
         }
 
         /**
