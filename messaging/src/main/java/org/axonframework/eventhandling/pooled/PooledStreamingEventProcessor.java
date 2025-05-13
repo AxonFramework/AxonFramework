@@ -452,7 +452,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         private boolean coordinatorExtendsClaims = false;
 
         protected Builder() {
-            rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
         }
 
         @Override
@@ -464,12 +463,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         @Override
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
             super.eventHandlerInvoker(eventHandlerInvoker);
-            return this;
-        }
-
-        @Override
-        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
-            super.rollbackConfiguration(rollbackConfiguration);
             return this;
         }
 

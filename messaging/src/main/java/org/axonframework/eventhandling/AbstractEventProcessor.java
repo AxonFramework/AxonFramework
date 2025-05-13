@@ -22,17 +22,13 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -40,7 +36,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -55,7 +50,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * {@link MessageHandlerInterceptor interceptors}.
  * <p>
  * Implementations are in charge of providing the events that need to be processed. Once these events are obtained they
- * can be passed to method {@link #processInUnitOfWork(List, LegacyUnitOfWork, Collection)} for processing.
+ * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Collection)} for processing.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -63,11 +58,9 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 public abstract class AbstractEventProcessor implements EventProcessor {
 
     private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final String name;
     private final EventHandlerInvoker eventHandlerInvoker;
-    private final RollbackConfiguration rollbackConfiguration;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
@@ -85,7 +78,6 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         builder.validate();
         this.name = builder.name;
         this.eventHandlerInvoker = builder.eventHandlerInvoker;
-        this.rollbackConfiguration = builder.rollbackConfiguration;
         this.errorHandler = builder.errorHandler;
         this.messageMonitor = builder.messageMonitor;
         this.spanFactory = builder.spanFactory;
@@ -143,8 +135,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     /**
-     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is
-     * handled the event processor creates an interceptor chain containing all registered
+     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
+     * the event processor creates an interceptor chain containing all registered
      * {@link MessageHandlerInterceptor interceptors}.
      *
      * @param eventMessages The batch of messages that is to be processed
@@ -157,8 +149,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     /**
-     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is
-     * handled the event processor creates an interceptor chain containing all registered
+     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
+     * the event processor creates an interceptor chain containing all registered
      * {@link MessageHandlerInterceptor interceptors}.
      *
      * @param eventMessages      The batch of messages that is to be processed
@@ -266,15 +258,13 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * <p>
      * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults
      * to a {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
-     * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name},
-     * {@link EventHandlerInvoker} and {@link RollbackConfiguration} are <b>hard requirements</b> and as such should be
-     * provided.
+     * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name}
+     * and {@link EventHandlerInvoker} are <b>hard requirements</b> and as such should be provided.
      */
     public abstract static class Builder {
 
         protected String name;
         private EventHandlerInvoker eventHandlerInvoker;
-        private RollbackConfiguration rollbackConfiguration;
         private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
@@ -303,20 +293,6 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
             assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
             this.eventHandlerInvoker = eventHandlerInvoker;
-            return this;
-        }
-
-        /**
-         * Sets the {@link RollbackConfiguration} specifying the rollback behavior of the {@link LegacyUnitOfWork} while
-         * processing a batch of events.
-         *
-         * @param rollbackConfiguration the {@link RollbackConfiguration} specifying the rollback behavior of the
-         *                              {@link LegacyUnitOfWork} while processing a batch of events.
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
-            assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
-            this.rollbackConfiguration = rollbackConfiguration;
             return this;
         }
 
@@ -371,8 +347,6 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         protected void validate() throws AxonConfigurationException {
             assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
             assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
-            assertNonNull(rollbackConfiguration,
-                          "The RollbackConfiguration is a hard requirement and should be provided");
         }
 
         private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {

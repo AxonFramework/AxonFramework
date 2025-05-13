@@ -185,7 +185,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
 
         public Builder() {
-            super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
+            super();
         }
 
         @Override
@@ -197,15 +197,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
         @Override
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
             super.eventHandlerInvoker(eventHandlerInvoker);
-            return this;
-        }
-
-        /**
-         * {@inheritDoc}. Defaults to a {@link RollbackConfigurationType#ANY_THROWABLE})
-         */
-        @Override
-        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
-            super.rollbackConfiguration(rollbackConfiguration);
             return this;
         }
 
