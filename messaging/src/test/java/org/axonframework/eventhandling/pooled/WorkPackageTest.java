@@ -531,20 +531,6 @@ class WorkPackageTest {
 
         private final List<EventMessage<?>> processedEvents = new ArrayList<>();
 
-//        @Override
-//        public void processBatch(List<? extends EventMessage<?>> eventMessages,
-//                                 LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-//                                 Collection<Segment> processingSegments) {
-//            if (batchProcessorPredicate.test(eventMessages)) {
-//                unitOfWork.executeWithResult(() -> {
-//                    unitOfWork.commit();
-//                    processedEvents.addAll(eventMessages);
-//                    // We don't care about the result to perform our tests. Just return null.
-//                    return null;
-//                });
-//            }
-//        }
-
         @Override
         public void processBatch(List<? extends EventMessage<?>> eventMessages, UnitOfWork unitOfWork,
                                  Collection<Segment> processingSegments) throws Exception {
