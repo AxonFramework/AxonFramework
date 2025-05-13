@@ -27,11 +27,6 @@ import java.util.Optional;
  * Implementation of the {@link MessageTypeResolver} that maintains a mapping of payload types to their corresponding
  * {@link MessageType}s. This resolver organizes message types under a common namespace.
  * <p>
- * The resolver will throw a {@link MessageTypeNotResolvedException} when encountering a payload type for which no
- * mapping has been defined. If fallback behavior is desired, use the
- * {@link Builder#fallback(MessageTypeResolver)} method during configuration to provide an
- * alternative resolver.
- * <p>
  * Use the {@link #namespace(String)} static method to start building a resolver with a default namespace.
  *
  * @author Mateusz Nowak
@@ -115,12 +110,15 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
         }
 
         /**
-         * Finalizes the builder and returns a {@link MessageTypeResolver} that throws a
-         * {@link MessageTypeNotResolvedException} when encountering unmapped payload types.
+         * Finalizes the builder and returns a {@link MessageTypeResolver} that:
+         * <ul>
+         *     <li>for {@link MessageTypeResolver#resolveOrThrow} throws a {@link MessageTypeNotResolvedException} when encountering unmapped payload types</li>
+         *     <li>for {@link MessageTypeResolver#resolve} returns an {@link Optional#empty()} when encountering unmapped payload types</li>
+         * </ul>
          *
-         * @return A {@link MessageTypeResolver} that will throw exceptions for unknown payload types.
+         * @return A {@link MessageTypeResolver} without fallback behavior.
          */
-        public MessageTypeResolver throwsIfUnknown() {
+        public MessageTypeResolver noFallback() {
             return new NamespaceMessageTypeResolver(mappings);
         }
 
@@ -136,7 +134,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
             if (mappings.isEmpty()) {
                 return resolver;
             }
-            return new FallbackMessageTypeResolver(throwsIfUnknown(), resolver);
+            return new FallbackMessageTypeResolver(noFallback(), resolver);
         }
     }
 }

@@ -30,7 +30,7 @@ class NamespaceMessageTypeResolverTest {
         var resolver = NamespaceMessageTypeResolver
                 .namespace("test")
                 .message(String.class, "string", "1.0.0")
-                .throwsIfUnknown();
+                .noFallback();
 
         // when
         var result = resolver.resolveOrThrow(String.class);
@@ -46,7 +46,7 @@ class NamespaceMessageTypeResolverTest {
         var resolver = NamespaceMessageTypeResolver
                 .namespace("test")
                 .message(String.class, "string", "1.0.0")
-                .throwsIfUnknown();
+                .noFallback();
 
         // when/then
         var exception = assertThrows(MessageTypeNotResolvedException.class,
@@ -99,7 +99,7 @@ class NamespaceMessageTypeResolverTest {
                 .message(String.class, "string", "1.0.0")
                 .message(Integer.class, "integer", "2.0.0")
                 .message(Double.class, "Double", "3.0.0")
-                .throwsIfUnknown();
+                .noFallback();
 
         // when
         var stringResult = resolver.resolveOrThrow(String.class);
@@ -141,8 +141,8 @@ class NamespaceMessageTypeResolverTest {
                 .namespace("test")
                 .message(Integer.class, "integer", "2.0.0");
 
-        var resolver1 = phase1.throwsIfUnknown();
-        var resolver2 = phase2.throwsIfUnknown();
+        var resolver1 = phase1.noFallback();
+        var resolver2 = phase2.noFallback();
 
         // then - resolver1 doesn't know about Integer
         assertThrows(MessageTypeNotResolvedException.class,
@@ -163,7 +163,7 @@ class NamespaceMessageTypeResolverTest {
         var resolver = NamespaceMessageTypeResolver
                 .namespace("test")
                 .message(String.class, "string", "1.0.0")
-                .throwsIfUnknown();
+                .noFallback();
 
         // when
         MessageType result = resolver.resolveOrThrow(message);
@@ -179,7 +179,7 @@ class NamespaceMessageTypeResolverTest {
         var resolver = NamespaceMessageTypeResolver
                 .namespace("test")
                 .message(String.class, "string", version)
-                .throwsIfUnknown();
+                .noFallback();
 
         // when
         var result = resolver.resolveOrThrow(String.class);
