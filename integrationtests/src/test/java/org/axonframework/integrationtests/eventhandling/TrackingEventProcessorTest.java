@@ -534,7 +534,6 @@ class TrackingEventProcessorTest {
         );
     }
 
-    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     void tokenStoredAtEndOfEventBatchAndNotExtendedWhenUsingANoTransactionManager() throws Exception {
         TrackingEventProcessorConfiguration tepConfig =
@@ -551,9 +550,7 @@ class TrackingEventProcessorTest {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         AtomicInteger invocationsInUnitOfWork = new AtomicInteger();
         doAnswer(i -> {
-            if (CurrentUnitOfWork.isStarted()) {
-                invocationsInUnitOfWork.incrementAndGet();
-            }
+            invocationsInUnitOfWork.incrementAndGet();
             return i.callRealMethod();
         }).when(tokenStore).extendClaim(anyString(), anyInt());
 
