@@ -34,26 +34,26 @@ import java.util.Optional;
  */
 public class FallbackMessageTypeResolver implements MessageTypeResolver {
 
-    private final MessageTypeResolver delegate;
+    private final MessageTypeResolver primary;
     private final MessageTypeResolver fallback;
 
     /**
      * Initializes a new instance with the given primary {@code delegate} and {@code fallback} resolvers.
      *
-     * @param delegate The primary resolver to attempt resolution with first, not {@code null}.
+     * @param primary The primary resolver to attempt resolution with first, not {@code null}.
      * @param fallback The fallback resolver to use when the delegate fails, not {@code null}.
      * @throws NullPointerException When either the {@code delegate} or {@code fallback} is {@code null}.
      */
-    public FallbackMessageTypeResolver(@Nonnull MessageTypeResolver delegate, @Nonnull MessageTypeResolver fallback) {
-        Objects.requireNonNull(delegate, "Delegate may not be null");
-        Objects.requireNonNull(fallback, "Fallback may not be null");
-        this.delegate = delegate;
+    public FallbackMessageTypeResolver(@Nonnull MessageTypeResolver primary, @Nonnull MessageTypeResolver fallback) {
+        Objects.requireNonNull(primary, "Primary may not be null.");
+        Objects.requireNonNull(fallback, "Fallback may not be null.");
+        this.primary = primary;
         this.fallback = fallback;
     }
 
     @Override
-    public Optional<MessageType> resolve(Class<?> payloadType) {
-        return delegate.resolve(payloadType)
-                       .or(() -> fallback.resolve(payloadType));
+    public Optional<MessageType> resolve(@Nonnull Class<?> payloadType) {
+        return primary.resolve(payloadType)
+                      .or(() -> fallback.resolve(payloadType));
     }
 }

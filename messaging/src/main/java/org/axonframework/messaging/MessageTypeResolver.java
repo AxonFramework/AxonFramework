@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 
 import java.util.Optional;
@@ -56,7 +57,7 @@ public interface MessageTypeResolver {
      * @return The {@link MessageType type} for the given {@code payloadType}.
      * @throws MessageTypeNotResolvedException if the {@link MessageType type} could not be resolved.
      */
-    default MessageType resolveOrThrow(Class<?> payloadType){
+    default MessageType resolveOrThrow(@Nonnull Class<?> payloadType){
         return resolve(payloadType)
                 .orElseThrow(() -> new MessageTypeNotResolvedException("Cannot resolve MessageType for the payload type [" + payloadType.getName() + "]"));
     }
@@ -72,7 +73,7 @@ public interface MessageTypeResolver {
      * @return An {@link Optional} containing the {@link MessageType type} for the given {@code payload},
      *         or empty if the type could not be resolved.
      */
-    default Optional<MessageType> resolve(Object payload) {
+    default Optional<MessageType> resolve(@Nonnull Object payload) {
         if (payload instanceof Message<?>) {
             return Optional.of(((Message<?>) payload).type());
         }
@@ -90,5 +91,5 @@ public interface MessageTypeResolver {
      * @return An {@link Optional} containing the {@link MessageType type} for the given {@code payloadType},
      *         or empty if the type could not be resolved.
      */
-    Optional<MessageType> resolve(Class<?> payloadType);
+    Optional<MessageType> resolve(@Nonnull Class<?> payloadType);
 }
