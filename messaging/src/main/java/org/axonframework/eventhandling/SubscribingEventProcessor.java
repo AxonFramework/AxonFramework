@@ -19,22 +19,16 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.Context;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
@@ -77,7 +71,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
     /**
      * Instantiate a Builder to be able to create a {@link SubscribingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a
      * {@link DirectEventProcessingStrategy}, the {@link EventProcessorSpanFactory} defaults to a
@@ -169,7 +162,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
     /**
      * Builder class to instantiate a {@link SubscribingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link EventProcessorSpanFactory} is defaulted to a {@link DefaultEventProcessorSpanFactory} backed by a
      * {@link org.axonframework.tracing.NoOpSpanFactory}, the {@link MessageMonitor} defaults to a
