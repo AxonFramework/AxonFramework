@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -28,8 +27,6 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Context;
-import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -394,8 +391,8 @@ class WorkPackage {
     }
 
     /**
-     * Returns the {@link TrackingToken} of the {@link TrackedEventMessage} that was delivered in the last {@link
-     * #scheduleEvent(TrackedEventMessage)} call.
+     * Returns the {@link TrackingToken} of the {@link TrackedEventMessage} that was delivered in the last
+     * {@link #scheduleEvent(TrackedEventMessage)} call.
      * <p>
      * <b>Threading note:</b> This method is only safe to call from {@link Coordinator} threads. The {@link
      * WorkPackage} threads must not rely on this method.
@@ -503,32 +500,26 @@ class WorkPackage {
     }
 
     /**
-     * Functional interface defining the processing of a batch of {@link EventMessage}s within a
-     * {@link LegacyUnitOfWork}.
+     * Functional interface defining the processing of a batch of {@link EventMessage}s within a {@link UnitOfWork}.
      */
     @FunctionalInterface
     interface BatchProcessor {
 
-//        /**
-//         * Processes a given batch of {@code eventMessages}. These {@code eventMessages} will be processed within the
-//         * given {@code unitOfWork}. The collection of {@link Segment} instances defines the segments for which the
-//         * {@code eventMessages} should be processed.
-//         *
-//         * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
-//         * @param unitOfWork         the {@link LegacyUnitOfWork} that has been prepared to process the {@code eventMessages}
-//         * @param processingSegments the {@link Segment}s for which the {@code eventMessages} should be processed in the
-//         *                           given {@code unitOfWork}
-//         * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
-//         */
-//        @Deprecated(since = "5.0.0")
-//        void processBatch(List<? extends EventMessage<?>> eventMessages,
-//                          LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-//                          Collection<Segment> processingSegments) throws Exception;
-
+        /**
+         * Processes a given batch of {@code eventMessages}. These {@code eventMessages} will be processed within the
+         * given {@code unitOfWork}. The collection of {@link Segment} instances defines the segments for which the
+         * {@code eventMessages} should be processed.
+         *
+         * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
+         * @param unitOfWork         the {@link UnitOfWork} that has been prepared to process the
+         *                           {@code eventMessages}
+         * @param processingSegments the {@link Segment}s for which the {@code eventMessages} should be processed in the
+         *                           given {@code unitOfWork}
+         * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
+         */
         void processBatch(List<? extends EventMessage<?>> eventMessages,
                           UnitOfWork unitOfWork,
                           Collection<Segment> processingSegments) throws Exception;
-
     }
 
     /**
