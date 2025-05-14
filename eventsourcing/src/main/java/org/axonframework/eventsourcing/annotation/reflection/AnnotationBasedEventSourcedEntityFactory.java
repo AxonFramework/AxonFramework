@@ -24,8 +24,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.PayloadParameterResolver;
@@ -42,10 +42,8 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
@@ -169,10 +167,13 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             return;
         }
 
-        String[] payloadQualifiedNames = annotation.payloadQualifiedNames();
+        List<QualifiedName> payloadQualifiedNames = Arrays.stream(annotation.payloadQualifiedNames()).map(
+                QualifiedName::new
+        ).collect(Collectors.toList());
         ParameterResolver<?>[] parameterResolvers = new ParameterResolver[c.getParameterCount()];
         boolean hasMessageParameter = false;
         Class<?> concreteIdType = null;
+
         for (int i = 0; i < c.getParameterCount(); i++) {
             Class<?> parameterType = c.getParameterTypes()[i];
 
@@ -195,16 +196,13 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             parameterResolvers[i] = instance;
         }
 
-        if (payloadQualifiedNames.length == 0) {
+        if (payloadQualifiedNames.isEmpty()) {
             // Let's find if we have a PayloadParameterResolver
-            Optional<MessageType> optionalPayloadQualifiedName = Arrays
-                    .stream(parameterResolvers)
-                    .filter(p -> p instanceof PayloadParameterResolver)
-                    .findFirst()
-                    .map(prr -> messageTypeResolver.resolve(prr.supportedPayloadType()));
-            if (optionalPayloadQualifiedName.isPresent()) {
-                payloadQualifiedNames = new String[]{optionalPayloadQualifiedName.get().name()};
-            }
+            Arrays.stream(parameterResolvers)
+                  .filter(p -> p instanceof PayloadParameterResolver)
+                  .findFirst()
+                  .map(prr -> messageTypeResolver.resolve(prr.supportedPayloadType()))
+                  .ifPresent(messageType -> payloadQualifiedNames.add(messageType.qualifiedName()));
         }
 
         factoryMethods.add(new ScannedFactoryMethod(c,
@@ -216,35 +214,33 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
 
     private ScannedFactoryMethod findMostSpecificMethod(ID id, EventMessage<?> eventMessage,
                                                         ProcessingContext context) {
-        Set<ScannedFactoryMethod> possibleConstructors = factoryMethods
-                .stream()
-                .filter(e -> {
-                    if (eventMessage == null) {
-                        return !e.hasPayload();
-                    }
-                    return e.hasPayload(eventMessage.type().name());
-                })
-                .filter(e -> e.concreteIdType == null || e.concreteIdType.isAssignableFrom(id.getClass()))
-                .collect(Collectors.toSet());
-        if(eventMessage != null && possibleConstructors.isEmpty()) {
-            // We will have to consider non-payload methods as well
-            possibleConstructors = factoryMethods
+        Set<ScannedFactoryMethod> compatibleMethods = factoryMethods.stream()
+                                                                    .filter(e -> e.supportsId(id))
+                                                                    .collect(Collectors.toSet());
+
+        // If we have an EventMessage, methods taking the payload type of the event message have precedence
+        if (eventMessage != null) {
+            Set<ScannedFactoryMethod> eventCompatibleConstructors = compatibleMethods
                     .stream()
-                    .filter(e -> e.concreteIdType == null || e.concreteIdType.isAssignableFrom(id.getClass()))
+                    .filter(e -> e.hasPayload(eventMessage.type().qualifiedName()))
                     .collect(Collectors.toSet());
+            if (!eventCompatibleConstructors.isEmpty()) {
+                compatibleMethods = eventCompatibleConstructors;
+            }
         }
-        if (possibleConstructors.isEmpty()) {
+        if (compatibleMethods.isEmpty()) {
             throw new AxonConfigurationException(
                     "No suitable @EntityFactoryMethods found for id: [%s] and event message [%s]: [%s]"
                             .formatted(id, eventMessage, factoryMethods));
         }
-        Set<ScannedFactoryMethod> matchingMethods = possibleConstructors.stream()
-                                                                        .filter(e -> e.matches(eventMessage, context))
-                                                                        .collect(Collectors.toSet());
+        Set<ScannedFactoryMethod> matchingMethods = compatibleMethods.stream()
+                                                                     .filter(e -> e.parametersMatch(eventMessage,
+                                                                                                    context))
+                                                                     .collect(Collectors.toSet());
         if (matchingMethods.isEmpty()) {
             throw new AxonConfigurationException(
                     "None of the @EntityFactoryMethods match the event message [%s] and context [%s]. Candidates were: [%s]"
-                            .formatted(eventMessage, context, possibleConstructors));
+                            .formatted(eventMessage, context, compatibleMethods));
         }
         return matchingMethods.stream()
                               .max(Comparator.comparingInt(ScannedFactoryMethod::getParameterCount))
@@ -255,7 +251,9 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     @Override
     public E create(@Nonnull ID id, @Nullable EventMessage<?> firstEventMessage, @Nonnull ProcessingContext context) {
         ProcessingContext contextWithId = context.withResource(ID_KEY, id);
-        return findMostSpecificMethod(id, firstEventMessage, contextWithId).invoke(id, firstEventMessage, contextWithId);
+        return findMostSpecificMethod(id, firstEventMessage, contextWithId).invoke(id,
+                                                                                   firstEventMessage,
+                                                                                   contextWithId);
     }
 
     /**
@@ -265,13 +263,13 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
 
         private final Executable executable;
         private final ParameterResolver<?>[] parameterResolvers;
-        private final String[] payloadQualifiedNames;
+        private final List<QualifiedName> payloadQualifiedNames;
         private final Class<?> concreteIdType;
         private final boolean hasMessageParameter;
 
         private ScannedFactoryMethod(Executable executable,
                                      ParameterResolver<?>[] parameterResolvers,
-                                     String[] payloadQualifiedNames,
+                                     List<QualifiedName> payloadQualifiedNames,
                                      Class<?> concreteIdType, boolean hasMessageParameter) {
             this.hasMessageParameter = hasMessageParameter;
 
@@ -291,25 +289,28 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             return constructEntityWithArguments(args);
         }
 
+        private boolean supportsId(ID id) {
+            return concreteIdType == null || concreteIdType.isAssignableFrom(id.getClass());
+        }
+
         private int getParameterCount() {
             return parameterResolvers.length;
         }
 
-        private boolean matches(Message<?> message, ProcessingContext processingContext) {
+        private boolean parametersMatch(EventMessage<?> message, ProcessingContext processingContext) {
             return Arrays.stream(parameterResolvers)
                          .allMatch(f -> f.matches(message, processingContext));
         }
 
         private boolean hasPayload() {
-            return hasMessageParameter || payloadQualifiedNames.length > 0;
+            return hasMessageParameter || !payloadQualifiedNames.isEmpty();
         }
 
-        private boolean hasPayload(String qualifiedName) {
-            if(hasMessageParameter) {
+        private boolean hasPayload(QualifiedName qualifiedName) {
+            if (hasMessageParameter) {
                 return true;
             }
-            return Arrays.stream(payloadQualifiedNames)
-                         .anyMatch(p -> p.equals(qualifiedName));
+            return payloadQualifiedNames.contains(qualifiedName);
         }
 
         @SuppressWarnings("unchecked")
