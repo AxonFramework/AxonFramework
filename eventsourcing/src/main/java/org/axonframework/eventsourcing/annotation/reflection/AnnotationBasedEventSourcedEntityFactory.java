@@ -251,9 +251,8 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     @Override
     public E create(@Nonnull ID id, @Nullable EventMessage<?> firstEventMessage, @Nonnull ProcessingContext context) {
         ProcessingContext contextWithId = context.withResource(ID_KEY, id);
-        return findMostSpecificMethod(id, firstEventMessage, contextWithId).invoke(id,
-                                                                                   firstEventMessage,
-                                                                                   contextWithId);
+        return findMostSpecificMethod(id, firstEventMessage, contextWithId)
+                .invoke(id, firstEventMessage, contextWithId);
     }
 
     /**
@@ -300,10 +299,6 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         private boolean parametersMatch(EventMessage<?> message, ProcessingContext processingContext) {
             return Arrays.stream(parameterResolvers)
                          .allMatch(f -> f.matches(message, processingContext));
-        }
-
-        private boolean hasPayload() {
-            return hasMessageParameter || !payloadQualifiedNames.isEmpty();
         }
 
         private boolean hasPayload(QualifiedName qualifiedName) {
