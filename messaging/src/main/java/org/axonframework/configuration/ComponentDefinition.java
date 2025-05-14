@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
  * it would look as follows:
  * <pre><code>
  * ComponentDefinition.ofType(MyComponentInterface.class)
- *                    .withFactory(config -> new MyComponentImplementation(config.getComponent(MyDependency.class)))
+ *                    .withBuilder(config -> new MyComponentImplementation(config.getComponent(MyDependency.class)))
  *                    .onStart(0, MyComponentImplementation::start)
  *                    .onShutdown(0, MyComponentImplementation::shutdown)
  * </code></pre>
@@ -47,7 +47,7 @@ import static java.util.Objects.requireNonNull;
  * Alternatively, you can specify a name to make multiple instances of the same component in the same configuration:
  * <pre><code>
  *     ComponentDefinition.ofTypeAndName(MyComponentInterface.class, "MyName")
- *                        .withFactory(config -> ...)
+ *                        .withBuilder(config -> ...)
  * </code></pre>
  * <p>
  * If an instance of the component is already constructed, it is more efficient to register it directly
@@ -67,7 +67,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * that {@code type}. To distinguish between different instances of the same type, consider using
      * {@link #ofTypeAndName(Class, String)} instead.
      * <p>
-     * Either {@link IncompleteComponentDefinition#withBuilder(ComponentBuilder) withFactory(...)} or
+     * Either {@link IncompleteComponentDefinition#withBuilder(ComponentBuilder) withBuilder(...)} or
      * {@link IncompleteComponentDefinition#withInstance(Object) withInstance(...)} must be called on the result of this
      * invocation to create a valid {@code ComponentDefinition} instance.
      *
