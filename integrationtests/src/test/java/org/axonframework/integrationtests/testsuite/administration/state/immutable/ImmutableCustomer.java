@@ -35,14 +35,6 @@ public record ImmutableCustomer(
         this(event.identifier(), event.emailAddress());
     }
 
-    @EventSourcingHandler
-    public ImmutableCustomer on(CustomerCreated event) {
-        return new ImmutableCustomer(
-                event.identifier(),
-                event.emailAddress()
-        );
-    }
-
     @CommandHandler
     public static void handle(CreateCustomer command, EventAppender appender) {
         appender.append(new CustomerCreated(command.identifier(),
