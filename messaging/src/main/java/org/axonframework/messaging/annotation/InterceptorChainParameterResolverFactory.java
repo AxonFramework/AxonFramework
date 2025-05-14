@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.InterceptorChain;
@@ -108,7 +110,7 @@ public class InterceptorChainParameterResolverFactory
     }
 
     @Override
-    public InterceptorChain resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+    public InterceptorChain resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
         InterceptorChain interceptorChain = processingContext == null
                 ? null
                 : processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
@@ -122,14 +124,14 @@ public class InterceptorChainParameterResolverFactory
     }
 
     @Override
-    public boolean matches(Message<?> message, ProcessingContext processingContext) {
+    public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
         return CURRENT.get() != null
                 || (processingContext != null && processingContext.containsResource(INTERCEPTOR_CHAIN_KEY));
     }
 
     @Override
-    public ParameterResolver<InterceptorChain> createInstance(Executable executable,
-                                                              Parameter[] parameters,
+    public ParameterResolver<InterceptorChain> createInstance(@Nonnull Executable executable,
+                                                              @Nonnull Parameter[] parameters,
                                                               int parameterIndex) {
         if (InterceptorChain.class.equals(parameters[parameterIndex].getType())) {
             return this;

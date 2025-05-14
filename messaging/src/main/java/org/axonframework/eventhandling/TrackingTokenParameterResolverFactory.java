@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -33,8 +35,9 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
     private static final TrackingTokenParameterResolver RESOLVER = new TrackingTokenParameterResolver();
 
+    @Nullable
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (TrackingToken.class.equals(parameters[parameterIndex].getType())) {
             return RESOLVER;
         }
@@ -44,7 +47,7 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
     private static class TrackingTokenParameterResolver implements ParameterResolver<TrackingToken> {
 
         @Override
-        public TrackingToken resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+        public TrackingToken resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
             return unwrap(((TrackedEventMessage) message).trackingToken());
         }
 
@@ -53,7 +56,7 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
             return message instanceof TrackedEventMessage;
         }
     }

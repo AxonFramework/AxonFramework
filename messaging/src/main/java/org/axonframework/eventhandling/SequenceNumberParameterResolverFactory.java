@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
@@ -58,8 +60,9 @@ public final class SequenceNumberParameterResolverFactory extends
      */
     public static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
 
+        @Nullable
         @Override
-        public Long resolveParameterValue(Message message, ProcessingContext processingContext) {
+        public Long resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
             if (message instanceof DomainEventMessage) {
                 return ((DomainEventMessage) message).getSequenceNumber();
             }
@@ -67,7 +70,7 @@ public final class SequenceNumberParameterResolverFactory extends
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
+        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
             return message instanceof DomainEventMessage;
         }
     }

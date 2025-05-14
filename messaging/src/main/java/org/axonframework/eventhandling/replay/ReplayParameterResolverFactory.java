@@ -16,6 +16,9 @@
 
 package org.axonframework.eventhandling.replay;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ReplayStatus;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.messaging.Message;
@@ -39,7 +42,7 @@ import java.lang.reflect.Parameter;
 public class ReplayParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (ReplayStatus.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return new ReplayParameterResolver();
         }
@@ -48,14 +51,15 @@ public class ReplayParameterResolverFactory implements ParameterResolverFactory 
 
     private class ReplayParameterResolver implements ParameterResolver {
 
+        @Nullable
         @Override
-        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
+        public Object resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
             return ReplayToken.isReplay(message) ? ReplayStatus.REPLAY : ReplayStatus.REGULAR;
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return true;
+        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+            return message instanceof EventMessage<?>;
         }
     }
 }

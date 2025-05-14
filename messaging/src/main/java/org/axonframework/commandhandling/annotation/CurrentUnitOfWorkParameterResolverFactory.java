@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -38,8 +40,9 @@ import java.lang.reflect.Parameter;
 @Deprecated(since = "5.0.0")
 public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResolverFactory, ParameterResolver {
 
+    @Nullable
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (LegacyUnitOfWork.class.equals(parameters[parameterIndex].getType())) {
             return this;
         }
@@ -47,7 +50,7 @@ public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResol
     }
 
     @Override
-    public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
+    public Object resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
         if (!CurrentUnitOfWork.isStarted()) {
             return null;
         }
@@ -55,7 +58,7 @@ public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResol
     }
 
     @Override
-    public boolean matches(Message message, ProcessingContext processingContext) {
+    public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
         return true;
     }
 }

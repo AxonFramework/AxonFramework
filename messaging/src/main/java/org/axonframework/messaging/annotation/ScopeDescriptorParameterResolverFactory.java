@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
@@ -37,8 +39,8 @@ import static org.axonframework.messaging.NoScopeDescriptor.INSTANCE;
 public class ScopeDescriptorParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver<ScopeDescriptor> createInstance(Executable executable,
-                                                             Parameter[] parameters,
+    public ParameterResolver<ScopeDescriptor> createInstance(@Nonnull Executable executable,
+                                                             @Nonnull Parameter[] parameters,
                                                              int parameterIndex) {
         return ScopeDescriptor.class.isAssignableFrom(parameters[parameterIndex].getType())
                 ? new ScopeDescriptorParameterResolver() : null;
@@ -46,8 +48,9 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
 
     private static class ScopeDescriptorParameterResolver implements ParameterResolver<ScopeDescriptor> {
 
+        @Nullable
         @Override
-        public ScopeDescriptor resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+        public ScopeDescriptor resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
             try {
                 return Scope.describeCurrentScope();
             } catch (IllegalStateException e) {
@@ -56,7 +59,7 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
             return true;
         }
     }

@@ -16,9 +16,13 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+
+import java.util.Objects;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
@@ -51,14 +55,16 @@ public final class MessageIdentifierParameterResolverFactory
      */
     static class MessageIdentifierParameterResolver implements ParameterResolver<String> {
 
+        @Nullable
         @Override
-        public String resolveParameterValue(Message message, ProcessingContext processingContext) {
+        public String resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+            Objects.requireNonNull(message, "The message is required.");
             return message.getIdentifier();
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return true;
+        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+            return message != null;
         }
     }
 }

@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
@@ -24,6 +26,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -36,8 +39,10 @@ import java.util.Optional;
 @Priority(Priority.LOW)
 public class DefaultParameterResolverFactory implements ParameterResolverFactory {
 
+    @Nullable
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
+                                            int parameterIndex) {
 
         Class<?> parameterType = parameters[parameterIndex].getType();
         if (Message.class.isAssignableFrom(parameterType)) {
@@ -75,13 +80,19 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             this.parameterType = parameterType;
         }
 
+        @Nullable
         @Override
-        public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+        public Object resolveParameterValue(@Nullable Message<?> message,
+                                            @Nonnull ProcessingContext processingContext) {
+            Objects.requireNonNull(message, "The message is required.");
             return message.getMetaData().get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString());
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+            if (message == null) {
+                return false;
+            }
             return !(parameterType.isPrimitive() || (boolean) metaDataValue.get(REQUIRED_PROPERTY))
                     || (
                     message.getMetaData().containsKey(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString())
@@ -98,13 +109,14 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
+        public Object resolveParameterValue(Message message, @Nonnull ProcessingContext processingContext) {
+            Objects.requireNonNull(message, "The message is required.");
             return message.getMetaData();
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return true;
+        public boolean matches(Message message, @Nonnull ProcessingContext processingContext) {
+            return message != null;
         }
     }
 
@@ -117,13 +129,14 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
+        public Object resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+            Objects.requireNonNull(message, "The message is required.");
             return message;
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return parameterType.isInstance(message);
+        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+            return message != null &&  parameterType.isInstance(message);
         }
     }
 }

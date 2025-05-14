@@ -16,6 +16,8 @@
 
 package org.axonframework.spring.config.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
@@ -59,7 +61,7 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
     }
 
     @Override
-    public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         final Optional<Boolean> ann =
                 AnnotationUtils.findAnnotationAttribute(parameters[parameterIndex], Autowired.class, "required");
 
@@ -93,13 +95,14 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
             this.dependencyDescriptor = dependencyDescriptor;
         }
 
+        @Nullable
         @Override
-        public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+        public Object resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
             return beanFactory.resolveDependency(dependencyDescriptor, null);
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
             return true;
         }
     }

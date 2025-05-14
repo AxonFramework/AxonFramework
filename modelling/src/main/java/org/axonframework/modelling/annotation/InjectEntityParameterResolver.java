@@ -17,12 +17,15 @@
 package org.axonframework.modelling.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.EntityIdResolver;
+
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
@@ -70,7 +73,8 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     }
 
     @Override
-    public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+    public Object resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        Objects.requireNonNull(message, "The message is required.");
         Object resolvedId = identifierResolver.resolve(message, processingContext);
         //noinspection ConstantValue Users can still make the mistake to return null.
         if (resolvedId == null) {
@@ -84,7 +88,7 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     }
 
     @Override
-    public boolean matches(Message<?> message, ProcessingContext processingContext) {
-        return true;
+    public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        return message != null;
     }
 }

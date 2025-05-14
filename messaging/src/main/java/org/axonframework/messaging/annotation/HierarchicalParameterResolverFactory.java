@@ -60,7 +60,7 @@ public class HierarchicalParameterResolverFactory implements ParameterResolverFa
     }
 
     @Override
-    public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         ParameterResolver<?> resolver = child.createInstance(executable, parameters, parameterIndex);
         if (resolver != null) {
             return resolver;

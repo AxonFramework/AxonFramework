@@ -303,7 +303,7 @@ class AxonAutoConfigurationTest {
             }
 
             @Override
-            public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+            public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
                 if (Integer.class.isAssignableFrom(parameters[parameterIndex].getType())) {
                     return new FixedValueParameterResolver<>(1);
                 }

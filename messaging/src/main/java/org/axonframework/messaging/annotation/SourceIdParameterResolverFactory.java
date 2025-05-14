@@ -16,10 +16,14 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+
+import java.util.Objects;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts
@@ -53,8 +57,10 @@ public final class SourceIdParameterResolverFactory extends AbstractAnnotatedPar
      */
     static class SourceIdParameterResolver implements ParameterResolver<String> {
 
+        @Nullable
         @Override
-        public String resolveParameterValue(Message message, ProcessingContext processingContext) {
+        public String resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+            Objects.requireNonNull(message, "The message is required.");
             if (message instanceof DomainEventMessage) {
                 return ((DomainEventMessage) message).getAggregateIdentifier();
             }
@@ -62,7 +68,7 @@ public final class SourceIdParameterResolverFactory extends AbstractAnnotatedPar
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
+        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
             return message instanceof DomainEventMessage;
         }
 

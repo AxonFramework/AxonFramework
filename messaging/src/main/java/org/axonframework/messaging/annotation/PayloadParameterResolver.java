@@ -16,8 +16,12 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+
+import java.util.Objects;
 
 /**
  * Implementation of a {@link ParameterResolver} that resolves the Message payload as parameter in a handler method.
@@ -37,13 +41,18 @@ public class PayloadParameterResolver implements ParameterResolver {
         this.payloadType = payloadType;
     }
 
+    @Nullable
     @Override
-    public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
+    public Object resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+        Objects.requireNonNull(message, "The message is required.");
         return message.getPayload();
     }
 
     @Override
-    public boolean matches(Message message, ProcessingContext processingContext) {
+    public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+        if (message == null) {
+            return false;
+        }
         return message.getPayloadType() != null && payloadType.isAssignableFrom(message.getPayloadType());
     }
 

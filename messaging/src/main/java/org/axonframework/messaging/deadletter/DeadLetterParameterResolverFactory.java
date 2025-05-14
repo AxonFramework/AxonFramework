@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.deadletter;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -42,9 +44,10 @@ import java.lang.reflect.Parameter;
  */
 public class DeadLetterParameterResolverFactory implements ParameterResolverFactory {
 
+    @Nullable
     @Override
-    public ParameterResolver<DeadLetter<?>> createInstance(Executable executable,
-                                                           Parameter[] parameters,
+    public ParameterResolver<DeadLetter<?>> createInstance(@Nonnull Executable executable,
+                                                           @Nonnull Parameter[] parameters,
                                                            int parameterIndex) {
         return DeadLetter.class.equals(parameters[parameterIndex].getType()) ? new DeadLetterParameterResolver() : null;
     }
@@ -59,7 +62,7 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
     static class DeadLetterParameterResolver implements ParameterResolver<DeadLetter<?>> {
 
         @Override
-        public DeadLetter<?> resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+        public DeadLetter<?> resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
             return CurrentUnitOfWork.isStarted()
                     ? (DeadLetter<?>) CurrentUnitOfWork.map(uow -> uow.getResource(DeadLetter.class.getName()))
                                                        .orElse(null)
@@ -67,7 +70,7 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
             return true;
         }
     }

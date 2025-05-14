@@ -16,6 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.*;
@@ -107,20 +108,22 @@ public class FixtureTest_RegisteringMethodEnhancements {
             this.assertion = assertion;
         }
 
+        @Nullable
         @Override
-        public ParameterResolver<AtomicBoolean> createInstance(Executable executable,
-                                                               Parameter[] parameters,
+        public ParameterResolver<AtomicBoolean> createInstance(@jakarta.annotation.Nonnull Executable executable,
+                                                               @jakarta.annotation.Nonnull Parameter[] parameters,
                                                                int parameterIndex) {
             return AtomicBoolean.class.equals(parameters[parameterIndex].getType()) ? this : null;
         }
 
+        @Nullable
         @Override
-        public AtomicBoolean resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+        public AtomicBoolean resolveParameterValue(Message<?> message, @jakarta.annotation.Nonnull ProcessingContext processingContext) {
             return assertion;
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(Message<?> message, @jakarta.annotation.Nonnull ProcessingContext processingContext) {
             return message.getPayloadType().isAssignableFrom(ResolveParameterCommand.class);
         }
     }
