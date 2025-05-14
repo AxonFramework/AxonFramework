@@ -49,12 +49,27 @@ public sealed interface StreamingCondition extends EventsCondition permits Defau
     }
 
     /**
+     * Constructs a simple {@code  StreamingCondition} that starts streaming from the given {@code position}, only
+     * returning events matching the given {@code criteria}.
+     *
+     * @param position The {@link TrackingToken} describing the position to start streaming from.
+     * @param criteria The criteria used to match events that are to be streamed.
+     * @return A simple {@code  StreamingCondition} that starts streaming from the given {@code position}, only
+     * returning events matching the given {@code criteria}.
+     */
+    static StreamingCondition conditionFor(@Nonnull TrackingToken position,
+                                           @Nonnull EventCriteria criteria) {
+        return new DefaultStreamingCondition(position, criteria);
+    }
+
+    /**
      * The position as a {@link TrackingToken} to start streaming from.
      *
      * @return The position as a {@link TrackingToken} to start streaming from.
      */
     TrackingToken position();
 
+    @Override
     default EventCriteria criteria() {
         return EventCriteria.havingAnyTag();
     }
@@ -62,10 +77,10 @@ public sealed interface StreamingCondition extends EventsCondition permits Defau
     /**
      * Combines the {@link #criteria()} of {@code this} {@code  StreamingCondition} with the given {@code criteria}.
      *
-     * @param criteria The {@link EventCriteria} to combine with the {@link #criteria()} of {@code this}
-     *                 {@code  StreamingCondition}.
-     * @return A {@code  StreamingCondition} that combined the given {@code criteria} with the {@link #criteria()} of
-     * {@code this} {@code  StreamingCondition}.
+     * @param criteria The {@link EventCriteria} to {@link EventCriteria#or()} with the {@link #criteria()} of
+     *                 {@code this} {@code  StreamingCondition}.
+     * @return A {@code  StreamingCondition} that {@link EventCriteria#or() "or-ed"} the given {@code criteria} with the
+     * {@link #criteria()} of {@code this} {@code  StreamingCondition}.
      */
     StreamingCondition or(@Nonnull EventCriteria criteria);
 }

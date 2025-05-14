@@ -139,9 +139,11 @@ public abstract class Assert {
      *
      * @param string           The value to assert.
      * @param exceptionMessage The message for the exception.
+     * @return The given {@code string} when it was not {@code null} or empty.
      */
-    public static void nonEmpty(String string, String exceptionMessage) {
+    public static String nonEmpty(String string, String exceptionMessage) {
         assertThat(string, StringUtils::nonEmptyOrNull, () -> new IllegalArgumentException(exceptionMessage));
+        return string;
     }
 
     /**
