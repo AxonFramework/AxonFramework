@@ -46,6 +46,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @author Mateusz Nowak
  * @since 5.0.0
+ * @param <T> The type of the annotated event handler.
  */
 public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponent {
 
