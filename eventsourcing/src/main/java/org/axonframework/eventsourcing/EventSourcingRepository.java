@@ -139,14 +139,15 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         return managedEntities.computeIfAbsent(
                 identifier,
                 id -> doLoad(identifier, processingContext)
-                        .thenApply((entity) -> createEntityIfNullFromLoad(identifier, entity))
+                        .thenApply((entity) -> createEntityIfNullFromLoad(identifier, entity, processingContext))
                         .whenComplete((entity, exception) -> updateActiveEntity(entity, processingContext, exception))
         ).thenApply(Function.identity());
     }
 
-    private EventSourcedEntity<ID, E> createEntityIfNullFromLoad(ID identifier, EventSourcedEntity<ID, E> entity) {
+    private EventSourcedEntity<ID, E> createEntityIfNullFromLoad(ID identifier, EventSourcedEntity<ID, E> entity,
+                                                                 ProcessingContext context) {
         if (entity.entity() == null) {
-            E createdEntity = entityFactory.create(identifier, null);
+            E createdEntity = entityFactory.create(identifier, null, context);
             if (createdEntity == null) {
                 throw new IllegalStateException(("The EventSourcedEntityFactory returned a null entity while loadOrCreate was called for identifier: [%s]. Adjust your EventSourcedEntityFactory to return a non-null entity when no first event message is present and using loadOrCreate.").formatted(
                         identifier));
@@ -163,7 +164,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
                 .reduce(new EventSourcedEntity<>(identifier, null),
                         (entity, entry) -> {
                             if (entity.entity() == null) {
-                                createEntityBasedOnFirstEvent(identifier, entity, entry);
+                                createEntityBasedOnFirstEvent(identifier, entity, entry, processingContext);
                             }
                             entity.evolve(entry.message(), entityEvolver, processingContext);
                             return entity;
@@ -184,8 +185,9 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     private void createEntityBasedOnFirstEvent(ID identifier, EventSourcedEntity<ID, E> entity,
-                                               MessageStream.Entry<? extends EventMessage<?>> entry) {
-        E createdEntity = entityFactory.create(identifier, entry.message());
+                                               MessageStream.Entry<? extends EventMessage<?>> entry,
+                                               ProcessingContext context) {
+        E createdEntity = entityFactory.create(identifier, entry.message(), context);
         if (createdEntity == null) {
             throw new IllegalStateException(("The EventSourcedEntityFactory returned a null entity while the first event message was non-null for identifier: [%s]. Adjust your EventSourcedEntityFactory to always return a non-null entity when an event message is present.").formatted(
                     identifier));
@@ -214,7 +216,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
                   .onAppend(event -> {
                       if (entity.entity() == null) {
                           entity.applyStateChange(e -> entityFactory.create(
-                                  entity.identifier(), event));
+                                  entity.identifier(), event, processingContext));
                       } else {
                           entity.evolve(event, entityEvolver, processingContext);
                       }

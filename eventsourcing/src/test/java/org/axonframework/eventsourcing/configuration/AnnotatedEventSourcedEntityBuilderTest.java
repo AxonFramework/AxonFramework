@@ -27,7 +27,9 @@ import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
+import org.axonframework.eventsourcing.annotation.reflection.EntityFactoryMethod;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 
@@ -138,10 +140,18 @@ class AnnotatedEventSourcedEntityBuilderTest {
     @EventSourcedEntity
     record Course(CourseId id) {
 
+        @EntityFactoryMethod
+        public Course {
+        }
+
     }
 
     @EventSourcedEntity(criteriaResolverDefinition = CustomCriteriaResolverDefinition.class)
     record CustomCriteriaResolverCourse(CourseId id) {
+
+        @EntityFactoryMethod
+        public CustomCriteriaResolverCourse {
+        }
 
     }
 
@@ -187,8 +197,8 @@ class AnnotatedEventSourcedEntityBuilderTest {
 
         @Override
         public @Nullable CustomEntityFactoryCourse create(
-                @Nonnull AnnotatedEventSourcedEntityBuilderTest.CourseId courseId,
-                @Nullable EventMessage<?> firstEventMessage) {
+                @Nonnull CourseId courseId,
+                @Nullable EventMessage<?> firstEventMessage, @Nonnull ProcessingContext context) {
             return new CustomEntityFactoryCourse(courseId);
         }
     }
@@ -196,6 +206,9 @@ class AnnotatedEventSourcedEntityBuilderTest {
     @MetaAnnotatedEventSourcingEntity
     record MetaAnnotatedCourse(CourseId id) {
 
+        @EntityFactoryMethod
+        public MetaAnnotatedCourse {
+        }
     }
 
     @Target({ElementType.TYPE})

@@ -19,8 +19,10 @@ package org.axonframework.integrationtests.testsuite.administration.state.mutabl
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.reflection.EntityFactoryMethod;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
+import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
 import org.axonframework.integrationtests.testsuite.administration.events.EmailAddressChanged;
 import org.axonframework.modelling.command.EntityId;
 
@@ -28,8 +30,6 @@ public abstract class MutablePerson {
 
     @EntityId
     protected PersonIdentifier identifier;
-    protected String lastNames;
-    protected String firstNames;
     protected String emailAddress;
 
     @CommandHandler
@@ -47,5 +47,15 @@ public abstract class MutablePerson {
     @EventSourcingHandler
     public void on(EmailAddressChanged event) {
         this.emailAddress = event.emailAddress();
+    }
+
+    @EntityFactoryMethod
+    public static MutablePerson create(PersonIdentifier id) {
+        if (id.type() == PersonType.EMPLOYEE) {
+            return new MutableEmployee();
+        } else if (id.type() == PersonType.CUSTOMER) {
+            return new MutableCustomer();
+        }
+        throw new IllegalArgumentException("Unknown type: " + id.type());
     }
 }

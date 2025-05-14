@@ -34,12 +34,12 @@ import java.util.function.Supplier;
  * Defines how an {@link EventSourcingRepository} should construct an entity of type {@code E}.
  * <p>
  * When sourcing an entity, the state is initially {@code null}. The first event will initialize the entity through
- * {@link #create(Object, EventMessage)}.
+ * {@link #create(Object, EventMessage, ProcessingContext)}.
  * <p>
  * If no events are found during sourcing, the repository will return {@code null} for the entity if
  * {@link EventSourcingRepository#load(Object, ProcessingContext)} was used. However, if
  * {@link EventSourcingRepository#loadOrCreate(Object, ProcessingContext)} was used, the repository will return an empty
- * entity through calling {@link #create(Object, EventMessage)} with a {@code null} {@code firstEventMessage}. This may
+ * entity through calling {@link #create(Object, EventMessage, ProcessingContext)} with a {@code null} {@code firstEventMessage}. This may
  * return null in case the entity should be created with the first event message only, for example when it is
  * immutable.
  * <p>
@@ -94,8 +94,8 @@ public interface EventSourcedEntityFactory<ID, E> {
      * of command handler should be invoked when the entity does not exist. If this is a
      * {@link EntityModelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command handler},
      * this should return {@code null}. If this is a
-     * {@link EntityModelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handler}, this
-     * should return an empty representation of the entity.
+     * {@link EntityModelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handler},
+     * this should return an empty representation of the entity.
      * <p>
      * It is recommended to use {@link #fromNoArgument(Supplier)}, {@link #fromIdentifier(Function)} or
      * {@link #fromEventMessage(BiFunction)} to create a factory that creates the entity based on the constructor of the
@@ -104,10 +104,11 @@ public interface EventSourcedEntityFactory<ID, E> {
      * @param id                The identifier of the entity to create. This is guaranteed to be non-null.
      * @param firstEventMessage The first event message that is present in the stream of the entity. This may be
      *                          {@code null} if no event messages are present.
+     * @param context           The processing context.
      * @return The entity to create. This may be {@code null} if no entity should be created.
      */
     @Nullable
-    E create(@Nonnull ID id, @Nullable EventMessage<?> firstEventMessage);
+    E create(@Nonnull ID id, @Nullable EventMessage<?> firstEventMessage, @Nonnull ProcessingContext context);
 
     /**
      * Creates a factory for an entity of type {@link E} using a specified no-argument constructor.
@@ -123,7 +124,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * @return A factory that creates the entity using the no-argument constructor.
      */
     static <ID, E> EventSourcedEntityFactory<ID, E> fromNoArgument(Supplier<E> creator) {
-        return (id, evt) -> creator.get();
+        return (id, evt, context) -> creator.get();
     }
 
     /**
@@ -141,7 +142,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * @return A factory that creates the entity using the constructor with the identifier as parameter.
      */
     static <ID, E> EventSourcedEntityFactory<ID, E> fromIdentifier(Function<ID, E> creator) {
-        return (id, evt) -> creator.apply(id);
+        return (id, evt, context) -> creator.apply(id);
     }
 
     /**
@@ -166,7 +167,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      */
     static <ID, E> EventSourcedEntityFactory<ID, E> fromEventMessage(
             BiFunction<ID, EventMessage<?>, E> creator) {
-        return (id, evt) -> evt == null
+        return (id, evt, context) -> evt == null
                 ? null
                 : creator.apply(id, evt);
     }
