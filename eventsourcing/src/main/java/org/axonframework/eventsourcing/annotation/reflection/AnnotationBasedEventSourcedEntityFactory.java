@@ -150,11 +150,6 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             throw new AxonConfigurationException(
                     "No @EntityFactoryMethod present on entity. Can not initialize AnnotationBasedEventSourcedEntityFactory.");
         }
-
-        // Check if executables without payload have overlapping id types
-        Stream<ScannedFactoryMethod> executablesWithoutPayload = factoryMethods
-                .stream()
-                .filter(e -> !e.hasMessageParameter && e.payloadQualifiedNames.length == 0);
     }
 
     private void createAndAddInitializerMethod(Method m) {
