@@ -67,7 +67,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     private final Class<E> entityType;
     private final Set<Class<? extends E>> types;
     private final Class<ID> idType;
-    private final List<ScannedFactoryMethod> executables = new ArrayList<>();
+    private final List<ScannedFactoryMethod> factoryMethods = new ArrayList<>();
     private final IdTypeParameterResolver idTypeParameterResolver = new IdTypeParameterResolver();
     private final ParameterResolverFactory resolverFactory;
     private final MessageTypeResolver messageTypeResolver;
@@ -146,13 +146,13 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     }
 
     private void validate() {
-        if (executables.isEmpty()) {
+        if (factoryMethods.isEmpty()) {
             throw new AxonConfigurationException(
                     "No @EntityFactoryMethod present on entity. Can not initialize AnnotationBasedEventSourcedEntityFactory.");
         }
 
         // Check if executables without payload have overlapping id types
-        Stream<ScannedFactoryMethod> executablesWithoutPayload = executables
+        Stream<ScannedFactoryMethod> executablesWithoutPayload = factoryMethods
                 .stream()
                 .filter(e -> !e.hasMessageParameter && e.payloadQualifiedNames.length == 0);
     }
@@ -212,16 +212,16 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             }
         }
 
-        executables.add(new ScannedFactoryMethod(c,
-                                                 parameterResolvers,
-                                                 payloadQualifiedNames,
-                                                 concreteIdType,
-                                                 hasMessageParameter));
+        factoryMethods.add(new ScannedFactoryMethod(c,
+                                                    parameterResolvers,
+                                                    payloadQualifiedNames,
+                                                    concreteIdType,
+                                                    hasMessageParameter));
     }
 
     private ScannedFactoryMethod findMostSpecificMethod(ID id, EventMessage<?> eventMessage,
                                                         ProcessingContext context) {
-        Set<ScannedFactoryMethod> possibleConstructors = executables
+        Set<ScannedFactoryMethod> possibleConstructors = factoryMethods
                 .stream()
                 .filter(e -> {
                     if (eventMessage == null) {
@@ -233,7 +233,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                 .collect(Collectors.toSet());
         if(eventMessage != null && possibleConstructors.isEmpty()) {
             // We will have to consider non-payload methods as well
-            possibleConstructors = executables
+            possibleConstructors = factoryMethods
                     .stream()
                     .filter(e -> e.concreteIdType == null || e.concreteIdType.isAssignableFrom(id.getClass()))
                     .collect(Collectors.toSet());
@@ -241,7 +241,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         if (possibleConstructors.isEmpty()) {
             throw new AxonConfigurationException(
                     "No suitable @EntityFactoryMethods found for id: [%s] and event message [%s]: [%s]"
-                            .formatted(id, eventMessage, executables));
+                            .formatted(id, eventMessage, factoryMethods));
         }
         Set<ScannedFactoryMethod> matchingMethods = possibleConstructors.stream()
                                                                         .filter(e -> e.matches(eventMessage, context))
