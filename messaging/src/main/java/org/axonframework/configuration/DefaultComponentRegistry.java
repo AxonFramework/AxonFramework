@@ -127,6 +127,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public <C> ComponentRegistry registerFactory(@Nonnull ComponentFactory<C> factory) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Registering component factory [{}].", factory.getClass().getSimpleName());
+        }
         this.factories.add(factory);
         return this;
     }
