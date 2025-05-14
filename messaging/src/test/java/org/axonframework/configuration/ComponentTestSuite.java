@@ -245,7 +245,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
         testSubject.describeTo(testDescriptor);
 
         verify(testDescriptor).describeProperty("identifier", identifier);
-        verify(testDescriptor).describeProperty("factory", builder);
+        verify(testDescriptor).describeProperty("builder", builder);
         verify(testDescriptor).describeProperty("initialized", false);
         verify(testDescriptor).describeProperty("instantiated", false);
     }
@@ -276,7 +276,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
         testSubject.describeTo(testDescriptor);
 
         verify(testDescriptor).describeProperty("identifier", identifier);
-        verify(testDescriptor).describeProperty("factory", builder);
+        verify(testDescriptor).describeProperty("builder", builder);
         verify(testDescriptor).describeProperty("initialized", true);
         verify(testDescriptor).describeProperty("instantiated", false);
     }
