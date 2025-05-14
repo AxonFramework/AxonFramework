@@ -24,6 +24,11 @@ import java.util.Optional;
 /**
  * A factory of components of type generic {@code C}.
  * <p>
+ * It is <b>strongly</b> recommended to invoke start operations during
+ * {@link #construct(String, Configuration) construction} of the components, since the {@link Configuration} is always
+ * {@link AxonConfiguration#start() started} before a factory is consulted. Hence, failing to invoke start operations
+ * results in components in a faulty state.
+ * <p>
  * When {@link ComponentRegistry#registerFactory(ComponentFactory) registered} with a {@link ComponentRegistry}, the
  * registry will consult the factory <b>only</b> when there is no registered component for a given type and name.
  *
@@ -49,6 +54,9 @@ public interface ComponentFactory<C> extends DescribableComponent {
      * Implementations of this method may choose to reject the construction by returning an
      * {@link Optional#empty() empty Optional} if the {@code name} is not of an expected format, or when the given
      * {@code config} does not contain the required components to construct a new instance with.
+     * <p>
+     * Be certain to invoke <b>any</b> start operation on the new instance of type {@code C} before returning. This is
+     * mandatory since factories are only consulted once an application is {@link AxonConfiguration#start() started}.
      *
      * @param name   The name that's used to request a new instance from this factory. This parameter can be a basis to
      *               reject construction.
