@@ -16,15 +16,13 @@
 
 package org.axonframework.axonserver.connector;
 
+import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
+import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
 import org.axonframework.config.TagsConfiguration;
-import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
@@ -37,8 +35,6 @@ import javax.annotation.Nonnull;
  */
 public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhancer {
 
-    private static final Logger logger = LoggerFactory.getLogger(ServerConnectorConfigurationEnhancer.class);
-
     /**
      * The {@link #order()} when this {@link ServerConnectorConfigurationEnhancer} enhances an
      * {@link org.axonframework.configuration.ApplicationConfigurer}.
@@ -50,14 +46,16 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
         registerIfNotPresent(registry, AxonServerConfiguration.class, c -> new AxonServerConfiguration());
         registerIfNotPresent(registry, AxonServerConnectionManager.class, this::buildAxonServerConnectionManager);
         registerIfNotPresent(registry, ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity());
-        // TODO add engine factory for context names
+        registerIfNotPresent(registry, AxonServerEventStorageEngine.class,
+                             ServerConnectorConfigurationEnhancer::buildEventStorageEngine);
+        registry.registerFactory(new AxonServerEventStorageEngineFactory());
     }
 
     private <C> void registerIfNotPresent(ComponentRegistry registry,
                                           Class<C> type,
-                                          ComponentFactory<C> factory) {
+                                          ComponentBuilder<C> builder) {
         if (!registry.hasComponent(type)) {
-            registry.registerComponent(type, factory);
+            registry.registerComponent(type, builder);
         }
     }
 
@@ -71,6 +69,11 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
                                           )
                                           .channelCustomizer(config.getComponent(ManagedChannelCustomizer.class))
                                           .build();
+    }
+
+    private static AxonServerEventStorageEngine buildEventStorageEngine(Configuration c) {
+        String defaultContext = c.getComponent(AxonServerConfiguration.class).getContext();
+        return AxonServerEventStorageEngineFactory.constructForContext(defaultContext, c);
     }
 
     @Override

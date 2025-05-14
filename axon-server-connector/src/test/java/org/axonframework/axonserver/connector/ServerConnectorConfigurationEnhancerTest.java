@@ -16,9 +16,12 @@
 
 package org.axonframework.axonserver.connector;
 
+import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
+import org.axonframework.axonserver.connector.event.TestConverter;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,17 +47,22 @@ class ServerConnectorConfigurationEnhancerTest {
 
     @Test
     void enhanceSetsExpectedDefaultsInAbsenceOfTheseComponents() {
-        ApplicationConfigurer configurer = EventSourcingConfigurer.create();
+        ApplicationConfigurer configurer =
+                EventSourcingConfigurer.create()
+                                       .componentRegistry(registry -> registry.registerComponent(
+                                               Converter.class, c -> new TestConverter()
+                                       ));
         configurer.componentRegistry(cr -> testSubject.enhance(cr));
-        Configuration resultConfig = configurer.build();
+        Configuration result = configurer.build();
 
-        AxonServerConfiguration serverConfig = resultConfig.getComponent(AxonServerConfiguration.class);
+        AxonServerConfiguration serverConfig = result.getComponent(AxonServerConfiguration.class);
         assertNotNull(serverConfig);
         assertEquals("localhost", serverConfig.getServers());
         assertNotNull(serverConfig.getClientId());
         assertNotNull(serverConfig.getComponentName());
         assertTrue(serverConfig.getComponentName().contains(serverConfig.getClientId()));
-        assertNotNull(resultConfig.getComponent(AxonServerConnectionManager.class));
-        assertInstanceOf(ManagedChannelCustomizer.class, resultConfig.getComponent(ManagedChannelCustomizer.class));
+        assertNotNull(result.getComponent(AxonServerConnectionManager.class));
+        assertInstanceOf(ManagedChannelCustomizer.class, result.getComponent(ManagedChannelCustomizer.class));
+        assertInstanceOf(AxonServerEventStorageEngine.class, result.getComponent(AxonServerEventStorageEngine.class));
     }
 }
