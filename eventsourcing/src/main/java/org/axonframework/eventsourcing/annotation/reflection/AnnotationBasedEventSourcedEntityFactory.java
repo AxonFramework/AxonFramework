@@ -260,7 +260,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     @Override
     public E create(@Nonnull ID id, @Nullable EventMessage<?> firstEventMessage, @Nonnull ProcessingContext context) {
         ProcessingContext contextWithId = context.withResource(ID_KEY, id);
-        return findMostSpecificMethod(id, firstEventMessage, context).invoke(id, firstEventMessage, contextWithId);
+        return findMostSpecificMethod(id, firstEventMessage, contextWithId).invoke(id, firstEventMessage, contextWithId);
     }
 
     /**

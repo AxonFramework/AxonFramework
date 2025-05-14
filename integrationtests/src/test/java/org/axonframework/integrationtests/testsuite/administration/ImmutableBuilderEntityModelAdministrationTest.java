@@ -171,7 +171,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                         return new ImmutableEmployee(employeeCreated);
                     }
                     if (eventMessage.getPayload() instanceof CustomerCreated customerCreated) {
-                        return new ImmutableCustomer(customerCreated, customerCreated.identifier());
+                        return new ImmutableCustomer(customerCreated);
                     }
                     throw new IllegalArgumentException(
                             format("Unknown event type: %s", eventMessage.getPayloadType().getName()));

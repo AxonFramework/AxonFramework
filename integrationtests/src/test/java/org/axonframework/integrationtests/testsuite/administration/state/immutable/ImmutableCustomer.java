@@ -31,7 +31,7 @@ public record ImmutableCustomer(
 ) implements ImmutablePerson {
 
     @EntityFactoryMethod
-    public ImmutableCustomer(CustomerCreated event, PersonIdentifier identifier) {
+    public ImmutableCustomer(CustomerCreated event) {
         this(event.identifier(), event.emailAddress());
     }
 
