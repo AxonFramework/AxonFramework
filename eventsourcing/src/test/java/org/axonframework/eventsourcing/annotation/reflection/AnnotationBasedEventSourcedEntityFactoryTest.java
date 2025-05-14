@@ -18,6 +18,8 @@ package org.axonframework.eventsourcing.annotation.reflection;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
@@ -42,8 +44,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
     @Spy
     private ParameterResolverFactory parameterResolverFactory = ClasspathParameterResolverFactory.forClass(this.getClass());
 
-    @Mock
-    private MessageTypeResolver messageTypeResolver;
+    @Spy
+    private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     @Mock
     private EventMessage<?> eventMessage;
@@ -113,6 +115,105 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                 return eventMessage;
             }
         }
+
+    }
+
+    @Nested
+    class PayloadTypeMatchingForEventMessage {
+
+        private AnnotationBasedEventSourcedEntityFactory<PayloadTypeSpecificTestEntity, String> factory;
+
+        @BeforeEach
+        void setUp() {
+            factory = new AnnotationBasedEventSourcedEntityFactory<>(
+                    PayloadTypeSpecificTestEntity.class,
+                    String.class,
+                    parameterResolverFactory,
+                    messageTypeResolver
+            );
+        }
+
+        @Test
+        void usesEventMessageConstructorWithCorrectPayloadType() {
+            PayloadTypeSpecificTestEntity entity = factory.create("test-id", eventMessage, processingContext);
+            assertNotNull(entity);
+            assertSame(eventMessage, entity.getEventMessage());
+        }
+
+        @Test
+        void throwsErrorIfNoMatchingPayloadType() {
+            when(eventMessage.type()).thenReturn(new MessageType("non-matching-test-type"));
+            AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
+                factory.create("test-id", eventMessage, processingContext);
+            });
+            assertTrue(exception.getMessage().contains("No suitable @EntityFactoryMethods found"));
+        }
+
+        public static class PayloadTypeSpecificTestEntity {
+
+            private final EventMessage<?> eventMessage;
+
+            @EntityFactoryMethod(payloadQualifiedNames = "matching-test-type")
+            public PayloadTypeSpecificTestEntity(EventMessage<String> eventMessage) {
+                this.eventMessage = eventMessage;
+            }
+
+            public EventMessage<?> getEventMessage() {
+                return eventMessage;
+            }
+        }
+    }
+
+
+    @Nested
+    class PayloadTypeMatchingForPayload {
+
+        private AnnotationBasedEventSourcedEntityFactory<PayloadSpecificTestEntity, String> factory;
+
+        @BeforeEach
+        void setUp() {
+            factory = new AnnotationBasedEventSourcedEntityFactory<>(
+                    PayloadSpecificTestEntity.class,
+                    String.class,
+                    parameterResolverFactory,
+                    messageTypeResolver
+            );
+        }
+
+        @Test
+        void usesEventPayloadConstructorWithCorrectPayloadType() {
+            eventMessage = new GenericEventMessage<>(new MessageType(PayloadSpecificPayload.class), new PayloadSpecificPayload("my-specific-payload"));
+            PayloadSpecificTestEntity entity = factory.create("test-id", eventMessage, processingContext);
+            assertNotNull(entity);
+            assertEquals("my-specific-payload", entity.getPayload());
+        }
+
+        @Test
+        void throwsErrorIfNoMatchingPayloadType() {
+            eventMessage = new GenericEventMessage<>(new MessageType("non-matching-test-type"), new PayloadSpecificPayload("my-specific-payload"));
+            AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
+                factory.create("test-id", eventMessage, processingContext);
+            });
+            assertTrue(exception.getMessage().contains("No suitable @EntityFactoryMethods found"));
+        }
+
+        public static class PayloadSpecificTestEntity {
+
+            private final String payload;
+
+            @EntityFactoryMethod()
+            public PayloadSpecificTestEntity(PayloadSpecificPayload payload) {
+                this.payload = payload.payload;
+            }
+
+            public String getPayload() {
+                return payload;
+            }
+        }
+
+        public record PayloadSpecificPayload(
+                String payload
+        ) {}
     }
 
     @Nested
@@ -303,15 +404,6 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
         public static class NoAnnotatedMethodsEntity {
 
             public NoAnnotatedMethodsEntity(String id) {
-            }
-        }
-
-        public static class FactoryMethodWithImpossibleParameter {
-
-            @EntityFactoryMethod
-            public static FactoryMethodWithImpossibleParameter create(EventMessage<?> eventMessage,
-                                                                      @MetaDataValue(value = "bonkers", required = true) String bonkersValue) {
-                return new FactoryMethodWithImpossibleParameter();
             }
         }
     }

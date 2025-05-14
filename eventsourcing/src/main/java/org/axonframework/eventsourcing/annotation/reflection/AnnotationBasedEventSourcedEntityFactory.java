@@ -212,21 +212,33 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                                                     hasMessageParameter));
     }
 
-    private ScannedFactoryMethod findMostSpecificMethod(ID id, EventMessage<?> eventMessage,
+    private Set<ScannedFactoryMethod> getMethodsCompatibleWithIdAndNoMessage(ID id) {
+        return factoryMethods.stream()
+                             .filter(e -> e.supportsId(id))
+                             .filter(ScannedFactoryMethod::isWithoutPayload)
+                             .collect(Collectors.toSet());
+    }
+
+    private Set<ScannedFactoryMethod> getMethodsCompatibleWithIdAndMessage(ID id, EventMessage<?> eventMessage) {
+        return factoryMethods.stream()
+                             .filter(e -> e.supportsId(id))
+                             .filter(e -> e.hasPayload(eventMessage.type().qualifiedName()))
+                             .collect(Collectors.toSet());
+    }
+
+    private ScannedFactoryMethod findMostSpecificMethod(ID id,
+                                                        EventMessage<?> eventMessage,
                                                         ProcessingContext context) {
-        Set<ScannedFactoryMethod> compatibleMethods = factoryMethods.stream()
-                                                                    .filter(e -> e.supportsId(id))
-                                                                    .collect(Collectors.toSet());
+        Set<ScannedFactoryMethod> compatibleMethods;
 
         // If we have an EventMessage, methods taking the payload type of the event message have precedence
         if (eventMessage != null) {
-            Set<ScannedFactoryMethod> eventCompatibleConstructors = compatibleMethods
-                    .stream()
-                    .filter(e -> e.hasPayload(eventMessage.type().qualifiedName()))
-                    .collect(Collectors.toSet());
-            if (!eventCompatibleConstructors.isEmpty()) {
-                compatibleMethods = eventCompatibleConstructors;
+            compatibleMethods = getMethodsCompatibleWithIdAndMessage(id, eventMessage);
+            if (compatibleMethods.isEmpty()) {
+                compatibleMethods = getMethodsCompatibleWithIdAndNoMessage(id);
             }
+        } else {
+            compatibleMethods = getMethodsCompatibleWithIdAndNoMessage(id);
         }
         if (compatibleMethods.isEmpty()) {
             throw new AxonConfigurationException(
@@ -301,9 +313,14 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                          .allMatch(f -> f.matches(message, processingContext));
         }
 
+        private boolean isWithoutPayload() {
+            return payloadQualifiedNames.isEmpty() && !hasMessageParameter;
+        }
+
         private boolean hasPayload(QualifiedName qualifiedName) {
-            if (hasMessageParameter) {
-                return true;
+            if (payloadQualifiedNames.isEmpty()) {
+                // If we have no payload qualified names, we can only match if the method has a message parameter
+                return hasMessageParameter;
             }
             return payloadQualifiedNames.contains(qualifiedName);
         }
