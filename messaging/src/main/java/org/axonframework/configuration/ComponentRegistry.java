@@ -26,7 +26,8 @@ import org.axonframework.configuration.Component.Identifier;
  * Provides utilities to {@link #registerComponent(Class, ComponentBuilder) register components},
  * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, check if a component
  * {@link #hasComponent(Class) exists}, register {@link #registerEnhancer(ConfigurationEnhancer) enhancers} for the
- * entire configurer, and {@link #registerModule(Module) modules}.
+ * entire configurer, register {@link #registerModule(Module) modules}, and register
+ * {@link #registerFactory(ComponentFactory) component factories}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -209,6 +210,22 @@ public interface ComponentRegistry extends DescribableComponent {
      * @throws ComponentOverrideException If a module with the same name already exists.
      */
     ComponentRegistry registerModule(@Nonnull Module module);
+
+    /**
+     * Registers a {@link ComponentFactory} with this registry.
+     * <p>
+     * If the {@link Configuration} that will contain this registry <b>does not</b> have a component for a given
+     * {@code Class} and name combination, it will consult all registered component factories. Only if a given
+     * {@code factory} can produce the {@link ComponentFactory#forType() requested type} will
+     * {@link ComponentFactory#construct(String, Configuration)} be invoked. When the {@code factory} decides to
+     * construct a new component, it will be stored in the {@code Configuration} for future reference to ensure it's not
+     * constructed again.
+     *
+     * @param factory The component factory to register.
+     * @param <C>     The component type constructed by the given {@code factory}.
+     * @return The current instance of the {@code ComponentRegistry} for a fluent API.
+     */
+    <C> ComponentRegistry registerFactory(@Nonnull ComponentFactory<C> factory);
 
     /**
      * Sets the {@link OverridePolicy} for this {@code ComponentRegistry}.

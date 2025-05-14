@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since 5.0.0
  */
 @Internal
-class LazyInitializedComponentDefinition<C, A extends C> extends AbstractComponent<C, A> {
+public class LazyInitializedComponentDefinition<C, A extends C> extends AbstractComponent<C, A> {
 
     private final ComponentBuilder<A> builder;
     private final AtomicReference<A> instanceReference = new AtomicReference<>();
@@ -46,8 +46,8 @@ class LazyInitializedComponentDefinition<C, A extends C> extends AbstractCompone
      * @param identifier The identifier of the component.
      * @param builder    The function used to create an instance of this component.
      */
-    LazyInitializedComponentDefinition(@Nonnull Component.Identifier<C> identifier,
-                                       @Nonnull ComponentBuilder<A> builder) {
+    public LazyInitializedComponentDefinition(@Nonnull Component.Identifier<C> identifier,
+                                              @Nonnull ComponentBuilder<A> builder) {
         super(identifier);
         this.builder = Objects.requireNonNull(builder, "The builder must not be null.");
     }

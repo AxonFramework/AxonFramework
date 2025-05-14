@@ -236,18 +236,24 @@ class DefaultComponentRegistryTest {
 
         @Test
         void configurerDescribeToDescribesBeingUninitializedComponentsEnhancersAndModules() {
+            // given...
             ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
             ConfigurationEnhancer testEnhancer = configurer -> {
 
             };
             TestModule testModule = new TestModule("module");
+            //noinspection unchecked
+            ComponentFactory<String> testFactory = mock(ComponentFactory.class);
 
-            // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                        .registerEnhancer(testEnhancer)
                        .registerModule(testModule)
-                       .describeTo(testDescriptor);
+                       .registerFactory(testFactory);
 
+            // when...
+            testSubject.describeTo(testDescriptor);
+
+            // then...
             verify(testDescriptor).describeProperty("initialized", false);
             verify(testDescriptor).describeProperty(eq("components"), isA(Components.class));
             verify(testDescriptor).describeProperty(eq("decorators"), isA(List.class));
@@ -257,38 +263,38 @@ class DefaultComponentRegistryTest {
             verify(testDescriptor).describeProperty(eq("configurerEnhancers"), enhancerCaptor.capture());
             List<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue();
             assertTrue(enhancers.contains(testEnhancer));
+            //noinspection unchecked
+            ArgumentCaptor<List<ComponentFactory<?>>> factoryCaptor = ArgumentCaptor.forClass(List.class);
+            verify(testDescriptor).describeProperty(eq("factories"), factoryCaptor.capture());
+            List<ComponentFactory<?>> factories = factoryCaptor.getValue();
+            assertTrue(factories.contains(testFactory));
 
             // Ensure new fields added to the describeTo implementation are validated
             verifyNoMoreInteractions(testDescriptor);
         }
 
-        @SafeVarargs
-        private <T> Collection<T> eqList(T... expected) {
-            return eqList(List.of(expected));
-        }
-
-        private <T> Collection<T> eqList(Collection<T> expected) {
-            return argThat(c -> List.copyOf(expected).equals(List.copyOf(c)));
-        }
-
         @Test
         void configurerDescribeToDescribesBeingInitializedComponentsEnhancersAndModules() {
+            // given...
             ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
             ConfigurationEnhancer testEnhancer = configurer -> {
 
             };
             TestModule testModule = new TestModule("module");
+            //noinspection unchecked
+            ComponentFactory<String> testFactory = mock(ComponentFactory.class);
 
-            // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                        .registerEnhancer(testEnhancer)
-                       .registerModule(testModule);
-
+                       .registerModule(testModule)
+                       .registerFactory(testFactory);
             // Build initializes the configurer
             testSubject.build(lifecycleRegistry);
 
+            // when...
             testSubject.describeTo(testDescriptor);
 
+            // then...
             verify(testDescriptor).describeProperty("initialized", true);
             verify(testDescriptor).describeProperty(eq("components"), isA(Components.class));
             verify(testDescriptor).describeProperty(eq("decorators"), isA(List.class));
@@ -298,6 +304,11 @@ class DefaultComponentRegistryTest {
             verify(testDescriptor).describeProperty(eq("configurerEnhancers"), enhancerCaptor.capture());
             List<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue();
             assertTrue(enhancers.contains(testEnhancer));
+            //noinspection unchecked
+            ArgumentCaptor<List<ComponentFactory<?>>> factoryCaptor = ArgumentCaptor.forClass(List.class);
+            verify(testDescriptor).describeProperty(eq("factories"), factoryCaptor.capture());
+            List<ComponentFactory<?>> factories = factoryCaptor.getValue();
+            assertTrue(factories.contains(testFactory));
 
             // Ensure new fields added to the describeTo implementation are validated
             verifyNoMoreInteractions(testDescriptor);
@@ -324,6 +335,15 @@ class DefaultComponentRegistryTest {
 
             // Ensure new fields added to the describeTo implementation are validated
             verifyNoMoreInteractions(testDescriptor);
+        }
+
+        @SafeVarargs
+        private <T> Collection<T> eqList(T... expected) {
+            return eqList(List.of(expected));
+        }
+
+        private <T> Collection<T> eqList(Collection<T> expected) {
+            return argThat(c -> List.copyOf(expected).equals(List.copyOf(c)));
         }
     }
 
