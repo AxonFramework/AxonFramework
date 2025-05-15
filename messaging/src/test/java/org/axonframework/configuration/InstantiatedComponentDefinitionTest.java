@@ -37,8 +37,8 @@ class InstantiatedComponentDefinitionTest extends ComponentTestSuite<Instantiate
 
     @Override
     InstantiatedComponentDefinition<String> createComponent(Component.Identifier<String> id,
-                                                            ComponentFactory<String> factory) {
-        Assumptions.abort("InstantiatedComponentDefinition doesn't support creation with factory method");
+                                                            ComponentBuilder<String> builder) {
+        Assumptions.abort("InstantiatedComponentDefinition doesn't support creation with builder.");
         return null;
     }
 

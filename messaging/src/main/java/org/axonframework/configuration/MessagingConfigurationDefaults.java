@@ -91,11 +91,11 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                              MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
     }
 
-    private <C> void registerIfNotPresent(ComponentRegistry configurer,
+    private <C> void registerIfNotPresent(ComponentRegistry registry,
                                           Class<C> type,
-                                          ComponentFactory<C> factory) {
-        if (!configurer.hasComponent(type)) {
-            configurer.registerComponent(type, factory);
+                                          ComponentBuilder<C> builder) {
+        if (!registry.hasComponent(type)) {
+            registry.registerComponent(type, builder);
         }
     }
 

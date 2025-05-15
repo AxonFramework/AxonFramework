@@ -17,7 +17,7 @@
 package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.modelling.SimpleRepository;
 import org.axonframework.modelling.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.SimpleRepositoryEntityPersister;
@@ -40,9 +40,9 @@ class DefaultStateBasedEntityBuilder<I, E> implements
 
     private final Class<I> idType;
     private final Class<E> entityType;
-    private ComponentFactory<SimpleRepositoryEntityLoader<I, E>> loaderFactory;
-    private ComponentFactory<SimpleRepositoryEntityPersister<I, E>> persisterFactory;
-    private ComponentFactory<Repository<I, E>> repositoryFactory;
+    private ComponentBuilder<SimpleRepositoryEntityLoader<I, E>> loader;
+    private ComponentBuilder<SimpleRepositoryEntityPersister<I, E>> persister;
+    private ComponentBuilder<Repository<I, E>> repository;
 
     DefaultStateBasedEntityBuilder(@Nonnull Class<I> idType,
                                    @Nonnull Class<E> entityType) {
@@ -52,23 +52,23 @@ class DefaultStateBasedEntityBuilder<I, E> implements
 
     @Override
     public StateBasedEntityBuilder<I, E> persister(
-            @Nonnull ComponentFactory<SimpleRepositoryEntityPersister<I, E>> persister
+            @Nonnull ComponentBuilder<SimpleRepositoryEntityPersister<I, E>> persister
     ) {
-        persisterFactory = requireNonNull(persister, "The repository persister factory cannot be null.");
+        this.persister = requireNonNull(persister, "The repository persister builder cannot be null.");
         return this;
     }
 
     @Override
-    public PersisterPhase<I, E> loader(@Nonnull ComponentFactory<SimpleRepositoryEntityLoader<I, E>> loader) {
-        loaderFactory = requireNonNull(loader, "The repository loader factory cannot be null.");
+    public PersisterPhase<I, E> loader(@Nonnull ComponentBuilder<SimpleRepositoryEntityLoader<I, E>> loader) {
+        this.loader = requireNonNull(loader, "The repository loader builder cannot be null.");
         return this;
     }
 
     @Override
     public StateBasedEntityBuilder<I, E> repository(
-            @Nonnull ComponentFactory<Repository<I, E>> repository
+            @Nonnull ComponentBuilder<Repository<I, E>> repository
     ) {
-        repositoryFactory = requireNonNull(repository, "The repository factory cannot be null.");
+        this.repository = requireNonNull(repository, "The repository builder cannot be null.");
         return this;
     }
 
@@ -78,12 +78,12 @@ class DefaultStateBasedEntityBuilder<I, E> implements
     }
 
     @Override
-    public ComponentFactory<Repository<I, E>> repository() {
-        return repositoryFactory != null
-                ? repositoryFactory
+    public ComponentBuilder<Repository<I, E>> repository() {
+        return repository != null
+                ? repository
                 : c -> new SimpleRepository<>(idType,
                                               entityType,
-                                              loaderFactory.build(c),
-                                              persisterFactory.build(c));
+                                              loader.build(c),
+                                              persister.build(c));
     }
 }

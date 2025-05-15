@@ -39,7 +39,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     protected static final String TEST_COMPONENT = "Hello World!";
 
     protected Identifier<String> identifier;
-    protected ComponentFactory<String> factory;
+    protected ComponentBuilder<String> builder;
 
     protected Configuration configuration;
     protected LifecycleRegistry lifecycleRegistry;
@@ -47,7 +47,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     @BeforeEach
     void setUp() {
         identifier = new Identifier<>(String.class, "id");
-        factory = c -> TEST_COMPONENT;
+        builder = c -> TEST_COMPONENT;
 
         configuration = mock(Configuration.class);
         // wrap the mock to allow default methods to be taken into account
@@ -65,14 +65,14 @@ abstract class ComponentTestSuite<D extends Component<String>> {
                                @SuppressWarnings("SameParameterValue") String instance);
 
     /**
-     * Creates a component for the given {@code id} and with the given {@code factory} to construct the component's
+     * Creates a component for the given {@code id} and with the given {@code builder} to construct the component's
      * instance for testing.
      *
      * @param id      The identifier of the component to create for the given {@code instance}.
-     * @param factory The factory constructing the component's instance.
+     * @param builder The builder constructing the component's instance.
      * @return The {@link Component} of type {@code D} for testing.
      */
-    abstract D createComponent(Component.Identifier<String> id, ComponentFactory<String> factory);
+    abstract D createComponent(Component.Identifier<String> id, ComponentBuilder<String> builder);
 
     /**
      * Registers a start-up {@code handler} with the given {@code testSubject} in the specified {@code phase}.
@@ -123,7 +123,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
 
         Component<String> testSubject = createComponent(identifier, c -> {
             counter.incrementAndGet();
-            return factory.build(c);
+            return builder.build(c);
         });
 
         assertEquals(0, counter.get());
@@ -143,7 +143,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
 
     @Test
     void isInstantiatedReturnsAsExpectedOnFactoryMethod() {
-        Component<String> testSubject = createComponent(identifier, factory);
+        Component<String> testSubject = createComponent(identifier, builder);
 
         assertFalse(testSubject.isInstantiated());
         testSubject.resolve(configuration);
@@ -161,7 +161,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
 
     @Test
     void isInitializedReturnsAsExpectedOnFactoryMethod() {
-        Component<String> testSubject = createComponent(identifier, factory);
+        Component<String> testSubject = createComponent(identifier, builder);
 
         assertFalse(testSubject.isInitialized());
         testSubject.initLifecycle(configuration, lifecycleRegistry);
@@ -187,7 +187,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
 
     @Test
     void initializationDoesNothingWhenAlreadyInitialized() {
-        D testComponent = createComponent(identifier, factory);
+        D testComponent = createComponent(identifier, builder);
         registerStartHandler(testComponent, 10, (cfg, cmp) -> {
         });
 
@@ -240,12 +240,12 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     void describeToDescribesBuilderWhenUnresolved() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
-        Component<String> testSubject = createComponent(identifier, factory);
+        Component<String> testSubject = createComponent(identifier, builder);
 
         testSubject.describeTo(testDescriptor);
 
         verify(testDescriptor).describeProperty("identifier", identifier);
-        verify(testDescriptor).describeProperty("factory", factory);
+        verify(testDescriptor).describeProperty("builder", builder);
         verify(testDescriptor).describeProperty("initialized", false);
         verify(testDescriptor).describeProperty("instantiated", false);
     }
@@ -254,7 +254,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     void describeToDescribesBuilderWhenInstantiated() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
-        Component<String> testSubject = createComponent(identifier, factory);
+        Component<String> testSubject = createComponent(identifier, builder);
         testSubject.resolve(configuration);
 
         testSubject.describeTo(testDescriptor);
@@ -269,14 +269,14 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     void describeToDescribesBuilderWhenUninstantiatedButInitialized() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
-        Component<String> testSubject = createComponent(identifier, factory);
+        Component<String> testSubject = createComponent(identifier, builder);
 
         testSubject.initLifecycle(configuration, lifecycleRegistry);
 
         testSubject.describeTo(testDescriptor);
 
         verify(testDescriptor).describeProperty("identifier", identifier);
-        verify(testDescriptor).describeProperty("factory", factory);
+        verify(testDescriptor).describeProperty("builder", builder);
         verify(testDescriptor).describeProperty("initialized", true);
         verify(testDescriptor).describeProperty("instantiated", false);
     }
