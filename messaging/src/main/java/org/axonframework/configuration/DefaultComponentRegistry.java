@@ -175,6 +175,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         Configuration config = new LocalConfiguration(optionalParent);
         buildModules(config, lifecycleRegistry);
         initializeComponents(config, lifecycleRegistry);
+        registerFactoryShutdownHandlers(lifecycleRegistry);
 
         return config;
     }
@@ -224,6 +225,17 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      */
     private void initializeComponents(Configuration config, LifecycleRegistry lifecycleRegistry) {
         components.postProcessComponents(c -> c.initLifecycle(config, lifecycleRegistry));
+    }
+
+    /**
+     * Registers the shutdown jamd;ers for all
+     * {@link #registerFactory(ComponentFactory) registered ComponentFactories}.
+     *
+     * @param lifecycleRegistry The registry where {@link ComponentFactory ComponentFactories} may register their
+     *                          shutdown operations.
+     */
+    private void registerFactoryShutdownHandlers(LifecycleRegistry lifecycleRegistry) {
+        factories.forEach(factory -> factory.registerShutdownHandlers(lifecycleRegistry));
     }
 
     @Override

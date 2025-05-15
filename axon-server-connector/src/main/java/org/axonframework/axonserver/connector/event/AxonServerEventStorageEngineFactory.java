@@ -24,6 +24,7 @@ import org.axonframework.configuration.Component;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.InstantiatedComponentDefinition;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.serialization.Converter;
 
 import java.util.Optional;
@@ -86,6 +87,11 @@ public class AxonServerEventStorageEngineFactory implements ComponentFactory<Axo
                                             new Component.Identifier<>(forType(), name),
                                             engine
                                     ));
+    }
+
+    @Override
+    public void registerShutdownHandlers(@Nonnull LifecycleRegistry registry) {
+        // Nothing to do here
     }
 
     private static Optional<String> contextNameFrom(String name) {

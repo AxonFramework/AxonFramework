@@ -67,4 +67,21 @@ public interface ComponentFactory<C> extends DescribableComponent {
      */
     @Nonnull
     Optional<Component<C>> construct(@Nonnull String name, @Nonnull Configuration config);
+
+    /**
+     * Registers this factory's shutdown process with the given {@code registry}.
+     * <p>
+     * This typically means the factory registers the shutdown operations of all
+     * {@link #construct(String, Configuration) constructed} components of type {@code C}. This operation might do
+     * nothing with the {@code registry} when the component of type {@code C} does not have any shutdown operations, for
+     * example.
+     * <p>
+     * Since a component factory is consulted <b>after</b> {@link AxonConfiguration#start() start-up} of a
+     * {@link Configuration}, only {@link LifecycleRegistry#onShutdown(Runnable) registered shutdown handlers} will take
+     * effect.
+     *
+     * @param registry The life cycle registry to
+     *                 {@link LifecycleRegistry#onShutdown(Runnable) register shutdown handlers} with.
+     */
+    void registerShutdownHandlers(@Nonnull LifecycleRegistry registry);
 }
