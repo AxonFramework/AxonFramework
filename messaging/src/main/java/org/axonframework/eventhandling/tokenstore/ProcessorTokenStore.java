@@ -37,6 +37,38 @@ import javax.annotation.Nullable;
 public interface ProcessorTokenStore {
 
     /**
+     * Initializes the given {@code segmentCount} number of segments to track its tokens.
+     * This method should only be invoked when no tokens have been stored yet.
+     * <p>
+     * This method will initialize the tokens, but not claim them. It will create the segments ranging from {@code 0}
+     * until {@code segmentCount - 1}.
+     *
+     * @param processingContext The context in which the segments are being initialized
+     * @param segmentCount  The number of segments to initialize
+     * @return A CompletableFuture that completes when all segments are initialized
+     * @throws UnableToClaimTokenException when a segment has already been created
+     */
+    CompletableFuture<Void> initializeTokenSegments(@Nonnull ProcessingContext processingContext, int segmentCount);
+
+    /**
+     * Initializes the given {@code segmentCount} number of segments to track its tokens.
+     * This method should only be invoked when no tokens have been stored yet.
+     * <p>
+     * This method will store {@code initialToken} for all segments as starting point, but not claim them.
+     * It will create the segments ranging from {@code 0} until {@code segmentCount - 1}.
+     *
+     * @param processingContext The context in which the segments are being initialized
+     * @param segmentCount  The number of segments to initialize
+     * @param initialToken  The initial token which is used as a starting point
+     * @return A CompletableFuture that completes when all segments are initialized
+     * @throws UnableToClaimTokenException when a segment has already been created
+     */
+    CompletableFuture<Void> initializeTokenSegments(@Nonnull ProcessingContext processingContext,
+                                                    int segmentCount,
+                                                    @Nullable TrackingToken initialToken);
+
+
+    /**
      * Stores the given {@code token} in the store. The token marks the current position of the segment with given
      * {@code segmentId}. The given {@code token} may be {@code null}.
      *
@@ -110,37 +142,6 @@ public interface ProcessorTokenStore {
     CompletableFuture<Void> initializeSegment(@Nonnull ProcessingContext processingContext,
                                               @Nullable TrackingToken token,
                                               int segmentId);
-
-    /**
-     * Initializes the given {@code segmentCount} number of segments to track its tokens.
-     * This method should only be invoked when no tokens have been stored yet.
-     * <p>
-     * This method will initialize the tokens, but not claim them. It will create the segments ranging from {@code 0}
-     * until {@code segmentCount - 1}.
-     *
-     * @param processingContext The context in which the segments are being initialized
-     * @param segmentCount  The number of segments to initialize
-     * @return A CompletableFuture that completes when all segments are initialized
-     * @throws UnableToClaimTokenException when a segment has already been created
-     */
-    CompletableFuture<Void> initializeTokenSegments(@Nonnull ProcessingContext processingContext, int segmentCount);
-
-    /**
-     * Initializes the given {@code segmentCount} number of segments to track its tokens.
-     * This method should only be invoked when no tokens have been stored yet.
-     * <p>
-     * This method will store {@code initialToken} for all segments as starting point, but not claim them.
-     * It will create the segments ranging from {@code 0} until {@code segmentCount - 1}.
-     *
-     * @param processingContext The context in which the segments are being initialized
-     * @param segmentCount  The number of segments to initialize
-     * @param initialToken  The initial token which is used as a starting point
-     * @return A CompletableFuture that completes when all segments are initialized
-     * @throws UnableToClaimTokenException when a segment has already been created
-     */
-    CompletableFuture<Void> initializeTokenSegments(@Nonnull ProcessingContext processingContext,
-                                                    int segmentCount,
-                                                    @Nullable TrackingToken initialToken);
 
     /**
      * Deletes the token for the given {@code segmentId}. The token must be owned by the current process
