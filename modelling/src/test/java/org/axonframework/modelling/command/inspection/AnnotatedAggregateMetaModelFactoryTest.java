@@ -27,6 +27,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
@@ -431,8 +433,9 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
     @SuppressWarnings("unchecked")
     private <T> MessageHandlingMember<T> getHandler(AggregateModel<T> member, CommandMessage<?> message) {
+        ProcessingContext processingContext = new LegacyMessageSupportingContext(message);
         return (MessageHandlingMember<T>) member.commandHandlers(member.entityClass())
-                                                .filter(ch -> ch.canHandle(message, null))
+                                                .filter(ch -> ch.canHandle(message, processingContext))
                                                 .findFirst()
                                                 .orElseThrow(() -> new AssertionError(
                                                         "Expected handler for this message"

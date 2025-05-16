@@ -26,6 +26,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.junit.jupiter.api.*;
 
@@ -73,7 +74,7 @@ class MethodQueryMessageHandlerDefinitionTest {
                 new MessageType(String.class), "mock", ResponseTypes.instanceOf(String.class)
         );
 
-        assertTrue(handler.canHandle(message, null));
+        assertTrue(handler.canHandle(message, new LegacyMessageSupportingContext(message)));
 
         Object invocationResult = handler.handleSync(message, this);
         assertNull(invocationResult);

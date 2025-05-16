@@ -28,6 +28,7 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -71,7 +72,7 @@ class AnnotatedCommandHandlingComponentTest {
         CommandMessage<String> testCommand = new GenericCommandMessage<>(new MessageType(String.class),
                                                                          "myStringPayload");
 
-        Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
+        Object result = testSubject.handle(testCommand, new LegacyMessageSupportingContext(testCommand))
                                    .first()
                                    .asCompletableFuture()
                                    .join()
@@ -87,7 +88,7 @@ class AnnotatedCommandHandlingComponentTest {
     void handlerDispatchingWithReturnType() {
         CommandMessage<Long> testCommand = new GenericCommandMessage<>(new MessageType(Long.class), 1L);
 
-        Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
+        Object result = testSubject.handle(testCommand, new LegacyMessageSupportingContext(testCommand))
                                    .first()
                                    .asCompletableFuture()
                                    .join()
@@ -104,7 +105,7 @@ class AnnotatedCommandHandlingComponentTest {
         CommandMessage<Long> testCommand =
                 new GenericCommandMessage<>(new GenericMessage<>(new MessageType("almostLong"), 1L));
 
-        Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
+        Object result = testSubject.handle(testCommand, new LegacyMessageSupportingContext(testCommand))
                                    .first()
                                    .asCompletableFuture()
                                    .join()
@@ -120,8 +121,9 @@ class AnnotatedCommandHandlingComponentTest {
     @Test
     void handlerDispatchingThrowingException() {
         try {
-            testSubject.handle(new GenericCommandMessage<>(new MessageType(HashSet.class), new HashSet<>()),
-                               mock(ProcessingContext.class))
+            GenericCommandMessage<HashSet<Object>> command = new GenericCommandMessage<>(new MessageType(HashSet.class),
+                                                                                         new HashSet<>());
+            testSubject.handle(command, new LegacyMessageSupportingContext(command))
                        .first()
                        .asCompletableFuture()
                        .join();

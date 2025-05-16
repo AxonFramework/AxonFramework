@@ -382,6 +382,10 @@ public interface ProcessingLifecycle {
      * @since 5.0.0
      */
     enum DefaultPhases implements Phase {
+        /**
+         * Phase used to put resources in the {@link ProcessingContext} before the any other phase invocation.
+         */
+        RESOURCES(-100000),
 
         /**
          * Phase used to contain actions that occur <b>before</b> the main invocation. Has an order of {@code -10000}.

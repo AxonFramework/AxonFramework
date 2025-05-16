@@ -154,4 +154,10 @@ public class StubProcessingContext implements ProcessingContext {
                                       @Nonnull T expectedResource) {
         return resources.remove(key, expectedResource);
     }
+
+    public static ProcessingContext forMessage(Message<?> message) {
+        StubProcessingContext stubProcessingContext = new StubProcessingContext();
+        stubProcessingContext.putResource(Message.resourceKey, message);
+        return stubProcessingContext;
+    }
 }

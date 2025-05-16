@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.eventhandling.EventMessage;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.Message;
@@ -41,7 +41,7 @@ import java.lang.reflect.Parameter;
 public class ReplayContextParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         Parameter parameter = parameters[parameterIndex];
         if (parameter.isAnnotationPresent(ReplayContext.class)) {
             return new ReplayContextParameterResolver(parameter.getType());
@@ -58,13 +58,16 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
         }
 
         @Override
-        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
-            return ReplayToken.replayContext((EventMessage<?>) message, this.type).orElse(null);
+        public Object resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            if(processingContext.getResource(Message.resourceKey) instanceof TrackedEventMessage<?> trackedEventMessage) {
+                return ReplayToken.replayContext(trackedEventMessage, this.type).orElse(null);
+            }
+            return false;
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return message instanceof TrackedEventMessage;
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey) instanceof TrackedEventMessage;
         }
     }
 }

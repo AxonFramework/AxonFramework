@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.annotation.CurrentUnitOfWorkParameterRe
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
@@ -60,8 +61,7 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
     void resolveParameterValue() {
         LegacyDefaultUnitOfWork.startAndGet(null);
         try {
-            assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(mock(GenericCommandMessage.class),
-                                                                                  null));
+            assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(new StubProcessingContext()));
         } finally {
             CurrentUnitOfWork.get().rollback();
         }
@@ -69,18 +69,15 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
 
     @Test
     void resolveParameterValueWithoutActiveUnitOfWork() {
-        assertNull(testSubject.resolveParameterValue(mock(GenericCommandMessage.class), null));
+        assertNull(testSubject.resolveParameterValue(new StubProcessingContext()));
     }
 
     @Test
     void matches() {
-        assertTrue(testSubject.matches(mock(GenericCommandMessage.class), null));
+        assertTrue(testSubject.matches(new StubProcessingContext()));
         LegacyDefaultUnitOfWork.startAndGet(null);
         try {
-            assertTrue(testSubject.matches(mock(Message.class), null));
-            assertTrue(testSubject.matches(mock(EventMessage.class), null));
-            assertTrue(testSubject.matches(mock(GenericEventMessage.class), null));
-            assertTrue(testSubject.matches(mock(GenericCommandMessage.class), null));
+            assertTrue(testSubject.matches(new StubProcessingContext()));
         } finally {
             CurrentUnitOfWork.get().rollback();
         }

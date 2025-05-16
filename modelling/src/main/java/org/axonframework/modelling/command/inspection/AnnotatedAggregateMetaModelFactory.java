@@ -29,6 +29,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.AggregateVersion;
 import org.axonframework.modelling.command.EntityId;
@@ -613,7 +614,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
          */
         protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message, Class<?> targetClass) {
             return handlers(allEventHandlers, targetClass)
-                    .filter(handler -> handler.canHandle(message, null))
+                    .filter(handler -> handler.canHandle(message, new LegacyMessageSupportingContext(message)))
                     .findFirst();
         }
 

@@ -21,6 +21,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -46,15 +47,36 @@ public interface MessageHandlerInterceptorMemberChain<T> {
      * @throws Exception any exception thrown by the handler or any of the interceptors
      */
     @Deprecated
-    Object handleSync(@Nonnull Message<?> message, @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler)
-            throws Exception;
+    Object handleSync(@Nonnull Message<?> message,
+                      @Nonnull ProcessingContext processingContext,
+                      @Nonnull T target,
+                      @Nonnull MessageHandlingMember<? super T> handler
+    ) throws Exception;
 
+
+    @Deprecated
+    default Object handleSync(@Nonnull Message<?> message,
+                              @Nonnull T target,
+                              @Nonnull MessageHandlingMember<? super T> handler
+    ) throws Exception {
+        ProcessingContext processingContext = new LegacyMessageSupportingContext(message);
+        return handleSync(message, processingContext, target, handler);
+    }
+
+    /**
+     * TODO
+     * @param message
+     * @param processingContext
+     * @param target
+     * @param handler
+     * @return
+     */
     default MessageStream<?> handle(@Nonnull Message<?> message,
                                     @Nonnull ProcessingContext processingContext,
                                     @Nonnull T target,
                                     @Nonnull MessageHandlingMember<? super T> handler) {
         try {
-            Object result = handleSync(message, target, handler);
+            Object result = handleSync(message, processingContext, target, handler);
             return MessageStream.just(new GenericMessage<>(new MessageType(result.getClass()), result));
         } catch (Exception e) {
             return MessageStream.failed(e);

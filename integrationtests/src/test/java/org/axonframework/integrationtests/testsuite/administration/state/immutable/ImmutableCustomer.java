@@ -19,11 +19,13 @@ package org.axonframework.integrationtests.testsuite.administration.state.immuta
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateCustomer;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.events.CustomerCreated;
 import org.axonframework.integrationtests.testsuite.administration.events.EmailAddressChanged;
 
+@EventSourcedEntity()
 public record ImmutableCustomer(
         PersonIdentifier identifier,
         String emailAddress

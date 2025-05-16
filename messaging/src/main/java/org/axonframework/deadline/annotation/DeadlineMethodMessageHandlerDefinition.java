@@ -57,7 +57,7 @@ public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDe
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        public boolean canHandle(@Nonnull Message<?> message, @jakarta.annotation.Nonnull ProcessingContext processingContext) {
             return message instanceof DeadlineMessage
                     && deadlineNameMatch((DeadlineMessage<?>) message)
                     && super.canHandle(message, processingContext);

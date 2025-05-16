@@ -31,6 +31,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateInvocationException;
@@ -416,7 +417,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         //noinspection unchecked
         List<MessageHandlingMember<? super T>> potentialHandlers =
                 inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
-                         .filter(mh -> mh.canHandle(commandMessage, null))
+                         .filter(mh -> mh.canHandle(commandMessage, new LegacyMessageSupportingContext(commandMessage)))
                          .collect(Collectors.toList());
         if (potentialHandlers.isEmpty()) {
             throw new NoHandlerForCommandException(commandMessage);

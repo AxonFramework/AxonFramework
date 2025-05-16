@@ -67,7 +67,7 @@ public interface MessageHandlingMember<T> {
      * @return {@code true} if the handler is capable of handling the message, {@code false} otherwise
      */
     // TODO - ProcessingContext should eventually become non-null when canHandle for event handlers is based on fully-qualified message qualifiedName only
-    boolean canHandle(@Nonnull Message<?> message, @Nullable ProcessingContext processingContext);
+    boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext);
 
     /**
      * Checks if this handler is capable of handling messages with the given {@code payloadType}.

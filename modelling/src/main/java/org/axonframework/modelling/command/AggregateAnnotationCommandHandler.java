@@ -39,6 +39,7 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
@@ -488,7 +489,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
         @Override
         public boolean canHandle(CommandMessage<?> message) {
-            return handler.canHandle(message, null);
+            return handler.canHandle(message, new LegacyMessageSupportingContext(message));
         }
     }
 
@@ -511,7 +512,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
         @Override
         public boolean canHandle(CommandMessage<?> message) {
-            return handler.canHandle(message, null);
+            return handler.canHandle(message, new LegacyMessageSupportingContext(message));
         }
     }
 
@@ -548,7 +549,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
         @Override
         public boolean canHandle(CommandMessage<?> message) {
-            return handler.canHandle(message, null);
+            return handler.canHandle(message, new LegacyMessageSupportingContext(message));
         }
     }
 
@@ -620,7 +621,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
         @Override
         public boolean canHandle(CommandMessage<?> message) {
-            return handler.canHandle(message, null);
+            return handler.canHandle(message, new LegacyMessageSupportingContext(message));
         }
     }
 }

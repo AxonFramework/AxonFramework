@@ -16,6 +16,8 @@
 
 package org.axonframework.test;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -42,7 +44,7 @@ import static org.axonframework.common.Priority.LAST;
 public final class FixtureResourceParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         return new FailingParameterResolver(parameters[parameterIndex].getType());
     }
 
@@ -55,13 +57,13 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
         }
 
         @Override
-        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
+        public Object resolveParameterValue(@Nonnull ProcessingContext processingContext) {
             throw new FixtureExecutionException("No resource of type [" + parameterType.getName()
                                                         + "] has been registered. It is required for one of the handlers being executed.");
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
             return true;
         }
     }

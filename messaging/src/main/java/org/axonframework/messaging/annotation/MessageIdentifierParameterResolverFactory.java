@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -51,14 +53,15 @@ public final class MessageIdentifierParameterResolverFactory
      */
     static class MessageIdentifierParameterResolver implements ParameterResolver<String> {
 
+        @Nullable
         @Override
-        public String resolveParameterValue(Message message, ProcessingContext processingContext) {
-            return message.getIdentifier();
+        public String resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey).getIdentifier();
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return true;
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            return processingContext.containsResource(Message.resourceKey);
         }
     }
 }

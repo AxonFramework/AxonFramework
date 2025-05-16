@@ -120,7 +120,7 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        public boolean canHandle(@Nonnull Message<?> message, @jakarta.annotation.Nonnull ProcessingContext processingContext) {
             return super.canHandle(message, processingContext)
                     && message instanceof QueryMessage
                     && queryName.equals(message.type().name())

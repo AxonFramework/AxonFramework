@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 
 import java.lang.reflect.Executable;
@@ -40,8 +42,9 @@ public class SimpleResourceParameterResolverFactory implements ParameterResolver
         this.resources = resources;
     }
 
+    @Nullable
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         for (Object resource : resources) {
             if (parameters[parameterIndex].getType().isInstance(resource)) {
                 return new FixedValueParameterResolver<>(resource);

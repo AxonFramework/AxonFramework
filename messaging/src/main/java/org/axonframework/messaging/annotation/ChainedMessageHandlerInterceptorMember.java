@@ -19,6 +19,7 @@ package org.axonframework.messaging.annotation;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Iterator;
@@ -77,18 +78,21 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
 
     @Override
     public Object handleSync(@Nonnull Message<?> message,
+                             @Nonnull ProcessingContext processingContext,
                              @Nonnull T target,
                              @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChainSync(
-                () -> next.handleSync(message, target, handler),
-                () -> doHandleSync(message, target, handler)
+                () -> next.handleSync(message, processingContext, target, handler),
+                () -> doHandleSync(message, processingContext, target, handler)
         );
     }
 
-    private Object doHandleSync(Message<?> message, T target, MessageHandlingMember<? super T> handler)
+    private Object doHandleSync(Message<?> message,
+                                @Nonnull ProcessingContext processingContext,
+                                T target, MessageHandlingMember<? super T> handler)
             throws Exception {
-        return delegate.canHandle(message, null)
+        return delegate.canHandle(message, new LegacyMessageSupportingContext(message))
                 ? delegate.handleSync(message, target)
-                : next.handleSync(message, target, handler);
+                : next.handleSync(message, processingContext, target, handler);
     }
 }

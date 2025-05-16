@@ -69,7 +69,7 @@ class EventSourcingRepositoryTest {
                 String.class,
                 eventStore,
                 (entityType, id) -> id,
-                identifier -> TEST_CRITERIA,
+                (identifier, context) -> TEST_CRITERIA,
                 (entity, event, context) -> entity + "-" + event.getPayload()
         );
     }

@@ -23,6 +23,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
@@ -152,6 +153,10 @@ public class SimpleCommandBus implements CommandBus {
         }
 
         UnitOfWork unitOfWork = new UnitOfWork(command.getIdentifier(), worker);
+        unitOfWork.on(ProcessingLifecycle.DefaultPhases.RESOURCES, context -> {
+            context.withResource(Message.resourceKey, command);
+            return CompletableFuture.completedFuture(null);
+        });
         processingLifecycleHandlerRegistrars.forEach(it -> it.registerHandlers(unitOfWork));
 
         var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).first().asCompletableFuture());

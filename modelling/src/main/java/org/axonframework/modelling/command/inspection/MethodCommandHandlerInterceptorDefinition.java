@@ -61,7 +61,7 @@ public class MethodCommandHandlerInterceptorDefinition implements HandlerEnhance
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        public boolean canHandle(@Nonnull Message<?> message, @jakarta.annotation.Nonnull ProcessingContext processingContext) {
             return super.canHandle(message, processingContext)
                     && commandNamePattern.matcher(message.type().name())
                                          .matches();
