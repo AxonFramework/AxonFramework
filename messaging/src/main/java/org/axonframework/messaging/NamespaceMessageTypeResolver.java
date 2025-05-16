@@ -51,7 +51,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
      */
     public static Builder namespace(@Nonnull String namespace) {
         Objects.requireNonNull(namespace, "Namespace may not be null.");
-        return new Builder(namespace, Map.of());
+        return new Builder(namespace);
     }
 
     @Override
@@ -66,10 +66,14 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
      * <p>
      * Allows for a fluent API to configure message type mappings under a common namespace.
      */
-    public record Builder(
-            String namespace,
-            Map<Class<?>, MessageType> mappings
-    ) {
+    public static class Builder {
+
+        private String namespace;
+        private final Map<Class<?>, MessageType> mappings = new HashMap<>();
+
+        private Builder(String namespace) {
+            this.namespace = namespace;
+        }
 
         /**
          * Sets a new namespace for subsequent message mappings.
@@ -79,7 +83,8 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
          */
         public Builder namespace(@Nonnull String namespace) {
             Objects.requireNonNull(namespace, "Namespace may not be null.");
-            return new Builder(namespace, this.mappings);
+            this.namespace = namespace;
+            return this;
         }
 
         /**
@@ -103,10 +108,9 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
                         "A MessageType is already defined for payload type [" + payloadType.getName() + "]");
             }
 
-            Map<Class<?>, MessageType> newMappings = new HashMap<>(mappings);
-            newMappings.put(payloadType, new MessageType(namespace, localName, version));
+            mappings.put(payloadType, new MessageType(namespace, localName, version));
 
-            return new Builder(this.namespace, newMappings);
+            return this;
         }
 
         /**
@@ -134,7 +138,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
             if (mappings.isEmpty()) {
                 return resolver;
             }
-            return new FallbackMessageTypeResolver(noFallback(), resolver);
+            return new HierarchicalMessageTypeResolver(noFallback(), resolver);
         }
     }
 }
