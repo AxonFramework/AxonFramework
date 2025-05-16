@@ -57,13 +57,16 @@ public final class AggregateTypeParameterResolverFactory
 
         @Nullable
         @Override
-        public String resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            return ((DomainEventMessage) message).getType();
+        public String resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            if(processingContext.getResource(Message.resourceKey) instanceof DomainEventMessage<?> domainEventMessage) {
+                return domainEventMessage.getType();
+            }
+            return null;
         }
 
         @Override
-        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            return message instanceof DomainEventMessage;
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey) instanceof DomainEventMessage;
         }
     }
 }

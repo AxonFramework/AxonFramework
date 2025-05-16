@@ -96,7 +96,7 @@ class PayloadAssociationResolverTest {
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        public boolean canHandle(@Nonnull Message<?> message, @jakarta.annotation.Nonnull ProcessingContext processingContext) {
             return true;
         }
     }

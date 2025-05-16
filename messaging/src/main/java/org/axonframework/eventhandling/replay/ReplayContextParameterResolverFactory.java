@@ -17,8 +17,6 @@
 package org.axonframework.eventhandling.replay;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.Message;
@@ -60,13 +58,16 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
         }
 
         @Override
-        public Object resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            return ReplayToken.replayContext((EventMessage<?>) message, this.type).orElse(null);
+        public Object resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            if(processingContext.getResource(Message.resourceKey) instanceof TrackedEventMessage<?> trackedEventMessage) {
+                return ReplayToken.replayContext(trackedEventMessage, this.type).orElse(null);
+            }
+            return false;
         }
 
         @Override
-        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            return message instanceof TrackedEventMessage;
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey) instanceof TrackedEventMessage;
         }
     }
 }

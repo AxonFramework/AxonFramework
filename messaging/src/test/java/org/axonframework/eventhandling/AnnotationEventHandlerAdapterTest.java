@@ -22,6 +22,7 @@ import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
@@ -29,6 +30,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -64,14 +66,14 @@ class AnnotationEventHandlerAdapterTest {
 
     @Test
     void invokeResetHandler() {
-        testSubject.prepareReset(null);
+        testSubject.prepareReset(new StubProcessingContext());
 
         assertTrue(annotatedEventListener.invocations.contains("reset"));
     }
 
     @Test
     void invokeResetHandlerWithResetContext() {
-        testSubject.prepareReset("resetContext", null);
+        testSubject.prepareReset("resetContext", new StubProcessingContext());
 
         assertTrue(annotatedEventListener.invocations.contains("resetWithContext"));
     }

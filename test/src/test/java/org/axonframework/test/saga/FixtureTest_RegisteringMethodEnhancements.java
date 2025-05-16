@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -39,7 +40,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.test.matchers.Matchers.listWithAnyOf;
 import static org.axonframework.test.matchers.Matchers.predicate;
@@ -138,12 +138,13 @@ public class FixtureTest_RegisteringMethodEnhancements {
 
         @Nullable
         @Override
-        public AtomicBoolean resolveParameterValue(Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public AtomicBoolean resolveParameterValue(@Nonnull ProcessingContext processingContext) {
             return assertion;
         }
 
         @Override
-        public boolean matches(Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            Message<?> message = processingContext.getResource(Message.resourceKey);
             return message.getPayloadType().isAssignableFrom(ParameterResolvedEvent.class);
         }
     }

@@ -56,12 +56,12 @@ public class ProcessingContextParameterResolverFactory implements ParameterResol
 
         @Nullable
         @Override
-        public ProcessingContext resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public ProcessingContext resolveParameterValue(@Nonnull ProcessingContext processingContext) {
             return processingContext;
         }
 
         @Override
-        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
             return true;
         }
     }

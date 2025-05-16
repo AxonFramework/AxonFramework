@@ -73,8 +73,8 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     }
 
     @Override
-    public Object resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
-        Objects.requireNonNull(message, "The message is required.");
+    public Object resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+        Message<?> message = processingContext.getResource(Message.resourceKey);
         Object resolvedId = identifierResolver.resolve(message, processingContext);
         //noinspection ConstantValue Users can still make the mistake to return null.
         if (resolvedId == null) {
@@ -88,7 +88,7 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     }
 
     @Override
-    public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
-        return message != null;
+    public boolean matches(@Nonnull ProcessingContext processingContext) {
+        return processingContext.containsResource(Message.resourceKey);
     }
 }

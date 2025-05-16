@@ -97,12 +97,12 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
 
         @Nullable
         @Override
-        public Object resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public Object resolveParameterValue(@Nonnull ProcessingContext processingContext) {
             return beanFactory.resolveDependency(dependencyDescriptor, null);
         }
 
         @Override
-        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
             return true;
         }
     }

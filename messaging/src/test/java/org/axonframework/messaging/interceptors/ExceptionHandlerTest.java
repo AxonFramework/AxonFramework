@@ -27,6 +27,8 @@ import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
@@ -82,6 +84,7 @@ class ExceptionHandlerTest {
             Object result = handle(command);
             assertNull(result);
         } catch (Exception e) {
+            e.printStackTrace();
             assertInstanceOf(IllegalStateException.class, e);
         }
 
@@ -152,7 +155,7 @@ class ExceptionHandlerTest {
     private Object handle(Message<?> message) throws Exception {
         Optional<MessageHandlingMember<? super ExceptionHandlingComponent>> handler =
                 inspector.getHandlers(ExceptionHandlingComponent.class)
-                         .filter(h -> h.canHandle(message, null))
+                         .filter(h -> h.canHandle(message, new LegacyMessageSupportingContext(message)))
                          .findFirst();
         if (handler.isPresent()) {
             MessageHandlerInterceptorMemberChain<ExceptionHandlingComponent> interceptorChain =

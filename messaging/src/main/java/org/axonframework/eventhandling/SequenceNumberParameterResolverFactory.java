@@ -62,16 +62,16 @@ public final class SequenceNumberParameterResolverFactory extends
 
         @Nullable
         @Override
-        public Long resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            if (message instanceof DomainEventMessage) {
-                return ((DomainEventMessage) message).getSequenceNumber();
+        public Long resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            if (processingContext.getResource(Message.resourceKey) instanceof DomainEventMessage<?> domainEventMessage) {
+                return domainEventMessage.getSequenceNumber();
             }
             return null;
         }
 
         @Override
-        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            return message instanceof DomainEventMessage;
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey) instanceof DomainEventMessage;
         }
     }
 }

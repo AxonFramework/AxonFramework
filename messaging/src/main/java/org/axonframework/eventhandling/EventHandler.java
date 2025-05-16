@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.configuration.MessageHandler;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -44,4 +45,18 @@ public interface EventHandler extends MessageHandler {
     @Nonnull
     MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                               @Nonnull ProcessingContext context);
+
+
+    /**
+     * Handles the given {@code event} within a {@link LegacyMessageSupportingContext} context.
+     * This method is a convenience method for legacy when the {@link ProcessingContext} is not available,
+     * and will disappear before the final release of 5.0.0. As such, this method is deprecated.
+     * @param event The event to handle.
+     * @return An {@link MessageStream.Empty empty stream} containing nothing.
+     */
+    @Nonnull
+    @Deprecated
+    default MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event) {
+        return handle(event, new LegacyMessageSupportingContext(event));
+    };
 }

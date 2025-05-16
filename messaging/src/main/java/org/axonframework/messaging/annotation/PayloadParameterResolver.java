@@ -21,12 +21,12 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Implementation of a {@link ParameterResolver} that resolves the Message payload as parameter in a handler method.
  */
-public class PayloadParameterResolver implements ParameterResolver {
+public class PayloadParameterResolver implements ParameterResolver<Object> {
 
     private final Class<?> payloadType;
 
@@ -43,17 +43,16 @@ public class PayloadParameterResolver implements ParameterResolver {
 
     @Nullable
     @Override
-    public Object resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-        Objects.requireNonNull(message, "The message is required.");
-        return message.getPayload();
+    public Object resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+        return processingContext.getResource(Message.resourceKey).getPayload();
     }
 
     @Override
-    public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-        if (message == null) {
-            return false;
-        }
-        return message.getPayloadType() != null && payloadType.isAssignableFrom(message.getPayloadType());
+    public boolean matches(@Nonnull ProcessingContext processingContext) {
+        return Optional.ofNullable(processingContext.getResource(Message.resourceKey))
+                       .map(Message::getPayloadType)
+                       .map(payloadType::isAssignableFrom)
+                       .orElse(false);
     }
 
     @Override

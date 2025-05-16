@@ -22,6 +22,7 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +72,6 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
         this.messageType = messageType;
         this.method = ReflectionUtils.ensureAccessible(method);
         this.returnTypeConverter = returnTypeConverter;
-//        this.handlerInvoker = new ExecutableMessageHandlerInvoker<>(executable, messageType);
         Parameter[] parameters = method.getParameters();
         this.parameterCount = method.getParameterCount();
         parameterResolvers = new ParameterResolver[parameterCount];
@@ -102,10 +102,11 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+    public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext) {
+        ProcessingContext contextWithMessage = processingContext.withResource(Message.resourceKey, message);
         return typeMatches(message)
                 && payloadType.isAssignableFrom(message.getPayloadType())
-                && parametersMatch(message, processingContext);
+                && parametersMatch(message, contextWithMessage);
     }
 
     @Override
@@ -139,7 +140,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
      */
     protected boolean parametersMatch(Message<?> message, ProcessingContext processingContext) {
         for (ParameterResolver<?> resolver : parameterResolvers) {
-            if (!resolver.matches(message, processingContext)) {
+            if (!resolver.matches(processingContext)) {
                 logger.debug("Parameter Resolver [{}] did not match message [{}] for payload type [{}].",
                              resolver.getClass(), message, message.getPayloadType());
                 return false;
@@ -150,8 +151,9 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
 
     @Override
     public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
+        ProcessingContext processingContext = new LegacyMessageSupportingContext(message);
         try {
-            return handle(message, ProcessingContext.NONE, target).first().asCompletableFuture().get()
+            return handle(message, processingContext, target).first().asCompletableFuture().get()
                                                                   .message().getPayload();
         } catch (ExecutionException e) {
             if (e.getCause() instanceof Exception ex) {
@@ -166,9 +168,10 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     public MessageStream<?> handle(@Nonnull Message<?> message,
                                    @Nonnull ProcessingContext processingContext,
                                    @Nullable T target) {
+        ProcessingContext contextWithMessage = processingContext.withResource(Message.resourceKey, message);
         Object invocationResult;
         try {
-            invocationResult = method.invoke(target, resolveParameterValues(message, processingContext));
+            invocationResult = method.invoke(target, resolveParameterValues(contextWithMessage));
         } catch (IllegalAccessException | InvocationTargetException e) {
             if (e.getCause() instanceof Exception) {
                 return MessageStream.failed(e.getCause());
@@ -182,10 +185,10 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
         return returnTypeConverter.apply(invocationResult);
     }
 
-    private Object[] resolveParameterValues(Message<?> message, ProcessingContext processingContext) {
+    private Object[] resolveParameterValues(ProcessingContext processingContext) {
         Object[] params = new Object[parameterCount];
         for (int i = 0; i < parameterCount; i++) {
-            params[i] = parameterResolvers[i].resolveParameterValue(message, processingContext);
+            params[i] = parameterResolvers[i].resolveParameterValue(processingContext);
         }
         return params;
     }

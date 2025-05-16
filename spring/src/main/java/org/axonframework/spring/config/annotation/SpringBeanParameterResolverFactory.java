@@ -147,12 +147,12 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
         }
 
         @Override
-        public Object resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public Object resolveParameterValue(@Nonnull ProcessingContext processingContext) {
             return beanFactory.getBean(beanName);
         }
 
         @Override
-        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
             return true;
         }
     }

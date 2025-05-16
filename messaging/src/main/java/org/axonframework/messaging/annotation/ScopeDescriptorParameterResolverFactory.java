@@ -50,7 +50,7 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
 
         @Nullable
         @Override
-        public ScopeDescriptor resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public ScopeDescriptor resolveParameterValue(@Nonnull ProcessingContext processingContext) {
             try {
                 return Scope.describeCurrentScope();
             } catch (IllegalStateException e) {
@@ -59,7 +59,7 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
         }
 
         @Override
-        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
             return true;
         }
     }

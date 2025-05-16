@@ -61,16 +61,16 @@ public final class TimestampParameterResolverFactory
 
         @Nullable
         @Override
-        public Instant resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            if (message instanceof EventMessage) {
-                return ((EventMessage) message).getTimestamp();
+        public Instant resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            if (processingContext.getResource(Message.resourceKey) instanceof EventMessage eventMessage) {
+                return eventMessage.getTimestamp();
             }
             return null;
         }
 
         @Override
-        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            return message instanceof EventMessage;
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey) instanceof EventMessage;
         }
     }
 }

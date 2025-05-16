@@ -16,7 +16,9 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;
@@ -84,8 +86,9 @@ class TimestampParameterResolverFactoryTest {
                 testSubject.createInstance(instantMethod, instantMethod.getParameters(), 0);
 
         final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
-        assertTrue(resolver.matches(message, null));
-        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message, null));
+        ProcessingContext processingContext = StubProcessingContext.forMessage(message);
+        assertTrue(resolver.matches(processingContext));
+        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(processingContext));
     }
 
     @Test
@@ -94,8 +97,9 @@ class TimestampParameterResolverFactoryTest {
                 testSubject.createInstance(temporalMethod, temporalMethod.getParameters(), 0);
 
         final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
-        assertTrue(resolver.matches(message, null));
-        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message, null));
+        ProcessingContext processingContext = StubProcessingContext.forMessage(message);
+        assertTrue(resolver.matches(processingContext));
+        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(processingContext));
     }
 
     @Test
@@ -116,8 +120,9 @@ class TimestampParameterResolverFactoryTest {
         Parameter[] parameters = metaAnnotatedMethod.getParameters();
         ParameterResolver<?> resolver = testSubject.createInstance(metaAnnotatedMethod, parameters, 0);
         final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
-        assertTrue(resolver.matches(message, null), "Resolver should be a match for message " + message);
-        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message, null));
+        ProcessingContext processingContext = StubProcessingContext.forMessage(message);
+        assertTrue(resolver.matches(processingContext), "Resolver should be a match for message " + message);
+        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(processingContext));
     }
 
     @Retention(RetentionPolicy.RUNTIME)

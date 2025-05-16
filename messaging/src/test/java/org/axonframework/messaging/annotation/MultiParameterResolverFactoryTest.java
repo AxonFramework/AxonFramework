@@ -22,6 +22,7 @@ import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -70,37 +71,40 @@ class MultiParameterResolverFactoryTest {
     void resolversQueriedInOrderProvided() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
         ParameterResolver factory = testSubject.createInstance(equals, equals.getParameters(), 0);
-        assertFalse(factory.matches(null, null));
+        assertNotNull(factory);
+        StubProcessingContext processingContext = new StubProcessingContext();
+        assertFalse(factory.matches(processingContext));
 
         InOrder inOrder = inOrder(mockFactory1, mockFactory2, mockResolver1, mockResolver2);
         inOrder.verify(mockFactory1).createInstance(ArgumentMatchers.any(Executable.class),
                                                     ArgumentMatchers.any(),
                                                     ArgumentMatchers.anyInt());
-        inOrder.verify(mockResolver1).matches(any(), isNull(ProcessingContext.class));
+        inOrder.verify(mockResolver1).matches(processingContext);
 
         verify(mockFactory2, never()).createInstance(ArgumentMatchers.any(Executable.class),
                                                      ArgumentMatchers.any(),
                                                      ArgumentMatchers.anyInt());
 
-        verify(mockResolver2, never()).matches(any(Message.class), isNull(ProcessingContext.class));
+        verify(mockResolver2, never()).matches(processingContext);
     }
 
     @Test
     void firstMatchingResolverMayReturnValue() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
         final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
+        ProcessingContext context = StubProcessingContext.forMessage(message);
         when(mockFactory1.createInstance(ArgumentMatchers.any(Executable.class),
                                          ArgumentMatchers.any(),
                                          ArgumentMatchers.anyInt()))
                 .thenReturn(null);
-        when(mockResolver2.matches(message, null)).thenReturn(true);
-        when(mockResolver2.resolveParameterValue(message, ProcessingContext.NONE)).thenReturn("Resolved");
+        when(mockResolver2.matches(context)).thenReturn(true);
+        when(mockResolver2.resolveParameterValue(context)).thenReturn("Resolved");
 
         ParameterResolver factory = testSubject.createInstance(equals, equals.getParameters(), 0);
-        assertTrue(factory.matches(message, null));
-        assertEquals("Resolved", factory.resolveParameterValue(message, ProcessingContext.NONE));
+        assertTrue(factory.matches(context));
+        assertEquals("Resolved", factory.resolveParameterValue(context));
 
-        verify(mockResolver1, never()).resolveParameterValue(any(Message.class), eq(ProcessingContext.NONE));
+        verify(mockResolver1, never()).resolveParameterValue(context);
     }
 
     @Test

@@ -57,13 +57,13 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
         }
 
         @Override
-        public Object resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+        public Object resolveParameterValue(@Nonnull ProcessingContext processingContext) {
             throw new FixtureExecutionException("No resource of type [" + parameterType.getName()
                                                         + "] has been registered. It is required for one of the handlers being executed.");
         }
 
         @Override
-        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
             return true;
         }
     }

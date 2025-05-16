@@ -22,8 +22,6 @@ import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
-
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
  * are annotated with the {@link MessageIdentifier} annotation and assigns the identifier of the Message.
@@ -57,14 +55,13 @@ public final class MessageIdentifierParameterResolverFactory
 
         @Nullable
         @Override
-        public String resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            Objects.requireNonNull(message, "The message is required.");
-            return message.getIdentifier();
+        public String resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey).getIdentifier();
         }
 
         @Override
-        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            return message != null;
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            return processingContext.containsResource(Message.resourceKey);
         }
     }
 }

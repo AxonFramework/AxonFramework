@@ -25,6 +25,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.Saga;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -178,7 +179,9 @@ class AnnotatedSagaRepositoryTest {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nonnull TestSaga target,
+        public Object handleSync(@Nonnull Message<?> message,
+                                 @Nonnull ProcessingContext processingContext,
+                                 @Nonnull TestSaga target,
                                  @Nonnull MessageHandlingMember<? super TestSaga> handler) throws Exception {
             counter.incrementAndGet();
             return handler.handleSync(message, target);

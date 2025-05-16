@@ -42,24 +42,27 @@ import java.lang.reflect.Parameter;
 public class ReplayParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<ReplayStatus> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (ReplayStatus.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return new ReplayParameterResolver();
         }
         return null;
     }
 
-    private class ReplayParameterResolver implements ParameterResolver {
+    private static class ReplayParameterResolver implements ParameterResolver<ReplayStatus> {
 
         @Nullable
         @Override
-        public Object resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            return ReplayToken.isReplay(message) ? ReplayStatus.REPLAY : ReplayStatus.REGULAR;
+        public ReplayStatus resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            if(processingContext.getResource(Message.resourceKey) instanceof EventMessage<?> eventMessage) {
+                return ReplayToken.isReplay(eventMessage) ? ReplayStatus.REPLAY : ReplayStatus.REGULAR;
+            }
+            return ReplayStatus.REGULAR;
         }
 
         @Override
-        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            return message instanceof EventMessage<?>;
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey) instanceof EventMessage<?>;
         }
     }
 }

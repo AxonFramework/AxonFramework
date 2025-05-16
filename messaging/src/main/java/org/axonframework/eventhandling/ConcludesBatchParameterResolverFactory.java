@@ -21,8 +21,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -50,13 +50,14 @@ public class ConcludesBatchParameterResolverFactory extends AbstractAnnotatedPar
 
     @Nullable
     @Override
-    public Boolean resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+    public Boolean resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+        Message<?> message = processingContext.getResource(Message.resourceKey);
         return CurrentUnitOfWork.map(unitOfWork -> !(unitOfWork instanceof LegacyBatchingUnitOfWork<?>) ||
                 ((LegacyBatchingUnitOfWork<?>) unitOfWork).isLastMessage(message)).orElse(true);
     }
 
     @Override
-    public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
-        return message instanceof EventMessage<?>;
+    public boolean matches(@Nonnull ProcessingContext processingContext) {
+        return processingContext.getResource(Message.resourceKey) instanceof EventMessage<?>;
     }
 }

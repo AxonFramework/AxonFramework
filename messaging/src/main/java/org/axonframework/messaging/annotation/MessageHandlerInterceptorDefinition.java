@@ -26,6 +26,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.ResultHandler;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Method;
@@ -88,7 +89,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext) {
             return ResultParameterResolverFactory.ignoringResultParameters(processingContext,
                                                                            pc -> super.canHandle(message, pc));
         }
@@ -103,7 +104,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                     throw e;
                 }
                 return ResultParameterResolverFactory.callWithResult(e, () -> {
-                    if (super.canHandle(message, null)) {
+                    if (super.canHandle(message, new LegacyMessageSupportingContext(message))) {
                         return super.handleSync(message, target);
                     }
                     throw e;

@@ -111,12 +111,12 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
         }
 
         @Override
-        public Object resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public Object resolveParameterValue(@Nonnull ProcessingContext processingContext) {
             return REGISTERED_RESULT.get();
         }
 
         @Override
-        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
             // we must always match, because this parameter is based on execution result
             Object registeredResult = REGISTERED_RESULT.get();
 

@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -110,20 +110,21 @@ public class FixtureTest_RegisteringMethodEnhancements {
 
         @Nullable
         @Override
-        public ParameterResolver<AtomicBoolean> createInstance(@jakarta.annotation.Nonnull Executable executable,
-                                                               @jakarta.annotation.Nonnull Parameter[] parameters,
+        public ParameterResolver<AtomicBoolean> createInstance(@Nonnull Executable executable,
+                                                               @Nonnull Parameter[] parameters,
                                                                int parameterIndex) {
             return AtomicBoolean.class.equals(parameters[parameterIndex].getType()) ? this : null;
         }
 
         @Nullable
         @Override
-        public AtomicBoolean resolveParameterValue(Message<?> message, @jakarta.annotation.Nonnull ProcessingContext processingContext) {
+        public AtomicBoolean resolveParameterValue(@Nonnull ProcessingContext processingContext) {
             return assertion;
         }
 
         @Override
-        public boolean matches(Message<?> message, @jakarta.annotation.Nonnull ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            Message<?> message = processingContext.getResource(Message.resourceKey);
             return message.getPayloadType().isAssignableFrom(ResolveParameterCommand.class);
         }
     }

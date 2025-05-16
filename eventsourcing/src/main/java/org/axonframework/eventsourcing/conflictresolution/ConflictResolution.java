@@ -86,14 +86,13 @@ public class ConflictResolution implements ParameterResolverFactory, ParameterRe
 
     @Nullable
     @Override
-    public ConflictResolver resolveParameterValue(@Nullable Message<?> message,
-                                                  @Nonnull ProcessingContext processingContext) {
+    public ConflictResolver resolveParameterValue(@Nonnull ProcessingContext processingContext) {
         return getConflictResolver();
     }
 
     @Override
-    public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
-        return message instanceof CommandMessage;
+    public boolean matches(@Nonnull ProcessingContext processingContext) {
+        return processingContext.getResource(Message.resourceKey) instanceof CommandMessage;
     }
 
 }

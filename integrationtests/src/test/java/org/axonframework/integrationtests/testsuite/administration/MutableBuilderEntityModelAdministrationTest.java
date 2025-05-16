@@ -166,7 +166,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                     }
                     throw new IllegalArgumentException("Unknown type: " + id.type());
                 },
-                s -> EventCriteria.havingTags("Person", s.key()),
+                (s, context) -> EventCriteria.havingTags("Person", s.key()),
                 personModel
         );
 

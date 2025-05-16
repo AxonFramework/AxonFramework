@@ -31,6 +31,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collection;
@@ -128,13 +129,14 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
 
     @Override
     public Object handleSync(EventMessage<?> event) throws Exception {
+        LegacyMessageSupportingContext processingContext = new LegacyMessageSupportingContext(event);
         Optional<MessageHandlingMember<? super Object>> handler =
                 inspector.getHandlers(listenerType)
-                         .filter(h -> h.canHandle(event, null))
+                         .filter(h -> h.canHandle(event, processingContext))
                          .findFirst();
         if (handler.isPresent()) {
             MessageHandlerInterceptorMemberChain<Object> interceptor = inspector.chainedInterceptor(listenerType);
-            return interceptor.handleSync(event, annotatedEventListener, handler.get());
+            return interceptor.handleSync(event, processingContext, annotatedEventListener, handler.get());
         }
         return null;
     }
@@ -142,7 +144,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     @Override
     public boolean canHandle(EventMessage<?> event) {
         return inspector.getHandlers(listenerType)
-                        .anyMatch(h -> h.canHandle(event, null));
+                        .anyMatch(h -> h.canHandle(event, new LegacyMessageSupportingContext(event)));
     }
 
     @Override
@@ -159,18 +161,19 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
 
     @Override
     public void prepareReset(ProcessingContext processingContext) {
-        prepareReset(null, null);
+        prepareReset(null, processingContext);
     }
 
     @Override
     public <R> void prepareReset(R resetContext, ProcessingContext processingContext) {
         try {
             ResetContext<?> resetMessage = asResetContext(resetContext);
+            ProcessingContext messageProcessingContext = processingContext.withResource(Message.resourceKey, resetMessage);
             inspector.getHandlers(listenerType)
-                     .filter(h -> h.canHandle(resetMessage, processingContext))
+                     .filter(h -> h.canHandle(resetMessage, messageProcessingContext))
                      .findFirst()
                      .ifPresent(messageHandlingMember -> messageHandlingMember.handle(resetMessage,
-                                                                                      processingContext,
+                                                                                      messageProcessingContext,
                                                                                       annotatedEventListener)
                                                                               .first()
                                                                               .asCompletableFuture()

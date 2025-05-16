@@ -56,7 +56,7 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+    public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext) {
         return delegate.canHandle(message, processingContext);
     }
 

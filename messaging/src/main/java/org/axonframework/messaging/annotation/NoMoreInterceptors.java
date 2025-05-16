@@ -43,6 +43,7 @@ public class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberCha
 
     @Override
     public Object handleSync(@Nonnull Message<?> message,
+                             @Nonnull ProcessingContext processingContext,
                              @Nonnull T target,
                              @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
         return handler.handleSync(message, target);

@@ -126,7 +126,7 @@ public class EventSourcingRepository<I, E> implements Repository.LifecycleManage
         return managedEntities.computeIfAbsent(
                 identifier,
                 id -> eventStore.transaction(processingContext)
-                                .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id)))
+                                .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id, processingContext)))
                                 .reduce(new EventSourcedEntity<>(
                                                 identifier,
                                                 entityFactory.createEntity(entityType(), identifier)

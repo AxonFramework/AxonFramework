@@ -44,6 +44,7 @@ import java.util.function.Function;
  * @since 2.0.0
  */
 public interface Message<P> {
+    Context.ResourceKey<Message<?>> resourceKey = Context.ResourceKey.withLabel("Message");
 
     /**
      * Returns the identifier of this {@code Message}.

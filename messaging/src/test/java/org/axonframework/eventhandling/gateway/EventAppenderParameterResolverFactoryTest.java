@@ -52,7 +52,7 @@ class EventAppenderParameterResolverFactoryTest {
         Method method = getClass().getMethod("methodWithEventAppenderParameter", EventAppender.class);
         ParameterResolver<?> instance = testSubject.createInstance(method, method.getParameters(), 0);
         assertNotNull(instance);
-        Object injectedParameter = instance.resolveParameterValue(mock(EventMessage.class), processingContext);
+        Object injectedParameter = instance.resolveParameterValue(processingContext);
         assertInstanceOf(ProcessingContextEventAppender.class, injectedParameter);
     }
 

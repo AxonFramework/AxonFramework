@@ -23,6 +23,7 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandlerAdapter;
@@ -108,19 +109,21 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
 
     @Override
     public Object handleSync(QueryMessage<?, ?> message) throws Exception {
+        LegacyMessageSupportingContext processingContext = new LegacyMessageSupportingContext(message);
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
-                     .filter(m -> m.canHandle(message, null))
+                     .filter(m -> m.canHandle(message, processingContext))
                      .findFirst()
                      .orElseThrow(() -> new NoHandlerForQueryException(message));
 
         return model.chainedInterceptor(target.getClass())
-                    .handleSync(message, target, handler);
+                    .handleSync(message, processingContext, target, handler);
     }
 
     @Override
     public boolean canHandle(QueryMessage<?, ?> message) {
+        LegacyMessageSupportingContext processingContext = new LegacyMessageSupportingContext(message);
         return model.getHandlers(target.getClass())
-                    .anyMatch(handlingMember -> handlingMember.canHandle(message, null));
+                    .anyMatch(handlingMember -> handlingMember.canHandle(message, processingContext));
     }
 }

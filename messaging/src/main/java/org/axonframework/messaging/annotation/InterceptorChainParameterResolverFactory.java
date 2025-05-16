@@ -110,7 +110,7 @@ public class InterceptorChainParameterResolverFactory
     }
 
     @Override
-    public InterceptorChain resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+    public InterceptorChain resolveParameterValue(@Nonnull ProcessingContext processingContext) {
         InterceptorChain interceptorChain = processingContext == null
                 ? null
                 : processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
@@ -124,7 +124,7 @@ public class InterceptorChainParameterResolverFactory
     }
 
     @Override
-    public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+    public boolean matches(@Nonnull ProcessingContext processingContext) {
         return CURRENT.get() != null
                 || (processingContext != null && processingContext.containsResource(INTERCEPTOR_CHAIN_KEY));
     }

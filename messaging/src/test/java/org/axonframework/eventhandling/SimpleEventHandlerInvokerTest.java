@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.StubProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -68,7 +69,7 @@ class SimpleEventHandlerInvokerTest {
         List<? extends EventMessage<?>> events = createEvents(2);
 
         for (EventMessage<?> event : events) {
-            testSubject.handle(event, null, Segment.ROOT_SEGMENT);
+            testSubject.handle(event, new StubProcessingContext(), Segment.ROOT_SEGMENT);
         }
 
         InOrder inOrder = inOrder(mockHandler1, mockHandler2);
@@ -81,20 +82,22 @@ class SimpleEventHandlerInvokerTest {
 
     @Test
     void performReset() {
-        testSubject.performReset(null);
+        StubProcessingContext processingContext = new StubProcessingContext();
+        testSubject.performReset(processingContext);
 
-        verify(mockHandler1).prepareReset(NO_RESET_PAYLOAD, null);
-        verify(mockHandler2).prepareReset(NO_RESET_PAYLOAD, null);
+        verify(mockHandler1).prepareReset(NO_RESET_PAYLOAD, processingContext);
+        verify(mockHandler2).prepareReset(NO_RESET_PAYLOAD, processingContext);
     }
 
     @Test
     void performResetWithResetContext() {
         String resetContext = "reset-context";
 
-        testSubject.performReset(resetContext, null);
+        StubProcessingContext processingContext = new StubProcessingContext();
+        testSubject.performReset(resetContext, processingContext);
 
-        verify(mockHandler1).prepareReset(eq(resetContext), isNull());
-        verify(mockHandler2).prepareReset(eq(resetContext), isNull());
+        verify(mockHandler1).prepareReset(eq(resetContext), eq(processingContext));
+        verify(mockHandler2).prepareReset(eq(resetContext), eq(processingContext));
     }
 
     @Test

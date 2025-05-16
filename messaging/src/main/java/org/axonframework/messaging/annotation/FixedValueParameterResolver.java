@@ -44,12 +44,12 @@ public class FixedValueParameterResolver<T> implements ParameterResolver<T> {
 
     @Nullable
     @Override
-    public T resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+    public T resolveParameterValue(@Nonnull ProcessingContext processingContext) {
         return value;
     }
 
     @Override
-    public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+    public boolean matches(@Nonnull ProcessingContext processingContext) {
         return true;
     }
 }

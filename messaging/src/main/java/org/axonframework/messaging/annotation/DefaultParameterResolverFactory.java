@@ -21,12 +21,12 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -73,23 +73,24 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         private static final String META_DATA_VALUE_PROPERTY = "metaDataValue";
 
         private final Map<String, Object> metaDataValue;
-        private final Class parameterType;
+        private final Class<?> parameterType;
 
-        public AnnotatedMetaDataParameterResolver(Map<String, Object> metaDataValue, Class parameterType) {
+        public AnnotatedMetaDataParameterResolver(Map<String, Object> metaDataValue, Class<?> parameterType) {
             this.metaDataValue = metaDataValue;
             this.parameterType = parameterType;
         }
 
         @Nullable
         @Override
-        public Object resolveParameterValue(@Nullable Message<?> message,
-                                            @Nonnull ProcessingContext processingContext) {
-            Objects.requireNonNull(message, "The message is required.");
-            return message.getMetaData().get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString());
+        public Object resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey)
+                                    .getMetaData()
+                                    .get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString());
         }
 
         @Override
-        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            Message<?> message = processingContext.getResource(Message.resourceKey);
             if (message == null) {
                 return false;
             }
@@ -101,7 +102,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
     }
 
-    private static final class MetaDataParameterResolver implements ParameterResolver {
+    private static final class MetaDataParameterResolver implements ParameterResolver<MetaData> {
 
         private static final MetaDataParameterResolver INSTANCE = new MetaDataParameterResolver();
 
@@ -109,18 +110,18 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public Object resolveParameterValue(Message message, @Nonnull ProcessingContext processingContext) {
-            Objects.requireNonNull(message, "The message is required.");
+        public MetaData resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            Message<?> message = processingContext.getResource(Message.resourceKey);
             return message.getMetaData();
         }
 
         @Override
-        public boolean matches(Message message, @Nonnull ProcessingContext processingContext) {
-            return message != null;
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            return processingContext.containsResource(Message.resourceKey);
         }
     }
 
-    private static class MessageParameterResolver implements ParameterResolver {
+    private static class MessageParameterResolver implements ParameterResolver<Message<?>> {
 
         private final Class<?> parameterType;
 
@@ -129,14 +130,17 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public Object resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            Objects.requireNonNull(message, "The message is required.");
-            return message;
+        public Message<?> resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey);
         }
 
         @Override
-        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            return message != null &&  parameterType.isInstance(message);
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            Message<?> message = processingContext.getResource(Message.resourceKey);
+            if (message == null) {
+                return false;
+            }
+            return parameterType.isAssignableFrom(message.getClass());
         }
     }
 }

@@ -170,7 +170,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     @Override
     public <R> void performReset(@Nullable R resetContext, ProcessingContext processingContext) {
         for (EventMessageHandler eventHandler : eventHandlingComponents) {
-            eventHandler.prepareReset(resetContext, null);
+            eventHandler.prepareReset(resetContext, processingContext);
         }
     }
 

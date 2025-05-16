@@ -47,8 +47,11 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
     private static class TrackingTokenParameterResolver implements ParameterResolver<TrackingToken> {
 
         @Override
-        public TrackingToken resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
-            return unwrap(((TrackedEventMessage) message).trackingToken());
+        public TrackingToken resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            if (processingContext.getResource(Message.resourceKey) instanceof TrackedEventMessage<?> trackedEventMessage) {
+                return unwrap(trackedEventMessage.trackingToken());
+            }
+            return null;
         }
 
         private TrackingToken unwrap(TrackingToken trackingToken) {
@@ -56,8 +59,8 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
         }
 
         @Override
-        public boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext) {
-            return message instanceof TrackedEventMessage;
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey) instanceof TrackedEventMessage;
         }
     }
 }

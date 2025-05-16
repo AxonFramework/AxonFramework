@@ -24,6 +24,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.SagaMethodMessageHandlingMember;
 
@@ -122,7 +123,7 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
         @SuppressWarnings("unchecked")
         public Optional<AssociationValue> resolveAssociation(EventMessage<?> eventMessage) {
             for (MessageHandlingMember<? super T> handler : handlers) {
-                if (handler.canHandle(eventMessage, null)) {
+                if (handler.canHandle(eventMessage, new LegacyMessageSupportingContext(eventMessage))) {
                     return handler.unwrap(SagaMethodMessageHandlingMember.class)
                                   .map(mh -> mh.getAssociationValue(eventMessage));
                 }
@@ -132,14 +133,14 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
 
         @Override
         public List<MessageHandlingMember<? super T>> findHandlerMethods(EventMessage<?> eventMessage) {
-            return handlers.stream().filter(h -> h.canHandle(eventMessage, null))
+            return handlers.stream().filter(h -> h.canHandle(eventMessage, new LegacyMessageSupportingContext(eventMessage)))
                            .collect(Collectors.toList());
         }
 
         @Override
         public boolean hasHandlerMethod(EventMessage<?> eventMessage) {
             for (MessageHandlingMember<? super T> handler : handlers) {
-                if (handler.canHandle(eventMessage, null)) {
+                if (handler.canHandle(eventMessage, new LegacyMessageSupportingContext(eventMessage))) {
                     return true;
                 }
             }

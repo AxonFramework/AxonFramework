@@ -18,12 +18,10 @@ package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
- * Interface for a mechanism that resolves handler method parameter values from a given {@link Message} and/or
- * {@link ProcessingContext}.
+ * Interface for a mechanism that resolves handler method parameter values from a given {@link ProcessingContext}.
  *
  * @param <T> The type of parameter returned by this resolver.
  * @author Allard Buijze
@@ -32,26 +30,22 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 public interface ParameterResolver<T> {
 
     /**
-     * Resolves the parameter value to use for the given {@code message} and {@code processingContext}, or {@code null}
-     * if no suitable parameter value can be resolved.
+     * Resolves the parameter value to for the {@code processingContext}, or {@code null} if no suitable parameter value
+     * can be resolved.
      *
-     * @param message           The message to resolve the value from. This may be null in case there is no message
-     *                          available for resolving the value.
-     * @param processingContext The current processing context. This is never null.
+     * @param processingContext The current processing context.
      * @return The parameter value for the handler.
      */
     @Nullable
-    T resolveParameterValue(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext);
+    T resolveParameterValue(@Nonnull ProcessingContext processingContext);
 
     /**
-     * Indicates whether this resolver is capable of providing a value for the given {@code message} and
-     * {@code processingContext}.
+     * Indicates whether this resolver is capable of providing a value for the given {@code processingContext}.
      *
-     * @param message           The message to evaluate. This may be null in case there is no message available for resolving the value.
      * @param processingContext The current processing context.
-     * @return {@code true} if this resolver can provide a value for the message, otherwise {@code false}
+     * @return Returns {@code true} if this resolver can provide a value for the message, otherwise {@code false}.
      */
-    boolean matches(@Nullable Message<?> message, @Nonnull ProcessingContext processingContext);
+    boolean matches(@Nonnull ProcessingContext processingContext);
 
     /**
      * Returns the class of the payload that is supported by this resolver. Defaults to the {@link Object} class

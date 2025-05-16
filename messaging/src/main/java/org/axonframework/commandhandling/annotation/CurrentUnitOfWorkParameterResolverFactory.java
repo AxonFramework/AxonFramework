@@ -50,7 +50,7 @@ public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResol
     }
 
     @Override
-    public Object resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+    public Object resolveParameterValue(@Nonnull ProcessingContext processingContext) {
         if (!CurrentUnitOfWork.isStarted()) {
             return null;
         }
@@ -58,7 +58,7 @@ public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResol
     }
 
     @Override
-    public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
+    public boolean matches(@Nonnull ProcessingContext processingContext) {
         return true;
     }
 }

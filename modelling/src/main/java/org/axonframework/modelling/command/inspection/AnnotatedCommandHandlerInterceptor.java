@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.InterceptorChainParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -57,7 +58,7 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChainSync(
                 interceptorChain,
-                () -> delegate.canHandle(unitOfWork.getMessage(), null)
+                () -> delegate.canHandle(unitOfWork.getMessage(), new LegacyMessageSupportingContext(unitOfWork.getMessage()))
                         ? delegate.handleSync(unitOfWork.getMessage(), target)
                         : interceptorChain.proceedSync());
     }

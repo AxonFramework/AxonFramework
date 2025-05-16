@@ -23,24 +23,21 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
-
 /**
- * An extension of the AbstractAnnotatedParameterResolverFactory that accepts
- * parameters of a {@link String} type that are annotated with the {@link SourceId}
- * annotation and assigns the aggregate identifier of the DomainEventMessage.
+ * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
+ * are annotated with the {@link SourceId} annotation and assigns the aggregate identifier of the DomainEventMessage.
  *
  * @author Thomas van Putten (delta11)
  * @since 4.1
  */
 @Priority(Priority.HIGH)
-public final class SourceIdParameterResolverFactory extends AbstractAnnotatedParameterResolverFactory<SourceId, String> {
+public final class SourceIdParameterResolverFactory
+        extends AbstractAnnotatedParameterResolverFactory<SourceId, String> {
 
     private final ParameterResolver<String> resolver;
 
     /**
-     * Initialize a {@link ParameterResolverFactory} for {@link SourceId}
-     * annotated parameters
+     * Initialize a {@link ParameterResolverFactory} for {@link SourceId} annotated parameters
      */
     public SourceIdParameterResolverFactory() {
         super(SourceId.class, String.class);
@@ -59,19 +56,16 @@ public final class SourceIdParameterResolverFactory extends AbstractAnnotatedPar
 
         @Nullable
         @Override
-        public String resolveParameterValue(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            Objects.requireNonNull(message, "The message is required.");
-            if (message instanceof DomainEventMessage) {
-                return ((DomainEventMessage) message).getAggregateIdentifier();
+        public String resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            if (processingContext.getResource(Message.resourceKey) instanceof DomainEventMessage message) {
+                return message.getAggregateIdentifier();
             }
             throw new IllegalArgumentException();
         }
 
         @Override
-        public boolean matches(@Nullable Message message, @Nonnull ProcessingContext processingContext) {
-            return message instanceof DomainEventMessage;
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
+            return processingContext.getResource(Message.resourceKey) instanceof DomainEventMessage;
         }
-
     }
-
 }
