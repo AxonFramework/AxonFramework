@@ -26,8 +26,8 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.NamespaceMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.NamespaceMessageTypeResolver;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
@@ -101,7 +101,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     }
 
     @Test
-    void messageTypeResolverBuilderShouldBeImmutable() {
+    void messageTypeResolverBuilderShouldBeMutable() {
         NamespaceMessageTypeResolver.Builder builder1 = NamespaceMessageTypeResolver
                 .namespace("namespace")
                 .message(String.class, "test.string", "1.0.0");
@@ -112,7 +112,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         var instance2 = builder2.fallback(new ClassBasedMessageTypeResolver());
 
         assertTrue(instance1.resolve(String.class).isPresent());
-        assertFalse(instance1.resolve(Integer.class).isPresent());
+        assertTrue(instance1.resolve(Integer.class).isPresent());
         assertTrue(instance2.resolve(String.class).isPresent());
         assertTrue(instance2.resolve(Integer.class).isPresent());
     }
