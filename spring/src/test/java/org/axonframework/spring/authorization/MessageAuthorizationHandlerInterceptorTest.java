@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,13 @@ package org.axonframework.spring.authorization;
 
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
 import org.axonframework.test.matchers.Matchers;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.security.core.userdetails.User;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -44,10 +45,14 @@ import static org.hamcrest.core.StringStartsWith.startsWith;
 })
 class MessageAuthorizationHandlerInterceptorTest {
 
+    private Converter converter;
+
     private FixtureConfiguration<TestAggregate> fixture;
 
     @BeforeEach
     public void setUp() {
+        converter = JacksonSerializer.defaultSerializer().getConverter();
+
         fixture = new AggregateTestFixture<>(TestAggregate.class);
     }
 
@@ -56,7 +61,7 @@ class MessageAuthorizationHandlerInterceptorTest {
     @WithMockUser(username = "admin", authorities = {"ROLE_aggregate.create"})
     public void shouldAuthorizeAndPropagateUsername() {
         UUID aggregateId = UUID.randomUUID();
-        fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>())
+        fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>(converter))
                .registerCommandHandlerInterceptor(new MessageAuthorizationHandlerInterceptor<>())
                .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
                        "username")))
@@ -64,7 +69,7 @@ class MessageAuthorizationHandlerInterceptorTest {
                .when(new CreateAggregateCommand(aggregateId))
                .expectSuccessfulHandlerExecution()
                .expectResultMessageMatching(Matchers.matches(
-                       message -> ((User) message.getMetaData().get("username")).getUsername().equals("admin")
+                       message -> message.getMetaData().get("username").equals("admin")
                ));
     }
 
@@ -73,7 +78,7 @@ class MessageAuthorizationHandlerInterceptorTest {
     @WithMockUser(username = "user", roles = {""})
     public void shouldNotAuthorize() {
         UUID aggregateId = UUID.randomUUID();
-        fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>())
+        fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>(converter))
                .registerCommandHandlerInterceptor(new MessageAuthorizationHandlerInterceptor<>())
                .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(
                        new SimpleCorrelationDataProvider("username")

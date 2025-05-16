@@ -41,7 +41,7 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     private final String deadlineName;
 
     /**
-     * Constructs a {@link GenericDeadlineMessage} for the given {@code type} and {@code deadlineName}.
+     * Constructs a {@code GenericDeadlineMessage} for the given {@code type} and {@code deadlineName}.
      * <p>
      * The {@link #getPayload()} defaults to {@code null} and the {@link MetaData} defaults to an empty instance.
      *
@@ -54,7 +54,7 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     }
 
     /**
-     * Constructs a {@link GenericDeadlineMessage} for the given {@code deadlineName}, {@code type}, and
+     * Constructs a {@code GenericDeadlineMessage} for the given {@code deadlineName}, {@code type}, and
      * {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
@@ -70,7 +70,7 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     }
 
     /**
-     * Constructs a {@link GenericDeadlineMessage} for the given {@code deadlineName}, {@code type}, {@code payload},
+     * Constructs a {@code GenericDeadlineMessage} for the given {@code deadlineName}, {@code type}, {@code payload},
      * and {@code metaData}.
      *
      * @param deadlineName The name for this {@link DeadlineMessage}.
@@ -81,13 +81,13 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     public GenericDeadlineMessage(@Nonnull String deadlineName,
                                   @Nonnull MessageType type,
                                   @Nullable P payload,
-                                  @Nonnull Map<String, ?> metaData) {
+                                  @Nonnull Map<String, String> metaData) {
         super(type, payload, metaData);
         this.deadlineName = deadlineName;
     }
 
     /**
-     * Constructs a {@link GenericDeadlineMessage} for the given {@code deadlineName}, {@code identifier}, {@code type},
+     * Constructs a {@code GenericDeadlineMessage} for the given {@code deadlineName}, {@code identifier}, {@code type},
      * {@code payload}, {@code metaData}, and {@code timestamp}.
      *
      * @param deadlineName The name for this {@link DeadlineMessage}.
@@ -101,14 +101,14 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
                                   @Nonnull String identifier,
                                   @Nonnull MessageType type,
                                   @Nullable P payload,
-                                  @Nonnull Map<String, ?> metaData,
+                                  @Nonnull Map<String, String> metaData,
                                   @Nonnull Instant timestamp) {
         super(identifier, type, payload, metaData, timestamp);
         this.deadlineName = deadlineName;
     }
 
     /**
-     * Constructs a {@link GenericDeadlineMessage} for the given {@code deadlineName}, {@code delegate} and
+     * Constructs a {@code GenericDeadlineMessage} for the given {@code deadlineName}, {@code delegate} and
      * {@code timestampSupplier}, intended to reconstruct another {@link DeadlineMessage}.
      * <p>
      * The timestamp of the deadline is supplied lazily through the given {@code timestampSupplier} to prevent
@@ -137,12 +137,12 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     }
 
     @Override
-    public GenericDeadlineMessage<P> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericDeadlineMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericDeadlineMessage<>(deadlineName, getDelegate().withMetaData(metaData), this::getTimestamp);
     }
 
     @Override
-    public GenericDeadlineMessage<P> andMetaData(@Nonnull Map<String, ?> additionalMetaData) {
+    public GenericDeadlineMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new GenericDeadlineMessage<>(
                 deadlineName, getDelegate().andMetaData(additionalMetaData), this::getTimestamp
         );

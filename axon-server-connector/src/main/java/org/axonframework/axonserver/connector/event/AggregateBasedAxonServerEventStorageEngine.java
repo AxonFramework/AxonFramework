@@ -157,21 +157,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     private void buildMetaData(MetaData metaData, Map<String, MetaDataValue> metaDataMap) {
-        metaData.forEach((k, v) -> {
-            MetaDataValue result = null;
-            if (v instanceof CharSequence c) {
-                result = MetaDataValue.newBuilder().setTextValue(c.toString()).build();
-            } else if (v instanceof Number n) {
-                if (n instanceof Float || n instanceof Double) {
-                    result = MetaDataValue.newBuilder().setDoubleValue(n.doubleValue()).build();
-                } else {
-                    result = MetaDataValue.newBuilder().setNumberValue(n.longValue()).build();
-                }
-            } else if (v instanceof Boolean b) {
-                result = MetaDataValue.newBuilder().setBooleanValue(b).build();
-            }
-            metaDataMap.put(k, result);
-        });
+        metaData.forEach((k, v) -> metaDataMap.put(k, MetaDataValue.newBuilder().setTextValue(v).build()));
     }
 
     @Override
@@ -227,7 +213,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     private MetaData getMetaData(Map<String, MetaDataValue> metaDataMap) {
         MetaData metaData = MetaData.emptyInstance();
         for (Map.Entry<String, MetaDataValue> entry : metaDataMap.entrySet()) {
-            Object value = convertFromMetaDataValue(entry.getValue());
+            String value = convertFromMetaDataValue(entry.getValue());
             if (value != null) {
                 metaData = metaData.and(entry.getKey(), value);
             }
@@ -235,12 +221,12 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         return metaData;
     }
 
-    private Object convertFromMetaDataValue(MetaDataValue value) {
+    private String convertFromMetaDataValue(MetaDataValue value) {
         return switch (value.getDataCase()) {
             case TEXT_VALUE -> value.getTextValue();
-            case DOUBLE_VALUE -> value.getDoubleValue();
-            case NUMBER_VALUE -> value.getNumberValue();
-            case BOOLEAN_VALUE -> value.getBooleanValue();
+            case DOUBLE_VALUE -> Double.toString(value.getDoubleValue());
+            case NUMBER_VALUE -> Long.toString(value.getNumberValue());
+            case BOOLEAN_VALUE -> Boolean.toString(value.getBooleanValue());
             default -> null;
         };
     }

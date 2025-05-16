@@ -217,8 +217,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                                          "event-0",
                                          TEST_AGGREGATE_TAGS,
                                          MetaData.with("key1", "value1")
-                                                 .and("key2", true)
-                                                 .and("key3", new ComplexObject("value1", false, 44))
+                                                 .and("key2", "true")
+                                                 .and("key3", "44")
                                  )
                    )
                    .thenCompose(AppendTransaction::commit).join();

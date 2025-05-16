@@ -45,8 +45,8 @@ class DefaultEventMessageConverterTest {
         String id = UUID.randomUUID().toString();
         MessageType name = new MessageType("event");
         EventPayload payload = new EventPayload("hello");
-        Map<String, Object> metaData = new HashMap<>();
-        metaData.put("number", 100);
+        Map<String, String> metaData = new HashMap<>();
+        metaData.put("number", "100");
         metaData.put("string", "world");
         Instant instant = Instant.EPOCH;
 
@@ -58,7 +58,7 @@ class DefaultEventMessageConverterTest {
         );
 
         assertEquals(instant, convertedAxonMessage.getTimestamp());
-        assertEquals(100, convertedAxonMessage.getMetaData().get("number"));
+        assertEquals("100", convertedAxonMessage.getMetaData().get("number"));
         assertEquals("world", convertedAxonMessage.getMetaData().get("string"));
         assertEquals("hello", convertedAxonMessage.getPayload().name);
         assertEquals(id, convertedAxonMessage.getIdentifier());
@@ -70,8 +70,8 @@ class DefaultEventMessageConverterTest {
         String id = UUID.randomUUID().toString();
         MessageType name = new MessageType("event");
         EventPayload payload = new EventPayload("hello");
-        Map<String, Object> metaData = new HashMap<>();
-        metaData.put("number", 100);
+        Map<String, String> metaData = new HashMap<>();
+        metaData.put("number", "100");
         metaData.put("string", "world");
         Instant instant = Instant.EPOCH;
 
@@ -85,7 +85,7 @@ class DefaultEventMessageConverterTest {
 
         DomainEventMessage<EventPayload> convertDomainMessage = (DomainEventMessage<EventPayload>) convertedAxonMessage;
         assertEquals(instant, convertDomainMessage.getTimestamp());
-        assertEquals(100, convertDomainMessage.getMetaData().get("number"));
+        assertEquals("100", convertDomainMessage.getMetaData().get("number"));
         assertEquals("world", convertDomainMessage.getMetaData().get("string"));
         assertEquals("hello", convertDomainMessage.getPayload().name);
         assertEquals(id, convertDomainMessage.getIdentifier());

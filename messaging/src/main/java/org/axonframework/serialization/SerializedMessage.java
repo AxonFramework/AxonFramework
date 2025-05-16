@@ -122,12 +122,12 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public SerializedMessage<P> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public SerializedMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         return (SerializedMessage<P>) super.withMetaData(metaData);
     }
 
     @Override
-    public SerializedMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public SerializedMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         return (SerializedMessage<P>) super.andMetaData(metaData);
     }
 

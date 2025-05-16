@@ -60,7 +60,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
         headers.put(MESSAGE_TYPE, event.type().toString());
         if (event instanceof DomainEventMessage) {
             headers.put(AGGREGATE_ID, ((DomainEventMessage<?>) event).getAggregateIdentifier());
-            headers.put(AGGREGATE_SEQ, ((DomainEventMessage<?>) event).getSequenceNumber());
+            headers.put(AGGREGATE_SEQ, Long.toString(((DomainEventMessage<?>) event).getSequenceNumber()));
             headers.put(AGGREGATE_TYPE, ((DomainEventMessage<?>) event).getType());
         }
         return new GenericMessage<>(event.getPayload(),
@@ -70,10 +70,13 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
     @Override
     public <T> EventMessage<T> convertFromInboundMessage(Message<T> message) {
         MessageHeaders headers = message.getHeaders();
-        Map<String, ?> metaData = headers.entrySet()
-                                         .stream()
-                                         .filter(entry -> !entry.getKey().startsWith(AXON_MESSAGE_PREFIX))
-                                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, String> metaData = headers.entrySet()
+                                              .stream()
+                                              .filter(entry -> !entry.getKey().startsWith(AXON_MESSAGE_PREFIX))
+                                              .collect(Collectors.toMap(
+                                                      Map.Entry::getKey,
+                                                      entry -> entry.getValue().toString()
+                                              ));
 
         String messageId = Objects.toString(headers.get(MESSAGE_ID));
         MessageType type = getType(message);

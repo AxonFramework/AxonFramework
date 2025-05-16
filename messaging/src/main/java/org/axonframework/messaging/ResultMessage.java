@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,8 +107,8 @@ public interface ResultMessage<R> extends Message<R> {
     }
 
     @Override
-    ResultMessage<R> withMetaData(@Nonnull Map<String, ?> metaData);
+    ResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
-    ResultMessage<R> andMetaData(@Nonnull Map<String, ?> metaData);
+    ResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData);
 }

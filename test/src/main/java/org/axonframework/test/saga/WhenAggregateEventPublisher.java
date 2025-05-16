@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,8 @@ public interface WhenAggregateEventPublisher {
      * in the FixtureExecutionResult.
      *
      * @param event The event published by the aggregate
-     * @param metaData The meta data to attach to the event
+     * @param metaData The metadata to attach to the event
      * @return a reference to the test results for the validation  phase
      */
-    FixtureExecutionResult publishes(Object event, Map<String, ?> metaData);
+    FixtureExecutionResult publishes(Object event, Map<String, String> metaData);
 }

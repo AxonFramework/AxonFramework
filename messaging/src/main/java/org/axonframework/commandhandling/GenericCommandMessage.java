@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
@@ -24,7 +25,6 @@ import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 /**
  * Generic implementation of the {@link CommandMessage} interface.
@@ -58,7 +58,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      */
     public GenericCommandMessage(@Nonnull MessageType type,
                                  @Nonnull P payload,
-                                 @Nonnull Map<String, ?> metaData) {
+                                 @Nonnull Map<String, String> metaData) {
         this(new GenericMessage<>(type, payload, metaData));
     }
 
@@ -81,17 +81,17 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
     }
 
     @Override
-    public GenericCommandMessage<P> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericCommandMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericCommandMessage<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public GenericCommandMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericCommandMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericCommandMessage<>(getDelegate().andMetaData(metaData));
     }
 
     @Override
-    public <C> CommandMessage<C> withConvertedPayload(@jakarta.annotation.Nonnull Function<P, C> conversion) {
+    public <C> CommandMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
         Message<P> delegate = getDelegate();
         Message<C> transformed = new GenericMessage<>(delegate.getIdentifier(),
                                                       delegate.type(),

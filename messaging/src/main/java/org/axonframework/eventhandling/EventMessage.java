@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,10 +68,10 @@ public interface EventMessage<P> extends Message<P> {
     Instant getTimestamp();
 
     @Override
-    EventMessage<P> withMetaData(@Nonnull Map<String, ?> metaData);
+    EventMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
-    EventMessage<P> andMetaData(@Nonnull Map<String, ?> metaData);
+    EventMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
 
     /**
      * Returns a copy of this EventMessage with its payload converted using given {@code conversion} function. If the
