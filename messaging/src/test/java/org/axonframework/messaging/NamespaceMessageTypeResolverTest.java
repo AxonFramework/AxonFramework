@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -131,22 +131,22 @@ class NamespaceMessageTypeResolverTest {
     }
 
     @Test
-    void shouldCreateImmutablePhaseInstances() {
+    void builderShouldBeMutable() {
         // given
-        var phase1 = NamespaceMessageTypeResolver
+        var builder1 = NamespaceMessageTypeResolver
                 .namespace("test")
                 .message(String.class, "string", "1.0.0");
 
-        var phase2 = phase1
+        var builder2 = builder1
                 .namespace("test")
                 .message(Integer.class, "integer", "2.0.0");
 
-        var resolver1 = phase1.noFallback();
-        var resolver2 = phase2.noFallback();
+        var resolver1 = builder1.noFallback();
+        var resolver2 = builder2.noFallback();
 
-        // then - resolver1 doesn't know about Integer
-        assertThrows(MessageTypeNotResolvedException.class,
-                     () -> resolver1.resolveOrThrow(Integer.class));
+        // then - resolver1 knows both types
+        assertEquals("test.string", resolver1.resolveOrThrow(String.class).qualifiedName().toString());
+        assertEquals("test.integer", resolver1.resolveOrThrow(Integer.class).qualifiedName().toString());
 
         // then - resolver2 knows both types
         assertEquals("test.string", resolver2.resolveOrThrow(String.class).qualifiedName().toString());

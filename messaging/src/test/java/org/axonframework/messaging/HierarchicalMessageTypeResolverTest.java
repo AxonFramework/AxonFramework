@@ -22,7 +22,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class FallbackMessageTypeResolverTest {
+class HierarchicalMessageTypeResolverTest {
 
     @Nested
     class Resolve {
@@ -33,7 +33,7 @@ class FallbackMessageTypeResolverTest {
             var expectedType = new MessageType("test.type", "1.0.0");
             MessageTypeResolver delegate = (pt) -> Optional.empty();
             MessageTypeResolver fallback = (pt) -> Optional.of(expectedType);
-            FallbackMessageTypeResolver resolver = new FallbackMessageTypeResolver(delegate, fallback);
+            HierarchicalMessageTypeResolver resolver = new HierarchicalMessageTypeResolver(delegate, fallback);
 
             // when
             var result = resolver.resolve(String.class);
@@ -49,7 +49,7 @@ class FallbackMessageTypeResolverTest {
             var expectedType = new MessageType("test.type", "1.0.0");
             MessageTypeResolver delegate = (pt) -> Optional.of(expectedType);
             MessageTypeResolver fallback = (pt) -> Optional.empty();
-            var resolver = new FallbackMessageTypeResolver(delegate, fallback);
+            var resolver = new HierarchicalMessageTypeResolver(delegate, fallback);
 
             // when
             var result = resolver.resolve(String.class);
@@ -69,7 +69,7 @@ class FallbackMessageTypeResolverTest {
             var expectedType = new MessageType("test.type", "1.0.0");
             MessageTypeResolver delegate = (pt) -> Optional.empty();
             MessageTypeResolver fallback = (pt) -> Optional.of(expectedType);
-            FallbackMessageTypeResolver resolver = new FallbackMessageTypeResolver(delegate, fallback);
+            HierarchicalMessageTypeResolver resolver = new HierarchicalMessageTypeResolver(delegate, fallback);
 
             // when
             var result = assertDoesNotThrow(() -> resolver.resolveOrThrow(String.class));
@@ -83,7 +83,7 @@ class FallbackMessageTypeResolverTest {
             // given
             MessageTypeResolver delegate = (pt) -> Optional.empty();
             MessageTypeResolver fallback = (pt) -> Optional.empty();
-            FallbackMessageTypeResolver resolver = new FallbackMessageTypeResolver(delegate, fallback);
+            HierarchicalMessageTypeResolver resolver = new HierarchicalMessageTypeResolver(delegate, fallback);
 
             // when/then
             assertThrows(MessageTypeNotResolvedException.class, () -> resolver.resolveOrThrow(String.class));
