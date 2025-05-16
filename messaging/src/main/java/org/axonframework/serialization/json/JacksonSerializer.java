@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,32 @@
 package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.SerializationException;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.UnknownSerializedType;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -263,13 +277,13 @@ public class JacksonSerializer implements Serializer {
      */
     public static class Builder {
 
-        private boolean cacheUnknownClasses = true;
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private Converter converter = new ChainingConverter();
         private ObjectMapper objectMapper = new ObjectMapper();
         private boolean lenientDeserialization = false;
         private boolean defaultTyping = false;
         private ClassLoader classLoader;
+        private boolean cacheUnknownClasses = true;
 
         /**
          * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
@@ -341,15 +355,15 @@ public class JacksonSerializer implements Serializer {
         }
 
         /**
-         * Indicated whether to cache the names for classes which couldn't be resolved to a class. Defaults to {@code true}.
+         * Disables the caching of the names for classes which couldn't be resolved to a class.
          * <p>
-         * It is recommended to disable this in case the class loading is dynamic, and classes that are not available
-         * at one point in time, may become available at any time later.
+         * It is recommended to disable this in case the class loading is dynamic, and classes that are not available at
+         * one point in time, may become available at any time later.
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder cacheUnknownClasses(boolean cacheUnknownClasses) {
-            this.cacheUnknownClasses = cacheUnknownClasses;
+        public Builder disableCachingOfUnknownClasses() {
+            this.cacheUnknownClasses = false;
             return this;
         }
 
