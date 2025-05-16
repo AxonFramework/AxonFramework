@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,11 +148,14 @@ class JacksonSerializerTest {
     @Test
     void readUnknownSerializedTypeCachesLookupResults() {
         ObjectMapper spiedMapper = spy(objectMapper);
-        testSubject = JacksonSerializer.builder().objectMapper(spiedMapper).build();
-        SerializedObject<String> serialized = new SimpleSerializedObject<>("{\"data\" : \"value\"}", String.class, "my.nonexistent.Class", null);
+        testSubject = JacksonSerializer.builder()
+                                       .objectMapper(spiedMapper)
+                                       .build();
+        SerializedObject<String> testObject =
+                new SimpleSerializedObject<>("{\"data\" : \"value\"}", String.class, "my.nonexistent.Class", null);
 
         for (int i = 0; i < 10; i++) {
-            Class<?> actual = testSubject.classForType(serialized.getType());
+            Class<?> actual = testSubject.classForType(testObject.getType());
             assertEquals(UnknownSerializedType.class, actual);
         }
 
@@ -162,11 +165,15 @@ class JacksonSerializerTest {
     @Test
     void readUnknownSerializedTypeWithCachingDisabled() {
         ObjectMapper spiedMapper = spy(objectMapper);
-        testSubject = JacksonSerializer.builder().cacheUnknownClasses(false).objectMapper(spiedMapper).build();
-        SerializedObject<String> serialized = new SimpleSerializedObject<>("{\"data\" : \"value\"}", String.class, "my.nonexistent.Class", null);
+        testSubject = JacksonSerializer.builder()
+                                       .objectMapper(spiedMapper)
+                                       .disableCachingOfUnknownClasses()
+                                       .build();
+        SerializedObject<String> testObject =
+                new SimpleSerializedObject<>("{\"data\" : \"value\"}", String.class, "my.nonexistent.Class", null);
 
         for (int i = 0; i < 10; i++) {
-            Class<?> actual = testSubject.classForType(serialized.getType());
+            Class<?> actual = testSubject.classForType(testObject.getType());
             assertEquals(UnknownSerializedType.class, actual);
         }
 
