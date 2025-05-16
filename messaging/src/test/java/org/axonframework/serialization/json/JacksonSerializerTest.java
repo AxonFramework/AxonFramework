@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.ContentTypeConverter;
-import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.UnknownSerializedType;
-import org.junit.jupiter.api.*;
+import org.axonframework.serialization.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.time.Instant;
@@ -149,6 +143,41 @@ class JacksonSerializerTest {
 
         assertEquals("first", actualJson.get("value").asText());
         assertEquals("nested", actualJson.path("nested").path("value").asText());
+    }
+
+    @Test
+    void readUnknownSerializedTypeCachesLookupResults() {
+        ObjectMapper spiedMapper = spy(objectMapper);
+        testSubject = JacksonSerializer.builder()
+                                       .objectMapper(spiedMapper)
+                                       .build();
+        SerializedObject<String> testObject =
+                new SimpleSerializedObject<>("{\"data\" : \"value\"}", String.class, "my.nonexistent.Class", null);
+
+        for (int i = 0; i < 10; i++) {
+            Class<?> actual = testSubject.classForType(testObject.getType());
+            assertEquals(UnknownSerializedType.class, actual);
+        }
+
+        verify(spiedMapper, times(1)).getTypeFactory();
+    }
+
+    @Test
+    void readUnknownSerializedTypeWithCachingDisabled() {
+        ObjectMapper spiedMapper = spy(objectMapper);
+        testSubject = JacksonSerializer.builder()
+                                       .objectMapper(spiedMapper)
+                                       .disableCachingOfUnknownClasses()
+                                       .build();
+        SerializedObject<String> testObject =
+                new SimpleSerializedObject<>("{\"data\" : \"value\"}", String.class, "my.nonexistent.Class", null);
+
+        for (int i = 0; i < 10; i++) {
+            Class<?> actual = testSubject.classForType(testObject.getType());
+            assertEquals(UnknownSerializedType.class, actual);
+        }
+
+        verify(spiedMapper, times(10)).getTypeFactory();
     }
 
     @Test
