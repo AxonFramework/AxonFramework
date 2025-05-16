@@ -113,7 +113,7 @@ public class DefaultCommandGateway implements CommandGateway {
         }
 
         return new GenericCommandMessage<>(
-                messageTypeResolver.resolve(command),
+                messageTypeResolver.resolveOrThrow(command),
                 (C) command,
                 metaData
         );
