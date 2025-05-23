@@ -25,6 +25,8 @@ import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -54,11 +56,13 @@ class ReplayParameterResolverFactoryTest {
     @Test
     void invokeWithReplayTokens() throws Exception {
         GenericTrackedEventMessage<Object> replayEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage(1L));
+        ProcessingContext replayContext = StubProcessingContext.forMessage(replayEvent);
         GenericTrackedEventMessage<Object> liveEvent = new GenericTrackedEventMessage<>(regularToken, asEventMessage(2L));
-        assertTrue(testSubject.canHandle(replayEvent));
-        assertTrue(testSubject.canHandle(liveEvent));
-        testSubject.handleSync(replayEvent);
-        testSubject.handleSync(liveEvent);
+        ProcessingContext liveContext = StubProcessingContext.forMessage(liveEvent);
+        assertTrue(testSubject.canHandle(replayEvent, replayContext));
+        assertTrue(testSubject.canHandle(liveEvent, liveContext));
+        testSubject.handleSync(replayEvent, replayContext);
+        testSubject.handleSync(liveEvent, liveContext);
 
         assertEquals(asList(1L, 2L), handler.receivedLongs);
         assertEquals(singletonList(1L), handler.receivedInReplay);

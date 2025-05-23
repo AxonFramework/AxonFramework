@@ -79,7 +79,7 @@ class SubscribingEventProcessorTest {
         doAnswer(invocation -> {
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
 
         testSubject.start();
         testSubject.shutDown();
@@ -95,7 +95,7 @@ class SubscribingEventProcessorTest {
             EventMessage<?> message = invocation.getArgument(0, EventMessage.class);
             spanFactory.verifySpanActive("EventProcessor.process", message);
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
 
         testSubject.start();
 

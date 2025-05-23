@@ -16,23 +16,18 @@
 
 package org.axonframework.messaging.deadletter;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryMessage;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -86,23 +81,6 @@ class DeadLetterParameterResolverFactoryTest {
     }
 
     @Test
-    void resolverMatchesForAnyMessageType() {
-        CommandMessage<Object> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), "some-command");
-        EventMessage<Object> testEvent = EventTestUtils.asEventMessage("some-command");
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "some-query", instanceOf(String.class)
-        );
-
-        ParameterResolver<DeadLetter<?>> resolver =
-                testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
-
-        assertTrue(resolver.matches(testCommand, null));
-        assertTrue(resolver.matches(testEvent, null));
-        assertTrue(resolver.matches(testQuery, null));
-    }
-
-    @Test
     void resolvesDeadLetterFromUnitOfWorkResources() {
         EventMessage<String> testMessage = EventTestUtils.asEventMessage("some-event");
         DeadLetter<EventMessage<String>> expected = new GenericDeadLetter<>(
@@ -114,7 +92,7 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        DeadLetter<?> result = resolver.resolveParameterValue(testMessage, null);
+        DeadLetter<?> result = resolver.resolveParameterValue(StubProcessingContext.forUnitOfWork(uow));
         assertEquals(expected, result);
     }
 
@@ -125,7 +103,7 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        assertNull(resolver.resolveParameterValue(testMessage, null));
+        assertNull(resolver.resolveParameterValue(StubProcessingContext.forMessage(testMessage)));
     }
 
     @Test
@@ -136,6 +114,6 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        assertNull(resolver.resolveParameterValue(testMessage, null));
+        assertNull(resolver.resolveParameterValue(StubProcessingContext.forMessage(testMessage)));
     }
 }

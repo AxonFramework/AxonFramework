@@ -70,21 +70,22 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     }
 
     @Override
-    public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
-        Object resolvedId = identifierResolver.resolve(message, processingContext);
+    public Object resolveParameterValue(@Nonnull ProcessingContext context) {
+        Message<?> message = context.getResource(Message.RESOURCE_KEY);
+        Object resolvedId = identifierResolver.resolve(message, context);
         //noinspection ConstantValue Users can still make the mistake to return null.
         if (resolvedId == null) {
             throw new NullEntityIdInPayloadException(message.getPayload().getClass());
         }
         StateManager stateManager = configuration.getComponent(StateManager.class);
         if (managedEntity) {
-            return stateManager.loadManagedEntity(type, resolvedId, processingContext).join();
+            return stateManager.loadManagedEntity(type, resolvedId, context).join();
         }
-        return stateManager.loadEntity(type, resolvedId, processingContext).join();
+        return stateManager.loadEntity(type, resolvedId, context).join();
     }
 
     @Override
-    public boolean matches(Message<?> message, ProcessingContext processingContext) {
-        return true;
+    public boolean matches(@Nonnull ProcessingContext context) {
+        return context.containsResource(Message.RESOURCE_KEY);
     }
 }

@@ -263,7 +263,7 @@ public class StubDeadlineManager implements DeadlineManager {
                                                ScheduledDeadlineInfo scheduledDeadlineInfo) {
         LegacyDefaultUnitOfWork<? extends DeadlineMessage<?>> uow =
                 LegacyDefaultUnitOfWork.startAndGet(scheduledDeadlineInfo.deadlineMessage());
-        InterceptorChain chain = new DefaultInterceptorChain<>(uow, handlerInterceptors, deadlineMessage -> {
+        InterceptorChain chain = new DefaultInterceptorChain<>(uow, handlerInterceptors, (deadlineMessage, ctx) -> {
             deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), deadlineMessage);
             return deadlineMessage;
         });

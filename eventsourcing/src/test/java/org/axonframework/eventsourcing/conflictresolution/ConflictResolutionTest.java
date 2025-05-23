@@ -20,8 +20,10 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -60,16 +62,16 @@ class ConflictResolutionTest {
     @Test
     void resolve() {
         ConflictResolution.initialize(conflictResolver);
-        assertFalse(subject.matches(EventTestUtils.asEventMessage("testEvent"), null));
-        assertTrue(subject.matches(commandMessage, null));
+        assertFalse(subject.matches(StubProcessingContext.forMessage(EventTestUtils.asEventMessage("testEvent"))));
+        assertTrue(subject.matches(StubProcessingContext.forMessage(commandMessage)));
         assertSame(conflictResolver, ConflictResolution.getConflictResolver());
-        assertSame(conflictResolver, subject.resolveParameterValue(commandMessage, null));
+        assertSame(conflictResolver, subject.resolveParameterValue(StubProcessingContext.forMessage(commandMessage)));
     }
 
     @Test
     void resolveWithoutInitializationReturnsNoConflictsResolver() {
-        assertTrue(subject.matches(commandMessage, null));
-        assertSame(NoConflictResolver.INSTANCE, subject.resolveParameterValue(commandMessage, null));
+        assertTrue(subject.matches(StubProcessingContext.forMessage(commandMessage)));
+        assertSame(NoConflictResolver.INSTANCE, subject.resolveParameterValue(new LegacyMessageSupportingContext(commandMessage)));
     }
 
     @SuppressWarnings("unused") //used in set up

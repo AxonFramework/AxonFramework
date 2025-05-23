@@ -82,8 +82,8 @@ class FixtureTest_ScopeDescriptor {
 
         @StartSaga
         @SagaEventHandler(associationProperty = "identifier")
-        public void on(SagaStartEvent event, ScopeDescriptor scopeDescriptor, CommandGateway commandGateway) {
-            commandGateway.send(new ScopeDescriptorCommand(scopeDescriptor), ProcessingContext.NONE);
+        public void on(SagaStartEvent event, ScopeDescriptor scopeDescriptor, CommandGateway commandGateway, ProcessingContext context) {
+            commandGateway.send(new ScopeDescriptorCommand(scopeDescriptor), context);
         }
     }
 }

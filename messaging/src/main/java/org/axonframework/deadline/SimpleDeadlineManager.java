@@ -35,6 +35,7 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
@@ -380,8 +381,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
                 InterceptorChain chain =
                         new DefaultInterceptorChain<>(unitOfWork,
                                                       handlerInterceptors(),
-                                                      deadlineMessage -> {
+                                                      (deadlineMessage, ctx) -> {
                                                           executeScheduledDeadline(deadlineMessage,
+                                                                                   ctx,
                                                                                    deadlineId.getDeadlineScope());
                                                           return null;
                                                       });
@@ -402,12 +404,12 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         }
 
         @SuppressWarnings("Duplicates")
-        private void executeScheduledDeadline(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope) {
+        private void executeScheduledDeadline(DeadlineMessage deadlineMessage, ProcessingContext context, ScopeDescriptor deadlineScope) {
             scopeAwareProvider.provideScopeAwareStream(deadlineScope)
                               .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
                               .forEach(scopeAwareComponent -> {
                                   try {
-                                      scopeAwareComponent.send(deadlineMessage, deadlineScope);
+                                      scopeAwareComponent.send(deadlineMessage, context, deadlineScope);
                                   } catch (Exception e) {
                                       String exceptionMessage = format(
                                               "Failed to send a DeadlineMessage for scope [%s]",

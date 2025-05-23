@@ -17,30 +17,34 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
- * No-op implementation of the {@link ProcessingContext}.
+ * Implementation of the {@link ProcessingContext} that can only store resources.
+ * Registering a lifecycle action will not take effect.
  *
  * @author Allard Buijze
  * @since 5.0.0
  */
-public class NoProcessingContext implements ProcessingContext {
+public class SimpleProcessingContext implements ProcessingContext {
+    private final Map<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
 
     /**
-     * Constant of the {@link NoProcessingContext} to be used as a single reference.
+     * Create a new simple {@link ProcessingContext} instance.
+     * @return a new {@link SimpleProcessingContext} instance.
      */
-    public static final NoProcessingContext INSTANCE = new NoProcessingContext();
+    public static SimpleProcessingContext empty() {
+        return new SimpleProcessingContext();
+    }
 
-    private static final String UNSUPPORTED_MESSAGE = "Cannot register lifecycle actions in this ProcessingContext";
-
-    private NoProcessingContext() {
+    protected SimpleProcessingContext() {
         // No-arg constructor
     }
 
@@ -66,67 +70,66 @@ public class NoProcessingContext implements ProcessingContext {
 
     @Override
     public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
-        throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
+        return this;
     }
 
     @Override
     public ProcessingLifecycle onError(ErrorHandler action) {
-        throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
+        return this;
     }
 
     @Override
     public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
-        throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
+        return this;
     }
 
     @Override
     public boolean containsResource(@Nonnull ResourceKey<?> key) {
-        return false;
+        return resources.containsKey(key);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T getResource(@Nonnull ResourceKey<T> key) {
-        return null;
-    }
-
-    @Override
-    public <T> ProcessingContext withResource(@Nonnull ResourceKey<T> key,
-                                              @Nonnull T resource) {
-        return this;
+        return (T) resources.get(key);
     }
 
     @Override
     public <T> T putResource(@Nonnull ResourceKey<T> key,
                              @Nonnull T resource) {
-        throw new IllegalArgumentException("Cannot put resources in this ProcessingContext");
+        return (T) resources.put(key, resource);
     }
 
     @Override
     public <T> T updateResource(@Nonnull ResourceKey<T> key,
                                 @Nonnull UnaryOperator<T> resourceUpdater) {
-        throw new IllegalArgumentException("Cannot update resources in this ProcessingContext");
+        //noinspection unchecked
+        return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
     }
 
     @Override
     public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
                                      @Nonnull T resource) {
-        throw new IllegalArgumentException("Cannot put resources in this ProcessingContext");
+        //noinspection unchecked
+        return (T) resources.putIfAbsent(key, resource);
     }
 
     @Override
     public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
                                          @Nonnull Supplier<T> resourceSupplier) {
-        throw new IllegalArgumentException("Cannot compute resources in this ProcessingContext");
+        //noinspection unchecked
+        return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
     }
 
     @Override
     public <T> T removeResource(@Nonnull ResourceKey<T> key) {
-        return null;
+        //noinspection unchecked
+        return (T) resources.remove(key);
     }
 
     @Override
     public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
-                                      @Nullable T expectedResource) {
-        return expectedResource == null;
+                                      @Nonnull T expectedResource) {
+        return resources.remove(key, expectedResource);
     }
 }

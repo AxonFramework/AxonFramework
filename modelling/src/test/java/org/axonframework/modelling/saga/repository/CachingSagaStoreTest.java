@@ -247,12 +247,12 @@ public abstract class CachingSagaStoreTest {
                                      String sagaId = IdentifierFactory.getInstance().generateIdentifier();
                                      // Create instances
                                      Saga<StubSaga> saga = sagaRepository.createInstance(sagaId, StubSaga::new);
-                                     uow.execute(() -> saga.getAssociationValues().add(associationValue));
+                                     uow.execute((ctx) -> saga.getAssociationValues().add(associationValue));
                                      // Find Saga identifiers
                                      Set<String> sagaIds = sagaRepository.find(associationValue);
                                      // Load Sagas
                                      LegacyDefaultUnitOfWork.startAndGet(null)
-                                                            .execute(() -> sagaIds.forEach(sagaRepository::load));
+                                                            .execute((ctx) -> sagaIds.forEach(sagaRepository::load));
                                  } catch (Exception e) {
                                      throw new RuntimeException(e);
                                  }

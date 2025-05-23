@@ -16,8 +16,10 @@
 
 package org.axonframework.modelling.saga;
 
+import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -107,12 +109,12 @@ class SimpleResourceInjectorTest {
         }
 
         @Override
-        public boolean canHandle(EventMessage<?> event) {
+        public boolean canHandle(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
             return true;
         }
 
         @Override
-        public Object handleSync(EventMessage event) {
+        public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
             return null;
         }
 

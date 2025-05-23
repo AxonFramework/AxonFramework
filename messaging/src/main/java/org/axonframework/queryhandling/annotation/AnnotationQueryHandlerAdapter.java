@@ -15,6 +15,7 @@
  */
 package org.axonframework.queryhandling.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
@@ -23,6 +24,7 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandlerAdapter;
@@ -32,7 +34,6 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 
 /**
  * Adapter that turns any {@link QueryHandler @QueryHandler} annotated bean into a {@link MessageHandler}
@@ -107,20 +108,20 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
     }
 
     @Override
-    public Object handleSync(QueryMessage<?, ?> message) throws Exception {
+    public Object handleSync(@Nonnull QueryMessage<?, ?> message, @Nonnull ProcessingContext context) throws Exception {
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
-                     .filter(m -> m.canHandle(message, null))
+                     .filter(m -> m.canHandle(message, context))
                      .findFirst()
                      .orElseThrow(() -> new NoHandlerForQueryException(message));
 
         return model.chainedInterceptor(target.getClass())
-                    .handleSync(message, target, handler);
+                    .handleSync(message, context, target, handler);
     }
 
     @Override
-    public boolean canHandle(QueryMessage<?, ?> message) {
+    public boolean canHandle(@Nonnull QueryMessage<?, ?> message, @Nonnull ProcessingContext context) {
         return model.getHandlers(target.getClass())
-                    .anyMatch(handlingMember -> handlingMember.canHandle(message, null));
+                    .anyMatch(handlingMember -> handlingMember.canHandle(message, context));
     }
 }

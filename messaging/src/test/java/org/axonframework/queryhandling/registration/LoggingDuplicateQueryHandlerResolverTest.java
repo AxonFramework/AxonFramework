@@ -54,7 +54,7 @@ class LoggingDuplicateQueryHandlerResolverTest {
 
     private QuerySubscription<?> mockSubscription() {
         QuerySubscription<?> mock = mock(QuerySubscription.class);
-        when(mock.getQueryHandler()).thenReturn(message -> null);
+        when(mock.getQueryHandler()).thenReturn((message, ctx) -> null);
         when(mock.getResponseType()).thenReturn(MyResponse.class);
         return mock;
     }

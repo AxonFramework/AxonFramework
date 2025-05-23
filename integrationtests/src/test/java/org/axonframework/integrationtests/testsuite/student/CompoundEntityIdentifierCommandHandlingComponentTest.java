@@ -49,7 +49,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
         EventSourcedEntityBuilder<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentSlice =
                 EventSourcedEntityBuilder.entity(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
                                          .entityFactory(c -> (type, id) -> new StudentMentorAssignment(id))
-                                         .criteriaResolver(c -> id -> EventCriteria.either(
+                                         .criteriaResolver(c -> (id, ctx) -> EventCriteria.either(
                                                  EventCriteria.havingTags(new Tag("Student", id.menteeId())),
                                                  EventCriteria.havingTags(new Tag("Student", id.mentorId()))
                                                               .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())

@@ -29,6 +29,8 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.AggregateVersion;
 import org.axonframework.modelling.command.EntityId;
@@ -561,8 +563,9 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private void doPublish(EventMessage<?> message, T target) {
             getHandler(message, target.getClass()).ifPresent(h -> {
                 try {
+                    ProcessingContext context = new LegacyMessageSupportingContext(message);
                     handlerInspector.chainedInterceptor(target.getClass())
-                                    .handleSync(message, target, h);
+                                    .handleSync(message, context, target, h);
                 } catch (Exception e) {
                     throw new MessageHandlerInvocationException(
                             format("Error handling event of type [%s] in aggregate", message.getPayloadType()), e);
@@ -613,7 +616,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
          */
         protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message, Class<?> targetClass) {
             return handlers(allEventHandlers, targetClass)
-                    .filter(handler -> handler.canHandle(message, null))
+                    .filter(handler -> handler.canHandle(message, new LegacyMessageSupportingContext(message)))
                     .findFirst();
         }
 

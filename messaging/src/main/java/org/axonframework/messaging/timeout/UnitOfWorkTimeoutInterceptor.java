@@ -19,6 +19,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -102,7 +103,7 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
 
     @Override
     public Object handle(@Nonnull LegacyUnitOfWork<? extends Message<?>> unitOfWork,
-                         @Nonnull InterceptorChain interceptorChain) throws Exception {
+                         @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain) throws Exception {
         LegacyUnitOfWork<?> root = unitOfWork.root();
         if (!root.resources().containsKey(TRANSACTION_TIME_LIMIT_RESOURCE_KEY)) {
             AxonTimeLimitedTask taskTimeout = new AxonTimeLimitedTask(
@@ -119,6 +120,6 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
             unitOfWork.onRollback(u -> taskTimeout.complete());
         }
 
-        return interceptorChain.proceedSync();
+        return interceptorChain.proceedSync(context);
     }
 }

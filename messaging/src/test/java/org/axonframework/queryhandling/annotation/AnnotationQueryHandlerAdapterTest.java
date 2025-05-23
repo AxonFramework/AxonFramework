@@ -19,9 +19,11 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryBus;
@@ -89,7 +91,8 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
                 new MessageType("query"), testResponse, instanceOf(String.class)
         );
-        Object result = testSubject.handleSync(testQuery);
+        ProcessingContext context = StubProcessingContext.forMessage(testQuery);
+        Object result = testSubject.handleSync(testQuery, context);
 
         assertEquals(testResponse, result);
     }
@@ -99,8 +102,9 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<String, Integer> testQuery = new GenericQueryMessage<>(
                 new MessageType("query"), "hello", instanceOf(Integer.class)
         );
+        ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
-        assertThrows(MockException.class, () -> testSubject.handleSync(testQuery));
+        assertThrows(MockException.class, () -> testSubject.handleSync(testQuery, context));
     }
 
     @Test
@@ -108,8 +112,9 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
                 new MessageType("noEcho"), "hello", instanceOf(String.class)
         );
+        ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
-        assertNull(testSubject.handleSync(testQuery));
+        assertNull(testSubject.handleSync(testQuery, context));
     }
 
     @Test
@@ -117,8 +122,9 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
                 new MessageType("query"), "hello", instanceOf(String.class)
         );
+        ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
-        assertEquals("hello", testSubject.handleSync(testQuery));
+        assertEquals("hello", testSubject.handleSync(testQuery, context));
     }
 
     @Test
@@ -127,9 +133,10 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<Integer, List<String>> testQuery = new GenericQueryMessage<>(
                 new MessageType("query"), testResponse, multipleInstancesOf(String.class)
         );
+        ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
         //noinspection unchecked
-        Collection<String> result = (Collection<String>) testSubject.handleSync(testQuery);
+        Collection<String> result = (Collection<String>) testSubject.handleSync(testQuery, context);
 
         assertEquals(testResponse, result.size());
     }
@@ -139,8 +146,9 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<Long, List<String>> testQuery = new GenericQueryMessage<>(
                 new MessageType("query"), 42L, multipleInstancesOf(String.class)
         );
+        ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
-        assertThrows(NoHandlerForQueryException.class, () -> testSubject.handleSync(testQuery));
+        assertThrows(NoHandlerForQueryException.class, () -> testSubject.handleSync(testQuery, context));
     }
 
     @Test
@@ -154,8 +162,9 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
                 new MessageType("query"), "Hi", instanceOf(String.class)
         );
+        ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
-        String result = (String) testSubject.handleSync(testQuery);
+        String result = (String) testSubject.handleSync(testQuery, context);
 
         assertEquals("Hi", result);
         assertEquals(Collections.singletonList(testQuery), withInterceptor);
@@ -167,12 +176,14 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<String, Integer> testIntegerQuery = new GenericQueryMessage<>(
                 new MessageType("query"), "hello", instanceOf(Integer.class)
         );
+        ProcessingContext integerContext = StubProcessingContext.forMessage(testIntegerQuery);
         QueryMessage<String, Long> testLongQuery = new GenericQueryMessage<>(
                 new MessageType("query"), "hello", instanceOf(Long.class)
         );
+        ProcessingContext longContext = StubProcessingContext.forMessage(testLongQuery);
 
-        assertTrue(testSubject.canHandle(testIntegerQuery));
-        assertFalse(testSubject.canHandle(testLongQuery));
+        assertTrue(testSubject.canHandle(testIntegerQuery, integerContext));
+        assertFalse(testSubject.canHandle(testLongQuery, longContext));
     }
 
     @Test
@@ -186,8 +197,9 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<ArrayList<Object>, Object> testQuery = new GenericQueryMessage<>(
                 new MessageType("query"), new ArrayList<>(), instanceOf(Object.class)
         );
+        ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
-        Object result = testSubject.handleSync(testQuery);
+        Object result = testSubject.handleSync(testQuery, context);
 
         assertNull(result);
         assertFalse(interceptedExceptions.isEmpty());
@@ -273,9 +285,9 @@ class AnnotationQueryHandlerAdapterTest {
         }
 
         @MessageHandlerInterceptor
-        public Object interceptAny(QueryMessage<?, ?> query, InterceptorChain chain) throws Exception {
+        public Object interceptAny(QueryMessage<?, ?> query, InterceptorChain chain, ProcessingContext context) throws Exception {
             interceptedWithInterceptorChain.add(query);
-            return chain.proceedSync();
+            return chain.proceedSync(context);
         }
 
         @ExceptionHandler(resultType = RuntimeException.class)

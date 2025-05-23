@@ -43,7 +43,7 @@ class SimpleStateManagerTest {
                                                             .build();
 
         // when
-        var state = stateManager.loadEntity(Integer.class, "42", new StubProcessingContext()).join();
+        var state = stateManager.loadEntity(Integer.class, "42", ProcessingContext.empty()).join();
 
         // then
         assertEquals(42, state);
@@ -56,7 +56,7 @@ class SimpleStateManagerTest {
 
         // when & then
         assertThrows(MissingRepositoryException.class,
-                     () -> testSubject.loadEntity(Integer.class, "42", ProcessingContext.NONE).join());
+                     () -> testSubject.loadEntity(Integer.class, "42", ProcessingContext.empty()).join());
     }
 
     @Test
@@ -160,7 +160,7 @@ class SimpleStateManagerTest {
             // when
             var result = stateManager.loadManagedEntity(MyFirstImplementingEntity.class,
                                                         "42",
-                                                        new StubProcessingContext()).join();
+                                                        ProcessingContext.empty()).join();
 
             // then
             assertNotNull(result.entity());
@@ -181,7 +181,7 @@ class SimpleStateManagerTest {
 
             // when & then
             assertThrows(MissingRepositoryException.class,
-                         () -> stateManager.loadManagedEntity(MySuperEntity.class, "42", new StubProcessingContext())
+                         () -> stateManager.loadManagedEntity(MySuperEntity.class, "42", ProcessingContext.empty())
                                            .join());
         }
 
@@ -201,7 +201,7 @@ class SimpleStateManagerTest {
             // when
             var result = stateManager.loadManagedEntity(MySuperEntity.class,
                                                         new MySuperId(),
-                                                        new StubProcessingContext()).join();
+                                                        ProcessingContext.empty()).join();
 
             // then
             assertNotNull(result.entity());
@@ -223,7 +223,7 @@ class SimpleStateManagerTest {
             assertThrows(MissingRepositoryException.class,
                          () -> stateManager.loadManagedEntity(MySuperEntity.class,
                                                               new MySuperId(),
-                                                              new StubProcessingContext()).join());
+                                                              ProcessingContext.empty()).join());
         }
 
         @Test
@@ -251,10 +251,10 @@ class SimpleStateManagerTest {
             // when
             var result = stateManager.loadManagedEntity(MyFirstImplementingEntity.class,
                                                         "42",
-                                                        new StubProcessingContext()).join();
+                                                        ProcessingContext.empty()).join();
             var result2 = stateManager.loadManagedEntity(MySecondImplementingEntity.class,
                                                          "42",
-                                                         new StubProcessingContext()).join();
+                                                         ProcessingContext.empty()).join();
 
             // then
             assertNotNull(result.entity());
@@ -278,7 +278,7 @@ class SimpleStateManagerTest {
             var exception = assertThrows(CompletionException.class, () -> stateManager.loadManagedEntity(
                     MyFirstImplementingEntity.class,
                     "42",
-                    new StubProcessingContext()).join());
+                    ProcessingContext.empty()).join());
             assertInstanceOf(LoadedEntityNotOfExpectedTypeException.class, exception.getCause());
         }
 
@@ -356,10 +356,10 @@ class SimpleStateManagerTest {
             // when
             var result = stateManager.loadManagedEntity(MyFirstImplementingEntity.class,
                                                         "42",
-                                                        new StubProcessingContext()).join();
+                                                        ProcessingContext.empty()).join();
             var result2 = stateManager.loadManagedEntity(MyFirstImplementingEntity.class,
                                                          42,
-                                                         new StubProcessingContext()).join();
+                                                         ProcessingContext.empty()).join();
 
             // then
             assertNotNull(result.entity());

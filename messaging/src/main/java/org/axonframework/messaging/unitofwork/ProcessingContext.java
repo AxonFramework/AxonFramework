@@ -41,9 +41,13 @@ import java.util.function.UnaryOperator;
 public interface ProcessingContext extends ProcessingLifecycle, Context {
 
     /**
-     * Constant referring to a no-op {@link ProcessingContext} implementation, the {@link NoProcessingContext}.
+     * Creates a new context that is empty and does not contain any resources.
+     * Useful when a component requires a context but none it available.
+     * @return A new, empty context.
      */
-    ProcessingContext NONE = NoProcessingContext.INSTANCE;
+    static ProcessingContext empty() {
+        return SimpleProcessingContext.empty();
+    }
 
     /**
      * Constructs a new {@link ProcessingContext}, branching off from {@code this} {@code ProcessingContext}.

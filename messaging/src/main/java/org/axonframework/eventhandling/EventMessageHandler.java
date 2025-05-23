@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -45,11 +46,11 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Mes
      * @return the result of the event handler invocation. Is generally ignored
      * @throws Exception when an exception is raised during event handling
      */
-    Object handleSync(EventMessage<?> event) throws Exception;
+    Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) throws Exception;
 
-    default MessageStream<Message<Void>> handle(EventMessage<?> event, ProcessingContext processingContext) {
+    default MessageStream<Message<Void>> handle(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         try {
-            handleSync(event);
+            handleSync(event, context);
             return MessageStream.empty();
         } catch (Exception e) {
             return MessageStream.failed(e);

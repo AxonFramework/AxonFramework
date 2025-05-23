@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -39,20 +41,22 @@ class MultiEventHandlerInvokerTest {
     private final EventHandlerInvoker mockedEventHandlerInvokerTwo = mock(EventHandlerInvoker.class);
 
     private EventMessage<String> testEventMessage;
+    private ProcessingContext context;
     private EventMessage<String> replayMessage;
     private Segment testSegment;
 
     @BeforeEach
     void setUp() {
         testEventMessage = EventTestUtils.asEventMessage("some-event");
+        context = StubProcessingContext.forMessage(testEventMessage);
         TrackingToken testToken = ReplayToken.createReplayToken(
                 new GlobalSequenceTrackingToken(10), new GlobalSequenceTrackingToken(0)
         );
         replayMessage = new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("replay-event"));
         testSegment = new Segment(1, 1);
 
-        when(mockedEventHandlerInvokerOne.canHandle(any(), eq(testSegment))).thenReturn(true);
-        when(mockedEventHandlerInvokerTwo.canHandle(any(), eq(testSegment))).thenReturn(true);
+        when(mockedEventHandlerInvokerOne.canHandle(any(), any(), eq(testSegment))).thenReturn(true);
+        when(mockedEventHandlerInvokerTwo.canHandle(any(), any(), eq(testSegment))).thenReturn(true);
 
         testSubject = new MultiEventHandlerInvoker(mockedEventHandlerInvokerOne, mockedEventHandlerInvokerTwo);
     }
@@ -67,20 +71,20 @@ class MultiEventHandlerInvokerTest {
 
     @Test
     void canHandleCallsCanHandleOnTheFirstDelegateToReturn() {
-        testSubject.canHandle(testEventMessage, testSegment);
+        testSubject.canHandle(testEventMessage, context, testSegment);
 
-        verify(mockedEventHandlerInvokerOne).canHandle(testEventMessage, testSegment);
+        verify(mockedEventHandlerInvokerOne).canHandle(testEventMessage, context, testSegment);
         verifyNoInteractions(mockedEventHandlerInvokerTwo);
     }
 
     @Test
     void handleCallsCanHandleAndHandleOfAllDelegates() throws Exception {
-        testSubject.handle(testEventMessage, null, testSegment);
+        testSubject.handle(testEventMessage, context, testSegment);
 
-        verify(mockedEventHandlerInvokerOne).canHandle(testEventMessage, testSegment);
-        verify(mockedEventHandlerInvokerOne).handle(testEventMessage, null, testSegment);
-        verify(mockedEventHandlerInvokerTwo).canHandle(testEventMessage, testSegment);
-        verify(mockedEventHandlerInvokerTwo).handle(testEventMessage, null, testSegment);
+        verify(mockedEventHandlerInvokerOne).canHandle(testEventMessage, context, testSegment);
+        verify(mockedEventHandlerInvokerOne).handle(testEventMessage, context, testSegment);
+        verify(mockedEventHandlerInvokerTwo).canHandle(testEventMessage, context, testSegment);
+        verify(mockedEventHandlerInvokerTwo).handle(testEventMessage, context, testSegment);
     }
 
     @Test
@@ -143,14 +147,14 @@ class MultiEventHandlerInvokerTest {
         when(mockedEventHandlerInvokerOne.supportsReset()).thenReturn(true);
         when(mockedEventHandlerInvokerTwo.supportsReset()).thenReturn(false);
 
-        assertTrue(testSubject.canHandle(testEventMessage, testSegment));
-        testSubject.handle(testEventMessage, null, testSegment);
-        testSubject.handle(replayMessage, null, testSegment);
+        assertTrue(testSubject.canHandle(testEventMessage, context, testSegment));
+        testSubject.handle(testEventMessage, context, testSegment);
+        testSubject.handle(replayMessage, context, testSegment);
 
         InOrder inOrder = inOrder(mockedEventHandlerInvokerOne, mockedEventHandlerInvokerTwo);
-        inOrder.verify(mockedEventHandlerInvokerOne).handle(testEventMessage, null, testSegment);
-        inOrder.verify(mockedEventHandlerInvokerTwo).handle(testEventMessage, null, testSegment);
-        inOrder.verify(mockedEventHandlerInvokerOne).handle(replayMessage, null, testSegment);
+        inOrder.verify(mockedEventHandlerInvokerOne).handle(testEventMessage, context, testSegment);
+        inOrder.verify(mockedEventHandlerInvokerTwo).handle(testEventMessage, context, testSegment);
+        inOrder.verify(mockedEventHandlerInvokerOne).handle(replayMessage, context, testSegment);
 
         verify(mockedEventHandlerInvokerTwo, never()).handle(eq(replayMessage), isNull(), any());
     }

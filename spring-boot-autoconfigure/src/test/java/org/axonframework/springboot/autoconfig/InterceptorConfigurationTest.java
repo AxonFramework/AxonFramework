@@ -30,11 +30,11 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.springboot.utils.TestSerializer;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -51,6 +51,7 @@ import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import jakarta.annotation.Nonnull;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -577,12 +578,13 @@ class InterceptorConfigurationTest {
             }
 
             @Override
-            public Object handle(LegacyUnitOfWork<? extends T> unitOfWork,
-                                 InterceptorChain interceptorChain) throws Exception {
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
+                                 @Nonnull ProcessingContext context,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
                 invocation.countDown();
                 axonConfiguration.tags();
                 handlingOutcome.add(name + ": " + unitOfWork.getMessage());
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
         }
 
@@ -605,9 +607,9 @@ class InterceptorConfigurationTest {
                 this.axonConfiguration = axonConfiguration;
             }
 
-            @NotNull
+            @Nonnull
             @Override
-            public BiFunction<Integer, T, T> handle(@NotNull List<? extends T> messages) {
+            public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
                 axonConfiguration.tags();
                 return (index, message) -> {
                     invocation.countDown();
@@ -644,9 +646,9 @@ class InterceptorConfigurationTest {
                 this.eventHandlingOutcome = eventHandlingOutcome;
             }
 
-            @NotNull
+            @Nonnull
             @Override
-            public BiFunction<Integer, T, T> handle(@NotNull List<? extends T> messages) {
+            public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
                 return (index, message) -> {
                     if (message instanceof CommandMessage) {
                         commandInvocation.countDown();
@@ -689,10 +691,11 @@ class InterceptorConfigurationTest {
                 this.eventHandlingOutcome = eventHandlingOutcome;
             }
 
-            @NotNull
+            @Nonnull
             @Override
-            public Object handle(LegacyUnitOfWork<?> unitOfWork,
-                                 InterceptorChain interceptorChain) throws Exception {
+            public Object handle(@Nonnull LegacyUnitOfWork<?> unitOfWork,
+                                 @Nonnull ProcessingContext context,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
                 if (unitOfWork.getMessage() instanceof CommandMessage) {
                     commandInvocation.countDown();
                     commandHandlingOutcome.add(name);
@@ -703,7 +706,7 @@ class InterceptorConfigurationTest {
                     eventInvocation.countDown();
                     eventHandlingOutcome.add(name);
                 }
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
         }
 
@@ -745,9 +748,10 @@ class InterceptorConfigurationTest {
         public static class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
             @Override
-            public Object handle(@NotNull LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWork,
-                                 @NotNull InterceptorChain interceptorChain) throws Exception {
-                return interceptorChain.proceedSync();
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWork,
+                                 @Nonnull ProcessingContext context,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
+                return interceptorChain.proceedSync(context);
             }
         }
     }

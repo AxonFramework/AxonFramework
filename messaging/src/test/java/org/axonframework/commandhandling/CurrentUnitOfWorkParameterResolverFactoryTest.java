@@ -17,18 +17,15 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.annotation.CurrentUnitOfWorkParameterResolverFactory;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -60,8 +57,7 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
     void resolveParameterValue() {
         LegacyDefaultUnitOfWork.startAndGet(null);
         try {
-            assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(mock(GenericCommandMessage.class),
-                                                                                  null));
+            assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(ProcessingContext.empty()));
         } finally {
             CurrentUnitOfWork.get().rollback();
         }
@@ -69,18 +65,15 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
 
     @Test
     void resolveParameterValueWithoutActiveUnitOfWork() {
-        assertNull(testSubject.resolveParameterValue(mock(GenericCommandMessage.class), null));
+        assertNull(testSubject.resolveParameterValue(ProcessingContext.empty()));
     }
 
     @Test
     void matches() {
-        assertTrue(testSubject.matches(mock(GenericCommandMessage.class), null));
+        assertTrue(testSubject.matches(ProcessingContext.empty()));
         LegacyDefaultUnitOfWork.startAndGet(null);
         try {
-            assertTrue(testSubject.matches(mock(Message.class), null));
-            assertTrue(testSubject.matches(mock(EventMessage.class), null));
-            assertTrue(testSubject.matches(mock(GenericEventMessage.class), null));
-            assertTrue(testSubject.matches(mock(GenericCommandMessage.class), null));
+            assertTrue(testSubject.matches(ProcessingContext.empty()));
         } finally {
             CurrentUnitOfWork.get().rollback();
         }

@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.Message;
@@ -54,13 +55,16 @@ public final class AggregateTypeParameterResolverFactory
     static class AggregateTypeParameterResolver implements ParameterResolver<String> {
 
         @Override
-        public String resolveParameterValue(Message message, ProcessingContext processingContext) {
-            return ((DomainEventMessage) message).getType();
+        public String resolveParameterValue(@Nonnull ProcessingContext context) {
+            if(context.getResource(Message.RESOURCE_KEY) instanceof DomainEventMessage<?> domainEventMessage) {
+                return domainEventMessage.getType();
+            }
+            return null;
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return message instanceof DomainEventMessage;
+        public boolean matches(@Nonnull ProcessingContext context) {
+            return context.getResource(Message.RESOURCE_KEY) instanceof DomainEventMessage;
         }
     }
 }

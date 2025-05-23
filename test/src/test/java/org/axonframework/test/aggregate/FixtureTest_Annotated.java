@@ -127,7 +127,7 @@ class FixtureTest_Annotated {
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void aggregateCommandHandlersOverwrittenByCustomHandlers() {
         final AtomicBoolean invoked = new AtomicBoolean(false);
-        fixture.registerCommandHandler(CreateAggregateCommand.class, commandMessage -> {
+        fixture.registerCommandHandler(CreateAggregateCommand.class, (commandMessage, ctx) -> {
             invoked.set(true);
             return null;
         });

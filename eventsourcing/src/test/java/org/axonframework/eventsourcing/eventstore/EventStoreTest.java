@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleProcessingContext;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
@@ -57,7 +58,7 @@ class EventStoreTest {
 
     @Test
     void publishInvokesEventStoreTransactionMethod() {
-        ProcessingContext testProcessingContext = ProcessingContext.NONE;
+        ProcessingContext testProcessingContext = SimpleProcessingContext.empty();
         EventMessage<?> testEventZero = eventMessage(0);
         EventMessage<?> testEventOne = eventMessage(1);
         EventMessage<?> testEventTwo = eventMessage(2);

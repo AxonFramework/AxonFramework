@@ -201,7 +201,7 @@ class InfraConfigurationTest {
             assertThat(handlerInvoked).isFalse();
             assertThat(enhancerInvoked).isTrue();
 
-            context.getBean("commandGateway", CommandGateway.class).send(new Object(), ProcessingContext.NONE);
+            context.getBean("commandGateway", CommandGateway.class).send(new Object(), ProcessingContext.empty());
             assertThat(handlerInvoked).isTrue();
             assertThat(enhancerInvoked).isTrue();
         });

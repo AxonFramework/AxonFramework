@@ -102,7 +102,7 @@ class SagaCustomizeIntegrationTest {
 
     private void publishEvent(EchoEvent... events) {
         LegacyDefaultUnitOfWork.startAndGet(null).execute(
-                () -> {
+                (ctx) -> {
                     Transaction tx = transactionManager.startTransaction();
                     CurrentUnitOfWork.get().onRollback(u -> tx.rollback());
                     CurrentUnitOfWork.get().onCommit(u -> tx.commit());

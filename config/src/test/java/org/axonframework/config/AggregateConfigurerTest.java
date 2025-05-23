@@ -111,15 +111,15 @@ public class AggregateConfigurerTest {
         configuration.start();
 
         CommandGateway commandGateway = configuration.commandGateway();
-        String aggregateAId = commandGateway.send(new CreateACommand("123"), ProcessingContext.NONE, String.class)
+        String aggregateAId = commandGateway.send(new CreateACommand("123"), ProcessingContext.empty(), String.class)
                                             .join();
-        String aggregateBId = commandGateway.send(new CreateBCommand("456"), ProcessingContext.NONE, String.class)
+        String aggregateBId = commandGateway.send(new CreateBCommand("456"), ProcessingContext.empty(), String.class)
                                             .join();
-        String result1 = commandGateway.send(new DoSomethingCommand(aggregateAId), ProcessingContext.NONE, String.class)
+        String result1 = commandGateway.send(new DoSomethingCommand(aggregateAId), ProcessingContext.empty(), String.class)
                                        .join();
-        String result2 = commandGateway.send(new DoSomethingCommand(aggregateBId), ProcessingContext.NONE, String.class)
+        String result2 = commandGateway.send(new DoSomethingCommand(aggregateBId), ProcessingContext.empty(), String.class)
                                        .join();
-        String result3 = commandGateway.send(new BSpecificCommand(aggregateBId), ProcessingContext.NONE, String.class)
+        String result3 = commandGateway.send(new BSpecificCommand(aggregateBId), ProcessingContext.empty(), String.class)
                                        .join();
         assertEquals("A123", result1);
         assertEquals("B456", result2);
@@ -197,7 +197,7 @@ public class AggregateConfigurerTest {
 
         CommandGateway commandGateway = config.commandGateway();
         String testAggregateIdentifier = "123";
-        commandGateway.send(new CreateACommand(testAggregateIdentifier), ProcessingContext.NONE)
+        commandGateway.send(new CreateACommand(testAggregateIdentifier), ProcessingContext.empty())
                       .getResultMessage()
                       .join();
         verify(lockFactory).obtainLock(testAggregateIdentifier);
