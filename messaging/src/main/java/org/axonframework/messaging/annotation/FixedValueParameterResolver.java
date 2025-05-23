@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.messaging.Message;
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -41,12 +41,12 @@ public class FixedValueParameterResolver<T> implements ParameterResolver<T> {
     }
 
     @Override
-    public T resolveParameterValue(Message message, ProcessingContext processingContext) {
+    public T resolveParameterValue(@Nonnull ProcessingContext context) {
         return value;
     }
 
     @Override
-    public boolean matches(Message message, ProcessingContext processingContext) {
+    public boolean matches(@Nonnull ProcessingContext context) {
         return true;
     }
 }

@@ -43,7 +43,7 @@ class UnitOfWorkTimeoutInterceptorTest {
         DefaultInterceptorChain<EventMessage<String>, Message<Void>> interceptorChain = new DefaultInterceptorChain<>(
                 uow,
                 Collections.singletonList(testSubject),
-                message -> {
+                (message, ctx) -> {
                     Thread.sleep(300);
                     return null;
                 }
@@ -65,7 +65,7 @@ class UnitOfWorkTimeoutInterceptorTest {
         DefaultInterceptorChain<EventMessage<String>, Message<Void>> interceptorChain = new DefaultInterceptorChain<>(
                 uow,
                 Collections.singletonList(testSubject),
-                message -> {
+                (message, ctx) -> {
                     Thread.sleep(80);
                     return null;
                 }

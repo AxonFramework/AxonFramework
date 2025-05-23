@@ -63,6 +63,7 @@ import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.tracing.TestSpanFactory;
@@ -1719,9 +1720,10 @@ class EventProcessingModuleTest {
 
         @Override
         public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                             @Nonnull ProcessingContext context,
                              @Nonnull InterceptorChain interceptorChain)
                 throws Exception {
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         }
     }
 

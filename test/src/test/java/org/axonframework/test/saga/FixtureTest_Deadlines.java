@@ -300,11 +300,11 @@ class FixtureTest_Deadlines {
 
     @Test
     void deadlineHandlerInterceptor() {
-        fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
+        fixture.registerDeadlineHandlerInterceptor((uow, context, chain) -> {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(
                     deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp())
             );
-            return chain.proceedSync();
+            return chain.proceedSync(context);
         })
                .givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)

@@ -27,6 +27,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -392,11 +393,11 @@ public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implem
     }
 
     @Override
-    public void send(@Nonnull Message<?> message, @Nonnull ScopeDescriptor scopeDescription) throws Exception {
+    public void send(@Nonnull Message<?> message, ProcessingContext context, @Nonnull ScopeDescriptor scopeDescription) throws Exception {
         if (canResolve(scopeDescription)) {
             String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
             try {
-                load(aggregateIdentifier).handle(message);
+                load(aggregateIdentifier).handle(message, context);
             } catch (AggregateNotFoundException e) {
                 logger.debug("Aggregate (with id: [{}]) cannot be loaded. Hence, message '[{}]' cannot be handled.",
                         aggregateIdentifier, message);

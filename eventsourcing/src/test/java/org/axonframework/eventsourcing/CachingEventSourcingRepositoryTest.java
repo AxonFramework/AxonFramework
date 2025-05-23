@@ -180,7 +180,7 @@ class CachingEventSourcingRepositoryTest {
     @Test
     void cacheClearedAfterRollbackOfLoadedAggregate() {
 
-        startAndGetUnitOfWork().executeWithResult(() -> testSubject.newInstance(() -> new StubAggregate("id1")));
+        startAndGetUnitOfWork().executeWithResult((ctx) -> testSubject.newInstance(() -> new StubAggregate("id1")));
 
         LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         uow.onCommit(c -> {
@@ -198,7 +198,7 @@ class CachingEventSourcingRepositoryTest {
     @Test
     void cacheClearedAfterRollbackOfLoadedAggregateUsingLoadOrCreate() throws Exception {
 
-        startAndGetUnitOfWork().executeWithResult(() -> testSubject.newInstance(() -> new StubAggregate("id1")));
+        startAndGetUnitOfWork().executeWithResult((ctx) -> testSubject.newInstance(() -> new StubAggregate("id1")));
 
         LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         uow.onCommit(c -> { throw new MockException();});

@@ -16,20 +16,21 @@
 
 package org.axonframework.messaging.interceptors;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -146,13 +147,13 @@ class ExceptionHandlerTest {
 
     /**
      * This method is a similar approach as followed by the
-     * {@link org.axonframework.eventhandling.AnnotationEventHandlerAdapter#handleSync(EventMessage)}. Thus, mirroring
+     * {@link org.axonframework.eventhandling.AnnotationEventHandlerAdapter#handleSync(EventMessage,org.axonframework.messaging.unitofwork.ProcessingContext)}. Thus, mirroring
      * regular message handling components.
      */
     private Object handle(Message<?> message) throws Exception {
         Optional<MessageHandlingMember<? super ExceptionHandlingComponent>> handler =
                 inspector.getHandlers(ExceptionHandlingComponent.class)
-                         .filter(h -> h.canHandle(message, null))
+                         .filter(h -> h.canHandle(message, new LegacyMessageSupportingContext(message)))
                          .findFirst();
         if (handler.isPresent()) {
             MessageHandlerInterceptorMemberChain<ExceptionHandlingComponent> interceptorChain =

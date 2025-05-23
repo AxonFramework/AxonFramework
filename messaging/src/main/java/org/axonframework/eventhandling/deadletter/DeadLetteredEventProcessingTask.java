@@ -29,6 +29,7 @@ import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,34 +90,33 @@ class DeadLetteredEventProcessingTask
 
         AtomicReference<EnqueueDecision<EventMessage<?>>> decision = new AtomicReference<>();
         LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(letter.message());
-
         unitOfWork.attachTransaction(transactionManager);
         unitOfWork.resources()
                   .put(DeadLetter.class.getName(), letter);
         unitOfWork.onPrepareCommit(uow -> decision.set(onCommit(letter)));
         unitOfWork.onRollback(uow -> decision.set(onRollback(letter, uow.getExecutionResult().getExceptionResult())));
-        unitOfWork.executeWithResult(() -> handleWithInterceptors(unitOfWork));
+        unitOfWork.executeWithResult((ctx) -> handleWithInterceptors(unitOfWork, ctx));
 
         return ObjectUtils.getOrDefault(decision.get(), Decisions::ignore);
     }
 
-    private void handle(EventMessage<?> eventMessage) throws Exception {
+    private void handle(EventMessage<?> eventMessage, ProcessingContext context) throws Exception {
         for (EventMessageHandler handler : eventHandlingComponents) {
-            handler.handleSync(eventMessage);
+            handler.handleSync(eventMessage, context);
         }
     }
 
     private Object handleWithInterceptors(
-            LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork
-    ) throws Exception {
+            LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+            ProcessingContext context) throws Exception {
         new DefaultInterceptorChain<EventMessage<?>, Message<Void>>(
                 unitOfWork,
                 interceptors,
-                m -> {
-                    handle(m);
+                (m, ctx) -> {
+                    handle(m, ctx);
                     return null;
                 }
-        ).proceedSync();
+        ).proceedSync(context);
         // There's no result of event handling to return here.
         // We use this methods format to be able to define the Error Handler may throw Exceptions.
         return null;

@@ -76,7 +76,7 @@ class AggregateCreationFromCommandsTest {
                 new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
         CompletableFuture<? extends Message<?>> dispatchingResult =
-                commandBus.dispatch(testCommand, ProcessingContext.NONE);
+                commandBus.dispatch(testCommand, ProcessingContext.empty());
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -96,7 +96,7 @@ class AggregateCreationFromCommandsTest {
                 new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
         CompletableFuture<? extends Message<?>> dispatchingResult =
-                commandBus.dispatch(testCommand, ProcessingContext.NONE);
+                commandBus.dispatch(testCommand, ProcessingContext.empty());
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -116,7 +116,7 @@ class AggregateCreationFromCommandsTest {
                 new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
         CompletableFuture<? extends Message<?>> dispatchingResult =
-                commandBus.dispatch(testCommand, ProcessingContext.NONE);
+                commandBus.dispatch(testCommand, ProcessingContext.empty());
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -137,7 +137,7 @@ class AggregateCreationFromCommandsTest {
                 new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
         CompletableFuture<? extends Message<?>> dispatchingResult =
-                commandBus.dispatch(testCommand, ProcessingContext.NONE);
+                commandBus.dispatch(testCommand, ProcessingContext.empty());
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()

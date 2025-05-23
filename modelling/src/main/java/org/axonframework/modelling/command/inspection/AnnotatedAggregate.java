@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Assert;
@@ -32,6 +33,7 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateInvocationException;
 import org.axonframework.modelling.command.AggregateLifecycle;
@@ -49,7 +51,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 
@@ -392,13 +393,13 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     @Override
-    public Object handle(Message<?> message) throws Exception {
+    public Object handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) throws Exception {
         Callable<Object> messageHandling;
 
         if (message instanceof CommandMessage) {
-            messageHandling = () -> handle((CommandMessage<?>) message);
+            messageHandling = () -> handle((CommandMessage<?>) message, context);
         } else if (message instanceof EventMessage) {
-            messageHandling = () -> handle((EventMessage<?>) message);
+            messageHandling = () -> handle((EventMessage<?>) message, context);
         } else {
             throw new IllegalArgumentException("Unsupported message type: " + message.getClass());
         }
@@ -406,7 +407,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         return executeWithResult(messageHandling);
     }
 
-    private Object handle(CommandMessage<?> commandMessage) throws Exception {
+    private Object handle(CommandMessage<?> commandMessage, ProcessingContext context) throws Exception {
         //noinspection unchecked
         List<AnnotatedCommandHandlerInterceptor<? super T>> interceptors =
                 inspector.commandHandlerInterceptors((Class<? extends T>) aggregateRoot.getClass())
@@ -416,7 +417,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         //noinspection unchecked
         List<MessageHandlingMember<? super T>> potentialHandlers =
                 inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
-                         .filter(mh -> mh.canHandle(commandMessage, null))
+                         .filter(mh -> mh.canHandle(commandMessage, context))
                          .collect(Collectors.toList());
         if (potentialHandlers.isEmpty()) {
             throw new NoHandlerForCommandException(commandMessage);
@@ -424,20 +425,21 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
         Object result;
         if (interceptors.isEmpty()) {
-            result = findHandlerAndHandleCommand(potentialHandlers, commandMessage);
+            result = findHandlerAndHandleCommand(potentialHandlers, commandMessage, context);
         } else {
             //noinspection unchecked
             result = new DefaultInterceptorChain<>(
                     (LegacyUnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
                     interceptors,
-                    m -> findHandlerAndHandleCommand(potentialHandlers, commandMessage)
-            ).proceedSync();
+                    (m, ctx) -> findHandlerAndHandleCommand(potentialHandlers, commandMessage, context)
+            ).proceedSync(context);
         }
         return result;
     }
 
     private Object findHandlerAndHandleCommand(List<MessageHandlingMember<? super T>> handlers,
-                                               CommandMessage<?> command) throws Exception {
+                                               CommandMessage<?> command,
+                                               ProcessingContext context) throws Exception {
         //noinspection unchecked
         return handlers.stream()
                        .filter(mh -> mh.unwrap(ForwardingCommandMessageHandlingMember.class)
@@ -448,10 +450,10 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                                "Aggregate cannot handle command [" + command.type()
                                        + "], as there is no entity instance within the aggregate to forward it to."
                        ))
-                       .handleSync(command, aggregateRoot);
+                       .handleSync(command, context, aggregateRoot);
     }
 
-    private Object handle(EventMessage<?> eventMessage) {
+    private Object handle(EventMessage<?> eventMessage, ProcessingContext context) {
         inspector.publish(eventMessage, aggregateRoot);
         return null;
     }

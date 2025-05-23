@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
@@ -57,17 +59,18 @@ public final class TimestampParameterResolverFactory
      */
     static class TimestampParameterResolver implements ParameterResolver<Instant> {
 
+        @Nullable
         @Override
-        public Instant resolveParameterValue(Message message, ProcessingContext processingContext) {
-            if (message instanceof EventMessage) {
-                return ((EventMessage) message).getTimestamp();
+        public Instant resolveParameterValue(@Nonnull ProcessingContext context) {
+            if (context.getResource(Message.RESOURCE_KEY) instanceof EventMessage eventMessage) {
+                return eventMessage.getTimestamp();
             }
             return null;
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return message instanceof EventMessage;
+        public boolean matches(@Nonnull ProcessingContext context) {
+            return context.getResource(Message.RESOURCE_KEY) instanceof EventMessage;
         }
     }
 }

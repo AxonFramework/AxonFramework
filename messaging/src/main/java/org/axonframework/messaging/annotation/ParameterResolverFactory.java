@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 
 import java.lang.reflect.Executable;
@@ -52,5 +53,6 @@ public interface ParameterResolverFactory {
      * @param parameterIndex The index of the parameter to return a ParameterResolver for
      * @return a suitable ParameterResolver, or {@code null} if none is found
      */
-    ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex);
+    ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
+                                     int parameterIndex);
 }

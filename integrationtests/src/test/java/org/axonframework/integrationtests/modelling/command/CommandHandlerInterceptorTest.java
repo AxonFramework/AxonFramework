@@ -34,6 +34,7 @@ import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -367,9 +368,9 @@ class CommandHandlerInterceptorTest {
         }
 
         @CommandHandlerInterceptor(commandNamePattern = ".*Nested.*")
-        public void interceptAllMatchingPattern(Object command, InterceptorChain interceptorChain) throws Exception {
+        public void interceptAllMatchingPattern(Object command, InterceptorChain interceptorChain, ProcessingContext context) throws Exception {
             apply(new AnyCommandMatchingPatternInterceptedEvent(command.getClass().getName()));
-            interceptorChain.proceedSync();
+            interceptorChain.proceedSync(context);
         }
 
         @EventSourcingHandler
@@ -395,10 +396,10 @@ class CommandHandlerInterceptorTest {
         }
 
         @CommandHandlerInterceptor
-        public void intercept(ClearMyAggregateStateCommand command, InterceptorChain interceptorChain)
+        public void intercept(ClearMyAggregateStateCommand command, InterceptorChain interceptorChain, ProcessingContext context)
                 throws Exception {
             if (command.proceed()) {
-                interceptorChain.proceedSync();
+                interceptorChain.proceedSync(context);
             } else {
                 apply(new MyAggregateStateNotClearedEvent(command.id()));
             }
@@ -478,9 +479,9 @@ class CommandHandlerInterceptorTest {
         private String state;
 
         @CommandHandlerInterceptor
-        public static void interceptAll(Object command, InterceptorChain chain) throws Exception {
+        public static void interceptAll(Object command, InterceptorChain chain, ProcessingContext context) throws Exception {
             apply(new AnyCommandInterceptedEvent("StaticNestedNested" + command.getClass().getName()));
-            chain.proceedSync();
+            chain.proceedSync(context);
         }
 
         private MyNestedNestedEntity(String id) {

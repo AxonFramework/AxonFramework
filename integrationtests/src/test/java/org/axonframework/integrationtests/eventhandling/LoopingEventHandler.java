@@ -33,11 +33,11 @@ public class LoopingEventHandler {
     }
 
     @EventHandler
-    public void handleLoopingEvent(LoopingChangeDoneEvent event) {
+    public void handleLoopingEvent(LoopingChangeDoneEvent event, ProcessingContext context) {
         UpdateStubAggregateCommand testPayload = new UpdateStubAggregateCommand(event.getAggregateIdentifier());
         GenericCommandMessage<UpdateStubAggregateCommand> testCommand =
                 new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
-        commandBus.dispatch(testCommand, ProcessingContext.NONE);
+        commandBus.dispatch(testCommand, context);
     }
 }

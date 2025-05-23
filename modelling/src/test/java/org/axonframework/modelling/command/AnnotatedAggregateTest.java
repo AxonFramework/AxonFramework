@@ -68,7 +68,7 @@ public class AnnotatedAggregateTest {
         LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = LegacyDefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =
-                uow.executeWithResult(() -> repository.newInstance(() -> {
+                uow.executeWithResult((ctx) -> repository.newInstance(() -> {
                        AggregateRoot root = new AggregateRoot();
                        root.handle(testPayload);
                        return root;
@@ -90,7 +90,7 @@ public class AnnotatedAggregateTest {
         LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = LegacyDefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =
-                uow.executeWithResult(() -> repository.newInstance(() -> {
+                uow.executeWithResult((ctx) -> repository.newInstance(() -> {
                        AggregateRoot root = new AggregateRoot();
                        root.handle(testPayload);
                        return root;
@@ -114,7 +114,7 @@ public class AnnotatedAggregateTest {
 
         AnnotatedAggregate<AggregateRoot> testSubject =
                 (AnnotatedAggregate<AggregateRoot>) uow.executeWithResult(
-                        () -> repository.newInstance(AggregateRoot::new)).getPayload();
+                        (ctx) -> repository.newInstance(AggregateRoot::new)).getPayload();
 
         assertNull(testSubject.lastSequence());
     }
@@ -127,7 +127,7 @@ public class AnnotatedAggregateTest {
         LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = LegacyDefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =
-                uow.executeWithResult(() -> repository.newInstance(() -> {
+                uow.executeWithResult((ctx) -> repository.newInstance(() -> {
                        AggregateRoot root = new AggregateRoot();
                        root.handle(testPayload, sideEffect);
                        return root;

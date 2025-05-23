@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,7 +33,7 @@ class EventMessageHandlerTest {
     @SuppressWarnings("Convert2Lambda") // Cannot spy a lambda
     private final EventMessageHandler testSubject = spy(new EventMessageHandler() {
         @Override
-        public Object handleSync(EventMessage<?> event) throws Exception {
+        public Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) throws Exception {
             return null;
         }
     });

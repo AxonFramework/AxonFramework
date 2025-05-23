@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.conflictresolution;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.Message;
@@ -73,7 +74,9 @@ public class ConflictResolution implements ParameterResolverFactory, ParameterRe
     }
 
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable,
+                                            @Nonnull Parameter[] parameters,
+                                            int parameterIndex) {
         if (ConflictResolver.class.equals(parameters[parameterIndex].getType())) {
             return this;
         }
@@ -81,13 +84,13 @@ public class ConflictResolution implements ParameterResolverFactory, ParameterRe
     }
 
     @Override
-    public ConflictResolver resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+    public ConflictResolver resolveParameterValue(@Nonnull ProcessingContext context) {
         return getConflictResolver();
     }
 
     @Override
-    public boolean matches(Message<?> message, ProcessingContext processingContext) {
-        return message instanceof CommandMessage;
+    public boolean matches(@Nonnull ProcessingContext context) {
+        return context.getResource(Message.RESOURCE_KEY) instanceof CommandMessage;
     }
 
 }

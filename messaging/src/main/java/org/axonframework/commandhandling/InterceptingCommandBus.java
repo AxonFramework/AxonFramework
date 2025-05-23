@@ -131,14 +131,14 @@ public class InterceptingCommandBus implements CommandBus {
         }
 
         @Override
-        public Object proceedSync() {
+        public Object proceedSync(@Nonnull ProcessingContext context) {
             throw new UnsupportedOperationException("Sync processing not supported");
         }
 
         @Override
-        public MessageStream<CommandResultMessage<?>> proceed(CommandMessage<?> message,
-                                                              ProcessingContext processingContext) {
-            return next.handle(message, processingContext);
+        public MessageStream<CommandResultMessage<?>> proceed(@Nonnull CommandMessage<?> message,
+                                                              @Nonnull ProcessingContext context) {
+            return next.handle(message, context);
         }
     }
 
@@ -159,14 +159,14 @@ public class InterceptingCommandBus implements CommandBus {
         }
 
         @Override
-        public Object proceedSync() {
+        public Object proceedSync(@Nonnull ProcessingContext context) {
             throw new UnsupportedOperationException("Sync processing not supported ");
         }
 
         @Override
-        public MessageStream<CommandResultMessage<?>> proceed(CommandMessage<?> message,
-                                                              ProcessingContext processingContext) {
-            return next.apply(message, processingContext);
+        public MessageStream<CommandResultMessage<?>> proceed(@Nonnull CommandMessage<?> message,
+                                                              @Nonnull ProcessingContext context) {
+            return next.apply(message, context);
         }
     }
 }

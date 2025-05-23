@@ -37,7 +37,7 @@ class ProcessingContextEventAppenderTest {
 
     @Test
     void publishesPayloadsAsMessagesToEventSink() {
-        ProcessingContext context = new StubProcessingContext();
+        ProcessingContext context = ProcessingContext.empty();
 
         EventAppender testSubject = new ProcessingContextEventAppender(
                 context,

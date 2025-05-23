@@ -21,6 +21,8 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -63,20 +65,23 @@ class MessageIdentifierParameterResolverFactoryTest {
     void resolvesToMessageIdentifierWhenAnnotatedForEventMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
+        assertNotNull(resolver);
         final EventMessage<Object> eventMessage = EventTestUtils.asEventMessage("test");
-        assertTrue(resolver.matches(eventMessage, null));
-        assertEquals(eventMessage.getIdentifier(), resolver.resolveParameterValue(eventMessage, null));
+        ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
+        assertTrue(resolver.matches(context));
+        assertEquals(eventMessage.getIdentifier(), resolver.resolveParameterValue(context));
     }
 
     @Test
     void resolvesToMessageIdentifierWhenAnnotatedForCommandMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
+        assertNotNull(resolver);
         CommandMessage<Object> commandMessage =
                 new GenericCommandMessage<>(new MessageType("command"), "test");
-        assertTrue(resolver.matches(commandMessage, null));
-        assertEquals(commandMessage.getIdentifier(), resolver.resolveParameterValue(commandMessage,
-                                                                                    null));
+        ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
+        assertTrue(resolver.matches(context));
+        assertEquals(commandMessage.getIdentifier(), resolver.resolveParameterValue(context));
     }
 
     @Test

@@ -41,7 +41,7 @@ public interface EventHandlerInvoker {
      * @return {@code true} if the invoker has one or more handlers that can handle the given message, {@code false}
      * otherwise
      */
-    boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull Segment segment);
+    boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment);
 
     /**
      * Check whether or not this invoker has handlers that can handle the given {@code payloadType}.
@@ -64,7 +64,8 @@ public interface EventHandlerInvoker {
      * @param segment The segment for which to handle the message
      * @throws Exception when an exception occurs while handling the message
      */
-    void handle(@Nonnull EventMessage<?> message, ProcessingContext processingContext,
+    void handle(@Nonnull EventMessage<?> message,
+                @Nonnull ProcessingContext processingContext,
                 @Nonnull Segment segment) throws Exception;
 
     /**
@@ -79,7 +80,7 @@ public interface EventHandlerInvoker {
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
      */
-    default void performReset(ProcessingContext processingContext) {
+    default void performReset(ProcessingContext context) {
     }
 
     /**
@@ -87,11 +88,11 @@ public interface EventHandlerInvoker {
      *
      * @param <R>               the type of the provided {@code resetContext}
      * @param resetContext      a {@code R} used to support the reset operation
-     * @param processingContext
+     * @param context
      */
-    default <R> void performReset(@Nullable R resetContext, ProcessingContext processingContext) {
+    default <R> void performReset(@Nullable R resetContext, ProcessingContext context) {
         if (Objects.isNull(resetContext)) {
-            performReset(processingContext);
+            performReset(context);
         } else {
             throw new UnsupportedOperationException(
                     "EventHandlerInvoker#performRest(R) is not implemented for a non-null reset context."

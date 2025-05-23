@@ -129,7 +129,7 @@ class QueryThreadingIntegrationTest {
 
     @Test
     void canStillHandleQueryResponsesWhileManyQueriesHandling() {
-        queryBus2.subscribe(QUERY_TYPE_B.name(), String.class, query -> {
+        queryBus2.subscribe(QUERY_TYPE_B.name(), String.class, (query, ctx) -> {
             while (secondaryQueryBlock.get()) {
                 try {
                     Thread.sleep(10);
@@ -140,7 +140,7 @@ class QueryThreadingIntegrationTest {
             return "b";
         });
 
-        queryBus.subscribe(QUERY_TYPE_A.name(), String.class, query -> {
+        queryBus.subscribe(QUERY_TYPE_A.name(), String.class, (query, ctx) -> {
             waitingQueries.incrementAndGet();
             QueryMessage<String, String> testQuery = new GenericQueryMessage<>(QUERY_TYPE_B,
                                                                                "start",

@@ -30,6 +30,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -127,7 +128,7 @@ class NewMessageHandlerRegistrationTest {
     void handlingCommandMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
         CommandMessage<Object> testMessage = new GenericCommandMessage<>(COMMAND_TYPE, COMMAND_TYPE);
 
-        MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
+        MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, StubProcessingContext.forMessage(testMessage));
 
         CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.first().asCompletableFuture();
 
@@ -145,7 +146,7 @@ class NewMessageHandlerRegistrationTest {
     void handlingEventMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
         EventMessage<?> testMessage = new GenericEventMessage<>(EVENT_TYPE, "payload");
 
-        MessageStream.Empty<Message<Void>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
+        MessageStream.Empty<Message<Void>> result = testSubject.handle(testMessage, StubProcessingContext.forMessage(testMessage));
 
         CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.first().asCompletableFuture();
 
@@ -165,7 +166,7 @@ class NewMessageHandlerRegistrationTest {
                 new GenericQueryMessage<>(QUERY_TYPE, "payload", ResponseTypes.instanceOf(String.class));
 
         MessageStream<? extends QueryResponseMessage<?>> result =
-                testSubject.handle(testMessage, ProcessingContext.NONE);
+                testSubject.handle(testMessage, StubProcessingContext.forMessage(testMessage));
 
         CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.first().asCompletableFuture();
 
@@ -189,9 +190,9 @@ class NewMessageHandlerRegistrationTest {
         MessageHandlingComponent testSubjectWithRegisteredMHC =
                 new GenericMessageHandlingComponent().subscribe(testSubject);
 
-        testSubjectWithRegisteredMHC.handle(testCommandMessage, ProcessingContext.NONE);
-        testSubjectWithRegisteredMHC.handle(testEventMessage, ProcessingContext.NONE);
-        testSubjectWithRegisteredMHC.handle(testQueryMessage, ProcessingContext.NONE);
+        testSubjectWithRegisteredMHC.handle(testCommandMessage, StubProcessingContext.forMessage(testCommandMessage));
+        testSubjectWithRegisteredMHC.handle(testEventMessage, StubProcessingContext.forMessage(testEventMessage));
+        testSubjectWithRegisteredMHC.handle(testQueryMessage, StubProcessingContext.forMessage(testQueryMessage));
 
         assertTrue(commandHandlerInvoked.get());
         assertTrue(eventHandlerInvoked.get());
