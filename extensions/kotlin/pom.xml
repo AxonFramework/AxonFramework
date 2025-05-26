@@ -624,15 +624,6 @@
             </roles>
         </developer>
         <developer>
-            <name>Gerard Klijs</name>
-            <email>gerard.klijs@axoniq.io</email>
-            <organization>AxonIQ</organization>
-            <organizationUrl>https://axoniq.io</organizationUrl>
-            <roles>
-                <role>Developer</role>
-            </roles>
-        </developer>
-        <developer>
             <name>Mitchell Herrijgers</name>
             <email>mitchell.herrijgers@axoniq.io</email>
             <organization>AxonIQ</organization>
@@ -642,13 +633,13 @@
             </roles>
         </developer>
         <developer>
-            <name>Stefan Andjelkovic</name>
-            <email>stefan.andjelkovic@axoniq.io</email>
-            <organization>AxonIQ</organization>
-            <organizationUrl>https://axoniq.io</organizationUrl>
-            <roles>
-                <role>Developer</role>
-            </roles>
+          <name>Mateusz Nowak</name>
+          <email>mateusz.nowak@axoniq.io</email>
+          <organization>AxonIQ</organization>
+          <organizationUrl>https://axoniq.io</organizationUrl>
+          <roles>
+            <role>Developer</role>
+          </roles>
         </developer>
         <developer>
             <name>Simon Zambrovski</name>
