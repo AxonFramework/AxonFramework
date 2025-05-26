@@ -125,7 +125,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         return new GenericDomainEventMessage<>(aggregate.type(),
                                                aggregate.identifierAsString(),
                                                aggregate.version(),
-                                               messageTypeResolver.resolve(aggregateType),
+                                               messageTypeResolver.resolveOrThrow(aggregateType),
                                                aggregate.getAggregateRoot());
     }
 

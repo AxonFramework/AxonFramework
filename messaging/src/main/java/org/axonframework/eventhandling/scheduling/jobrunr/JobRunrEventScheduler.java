@@ -256,7 +256,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
             return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage<>(
-                messageTypeResolver.resolve(event),
+                messageTypeResolver.resolveOrThrow(event),
                 (E) event,
                 MetaData.emptyInstance()
         );

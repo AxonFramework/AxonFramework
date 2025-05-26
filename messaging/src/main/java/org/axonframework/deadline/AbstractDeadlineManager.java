@@ -138,7 +138,7 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
                                                 (Message<P>) messageOrPayload,
                                                 () -> expiryTime);
         }
-        MessageType type = messageTypeResolver.resolve(ObjectUtils.nullSafeTypeOf(messageOrPayload));
+        MessageType type = messageTypeResolver.resolveOrThrow(ObjectUtils.nullSafeTypeOf(messageOrPayload));
         return new GenericDeadlineMessage<>(
                 deadlineName, new GenericMessage<>(type, (P) messageOrPayload), () -> expiryTime
         );

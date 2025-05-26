@@ -63,11 +63,11 @@ class ProcessingContextEventAppenderTest {
         assertEquals(payload1, publishedEvent1.getPayload());
         assertEquals(payload2, publishedEvent2.getPayload());
         assertEquals(
-                messageTypeResolver.resolve(payload1).qualifiedName(),
+                messageTypeResolver.resolveOrThrow(payload1).qualifiedName(),
                 publishedEvent1.type().qualifiedName()
         );
         assertEquals(
-                messageTypeResolver.resolve(payload2).qualifiedName(),
+                messageTypeResolver.resolveOrThrow(payload2).qualifiedName(),
                 publishedEvent2.type().qualifiedName()
         );
     }

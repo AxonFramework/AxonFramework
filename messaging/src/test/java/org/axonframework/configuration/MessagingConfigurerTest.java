@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.NamespaceMessageTypeResolver;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
@@ -84,6 +85,36 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Optional<QueryUpdateEmitter> queryUpdateEmitter = result.getOptionalComponent(QueryUpdateEmitter.class);
         assertTrue(queryUpdateEmitter.isPresent());
         assertInstanceOf(SimpleQueryUpdateEmitter.class, queryUpdateEmitter.get());
+    }
+
+    @Test
+    void registerMessageTypeResolverOverridesDefault() {
+        MessageTypeResolver expected = NamespaceMessageTypeResolver
+                .namespace("namespace")
+                .message(String.class, "test.message", "1.0.0")
+                .noFallback();
+
+        Configuration result = testSubject.registerMessageTypeResolver(c -> expected)
+                                          .build();
+
+        assertEquals(expected, result.getComponent(MessageTypeResolver.class));
+    }
+
+    @Test
+    void messageTypeResolverBuilderShouldBeMutable() {
+        NamespaceMessageTypeResolver.Builder builder1 = NamespaceMessageTypeResolver
+                .namespace("namespace")
+                .message(String.class, "test.string", "1.0.0");
+        NamespaceMessageTypeResolver.Builder builder2 = builder1
+                .message(Integer.class, "test.integer", "1.0.0");
+
+        var instance1 = builder1.noFallback();
+        var instance2 = builder2.fallback(new ClassBasedMessageTypeResolver());
+
+        assertTrue(instance1.resolve(String.class).isPresent());
+        assertTrue(instance1.resolve(Integer.class).isPresent());
+        assertTrue(instance2.resolve(String.class).isPresent());
+        assertTrue(instance2.resolve(Integer.class).isPresent());
     }
 
     @Test
