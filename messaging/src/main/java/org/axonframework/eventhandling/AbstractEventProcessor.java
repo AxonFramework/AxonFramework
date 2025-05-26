@@ -187,7 +187,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                           }));
     }
 
-    private Object processMessageInUnitOfWork(Collection<Segment> processingSegments,
+    private MessageStream.Empty<?> processMessageInUnitOfWork(Collection<Segment> processingSegments,
                                               EventMessage<?> message,
                                               ProcessingContext processingContext,
                                               MessageMonitor.MonitorCallback monitorCallback

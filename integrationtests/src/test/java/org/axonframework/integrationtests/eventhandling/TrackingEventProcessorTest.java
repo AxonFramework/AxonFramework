@@ -639,7 +639,7 @@ class TrackingEventProcessorTest {
             public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
                     @NotNull M message, @NotNull ProcessingContext context,
                     @NotNull InterceptorChain<M, R> interceptorChain) {
-                context.runOnAfterCommit(uow -> countDownLatch.countDown());
+                context.doFinally(uow -> countDownLatch.countDown());
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {

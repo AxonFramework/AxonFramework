@@ -16,23 +16,27 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Context;
 
+import java.util.Objects;
+
 /**
  * Factory for creating {@link UnitOfWork} instances that are bound to a transaction.
  * <p>
- * This factory creates units of work that automatically start a transaction before invocation,
- * commit the transaction on successful completion, and roll back the transaction when an error occurs.
+ * This factory creates units of work that automatically start a transaction before invocation, commit the transaction
+ * on successful completion, and roll back the transaction when an error occurs.
  * <p>
- * The transaction is managed by the configured {@link TransactionManager} and is stored as a resource
- * in the unit of work's {@link Context}.
+ * The transaction is managed by the configured {@link TransactionManager} and is stored as a resource in the unit of
+ * work's {@link Context}.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class TransactionalUnitOfWorkFactory {
+public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
+
     private final TransactionManager transactionManager;
 
     /**
@@ -40,7 +44,8 @@ public class TransactionalUnitOfWorkFactory {
      *
      * @param transactionManager The transaction manager used to create and manage transactions for the units of work
      */
-    public TransactionalUnitOfWorkFactory(TransactionManager transactionManager) {
+    public TransactionalUnitOfWorkFactory(@Nonnull TransactionManager transactionManager) {
+        Objects.requireNonNull(transactionManager, "Transaction Manager cannot be null");
         this.transactionManager = transactionManager;
     }
 
@@ -49,14 +54,15 @@ public class TransactionalUnitOfWorkFactory {
      * <p>
      * The created unit of work will:
      * <ul>
-     *     <li>Start a new transaction before invocation using the configured {@link TransactionManager}</li>
-     *     <li>Commit the transaction when the unit of work is committed</li>
-     *     <li>Roll back the transaction when an error occurs during any phase of the unit of work</li>
+     *     <li>Start a new transaction before invocation using the configured {@link TransactionManager}.</li>
+     *     <li>Commit the transaction when the unit of work is committed.</li>
+     *     <li>Roll back the transaction when an error occurs during any phase of the unit of work.</li>
      * </ul>
      * The transaction is stored as a resource in the unit of work's context using a resource key with label "transaction".
      *
-     * @return A new transactional unit of work
+     * @return A new transactional unit of work.
      */
+    @Override
     public UnitOfWork create() {
         var unitOfWork = new UnitOfWork();
         var transactionKey = Context.ResourceKey.<Transaction>withLabel("transaction");
