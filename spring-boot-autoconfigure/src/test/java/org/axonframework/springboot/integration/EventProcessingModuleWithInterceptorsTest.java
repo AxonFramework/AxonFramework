@@ -39,7 +39,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 

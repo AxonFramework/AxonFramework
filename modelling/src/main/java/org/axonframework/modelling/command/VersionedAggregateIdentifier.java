@@ -19,7 +19,7 @@ package org.axonframework.modelling.command;
 import org.axonframework.common.Assert;
 
 import java.util.Objects;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Structure that holds an Aggregate Identifier and an expected version of an aggregate.

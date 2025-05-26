@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;

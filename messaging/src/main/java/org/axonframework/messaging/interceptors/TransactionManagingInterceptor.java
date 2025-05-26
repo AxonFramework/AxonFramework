@@ -25,7 +25,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interceptor that uses a {@link TransactionManager} to start a new transaction before a Message is handled. When the

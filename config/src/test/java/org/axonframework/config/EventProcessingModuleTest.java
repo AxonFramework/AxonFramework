@@ -83,7 +83,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.axonframework.utils.AssertUtils.assertWithin;

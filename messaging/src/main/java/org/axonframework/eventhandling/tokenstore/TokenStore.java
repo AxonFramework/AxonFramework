@@ -24,8 +24,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Describes a component capable of storing and retrieving event tracking tokens. An {@link EventProcessor} that is

@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -233,7 +233,7 @@ class SimpleEventStoreTest {
         verify(descriptor).describeProperty("eventStorageEngine", mockStorageEngine);
     }
 
-    private static @NotNull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
+    private static @Nonnull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
         return MessageStream.fromStream(IntStream.range(0, messageCount).boxed(),
                                         SimpleEventStoreTest::eventMessage,
                                         i -> Context.with(ConsistencyMarker.RESOURCE_KEY,

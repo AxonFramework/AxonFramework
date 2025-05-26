@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing instances that are capable of creating snapshot events for aggregates. Although snapshotting is

@@ -25,7 +25,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ScheduledExecutorService;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Message handler interceptor that sets a timeout on the processing of the current {@link LegacyUnitOfWork}. If the

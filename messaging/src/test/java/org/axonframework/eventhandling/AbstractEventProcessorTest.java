@@ -29,7 +29,7 @@ import org.junit.jupiter.api.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.utils.EventTestUtils.createEvent;
 import static org.axonframework.utils.EventTestUtils.createEvents;
