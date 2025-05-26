@@ -27,8 +27,8 @@ import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.Predicate;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Component which informs subscription queries about updates, errors and when there are no more updates.

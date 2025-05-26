@@ -28,7 +28,7 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Spring factory bean that creates a ParameterResolverFactory instance that is capable of resolving parameter values as

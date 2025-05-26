@@ -32,7 +32,7 @@ import org.springframework.core.env.Environment;
 
 import java.util.Collections;
 import java.util.Map;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static io.axoniq.axonserver.connector.impl.ObjectUtils.nonNullOrDefault;
 

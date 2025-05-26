@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.annotations.EventTags;
 import org.axonframework.messaging.MessageType;
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -268,7 +268,7 @@ class AnnotationBasedTagResolverTest {
         static class CustomIterable implements Iterable<String> {
 
             @Override
-            public @NotNull Iterator<String> iterator() {
+            public @Nonnull Iterator<String> iterator() {
                 return Arrays.asList("one", "two", "three").iterator();
             }
         }

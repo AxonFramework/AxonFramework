@@ -38,7 +38,7 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 

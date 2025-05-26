@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 public class MessageCollectingMonitor implements MessageMonitor<Message<?>> {
     private final List<Message<?>> messages = new ArrayList<>();

@@ -18,7 +18,7 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandMessage;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface towards a mechanism that is capable of extracting an Aggregate Identifier and Version form a command that

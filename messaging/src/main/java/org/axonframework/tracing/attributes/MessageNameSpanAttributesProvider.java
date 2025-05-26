@@ -21,7 +21,7 @@ import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.Map;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Collections.singletonMap;
 

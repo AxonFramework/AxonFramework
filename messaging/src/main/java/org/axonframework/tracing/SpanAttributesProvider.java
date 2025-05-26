@@ -19,7 +19,7 @@ package org.axonframework.tracing;
 import org.axonframework.messaging.Message;
 
 import java.util.Map;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Represents a provider of attributes to a {@link Span}, based on a {@link Message}. It's the responsibility of the
