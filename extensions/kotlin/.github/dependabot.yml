@@ -11,8 +11,6 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
   milestone: 10
-  reviewers:
-    - "AxonFramework/framework-developers"
   groups:
     github-dependencies:
       update-types:
@@ -30,8 +28,6 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
   milestone: 10
-  reviewers:
-    - "AxonFramework/framework-developers"
   groups:
     maven-dependencies:
       update-types:
