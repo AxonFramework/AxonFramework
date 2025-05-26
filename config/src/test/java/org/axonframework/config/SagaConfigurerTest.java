@@ -109,7 +109,7 @@ class SagaConfigurerTest {
     }
 
 
-    @Disabled("TODO #XXXX - Adjust SagaRepository API to be async-native")
+    @Disabled("TODO #3443 - Adjust SagaRepository API to be async-native")
     @Test
     void deduplicateRegisterSaga() {
         LegacyEmbeddedEventStore eventStore =
