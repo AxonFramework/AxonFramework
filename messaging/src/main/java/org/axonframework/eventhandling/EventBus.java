@@ -21,7 +21,7 @@ import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.Arrays;
 import java.util.List;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish

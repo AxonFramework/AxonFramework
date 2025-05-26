@@ -20,7 +20,7 @@ import org.axonframework.common.digest.Digester;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Utility to create labels for use with JobRunr. As labels have a maximum length of 44, we hash a label whenever it

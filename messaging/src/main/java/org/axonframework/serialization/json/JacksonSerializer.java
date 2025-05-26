@@ -42,8 +42,8 @@ import org.axonframework.serialization.UnknownSerializedType;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 

@@ -22,7 +22,7 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import javax.sql.DataSource;
 
 /**

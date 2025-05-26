@@ -34,7 +34,7 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.springboot.utils.TestSerializer;
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -605,9 +605,9 @@ class InterceptorConfigurationTest {
                 this.axonConfiguration = axonConfiguration;
             }
 
-            @NotNull
+            @Nonnull
             @Override
-            public BiFunction<Integer, T, T> handle(@NotNull List<? extends T> messages) {
+            public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
                 axonConfiguration.tags();
                 return (index, message) -> {
                     invocation.countDown();
@@ -644,9 +644,9 @@ class InterceptorConfigurationTest {
                 this.eventHandlingOutcome = eventHandlingOutcome;
             }
 
-            @NotNull
+            @Nonnull
             @Override
-            public BiFunction<Integer, T, T> handle(@NotNull List<? extends T> messages) {
+            public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
                 return (index, message) -> {
                     if (message instanceof CommandMessage) {
                         commandInvocation.countDown();
@@ -689,7 +689,7 @@ class InterceptorConfigurationTest {
                 this.eventHandlingOutcome = eventHandlingOutcome;
             }
 
-            @NotNull
+            @Nonnull
             @Override
             public Object handle(LegacyUnitOfWork<?> unitOfWork,
                                  InterceptorChain interceptorChain) throws Exception {
@@ -745,8 +745,8 @@ class InterceptorConfigurationTest {
         public static class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
             @Override
-            public Object handle(@NotNull LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWork,
-                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWork,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
                 return interceptorChain.proceedSync();
             }
         }

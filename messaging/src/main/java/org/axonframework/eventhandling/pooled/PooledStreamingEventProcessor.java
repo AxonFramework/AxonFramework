@@ -60,7 +60,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;

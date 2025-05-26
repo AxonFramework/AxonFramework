@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.TrackingToken;
 
 import java.time.Duration;
 import java.time.Instant;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /**
  * Interface for a source of {@link Message messages} that processors can track.

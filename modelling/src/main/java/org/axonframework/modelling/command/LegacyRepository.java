@@ -22,8 +22,8 @@ import org.axonframework.modelling.repository.Repository;
 
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * The {@link LegacyRepository} provides an abstraction of the storage of aggregates.

@@ -32,7 +32,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Abstract implementation of the {@link DeadlineManager} to be implemented by concrete solutions for the

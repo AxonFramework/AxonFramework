@@ -37,7 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 
