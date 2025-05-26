@@ -38,15 +38,33 @@ import java.util.Objects;
 public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
 
     private final TransactionManager transactionManager;
+    private final UnitOfWorkFactory delegate;
 
     /**
      * Initializes a factory with the given {@code transactionManager}.
+     * The unit of work lifecycle will be bound to transactions managed by the provided {@code transactionManager}.
      *
      * @param transactionManager The transaction manager used to create and manage transactions for the units of work
      */
     public TransactionalUnitOfWorkFactory(@Nonnull TransactionManager transactionManager) {
         Objects.requireNonNull(transactionManager, "Transaction Manager cannot be null");
         this.transactionManager = transactionManager;
+        this.delegate = new SimpleUnitOfWorkFactory();
+    }
+
+    /**
+     * Initializes a factory with the given {@code transactionManager} and a delegate {@link UnitOfWorkFactory}.
+     * The unit of work lifecycle will be bound to transaction managed by the provided {@code transactionManager},
+     *
+     * @param transactionManager The transaction manager used to create and manage transactions for the units of work.
+     * @param delegate           The delegate factory to use for creating units of work.
+     */
+    public TransactionalUnitOfWorkFactory(@Nonnull TransactionManager transactionManager,
+                                          @Nonnull UnitOfWorkFactory delegate) {
+        Objects.requireNonNull(transactionManager, "Transaction Manager cannot be null");
+        Objects.requireNonNull(delegate, "Delegate UnitOfWorkFactory cannot be null");
+        this.transactionManager = transactionManager;
+        this.delegate = delegate;
     }
 
     /**
@@ -64,7 +82,7 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      */
     @Override
     public UnitOfWork create() {
-        var unitOfWork = new UnitOfWork();
+        var unitOfWork = delegate.create();
         var transactionKey = Context.ResourceKey.<Transaction>withLabel("transaction");
         unitOfWork.runOnPreInvocation(ctx -> {
             var transaction = transactionManager.startTransaction();
