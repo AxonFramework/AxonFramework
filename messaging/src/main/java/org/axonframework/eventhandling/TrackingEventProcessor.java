@@ -33,6 +33,7 @@ import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -464,24 +465,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
 
             var unitOfWork = transactionalUnitOfWorkFactory.create();
-            unitOfWork.runOnPreInvocation(ctx -> {
-                ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
-                ctx.putResource(lastTokenResourceKey, finalLastToken);
-                if (storeTokenBeforeProcessing) {
-                    tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
-                } else {
-                    tokenStore.extendClaim(getName(), segment.getSegmentId());
-                }
-            });
-            var startTime = now();
-            unitOfWork.runOnPrepareCommit(ctx -> {
-                if (!storeTokenBeforeProcessing) {
-                    tokenStore.storeToken(ctx.getResource(lastTokenResourceKey), getName(), ctx.getResource(segmentIdResourceKey));
-                } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
-                    tokenStore.extendClaim(getName(), ctx.getResource(segmentIdResourceKey));
-                }
-            });
-
+            instructTokenClaim(segment, unitOfWork, finalLastToken);
             processInUnitOfWork(batch, unitOfWork, processingSegments).join();
 
             TrackerStatus previousStatus = activeSegments.get(segment.getSegmentId());
@@ -500,6 +484,26 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             Thread.currentThread().interrupt();
         }
+    }
+
+    private void instructTokenClaim(Segment segment, UnitOfWork unitOfWork, TrackingToken finalLastToken) {
+        unitOfWork.runOnPreInvocation(ctx -> {
+            ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
+            ctx.putResource(lastTokenResourceKey, finalLastToken);
+            if (storeTokenBeforeProcessing) {
+                tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
+            } else {
+                tokenStore.extendClaim(getName(), segment.getSegmentId());
+            }
+        });
+        var startTime = now();
+        unitOfWork.runOnPrepareCommit(ctx -> {
+            if (!storeTokenBeforeProcessing) {
+                tokenStore.storeToken(ctx.getResource(lastTokenResourceKey), getName(), ctx.getResource(segmentIdResourceKey));
+            } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
+                tokenStore.extendClaim(getName(), ctx.getResource(segmentIdResourceKey));
+            }
+        });
     }
 
     private void ignoreEvent(BlockingStream<TrackedEventMessage<?>> eventStream,
