@@ -37,7 +37,6 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
@@ -49,14 +48,12 @@ import org.mockito.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -74,6 +71,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.utils.AssertUtils.assertWithin;
@@ -257,17 +255,15 @@ class PooledStreamingEventProcessorTest {
         spanFactory.verifySpanCompleted("StreamingEventProcessor.batch");
     }
 
-    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
-    // FIXME: this test doesn't test behavior. Do we really need it? I don't have access to ResourceKey here since resource keys are not identifier by the label but by the instance
     @Test
     void handlingEventsHaveSegmentAndTokenInUnitOfWork() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(8);
         mockEventHandlerInvoker();
         doAnswer(
                 answer -> {
-                    Map<String, Object> resources = CurrentUnitOfWork.get().resources();
-                    boolean containsSegment = resources.containsKey("Processor[" + PROCESSOR_NAME + "]/SegmentId");
-                    boolean containsToken = resources.containsKey("Processor[" + PROCESSOR_NAME + "]/Token");
+                    var processingContext = answer.getArgument(1, ProcessingContext.class);
+                    boolean containsSegment = processingContext.containsResource(Segment.ID_RESOURCE_KEY);
+                    boolean containsToken = processingContext.containsResource(TrackingToken.RESOURCE_KEY);
                     if (!containsSegment) {
                         logger.error("UoW didn't contain the segment!");
                         return null;

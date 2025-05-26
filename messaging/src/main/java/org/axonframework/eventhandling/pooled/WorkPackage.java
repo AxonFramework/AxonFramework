@@ -127,8 +127,8 @@ class WorkPackage {
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.segmentStatusUpdater = builder.segmentStatusUpdater;
         this.clock = builder.clock;
-        this.segmentIdResourceKey = Context.ResourceKey.withLabel("Processor[" + builder.name + "]/SegmentId");
-        this.lastTokenResourceKey = Context.ResourceKey.withLabel("Processor[" + builder.name + "]/Token");
+        this.segmentIdResourceKey = Segment.ID_RESOURCE_KEY;
+        this.lastTokenResourceKey = TrackingToken.RESOURCE_KEY;
 
         this.lastConsumedToken = builder.initialToken;
         this.nextClaimExtension = new AtomicLong(now() + claimExtensionThreshold);

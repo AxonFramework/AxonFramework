@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
@@ -61,7 +62,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -155,8 +155,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.maxThreadCount = config.getMaxThreadCount();
         this.threadFactory = config.getThreadFactory(builder.name);
         this.workerTerminationTimeout = config.getWorkerTerminationTimeout();
-        this.segmentIdResourceKey = Context.ResourceKey.withLabel("Processor[" + builder.name + "]/SegmentId");
-        this.lastTokenResourceKey = Context.ResourceKey.withLabel("Processor[" + builder.name + "]/Token");
+        this.segmentIdResourceKey = Segment.ID_RESOURCE_KEY;
+        this.lastTokenResourceKey = TrackingToken.RESOURCE_KEY;
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
     }

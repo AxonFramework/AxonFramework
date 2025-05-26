@@ -37,12 +37,14 @@ import java.util.Objects;
  */
 public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
 
+    private static final Context.ResourceKey<Transaction> TRANSACTION_RESOURCE_KEY =
+            Context.ResourceKey.withLabel("transaction");
     private final TransactionManager transactionManager;
     private final UnitOfWorkFactory delegate;
 
     /**
-     * Initializes a factory with the given {@code transactionManager}.
-     * The unit of work lifecycle will be bound to transactions managed by the provided {@code transactionManager}.
+     * Initializes a factory with the given {@code transactionManager}. The unit of work lifecycle will be bound to
+     * transactions managed by the provided {@code transactionManager}.
      *
      * @param transactionManager The transaction manager used to create and manage transactions for the units of work
      */
@@ -53,8 +55,8 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
     }
 
     /**
-     * Initializes a factory with the given {@code transactionManager} and a delegate {@link UnitOfWorkFactory}.
-     * The unit of work lifecycle will be bound to transaction managed by the provided {@code transactionManager},
+     * Initializes a factory with the given {@code transactionManager} and a delegate {@link UnitOfWorkFactory}. The
+     * unit of work lifecycle will be bound to transaction managed by the provided {@code transactionManager},
      *
      * @param transactionManager The transaction manager used to create and manage transactions for the units of work.
      * @param delegate           The delegate factory to use for creating units of work.
@@ -83,17 +85,16 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
     @Override
     public UnitOfWork create() {
         var unitOfWork = delegate.create();
-        var transactionKey = Context.ResourceKey.<Transaction>withLabel("transaction");
         unitOfWork.runOnPreInvocation(ctx -> {
             var transaction = transactionManager.startTransaction();
-            ctx.putResource(transactionKey, transaction);
+            ctx.putResource(TRANSACTION_RESOURCE_KEY, transaction);
         });
         unitOfWork.runOnCommit(ctx -> {
-            var transaction = ctx.getResource(transactionKey);
+            var transaction = ctx.getResource(TRANSACTION_RESOURCE_KEY);
             transaction.commit();
         });
         unitOfWork.onError((ctx, phase, error) -> {
-            var transaction = ctx.getResource(transactionKey);
+            var transaction = ctx.getResource(TRANSACTION_RESOURCE_KEY);
             transaction.rollback();
         });
         return unitOfWork;

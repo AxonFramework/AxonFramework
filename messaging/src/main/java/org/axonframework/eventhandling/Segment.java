@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 
 import org.axonframework.common.Assert;
+import org.axonframework.messaging.Context;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +43,11 @@ import static java.util.stream.Collectors.toList;
  * The 'mask' is a bitmask to be applied to an identifier, resulting in the segmentId of the {@link Segment}.
  */
 public class Segment implements Comparable<Segment> {
+
+    /**
+     * The Context.ResourceKey used whenever a Context would contain a segment id.
+     */
+    public static final Context.ResourceKey<Integer> ID_RESOURCE_KEY = Context.ResourceKey.withLabel("segmentId");
 
     private static final Segment[] EMPTY_SEGMENTS = new Segment[0];
     private static final int ZERO_MASK = 0x0;
