@@ -22,9 +22,11 @@ import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.utils.StubDomainEvent;
 import org.dom4j.Document;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -262,6 +264,45 @@ class XStreamSerializerTest {
                          .build();
 
         verify(xStream).allowTypesByWildcard(new String[]{"org.axonframework.**"});
+    }
+
+    @Test
+    void readUnknownSerializedTypeCachesLookupResults() {
+        XStream spiedXStream = spy(new XStream());
+        testSubject = XStreamSerializer.builder()
+                                       .xStream(spiedXStream)
+                                       .build();
+        // Clear invocations during the construction of the serializer
+        Mockito.clearInvocations(spiedXStream);
+        SerializedObject<String> testObject =
+                new SimpleSerializedObject<>("<key>value</key>", String.class, "my.nonexistent.Class", null);
+
+        for (int i = 0; i < 10; i++) {
+            Class<?> actual = testSubject.classForType(testObject.getType());
+            assertEquals(UnknownSerializedType.class, actual);
+        }
+
+        verify(spiedXStream, times(1)).getMapper();
+    }
+
+    @Test
+    void readUnknownSerializedTypeWithCachingDisabled() {
+        XStream spiedXStream = spy(new XStream());
+        testSubject = XStreamSerializer.builder()
+                                       .xStream(spiedXStream)
+                                       .disableCachingOfUnknownClasses()
+                                       .build();
+        // Clear invocations during the construction of the serializer
+        Mockito.clearInvocations(spiedXStream);
+        SerializedObject<String> testObject =
+                new SimpleSerializedObject<>("<key>value</key>", String.class, "my.nonexistent.Class", null);
+
+        for (int i = 0; i < 10; i++) {
+            Class<?> actual = testSubject.classForType(testObject.getType());
+            assertEquals(UnknownSerializedType.class, actual);
+        }
+
+        verify(spiedXStream, times(10)).getMapper();
     }
 
     @Revision("2")
