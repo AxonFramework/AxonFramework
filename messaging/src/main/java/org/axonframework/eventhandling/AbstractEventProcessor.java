@@ -20,21 +20,20 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import jakarta.annotation.Nonnull;
 
@@ -50,7 +49,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * {@link MessageHandlerInterceptor interceptors}.
  * <p>
  * Implementations are in charge of providing the events that need to be processed. Once these events are obtained they
- * can be passed to method {@link #processInUnitOfWork(List, LegacyUnitOfWork, Collection)} for processing.
+ * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Collection)} for processing.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -58,11 +57,9 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 public abstract class AbstractEventProcessor implements EventProcessor {
 
     private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final String name;
     private final EventHandlerInvoker eventHandlerInvoker;
-    private final RollbackConfiguration rollbackConfiguration;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
@@ -80,7 +77,6 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         builder.validate();
         this.name = builder.name;
         this.eventHandlerInvoker = builder.eventHandlerInvoker;
-        this.rollbackConfiguration = builder.rollbackConfiguration;
         this.errorHandler = builder.errorHandler;
         this.messageMonitor = builder.messageMonitor;
         this.spanFactory = builder.spanFactory;
@@ -138,8 +134,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     /**
-     * Process a batch of events. The messages are processed in a new {@link LegacyUnitOfWork}. Before each message is
-     * handled the event processor creates an interceptor chain containing all registered
+     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
+     * the event processor creates an interceptor chain containing all registered
      * {@link MessageHandlerInterceptor interceptors}.
      *
      * @param eventMessages The batch of messages that is to be processed
@@ -147,13 +143,13 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @throws Exception when an exception occurred during processing of the batch
      */
     protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                             LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
-        processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT);
+                                             UnitOfWork unitOfWork) throws Exception {
+        processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT).join();
     }
 
     /**
-     * Process a batch of events. The messages are processed in a new {@link LegacyUnitOfWork}. Before each message is
-     * handled the event processor creates an interceptor chain containing all registered
+     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
+     * the event processor creates an interceptor chain containing all registered
      * {@link MessageHandlerInterceptor interceptors}.
      *
      * @param eventMessages      The batch of messages that is to be processed
@@ -161,49 +157,74 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @param processingSegments The segments for which the events should be processed in this unit of work
      * @throws Exception when an exception occurred during processing of the batch
      */
-    protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                       LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                       Collection<Segment> processingSegments) throws Exception {
-        // TODO - Change UnitOfWork to ProcessingContext
-        spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages).runCallable(() -> {
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
-                EventMessage<?> message = unitOfWork.getMessage();
-                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(message);
-                return spanFactory.createProcessEventSpan(this instanceof StreamingEventProcessor, message)
-                                  .runCallable(() -> new DefaultInterceptorChain<>(
-                                          unitOfWork,
-                                          interceptors,
-                                          m -> processMessageInUnitOfWork(processingSegments, m, null, monitorCallback))
-                                          .proceedSync());
-            }, rollbackConfiguration);
+    protected CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
+                                                          UnitOfWork unitOfWork,
+                                                          Collection<Segment> processingSegments) throws Exception {
+        unitOfWork.onInvocation(processingContext -> {
+            CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
 
-            if (resultMessage.isExceptional()) {
-                Throwable e = resultMessage.exceptionResult();
-                if (unitOfWork.isRolledBack()) {
-                    errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
-                } else {
-                    logger.info(
-                            "Exception occurred while processing a message, but unit of work was committed. {}",
-                            e.getClass().getName());
-                }
+            for (EventMessage<?> message : eventMessages) {
+                result = result.thenCompose(v -> spanFactory
+                        .createProcessEventSpan(this instanceof StreamingEventProcessor, message)
+                        .runSupplierAsync(() -> processMessage(processingSegments, processingContext, message))
+                );
             }
-            return null;
+
+            return result;
         });
+
+        return spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages)
+                          .runSupplierAsync(() -> unitOfWork.execute().exceptionally(e -> {
+                              try {
+                                  var cause = e instanceof CompletionException ? e.getCause() : e;
+                                  errorHandler.handleError(new ErrorContext(getName(), cause, eventMessages));
+                              } catch (RuntimeException ex) {
+                                  throw ex;
+                              } catch (Exception ex) {
+                                  throw new EventProcessingException("Exception occurred while processing events", ex);
+                              }
+                              return null;
+                          }));
     }
 
-    private Object processMessageInUnitOfWork(Collection<Segment> processingSegments, EventMessage<?> message,
+    private MessageStream.Empty<?> processMessageInUnitOfWork(Collection<Segment> processingSegments,
+                                              EventMessage<?> message,
                                               ProcessingContext processingContext,
-                                              MessageMonitor.MonitorCallback monitorCallback) throws Exception {
+                                              MessageMonitor.MonitorCallback monitorCallback
+    ) throws Exception {
         try {
             for (Segment processingSegment : processingSegments) {
                 eventHandlerInvoker.handle(message, processingContext, processingSegment);
             }
             monitorCallback.reportSuccess();
-            return null;
+            return MessageStream.empty();
         } catch (Exception exception) {
-            monitorCallback.reportFailure(
-                    exception);
+            monitorCallback.reportFailure(exception);
             throw exception;
+        }
+    }
+
+    private CompletableFuture<Void> processMessage(Collection<Segment> processingSegments,
+                                                   ProcessingContext processingContext,
+                                                   EventMessage<?> message
+    ) {
+        try {
+            var monitorCallback = messageMonitor.onMessageIngested(message);
+
+            DefaultInterceptorChain<EventMessage<?>, ?> chain =
+                    new DefaultInterceptorChain<>(
+                            null,
+                            interceptors,
+                            (msg) -> processMessageInUnitOfWork(processingSegments,
+                                                                msg,
+                                                                processingContext,
+                                                                monitorCallback));
+            return chain.proceed(message, processingContext)
+                        .ignoreEntries()
+                        .asCompletableFuture()
+                        .thenApply(e -> null);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
         }
     }
 
@@ -235,15 +256,13 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * <p>
      * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults
      * to a {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
-     * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name},
-     * {@link EventHandlerInvoker} and {@link RollbackConfiguration} are <b>hard requirements</b> and as such should be
-     * provided.
+     * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name}
+     * and {@link EventHandlerInvoker} are <b>hard requirements</b> and as such should be provided.
      */
     public abstract static class Builder {
 
         protected String name;
         private EventHandlerInvoker eventHandlerInvoker;
-        private RollbackConfiguration rollbackConfiguration;
         private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
@@ -276,24 +295,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }
 
         /**
-         * Sets the {@link RollbackConfiguration} specifying the rollback behavior of the {@link LegacyUnitOfWork} while
-         * processing a batch of events.
-         *
-         * @param rollbackConfiguration the {@link RollbackConfiguration} specifying the rollback behavior of the
-         *                              {@link LegacyUnitOfWork} while processing a batch of events.
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
-            assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
-            this.rollbackConfiguration = rollbackConfiguration;
-            return this;
-        }
-
-        /**
-         * Sets the {@link ErrorHandler} invoked when an {@link LegacyUnitOfWork} is rolled back during processing.
+         * Sets the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during processing.
          * Defaults to a {@link PropagatingErrorHandler}.
          *
-         * @param errorHandler the {@link ErrorHandler} invoked when an {@link LegacyUnitOfWork} is rolled back during
+         * @param errorHandler the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during
          *                     processing
          * @return the current Builder instance, for fluent interfacing
          */
@@ -340,8 +345,6 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         protected void validate() throws AxonConfigurationException {
             assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
             assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
-            assertNonNull(rollbackConfiguration,
-                          "The RollbackConfiguration is a hard requirement and should be provided");
         }
 
         private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
