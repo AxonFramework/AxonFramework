@@ -22,6 +22,7 @@ import io.axoniq.axonserver.connector.control.ControlChannel;
 import io.axoniq.axonserver.connector.control.ProcessorInstructionHandler;
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.FutureUtils;
@@ -30,7 +31,6 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.slf4j.Logger;
@@ -41,7 +41,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -193,7 +192,7 @@ public class EventProcessorControlService implements Lifecycle {
     }
 
     private Optional<String> tokenStoreIdentifierFor(String processorName) {
-        TokenStore tokenStore = eventProcessingConfiguration.tokenStore(processorName);
+        var tokenStore = eventProcessingConfiguration.tokenStore(processorName);
         return eventProcessingConfiguration.transactionManager(processorName)
                                            .fetchInTransaction(tokenStore::retrieveStorageIdentifier);
     }

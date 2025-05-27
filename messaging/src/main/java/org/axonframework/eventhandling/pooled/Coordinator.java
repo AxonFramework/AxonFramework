@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
+import org.axonframework.eventhandling.tokenstore.ProcessorTokenStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -81,7 +82,7 @@ class Coordinator {
 
     private final String name;
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
-    private final TokenStore tokenStore;
+    private final ProcessorTokenStore tokenStore;
     private final TransactionManager transactionManager;
     private final ScheduledExecutorService executorService;
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
@@ -399,7 +400,7 @@ class Coordinator {
 
         private String name;
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
-        private TokenStore tokenStore;
+        private ProcessorTokenStore tokenStore;
         private TransactionManager transactionManager;
         private ScheduledExecutorService executorService;
         private BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;

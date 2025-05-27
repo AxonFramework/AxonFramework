@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.pooled;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.tokenstore.ProcessorTokenStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,7 @@ class ClaimTask extends CoordinatorTask {
     private final int segmentId;
     private final Map<Integer, WorkPackage> workPackages;
     private final Map<Integer, Instant> releasesDeadlines;
-    private final TokenStore tokenStore;
+    private final ProcessorTokenStore tokenStore;
     private final TransactionManager transactionManager;
 
     /**

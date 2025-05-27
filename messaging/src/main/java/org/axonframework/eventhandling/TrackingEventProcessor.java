@@ -27,6 +27,7 @@ import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.eventhandling.tokenstore.ProcessorTokenStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.lifecycle.Lifecycle;
@@ -97,7 +98,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
 
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
-    private final TokenStore tokenStore;
+    private final ProcessorTokenStore tokenStore;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder;
     private final TransactionManager transactionManager;
     private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
@@ -944,7 +945,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     public static class Builder extends AbstractEventProcessor.Builder {
 
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
-        private TokenStore tokenStore;
+        private ProcessorTokenStore tokenStore;
         private TransactionManager transactionManager;
         private TrackingEventProcessorConfiguration trackingEventProcessorConfiguration =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
@@ -999,15 +1000,15 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         }
 
         /**
-         * Sets the {@link TokenStore} used to store and fetch event tokens that enable this {@link EventProcessor} to
+         * Sets the {@link ProcessorTokenStore} used to store and fetch event tokens that enable this {@link EventProcessor} to
          * track its progress.
          *
-         * @param tokenStore the {@link TokenStore} used to store and fetch event tokens that enable this
+         * @param tokenStore the {@link ProcessorTokenStore} used to store and fetch event tokens that enable this
          *                   {@link EventProcessor} to track its progress
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder tokenStore(TokenStore tokenStore) {
-            assertNonNull(tokenStore, "TokenStore may not be null");
+        public Builder tokenStore(ProcessorTokenStore tokenStore) {
+            assertNonNull(tokenStore, "ProcessorTokenStore may not be null");
             this.tokenStore = tokenStore;
             return this;
         }

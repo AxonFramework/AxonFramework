@@ -16,19 +16,20 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.tokenstore.ProcessorTokenStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 
@@ -36,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 /**
  * Defines a contract for accessor methods regarding event processing configuration.
@@ -200,7 +200,7 @@ public interface EventProcessingConfiguration {
      * @param processorName a {@link String} specifying a event processor
      * @return the {@link TokenStore} belonging to the given {@code processorName}
      */
-    TokenStore tokenStore(String processorName);
+    ProcessorTokenStore tokenStore(String processorName);
 
     /**
      * Returns the {@link TransactionManager} tied to the given {@code processorName}.

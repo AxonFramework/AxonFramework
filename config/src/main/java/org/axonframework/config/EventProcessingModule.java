@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -39,8 +40,9 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.tokenstore.ProcessorTokenStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryProcessorTokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
@@ -53,8 +55,6 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.monitoring.MessageMonitor;
@@ -74,7 +74,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
@@ -127,7 +126,7 @@ public class EventProcessingModule
     protected final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
     protected final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
     protected final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
-    protected final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
+    protected final Map<String, Component<ProcessorTokenStore>> tokenStore = new HashMap<>();
     protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
     protected final Map<String, Component<SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueues = new HashMap<>();
     protected final Map<String, Component<EnqueuePolicy<EventMessage<?>>>> deadLetterPolicies = new HashMap<>();
@@ -155,10 +154,10 @@ public class EventProcessingModule
             "sequencingPolicy",
             c -> SequentialPerAggregatePolicy.instance()
     );
-    private final Component<TokenStore> defaultTokenStore = new Component<>(
+    private final Component<ProcessorTokenStore> defaultTokenStore = new Component<>(
             () -> configuration,
             "tokenStore",
-            c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)
+            c -> c.getComponent(ProcessorTokenStore.class, InMemoryProcessorTokenStore::new)
     );
     private final Component<SagaStore> sagaStore = new Component<>(
             () -> configuration,
@@ -508,7 +507,7 @@ public class EventProcessingModule
     }
 
     @Override
-    public TokenStore tokenStore(String processorName) {
+    public ProcessorTokenStore tokenStore(String processorName) {
         validateConfigInitialization();
         return tokenStore.containsKey(processorName)
                 ? tokenStore.get(processorName).get()

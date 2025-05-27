@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
+import org.axonframework.eventhandling.tokenstore.ProcessorTokenStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -77,7 +78,7 @@ class WorkPackage {
     static final int BUFFER_SIZE = 1024;
 
     private final String name;
-    private final TokenStore tokenStore;
+    private final ProcessorTokenStore tokenStore;
     private final TransactionManager transactionManager;
     private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
     private final ExecutorService executorService;
@@ -529,7 +530,7 @@ class WorkPackage {
     static class Builder {
 
         private String name;
-        private TokenStore tokenStore;
+        private ProcessorTokenStore tokenStore;
         private TransactionManager transactionManager;
         private ExecutorService executorService;
         private EventFilter eventFilter;

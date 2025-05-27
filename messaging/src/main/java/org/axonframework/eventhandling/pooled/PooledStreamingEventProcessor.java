@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
@@ -35,6 +36,7 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.tokenstore.ProcessorTokenStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
@@ -60,7 +62,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
-import jakarta.annotation.Nonnull;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -93,7 +94,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
 
     private final String name;
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
-    private final TokenStore tokenStore;
+    private final ProcessorTokenStore tokenStore;
     private final TransactionManager transactionManager;
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
@@ -442,7 +443,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     public static class Builder extends AbstractEventProcessor.Builder {
 
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
-        private TokenStore tokenStore;
+        private ProcessorTokenStore tokenStore;
         private TransactionManager transactionManager;
         private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder;
         private Function<String, ScheduledExecutorService> workerExecutorBuilder;
