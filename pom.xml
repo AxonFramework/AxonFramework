@@ -80,7 +80,7 @@
         <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.6.15.Final</hibernate-core.6.version>
+        <hibernate-core.6.version>7.0.0.Final</hibernate-core.6.version>
         <mysql-connector-java.version>9.3.0</mysql-connector-java.version>
         <postgresql.version>42.7.5</postgresql.version>
         <!-- Jakarta -->
@@ -104,7 +104,7 @@
         <log4j.version>2.24.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
-        <dropwizard.metrics.version>4.2.30</dropwizard.metrics.version>
+        <dropwizard.metrics.version>4.2.32</dropwizard.metrics.version>
         <micrometer.version>1.15.0</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.17.5</byte-buddy.version>
@@ -136,10 +136,10 @@
         <junit4.version>4.13.2</junit4.version>
         <junit.jupiter.version>5.12.2</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
-        <testcontainers.version>1.19.3</testcontainers.version>
+        <testcontainers.version>1.21.0</testcontainers.version>
         <!-- Validation -->
         <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
-        <hibernate-validator.8.version>8.0.1.Final</hibernate-validator.8.version>
+        <hibernate-validator.8.version>9.0.0.Final</hibernate-validator.8.version>
         <!-- Build / Plugin -->
         <central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
         <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
