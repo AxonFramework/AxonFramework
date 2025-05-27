@@ -89,7 +89,7 @@ class WorkPackage {
     private final Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
     private Runnable batchProcessedCallback;
     private final Clock clock;
-    private final Context.ResourceKey<Integer> segmentIdResourceKey;
+    private final Context.ResourceKey<Segment> segmentResourceKey;
     private final Context.ResourceKey<TrackingToken> lastTokenResourceKey;
 
     private TrackingToken lastDeliveredToken; // For use only by event delivery threads, like Coordinator
@@ -127,7 +127,7 @@ class WorkPackage {
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.segmentStatusUpdater = builder.segmentStatusUpdater;
         this.clock = builder.clock;
-        this.segmentIdResourceKey = Segment.ID_RESOURCE_KEY;
+        this.segmentResourceKey = Segment.RESOURCE_KEY;
         this.lastTokenResourceKey = TrackingToken.RESOURCE_KEY;
 
         this.lastConsumedToken = builder.initialToken;
@@ -316,7 +316,7 @@ class WorkPackage {
                 processingEvents.set(true);
                 var unitOfWork = transactionalUnitOfWorkFactory.create();
                 unitOfWork.runOnPreInvocation(ctx -> {
-                    ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
+                    ctx.putResource(segmentResourceKey, segment);
                     ctx.putResource(lastTokenResourceKey, lastConsumedToken);
                 });
 

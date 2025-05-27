@@ -112,7 +112,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final AtomicBoolean workLauncherRunning = new AtomicBoolean(false);
     private final ConcurrentMap<Integer, TrackerStatus> activeSegments = new ConcurrentSkipListMap<>();
     private final ConcurrentMap<Integer, Long> segmentReleaseDeadlines = new ConcurrentSkipListMap<>();
-    private final Context.ResourceKey<Integer> segmentIdResourceKey;
+    private final Context.ResourceKey<Segment> segmentResourceKey;
     private final Context.ResourceKey<TrackingToken> lastTokenResourceKey;
     private final AtomicInteger availableThreads;
     private final long tokenClaimInterval;
@@ -155,7 +155,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.maxThreadCount = config.getMaxThreadCount();
         this.threadFactory = config.getThreadFactory(builder.name);
         this.workerTerminationTimeout = config.getWorkerTerminationTimeout();
-        this.segmentIdResourceKey = Segment.ID_RESOURCE_KEY;
+        this.segmentResourceKey = Segment.RESOURCE_KEY;
         this.lastTokenResourceKey = TrackingToken.RESOURCE_KEY;
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
@@ -488,7 +488,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private void instructTokenClaim(Segment segment, UnitOfWork unitOfWork, TrackingToken finalLastToken) {
         unitOfWork.runOnPreInvocation(ctx -> {
-            ctx.putResource(segmentIdResourceKey, segment.getSegmentId());
+            ctx.putResource(segmentResourceKey, segment);
             ctx.putResource(lastTokenResourceKey, finalLastToken);
             if (storeTokenBeforeProcessing) {
                 tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
@@ -499,9 +499,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         var startTime = now();
         unitOfWork.runOnPrepareCommit(ctx -> {
             if (!storeTokenBeforeProcessing) {
-                tokenStore.storeToken(ctx.getResource(lastTokenResourceKey), getName(), ctx.getResource(segmentIdResourceKey));
+                tokenStore.storeToken(
+                        ctx.getResource(lastTokenResourceKey),
+                        getName(),
+                        ctx.getResource(segmentResourceKey).getSegmentId()
+                );
             } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
-                tokenStore.extendClaim(getName(), ctx.getResource(segmentIdResourceKey));
+                tokenStore.extendClaim(getName(), ctx.getResource(segmentResourceKey).getSegmentId());
             }
         });
     }

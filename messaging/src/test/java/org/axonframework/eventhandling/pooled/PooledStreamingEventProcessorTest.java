@@ -262,8 +262,8 @@ class PooledStreamingEventProcessorTest {
         doAnswer(
                 answer -> {
                     var processingContext = answer.getArgument(1, ProcessingContext.class);
-                    boolean containsSegment = processingContext.containsResource(Segment.ID_RESOURCE_KEY);
-                    boolean containsToken = processingContext.containsResource(TrackingToken.RESOURCE_KEY);
+                    boolean containsSegment = Segment.fromContext(processingContext).isPresent();
+                    boolean containsToken = TrackingToken.fromContext(processingContext).isPresent();
                     if (!containsSegment) {
                         logger.error("UoW didn't contain the segment!");
                         return null;
