@@ -16,6 +16,7 @@
 
 package org.axonframework.spring.authorization;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -30,7 +31,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 
 
 /**

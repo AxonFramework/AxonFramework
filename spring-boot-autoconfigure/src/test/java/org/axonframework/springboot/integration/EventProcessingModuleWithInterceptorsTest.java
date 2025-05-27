@@ -16,17 +16,21 @@
 
 package org.axonframework.springboot.integration;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -35,7 +39,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
-import javax.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -94,6 +97,15 @@ class EventProcessingModuleWithInterceptorsTest {
                 unitOfWork.transformMessage(event -> event
                         .andMetaData(Collections.singletonMap("myMetaDataKey", "myMetaDataValue")));
                 return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @Nonnull M message, @Nonnull ProcessingContext context,
+                    @Nonnull InterceptorChain<M, R> interceptorChain) {
+                //noinspection unchecked
+                var eventWithMetaData = (M) message.andMetaData(Collections.singletonMap("myMetaDataKey", "myMetaDataValue"));
+                return interceptorChain.proceed(eventWithMetaData, context);
             }
         }
 

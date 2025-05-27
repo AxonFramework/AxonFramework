@@ -40,8 +40,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import javax.annotation.Nonnull;
+import java.util.concurrent.ConcurrentSkipListSet;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -58,6 +60,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     private final Charset charset;
     private final RevisionResolver revisionResolver;
     private final Converter converter;
+    private final Set<String> unknownClasses = new ConcurrentSkipListSet<>();
+    private final boolean cacheUnknownClasses;
 
     /**
      * Instantiate a {@link AbstractXStreamSerializer} based on the fields contained in the {@link Builder}.
@@ -70,6 +74,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         this.xStream = builder.xStream;
         this.converter = builder.converter;
         this.revisionResolver = builder.revisionResolver;
+        this.cacheUnknownClasses = builder.cacheUnknownClasses;
 
         if (converter instanceof ChainingConverter) {
             registerConverters((ChainingConverter) converter);
@@ -167,9 +172,14 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         if (SerializedType.emptyType().equals(type)) {
             return Void.class;
         }
+        String className = type.getName();
+        if (cacheUnknownClasses && unknownClasses.contains(className)) {
+            return UnknownSerializedType.class;
+        }
         try {
-            return xStream.getMapper().realClass(type.getName());
+            return xStream.getMapper().realClass(className);
         } catch (CannotResolveClassException e) {
+            unknownClasses.add(className);
             return UnknownSerializedType.class;
         }
     }
@@ -287,6 +297,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         private boolean lenientDeserialization = false;
         private boolean axonTypeSecurity = true;
         private ClassLoader classLoader;
+        private boolean cacheUnknownClasses = true;
 
         /**
          * Sets the {@link XStream} used to perform the serialization of objects to XML, and vice versa.
@@ -379,6 +390,19 @@ public abstract class AbstractXStreamSerializer implements Serializer {
          */
         public Builder disableAxonTypeSecurity() {
             this.axonTypeSecurity = false;
+            return this;
+        }
+
+        /**
+         * Disables the caching of the names for classes which couldn't be resolved to a class.
+         * <p>
+         * It is recommended to disable this in case the class loading is dynamic, and classes that are not available at
+         * one point in time, may become available at any time later.
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder disableCachingOfUnknownClasses() {
+            this.cacheUnknownClasses = false;
             return this;
         }
 

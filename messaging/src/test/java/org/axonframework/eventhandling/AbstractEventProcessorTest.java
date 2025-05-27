@@ -16,15 +16,20 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.utils.EventTestUtils.createEvent;
 import static org.axonframework.utils.EventTestUtils.createEvents;
@@ -69,9 +74,22 @@ class AbstractEventProcessorTest {
 
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
-        testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
-            unitOfWork.transformMessage(m -> createEvent());
-            return interceptorChain.proceedSync();
+        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {
+            @Override
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
+                unitOfWork.transformMessage(m -> createEvent());
+                return interceptorChain.proceedSync();
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @Nonnull M message, @Nonnull ProcessingContext context,
+                    @Nonnull InterceptorChain<M, R> interceptorChain) {
+                var event = createEvent();
+                //noinspection unchecked
+                return interceptorChain.proceed((M) event, context);
+            }
         });
 
         testSubject.processInBatchingUnitOfWork(events);
@@ -108,13 +126,13 @@ class AbstractEventProcessorTest {
         }
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {
-            processInUnitOfWork(eventMessages, new LegacyBatchingUnitOfWork<>(eventMessages));
+            processInUnitOfWork(eventMessages, new UnitOfWork());
         }
 
         private static class Builder extends AbstractEventProcessor.Builder {
 
             public Builder() {
-                super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
+                super();
             }
 
             @Override

@@ -19,7 +19,7 @@ package org.axonframework.modelling.command;
 import org.axonframework.messaging.Message;
 
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Forward all messages {@code T} regardless of their set up.

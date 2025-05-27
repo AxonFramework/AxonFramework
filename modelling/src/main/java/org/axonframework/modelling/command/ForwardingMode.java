@@ -21,7 +21,7 @@ import org.axonframework.modelling.command.inspection.EntityModel;
 
 import java.lang.reflect.Member;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing the required functionality to forward a message. An example implementation is the {@link

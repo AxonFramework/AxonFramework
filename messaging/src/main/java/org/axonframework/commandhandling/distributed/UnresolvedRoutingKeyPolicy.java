@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.retry.RetryScheduler;
 
 import java.util.function.Function;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 

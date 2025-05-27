@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import jakarta.annotation.Nonnull;
 
 /**
  * MessageHandlerDefinition that verifies authorization based on

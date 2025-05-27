@@ -45,7 +45,7 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of the {@link org.axonframework.eventsourcing.AggregateSnapshotter} that eases the configuration when

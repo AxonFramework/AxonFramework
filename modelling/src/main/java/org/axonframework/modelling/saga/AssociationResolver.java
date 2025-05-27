@@ -19,7 +19,7 @@ package org.axonframework.modelling.saga;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Used to derive the value of an association property as designated by the association property name.

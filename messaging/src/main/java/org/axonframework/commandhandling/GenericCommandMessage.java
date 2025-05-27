@@ -25,6 +25,7 @@ import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
 import java.util.function.Function;
+import jakarta.annotation.Nonnull;
 
 /**
  * Generic implementation of the {@link CommandMessage} interface.

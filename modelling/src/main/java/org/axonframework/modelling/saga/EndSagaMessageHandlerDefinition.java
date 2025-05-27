@@ -23,8 +23,8 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 
 import java.lang.reflect.Executable;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * A {@link HandlerEnhancerDefinition} inspecting the existence of the {@link EndSaga} annotation on

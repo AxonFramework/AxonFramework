@@ -20,7 +20,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.axonframework.serialization.SerializedObject;
 
 import java.util.function.Predicate;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Serialization strategy for Avro Serializer.
