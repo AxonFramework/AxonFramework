@@ -18,7 +18,7 @@ package org.axonframework.messaging;
 
 import org.axonframework.common.Registration;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface marking components capable of registering Dispatch Interceptors. Generally, these are Messaging components

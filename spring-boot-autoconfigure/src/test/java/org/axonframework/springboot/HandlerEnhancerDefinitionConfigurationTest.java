@@ -29,7 +29,7 @@ import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;

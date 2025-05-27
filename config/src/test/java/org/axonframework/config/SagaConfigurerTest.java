@@ -108,6 +108,8 @@ class SagaConfigurerTest {
         assertEquals(sagaStore, sagaConfiguration.store());
     }
 
+
+    @Disabled("TODO #3443 - Adjust SagaRepository API to be async-native")
     @Test
     void deduplicateRegisterSaga() {
         LegacyEmbeddedEventStore eventStore =

@@ -24,7 +24,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
@@ -534,7 +534,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         );
     }
 
-    private @NotNull Predicate<Entry<EventMessage<?>>> entryWithAggregateEvent(String expectedPayload,
+    private @Nonnull Predicate<Entry<EventMessage<?>>> entryWithAggregateEvent(String expectedPayload,
                                                                                int expectedSequence) {
         return e -> expectedPayload.equals(convertPayload(e.message()).getPayload())
                 && TEST_AGGREGATE_ID.equals(e.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY))

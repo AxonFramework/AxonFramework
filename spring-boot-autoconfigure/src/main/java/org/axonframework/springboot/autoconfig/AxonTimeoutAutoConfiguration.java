@@ -23,7 +23,7 @@ import org.axonframework.messaging.timeout.HandlerTimeoutHandlerEnhancerDefiniti
 import org.axonframework.messaging.timeout.TaskTimeoutSettings;
 import org.axonframework.messaging.timeout.UnitOfWorkTimeoutInterceptor;
 import org.axonframework.springboot.TimeoutProperties;
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.Nonnull;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -65,7 +65,7 @@ public class AxonTimeoutAutoConfiguration {
         }
 
         @Override
-        public void configureModule(@NotNull LegacyConfigurer configurer) {
+        public void configureModule(@Nonnull LegacyConfigurer configurer) {
             configurer.eventProcessing()
                       .registerDefaultHandlerInterceptor((c, name) -> {
                           TaskTimeoutSettings settings = getSettingsForProcessor(name);

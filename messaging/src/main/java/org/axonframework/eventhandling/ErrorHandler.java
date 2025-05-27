@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface of the error handler that will be invoked if event processing fails. The error handler is generally invoked

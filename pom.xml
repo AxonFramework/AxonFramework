@@ -76,8 +76,8 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hikari.version>6.2.1</hikari.version>
         <hsqldb.version>2.7.2</hsqldb.version>
-        <hibernate-core.version>6.6.13.Final</hibernate-core.version>
-        <mysql-connector-java.version>9.2.0</mysql-connector-java.version>
+        <hibernate-core.version>6.6.15.Final</hibernate-core.version>
+        <mysql-connector-java.version>9.3.0</mysql-connector-java.version>
         <postgresql.version>42.7.5</postgresql.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>2.1.1</jakarta.annotation.version><!-- Don't upgrade due to JDK8 -->
@@ -91,7 +91,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.30</dropwizard.metrics.version>
-        <micrometer.version>1.14.6</micrometer.version>
+        <micrometer.version>1.15.0</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.17.5</byte-buddy.version>
         <commons-io.version>2.19.0</commons-io.version>
@@ -100,17 +100,17 @@
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.7.5</projectreactor.version>
+        <projectreactor.version>3.7.6</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
         <avro.version>1.12.0</avro.version>
         <dom4j.version>2.1.4</dom4j.version>
-        <gson.version>2.13.0</gson.version>
-        <jackson.version>2.18.3</jackson.version>
+        <gson.version>2.13.1</gson.version>
+        <jackson.version>2.19.0</jackson.version>
         <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version>
-        <jobrunr.version>7.5.0</jobrunr.version>
+        <jobrunr.version>7.5.1</jobrunr.version>
         <quartz.version>2.4.0</quartz.version>
         <!-- Spring -->
         <spring.version>6.2.1</spring.version>
@@ -126,13 +126,13 @@
         <!-- Validation -->
         <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
+        <central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
         <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
         <felix.maven-bundle-plugin.version>5.1.9</felix.maven-bundle-plugin.version>
         <jacoco-maven.version>0.8.13</jacoco-maven.version>
         <maven-assembly.version>3.7.1</maven-assembly.version>
         <maven-clean.version>3.4.1</maven-clean.version>
         <maven-compiler.version>3.14.0</maven-compiler.version>
-        <maven-deploy.version>3.1.4</maven-deploy.version>
         <maven-enforcer.version>3.5.0</maven-enforcer.version>
         <maven-failsafe.version>3.5.3</maven-failsafe.version>
         <maven-gpg.version>3.2.7</maven-gpg.version>
@@ -576,23 +576,18 @@
                     </archive>
                 </configuration>
             </plugin>
-            <plugin>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>${maven-source.version}</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <!-- deploy -->
             <plugin>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <version>${maven-deploy.version}</version>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>${central-publishing-maven-plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <excludeArtifacts>
+                        axon-integrationtests
+                    </excludeArtifacts>
+                </configuration>
             </plugin>
             <plugin>
                 <!-- just to make sure deployed artifacts are always built (and tested) using JDK 8+ -->
@@ -628,7 +623,7 @@
                     <!-- perform goal configuration -->
                     <mavenExecutorId>forked-path</mavenExecutorId>
                     <localCheckout>true</localCheckout>
-                    <releaseProfiles>javadoc,release-sign-artifacts</releaseProfiles>
+                    <releaseProfiles>javadoc,sources,sign</releaseProfiles>
                 </configuration>
             </plugin>
             <plugin>
@@ -750,6 +745,27 @@
         </profile>
 
         <profile>
+            <id>sources</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>${maven-source.version}</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>javadoc</id>
             <build>
                 <plugins>
@@ -793,25 +809,7 @@
         </profile>
 
         <profile>
-            <id>ossrh</id>
-            <repositories>
-                <repository>
-                    <id>sonatype</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-                    <snapshots>
-                        <enabled>true</enabled>
-                        <checksumPolicy>fail</checksumPolicy>
-                        <updatePolicy>always</updatePolicy>
-                    </snapshots>
-                    <releases>
-                        <enabled>false</enabled>
-                    </releases>
-                </repository>
-            </repositories>
-        </profile>
-
-        <profile>
-            <id>release-sign-artifacts</id>
+            <id>sign</id>
             <build>
                 <plugins>
                     <plugin>
@@ -822,7 +820,6 @@
                                 <id>sign-artifacts</id>
                                 <phase>verify</phase>
                                 <goals>
-                                    <!--suppress MavenModelInspection -->
                                     <goal>sign</goal>
                                 </goals>
                             </execution>
@@ -840,20 +837,6 @@
             </properties>
         </profile>
     </profiles>
-
-    <!-- deploy and release configuration -->
-    <distributionManagement>
-        <snapshotRepository>
-            <id>sonatype</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <uniqueVersion>true</uniqueVersion>
-        </snapshotRepository>
-        <repository>
-            <id>sonatype</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-            <uniqueVersion>false</uniqueVersion>
-        </repository>
-    </distributionManagement>
 
     <scm>
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
@@ -882,8 +865,8 @@
             </roles>
         </developer>
         <developer>
-            <name>Gerard Klijs</name>
-            <email>gerard.klijs@axoniq.io</email>
+            <name>Mitchell Herrijgers</name>
+            <email>mitchell.herrijgers@axoniq.io</email>
             <organization>AxonIQ</organization>
             <organizationUrl>https://axoniq.io</organizationUrl>
             <roles>
@@ -891,8 +874,8 @@
             </roles>
         </developer>
         <developer>
-            <name>Mitchell Herrijgers</name>
-            <email>mitchell.herrijgers@axoniq.io</email>
+            <name>Mateusz Nowak</name>
+            <email>mateusz.nowak@axoniq.io</email>
             <organization>AxonIQ</organization>
             <organizationUrl>https://axoniq.io</organizationUrl>
             <roles>

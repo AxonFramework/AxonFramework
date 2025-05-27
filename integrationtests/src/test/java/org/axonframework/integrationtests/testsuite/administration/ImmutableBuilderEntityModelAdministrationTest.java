@@ -62,7 +62,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
         EntityModel<ImmutableTask> taskModel = SimpleEntityModel
                 .forEntityClass(ImmutableTask.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableTask.class))
-                .commandHandler(typeResolver.resolve(CompleteTaskCommand.class).qualifiedName(),
+                .commandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
                                 (command, entity, context) -> {
                                     EventAppender eventAppender = EventAppender.forContext(context, configuration);
                                     entity.handle((CompleteTaskCommand) command.getPayload(), eventAppender);
@@ -74,7 +74,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
         EntityModel<ImmutableSalaryInformation> salaryInformationModel = SimpleEntityModel
                 .forEntityClass(ImmutableSalaryInformation.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableSalaryInformation.class))
-                .commandHandler(typeResolver.resolve(GiveRaise.class).qualifiedName(),
+                .commandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
                                 (command, entity, context) -> {
                                     EventAppender eventAppender = EventAppender.forContext(context,
                                                                                            configuration);
@@ -87,13 +87,13 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
         EntityModel<ImmutableEmployee> employeeModel = SimpleEntityModel
                 .forEntityClass(ImmutableEmployee.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableEmployee.class))
-                .commandHandler(typeResolver.resolve(CreateEmployee.class).qualifiedName(),
+                .commandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
                                 ((command, entity, context) -> {
                                     EventAppender eventAppender = EventAppender.forContext(context, configuration);
                                     entity.handle((CreateEmployee) command.getPayload(), eventAppender);
                                     return MessageStream.empty().cast();
                                 }))
-                .commandHandler(typeResolver.resolve(AssignTaskCommand.class).qualifiedName(),
+                .commandHandler(typeResolver.resolveOrThrow(AssignTaskCommand.class).qualifiedName(),
                                 ((command, entity, context) -> {
                                     EventAppender eventAppender = EventAppender.forContext(context, configuration);
                                     entity.handle((AssignTaskCommand) command.getPayload(), eventAppender);
@@ -135,7 +135,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .forEntityClass(ImmutableCustomer.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableCustomer.class))
                 .commandHandler(
-                        typeResolver.resolve(CreateCustomer.class).qualifiedName(),
+                        typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
                         ((command, entity, context) -> {
                             EventAppender eventAppender = EventAppender.forContext(context, configuration);
                             entity.handle((CreateCustomer) command.getPayload(), eventAppender);
@@ -149,7 +149,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .addConcreteType(employeeModel)
                 .addConcreteType(customerModel)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutablePerson.class))
-                .commandHandler(typeResolver.resolve(ChangeEmailAddress.class).qualifiedName(),
+                .commandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                 (command, entity, context) -> {
                                     EventAppender eventAppender = EventAppender.forContext(context, configuration);
                                     entity.handle((ChangeEmailAddress) command.getPayload(), eventAppender);

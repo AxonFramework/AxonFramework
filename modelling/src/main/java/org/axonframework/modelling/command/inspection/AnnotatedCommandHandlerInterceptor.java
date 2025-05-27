@@ -26,7 +26,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Annotated command handler interceptor on aggregate. Will invoke the delegate to the real interceptor method.

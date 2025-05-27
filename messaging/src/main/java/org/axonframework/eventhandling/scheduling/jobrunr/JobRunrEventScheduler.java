@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -256,7 +256,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
             return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage<>(
-                messageTypeResolver.resolve(event),
+                messageTypeResolver.resolveOrThrow(event),
                 (E) event,
                 MetaData.emptyInstance()
         );
