@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.Context;
 
@@ -66,7 +67,7 @@ public class Segment implements Comparable<Segment> {
      * @param context The {@link Context} to add the given {@code token} to.
      * @param segment The {@link Segment} to add to the given {@code context} using the {@link #RESOURCE_KEY}.
      */
-    public static Context addToContext(Context context, Segment segment) {
+    public static Context addToContext(@Nonnull Context context, @Nonnull Segment segment) {
         return context.withResource(RESOURCE_KEY, segment);
     }
 
@@ -78,7 +79,7 @@ public class Segment implements Comparable<Segment> {
      * @return An {@link Optional} of {@link Segment}, returning the resource keyed under the {@link #RESOURCE_KEY} in
      * the given {@code context}.
      */
-    public static Optional<Segment> fromContext(Context context) {
+    public static Optional<Segment> fromContext(@Nonnull Context context) {
         return Optional.ofNullable(context.getResource(RESOURCE_KEY));
     }
 

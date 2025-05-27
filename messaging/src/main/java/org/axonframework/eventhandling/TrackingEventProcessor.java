@@ -31,7 +31,6 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.Context;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -112,8 +111,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final AtomicBoolean workLauncherRunning = new AtomicBoolean(false);
     private final ConcurrentMap<Integer, TrackerStatus> activeSegments = new ConcurrentSkipListMap<>();
     private final ConcurrentMap<Integer, Long> segmentReleaseDeadlines = new ConcurrentSkipListMap<>();
-    private final Context.ResourceKey<Segment> segmentResourceKey;
-    private final Context.ResourceKey<TrackingToken> lastTokenResourceKey;
     private final AtomicInteger availableThreads;
     private final long tokenClaimInterval;
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
@@ -155,8 +152,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.maxThreadCount = config.getMaxThreadCount();
         this.threadFactory = config.getThreadFactory(builder.name);
         this.workerTerminationTimeout = config.getWorkerTerminationTimeout();
-        this.segmentResourceKey = Segment.RESOURCE_KEY;
-        this.lastTokenResourceKey = TrackingToken.RESOURCE_KEY;
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
     }
@@ -488,8 +483,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private void instructTokenClaim(Segment segment, UnitOfWork unitOfWork, TrackingToken finalLastToken) {
         unitOfWork.runOnPreInvocation(ctx -> {
-            ctx.putResource(segmentResourceKey, segment);
-            ctx.putResource(lastTokenResourceKey, finalLastToken);
+            ctx.putResource(Segment.RESOURCE_KEY, segment);
+            ctx.putResource(TrackingToken.RESOURCE_KEY, finalLastToken);
             if (storeTokenBeforeProcessing) {
                 tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
             } else {
@@ -500,12 +495,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         unitOfWork.runOnPrepareCommit(ctx -> {
             if (!storeTokenBeforeProcessing) {
                 tokenStore.storeToken(
-                        ctx.getResource(lastTokenResourceKey),
+                        ctx.getResource(TrackingToken.RESOURCE_KEY),
                         getName(),
-                        ctx.getResource(segmentResourceKey).getSegmentId()
+                        ctx.getResource(Segment.RESOURCE_KEY).getSegmentId()
                 );
             } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
-                tokenStore.extendClaim(getName(), ctx.getResource(segmentResourceKey).getSegmentId());
+                tokenStore.extendClaim(getName(), ctx.getResource(Segment.RESOURCE_KEY).getSegmentId());
             }
         });
     }
