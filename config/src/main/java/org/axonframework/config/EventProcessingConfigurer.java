@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -31,6 +32,7 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.tokenstore.ProcessorTokenStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -39,7 +41,6 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 
@@ -47,7 +48,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import jakarta.annotation.Nonnull;
 
 /**
  * Defines a contract for configuring event processing.
@@ -226,7 +226,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerTokenStore(String processorName,
-                                                 Function<LegacyConfiguration, TokenStore> tokenStoreBuilder);
+                                                 Function<LegacyConfiguration, ProcessorTokenStore> tokenStoreBuilder);
 
     /**
      * Register a {@link Function} that builds a {@link TokenStore} to use as the default in case no explicit token
@@ -235,7 +235,7 @@ public interface EventProcessingConfigurer {
      * @param tokenStore a {@link Function} that builds a {@link TokenStore}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, TokenStore> tokenStore);
+    EventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, ProcessorTokenStore> tokenStore);
 
     /**
      * Defaults Event Processors builders to use {@link org.axonframework.eventhandling.SubscribingEventProcessor}.

@@ -41,7 +41,6 @@ import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.ProcessorTokenStore;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryProcessorTokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -655,7 +654,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerTokenStore(String processorName,
-                                                        Function<LegacyConfiguration, TokenStore> tokenStore) {
+                                                        Function<LegacyConfiguration, ProcessorTokenStore> tokenStore) {
         this.tokenStore.put(processorName, new Component<>(() -> configuration,
                                                            "tokenStore",
                                                            tokenStore));
@@ -663,7 +662,7 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, TokenStore> tokenStore) {
+    public EventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, ProcessorTokenStore> tokenStore) {
         this.defaultTokenStore.update(tokenStore);
         return this;
     }

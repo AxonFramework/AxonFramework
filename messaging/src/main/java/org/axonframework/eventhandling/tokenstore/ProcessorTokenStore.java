@@ -83,6 +83,17 @@ public interface ProcessorTokenStore {
                                        int segmentId);
 
     /**
+     * Extends the claim on the current token held by this process for the given {@code segmentId}.
+     * Default implementation will fetch the token, which implicitly extends the claim.
+     *
+     * @param processingContext The context in which the claim is being extended
+     * @param segmentId The segment index for which to extend the claim
+     * @return A CompletableFuture that completes when the claim is extended, or completes exceptionally with
+     *         UnableToClaimTokenException if there is no token for given {@code segmentId}, or if it has been claimed by another process
+     */
+    CompletableFuture<Void> extendClaim(@Nonnull ProcessingContext processingContext, int segmentId);
+
+    /**
      * Returns the last stored {@link TrackingToken token} for the given {@code segmentId}.
      * Returns {@code null} if the stored token for the given segment is {@code null}.
      * <p>

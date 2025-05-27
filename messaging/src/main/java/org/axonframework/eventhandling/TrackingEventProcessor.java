@@ -220,13 +220,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     @Override
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
-        if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            result.completeExceptionally(new UnsupportedOperationException(
-                    "TokenStore must require explicit initialization to safely split tokens"
-            ));
-            return result;
-        }
-
         if (!this.activeSegments.containsKey(segmentId)) {
             return CompletableFuture.completedFuture(false);
         }
@@ -250,12 +243,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     @Override
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
-        if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            result.completeExceptionally(new UnsupportedOperationException(
-                    "TokenStore must require explicit initialization to safely merge tokens"
-            ));
-            return result;
-        }
 
         TrackerStatus segmentStatus = this.activeSegments.get(segmentId);
         if (segmentStatus == null) {
@@ -347,10 +334,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private void releaseToken(Segment segment) {
         try {
-            transactionManager.executeInTransaction(() -> {
-                tokenStore.releaseClaim(getName(), segment.getSegmentId());
-                eventHandlerInvoker().segmentReleased(segment);
-            });
+            var unitOfWork = transactionalUnitOfWorkFactory.create();
+            unitOfWork.executeWithResult(context ->
+                                                 tokenStore.releaseClaim(context, segment.getSegmentId())
+                                                           .thenRun(() -> eventHandlerInvoker().segmentReleased(segment))
+            ).join();
             logger.info("Released claim");
         } catch (Exception e) {
             // Ignore exception
@@ -440,16 +428,18 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             if (lastToken == null) {
                 // The token is never updated, so we extend the token claim.
                 checkSegmentCaughtUp(segment, eventStream);
-                transactionManager.executeInTransaction(
-                        () -> tokenStore.extendClaim(getName(), segment.getSegmentId())
-                );
+                var unitOfWork = transactionalUnitOfWorkFactory.create();
+                unitOfWork.executeWithResult(
+                        processingContext -> tokenStore.extendClaim(processingContext, segment.getSegmentId())
+                ).join();
                 return;
             } else if (batch.isEmpty()) {
                 // The token is updated but didn't contain events for this segment. So, we update the token position.
                 TrackingToken finalLastToken = lastToken;
-                transactionManager.executeInTransaction(
-                        () -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId())
-                );
+                var unitOfWork = transactionalUnitOfWorkFactory.create();
+                unitOfWork.executeWithResult(
+                        processingContext -> tokenStore.storeToken(processingContext, finalLastToken, segment.getSegmentId())
+                ).join();
                 return;
             }
 
@@ -488,26 +478,27 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     private void instructTokenClaim(Segment segment, UnitOfWork unitOfWork, TrackingToken finalLastToken) {
-        unitOfWork.runOnPreInvocation(ctx -> {
+        unitOfWork.onInvocation(ctx -> {
             ctx.putResource(segmentResourceKey, segment);
             ctx.putResource(lastTokenResourceKey, finalLastToken);
             if (storeTokenBeforeProcessing) {
-                tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
+                return tokenStore.storeToken(ctx, finalLastToken, segment.getSegmentId());
             } else {
-                tokenStore.extendClaim(getName(), segment.getSegmentId());
+                return tokenStore.extendClaim(ctx, segment.getSegmentId());
             }
         });
         var startTime = now();
-        unitOfWork.runOnPrepareCommit(ctx -> {
+        unitOfWork.onPrepareCommit(ctx -> {
             if (!storeTokenBeforeProcessing) {
-                tokenStore.storeToken(
+                return tokenStore.storeToken(
+                        ctx,
                         ctx.getResource(lastTokenResourceKey),
-                        getName(),
                         ctx.getResource(segmentResourceKey).getSegmentId()
                 );
             } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
-                tokenStore.extendClaim(getName(), ctx.getResource(segmentResourceKey).getSegmentId());
+                return tokenStore.extendClaim(ctx, ctx.getResource(segmentResourceKey).getSegmentId());
             }
+            return CompletableFuture.completedFuture(null);
         });
     }
 
@@ -1000,8 +991,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         }
 
         /**
-         * Sets the {@link ProcessorTokenStore} used to store and fetch event tokens that enable this {@link EventProcessor} to
-         * track its progress.
+         * Sets the {@link ProcessorTokenStore} used to store and fetch event tokens that enable this
+         * {@link EventProcessor} to track its progress.
          *
          * @param tokenStore the {@link ProcessorTokenStore} used to store and fetch event tokens that enable this
          *                   {@link EventProcessor} to track its progress
