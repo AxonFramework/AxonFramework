@@ -56,7 +56,7 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
 
     /**
      * Initializes a factory with the given {@code transactionManager} and a delegate {@link UnitOfWorkFactory}. The
-     * unit of work lifecycle will be bound to transaction managed by the provided {@code transactionManager},
+     * unit of work's lifecycle will be bound to transaction managed by the provided {@code transactionManager}.
      *
      * @param transactionManager The transaction manager used to create and manage transactions for the units of work.
      * @param delegate           The delegate factory used to create units of work.

@@ -17,7 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 /**
- * Factory for creating {@link UnitOfWork} instances. It useful to create units of work that are bound to some context,
+ * Factory for creating {@link UnitOfWork} instances. Useful to create units of work that are bound to some context,
  * such as a database transaction.
  *
  * @author Mateusz Nowak
