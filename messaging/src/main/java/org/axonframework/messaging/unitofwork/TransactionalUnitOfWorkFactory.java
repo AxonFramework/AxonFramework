@@ -43,7 +43,7 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
     private final UnitOfWorkFactory delegate;
 
     /**
-     * Initializes a factory with the given {@code transactionManager}. The unit of work lifecycle will be bound to
+     * Initializes a factory with the given {@code transactionManager}. The unit of work's lifecycle will be bound to
      * transactions managed by the provided {@code transactionManager}.
      *
      * @param transactionManager The transaction manager used to create and manage transactions for the units of work
