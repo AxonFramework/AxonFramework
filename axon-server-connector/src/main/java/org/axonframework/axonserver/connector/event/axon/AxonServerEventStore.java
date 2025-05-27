@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -520,7 +520,8 @@ public class AxonServerEventStore extends AbstractEventStore {
                              .appendSnapshot(map(snapshot, serializer))
                              .whenComplete((c, e) -> {
                                  if (e != null) {
-                                     logger.warn("Error occurred while creating a snapshot", e);
+                                     logger.warn("Error occurred while appending a snapshot for aggregate [{}] with [{}].",
+                                                 snapshot.getType(), snapshot.getAggregateIdentifier(), e);
                                  } else if (c != null) {
                                      if (c.getSuccess()) {
                                          logger.debug("Snapshot created for aggregate type {}, identifier {}",
