@@ -18,7 +18,7 @@ package org.axonframework.eventhandling;
 
 import java.util.List;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Event processing strategy that directly initiates event processing.

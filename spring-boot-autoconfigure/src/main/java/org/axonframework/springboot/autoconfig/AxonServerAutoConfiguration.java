@@ -66,7 +66,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.lang.Nullable;
 
 import java.util.concurrent.ScheduledExecutorService;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Configures Axon Server as implementation for the CommandBus, QueryBus and EventStore.

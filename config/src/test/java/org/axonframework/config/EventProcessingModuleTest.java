@@ -63,7 +63,6 @@ import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
@@ -84,7 +83,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.axonframework.utils.AssertUtils.assertWithin;
@@ -992,7 +991,6 @@ class EventProcessingModuleTest {
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(testName)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerRollbackConfiguration(testName, config -> RollbackConfigurationType.ANY_THROWABLE)
                   .registerErrorHandler(testName, config -> PropagatingErrorHandler.INSTANCE)
                   .registerTokenStore(testName, config -> testTokenStore)
                   .registerTransactionManager(testName, config -> NoTransactionManager.INSTANCE);
@@ -1005,10 +1003,6 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testName, result.getName());
-        assertEquals(
-                RollbackConfigurationType.ANY_THROWABLE,
-                getField(AbstractEventProcessor.class, "rollbackConfiguration", result)
-        );
         assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", result));
@@ -1024,7 +1018,6 @@ class EventProcessingModuleTest {
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor(testName, config -> eventStoreOne)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerRollbackConfiguration(testName, config -> RollbackConfigurationType.ANY_THROWABLE)
                   .registerErrorHandler(testName, config -> PropagatingErrorHandler.INSTANCE)
                   .registerTokenStore(testName, config -> testTokenStore)
                   .registerTransactionManager(testName, config -> NoTransactionManager.INSTANCE);
@@ -1037,10 +1030,6 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testName, result.getName());
-        assertEquals(
-                RollbackConfigurationType.ANY_THROWABLE,
-                getField(AbstractEventProcessor.class, "rollbackConfiguration", result)
-        );
         assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
         assertEquals(eventStoreOne, getField("messageSource", result));
         assertEquals(testTokenStore, getField("tokenStore", result));

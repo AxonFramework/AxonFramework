@@ -56,8 +56,8 @@ import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.util.UUID;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;

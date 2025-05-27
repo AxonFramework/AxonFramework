@@ -27,7 +27,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 

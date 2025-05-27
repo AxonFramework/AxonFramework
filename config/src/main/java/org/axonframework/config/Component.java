@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A Component used in the Axon Configurer. A Component describes an object that needs to be created, possibly based on

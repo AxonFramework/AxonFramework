@@ -698,6 +698,8 @@ Minor API Changes
   as described in the [Event Store](#event-store) section. Furthermore, operations have been made "async-native," as
   described [here](#adjusted-apis). This is marked as a minor API changes since the `EventStorageEngine` should not be
   used directly
+* The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all EventProcessor builders. 
+  Exceptions need to be handled by an interceptor, or otherwise they are always considered an error.
 
 Stored Format Changes
 =====================

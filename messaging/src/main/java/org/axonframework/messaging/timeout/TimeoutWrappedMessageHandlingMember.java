@@ -20,7 +20,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 
 import java.util.concurrent.TimeoutException;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Represents a {@link MessageHandlingMember} that wraps another {@link MessageHandlingMember} and enforces a timeout on

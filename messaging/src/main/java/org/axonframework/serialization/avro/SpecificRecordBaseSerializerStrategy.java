@@ -32,7 +32,7 @@ import org.axonframework.serialization.SimpleSerializedType;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 

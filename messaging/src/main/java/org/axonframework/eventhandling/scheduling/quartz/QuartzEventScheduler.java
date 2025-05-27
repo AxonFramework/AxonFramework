@@ -53,7 +53,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.eventhandling.GenericEventMessage.clock;
@@ -157,7 +157,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage<>(
-                messageTypeResolver.resolve(event),
+                messageTypeResolver.resolveOrThrow(event),
                 (E) event,
                 MetaData.emptyInstance()
         );

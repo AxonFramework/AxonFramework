@@ -200,7 +200,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
         }
         MessageType type = messageOrPayload == null
                 ? new MessageType("empty.reset.context")
-                : messageTypeResolver.resolve(messageOrPayload);
+                : messageTypeResolver.resolveOrThrow(messageOrPayload);
         return new GenericResetContext<>(type, (T) messageOrPayload);
     }
 

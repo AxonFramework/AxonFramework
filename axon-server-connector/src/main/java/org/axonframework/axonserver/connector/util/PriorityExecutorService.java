@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * This {@link ExecutorService} wraps an existing one, creating a {@link PriorityTask} for every {@link Runnable} that

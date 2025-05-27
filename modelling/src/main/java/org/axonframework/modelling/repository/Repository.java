@@ -20,7 +20,7 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * The {@link Repository} provides an abstraction for the storage of entities.

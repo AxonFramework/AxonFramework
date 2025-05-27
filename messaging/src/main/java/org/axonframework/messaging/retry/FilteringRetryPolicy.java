@@ -21,7 +21,7 @@ import org.axonframework.messaging.Message;
 
 import java.util.List;
 import java.util.function.Predicate;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A RetryPolicy that delegates to another RetryPolicy when the latest exception matches a given predicate.

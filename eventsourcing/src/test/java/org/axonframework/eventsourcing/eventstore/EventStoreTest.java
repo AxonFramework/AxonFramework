@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -88,13 +88,13 @@ class EventStoreTest {
         }
 
         @Override
-        public EventStoreTransaction transaction(@NotNull ProcessingContext processingContext) {
+        public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
             this.processingContext.set(processingContext);
             return new TestEventStoreTransaction(appendedEvents);
         }
 
         @Override
-        public void describeTo(@NotNull ComponentDescriptor descriptor) {
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException("We don't need this method to test the defaulted methods.");
         }
     }
@@ -108,17 +108,17 @@ class EventStoreTest {
         }
 
         @Override
-        public MessageStream<EventMessage<?>> source(@NotNull SourcingCondition condition) {
+        public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
             throw new UnsupportedOperationException("We don't need this method to test the defaulted methods.");
         }
 
         @Override
-        public void appendEvent(@NotNull EventMessage<?> eventMessage) {
+        public void appendEvent(@Nonnull EventMessage<?> eventMessage) {
             appendedEvents.get().add(eventMessage);
         }
 
         @Override
-        public void onAppend(@NotNull Consumer<EventMessage<?>> callback) {
+        public void onAppend(@Nonnull Consumer<EventMessage<?>> callback) {
             throw new UnsupportedOperationException("We don't need this method to test the defaulted methods.");
         }
 
