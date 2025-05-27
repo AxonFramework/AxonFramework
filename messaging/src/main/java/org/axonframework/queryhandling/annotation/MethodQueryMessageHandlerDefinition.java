@@ -31,8 +31,8 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.Optional;
 import java.util.concurrent.Future;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperTypeIfPrimitive;
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;

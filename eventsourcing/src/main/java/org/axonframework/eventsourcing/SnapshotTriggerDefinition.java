@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing the mechanism for triggering Snapshots. The SnapshotTriggerDefinition creates specific trigger

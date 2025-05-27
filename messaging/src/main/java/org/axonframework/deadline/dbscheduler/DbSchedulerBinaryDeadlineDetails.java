@@ -29,8 +29,8 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static java.lang.String.format;
 

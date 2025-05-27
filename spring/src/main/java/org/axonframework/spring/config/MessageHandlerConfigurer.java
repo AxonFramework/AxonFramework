@@ -28,7 +28,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.util.List;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * An implementation of a {@link ConfigurerModule} that will register a list of beans as handlers for a specific type of

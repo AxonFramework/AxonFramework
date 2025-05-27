@@ -19,7 +19,7 @@ package org.axonframework.tracing.opentelemetry;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import org.axonframework.messaging.Message;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * This {@link TextMapGetter} implementation is able to extract the parent OpenTelemetry span context from a

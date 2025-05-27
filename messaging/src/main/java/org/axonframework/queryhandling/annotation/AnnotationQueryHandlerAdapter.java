@@ -32,7 +32,7 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Adapter that turns any {@link QueryHandler @QueryHandler} annotated bean into a {@link MessageHandler}

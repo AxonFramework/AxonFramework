@@ -23,7 +23,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Specifies a mechanism to monitor message processing. When a message is supplied to

@@ -66,7 +66,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     private GenericEventMessage<Object> toGenericEventMessage(Object payload, MetaData metaData) {
-        var messageType = messageTypeResolver.resolve(payload);
+        var messageType = messageTypeResolver.resolveOrThrow(payload);
         return new GenericEventMessage<>(
                 messageType,
                 payload,
@@ -122,7 +122,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     private GenericCommandMessage<Object> toGenericCommandMessage(@Nonnull Object payload,
                                                                   @Nonnull MetaData metaData
     ) {
-        var messageType = messageTypeResolver.resolve(payload);
+        var messageType = messageTypeResolver.resolveOrThrow(payload);
         return new GenericCommandMessage<>(
                 messageType,
                 payload,

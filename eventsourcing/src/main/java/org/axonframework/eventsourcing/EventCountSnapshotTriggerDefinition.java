@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Snapshotter trigger mechanism that counts the number of events to decide when to create a snapshot. A snapshot is

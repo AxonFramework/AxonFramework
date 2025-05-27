@@ -25,7 +25,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Component that publishes events to an {@link EventSink} in the context of a {@link ProcessingContext}. The events

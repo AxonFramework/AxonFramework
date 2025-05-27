@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.async;
 
 import org.axonframework.eventhandling.EventMessage;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * SequencingPolicy that does not enforce any sequencing requirements on event processing.

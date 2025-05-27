@@ -21,7 +21,7 @@ import org.axonframework.messaging.Message;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A RetryScheduler that uses a backoff strategy, doubling the retry delay after each attempt.

@@ -26,7 +26,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;
@@ -68,8 +68,8 @@ class FixtureMessageHandlerInterceptorTest {
         }
 
         @Override
-        public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                             @NotNull InterceptorChain interceptorChain) throws Exception {
+        public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                             @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.transformMessage(event -> event.withMetaData(MetaData.with(META_DATA_KEY, value)));
             return interceptorChain.proceedSync();
         }

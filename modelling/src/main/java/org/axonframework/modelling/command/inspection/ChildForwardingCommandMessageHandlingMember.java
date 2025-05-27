@@ -29,8 +29,8 @@ import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Implementation of a {@link CommandMessageHandlingMember} that forwards commands to a child entity.

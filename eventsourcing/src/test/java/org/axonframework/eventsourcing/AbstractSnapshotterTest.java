@@ -39,7 +39,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executor;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;

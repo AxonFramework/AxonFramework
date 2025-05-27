@@ -24,7 +24,7 @@ import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Counts the number of ingested, successful, failed and processed messages

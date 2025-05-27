@@ -22,7 +22,7 @@ import org.axonframework.serialization.Serializer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A {@link Message} that represents a result of handling some form of request message.

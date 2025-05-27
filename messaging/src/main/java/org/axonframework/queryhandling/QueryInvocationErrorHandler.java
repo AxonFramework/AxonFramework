@@ -18,7 +18,7 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageHandler;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing a mechanism for the QueryMessage components to report errors.

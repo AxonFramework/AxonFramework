@@ -19,7 +19,7 @@ package org.axonframework.messaging;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Workflow interface that allows for customized message handler invocation chains. A MessageHandlerInterceptor can add

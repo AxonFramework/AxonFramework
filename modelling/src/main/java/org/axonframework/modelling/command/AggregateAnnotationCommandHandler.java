@@ -56,8 +56,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -225,7 +225,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(message))
                        .handle(message, processingContext)
-                       .mapMessage(m -> asCommandResultMessage(m, messageTypeResolver::resolve))
+                       .mapMessage(m -> asCommandResultMessage(m, messageTypeResolver::resolveOrThrow))
                        .first()
                        .cast();
     }

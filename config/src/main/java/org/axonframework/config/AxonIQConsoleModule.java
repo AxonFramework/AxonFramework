@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /**
  * Module related to AxonIQ console, for now it's just logging information about AxonIQ console when it's not suppressed

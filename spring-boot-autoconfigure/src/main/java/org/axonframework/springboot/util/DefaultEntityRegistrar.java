@@ -24,7 +24,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotationMetadata;
 
 import java.util.Map;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class DefaultEntityRegistrar implements ImportBeanDefinitionRegistrar {

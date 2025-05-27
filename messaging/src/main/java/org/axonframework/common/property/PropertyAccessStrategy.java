@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 
 /**

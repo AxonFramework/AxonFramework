@@ -21,7 +21,7 @@ import org.axonframework.messaging.Message;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Describes a policy for retrying failed messages. These could be commands, events, as well as queries where the

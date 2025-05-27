@@ -19,7 +19,7 @@ package org.axonframework.micrometer;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of the {@link ConfigurerModule} which uses the

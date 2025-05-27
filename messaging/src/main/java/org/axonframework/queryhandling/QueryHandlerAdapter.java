@@ -17,7 +17,7 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.Registration;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Describes a class capable of subscribing to the query bus.

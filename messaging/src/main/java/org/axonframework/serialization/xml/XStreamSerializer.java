@@ -37,7 +37,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Serializer that uses XStream to serialize and deserialize arbitrary objects. The XStream instance is configured to

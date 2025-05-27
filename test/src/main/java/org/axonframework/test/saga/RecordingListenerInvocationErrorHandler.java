@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 
 import java.util.Optional;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A wrapper around a {@link ListenerInvocationErrorHandler} that in itself also implements

@@ -32,7 +32,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Abstract implementation of the {@link DeadlineManager} to be implemented by concrete solutions for the
@@ -138,7 +138,7 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
                                                 (Message<P>) messageOrPayload,
                                                 () -> expiryTime);
         }
-        MessageType type = messageTypeResolver.resolve(ObjectUtils.nullSafeTypeOf(messageOrPayload));
+        MessageType type = messageTypeResolver.resolveOrThrow(ObjectUtils.nullSafeTypeOf(messageOrPayload));
         return new GenericDeadlineMessage<>(
                 deadlineName, new GenericMessage<>(type, (P) messageOrPayload), () -> expiryTime
         );

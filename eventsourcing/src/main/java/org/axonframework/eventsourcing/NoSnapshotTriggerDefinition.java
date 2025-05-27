@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.EventMessage;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of {@link SnapshotTriggerDefinition} that doesn't trigger snapshots at all.

@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.StreamableMessageSource;
 
 import java.util.Optional;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Provides a mechanism to open streams from events in the the underlying event storage.

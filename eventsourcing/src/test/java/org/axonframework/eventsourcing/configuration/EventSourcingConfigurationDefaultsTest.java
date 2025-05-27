@@ -29,7 +29,7 @@ import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -90,7 +90,7 @@ class EventSourcingConfigurationDefaultsTest {
     private static class TestTagResolver implements TagResolver {
 
         @Override
-        public Set<Tag> resolve(@NotNull EventMessage<?> event) {
+        public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
             throw new UnsupportedOperationException();
         }
     }

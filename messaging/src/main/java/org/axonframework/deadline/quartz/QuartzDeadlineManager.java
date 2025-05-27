@@ -55,7 +55,7 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Date.from;
 import static org.axonframework.common.BuilderUtils.assertNonNull;

@@ -29,7 +29,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
 
 import java.util.Set;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;

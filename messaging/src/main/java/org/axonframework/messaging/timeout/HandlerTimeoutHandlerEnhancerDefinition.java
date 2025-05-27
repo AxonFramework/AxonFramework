@@ -24,7 +24,7 @@ import org.axonframework.messaging.annotation.MessageHandlerTimeout;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.queryhandling.QueryMessage;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Inspects message handler and wraps it in a {@link TimeoutWrappedMessageHandlingMember} if the handler should have a

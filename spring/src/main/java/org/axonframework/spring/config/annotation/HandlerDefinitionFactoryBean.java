@@ -26,7 +26,7 @@ import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
 
 import java.util.List;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Spring {@link FactoryBean} that creates a {@link HandlerDefinition} using configured {@link HandlerDefinition} and

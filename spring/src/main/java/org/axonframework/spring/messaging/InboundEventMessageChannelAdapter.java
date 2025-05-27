@@ -26,7 +26,7 @@ import org.springframework.messaging.MessageHandler;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;

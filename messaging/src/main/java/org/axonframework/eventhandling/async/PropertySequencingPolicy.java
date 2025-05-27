@@ -22,7 +22,7 @@ import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.eventhandling.EventMessage;
 
 import java.util.function.Function;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 

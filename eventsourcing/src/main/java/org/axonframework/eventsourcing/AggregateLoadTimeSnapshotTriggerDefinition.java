@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import java.time.Clock;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A Snapshotter trigger mechanism which based on the loading time of an Aggregate decides when to trigger the creation

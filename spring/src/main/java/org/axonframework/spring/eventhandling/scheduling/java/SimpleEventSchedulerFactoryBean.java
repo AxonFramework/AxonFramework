@@ -32,7 +32,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Spring FactoryBean that creates a SimpleEventScheduler instance using resources found in the Spring Application

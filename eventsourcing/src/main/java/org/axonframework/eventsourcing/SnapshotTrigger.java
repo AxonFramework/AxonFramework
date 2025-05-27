@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.EventMessage;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing a mechanism that keeps track of an Aggregate's activity in order to trigger a snapshot. The

@@ -21,7 +21,7 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Encapsulates the identifying fields of a Query Handler when one is subscribed to the

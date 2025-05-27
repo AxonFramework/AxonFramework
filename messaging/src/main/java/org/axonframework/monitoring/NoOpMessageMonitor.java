@@ -18,7 +18,7 @@ package org.axonframework.monitoring;
 
 import org.axonframework.messaging.Message;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A message monitor that returns a NoOp message callback

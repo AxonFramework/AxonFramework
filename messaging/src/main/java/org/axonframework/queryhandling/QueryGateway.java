@@ -24,7 +24,7 @@ import reactor.util.concurrent.Queues;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface towards the Query Handling components of an application. This interface provides a friendlier API toward

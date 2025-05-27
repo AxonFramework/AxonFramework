@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.StateManager;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing a registry of {@link StatefulCommandHandler stateful command handlers}. These command handlers

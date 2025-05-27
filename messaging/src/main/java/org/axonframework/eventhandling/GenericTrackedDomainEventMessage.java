@@ -21,7 +21,7 @@ import org.axonframework.messaging.Message;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Generic implementation of a {@link DomainEventMessage} that is also a {@link TrackedEventMessage}.

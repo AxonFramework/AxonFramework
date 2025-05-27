@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Context.ResourceKey;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing a mechanism that generates a routing key for a given command. Commands that should be handled by

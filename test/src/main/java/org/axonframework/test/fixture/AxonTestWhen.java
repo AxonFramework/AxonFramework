@@ -60,7 +60,7 @@ class AxonTestWhen implements AxonTestPhase.When {
 
     @Override
     public Command command(@Nonnull Object payload, @Nonnull MetaData metaData) {
-        var messageType = messageTypeResolver.resolve(payload);
+        var messageType = messageTypeResolver.resolveOrThrow(payload);
         var message = new GenericCommandMessage<>(messageType, payload, metaData);
         inUnitOfWorkOnInvocation(processingContext ->
                                          commandBus.dispatch(message, processingContext)
@@ -84,7 +84,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     private GenericEventMessage<Object> toGenericEventMessage(Object payload, MetaData metaData) {
-        var messageType = messageTypeResolver.resolve(payload);
+        var messageType = messageTypeResolver.resolveOrThrow(payload);
         return new GenericEventMessage<>(
                 messageType,
                 payload,

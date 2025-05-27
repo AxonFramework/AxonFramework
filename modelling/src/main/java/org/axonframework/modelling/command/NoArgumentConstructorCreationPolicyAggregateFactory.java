@@ -18,8 +18,8 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.common.ReflectionUtils;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Default implementation of {@link CreationPolicyAggregateFactory} that invokes the default, no-arguments constructor

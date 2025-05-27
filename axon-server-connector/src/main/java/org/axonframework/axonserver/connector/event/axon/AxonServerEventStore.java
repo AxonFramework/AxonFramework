@@ -77,7 +77,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Spliterator.*;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;

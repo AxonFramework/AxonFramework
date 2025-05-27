@@ -16,7 +16,7 @@
 
 package org.axonframework.config;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing a configurer for a module in the Axon Configuration API. Allows the registration of modules on

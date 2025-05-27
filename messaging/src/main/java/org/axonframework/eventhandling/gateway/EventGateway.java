@@ -20,7 +20,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Arrays;
 import java.util.List;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface towards the Event Handling components of an application. This interface provides a friendlier API toward

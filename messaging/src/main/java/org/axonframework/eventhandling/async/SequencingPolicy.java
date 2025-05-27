@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.async;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface to a policy definition for concurrent processing, for example event handling.

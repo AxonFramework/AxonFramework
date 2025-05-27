@@ -21,7 +21,7 @@ import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Adds the metadata of the message to the span as attributes.

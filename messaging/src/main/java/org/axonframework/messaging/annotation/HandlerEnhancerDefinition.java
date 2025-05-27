@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing objects that are capable of enhancing a {@link MessageHandler}, giving it additional

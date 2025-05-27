@@ -28,7 +28,7 @@ import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Collections.singletonMap;
 

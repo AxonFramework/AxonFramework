@@ -34,7 +34,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.ExecutionException;
@@ -180,7 +180,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
         public static class MentorIdResolver implements EntityIdResolver<String> {
 
             @Override
-            @NotNull
+            @Nonnull
             public String resolve(@Nonnull Message<?> command, @Nonnull ProcessingContext context) {
                 //noinspection unused
                 if (command.getPayload() instanceof AssignMentorCommand(String studentId, String mentorId)) {

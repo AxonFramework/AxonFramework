@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.replay;
 import org.axonframework.messaging.Message;
 
 import java.util.Map;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A {@link Message} initiating the reset of an Event Handling Component.

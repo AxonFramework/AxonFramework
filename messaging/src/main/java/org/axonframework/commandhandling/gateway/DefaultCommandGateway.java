@@ -26,8 +26,8 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Default implementation of the {@link CommandGateway} interface.
@@ -113,7 +113,7 @@ public class DefaultCommandGateway implements CommandGateway {
         }
 
         return new GenericCommandMessage<>(
-                messageTypeResolver.resolve(command),
+                messageTypeResolver.resolveOrThrow(command),
                 (C) command,
                 metaData
         );

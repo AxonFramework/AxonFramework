@@ -25,7 +25,7 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A {@link SubscribableMessageSource} that receives event from a persistent stream from Axon Server. The persistent

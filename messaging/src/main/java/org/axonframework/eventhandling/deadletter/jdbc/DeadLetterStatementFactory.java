@@ -28,7 +28,7 @@ import java.time.Instant;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A contract towards <b>all</b> {@link PreparedStatement PreparedStatements} a {@link JdbcSequencedDeadLetterQueue}

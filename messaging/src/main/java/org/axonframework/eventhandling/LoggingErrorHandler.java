@@ -19,7 +19,7 @@ package org.axonframework.eventhandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of a {@link ListenerInvocationErrorHandler} that logs exceptions as errors but otherwise does nothing

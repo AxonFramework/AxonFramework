@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface of an error handler that is invoked when an exception is triggered as result of an {@link
