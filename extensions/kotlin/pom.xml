@@ -54,21 +54,21 @@
             ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
         <!-- Main -->
-        <axon.version>4.11.0</axon.version>
-        <kotlin.version>1.9.24</kotlin.version>
+        <axon.version>4.11.2</axon.version>
+        <kotlin.version>2.1.21</kotlin.version>
         <!-- Serialization -->
-        <jackson-kotlin.version>2.17.1</jackson-kotlin.version>
+        <jackson-kotlin.version>2.19.0</jackson-kotlin.version>
         <kotlin-serialization.version>1.6.3</kotlin-serialization.version>
         <!-- Logging -->
         <slf4j.version>2.0.17</slf4j.version>
         <log4j.version>2.13.3</log4j.version>
         <!-- Testing -->
-        <junit.jupiter.version>5.10.1</junit.jupiter.version>
+        <junit.jupiter.version>5.12.2</junit.jupiter.version>
         <mockk.version>1.12.4</mockk.version>
         <!-- Build -->
         <central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
-        <dokka.version>1.9.20</dokka.version>
-        <jacoco-maven.version>0.8.11</jacoco-maven.version>
+        <dokka.version>2.0.0</dokka.version>
+        <jacoco-maven.version>0.8.13</jacoco-maven.version>
         <maven-assembly.version>3.7.1</maven-assembly.version>
         <maven-clean.version>3.4.1</maven-clean.version>
         <maven-compiler.version>3.14.0</maven-compiler.version>
@@ -123,9 +123,11 @@
             </dependency>
             <!-- Testing -->
             <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter</artifactId>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
                 <version>${junit.jupiter.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
