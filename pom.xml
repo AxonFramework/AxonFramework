@@ -104,7 +104,7 @@
         <log4j.version>2.24.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
-        <dropwizard.metrics.version>4.2.30</dropwizard.metrics.version>
+        <dropwizard.metrics.version>4.2.32</dropwizard.metrics.version>
         <micrometer.version>1.15.0</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.17.5</byte-buddy.version>
@@ -136,7 +136,7 @@
         <junit4.version>4.13.2</junit4.version>
         <junit.jupiter.version>5.12.2</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
-        <testcontainers.version>1.19.3</testcontainers.version>
+        <testcontainers.version>1.21.0</testcontainers.version>
         <!-- Validation -->
         <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
         <hibernate-validator.8.version>8.0.1.Final</hibernate-validator.8.version>

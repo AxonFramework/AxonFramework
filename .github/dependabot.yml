@@ -54,6 +54,10 @@ updates:
         versions: [ "[6.0.0,)" ]
       - dependency-name: "org.hibernate:hibernate-validator"
         versions: [ "[7.0.0,)" ]
+      - dependency-name: "org.hibernate:hibernate-validator"
+        versions: [ "[9.0.0,)" ]
+      - dependency-name: "org.hibernate.orm:hibernate-core"
+        versions: [ "[7.0.0,)" ]
       - dependency-name: "org.mockito:*"
         versions: [ "[5.0.0,)" ]
       - dependency-name: "org.openrewrite.recipe:rewrite-migrate-java"
