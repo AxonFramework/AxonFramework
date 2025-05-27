@@ -32,7 +32,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 

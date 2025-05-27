@@ -20,7 +20,7 @@ import io.opentelemetry.context.propagation.TextMapSetter;
 import org.axonframework.messaging.Message;
 
 import java.util.Map;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * This {@link TextMapSetter} implementation is able to insert the current OpenTelemetry span context into a

@@ -201,7 +201,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             Arrays.stream(parameterResolvers)
                   .filter(p -> p instanceof PayloadParameterResolver)
                   .findFirst()
-                  .map(prr -> messageTypeResolver.resolve(prr.supportedPayloadType()))
+                  .map(prr -> messageTypeResolver.resolveOrThrow(prr.supportedPayloadType()))
                   .ifPresent(messageType -> payloadQualifiedNames.add(messageType.qualifiedName()));
         }
 

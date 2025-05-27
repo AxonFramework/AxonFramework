@@ -25,7 +25,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.PayloadApplicationEvent;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Component that forward events received from a {@link SubscribableMessageSource} as Spring {@link ApplicationEvent} to

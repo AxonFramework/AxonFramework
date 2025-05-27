@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A {@link BeanDefinitionRegistryPostProcessor} implementation that detects beans with Axon Message handlers and

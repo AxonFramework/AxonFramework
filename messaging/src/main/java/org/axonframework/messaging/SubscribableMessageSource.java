@@ -20,7 +20,7 @@ import org.axonframework.common.Registration;
 
 import java.util.List;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface for a source of {@link Message messages} to which message processors can subscribe.
