@@ -20,7 +20,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.jpa.EntityManagerProvider;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * EntityManagerProvider implementation that expects the container to inject the default container managed

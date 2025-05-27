@@ -29,7 +29,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.util.Map;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 

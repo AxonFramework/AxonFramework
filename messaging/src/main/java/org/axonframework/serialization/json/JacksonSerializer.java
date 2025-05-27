@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,9 +41,11 @@ import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.UnknownSerializedType;
 
 import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.lang.reflect.Type;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -60,6 +62,8 @@ public class JacksonSerializer implements Serializer {
     private final RevisionResolver revisionResolver;
     private final Converter converter;
     private final ObjectMapper objectMapper;
+    private final Set<String> unknownClasses = new ConcurrentSkipListSet<>();
+    private final boolean cacheUnknownClasses;
 
     /**
      * Instantiate a Builder to be able to create a {@link JacksonSerializer}.
@@ -120,6 +124,7 @@ public class JacksonSerializer implements Serializer {
         if (converter instanceof ChainingConverter) {
             registerConverters((ChainingConverter) converter);
         }
+        this.cacheUnknownClasses = builder.cacheUnknownClasses;
     }
 
     /**
@@ -252,9 +257,14 @@ public class JacksonSerializer implements Serializer {
         if (SimpleSerializedType.emptyType().equals(type)) {
             return Void.class;
         }
+        String className = resolveClassName(type);
+        if (cacheUnknownClasses && unknownClasses.contains(className)) {
+            return UnknownSerializedType.class;
+        }
         try {
-            return objectMapper.getTypeFactory().findClass(resolveClassName(type));
+            return objectMapper.getTypeFactory().findClass(className);
         } catch (ClassNotFoundException e) {
+            unknownClasses.add(className);
             return UnknownSerializedType.class;
         }
     }
@@ -312,6 +322,7 @@ public class JacksonSerializer implements Serializer {
         private boolean lenientDeserialization = false;
         private boolean defaultTyping = false;
         private ClassLoader classLoader;
+        private boolean cacheUnknownClasses = true;
 
         /**
          * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
@@ -381,6 +392,19 @@ public class JacksonSerializer implements Serializer {
          */
         public Builder lenientDeserialization() {
             lenientDeserialization = true;
+            return this;
+        }
+
+        /**
+         * Disables the caching of the names for classes which couldn't be resolved to a class.
+         * <p>
+         * It is recommended to disable this in case the class loading is dynamic, and classes that are not available at
+         * one point in time, may become available at any time later.
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder disableCachingOfUnknownClasses() {
+            this.cacheUnknownClasses = false;
             return this;
         }
 

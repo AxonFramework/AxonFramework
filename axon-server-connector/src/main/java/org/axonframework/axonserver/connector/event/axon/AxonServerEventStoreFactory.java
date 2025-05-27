@@ -34,7 +34,7 @@ import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 
 import java.util.function.Function;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 

@@ -38,7 +38,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Serializer that uses XStream to serialize and deserialize arbitrary objects. The XStream instance is configured to
@@ -181,6 +181,12 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
         @Override
         public Builder disableAxonTypeSecurity() {
             super.disableAxonTypeSecurity();
+            return this;
+        }
+
+        @Override
+        public Builder disableCachingOfUnknownClasses() {
+            super.disableCachingOfUnknownClasses();
             return this;
         }
 

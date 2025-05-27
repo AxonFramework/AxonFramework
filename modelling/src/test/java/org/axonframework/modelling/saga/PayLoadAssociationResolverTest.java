@@ -23,8 +23,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
 import static org.axonframework.modelling.utils.ConcurrencyUtils.testConcurrent;

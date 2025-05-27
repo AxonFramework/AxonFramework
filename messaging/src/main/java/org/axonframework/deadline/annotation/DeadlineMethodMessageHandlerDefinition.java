@@ -24,7 +24,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of a {@link HandlerEnhancerDefinition} that is used for {@link DeadlineHandler} annotated methods.

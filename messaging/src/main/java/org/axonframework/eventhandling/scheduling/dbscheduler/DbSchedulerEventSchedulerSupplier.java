@@ -20,7 +20,7 @@ import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Default supplier for an {@link DbSchedulerEventScheduler}. This makes it easier to use in context without more

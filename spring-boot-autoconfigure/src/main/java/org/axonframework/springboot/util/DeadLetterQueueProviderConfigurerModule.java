@@ -26,7 +26,7 @@ import org.axonframework.springboot.EventProcessorProperties;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A {@link ConfigurerModule} implementation dedicated towards registering a {@link SequencedDeadLetterQueue} provider

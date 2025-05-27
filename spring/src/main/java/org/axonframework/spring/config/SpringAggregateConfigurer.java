@@ -37,7 +37,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.util.Set;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * A {@link ConfigurerModule} implementation that will configure an Aggregate with the Axon {@link
