@@ -28,9 +28,9 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Interface towards a streamable event source.
  * <p>
- * Provides functionality to {@link #open(StreamingCondition) open} an {@link MessageStream event stream}
- * and to retrieve {@link TrackingToken TrackingTokens} for the head and tail of the stream, and at a
- * given point in time in the stream.
+ * Provides functionality to {@link #open(StreamingCondition) open} an {@link MessageStream event stream} and to
+ * retrieve {@link TrackingToken TrackingTokens} for the head and tail of the stream, and at a given point in time in
+ * the stream.
  *
  * @param <E> The type of {@link EventMessage} streamed by this source.
  * @author Allard Buijze
@@ -50,6 +50,9 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      * <p>
      * Note that the returned stream is <em>infinite</em>, so beware of applying terminal operations to the returned
      * stream.
+     * <p>
+     * When all events are of interest during streaming, then use {@link EventCriteria#havingAnyTag()} as the condition
+     * criteria.
      *
      * @param condition The {@link StreamingCondition} defining the
      *                  {@link StreamingCondition#position() starting position} of the stream and
@@ -84,8 +87,8 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      * <p>
      * When there is an {@link EventMessage} exactly at the given {@code dateTime}, it will be tracked too.
      *
-     * @param at      The {@link Instant} determining how the {@link TrackingToken} should be created. The returned
-     *                token points at very first event before this {@code Instant}.
+     * @param at The {@link Instant} determining how the {@link TrackingToken} should be created. The returned token
+     *           points at very first event before this {@code Instant}.
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the very first event before the given
      * {@code at} of the {@link MessageStream event stream}.
      */

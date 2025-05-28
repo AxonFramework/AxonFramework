@@ -27,13 +27,6 @@ import java.util.Set;
  * Implementation of the {@link EventCriteria} allowing <b>any</b> event, regardless of its type or tags.
  * You can limit the types of events to be matched by using the {@link AnyEvent#andBeingOneOfTypes(Set)} method, which
  * will return a new {@link EventCriteria} that matches only the specified types.
- * <p>
- * Use this instance when all events are of interest during
- * {@link StreamableEventSource#open(StreamingCondition) streaming}
- * or when there are no consistency boundaries to validate during
- * {@code EventStoreTransaction#appendEvent(EventMessage) appending}. Note that {@code AnyEvent} criteria does not make
- * sense for {@code EventStoreTransaction#source(SourcingCondition) sourcing}, as it is
- * <b>not</b> recommended to source the entire event store.
  *
  * @author Steven van Beelen
  * @since 5.0.0

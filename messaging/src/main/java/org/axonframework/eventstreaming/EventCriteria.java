@@ -26,14 +26,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Describes the criteria for {@link EventStoreTransaction#source(SourcingCondition) sourcing} or
+ * Describes the criteria for {@code EventStoreTransaction#source(SourcingCondition) sourcing} or
  * {@link StreamableEventSource#open(StreamingCondition) streaming} events. The criteria are used to filter the events
- * to read from the {@link EventStore event store}.
+ * to read from a streamable event source (like an Event Store).
  * <p>
  * <h3>Filtering</h3>
- * Filtering happens based on the {@link TaggedEventMessage#tags() tags} of the event, indicating an association during
+ * Filtering happens based on the tags of the event, indicating an association during
  * publishing of the event. For example, a student enrolling in a course may have the "student" tag with the value of
- * its id. This value is determined during publishing by the {@link TagResolver}. If an instance of a criteria contains
+ * its id. This value is determined during publishing by the {@code TagResolver}. If an instance of a criteria contains
  * multiple tags, the event must contain all of them to be considered a match.
  *
  * <pre>
@@ -64,7 +64,7 @@ import java.util.stream.Collectors;
  * recommended to use it when possible.
  *
  * <h3>Combining</h3>
- * You can combine multiple criteriaa using {@link #either(EventCriteria...)}, or in a fluent fashion using
+ * You can combine multiple criteria using {@link #either(EventCriteria...)}, or in a fluent fashion using
  * {@link #or()}. This allows you to create more complex criteria that match events based on multiple tags or types.
  * However, it's not possible to create AND conditions between multiple criteria.
  *
