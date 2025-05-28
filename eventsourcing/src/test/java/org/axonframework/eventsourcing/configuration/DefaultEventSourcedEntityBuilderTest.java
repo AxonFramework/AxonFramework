@@ -18,14 +18,14 @@ package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.modelling.EntityEvolver;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 

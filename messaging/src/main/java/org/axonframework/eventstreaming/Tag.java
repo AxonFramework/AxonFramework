@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Context.ResourceKey;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -32,9 +30,7 @@ import java.util.Set;
  * has been published, typically referring to domain-specifics used for identification.
  * <p>
  * Such a {@code Tag} is typically used by the {@link EventCriteria} as a filter when
- * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing},
- * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or
- * {@link EventStoreTransaction#appendEvent(EventMessage) appending} events.
+ * sourcing, streaming or appending events.
  *
  * @param key   The key of this {@link Tag}.
  * @param value The value of this {@link Tag}.

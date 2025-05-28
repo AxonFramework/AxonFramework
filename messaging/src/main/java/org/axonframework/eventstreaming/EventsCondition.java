@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
@@ -28,7 +28,7 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 5.0.0
  */
-public sealed interface EventsCondition permits SourcingCondition, StreamingCondition, AppendCondition {
+public interface EventsCondition {
 
     /**
      * The set of criteria against which events must match.
