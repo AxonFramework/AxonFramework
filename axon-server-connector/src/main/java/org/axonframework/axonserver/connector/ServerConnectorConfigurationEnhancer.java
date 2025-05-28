@@ -71,7 +71,7 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
                                           .build();
     }
 
-    private static AxonServerEventStorageEngine buildEventStorageEngine(Configuration c) {
+    private AxonServerEventStorageEngine buildEventStorageEngine(Configuration c) {
         String defaultContext = c.getComponent(AxonServerConfiguration.class).getContext();
         return AxonServerEventStorageEngineFactory.constructForContext(defaultContext, c);
     }
