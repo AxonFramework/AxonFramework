@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
@@ -51,7 +52,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -60,11 +60,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
-import jakarta.annotation.Nonnull;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
  * A {@link StreamingEventProcessor} implementation which pools its resources to enhance processing speed. It utilizes a
@@ -95,6 +95,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
+    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
@@ -130,6 +131,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
         this.transactionManager = builder.transactionManager;
+        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(transactionManager);
         this.workerExecutor = builder.workerExecutorBuilder.apply(name);
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
@@ -231,8 +233,11 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     }
 
     private String calculateIdentifier() {
-        return transactionManager.fetchInTransaction(
-                () -> tokenStore.retrieveStorageIdentifier().orElse("--unknown--")
+        var unitOfWork = transactionalUnitOfWorkFactory.create();
+        return joinAndUnwrap(
+                unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(
+                        tokenStore.retrieveStorageIdentifier().orElse("--unknown--"))
+                )
         );
     }
 
@@ -319,9 +324,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
         Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
 
-        // TODO - Use a ProcessingContext instead of a direct transaction
-        var unitOfWork = new TransactionalUnitOfWorkFactory(transactionManager).create();
-        unitOfWork.executeWithResult((processingContext) -> {
+        var unitOfWork = transactionalUnitOfWorkFactory.create();
+        var resetTokensFuture = unitOfWork.executeWithResult((processingContext) -> {
             // Find all segments and fetch all tokens
             int[] segments = tokenStore.fetchSegments(getName());
             logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
@@ -339,7 +343,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
                      ));
             logger.info("Processor [{}] successfully reset tokens for segments [{}].", name, segments);
             return CompletableFuture.completedFuture(null);
-        }).exceptionally(e -> e instanceof CompletionException ? e.getCause() : e).join();
+        });
+        joinAndUnwrap(resetTokensFuture);
     }
 
     /**
