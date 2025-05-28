@@ -16,7 +16,9 @@
 
 package org.axonframework.messaging.correlation;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.Collection;
@@ -33,6 +35,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Allard Buijze
  */
 class MetaDataTest {
+
+    private Converter converter;
+
+    @BeforeEach
+    void setUp() {
+        converter = new ToStringConverter();
+    }
 
     @Test
     void createMetaData() {
@@ -96,11 +105,13 @@ class MetaDataTest {
         Map<String, String> testMetaDataMap = new HashMap<>();
         testMetaDataMap.put("firstKey", "firstVal");
         testMetaDataMap.put("secondKey", "secondVal");
+        testMetaDataMap.put("thirdKey", null);
 
         MetaData result = MetaData.from(testMetaDataMap);
 
         assertEquals("firstVal", result.get("firstKey"));
         assertEquals("secondVal", result.get("secondKey"));
+        assertNull(result.get("thirdKey"));
     }
 
     @Test
@@ -111,19 +122,82 @@ class MetaDataTest {
     }
 
     @Test
+    void buildMetaDataThroughWithAllowsNulls() {
+        MetaData result = MetaData.with("key", null);
+
+        assertNull(result.get("key"));
+    }
+
+    @Test
+    void buildMetaDataThroughWithConverter() {
+        MetaDataValue testValue = new MetaDataValue("text", 42L);
+        String expectedValue = converter.convert(testValue, String.class);
+
+        MetaData result = MetaData.with("key", testValue, converter);
+
+        assertEquals(expectedValue, result.get("key"));
+    }
+
+    @Test
     void buildMetaDataThroughWithAnd() {
-        MetaData result = MetaData.with("firstKey", "firstVal").and("secondKey", "secondVal");
+        MetaData result = MetaData.with("firstKey", "firstVal")
+                                  .and("secondKey", "secondVal");
 
         assertEquals("firstVal", result.get("firstKey"));
         assertEquals("secondVal", result.get("secondKey"));
     }
 
     @Test
+    void buildMetaDataThroughWithAndAllowsNulls() {
+        MetaData result = MetaData.with("firstKey", null)
+                                  .and("secondKey", null);
+
+        assertNull(result.get("firstKey"));
+        assertNull(result.get("secondKey"));
+    }
+
+    @Test
+    void buildMetaDataThroughWithAndConverter() {
+        MetaDataValue testValueOne = new MetaDataValue("val1", 1L);
+        MetaDataValue testValueTwo = new MetaDataValue("val2", 2L);
+        String expectedValueOne = converter.convert(testValueOne, String.class);
+        String expectedValueTwo = converter.convert(testValueTwo, String.class);
+
+        MetaData result = MetaData.with("firstKey", testValueOne, converter)
+                                  .and("secondKey", testValueTwo, converter);
+
+        assertEquals(expectedValueOne, result.get("firstKey"));
+        assertEquals(expectedValueTwo, result.get("secondKey"));
+    }
+
+    @Test
     void buildMetaDataThroughAndIfNotPresentAddsNewValue() {
-        MetaData result = MetaData.with("firstKey", "firstVal").andIfNotPresent("secondKey", () -> "secondVal");
+        MetaData result = MetaData.with("firstKey", "firstVal")
+                                  .andIfNotPresent("secondKey", () -> "secondVal");
 
         assertEquals("firstVal", result.get("firstKey"));
         assertEquals("secondVal", result.get("secondKey"));
+    }
+
+    @Test
+    void buildMetaDataThroughAndIfNotPresentAddsNewNullValue() {
+        MetaData result = MetaData.with("firstKey", "firstVal")
+                                  .andIfNotPresent("secondKey", () -> null);
+
+        assertEquals("firstVal", result.get("firstKey"));
+        assertNull(result.get("secondKey"));
+    }
+
+    @Test
+    void buildMetaDataThroughAndIfNotPresentAddsNewValueWithConverter() {
+        MetaDataValue testValue = new MetaDataValue("val1", 1L);
+        String expectedValue = converter.convert(testValue, String.class);
+
+        MetaData result = MetaData.with("firstKey", "firstVal")
+                                  .andIfNotPresent("secondKey", () -> testValue, converter);
+
+        assertEquals("firstVal", result.get("firstKey"));
+        assertEquals(expectedValue, result.get("secondKey"));
     }
 
     @Test
@@ -208,5 +282,10 @@ class MetaDataTest {
         assertEquals(2, metaData.size());
         assertNull(metaData.get("nullkey"));
         assertEquals("value", metaData.get("otherkey"));
+    }
+
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+    private record MetaDataValue(String text, Long value) {
+
     }
 }

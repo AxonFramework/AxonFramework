@@ -18,6 +18,7 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.serialization.Converter;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -103,6 +104,21 @@ public class MetaData implements Map<String, String> {
     }
 
     /**
+     * Creates a {@code MetaData} instances with a single entry from the given {@code key} and given {@code value}.
+     * <p>
+     * The {@code value} is converted into a {@link String} by the given {@code converter} <em>if</em> it isn't a
+     * {@code String} already.
+     *
+     * @param key       The key for the entry.
+     * @param value     The value of the entry.
+     * @param converter The converter used to convert the given {@code value} into a {@link String}.
+     * @return A {@code MetaData} instance with a single entry.
+     */
+    public static MetaData with(@Nonnull String key, @Nullable Object value, @Nonnull Converter converter) {
+        return with(key, convertToString(value, converter));
+    }
+
+    /**
      * Returns a {@code MetaData} instances containing the current entries, <b>and</b> the given {@code key} and given
      * {@code value}.
      * <p>
@@ -119,6 +135,26 @@ public class MetaData implements Map<String, String> {
     }
 
     /**
+     * Returns a {@code MetaData} instances containing the current entries, <b>and</b> the given {@code key} and given
+     * {@code value}.
+     * <p>
+     * The {@code value} is converted into a {@link String} by the given {@code converter} <em>if</em> it isn't a
+     * {@code String} already.
+     * <p>
+     * If {@code key} already existed, it's old {@code value} is overwritten with the given {@code value}.
+     *
+     * @param key       The key for the entry.
+     * @param value     The value of the entry.
+     * @param converter The converter used to convert the given {@code value} into a {@link String}.
+     * @return A {@code MetaData} instance with an additional entry.
+     */
+    public MetaData and(@Nonnull String key, @Nullable Object value, @Nonnull Converter converter) {
+        HashMap<String, String> newValues = new HashMap<>(values);
+        newValues.put(key, convertToString(value, converter));
+        return new MetaData(newValues);
+    }
+
+    /**
      * Returns a {@code MetaData} instances containing the current entries, <b>and</b> the given {@code key} if it was
      * not yet present in this {@code MetaData}.
      * <p>
@@ -131,6 +167,32 @@ public class MetaData implements Map<String, String> {
      */
     public MetaData andIfNotPresent(@Nonnull String key, @Nonnull Supplier<String> value) {
         return containsKey(key) ? this : this.and(key, value.get());
+    }
+
+    /**
+     * Returns a {@code MetaData} instances containing the current entries, <b>and</b> the given {@code key} if it was
+     * not yet present in this {@code MetaData}.
+     * <p>
+     * If the given {@code key} already existed, the current value will be used. Otherwise, the {@code value}
+     * {@link Supplier} function will provide the value for {@code key}.
+     * <p>
+     * The result from the {@code value Supplier} is converted into a {@link String} by the given {@code converter}
+     * <em>if</em> it isn't a {@code String} already.
+     *
+     * @param key       The key for the entry.
+     * @param value     A {@code Supplier} function which provides the value.
+     * @param converter The converter used to convert the outcome of the given {@code value} Supplier into a
+     *                  {@link String}.
+     * @return A {@code MetaData} instance with an additional entry.
+     */
+    public MetaData andIfNotPresent(@Nonnull String key,
+                                    @Nonnull Supplier<Object> value,
+                                    @Nonnull Converter converter) {
+        return containsKey(key) ? this : this.and(key, convertToString(value.get(), converter));
+    }
+
+    private static String convertToString(Object value, Converter converter) {
+        return value instanceof String ? (String) value : converter.convert(value, String.class);
     }
 
     /**
