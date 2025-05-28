@@ -28,8 +28,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.serialization.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.InputStream;
 import java.time.Instant;
