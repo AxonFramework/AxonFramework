@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.junit.jupiter.api.*;
 
 import java.util.Set;
 

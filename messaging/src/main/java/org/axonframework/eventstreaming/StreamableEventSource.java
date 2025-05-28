@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Context;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 
 import java.time.Instant;

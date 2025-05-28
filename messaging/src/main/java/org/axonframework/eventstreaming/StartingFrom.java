@@ -14,36 +14,27 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.TrackingToken;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import static java.util.Objects.requireNonNull;
-
 /**
- * Default implementation of the {@link StreamingCondition}.
+ * An implementation of the {@link StreamingCondition} that will start
+ * {@link StreamableEventSource#open(String, StreamingCondition) streaming} from the given {@code position}.
  *
- * @param position The {@link TrackingToken} defining the {@link #position()} of this condition.
- * @param criteria The {@link EventCriteria} defining the {@link #criteria()} of this condition.
+ * @param position The {@link TrackingToken} describing the position to start streaming from.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-record DefaultStreamingCondition(
-        @Nonnull TrackingToken position,
-        @Nonnull EventCriteria criteria
-) implements StreamingCondition {
-
-    DefaultStreamingCondition {
-        requireNonNull(position, "The position cannot be null");
-        requireNonNull(criteria, "The EventCriteria cannot be null");
-    }
+record StartingFrom(@Nullable TrackingToken position) implements StreamingCondition {
 
     @Override
     public StreamingCondition or(@Nonnull EventCriteria criteria) {
-        return new DefaultStreamingCondition(this.position, this.criteria.or(criteria));
+        if (position == null) {
+            throw new IllegalArgumentException("The position may not be null when adding criteria to it");
+        }
+        return new DefaultStreamingCondition(position, criteria);
     }
 }

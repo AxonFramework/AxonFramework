@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.QualifiedName;
 
 import java.util.Collections;
@@ -30,10 +29,10 @@ import java.util.Set;
  * will return a new {@link EventCriteria} that matches only the specified types.
  * <p>
  * Use this instance when all events are of interest during
- * {@link StreamableEventSource#open(org.axonframework.eventsourcing.eventstore.StreamingCondition) streaming}
+ * {@link StreamableEventSource#open(StreamingCondition) streaming}
  * or when there are no consistency boundaries to validate during
- * {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that {@code AnyEvent} criteria does not make
- * sense for {@link EventStoreTransaction#source(SourcingCondition) sourcing}, as it is
+ * {@code EventStoreTransaction#appendEvent(EventMessage) appending}. Note that {@code AnyEvent} criteria does not make
+ * sense for {@code EventStoreTransaction#source(SourcingCondition) sourcing}, as it is
  * <b>not</b> recommended to source the entire event store.
  *
  * @author Steven van Beelen

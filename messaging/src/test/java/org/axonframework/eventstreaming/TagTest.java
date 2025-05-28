@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import org.axonframework.messaging.Context;
 import org.junit.jupiter.api.*;
@@ -25,7 +25,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link Tag}.
+ * Test class validating the {@link org.axonframework.eventstreaming.Tag}.
  *
  * @author Steven van Beelen
  */
@@ -36,7 +36,7 @@ class TagTest {
 
     @Test
     void containsExpectedData() {
-        Tag testSubject = new Tag(TEST_KEY, TEST_VALUE);
+        org.axonframework.eventstreaming.Tag testSubject = new org.axonframework.eventstreaming.Tag(TEST_KEY, TEST_VALUE);
 
         assertEquals(TEST_KEY, testSubject.key());
         assertEquals(TEST_VALUE, testSubject.value());
@@ -44,7 +44,7 @@ class TagTest {
 
     @Test
     void identicalTagsAreEqual() {
-        Tag testSubject = new Tag(TEST_KEY, TEST_VALUE);
+        org.axonframework.eventstreaming.Tag testSubject = new org.axonframework.eventstreaming.Tag(TEST_KEY, TEST_VALUE);
 
         assertEquals(testSubject, testSubject);
     }
@@ -52,26 +52,26 @@ class TagTest {
     @Test
     void assertsEventAndTagsAreNonNull() {
         //noinspection DataFlowIssue
-        assertThrows(IllegalArgumentException.class, () -> new Tag(null, TEST_VALUE));
+        assertThrows(IllegalArgumentException.class, () -> new org.axonframework.eventstreaming.Tag(null, TEST_VALUE));
         //noinspection DataFlowIssue
-        assertThrows(IllegalArgumentException.class, () -> new Tag(TEST_KEY, null));
+        assertThrows(IllegalArgumentException.class, () -> new org.axonframework.eventstreaming.Tag(TEST_KEY, null));
     }
 
     @Test
     void addToContextAddsTheGivenTagsToTheGivenContext() {
         Context testContext = Context.empty();
-        Set<Tag> testTags = Set.of(new Tag(TEST_KEY, TEST_VALUE));
+        Set<org.axonframework.eventstreaming.Tag> testTags = Set.of(new org.axonframework.eventstreaming.Tag(TEST_KEY, TEST_VALUE));
 
-        testContext = Tag.addToContext(testContext, testTags);
+        testContext = org.axonframework.eventstreaming.Tag.addToContext(testContext, testTags);
 
-        assertTrue(testContext.containsResource(Tag.RESOURCE_KEY));
+        assertTrue(testContext.containsResource(org.axonframework.eventstreaming.Tag.RESOURCE_KEY));
     }
 
     @Test
     void fromContextReturnsAnEmptyOptionalWhenNoTagsArePresent() {
         Context testContext = Context.empty();
 
-        Optional<Set<Tag>> result = Tag.fromContext(testContext);
+        Optional<Set<Tag>> result = org.axonframework.eventstreaming.Tag.fromContext(testContext);
 
         assertTrue(result.isEmpty());
     }
@@ -79,11 +79,11 @@ class TagTest {
     @Test
     void fromContextReturnsAnOptionalWithTheContainedTags() {
         Context testContext = Context.empty();
-        Set<Tag> testTags = Set.of(new Tag(TEST_KEY, TEST_VALUE));
+        Set<org.axonframework.eventstreaming.Tag> testTags = Set.of(new org.axonframework.eventstreaming.Tag(TEST_KEY, TEST_VALUE));
 
-        testContext = Tag.addToContext(testContext, testTags);
+        testContext = org.axonframework.eventstreaming.Tag.addToContext(testContext, testTags);
 
-        Optional<Set<Tag>> result = Tag.fromContext(testContext);
+        Optional<Set<org.axonframework.eventstreaming.Tag>> result = org.axonframework.eventstreaming.Tag.fromContext(testContext);
 
         assertFalse(result.isEmpty());
         assertEquals(testTags, result.get());

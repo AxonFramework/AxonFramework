@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.annotation;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.junit.jupiter.api.*;
