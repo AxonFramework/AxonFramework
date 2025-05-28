@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.eventstreaming.EventCriteria;
+
 /**
  * An {@link AppendCondition} implementation that has {@link EventCriteria#havingAnyTag() no criteria}.
  * <p>

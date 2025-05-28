@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;

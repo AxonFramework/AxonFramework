@@ -16,19 +16,15 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.annotations.EventTags;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageType;
-import jakarta.annotation.Nonnull;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;

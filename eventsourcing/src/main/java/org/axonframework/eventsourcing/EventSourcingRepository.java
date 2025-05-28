@@ -23,11 +23,12 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
-import org.axonframework.modelling.repository.Repository;
 import org.axonframework.modelling.repository.ManagedEntity;
+import org.axonframework.modelling.repository.Repository;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -64,7 +65,7 @@ public class EventSourcingRepository<I, E> implements Repository.LifecycleManage
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
      * apply state transitions to the entity based on the events received, and given {@code criteriaResolver} to resolve
-     * the {@link org.axonframework.eventsourcing.eventstore.EventCriteria} of the given identifier type used to source
+     * the {@link EventCriteria} of the given identifier type used to source
      * an entity.
      *
      * @param idType           The type of the identifier for the event sourced entity this repository serves.
@@ -73,7 +74,7 @@ public class EventSourcingRepository<I, E> implements Repository.LifecycleManage
      * @param entityFactory    A factory method to create new instances of the entity based on the entity's type and a
      *                         provided identifier.
      * @param criteriaResolver Converts the given identifier to an
-     *                         {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
+     *                         {@link EventCriteria} used to load a matching
      *                         event stream.
      * @param entityEvolver    The function used to evolve the state of loaded entities based on events.
      */
