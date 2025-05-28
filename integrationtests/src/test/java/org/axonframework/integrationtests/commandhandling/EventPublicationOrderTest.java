@@ -77,7 +77,7 @@ class EventPublicationOrderTest {
         doAnswer(invocation -> Void.class).when(eventStore).publish(isA(EventMessage.class));
 
         CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
-                testCommand, ProcessingContext.NONE
+                testCommand, ProcessingContext.empty()
         );
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 

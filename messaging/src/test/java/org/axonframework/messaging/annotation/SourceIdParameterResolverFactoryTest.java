@@ -20,6 +20,8 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -66,8 +68,9 @@ class SourceIdParameterResolverFactoryTest {
         final GenericDomainEventMessage<Object> eventMessage = new GenericDomainEventMessage<>(
                 "test", UUID.randomUUID().toString(), 0L, new MessageType("event"), "event"
         );
-        assertTrue(resolver.matches(eventMessage, null));
-        assertEquals(eventMessage.getAggregateIdentifier(), resolver.resolveParameterValue(eventMessage, null));
+        ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
+        assertTrue(resolver.matches(context));
+        assertEquals(eventMessage.getAggregateIdentifier(), resolver.resolveParameterValue(context));
     }
 
     @Test
@@ -76,7 +79,8 @@ class SourceIdParameterResolverFactoryTest {
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
         CommandMessage<Object> commandMessage =
                 new GenericCommandMessage<>(new MessageType("command"), "test");
-        assertFalse(resolver.matches(commandMessage, null));
+        ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
+        assertFalse(resolver.matches(context));
     }
 
     @Test

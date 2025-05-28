@@ -26,6 +26,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.utils.MockException;
@@ -78,7 +79,7 @@ class InterceptingCommandBusTest {
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(invocation -> CompletableFuture.completedFuture(
                 asCommandResultMessage("ok")));
 
-        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, ProcessingContext.NONE);
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
 
         ArgumentCaptor<CommandMessage<?>> dispatchedMessage = ArgumentCaptor.forClass(CommandMessage.class);
         verify(mockCommandBus).dispatch(dispatchedMessage.capture(), any());
@@ -102,7 +103,7 @@ class InterceptingCommandBusTest {
                                                                                                          any(),
                                                                                                          any());
 
-        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, ProcessingContext.NONE);
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
 
         assertTrue(result.isCompletedExceptionally());
         assertInstanceOf(MockException.class, result.exceptionNow());
@@ -122,7 +123,7 @@ class InterceptingCommandBusTest {
             return i.callRealMethod();
         }).when(dispatchInterceptor1).interceptOnDispatch(any(), any(), any());
 
-        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, ProcessingContext.NONE);
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
 
         assertTrue(result.isDone());
         verify(dispatchInterceptor1).interceptOnDispatch(any(), any(), any());
@@ -139,7 +140,7 @@ class InterceptingCommandBusTest {
         doThrow(new MockException("Simulating failure in interceptor"))
                 .when(dispatchInterceptor2).interceptOnDispatch(any(), any(), any());
 
-        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, ProcessingContext.NONE);
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
 
         assertTrue(result.isCompletedExceptionally());
         assertInstanceOf(MockException.class, result.exceptionNow());
@@ -273,6 +274,7 @@ class InterceptingCommandBusTest {
 
         @Override
         public Object handle(@Nonnull LegacyUnitOfWork<? extends M> unitOfWork,
+                             @Nonnull ProcessingContext context,
                              @Nonnull InterceptorChain interceptorChain) {
             throw new UnsupportedOperationException();
         }

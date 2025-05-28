@@ -19,7 +19,7 @@ package org.axonframework.commandhandling;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletionException;
@@ -72,7 +72,8 @@ class SimpleCommandHandlingComponentTest {
 
     @Test
     void handlesTheMostSpecificRegisteredHandler() {
-        handlingComponent.handle(new GenericCommandMessage<>(new MessageType("Command1"), ""), ProcessingContext.NONE);
+        GenericCommandMessage<String> command1 = new GenericCommandMessage<>(new MessageType("Command1"), "");
+        handlingComponent.handle(command1, StubProcessingContext.forMessage(command1));
         assertTrue(command1Handled.get());
         assertFalse(command2HandledParent.get());
         assertFalse(command2HandledChild.get());
@@ -80,14 +81,16 @@ class SimpleCommandHandlingComponentTest {
 
         command1Handled.set(false);
 
-        handlingComponent.handle(new GenericCommandMessage<>(new MessageType("Command2"), ""), ProcessingContext.NONE);
+        GenericCommandMessage<String> command2 = new GenericCommandMessage<>(new MessageType("Command2"), "");
+        handlingComponent.handle(command2, StubProcessingContext.forMessage(command2));
         assertFalse(command1Handled.get());
         assertFalse(command2HandledParent.get());
         assertTrue(command2HandledChild.get());
         assertFalse(command3Handled.get());
 
         command2HandledChild.set(false);
-        handlingComponent.handle(new GenericCommandMessage<>(new MessageType("Command3"), ""), ProcessingContext.NONE);
+        GenericCommandMessage<String> command3 = new GenericCommandMessage<>(new MessageType("Command3"), "");
+        handlingComponent.handle(command3, StubProcessingContext.forMessage(command3));
         assertFalse(command1Handled.get());
         assertFalse(command2HandledParent.get());
         assertFalse(command2HandledChild.get());
@@ -105,8 +108,8 @@ class SimpleCommandHandlingComponentTest {
     @Test
     void handleWithUnknownPayloadReturnsInFailure() {
         CompletionException exception = assertThrows(CompletionException.class, () -> {
-            handlingComponent.handle(new GenericCommandMessage<>(new MessageType("Command4"), ""),
-                                     ProcessingContext.NONE)
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("Command4"), "");
+            handlingComponent.handle(command, StubProcessingContext.forMessage(command))
                              .asCompletableFuture()
                              .join();
         });

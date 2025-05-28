@@ -18,6 +18,7 @@ package org.axonframework.modelling.saga.metamodel;
 
 import org.axonframework.common.AxonException;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.NoMoreInterceptors;
@@ -49,7 +50,8 @@ class AnnotationSagaMetaModelFactoryTest {
     void inspectSaga() {
         SagaModel<MySaga> sagaModel = testSubject.modelOf(MySaga.class);
 
-        Optional<AssociationValue> actual = sagaModel.resolveAssociation(asEventMessage(new MySagaStartEvent("value")));
+        EventMessage<Object> event = asEventMessage(new MySagaStartEvent("value"));
+        Optional<AssociationValue> actual = sagaModel.resolveAssociation(event, StubProcessingContext.forMessage(event));
         assertTrue(actual.isPresent());
         assertEquals("value", actual.get().getValue());
         assertEquals("property", actual.get().getKey());
@@ -62,7 +64,7 @@ class AnnotationSagaMetaModelFactoryTest {
         MySaga saga = new MySaga();
         EventMessage<MySagaStartEvent> event = asEventMessage(new MySagaStartEvent("foo"));
         Optional<MessageHandlingMember<? super MySaga>> handler = sagaModel
-                .findHandlerMethods(event).stream().findFirst();
+                .findHandlerMethods(event, StubProcessingContext.forMessage(event)).stream().findFirst();
         assertTrue(handler.isPresent());
         MessageHandlerInterceptorMemberChain<MySaga> interceptorChain = testSubject.chainedInterceptor(MySaga.class);
         assertThrows(FooException.class, () -> interceptorChain.handleSync(event, saga, handler.get()));
@@ -76,7 +78,7 @@ class AnnotationSagaMetaModelFactoryTest {
         MySagaWithErrorHandler saga = new MySagaWithErrorHandler();
         EventMessage<MySagaStartEvent> event = asEventMessage(new MySagaStartEvent("foo"));
         Optional<MessageHandlingMember<? super MySagaWithErrorHandler>> handler = sagaModel
-                .findHandlerMethods(event).stream().findFirst();
+                .findHandlerMethods(event, StubProcessingContext.forMessage(event)).stream().findFirst();
         assertTrue(handler.isPresent());
         MessageHandlerInterceptorMemberChain<MySagaWithErrorHandler> interceptorChain = testSubject.chainedInterceptor(
                 MySagaWithErrorHandler.class);

@@ -17,6 +17,7 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
@@ -44,6 +45,14 @@ import java.util.function.Function;
  * @since 2.0.0
  */
 public interface Message<P> {
+
+    /**
+     * The {@link Context.ResourceKey} used to store and retrieve the {@link Message} from the
+     * {@link ProcessingContext}. Should always be the message for which a handler is being called.
+     * For example, if an event handler is called within the context of a command, the message should be the event
+     * message.
+     */
+    Context.ResourceKey<Message<?>> RESOURCE_KEY = Context.ResourceKey.withLabel("Message");
 
     /**
      * Returns the identifier of this {@code Message}.

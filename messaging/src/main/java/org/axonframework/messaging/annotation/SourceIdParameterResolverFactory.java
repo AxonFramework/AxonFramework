@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,27 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
- * An extension of the AbstractAnnotatedParameterResolverFactory that accepts
- * parameters of a {@link String} type that are annotated with the {@link SourceId}
- * annotation and assigns the aggregate identifier of the DomainEventMessage.
+ * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
+ * are annotated with the {@link SourceId} annotation and assigns the aggregate identifier of the DomainEventMessage.
  *
  * @author Thomas van Putten (delta11)
  * @since 4.1
  */
 @Priority(Priority.HIGH)
-public final class SourceIdParameterResolverFactory extends AbstractAnnotatedParameterResolverFactory<SourceId, String> {
+public final class SourceIdParameterResolverFactory
+        extends AbstractAnnotatedParameterResolverFactory<SourceId, String> {
 
     private final ParameterResolver<String> resolver;
 
     /**
-     * Initialize a {@link ParameterResolverFactory} for {@link SourceId}
-     * annotated parameters
+     * Initialize a {@link ParameterResolverFactory} for {@link SourceId} annotated parameters
      */
     public SourceIdParameterResolverFactory() {
         super(SourceId.class, String.class);
@@ -54,18 +54,16 @@ public final class SourceIdParameterResolverFactory extends AbstractAnnotatedPar
     static class SourceIdParameterResolver implements ParameterResolver<String> {
 
         @Override
-        public String resolveParameterValue(Message message, ProcessingContext processingContext) {
-            if (message instanceof DomainEventMessage) {
-                return ((DomainEventMessage) message).getAggregateIdentifier();
+        public String resolveParameterValue(@Nonnull ProcessingContext context) {
+            if (context.getResource(Message.RESOURCE_KEY) instanceof DomainEventMessage message) {
+                return message.getAggregateIdentifier();
             }
             throw new IllegalArgumentException();
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return message instanceof DomainEventMessage;
+        public boolean matches(@Nonnull ProcessingContext context) {
+            return context.getResource(Message.RESOURCE_KEY) instanceof DomainEventMessage;
         }
-
     }
-
 }

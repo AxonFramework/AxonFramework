@@ -63,7 +63,7 @@ class DefaultConfigurerHandlerRegistrationTest {
                                                    .start();
 
         CompletableFuture<String> result = config.commandGateway().send(new SomeCommand(),
-                                                                        ProcessingContext.NONE,
+                                                                        ProcessingContext.empty(),
                                                                         String.class);
 
         assertEquals(COMMAND_HANDLING_RESPONSE, result.join());
@@ -94,7 +94,7 @@ class DefaultConfigurerHandlerRegistrationTest {
         ).start();
 
         CompletableFuture<String> commandHandlingResult = config.commandGateway().send(new SomeCommand(),
-                                                                                       ProcessingContext.NONE,
+                                                                                       ProcessingContext.empty(),
                                                                                        String.class);
         config.eventGateway().publish(new SomeEvent());
         CompletableFuture<String> queryHandling = config.queryGateway().query(new SomeQuery(), String.class);
@@ -136,7 +136,7 @@ class DefaultConfigurerHandlerRegistrationTest {
                                                    .start();
 
         CompletableFuture<String> result = config.commandGateway().send(new SomeCommand(),
-                                                                        ProcessingContext.NONE,
+                                                                        ProcessingContext.empty(),
                                                                         String.class);
 
         assertEquals(COMMAND_HANDLING_RESPONSE, result.join());

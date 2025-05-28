@@ -74,7 +74,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
         mockHandler = mock(EventMessageHandler.class);
-        when(mockHandler.canHandle(any())).thenReturn(true);
+        when(mockHandler.canHandle(any(), any())).thenReturn(true);
         eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
                                          .eventHandlers(singletonList(mockHandler))
@@ -274,7 +274,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
 
         testSubject.start();
         eventBus.publish(createEvents(4));
@@ -294,7 +294,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
         testSubject.start();
         eventBus.publish(createEvents(2));
         assertTrue(countDownLatch.await(5, SECONDS), "Expected Handler to have received 2 published events");
@@ -306,9 +306,9 @@ class TrackingEventProcessorTest_MultiThreaded {
     void multiThreadTokenIsStoredWhenEventIsRead() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, context, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         }));
         testSubject.start();
         eventBus.publish(createEvents(2));
@@ -333,7 +333,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
 
         configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         testSubject.start();
@@ -357,7 +357,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
         testSubject.start();
 
         eventBus.publish(events.subList(0, 2));
@@ -393,7 +393,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch2.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
 
         eventBus.publish(events.subList(2, 4));
         assertEquals(2, countDownLatch2.getCount());
@@ -427,7 +427,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
 
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -448,18 +448,18 @@ class TrackingEventProcessorTest_MultiThreaded {
         List<? extends EventMessage<?>> events = createEvents(2);
         CountDownLatch countDownLatch = new CountDownLatch(2);
         //noinspection Duplicates,resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, context, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
                 if (uow.getMessage().equals(events.get(1))) {
                     throw new MockException();
                 }
             });
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         }));
         //noinspection resource
-        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, context, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         }));
         testSubject.start();
         eventBus.publish(events);

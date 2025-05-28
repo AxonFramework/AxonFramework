@@ -55,7 +55,7 @@ public class ServerConnectorRunner {
             CompletableFuture<Object> result =
                     configuration.commandGateway()
                                  .send(new CreateMyAggregateCommand(UUID.randomUUID().toString()),
-                                       ProcessingContext.NONE,
+                                       ProcessingContext.empty(),
                                        Object.class);
             logger.info("Command sent, awaiting response...");
             result.join();

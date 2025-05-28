@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -52,13 +53,13 @@ public final class MessageIdentifierParameterResolverFactory
     static class MessageIdentifierParameterResolver implements ParameterResolver<String> {
 
         @Override
-        public String resolveParameterValue(Message message, ProcessingContext processingContext) {
-            return message.getIdentifier();
+        public String resolveParameterValue(@Nonnull ProcessingContext context) {
+            return context.getResource(Message.RESOURCE_KEY).getIdentifier();
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return true;
+        public boolean matches(@Nonnull ProcessingContext context) {
+            return context.containsResource(Message.RESOURCE_KEY);
         }
     }
 }

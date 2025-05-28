@@ -24,6 +24,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
@@ -71,7 +72,7 @@ class AnnotatedCommandHandlingComponentTest {
         CommandMessage<String> testCommand = new GenericCommandMessage<>(new MessageType(String.class),
                                                                          "myStringPayload");
 
-        Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
+        Object result = testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
                                    .first()
                                    .asCompletableFuture()
                                    .join()
@@ -87,7 +88,7 @@ class AnnotatedCommandHandlingComponentTest {
     void handlerDispatchingWithReturnType() {
         CommandMessage<Long> testCommand = new GenericCommandMessage<>(new MessageType(Long.class), 1L);
 
-        Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
+        Object result = testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
                                    .first()
                                    .asCompletableFuture()
                                    .join()
@@ -104,7 +105,7 @@ class AnnotatedCommandHandlingComponentTest {
         CommandMessage<Long> testCommand =
                 new GenericCommandMessage<>(new GenericMessage<>(new MessageType("almostLong"), 1L));
 
-        Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
+        Object result = testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
                                    .first()
                                    .asCompletableFuture()
                                    .join()
@@ -120,8 +121,9 @@ class AnnotatedCommandHandlingComponentTest {
     @Test
     void handlerDispatchingThrowingException() {
         try {
-            testSubject.handle(new GenericCommandMessage<>(new MessageType(HashSet.class), new HashSet<>()),
-                               mock(ProcessingContext.class))
+            GenericCommandMessage<HashSet<Object>> command = new GenericCommandMessage<>(new MessageType(HashSet.class),
+                                                                                         new HashSet<>());
+            testSubject.handle(command, StubProcessingContext.forMessage(command))
                        .first()
                        .asCompletableFuture()
                        .join();
@@ -252,9 +254,9 @@ class AnnotatedCommandHandlingComponentTest {
         }
 
         @MessageHandlerInterceptor
-        public Object interceptAny(CommandMessage<?> command, InterceptorChain chain) throws Exception {
+        public Object interceptAny(CommandMessage<?> command, ProcessingContext context, InterceptorChain chain) throws Exception {
             interceptedWithInterceptorChain.add(command);
-            return chain.proceedSync();
+            return chain.proceedSync(context);
         }
 
         @ExceptionHandler

@@ -97,10 +97,10 @@ public class BeanValidationInterceptor<T extends Message<?>>
 
     @Deprecated
     @Override
-    public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
+    public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork, @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain)
             throws Exception {
         handle(unitOfWork.getMessage());
-        return interceptorChain.proceedSync();
+        return interceptorChain.proceedSync(context);
     }
 
     @Deprecated

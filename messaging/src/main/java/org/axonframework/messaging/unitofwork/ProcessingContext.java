@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,9 +41,13 @@ import java.util.function.UnaryOperator;
 public interface ProcessingContext extends ProcessingLifecycle, Context {
 
     /**
-     * Constant referring to a no-op {@link ProcessingContext} implementation, the {@link NoProcessingContext}.
+     * Creates a new context that is empty and does not contain any resources.
+     * Useful when a component requires a context but none it available.
+     * @return A new, empty context.
      */
-    ProcessingContext NONE = NoProcessingContext.INSTANCE;
+    static ProcessingContext empty() {
+        return SimpleProcessingContext.empty();
+    }
 
     /**
      * Constructs a new {@link ProcessingContext}, branching off from {@code this} {@code ProcessingContext}.

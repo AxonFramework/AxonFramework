@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.messaging.Message;
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -37,8 +37,8 @@ import static org.axonframework.messaging.NoScopeDescriptor.INSTANCE;
 public class ScopeDescriptorParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver<ScopeDescriptor> createInstance(Executable executable,
-                                                             Parameter[] parameters,
+    public ParameterResolver<ScopeDescriptor> createInstance(@Nonnull Executable executable,
+                                                             @Nonnull Parameter[] parameters,
                                                              int parameterIndex) {
         return ScopeDescriptor.class.isAssignableFrom(parameters[parameterIndex].getType())
                 ? new ScopeDescriptorParameterResolver() : null;
@@ -47,7 +47,7 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
     private static class ScopeDescriptorParameterResolver implements ParameterResolver<ScopeDescriptor> {
 
         @Override
-        public ScopeDescriptor resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+        public ScopeDescriptor resolveParameterValue(@Nonnull ProcessingContext context) {
             try {
                 return Scope.describeCurrentScope();
             } catch (IllegalStateException e) {
@@ -56,7 +56,7 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext context) {
             return true;
         }
     }

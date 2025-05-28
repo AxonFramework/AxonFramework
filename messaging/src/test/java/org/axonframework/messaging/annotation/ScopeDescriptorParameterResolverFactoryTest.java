@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.NoScopeDescriptor;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link ScopeDescriptorParameterResolverFactory}.
@@ -37,13 +36,11 @@ class ScopeDescriptorParameterResolverFactoryTest {
 
     private Method scopeDescriptorLessMethod;
     private Method scopeDescriptorUsingMethod;
-    private Message<?> testMessage;
 
     @BeforeEach
     void setUp() throws NoSuchMethodException {
         scopeDescriptorUsingMethod = getClass().getMethod("someScopeDescriptorUsingMethod", ScopeDescriptor.class);
         scopeDescriptorLessMethod = getClass().getMethod("someScopeDescriptorLessMethod", String.class);
-        testMessage = mock(Message.class);
     }
 
     @Test
@@ -56,8 +53,8 @@ class ScopeDescriptorParameterResolverFactoryTest {
         ParameterResolver<ScopeDescriptor> resolver =
                 testSubject.createInstance(scopeDescriptorUsingMethod, scopeDescriptorUsingMethod.getParameters(), 0);
 
-        assertTrue(resolver.matches(testMessage, null));
-        assertEquals(NoScopeDescriptor.INSTANCE, resolver.resolveParameterValue(testMessage, null));
+        assertTrue(resolver.matches(ProcessingContext.empty()));
+        assertEquals(NoScopeDescriptor.INSTANCE, resolver.resolveParameterValue(ProcessingContext.empty()));
     }
 
     @SuppressWarnings("unused")

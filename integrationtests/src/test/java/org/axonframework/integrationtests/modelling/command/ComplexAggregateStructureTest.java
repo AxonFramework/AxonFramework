@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
@@ -56,12 +57,18 @@ class ComplexAggregateStructureTest {
                 },
                 bookAggregateModel, mockEventBus
         );
-        bookAggregate.handle(command(new CreateBookCommand("book1")));
-        bookAggregate.handle(command(new CreatePageCommand("book1")));
-        bookAggregate.handle(command(new CreateParagraphCommand("book1", 0)));
-        bookAggregate.handle(command(new CreateParagraphCommand("book1", 0)));
-        bookAggregate.handle(command(new UpdateParagraphCommand("book1", 0, 0, "Hello world")));
-        bookAggregate.handle(command(new UpdateParagraphCommand("book1", 0, 1, "Hello world2")));
+        var createBookCommand = command(new CreateBookCommand("book1"));
+        bookAggregate.handle(createBookCommand, StubProcessingContext.forMessage(createBookCommand));
+        CommandMessage<Object> createPageCommand = command(new CreatePageCommand("book1"));
+        bookAggregate.handle(createPageCommand, StubProcessingContext.forMessage(createPageCommand));
+        CommandMessage<Object> createParagraphPage0Command = command(new CreateParagraphCommand("book1", 0));
+        bookAggregate.handle(createParagraphPage0Command, StubProcessingContext.forMessage(createParagraphPage0Command));
+        CommandMessage<Object> createParagraphPage1Command = command(new CreateParagraphCommand("book1", 0));
+        bookAggregate.handle(createParagraphPage1Command, StubProcessingContext.forMessage(createParagraphPage1Command));
+        CommandMessage<Object> updateParagraph00Command = command(new UpdateParagraphCommand("book1", 0, 0, "Hello world"));
+        bookAggregate.handle(updateParagraph00Command, StubProcessingContext.forMessage(updateParagraph00Command));
+        CommandMessage<Object> updateParagraph01Command = command(new UpdateParagraphCommand("book1", 0, 1, "Hello world2"));
+        bookAggregate.handle(updateParagraph01Command, StubProcessingContext.forMessage(updateParagraph01Command));
 
         assertEquals("Hello world",
                      bookAggregate.getAggregateRoot().getPages().getFirst().getParagraphs().get(0).getText());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,8 +87,8 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception {
-            Object result = super.handleSync(message, target);
+        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable T target) throws Exception {
+            Object result = super.handleSync(message, context, target);
             if (result instanceof Optional) {
                 return ((Optional<?>) result).orElse(null);
             }
@@ -120,8 +120,8 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
-            return super.canHandle(message, processingContext)
+        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+            return super.canHandle(message, context)
                     && message instanceof QueryMessage
                     && queryName.equals(message.type().name())
                     && ((QueryMessage<?, ?>) message).getResponseType().matches(resultType);

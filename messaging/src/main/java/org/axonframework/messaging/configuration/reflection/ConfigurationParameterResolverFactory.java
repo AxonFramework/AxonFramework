@@ -53,7 +53,7 @@ public class ConfigurationParameterResolverFactory implements ParameterResolverF
     }
 
     @Override
-    public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         // TODO #3360 - This block is up for improvements per referenced issue number.
         Class<?> componentType = parameters[parameterIndex].getType();
         return configuration.getOptionalComponent(componentType)

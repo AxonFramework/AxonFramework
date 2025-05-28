@@ -23,8 +23,10 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
@@ -46,6 +48,7 @@ class LoggingInterceptorTest {
     private ExtendedLogger mockLogger;
     private InterceptorChain interceptorChain;
     private LegacyUnitOfWork<Message<?>> unitOfWork;
+    private ProcessingContext context;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -59,9 +62,9 @@ class LoggingInterceptorTest {
         loggerField.set(logger, mockLogger);
 
         interceptorChain = mock(InterceptorChain.class);
-        unitOfWork = new LegacyDefaultUnitOfWork<>(
-                new GenericMessage<>(new MessageType("message"), new StubMessage())
-        );
+        GenericMessage<StubMessage> message = new GenericMessage<>(new MessageType("message"), new StubMessage());
+        context = StubProcessingContext.forMessage(message);
+        unitOfWork = new LegacyDefaultUnitOfWork<>(message);
     }
 
     @Test
@@ -78,9 +81,9 @@ class LoggingInterceptorTest {
     @Test
     void handlerInterceptorWithIncomingLoggingNullReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        when(interceptorChain.proceedSync()).thenReturn(null);
+        when(interceptorChain.proceedSync(context)).thenReturn(null);
 
-        testSubject.handle(unitOfWork, interceptorChain);
+        testSubject.handle(unitOfWork, context, interceptorChain);
 
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
         verify(mockLogger).logIfEnabled(
@@ -92,9 +95,9 @@ class LoggingInterceptorTest {
     @Test
     void handlerInterceptorWithSuccessfulExecutionVoidReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        when(interceptorChain.proceedSync()).thenReturn(null);
+        when(interceptorChain.proceedSync(context)).thenReturn(null);
 
-        testSubject.handle(unitOfWork, interceptorChain);
+        testSubject.handle(unitOfWork, context, interceptorChain);
 
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
         verify(mockLogger).logIfEnabled(
@@ -105,10 +108,10 @@ class LoggingInterceptorTest {
 
     @Test
     void handlerInterceptorWithSuccessfulExecutionCustomReturnValue() throws Exception {
-        when(interceptorChain.proceedSync()).thenReturn(new StubResponse());
+        when(interceptorChain.proceedSync(context)).thenReturn(new StubResponse());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.handle(unitOfWork, interceptorChain);
+        testSubject.handle(unitOfWork, context, interceptorChain);
 
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
         verify(mockLogger).logIfEnabled(
@@ -121,11 +124,11 @@ class LoggingInterceptorTest {
     @Test
     void handlerInterceptorWithFailedExecution() throws Exception {
         RuntimeException exception = new RuntimeException();
-        when(interceptorChain.proceedSync()).thenThrow(exception);
+        when(interceptorChain.proceedSync(context)).thenThrow(exception);
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
         try {
-            testSubject.handle(unitOfWork, interceptorChain);
+            testSubject.handle(unitOfWork, context, interceptorChain);
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
             // expected

@@ -69,14 +69,14 @@ class EventSourcingRepositoryTest {
                 String.class,
                 eventStore,
                 (entityType, id) -> id,
-                identifier -> TEST_CRITERIA,
+                (identifier, ctx) -> TEST_CRITERIA,
                 (entity, event, context) -> entity + "-" + event.getPayload()
         );
     }
 
     @Test
     void loadEventSourcedEntity() {
-        ProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = ProcessingContext.empty();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -95,7 +95,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void persistNewEntityRegistersItToListenToEvents() {
-        ProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = ProcessingContext.empty();
 
         ManagedEntity<String, String> result = testSubject.persist("id", "entity", processingContext);
 
@@ -106,7 +106,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void persistAlreadyPersistedEntityDoesNotRegisterItToListenToEvents() {
-        ProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = ProcessingContext.empty();
 
         ManagedEntity<String, String> first = testSubject.persist("id", "entity", processingContext);
         ManagedEntity<String, String> second = testSubject.persist("id", "entity", processingContext);
@@ -119,8 +119,8 @@ class EventSourcingRepositoryTest {
 
     @Test
     void assigningEntityToOtherProcessingContextInExactFormat() throws Exception {
-        ProcessingContext processingContext = new StubProcessingContext();
-        ProcessingContext processingContext2 = new StubProcessingContext();
+        ProcessingContext processingContext = ProcessingContext.empty();
+        ProcessingContext processingContext2 = ProcessingContext.empty();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -134,8 +134,8 @@ class EventSourcingRepositoryTest {
 
     @Test
     void assigningEntityToOtherProcessingContextInOtherFormat() throws Exception {
-        ProcessingContext processingContext = new StubProcessingContext();
-        ProcessingContext processingContext2 = new StubProcessingContext();
+        ProcessingContext processingContext = ProcessingContext.empty();
+        ProcessingContext processingContext2 = ProcessingContext.empty();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -165,7 +165,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void updateLoadedEventSourcedEntity() {
-        ProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = ProcessingContext.empty();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -189,7 +189,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void loadOrCreateShouldLoadWhenEventsAreReturned() {
-        ProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = ProcessingContext.empty();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -202,7 +202,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void loadOrCreateShouldCreateWhenNoEventsAreReturned() {
-        StubProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = ProcessingContext.empty();
         doReturn(MessageStream.empty())
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));

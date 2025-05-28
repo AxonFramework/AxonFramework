@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.AggregateMember;
@@ -171,7 +172,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         AnnotatedAggregate<LeafAggregate> testSubject =
                 AnnotatedAggregate.initialize(testAggregate, testModel, mock(EventBus.class));
 
-        testSubject.handle(testMemberCommand);
+        testSubject.handle(testMemberCommand, StubProcessingContext.forMessage(testMemberCommand));
         assertTrue(memberCommandHandlingValidator.get());
     }
 
@@ -192,7 +193,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
                 AnnotatedAggregate.initialize(testAggregate, testModel, mock(EventBus.class));
 
 
-        testSubject.handle(testMemberCommand);
+        testSubject.handle(testMemberCommand, StubProcessingContext.forMessage(testMemberCommand));
         assertTrue(memberCommandHandlingValidator.get());
     }
 
@@ -211,7 +212,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         AnnotatedAggregate<LeafAggregate> testSubject =
                 AnnotatedAggregate.initialize(testAggregate, testModel, mock(EventBus.class));
 
-        testSubject.handle(testMemberCommand);
+        testSubject.handle(testMemberCommand, StubProcessingContext.forMessage(testMemberCommand));
         assertEquals(expectedNumberOfMemberCommandInterceptorInvocations, memberCommandInterceptingCounter.get());
     }
 
@@ -232,7 +233,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
                 AnnotatedAggregate.initialize(testAggregate, testModel, mock(EventBus.class));
 
 
-        testSubject.handle(testMemberCommand);
+        testSubject.handle(testMemberCommand, StubProcessingContext.forMessage(testMemberCommand));
         assertEquals(expectedNumberOfMemberCommandInterceptorInvocations, memberCommandInterceptingCounter.get());
     }
 

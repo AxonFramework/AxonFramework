@@ -130,9 +130,9 @@ public interface CommandGateway {
      */
     default Object sendAndWait(@Nonnull Object command) {
         try {
-            return send(command, ProcessingContext.NONE).getResultMessage()
-                                                        .thenApply(Message::getPayload)
-                                                        .get();
+            return send(command, ProcessingContext.empty()).getResultMessage()
+                                                           .thenApply(Message::getPayload)
+                                                           .get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CommandExecutionException("Thread interrupted while waiting for result", e);
@@ -156,8 +156,8 @@ public interface CommandGateway {
     default <R> R sendAndWait(@Nonnull Object command,
                               @Nonnull Class<R> returnType) {
         try {
-            return send(command, ProcessingContext.NONE).resultAs(returnType)
-                                                        .get();
+            return send(command, ProcessingContext.empty()).resultAs(returnType)
+                                                           .get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CommandExecutionException("Thread interrupted while waiting for result", e);

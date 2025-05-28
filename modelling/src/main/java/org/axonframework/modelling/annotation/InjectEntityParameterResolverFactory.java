@@ -60,7 +60,7 @@ public class InjectEntityParameterResolverFactory implements ParameterResolverFa
     }
 
     @Override
-    public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         Parameter parameter = parameters[parameterIndex];
         if (!parameter.isAnnotationPresent(InjectEntity.class)) {
             return null;

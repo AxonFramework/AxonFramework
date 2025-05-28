@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.messaging.Context.ResourceKey;
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.interceptors.ResultHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ResourceOverridingProcessingContext;
@@ -92,7 +92,7 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
     }
 
     @Override
-    public ParameterResolver<Object> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<Object> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (Exception.class.isAssignableFrom(parameters[parameterIndex].getType())
                 && AnnotationUtils.isAnnotationPresent(executable, ResultHandler.class)) {
             return new ExceptionResultParameterResolver(parameters[parameterIndex].getType());
@@ -109,12 +109,12 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
         }
 
         @Override
-        public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+        public Object resolveParameterValue(@Nonnull ProcessingContext context) {
             return REGISTERED_RESULT.get();
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext context) {
             // we must always match, because this parameter is based on execution result
             Object registeredResult = REGISTERED_RESULT.get();
 

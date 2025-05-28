@@ -17,14 +17,16 @@
 package org.axonframework.eventhandling.replay;
 
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -57,14 +59,25 @@ class ReplayContextParameterResolverFactoryTest {
     void resolvesIfMatching() throws Exception {
         GenericTrackedEventMessage<Object> replayEvent = new GenericTrackedEventMessage<>(replayToken,
                                                                                           asEventMessage(1L));
+        ProcessingContext replayEventContext = StubProcessingContext.forMessage(replayEvent);
         GenericTrackedEventMessage<Object> liveEvent = new GenericTrackedEventMessage<>(regularToken,
                                                                                         asEventMessage(2L));
-        assertTrue(testSubject.canHandle(replayEvent));
-        assertTrue(testSubject.canHandle(liveEvent));
-        testSubject.handleSync(createMessage(1L, true));
-        testSubject.handleSync(createMessage(2L, true));
-        testSubject.handleSync(createMessage(3L, true));
-        testSubject.handleSync(createMessage(4L, false));
+        ProcessingContext liveEventContext = StubProcessingContext.forMessage(liveEvent);
+
+        assertTrue(testSubject.canHandle(replayEvent, replayEventContext));
+        assertTrue(testSubject.canHandle(liveEvent, liveEventContext));
+        TrackedEventMessage<Object> event1 = createMessage(1L, true);
+        ProcessingContext event1Context = StubProcessingContext.forMessage(event1);
+        testSubject.handleSync(event1, event1Context);
+        TrackedEventMessage<Object> event2 = createMessage(2L, true);
+        ProcessingContext event2Context = StubProcessingContext.forMessage(event2);
+        testSubject.handleSync(event2, event2Context);
+        TrackedEventMessage<Object> event3 = createMessage(3L, true);
+        ProcessingContext event3Context = StubProcessingContext.forMessage(event3);
+        testSubject.handleSync(event3, event3Context);
+        TrackedEventMessage<Object> event4 = createMessage(4L, false);
+        ProcessingContext event4Context = StubProcessingContext.forMessage(event4);
+        testSubject.handleSync(event4, event4Context);
 
         assertEquals(asList(1L, 2L, 3L, 4L), handler.receivedLongs);
         assertEquals(asList(2L, 3L), handler.receivedInReplay);

@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
@@ -36,7 +37,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -119,10 +119,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @throws Exception if the {@code errorHandler} throws an Exception back on the
      *                   {@link ErrorHandler#handleError(ErrorContext)} call
      */
-    protected boolean canHandle(EventMessage<?> eventMessage, Segment segment)
+    protected boolean canHandle(EventMessage<?> eventMessage, @Nonnull ProcessingContext context, Segment segment)
             throws Exception {
         try {
-            return eventHandlerInvoker.canHandle(eventMessage, segment);
+            return eventHandlerInvoker.canHandle(eventMessage, context, segment);
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
             return false;
@@ -166,15 +166,18 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                                        Collection<Segment> processingSegments) throws Exception {
         // TODO - Change UnitOfWork to ProcessingContext
         spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages).runCallable(() -> {
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
+            ResultMessage<?> resultMessage = unitOfWork.executeWithResult((context) -> {
                 EventMessage<?> message = unitOfWork.getMessage();
                 MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(message);
                 return spanFactory.createProcessEventSpan(this instanceof StreamingEventProcessor, message)
                                   .runCallable(() -> new DefaultInterceptorChain<>(
                                           unitOfWork,
                                           interceptors,
-                                          m -> processMessageInUnitOfWork(processingSegments, m, null, monitorCallback))
-                                          .proceedSync());
+                                          (m, c) -> processMessageInUnitOfWork(processingSegments,
+                                                                                     m,
+                                                                                     context,
+                                                                                     monitorCallback))
+                                          .proceedSync(context));
             }, rollbackConfiguration);
 
             if (resultMessage.isExceptional()) {

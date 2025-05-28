@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -55,11 +57,12 @@ class SimpleEventHandlerInvokerTest {
     void singleEventPublication() throws Exception {
         EventMessage<?> event = createEvent();
 
-        testSubject.handle(event, null, Segment.ROOT_SEGMENT);
+        ProcessingContext context = StubProcessingContext.forMessage(event);
+        testSubject.handle(event, context, Segment.ROOT_SEGMENT);
 
         InOrder inOrder = inOrder(mockHandler1, mockHandler2);
-        inOrder.verify(mockHandler1).handleSync(event);
-        inOrder.verify(mockHandler2).handleSync(event);
+        inOrder.verify(mockHandler1).handleSync(event, context);
+        inOrder.verify(mockHandler2).handleSync(event, context);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -68,33 +71,35 @@ class SimpleEventHandlerInvokerTest {
         List<? extends EventMessage<?>> events = createEvents(2);
 
         for (EventMessage<?> event : events) {
-            testSubject.handle(event, null, Segment.ROOT_SEGMENT);
+            testSubject.handle(event, StubProcessingContext.forMessage(event), Segment.ROOT_SEGMENT);
         }
 
         InOrder inOrder = inOrder(mockHandler1, mockHandler2);
-        inOrder.verify(mockHandler1).handleSync(events.get(0));
-        inOrder.verify(mockHandler2).handleSync(events.get(0));
-        inOrder.verify(mockHandler1).handleSync(events.get(1));
-        inOrder.verify(mockHandler2).handleSync(events.get(1));
+        inOrder.verify(mockHandler1).handleSync(eq(events.get(0)), any());
+        inOrder.verify(mockHandler2).handleSync(eq(events.get(0)), any());
+        inOrder.verify(mockHandler1).handleSync(eq(events.get(1)), any());
+        inOrder.verify(mockHandler2).handleSync(eq(events.get(1)), any());
         inOrder.verifyNoMoreInteractions();
     }
 
     @Test
     void performReset() {
-        testSubject.performReset(null);
+        ProcessingContext context = ProcessingContext.empty();
+        testSubject.performReset(context);
 
-        verify(mockHandler1).prepareReset(NO_RESET_PAYLOAD, null);
-        verify(mockHandler2).prepareReset(NO_RESET_PAYLOAD, null);
+        verify(mockHandler1).prepareReset(NO_RESET_PAYLOAD, context);
+        verify(mockHandler2).prepareReset(NO_RESET_PAYLOAD, context);
     }
 
     @Test
     void performResetWithResetContext() {
         String resetContext = "reset-context";
 
-        testSubject.performReset(resetContext, null);
+        ProcessingContext context = ProcessingContext.empty();
+        testSubject.performReset(resetContext, context);
 
-        verify(mockHandler1).prepareReset(eq(resetContext), isNull());
-        verify(mockHandler2).prepareReset(eq(resetContext), isNull());
+        verify(mockHandler1).prepareReset(eq(resetContext), eq(context));
+        verify(mockHandler2).prepareReset(eq(resetContext), eq(context));
     }
 
     @Test

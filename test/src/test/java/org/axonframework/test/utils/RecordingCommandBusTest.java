@@ -51,8 +51,8 @@ class RecordingCommandBusTest {
         CommandMessage<String> firstTestCommand = new GenericCommandMessage<>(TEST_TYPE, "First");
         CommandMessage<String> secondTestCommand = new GenericCommandMessage<>(TEST_TYPE, "Second");
 
-        testSubject.dispatch(firstTestCommand, ProcessingContext.NONE);
-        var result = testSubject.dispatch(secondTestCommand, ProcessingContext.NONE);
+        testSubject.dispatch(firstTestCommand, ProcessingContext.empty());
+        var result = testSubject.dispatch(secondTestCommand, ProcessingContext.empty());
 
         Message<?> commandResultMessage = result.get();
         if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
@@ -72,9 +72,9 @@ class RecordingCommandBusTest {
         CommandMessage<String> secondTestCommand = new GenericCommandMessage<>(TEST_TYPE, "Second");
 
         testSubject.setCallbackBehavior((commandPayload, commandMetaData) -> "callbackResult");
-        testSubject.dispatch(firstTestCommand, ProcessingContext.NONE);
+        testSubject.dispatch(firstTestCommand, ProcessingContext.empty());
 
-        var commandResultMessage = testSubject.dispatch(secondTestCommand, ProcessingContext.NONE).get();
+        var commandResultMessage = testSubject.dispatch(secondTestCommand, ProcessingContext.empty()).get();
         if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
             fail("Didn't expect handling to fail");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
@@ -37,7 +39,8 @@ import java.util.Optional;
 public class DefaultParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
+                                            int parameterIndex) {
 
         Class<?> parameterType = parameters[parameterIndex].getType();
         if (Message.class.isAssignableFrom(parameterType)) {
@@ -68,20 +71,26 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         private static final String META_DATA_VALUE_PROPERTY = "metaDataValue";
 
         private final Map<String, Object> metaDataValue;
-        private final Class parameterType;
+        private final Class<?> parameterType;
 
-        public AnnotatedMetaDataParameterResolver(Map<String, Object> metaDataValue, Class parameterType) {
+        public AnnotatedMetaDataParameterResolver(Map<String, Object> metaDataValue, Class<?> parameterType) {
             this.metaDataValue = metaDataValue;
             this.parameterType = parameterType;
         }
 
         @Override
-        public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
-            return message.getMetaData().get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString());
+        public Object resolveParameterValue(@Nonnull ProcessingContext context) {
+            return context.getResource(Message.RESOURCE_KEY)
+                          .getMetaData()
+                          .get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString());
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext context) {
+            Message<?> message = context.getResource(Message.RESOURCE_KEY);
+            if (message == null) {
+                return false;
+            }
             return !(parameterType.isPrimitive() || (boolean) metaDataValue.get(REQUIRED_PROPERTY))
                     || (
                     message.getMetaData().containsKey(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString())
@@ -90,7 +99,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
     }
 
-    private static final class MetaDataParameterResolver implements ParameterResolver {
+    private static final class MetaDataParameterResolver implements ParameterResolver<MetaData> {
 
         private static final MetaDataParameterResolver INSTANCE = new MetaDataParameterResolver();
 
@@ -98,17 +107,18 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
+        public MetaData resolveParameterValue(@Nonnull ProcessingContext context) {
+            Message<?> message = context.getResource(Message.RESOURCE_KEY);
             return message.getMetaData();
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return true;
+        public boolean matches(@Nonnull ProcessingContext context) {
+            return context.containsResource(Message.RESOURCE_KEY);
         }
     }
 
-    private static class MessageParameterResolver implements ParameterResolver {
+    private static class MessageParameterResolver implements ParameterResolver<Message<?>> {
 
         private final Class<?> parameterType;
 
@@ -117,13 +127,17 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
-            return message;
+        public Message<?> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return context.getResource(Message.RESOURCE_KEY);
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return parameterType.isInstance(message);
+        public boolean matches(@Nonnull ProcessingContext context) {
+            Message<?> message = context.getResource(Message.RESOURCE_KEY);
+            if (message == null) {
+                return false;
+            }
+            return parameterType.isAssignableFrom(message.getClass());
         }
     }
 }

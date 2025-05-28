@@ -56,24 +56,24 @@ class StatefulCommandHandlingComponentTest {
             return MessageStream.empty().cast();
         });
 
-        testSubject.handle(new GenericCommandMessage<>(new MessageType("test-command"),
-                                                       "my-payload"), new StubProcessingContext())
-                   .asCompletableFuture().join();
+        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("test-command"),
+                                                                            "my-payload");
+        testSubject.handle(command, StubProcessingContext.forMessage(command)).asCompletableFuture().join();
         assertTrue(invoked.get());
     }
 
     @Test
     void canRegisterNonStatefulNormalHandler() {
         StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", stateManager);
-        ProcessingContext processingContext = new StubProcessingContext();
         AtomicBoolean invoked = new AtomicBoolean();
         testSubject.subscribe(new QualifiedName("test-command"), (command, ctx) -> {
             invoked.set(true);
             return MessageStream.empty().cast();
         });
 
-        testSubject.handle(new GenericCommandMessage<>(new MessageType("test-command"),
-                                                       "my-payload"), processingContext)
+        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("test-command"),
+                                                                            "my-payload");
+        testSubject.handle(command, StubProcessingContext.forMessage(command))
                    .asCompletableFuture().join();
         assertTrue(invoked.get());
     }
@@ -93,14 +93,14 @@ class StatefulCommandHandlingComponentTest {
     @Test
     void exceptionWhileHandlingCommandResultsInFailedStream() {
         StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", stateManager);
-        ProcessingContext processingContext = new StubProcessingContext();
         testSubject.subscribe(new QualifiedName("test-command"), (command, models, ctx) -> {
             throw new RuntimeException("Faking an exception");
         });
 
         CompletionException exception = assertThrows(CompletionException.class, () -> {
-            testSubject.handle(new GenericCommandMessage<>(new MessageType("test-command"),
-                                                           "my-payload"), processingContext)
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("test-command"),
+                                                                                "my-payload");
+            testSubject.handle(command, StubProcessingContext.forMessage(command))
                        .asCompletableFuture()
                        .join();
         });

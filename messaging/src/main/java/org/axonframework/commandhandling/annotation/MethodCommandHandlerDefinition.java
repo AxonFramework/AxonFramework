@@ -29,7 +29,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Optional;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of a {@link HandlerEnhancerDefinition} that is used for {@link CommandHandler} annotated methods.
@@ -81,8 +81,8 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
-            return super.canHandle(message, processingContext) && commandName.equals(message.type().name());
+        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+            return super.canHandle(message, context) && commandName.equals(message.type().name());
         }
 
         @Override

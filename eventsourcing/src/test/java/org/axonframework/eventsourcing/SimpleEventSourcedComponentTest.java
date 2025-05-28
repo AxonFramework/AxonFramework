@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.junit.jupiter.api.*;
 
@@ -81,13 +81,13 @@ class SimpleEventSourcedComponentTest {
     @Test
     void evolveThrowsNullPointerExceptionForNullEntity() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.evolve(null, STRING_EVENT, ProcessingContext.NONE));
+        assertThrows(NullPointerException.class, () -> testSubject.evolve(null, STRING_EVENT, StubProcessingContext.forMessage(STRING_EVENT)));
     }
 
     @Test
     void evolveThrowsNullPointerExceptionForNullEventMessage() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.evolve(ENTITY, null, ProcessingContext.NONE));
+        assertThrows(NullPointerException.class, () -> testSubject.evolve(ENTITY, null, null));
     }
 
     @Test
@@ -98,7 +98,7 @@ class SimpleEventSourcedComponentTest {
 
     @Test
     void evolveInvokesQualifiedNameMatchingEntityEvolver() {
-        String result = testSubject.evolve(ENTITY, STRING_EVENT, ProcessingContext.NONE);
+        String result = testSubject.evolve(ENTITY, STRING_EVENT, StubProcessingContext.forMessage(STRING_EVENT));
 
         assertNotEquals(ENTITY, result);
         assertEquals(ENTITY + "-string", result);
@@ -109,7 +109,7 @@ class SimpleEventSourcedComponentTest {
 
     @Test
     void subsequentEvolveInvocations() {
-        String result = testSubject.evolve(ENTITY, STRING_EVENT, ProcessingContext.NONE);
+        String result = testSubject.evolve(ENTITY, STRING_EVENT, StubProcessingContext.forMessage(STRING_EVENT));
 
         assertNotEquals(ENTITY, result);
         assertEquals(ENTITY + "-string", result);
@@ -117,7 +117,7 @@ class SimpleEventSourcedComponentTest {
         assertTrue(stringEvolverInvoked.get());
         assertFalse(integerEvolverInvoked.get());
 
-        result = testSubject.evolve(result, INT_EVENT, ProcessingContext.NONE);
+        result = testSubject.evolve(result, INT_EVENT, StubProcessingContext.forMessage(INT_EVENT));
 
         assertNotEquals(ENTITY + "-string", result);
         assertEquals(ENTITY + "-string-42", result);
@@ -130,7 +130,7 @@ class SimpleEventSourcedComponentTest {
         GenericEventMessage<Boolean> eventWithUnknownName =
                 new GenericEventMessage<>(new MessageType(Boolean.class), true);
 
-        String result = testSubject.evolve(ENTITY, eventWithUnknownName, ProcessingContext.NONE);
+        String result = testSubject.evolve(ENTITY, eventWithUnknownName, StubProcessingContext.forMessage(eventWithUnknownName));
 
         assertEquals(ENTITY, result);
     }

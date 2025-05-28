@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -33,8 +35,9 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
     private static final TrackingTokenParameterResolver RESOLVER = new TrackingTokenParameterResolver();
 
+    @Nullable
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (TrackingToken.class.equals(parameters[parameterIndex].getType())) {
             return RESOLVER;
         }
@@ -44,8 +47,11 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
     private static class TrackingTokenParameterResolver implements ParameterResolver<TrackingToken> {
 
         @Override
-        public TrackingToken resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
-            return unwrap(((TrackedEventMessage) message).trackingToken());
+        public TrackingToken resolveParameterValue(@Nonnull ProcessingContext context) {
+            if (context.getResource(Message.RESOURCE_KEY) instanceof TrackedEventMessage<?> trackedEventMessage) {
+                return unwrap(trackedEventMessage.trackingToken());
+            }
+            return null;
         }
 
         private TrackingToken unwrap(TrackingToken trackingToken) {
@@ -53,8 +59,8 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
-            return message instanceof TrackedEventMessage;
+        public boolean matches(@Nonnull ProcessingContext context) {
+            return context.getResource(Message.RESOURCE_KEY) instanceof TrackedEventMessage;
         }
     }
 }

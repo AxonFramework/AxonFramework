@@ -26,6 +26,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 
@@ -156,8 +157,9 @@ class AnnotatedEventSourcedEntityBuilderTest {
 
     private static class CustomCriteriaResolver<ID> implements CriteriaResolver<ID> {
 
+        @Nonnull
         @Override
-        public EventCriteria apply(ID id) {
+        public EventCriteria resolve(@Nonnull ID id, @Nonnull ProcessingContext context) {
             return EventCriteria.havingAnyTag();
         }
     }

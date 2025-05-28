@@ -16,12 +16,13 @@
 
 package org.axonframework.messaging.deadletter;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -43,8 +44,8 @@ import java.lang.reflect.Parameter;
 public class DeadLetterParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver<DeadLetter<?>> createInstance(Executable executable,
-                                                           Parameter[] parameters,
+    public ParameterResolver<DeadLetter<?>> createInstance(@Nonnull Executable executable,
+                                                           @Nonnull Parameter[] parameters,
                                                            int parameterIndex) {
         return DeadLetter.class.equals(parameters[parameterIndex].getType()) ? new DeadLetterParameterResolver() : null;
     }
@@ -59,7 +60,7 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
     static class DeadLetterParameterResolver implements ParameterResolver<DeadLetter<?>> {
 
         @Override
-        public DeadLetter<?> resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+        public DeadLetter<?> resolveParameterValue(@Nonnull ProcessingContext context) {
             return CurrentUnitOfWork.isStarted()
                     ? (DeadLetter<?>) CurrentUnitOfWork.map(uow -> uow.getResource(DeadLetter.class.getName()))
                                                        .orElse(null)
@@ -67,7 +68,7 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext context) {
             return true;
         }
     }

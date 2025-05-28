@@ -24,8 +24,10 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,9 +59,11 @@ class BeanValidationInterceptorTest {
                 new MessageType("message"), "Simple instance"
         ));
 
-        testSubject.handle(uow, interceptorChain);
+        ProcessingContext context = StubProcessingContext.forUnitOfWork(uow);
 
-        verify(interceptorChain).proceedSync();
+        testSubject.handle(uow, context, interceptorChain);
+
+        verify(interceptorChain).proceedSync(context);
     }
 
     @Test
@@ -67,13 +71,14 @@ class BeanValidationInterceptorTest {
         uow.transformMessage(m -> new GenericMessage<>(
                 new MessageType("message"), new JSR303AnnotatedInstance(null)
         ));
+        ProcessingContext context = StubProcessingContext.forUnitOfWork(uow);
         try {
-            testSubject.handle(uow, interceptorChain);
+            testSubject.handle(uow, context, interceptorChain);
             fail("Expected exception");
         } catch (org.axonframework.messaging.interceptors.JSR303ViolationException e) {
             assertFalse(e.getViolations().isEmpty());
         }
-        verify(interceptorChain, never()).proceedSync();
+        verify(interceptorChain, never()).proceedSync(context);
     }
 
     @Test
@@ -81,10 +86,11 @@ class BeanValidationInterceptorTest {
         uow.transformMessage(m -> new GenericMessage<>(
                 new MessageType("message"), new JSR303AnnotatedInstance("abc")
         ));
+        ProcessingContext context = StubProcessingContext.forUnitOfWork(uow);
 
-        testSubject.handle(uow, interceptorChain);
+        testSubject.handle(uow, context, interceptorChain);
 
-        verify(interceptorChain).proceedSync();
+        verify(interceptorChain).proceedSync(context);
     }
 
     @Test
@@ -92,24 +98,26 @@ class BeanValidationInterceptorTest {
         uow.transformMessage(m -> new GenericMessage<>(
                 new MessageType("message"), new JSR303AnnotatedInstance("bea")
         ));
+        ProcessingContext context = StubProcessingContext.forUnitOfWork(uow);
 
         try {
-            testSubject.handle(uow, interceptorChain);
+            testSubject.handle(uow, context, interceptorChain);
             fail("Expected exception");
         } catch (JSR303ViolationException e) {
             assertFalse(e.getViolations().isEmpty());
         }
 
-        verify(interceptorChain, never()).proceedSync();
+        verify(interceptorChain, never()).proceedSync(context);
     }
 
     @Test
     void customValidatorFactory() throws Exception {
         uow.transformMessage(m -> new GenericMessage<Object>(new MessageType("message"),
                                                              new JSR303AnnotatedInstance("abc")));
+        ProcessingContext context = StubProcessingContext.forUnitOfWork(uow);
         ValidatorFactory mockValidatorFactory = spy(Validation.buildDefaultValidatorFactory());
         testSubject = new BeanValidationInterceptor<>(mockValidatorFactory);
-        testSubject.handle(uow, interceptorChain);
+        testSubject.handle(uow, context, interceptorChain);
         verify(mockValidatorFactory).getValidator();
     }
 

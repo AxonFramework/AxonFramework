@@ -20,6 +20,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
@@ -49,9 +50,10 @@ class CorrelationDataInterceptorTest {
 
     @Test
     void attachesCorrelationDataProvidersToUnitOfWork() throws Exception {
-        subject.handle(mockUnitOfWork, mockInterceptorChain);
+        ProcessingContext context = ProcessingContext.empty();
+        subject.handle(mockUnitOfWork, context, mockInterceptorChain);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider1);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider2);
-        verify(mockInterceptorChain).proceedSync();
+        verify(mockInterceptorChain).proceedSync(context);
     }
 }

@@ -18,6 +18,7 @@ package org.axonframework.modelling;
 
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -65,7 +66,7 @@ class HierarchicalStateManagerTest {
         HierarchicalStateManager stateManager = HierarchicalStateManager.create(parent, child);
 
         Assertions.assertThrows(MissingRepositoryException.class, () -> {
-            stateManager.loadEntity(String.class, "id", new StubProcessingContext())
+            stateManager.loadEntity(String.class, "id", ProcessingContext.empty())
                         .join();
         });
     }
@@ -111,7 +112,7 @@ class HierarchicalStateManagerTest {
     }
 
     private static void verifyHasAsResult(HierarchicalStateManager stateManager, String child) {
-        stateManager.loadEntity(String.class, "id", new StubProcessingContext())
+        stateManager.loadEntity(String.class, "id", ProcessingContext.empty())
                     .thenAccept(entity -> {
                         Assertions.assertEquals(child, entity);
                     })

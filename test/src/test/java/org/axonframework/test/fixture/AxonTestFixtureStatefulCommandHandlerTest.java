@@ -246,7 +246,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                                                  Student.class,
                                                                  c.getComponent(EventStore.class),
                                                                  (type, id) -> new Student(id),
-                                                                 id -> EventCriteria.havingTags("Student", id),
+                                                                 (id, context) -> EventCriteria.havingTags("Student", id),
                                                                  new AnnotationBasedEventSourcedComponent<>(Student.class)
                                                          );
                                                          return SimpleStateManager.builder("testfixture")

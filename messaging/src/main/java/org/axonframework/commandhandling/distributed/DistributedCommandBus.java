@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleProcessingContext;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -59,7 +60,7 @@ public class DistributedCommandBus implements CommandBus {
                                  @Nonnull Connector connector) {
         this.delegate = Objects.requireNonNull(delegate, "Given CommandBus delegate cannot be null.");
         this.connector = Objects.requireNonNull(connector, "Given Connector cannot be null.");
-        connector.onIncomingCommand((command, callback) -> delegate.dispatch(command, ProcessingContext.NONE)
+        connector.onIncomingCommand((command, callback) -> delegate.dispatch(command, SimpleProcessingContext.empty())
                                                                    .whenComplete((chr, e) -> {
                                                                        if (e == null) {
                                                                            callback.success(chr);
