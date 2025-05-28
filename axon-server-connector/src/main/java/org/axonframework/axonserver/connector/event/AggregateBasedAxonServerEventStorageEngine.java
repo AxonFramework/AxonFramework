@@ -202,11 +202,11 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         return MessageStream.fromStream(
                 aggregateStream.asStream(),
                 this::convertToMessage,
-                AggregateBasedAxonServerEventStorageEngine::buildContext
+                AggregateBasedAxonServerEventStorageEngine::eventMessageContext
         );
     }
 
-    private static Context buildContext(Event event) {
+    private static Context eventMessageContext(Event event) {
         Context legacyContext =
                 Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
                        .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
