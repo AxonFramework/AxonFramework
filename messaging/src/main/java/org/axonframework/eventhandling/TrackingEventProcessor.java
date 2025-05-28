@@ -239,8 +239,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     private String calculateIdentifier() {
-        return transactionManager.fetchInTransaction(
-                () -> tokenStore.retrieveStorageIdentifier().orElse("--unknown--")
+        var unitOfWork = transactionalUnitOfWorkFactory.create();
+        return joinAndUnwrap(
+                unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(
+                        tokenStore.retrieveStorageIdentifier().orElse("--unknown--"))
+                )
         );
     }
 
@@ -344,10 +347,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private void releaseToken(Segment segment) {
         try {
-            transactionManager.executeInTransaction(() -> {
-                tokenStore.releaseClaim(getName(), segment.getSegmentId());
-                eventHandlerInvoker().segmentReleased(segment);
-            });
+            var unitOfWork = transactionalUnitOfWorkFactory.create();
+            joinAndUnwrap(
+                    unitOfWork.executeWithResult(context -> {
+                        tokenStore.releaseClaim(getName(), segment.getSegmentId());
+                        eventHandlerInvoker().segmentReleased(segment);
+                        return emptyCompletedFuture();
+                    })
+            );
             logger.info("Released claim");
         } catch (Exception e) {
             // Ignore exception
@@ -439,15 +446,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             if (lastToken == null) {
                 // The token is never updated, so we extend the token claim.
                 checkSegmentCaughtUp(segment, eventStream);
-                transactionManager.executeInTransaction(
-                        () -> tokenStore.extendClaim(getName(), segment.getSegmentId())
+                var unitOfWork = transactionalUnitOfWorkFactory.create();
+                joinAndUnwrap(
+                        unitOfWork.executeWithResult(context -> {
+                            tokenStore.extendClaim(getName(), segment.getSegmentId());
+                            return emptyCompletedFuture();
+                        })
                 );
                 return;
             } else if (batch.isEmpty()) {
                 // The token is updated but didn't contain events for this segment. So, we update the token position.
                 TrackingToken finalLastToken = lastToken;
-                transactionManager.executeInTransaction(
-                        () -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId())
+                var unitOfWork = transactionalUnitOfWorkFactory.create();
+                joinAndUnwrap(
+                        unitOfWork.executeWithResult(context -> {
+                            tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
+                            return emptyCompletedFuture();
+                        })
                 );
                 return;
             }
@@ -1290,9 +1305,17 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                                                           })
                             );
                         }
-                        segmentsToClaim = transactionManager.fetchInTransaction(
-                                () -> tokenStore.fetchAvailableSegments(processorName)
+                        segmentsToClaim = joinAndUnwrap(
+                                transactionalUnitOfWorkFactory.create()
+                                                              .executeWithResult(
+                                                                      context ->
+                                                                              CompletableFuture.completedFuture(
+                                                                                      tokenStore.fetchAvailableSegments(
+                                                                                              processorName)
+                                                                              )
+                                                              )
                         );
+
                         waitTime = 1;
                     } catch (Exception e) {
                         if (waitTime == 1) {

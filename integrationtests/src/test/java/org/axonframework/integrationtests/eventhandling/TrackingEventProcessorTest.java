@@ -1854,7 +1854,6 @@ class TrackingEventProcessorTest {
     void retrievingStorageIdentifierWillCacheResults() {
         String id = testSubject.getTokenStoreIdentifier();
         InOrder inOrder = inOrder(mockTransactionManager, tokenStore);
-        inOrder.verify(mockTransactionManager).fetchInTransaction(any());
         inOrder.verify(tokenStore, times(1)).retrieveStorageIdentifier();
 
         String id2 = testSubject.getTokenStoreIdentifier();
