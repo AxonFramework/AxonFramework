@@ -35,15 +35,15 @@ class EventCriteriaTest {
         assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of()));
         assertTrue(testSubject.matches(new QualifiedName("Another"), Set.of()));
         assertTrue(testSubject.matches(new QualifiedName("OneType"),
-                                       Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"), new org.axonframework.eventstreaming.Tag("key2", "value2"))));
-        assertTrue(testSubject.matches(new QualifiedName("Another"), Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"))));
+                                       Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
+        assertTrue(testSubject.matches(new QualifiedName("Another"), Set.of(new Tag("key1", "value1"))));
     }
 
     @Test
     void canConstructCriteriaWithOnlyTagsInDifferentWaysWithSameResult() {
         EventCriteria testSubject1 = havingTags("key1", "value1").andBeingOfAnyType();
-        EventCriteria testSubject2 = havingTags(new org.axonframework.eventstreaming.Tag("key1", "value1")).andBeingOfAnyType();
-        EventCriteria testSubject3 = havingTags(Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"))).andBeingOfAnyType();
+        EventCriteria testSubject2 = havingTags(new Tag("key1", "value1")).andBeingOfAnyType();
+        EventCriteria testSubject3 = havingTags(Set.of(new Tag("key1", "value1"))).andBeingOfAnyType();
 
         assertEquals(testSubject1, testSubject2);
         assertEquals(testSubject1, testSubject3);
@@ -108,10 +108,10 @@ class EventCriteriaTest {
 
         assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of()));
         assertTrue(testSubject.matches(new QualifiedName("OneType"),
-                                       Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"), new org.axonframework.eventstreaming.Tag("key2", "value2"))));
+                                       Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
 
         assertFalse(testSubject.matches(new QualifiedName("Another"), Set.of()));
-        assertFalse(testSubject.matches(new QualifiedName("Another"), Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"))));
+        assertFalse(testSubject.matches(new QualifiedName("Another"), Set.of(new Tag("key1", "value1"))));
     }
 
     @Test
@@ -120,7 +120,7 @@ class EventCriteriaTest {
                                                  .andBeingOneOfTypes("OneType");
 
         assertTrue(testSubject.matches(new QualifiedName("OneType"),
-                                       Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"), new org.axonframework.eventstreaming.Tag("key2", "value2"))));
+                                       Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
 
         assertFalse(testSubject.matches(new QualifiedName("OneType"), Set.of()));
         assertFalse(testSubject.matches(new QualifiedName("Another"), Set.of()));
@@ -133,12 +133,12 @@ class EventCriteriaTest {
                                                  .andBeingOneOfTypes("OneType");
 
         assertTrue(testSubject.matches(new QualifiedName("OneType"),
-                                       Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"), new org.axonframework.eventstreaming.Tag("key2", "value2"))));
+                                       Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
 
-        assertFalse(testSubject.matches(new QualifiedName("OneType"), Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"))));
+        assertFalse(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key1", "value1"))));
         assertFalse(testSubject.matches(new QualifiedName("OneType"), Set.of()));
         assertFalse(testSubject.matches(new QualifiedName("Another"), Set.of()));
-        assertFalse(testSubject.matches(new QualifiedName("Another"), Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"))));
+        assertFalse(testSubject.matches(new QualifiedName("Another"), Set.of(new Tag("key1", "value1"))));
     }
 
     @Test
@@ -151,10 +151,10 @@ class EventCriteriaTest {
     @Test
     void criteriaWithEqualParametersAreConsideredEqual() {
         EventCriteria testSubject1 = havingTags("key1", "value1").andBeingOneOfTypes("OneType");
-        EventCriteria testSubject2 = havingTags(new org.axonframework.eventstreaming.Tag("key1", "value1")).andBeingOneOfTypes("OneType");
-        EventCriteria testSubject3 = havingTags(new org.axonframework.eventstreaming.Tag("key1", "value1"))
+        EventCriteria testSubject2 = havingTags(new Tag("key1", "value1")).andBeingOneOfTypes("OneType");
+        EventCriteria testSubject3 = havingTags(new Tag("key1", "value1"))
                 .andBeingOneOfTypes("OtherType");
-        EventCriteria testSubject4 = havingTags(new org.axonframework.eventstreaming.Tag("key2", "value2s")).andBeingOneOfTypes("OneType");
+        EventCriteria testSubject4 = havingTags(new Tag("key2", "value2s")).andBeingOneOfTypes("OneType");
         EventCriteria testSubject5 = EventCriteria.havingAnyTag().andBeingOfAnyType();
         EventCriteria testSubject6 = havingTags(Set.of()).andBeingOfAnyType();
 
@@ -184,11 +184,11 @@ class EventCriteriaTest {
         EventCriteria testSubject = havingTags("key1", "value1").andBeingOneOfTypes("OneType")
                                                  .or().havingTags("key2", "value2").andBeingOneOfTypes("OtherType");
 
-        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"))));
-        assertTrue(testSubject.matches(new QualifiedName("OtherType"), Set.of(new org.axonframework.eventstreaming.Tag("key2", "value2"))));
+        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key1", "value1"))));
+        assertTrue(testSubject.matches(new QualifiedName("OtherType"), Set.of(new Tag("key2", "value2"))));
 
-        assertFalse(testSubject.matches(new QualifiedName("OneType"), Set.of(new org.axonframework.eventstreaming.Tag("key2", "value2"))));
-        assertFalse(testSubject.matches(new QualifiedName("OtherType"), Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"))));
+        assertFalse(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key2", "value2"))));
+        assertFalse(testSubject.matches(new QualifiedName("OtherType"), Set.of(new Tag("key1", "value1"))));
     }
 
     @Test
@@ -199,19 +199,19 @@ class EventCriteriaTest {
                                                  .havingAnyTag()
                 .andBeingOfAnyType();
 
-        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"))));
-        assertTrue(testSubject.matches(new QualifiedName("OtherType"), Set.of(new org.axonframework.eventstreaming.Tag("key2", "value2"))));
+        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key1", "value1"))));
+        assertTrue(testSubject.matches(new QualifiedName("OtherType"), Set.of(new Tag("key2", "value2"))));
     }
 
     @Test
     void criteriaWithAnyTagsWillMatchAllEventsOfThatType() {
         EventCriteria testSubject = EventCriteria.havingAnyTag().andBeingOneOfTypes("OneType");
 
-        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"))));
-        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new org.axonframework.eventstreaming.Tag("key2", "value2"))));
+        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key1", "value1"))));
+        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key2", "value2"))));
         assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of()));
-        assertFalse(testSubject.matches(new QualifiedName("TypeTwo"), Set.of(new org.axonframework.eventstreaming.Tag("key1", "value1"))));
-        assertFalse(testSubject.matches(new QualifiedName("TypeTwo"), Set.of(new org.axonframework.eventstreaming.Tag("key2", "value2"))));
+        assertFalse(testSubject.matches(new QualifiedName("TypeTwo"), Set.of(new Tag("key1", "value1"))));
+        assertFalse(testSubject.matches(new QualifiedName("TypeTwo"), Set.of(new Tag("key2", "value2"))));
         assertFalse(testSubject.matches(new QualifiedName("TypeTwo"), Set.of()));
     }
 

@@ -30,9 +30,7 @@ import java.util.Set;
  * has been published, typically referring to domain-specifics used for identification.
  * <p>
  * Such a {@code Tag} is typically used by the {@link EventCriteria} as a filter when
- * {@code EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing},
- * {@link StreamableEventSource#open(StreamingCondition) streaming} or
- * {@code EventStoreTransaction#appendEvent(EventMessage) appending} events.
+ * sourcing, streaming or appending events.
  *
  * @param key   The key of this {@link Tag}.
  * @param value The value of this {@link Tag}.
