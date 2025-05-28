@@ -39,10 +39,6 @@ import static org.hamcrest.core.StringStartsWith.startsWith;
  * @author Roald Bankras
  */
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {
-        MessageAuthorizationDispatchInterceptor.class,
-        MessageAuthorizationHandlerInterceptor.class
-})
 class MessageAuthorizationHandlerInterceptorTest {
 
     private Converter converter;
