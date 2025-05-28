@@ -22,8 +22,8 @@ import io.axoniq.axonserver.grpc.event.dcb.TaggedEvent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.GenericTaggedEventMessage;
-import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
@@ -39,6 +39,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+
 
 /**
  * Test class validating the {@link EventConverter}.

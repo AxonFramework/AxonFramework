@@ -24,11 +24,11 @@ import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.TagsAndNamesCriterion;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventsourcing.eventstore.StreamingCondition;
-import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 

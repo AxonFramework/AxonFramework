@@ -25,8 +25,8 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
@@ -41,7 +41,8 @@ import java.util.stream.Collectors;
 
 /**
  * Wrapper around standard Axon Framework {@link Converter} that can convert
- * {@link TaggedEventMessage TaggedEventMessages} (Axon Framework representation) to {@link TaggedEvent TaggedEvents} (Axon Server representation).
+ * {@link TaggedEventMessage TaggedEventMessages} (Axon Framework representation) to {@link TaggedEvent TaggedEvents}
+ * (Axon Server representation).
  *
  * @author Steven van Beelen
  * @since 5.0.0
