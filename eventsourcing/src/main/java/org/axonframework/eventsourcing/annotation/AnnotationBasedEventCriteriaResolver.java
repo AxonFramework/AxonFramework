@@ -23,8 +23,8 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.Tag;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
