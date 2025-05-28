@@ -21,12 +21,16 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.annotations.EventTags;
+import org.axonframework.eventstreaming.Tag;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;

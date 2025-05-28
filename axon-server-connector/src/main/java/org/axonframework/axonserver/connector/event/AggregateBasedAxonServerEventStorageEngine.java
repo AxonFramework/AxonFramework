@@ -35,13 +35,13 @@ import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarke
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
-import org.axonframework.eventsourcing.eventstore.EventCriterion;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
+import org.axonframework.eventstreaming.EventCriterion;
+import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;

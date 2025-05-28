@@ -18,6 +18,8 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.EventsCondition;
 
 /**
  * Interface describing the consistency boundary condition for

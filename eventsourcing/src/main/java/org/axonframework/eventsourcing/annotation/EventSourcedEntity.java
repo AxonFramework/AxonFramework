@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventstreaming.EventCriteria;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

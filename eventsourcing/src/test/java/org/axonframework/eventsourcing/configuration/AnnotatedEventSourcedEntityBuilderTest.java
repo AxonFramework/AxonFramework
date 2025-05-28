@@ -19,13 +19,13 @@ package org.axonframework.eventsourcing.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 

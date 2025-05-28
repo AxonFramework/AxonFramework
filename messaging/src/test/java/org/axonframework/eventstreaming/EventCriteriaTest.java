@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -23,7 +23,7 @@ import org.junit.jupiter.api.*;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.axonframework.eventsourcing.eventstore.EventCriteria.havingTags;
+import static org.axonframework.eventstreaming.EventCriteria.havingTags;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EventCriteriaTest {
