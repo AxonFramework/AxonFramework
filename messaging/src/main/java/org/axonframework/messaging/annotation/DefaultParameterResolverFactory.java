@@ -80,14 +80,14 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
         @Override
         public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-            return context.getResource(Message.RESOURCE_KEY)
+            return Message.fromContext(context)
                           .getMetaData()
                           .get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString());
         }
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            Message<?> message = context.getResource(Message.RESOURCE_KEY);
+            Message<?> message = Message.fromContext(context);
             if (message == null) {
                 return false;
             }
@@ -108,13 +108,13 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
         @Override
         public MetaData resolveParameterValue(@Nonnull ProcessingContext context) {
-            Message<?> message = context.getResource(Message.RESOURCE_KEY);
+            Message<?> message = Message.fromContext(context);
             return message.getMetaData();
         }
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return context.containsResource(Message.RESOURCE_KEY);
+            return Message.fromContext(context) != null;
         }
     }
 
@@ -128,12 +128,12 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
         @Override
         public Message<?> resolveParameterValue(@Nonnull ProcessingContext context) {
-            return context.getResource(Message.RESOURCE_KEY);
+            return Message.fromContext(context);
         }
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            Message<?> message = context.getResource(Message.RESOURCE_KEY);
+            Message<?> message = Message.fromContext(context);
             if (message == null) {
                 return false;
             }

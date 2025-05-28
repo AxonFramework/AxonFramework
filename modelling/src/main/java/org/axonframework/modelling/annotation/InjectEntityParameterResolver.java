@@ -71,7 +71,7 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
 
     @Override
     public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-        Message<?> message = context.getResource(Message.RESOURCE_KEY);
+        Message<?> message = Message.fromContext(context);
         Object resolvedId = identifierResolver.resolve(message, context);
         //noinspection ConstantValue Users can still make the mistake to return null.
         if (resolvedId == null) {
@@ -86,6 +86,6 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
 
     @Override
     public boolean matches(@Nonnull ProcessingContext context) {
-        return context.containsResource(Message.RESOURCE_KEY);
+        return Message.fromContext(context) != null;
     }
 }

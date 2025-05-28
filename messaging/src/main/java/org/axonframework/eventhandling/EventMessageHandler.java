@@ -60,9 +60,9 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Mes
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
      *
-     * @param processingContext
+     * @param context the {@code ProcessingContext} in which the reset is being performed.
      */
-    default void prepareReset(ProcessingContext processingContext) {
+    default void prepareReset(ProcessingContext context) {
     }
 
     /**
@@ -70,11 +70,11 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Mes
      *
      * @param <R>               the type of the provided {@code resetContext}
      * @param resetContext      a {@code R} used to support the reset operation
-     * @param processingContext
+     * @param context the {@code ProcessingContext} in which the reset is being performed.
      */
-    default <R> void prepareReset(R resetContext, ProcessingContext processingContext) {
+    default <R> void prepareReset(R resetContext, ProcessingContext context) {
         if (Objects.isNull(resetContext)) {
-            prepareReset(processingContext);
+            prepareReset(context);
         } else {
             throw new UnsupportedOperationException(
                     "EventMessageHandler#prepareReset(R) is not implemented for a non-null reset context."

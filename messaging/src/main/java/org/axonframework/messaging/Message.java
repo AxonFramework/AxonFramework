@@ -55,6 +55,32 @@ public interface Message<P> {
     Context.ResourceKey<Message<?>> RESOURCE_KEY = Context.ResourceKey.withLabel("Message");
 
     /**
+     * Adds the given {@code message} to the given {@code context} under the {@link #RESOURCE_KEY}. This allows
+     * retrieving the message from the context later on, for example in a message handler.
+     * <p>
+     * Note that as the {@link ProcessingContext} might not be mutable in all implementations, this method returns a new
+     * {@link ProcessingContext} instance which should be used in place of the original.
+     *
+     * @param context The {@link ProcessingContext} to which the {@code message} should be added.
+     * @param message The {@link Message} to add to the {@code context}.
+     * @return The updated {@link ProcessingContext} with the {@code message} added under the {@link #RESOURCE_KEY}.
+     */
+    static ProcessingContext addToContext(ProcessingContext context, Message<?> message) {
+        return context.withResource(RESOURCE_KEY, message);
+    }
+
+    /**
+     * Retrieves the {@link Message} from the given {@code context} using the {@link #RESOURCE_KEY}.
+     *
+     * @param context The {@link ProcessingContext} from which to retrieve the {@link Message}.
+     * @return The {@link Message} stored in the {@code context} under the {@link #RESOURCE_KEY}, or {@code null} if not
+     * found.
+     */
+    static Message<?> fromContext(ProcessingContext context) {
+        return context.getResource(RESOURCE_KEY);
+    }
+
+    /**
      * Returns the identifier of this {@code Message}.
      * <p>
      * Two messages with the same identifiers should be interpreted as different representations of the same conceptual

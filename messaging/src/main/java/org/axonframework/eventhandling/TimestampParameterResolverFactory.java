@@ -62,7 +62,7 @@ public final class TimestampParameterResolverFactory
         @Nullable
         @Override
         public Instant resolveParameterValue(@Nonnull ProcessingContext context) {
-            if (context.getResource(Message.RESOURCE_KEY) instanceof EventMessage eventMessage) {
+            if (Message.fromContext(context) instanceof EventMessage eventMessage) {
                 return eventMessage.getTimestamp();
             }
             return null;
@@ -70,7 +70,7 @@ public final class TimestampParameterResolverFactory
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return context.getResource(Message.RESOURCE_KEY) instanceof EventMessage;
+            return Message.fromContext(context) instanceof EventMessage;
         }
     }
 }

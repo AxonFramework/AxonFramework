@@ -399,7 +399,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (message instanceof CommandMessage) {
             messageHandling = () -> handle((CommandMessage<?>) message, context);
         } else if (message instanceof EventMessage) {
-            messageHandling = () -> handle((EventMessage<?>) message, context);
+            messageHandling = () -> handle((EventMessage<?>) message);
         } else {
             throw new IllegalArgumentException("Unsupported message type: " + message.getClass());
         }
@@ -453,7 +453,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                        .handleSync(command, context, aggregateRoot);
     }
 
-    private Object handle(EventMessage<?> eventMessage, ProcessingContext context) {
+    private Object handle(EventMessage<?> eventMessage) {
         inspector.publish(eventMessage, aggregateRoot);
         return null;
     }

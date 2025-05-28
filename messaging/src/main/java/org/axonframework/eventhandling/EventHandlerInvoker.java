@@ -16,11 +16,11 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 /**
  * Interface for an event message handler that defers handling to one or more other handlers.
@@ -36,10 +36,11 @@ public interface EventHandlerInvoker {
      * Check whether or not this invoker has handlers that can handle the given {@code eventMessage} for a given
      * {@code segment}.
      *
-     * @param eventMessage The message to be processed
-     * @param segment      The segment for which the event handler should be invoked
+     * @param eventMessage The message to be processed.
+     * @param context      The {@code ProcessingContext} in which the event handler will be invoked.
+     * @param segment      The segment for which the event handler should be invoked.
      * @return {@code true} if the invoker has one or more handlers that can handle the given message, {@code false}
-     * otherwise
+     * otherwise.
      */
     boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment);
 
@@ -57,15 +58,15 @@ public interface EventHandlerInvoker {
     /**
      * Handle the given {@code message} for the given {@code segment}.
      * <p>
-     * Callers are recommended to invoke {@link #canHandle(EventMessage, Segment)} prior to invocation, but aren't
+     * Callers are recommended to invoke {@link #canHandle(EventMessage, ProcessingContext, Segment)} prior to invocation, but aren't
      * required to do so. Implementations must ensure to take the given segment into account when processing messages.
      *
-     * @param message The message to handle
-     * @param segment The segment for which to handle the message
-     * @throws Exception when an exception occurs while handling the message
+     * @param message The message to handle.
+     * @param segment The segment for which to handle the message.
+     * @throws Exception when an exception occurs while handling the message.
      */
     void handle(@Nonnull EventMessage<?> message,
-                @Nonnull ProcessingContext processingContext,
+                @Nonnull ProcessingContext context,
                 @Nonnull Segment segment) throws Exception;
 
     /**
@@ -79,6 +80,8 @@ public interface EventHandlerInvoker {
 
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
+     *
+     * @param context The {@link ProcessingContext} in which the reset is performed.
      */
     default void performReset(ProcessingContext context) {
     }
@@ -86,13 +89,13 @@ public interface EventHandlerInvoker {
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
      *
-     * @param <R>               the type of the provided {@code resetContext}
-     * @param resetContext      a {@code R} used to support the reset operation
-     * @param context
+     * @param <R>               The type of the provided {@code resetContext}.
+     * @param resetContext      A {@code R} used to support the reset operation.
+     * @param processingContext The {@link ProcessingContext} in which the reset is performed.
      */
-    default <R> void performReset(@Nullable R resetContext, ProcessingContext context) {
+    default <R> void performReset(@Nullable R resetContext, ProcessingContext processingContext) {
         if (Objects.isNull(resetContext)) {
-            performReset(context);
+            performReset(processingContext);
         } else {
             throw new UnsupportedOperationException(
                     "EventHandlerInvoker#performRest(R) is not implemented for a non-null reset context."

@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -40,6 +41,7 @@ public class FixedValueParameterResolver<T> implements ParameterResolver<T> {
         this.value = value;
     }
 
+    @Nullable
     @Override
     public T resolveParameterValue(@Nonnull ProcessingContext context) {
         return value;

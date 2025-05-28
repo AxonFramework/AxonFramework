@@ -51,13 +51,13 @@ public class ConcludesBatchParameterResolverFactory extends AbstractAnnotatedPar
     @Nullable
     @Override
     public Boolean resolveParameterValue(@Nonnull ProcessingContext context) {
-        Message<?> message = context.getResource(Message.RESOURCE_KEY);
+        Message<?> message = Message.fromContext(context);
         return CurrentUnitOfWork.map(unitOfWork -> !(unitOfWork instanceof LegacyBatchingUnitOfWork<?>) ||
                 ((LegacyBatchingUnitOfWork<?>) unitOfWork).isLastMessage(message)).orElse(true);
     }
 
     @Override
     public boolean matches(@Nonnull ProcessingContext context) {
-        return context.getResource(Message.RESOURCE_KEY) instanceof EventMessage<?>;
+        return Message.fromContext(context) instanceof EventMessage<?>;
     }
 }

@@ -47,6 +47,6 @@ class EventMessageHandlerTest {
 
     @Test
     void prepareResetWithNonNullThrowsUnsupportedOperationException() {
-        assertThrows(UnsupportedOperationException.class, () -> testSubject.prepareReset("non-null",null ));
+        assertThrows(UnsupportedOperationException.class, () -> testSubject.prepareReset("non-null", null));
     }
 }

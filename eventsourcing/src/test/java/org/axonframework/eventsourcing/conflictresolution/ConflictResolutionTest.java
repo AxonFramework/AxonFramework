@@ -20,11 +20,10 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -71,7 +70,7 @@ class ConflictResolutionTest {
     @Test
     void resolveWithoutInitializationReturnsNoConflictsResolver() {
         assertTrue(subject.matches(StubProcessingContext.forMessage(commandMessage)));
-        assertSame(NoConflictResolver.INSTANCE, subject.resolveParameterValue(new LegacyMessageSupportingContext(commandMessage)));
+        assertSame(NoConflictResolver.INSTANCE, subject.resolveParameterValue(StubProcessingContext.forMessage(commandMessage)));
     }
 
     @SuppressWarnings("unused") //used in set up

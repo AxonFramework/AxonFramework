@@ -102,7 +102,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
 
     @Override
     public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
-        ProcessingContext contextWithMessage = context.withResource(Message.RESOURCE_KEY, message);
+        ProcessingContext contextWithMessage = Message.addToContext(context, message);
         return typeMatches(message)
                 && payloadType.isAssignableFrom(message.getPayloadType())
                 && parametersMatch(message, contextWithMessage);
@@ -166,7 +166,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     public MessageStream<?> handle(@Nonnull Message<?> message,
                                    @Nonnull ProcessingContext context,
                                    @Nullable T target) {
-        ProcessingContext contextWithMessage = context.withResource(Message.RESOURCE_KEY, message);
+        ProcessingContext contextWithMessage = Message.addToContext(context, message);
         Object invocationResult;
         try {
             invocationResult = method.invoke(target, resolveParameterValues(contextWithMessage));

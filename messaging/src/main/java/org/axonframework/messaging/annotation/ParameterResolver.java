@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -35,6 +36,7 @@ public interface ParameterResolver<T> {
      * @param context The current processing context.
      * @return The parameter value for the handler.
      */
+    @Nullable
     T resolveParameterValue(@Nonnull ProcessingContext context);
 
     /**

@@ -18,7 +18,7 @@ package org.axonframework.modelling.saga.metamodel;
 
 import org.axonframework.common.AxonException;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.NoMoreInterceptors;

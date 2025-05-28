@@ -40,7 +40,11 @@ public interface MessageHandler<T extends Message<?>, R extends Message<?>> {
     Object handleSync(@Nonnull T message, @Nonnull ProcessingContext context) throws Exception;
 
     /**
-     * TODO Add documentation
+     * Handles the given {@code message} and returns a {@link MessageStream} containing the result of the processing.
+     *
+     * @param message The message to be processed.
+     * @param context The {@code ProcessingContext} in which the reset is being prepared.
+     * @return A {@link MessageStream} containing the result of the message processing.
      */
     default MessageStream<R> handle(@Nonnull T message, @Nonnull ProcessingContext context) {
         try {

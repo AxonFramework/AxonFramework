@@ -48,7 +48,8 @@ public class TransactionManagingInterceptor<T extends Message<?>> implements Mes
 
     @Override
     public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
-                         @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain) throws Exception {
+                         @Nonnull ProcessingContext context,
+                         @Nonnull InterceptorChain interceptorChain) throws Exception {
         Transaction transaction = transactionManager.startTransaction();
         unitOfWork.onCommit(u -> transaction.commit());
         unitOfWork.onRollback(u -> transaction.rollback());

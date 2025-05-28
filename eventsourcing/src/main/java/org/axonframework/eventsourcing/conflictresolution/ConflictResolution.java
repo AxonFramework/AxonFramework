@@ -90,7 +90,7 @@ public class ConflictResolution implements ParameterResolverFactory, ParameterRe
 
     @Override
     public boolean matches(@Nonnull ProcessingContext context) {
-        return context.getResource(Message.RESOURCE_KEY) instanceof CommandMessage;
+        return Message.fromContext(context) instanceof CommandMessage;
     }
 
 }

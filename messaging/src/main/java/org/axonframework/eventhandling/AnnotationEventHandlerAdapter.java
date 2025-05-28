@@ -32,6 +32,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collection;
@@ -159,15 +160,15 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public void prepareReset(ProcessingContext processingContext) {
-        prepareReset(null, processingContext);
+    public void prepareReset(ProcessingContext context) {
+        prepareReset(null, null);
     }
 
     @Override
-    public <R> void prepareReset(R resetContext, ProcessingContext processingContext) {
+    public <R> void prepareReset(R resetContext, ProcessingContext context) {
         try {
             ResetContext<?> resetMessage = asResetContext(resetContext);
-            ProcessingContext messageProcessingContext = processingContext.withResource(Message.RESOURCE_KEY, resetMessage);
+            ProcessingContext messageProcessingContext = new LegacyMessageSupportingContext(resetMessage);
             inspector.getHandlers(listenerType)
                      .filter(h -> h.canHandle(resetMessage, messageProcessingContext))
                      .findFirst()

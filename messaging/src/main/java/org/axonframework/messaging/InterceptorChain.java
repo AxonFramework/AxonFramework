@@ -35,13 +35,17 @@ public interface InterceptorChain<M extends Message<?>, R extends Message<?>> {
     /**
      * Signals the Interceptor Chain to continue processing the message.
      *
-     * @return The return value of the message processing
-     * @throws Exception any exceptions thrown by interceptors or the message handler
+     * @param context The {@link ProcessingContext} in which the reset is being prepared.
+     * @return The return value of the message processing.
+     * @throws Exception Any exceptions thrown by interceptors or the message handler.
      */
     Object proceedSync(@Nonnull ProcessingContext context) throws Exception;
 
     /**
-     * TODO Add documentation
+     * Signals the Interceptor Chain to continue processing the message.
+     *
+     * @param context The {@link ProcessingContext} in which the reset is being prepared.
+     * @return A {@link MessageStream} containing the result of the message processing.
      */
     default MessageStream<R> proceed(@Nonnull M message, @Nonnull ProcessingContext context) {
         try {

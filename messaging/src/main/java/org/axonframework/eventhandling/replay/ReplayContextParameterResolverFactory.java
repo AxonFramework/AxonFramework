@@ -59,7 +59,7 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
 
         @Override
         public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-            if(context.getResource(Message.RESOURCE_KEY) instanceof TrackedEventMessage<?> trackedEventMessage) {
+            if(Message.fromContext(context) instanceof TrackedEventMessage<?> trackedEventMessage) {
                 return ReplayToken.replayContext(trackedEventMessage, this.type).orElse(null);
             }
             return false;
@@ -67,7 +67,7 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return context.getResource(Message.RESOURCE_KEY) instanceof TrackedEventMessage;
+            return Message.fromContext(context) instanceof TrackedEventMessage;
         }
     }
 }

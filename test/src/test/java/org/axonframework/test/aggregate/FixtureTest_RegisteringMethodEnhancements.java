@@ -124,7 +124,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            Message<?> message = context.getResource(Message.RESOURCE_KEY);
+            Message<?> message = Message.fromContext(context);
             return message.getPayloadType().isAssignableFrom(ResolveParameterCommand.class);
         }
     }

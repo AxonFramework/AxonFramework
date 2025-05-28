@@ -18,7 +18,7 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.NoScopeDescriptor;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;

@@ -22,7 +22,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.configuration.reflection.ConfigurationParameterResolverFactory;
 import org.junit.jupiter.api.*;

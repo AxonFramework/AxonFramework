@@ -54,12 +54,12 @@ public final class MessageIdentifierParameterResolverFactory
 
         @Override
         public String resolveParameterValue(@Nonnull ProcessingContext context) {
-            return context.getResource(Message.RESOURCE_KEY).getIdentifier();
+            return Message.fromContext(context).getIdentifier();
         }
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return context.containsResource(Message.RESOURCE_KEY);
+            return Message.fromContext(context) != null;
         }
     }
 }

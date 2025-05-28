@@ -28,7 +28,6 @@ import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
-import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
@@ -38,6 +37,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -195,7 +195,9 @@ class DeadLetteringEventHandlerInvokerTest {
 
         testSubject.handle(eventMessageOne, StubProcessingContext.forMessage(eventMessageOne), Segment.ROOT_SEGMENT);
         testSubject.handle(eventMessageTwo, StubProcessingContext.forMessage(eventMessageTwo), Segment.ROOT_SEGMENT);
-        testSubject.handle(eventMessageThree, StubProcessingContext.forMessage(eventMessageThree), Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageThree,
+                           StubProcessingContext.forMessage(eventMessageThree),
+                           Segment.ROOT_SEGMENT);
 
         verify(queue, times(1)).enqueueIfPresent(eq("foo"), any());
         verify(queue, times(1)).enqueueIfPresent(eq("bar"), any());
@@ -222,7 +224,9 @@ class DeadLetteringEventHandlerInvokerTest {
         // as eventMessageTwo has a different sequence identifier, and the size of the sequenceIdentifierCache is set
         // to just 1, we expect the object identifier of eventMessageOne to be removed.
         testSubject.handle(eventMessageTwo, StubProcessingContext.forMessage(eventMessageTwo), Segment.ROOT_SEGMENT);
-        testSubject.handle(eventMessageThree, StubProcessingContext.forMessage(eventMessageThree), Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageThree,
+                           StubProcessingContext.forMessage(eventMessageThree),
+                           Segment.ROOT_SEGMENT);
 
         verify(queue, times(2)).enqueueIfPresent(eq("foo"), any());
         verify(queue, times(1)).enqueueIfPresent(eq("bar"), any());
@@ -386,7 +390,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
         verify(queue).clear();
         verify(transactionManager).executeInTransaction(any());
-        verify(handler).prepareReset(null,null );
+        verify(handler).prepareReset(null, null);
     }
 
     @Test
@@ -395,11 +399,11 @@ class DeadLetteringEventHandlerInvokerTest {
 
         String testContext = "some-reset-context";
 
-        testSubject.performReset(testContext,null );
+        testSubject.performReset(testContext, null);
 
         verifyNoInteractions(queue);
         verifyNoInteractions(transactionManager);
-        verify(handler).prepareReset(testContext,null );
+        verify(handler).prepareReset(testContext, null);
     }
 
     @Test
@@ -408,11 +412,11 @@ class DeadLetteringEventHandlerInvokerTest {
 
         String testContext = "some-reset-context";
 
-        testSubject.performReset(testContext,null );
+        testSubject.performReset(testContext, null);
 
         verify(queue).clear();
         verify(transactionManager).executeInTransaction(any());
-        verify(handler).prepareReset(testContext,null );
+        verify(handler).prepareReset(testContext, null);
     }
 
     @Test

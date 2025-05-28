@@ -90,6 +90,7 @@ class DeadLetteredEventProcessingTask
 
         AtomicReference<EnqueueDecision<EventMessage<?>>> decision = new AtomicReference<>();
         LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(letter.message());
+
         unitOfWork.attachTransaction(transactionManager);
         unitOfWork.resources()
                   .put(DeadLetter.class.getName(), letter);

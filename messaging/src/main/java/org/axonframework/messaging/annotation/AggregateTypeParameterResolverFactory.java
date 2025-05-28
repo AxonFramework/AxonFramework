@@ -56,7 +56,7 @@ public final class AggregateTypeParameterResolverFactory
 
         @Override
         public String resolveParameterValue(@Nonnull ProcessingContext context) {
-            if(context.getResource(Message.RESOURCE_KEY) instanceof DomainEventMessage<?> domainEventMessage) {
+            if(Message.fromContext(context) instanceof DomainEventMessage<?> domainEventMessage) {
                 return domainEventMessage.getType();
             }
             return null;
@@ -64,7 +64,7 @@ public final class AggregateTypeParameterResolverFactory
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return context.getResource(Message.RESOURCE_KEY) instanceof DomainEventMessage;
+            return Message.fromContext(context) instanceof DomainEventMessage;
         }
     }
 }

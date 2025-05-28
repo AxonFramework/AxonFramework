@@ -42,12 +42,12 @@ public class PayloadParameterResolver implements ParameterResolver<Object> {
 
     @Override
     public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-        return context.getResource(Message.RESOURCE_KEY).getPayload();
+        return Message.fromContext(context).getPayload();
     }
 
     @Override
     public boolean matches(@Nonnull ProcessingContext context) {
-        return Optional.ofNullable(context.getResource(Message.RESOURCE_KEY))
+        return Optional.ofNullable(Message.fromContext(context))
                        .map(Message::getPayloadType)
                        .map(payloadType::isAssignableFrom)
                        .orElse(false);

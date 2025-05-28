@@ -107,7 +107,8 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
 
     @Override
     public Object handle(@Nonnull LegacyUnitOfWork<? extends Message<?>> unitOfWork,
-                         @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain) throws Exception {
+                         @Nonnull ProcessingContext context,
+                         @Nonnull InterceptorChain interceptorChain) throws Exception {
         LegacyUnitOfWork<?> root = unitOfWork.root();
         if (!root.resources().containsKey(TRANSACTION_TIME_LIMIT_RESOURCE_KEY)) {
             AxonTimeLimitedTask taskTimeout = taskTimeout();

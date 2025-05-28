@@ -107,9 +107,9 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public <R> void performReset(R resetContext, ProcessingContext context) {
+    public <R> void performReset(R resetContext, ProcessingContext processingContext) {
         delegates.stream()
                  .filter(EventHandlerInvoker::supportsReset)
-                 .forEach(eventHandlerInvoker -> eventHandlerInvoker.performReset(resetContext, context));
+                 .forEach(eventHandlerInvoker -> eventHandlerInvoker.performReset(resetContext, processingContext));
     }
 }

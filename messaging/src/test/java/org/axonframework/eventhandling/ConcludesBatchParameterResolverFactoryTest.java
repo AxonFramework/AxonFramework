@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -28,7 +27,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
-import static org.axonframework.messaging.StubProcessingContext.forMessage;
+import static org.axonframework.messaging.unitofwork.StubProcessingContext.forMessage;
 import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 

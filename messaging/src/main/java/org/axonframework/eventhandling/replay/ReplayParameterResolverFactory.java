@@ -54,7 +54,7 @@ public class ReplayParameterResolverFactory implements ParameterResolverFactory 
         @Nullable
         @Override
         public ReplayStatus resolveParameterValue(@Nonnull ProcessingContext context) {
-            if(context.getResource(Message.RESOURCE_KEY) instanceof EventMessage<?> eventMessage) {
+            if (Message.fromContext(context) instanceof EventMessage<?> eventMessage) {
                 return ReplayToken.isReplay(eventMessage) ? ReplayStatus.REPLAY : ReplayStatus.REGULAR;
             }
             return ReplayStatus.REGULAR;
@@ -62,7 +62,7 @@ public class ReplayParameterResolverFactory implements ParameterResolverFactory 
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return context.getResource(Message.RESOURCE_KEY) instanceof EventMessage<?>;
+            return Message.fromContext(context) instanceof EventMessage<?>;
         }
     }
 }

@@ -638,7 +638,8 @@ class TrackingEventProcessorTest {
 
             @Override
             public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message, @Nonnull ProcessingContext context,
+                    @Nonnull M message,
+                    @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain<M, R> interceptorChain) {
                 context.doFinally(uow -> countDownLatch.countDown());
                 try {
@@ -937,7 +938,8 @@ class TrackingEventProcessorTest {
 
             @Override
             public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message, @Nonnull ProcessingContext context,
+                    @Nonnull M message,
+                    @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain<M, R> interceptorChain) {
                 context.onCommit(uow -> {
                     if (message.equals(events.get(1))) {
@@ -2285,7 +2287,8 @@ class TrackingEventProcessorTest {
 
             @Override
             public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message, @Nonnull ProcessingContext context,
+                    @Nonnull M message,
+                    @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain<M, R> interceptorChain) {
                 for (var runnable : runnables) {
                     context.doFinally(uow -> runnable.run());

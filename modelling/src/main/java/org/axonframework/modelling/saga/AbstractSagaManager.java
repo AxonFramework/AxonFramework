@@ -164,9 +164,9 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
      * Returns the Saga Initialization Policy for a Saga of the given {@code sagaType} and {@code event}. This policy
      * provides the conditions to create new Saga instance, as well as the initial association of that saga.
      *
-     * @param event   The Event that is being dispatched to Saga instances
-     * @param context
-     * @return the initialization policy for the Saga
+     * @param event   The Event that is being dispatched to Saga instances.
+     * @param context The {@link ProcessingContext} in which the event is being processed.
+     * @return The initialization policy for the Saga.
      */
     protected abstract SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event, ProcessingContext context);
 
@@ -174,9 +174,9 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
      * Extracts the AssociationValues from the given {@code event} as relevant for a Saga of given {@code sagaType}. A
      * single event may be associated with multiple values.
      *
-     * @param event   The event containing the association information
-     * @param context
-     * @return the AssociationValues indicating which Sagas should handle given event
+     * @param event   The event containing the association information.
+     * @param context The {@link ProcessingContext} in which the event is being processed.
+     * @return The AssociationValues indicating which Sagas should handle given event.
      */
     protected abstract Set<AssociationValue> extractAssociationValues(EventMessage<?> event, ProcessingContext context);
 

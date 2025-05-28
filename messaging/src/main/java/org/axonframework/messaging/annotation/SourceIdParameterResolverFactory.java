@@ -55,7 +55,7 @@ public final class SourceIdParameterResolverFactory
 
         @Override
         public String resolveParameterValue(@Nonnull ProcessingContext context) {
-            if (context.getResource(Message.RESOURCE_KEY) instanceof DomainEventMessage message) {
+            if (Message.fromContext(context) instanceof DomainEventMessage message) {
                 return message.getAggregateIdentifier();
             }
             throw new IllegalArgumentException();
@@ -63,7 +63,7 @@ public final class SourceIdParameterResolverFactory
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return context.getResource(Message.RESOURCE_KEY) instanceof DomainEventMessage;
+            return Message.fromContext(context) instanceof DomainEventMessage;
         }
     }
 }

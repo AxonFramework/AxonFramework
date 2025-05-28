@@ -28,7 +28,7 @@ import java.util.function.UnaryOperator;
 
 /**
  * Legacy implementation of the {@link ProcessingContext} that should only be used for legacy components. Can only be
- * constructed with a {@link org.axonframework.messaging.Message} as parameter that serves as his only resource. Any
+ * constructed with a {@link org.axonframework.messaging.Message} as parameter that serves as its only resource. Any
  * operation except getting the message from the context will fail.
  *
  * @author Mitchell Herrijgers
@@ -43,9 +43,9 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
 
     /**
      * Initialize the {@link ProcessingContext} with the given {@code message} as the only resource.
-     * @param message the message to be used as the only resource in this context
+     * @param message The message to be used as the only resource in this context.
      */
-    public LegacyMessageSupportingContext(Message<?> message) {
+    public LegacyMessageSupportingContext(@Nonnull Message<?> message) {
         this.message = message;
     }
 

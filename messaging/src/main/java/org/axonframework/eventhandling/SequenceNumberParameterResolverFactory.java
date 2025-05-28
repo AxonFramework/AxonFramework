@@ -63,7 +63,7 @@ public final class SequenceNumberParameterResolverFactory extends
         @Nullable
         @Override
         public Long resolveParameterValue(@Nonnull ProcessingContext context) {
-            if (context.getResource(Message.RESOURCE_KEY) instanceof DomainEventMessage<?> domainEventMessage) {
+            if (Message.fromContext(context) instanceof DomainEventMessage<?> domainEventMessage) {
                 return domainEventMessage.getSequenceNumber();
             }
             return null;
@@ -71,7 +71,7 @@ public final class SequenceNumberParameterResolverFactory extends
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return context.getResource(Message.RESOURCE_KEY) instanceof DomainEventMessage;
+            return Message.fromContext(context) instanceof DomainEventMessage;
         }
     }
 }
