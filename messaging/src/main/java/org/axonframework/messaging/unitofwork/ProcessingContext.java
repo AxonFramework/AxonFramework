@@ -41,15 +41,6 @@ import java.util.function.UnaryOperator;
 public interface ProcessingContext extends ProcessingLifecycle, Context {
 
     /**
-     * Creates a new context that is empty and does not contain any resources.
-     * Useful when a component requires a context but none it available.
-     * @return A new, empty context.
-     */
-    static ProcessingContext empty() {
-        return SimpleProcessingContext.empty();
-    }
-
-    /**
      * Constructs a new {@link ProcessingContext}, branching off from {@code this} {@code ProcessingContext}.
      * <p>
      * The given {@code resource} as added to the branched {@code ProcessingContext} under the given {@code key}.

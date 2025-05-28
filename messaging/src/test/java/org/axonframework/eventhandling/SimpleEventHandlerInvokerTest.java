@@ -84,7 +84,7 @@ class SimpleEventHandlerInvokerTest {
 
     @Test
     void performReset() {
-        ProcessingContext context = ProcessingContext.empty();
+        ProcessingContext context = new StubProcessingContext();
         testSubject.performReset(context);
 
         verify(mockHandler1).prepareReset(NO_RESET_PAYLOAD, context);
@@ -95,7 +95,7 @@ class SimpleEventHandlerInvokerTest {
     void performResetWithResetContext() {
         String resetContext = "reset-context";
 
-        ProcessingContext context = ProcessingContext.empty();
+        ProcessingContext context = new StubProcessingContext();
         testSubject.performReset(resetContext, context);
 
         verify(mockHandler1).prepareReset(eq(resetContext), eq(context));

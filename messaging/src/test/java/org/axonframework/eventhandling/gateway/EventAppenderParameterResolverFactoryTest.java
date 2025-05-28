@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.gateway;
 
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.StubProcessingContext;
@@ -47,7 +46,7 @@ class EventAppenderParameterResolverFactoryTest {
 
     @Test
     void injectsEventAppenderBasedOnProcessingContext() throws Exception {
-        ProcessingContext processingContext = ProcessingContext.empty();
+        ProcessingContext processingContext = new StubProcessingContext();
 
         Method method = getClass().getMethod("methodWithEventAppenderParameter", EventAppender.class);
         ParameterResolver<?> instance = testSubject.createInstance(method, method.getParameters(), 0);

@@ -76,9 +76,7 @@ class EventPublicationOrderTest {
         when(eventStore.readEvents(aggregateId)).thenReturn(DomainEventStream.of(event));
         doAnswer(invocation -> Void.class).when(eventStore).publish(isA(EventMessage.class));
 
-        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
-                testCommand, ProcessingContext.empty()
-        );
+        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(testCommand, null);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         InOrder inOrder = inOrder(eventStore, eventStore, eventStore);

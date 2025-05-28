@@ -70,7 +70,7 @@ class ConcludesBatchParameterResolverFactoryTest {
         List<? extends EventMessage<?>> events = createEvents(5);
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
-                    ProcessingContext event0Context = StubProcessingContext.forMessage(events.get(0));
+                    ProcessingContext event0Context = forMessage(events.get(0));
                     assertFalse(testSubject.resolveParameterValue(event0Context));
                 });
     }
@@ -80,7 +80,7 @@ class ConcludesBatchParameterResolverFactoryTest {
         List<? extends EventMessage<?>> events = createEvents(5);
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
-                    ProcessingContext lastEventContext = StubProcessingContext.forMessage(events.get(4));
+                    ProcessingContext lastEventContext = forMessage(events.get(4));
                     assertTrue(testSubject.resolveParameterValue(lastEventContext));
                 });
     }

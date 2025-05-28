@@ -17,10 +17,10 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.annotation.CurrentUnitOfWorkParameterResolverFactory;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -57,7 +57,7 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
     void resolveParameterValue() {
         LegacyDefaultUnitOfWork.startAndGet(null);
         try {
-            assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(ProcessingContext.empty()));
+            assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(new StubProcessingContext()));
         } finally {
             CurrentUnitOfWork.get().rollback();
         }
@@ -65,15 +65,15 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
 
     @Test
     void resolveParameterValueWithoutActiveUnitOfWork() {
-        assertNull(testSubject.resolveParameterValue(ProcessingContext.empty()));
+        assertNull(testSubject.resolveParameterValue(new StubProcessingContext()));
     }
 
     @Test
     void matches() {
-        assertTrue(testSubject.matches(ProcessingContext.empty()));
+        assertTrue(testSubject.matches(new StubProcessingContext()));
         LegacyDefaultUnitOfWork.startAndGet(null);
         try {
-            assertTrue(testSubject.matches(ProcessingContext.empty()));
+            assertTrue(testSubject.matches(new StubProcessingContext()));
         } finally {
             CurrentUnitOfWork.get().rollback();
         }

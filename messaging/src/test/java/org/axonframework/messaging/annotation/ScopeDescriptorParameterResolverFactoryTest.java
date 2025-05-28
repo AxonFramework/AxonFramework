@@ -18,7 +18,7 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.NoScopeDescriptor;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -53,8 +53,8 @@ class ScopeDescriptorParameterResolverFactoryTest {
         ParameterResolver<ScopeDescriptor> resolver =
                 testSubject.createInstance(scopeDescriptorUsingMethod, scopeDescriptorUsingMethod.getParameters(), 0);
 
-        assertTrue(resolver.matches(ProcessingContext.empty()));
-        assertEquals(NoScopeDescriptor.INSTANCE, resolver.resolveParameterValue(ProcessingContext.empty()));
+        assertTrue(resolver.matches(new StubProcessingContext()));
+        assertEquals(NoScopeDescriptor.INSTANCE, resolver.resolveParameterValue(new StubProcessingContext()));
     }
 
     @SuppressWarnings("unused")

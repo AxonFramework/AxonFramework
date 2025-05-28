@@ -70,7 +70,7 @@ class MultiParameterResolverFactoryTest {
         Method equals = getClass().getMethod("equals", Object.class);
         ParameterResolver factory = testSubject.createInstance(equals, equals.getParameters(), 0);
         assertNotNull(factory);
-        ProcessingContext context = ProcessingContext.empty();
+        ProcessingContext context = new StubProcessingContext();
         assertFalse(factory.matches(context));
 
         InOrder inOrder = inOrder(mockFactory1, mockFactory2, mockResolver1, mockResolver2);

@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling.gateway;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Message;
@@ -24,8 +26,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 /**
  * Interface towards the Command Handling components of an application.
@@ -130,9 +130,9 @@ public interface CommandGateway {
      */
     default Object sendAndWait(@Nonnull Object command) {
         try {
-            return send(command, ProcessingContext.empty()).getResultMessage()
-                                                           .thenApply(Message::getPayload)
-                                                           .get();
+            return send(command, null).getResultMessage()
+                                      .thenApply(Message::getPayload)
+                                      .get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CommandExecutionException("Thread interrupted while waiting for result", e);
@@ -156,8 +156,7 @@ public interface CommandGateway {
     default <R> R sendAndWait(@Nonnull Object command,
                               @Nonnull Class<R> returnType) {
         try {
-            return send(command, ProcessingContext.empty()).resultAs(returnType)
-                                                           .get();
+            return send(command, null).resultAs(returnType).get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CommandExecutionException("Thread interrupted while waiting for result", e);

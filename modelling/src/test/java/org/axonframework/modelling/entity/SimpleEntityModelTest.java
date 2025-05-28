@@ -56,7 +56,7 @@ class SimpleEntityModelTest {
     private final EntityEvolver<TestEntity> parentEntityEvolver = mock(EntityEvolver.class);
 
     private final TestEntity entity = new TestEntity();
-    private final ProcessingContext context = ProcessingContext.empty();
+    private final ProcessingContext context = new StubProcessingContext();
 
     private EntityModel<TestEntity> entityModel;
 

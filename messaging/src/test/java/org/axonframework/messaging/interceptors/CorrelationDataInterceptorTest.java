@@ -18,6 +18,7 @@ package org.axonframework.messaging.interceptors;
 
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -50,7 +51,7 @@ class CorrelationDataInterceptorTest {
 
     @Test
     void attachesCorrelationDataProvidersToUnitOfWork() throws Exception {
-        ProcessingContext context = ProcessingContext.empty();
+        ProcessingContext context = new StubProcessingContext();
         subject.handle(mockUnitOfWork, context, mockInterceptorChain);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider1);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider2);

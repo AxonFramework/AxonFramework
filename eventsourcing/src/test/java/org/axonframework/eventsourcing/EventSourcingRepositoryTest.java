@@ -76,7 +76,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void loadEventSourcedEntity() {
-        ProcessingContext processingContext = ProcessingContext.empty();
+        ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -95,7 +95,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void persistNewEntityRegistersItToListenToEvents() {
-        ProcessingContext processingContext = ProcessingContext.empty();
+        ProcessingContext processingContext = new StubProcessingContext();
 
         ManagedEntity<String, String> result = testSubject.persist("id", "entity", processingContext);
 
@@ -106,7 +106,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void persistAlreadyPersistedEntityDoesNotRegisterItToListenToEvents() {
-        ProcessingContext processingContext = ProcessingContext.empty();
+        ProcessingContext processingContext = new StubProcessingContext();
 
         ManagedEntity<String, String> first = testSubject.persist("id", "entity", processingContext);
         ManagedEntity<String, String> second = testSubject.persist("id", "entity", processingContext);
@@ -119,8 +119,8 @@ class EventSourcingRepositoryTest {
 
     @Test
     void assigningEntityToOtherProcessingContextInExactFormat() throws Exception {
-        ProcessingContext processingContext = ProcessingContext.empty();
-        ProcessingContext processingContext2 = ProcessingContext.empty();
+        ProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext2 = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -134,8 +134,8 @@ class EventSourcingRepositoryTest {
 
     @Test
     void assigningEntityToOtherProcessingContextInOtherFormat() throws Exception {
-        ProcessingContext processingContext = ProcessingContext.empty();
-        ProcessingContext processingContext2 = ProcessingContext.empty();
+        ProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext2 = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -165,7 +165,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void updateLoadedEventSourcedEntity() {
-        ProcessingContext processingContext = ProcessingContext.empty();
+        ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -189,7 +189,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void loadOrCreateShouldLoadWhenEventsAreReturned() {
-        ProcessingContext processingContext = ProcessingContext.empty();
+        ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -202,7 +202,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void loadOrCreateShouldCreateWhenNoEventsAreReturned() {
-        ProcessingContext processingContext = ProcessingContext.empty();
+        ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.empty())
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));

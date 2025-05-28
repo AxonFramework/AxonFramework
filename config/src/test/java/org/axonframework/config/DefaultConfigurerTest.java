@@ -138,7 +138,7 @@ class DefaultConfigurerTest {
                                        .buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.empty());
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(LegacyEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
@@ -329,7 +329,7 @@ class DefaultConfigurerTest {
                                        .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.empty());
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
@@ -355,7 +355,7 @@ class DefaultConfigurerTest {
                                        .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.empty());
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertTrue(config.getModules().stream().anyMatch(m -> m instanceof AggregateConfiguration));
@@ -407,7 +407,7 @@ class DefaultConfigurerTest {
                                        .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.empty());
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
@@ -434,7 +434,7 @@ class DefaultConfigurerTest {
                                                             .buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.empty());
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertEquals(1, defaultMonitor.getMessages().size());
         assertEquals(1, commandBusMonitor.getMessages().size());
@@ -478,8 +478,7 @@ class DefaultConfigurerTest {
                                                             .buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(TEST_COMMAND,
-                                                  ProcessingContext.empty());
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(LegacyCachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());

@@ -66,14 +66,14 @@ class AnnotationEventHandlerAdapterTest {
 
     @Test
     void invokeResetHandler() {
-        testSubject.prepareReset(ProcessingContext.empty());
+        testSubject.prepareReset(new StubProcessingContext());
 
         assertTrue(annotatedEventListener.invocations.contains("reset"));
     }
 
     @Test
     void invokeResetHandlerWithResetContext() {
-        testSubject.prepareReset("resetContext", ProcessingContext.empty());
+        testSubject.prepareReset("resetContext", new StubProcessingContext());
 
         assertTrue(annotatedEventListener.invocations.contains("resetWithContext"));
     }

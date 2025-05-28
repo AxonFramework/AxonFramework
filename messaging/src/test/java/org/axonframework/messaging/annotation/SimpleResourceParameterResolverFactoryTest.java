@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -37,7 +38,7 @@ class SimpleResourceParameterResolverFactoryTest {
     private Method messageHandlingMethodWithoutResourceParameter;
     private Method messageHandlingMethodWithResourceParameterOfDifferentType;
 
-    private ProcessingContext context = ProcessingContext.empty();
+    private ProcessingContext context = new StubProcessingContext();
 
     @BeforeEach
     void setUp() throws Exception {
