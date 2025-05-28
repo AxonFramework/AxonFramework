@@ -186,7 +186,6 @@ public abstract class DeadLetteringEventIntegrationTest {
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSING_GROUP)
                                              .eventHandlerInvoker(deadLetteringInvoker)
-                                             .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
                                              .messageSource(eventSource)
                                              .tokenStore(new InMemoryTokenStore())
                                              .transactionManager(transactionManager)

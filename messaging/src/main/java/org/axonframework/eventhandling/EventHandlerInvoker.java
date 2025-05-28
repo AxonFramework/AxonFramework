@@ -19,8 +19,8 @@ package org.axonframework.eventhandling;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Interface for an event message handler that defers handling to one or more other handlers.

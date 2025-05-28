@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Interceptor that applies JSR303 bean validation on incoming {@link Message}s. When validation on a message fails, a

@@ -44,7 +44,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -261,7 +261,7 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
                     ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
                                                 ((EventMessage<?>) event).getPayload(),
                                                 ((EventMessage<?>) event).getMetaData())
-                    : new GenericEventMessage<>(messageTypeResolver.resolve(event), event);
+                    : new GenericEventMessage<>(messageTypeResolver.resolveOrThrow(event), event);
         }
     }
 }

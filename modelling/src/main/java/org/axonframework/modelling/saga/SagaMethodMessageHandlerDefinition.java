@@ -24,7 +24,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 

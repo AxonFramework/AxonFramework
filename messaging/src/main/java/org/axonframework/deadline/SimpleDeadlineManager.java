@@ -53,7 +53,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;

@@ -21,8 +21,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Interceptor that allows messages to be intercepted and modified before they are dispatched. This interceptor provides

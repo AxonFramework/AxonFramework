@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;

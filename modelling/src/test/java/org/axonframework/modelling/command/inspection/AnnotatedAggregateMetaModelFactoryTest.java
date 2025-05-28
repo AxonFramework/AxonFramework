@@ -58,7 +58,7 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;

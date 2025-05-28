@@ -32,7 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.modelling.saga.SagaLifecycle.removeAssociationWith;
 import static org.junit.jupiter.api.Assertions.*;

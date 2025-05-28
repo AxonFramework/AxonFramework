@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -126,7 +126,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         return new GenericDomainEventMessage<>(aggregate.type(),
                                                aggregate.identifierAsString(),
                                                aggregate.version(),
-                                               messageTypeResolver.resolve(aggregateType),
+                                               messageTypeResolver.resolveOrThrow(aggregateType),
                                                aggregate.getAggregateRoot());
     }
 

@@ -20,7 +20,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaCompatibility;
 import org.axonframework.serialization.SerializationException;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Collectors;
 

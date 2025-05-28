@@ -34,7 +34,7 @@ class AnnotationBasedEventCriteriaResolverTest {
 
     private static final Configuration configuration = mock(Configuration.class);
     private static final MessageTypeResolver messageTypeResolver =
-            (clazz) -> new MessageType(null, "MyMessageType", "0.0.5");
+            (clazz) -> Optional.of(new MessageType(null, "MyMessageType", "0.0.5"));
     private static final EventSink eventSink = mock(EventSink.class);
     private static final CommandGateway commandGateway = mock(CommandGateway.class);
 

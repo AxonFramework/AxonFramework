@@ -27,7 +27,7 @@ import java.lang.reflect.Executable;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Enhances message handlers with the provided {@link SpanFactory}, wrapping handling of the message in a {@link Span}

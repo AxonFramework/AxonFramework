@@ -37,7 +37,7 @@ import org.mockito.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Collections.singleton;
 import static org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork.startAndGet;

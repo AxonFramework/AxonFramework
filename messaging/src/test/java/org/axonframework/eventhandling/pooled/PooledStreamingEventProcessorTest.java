@@ -31,11 +31,14 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.axonframework.utils.InMemoryStreamableEventSource;
@@ -51,7 +54,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -69,6 +71,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.utils.AssertUtils.assertWithin;
@@ -126,7 +129,6 @@ class PooledStreamingEventProcessorTest {
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
                                              .eventHandlerInvoker(stubEventHandler)
-                                             .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
                                              .errorHandler(PropagatingErrorHandler.instance())
                                              .messageSource(stubMessageSource)
                                              .tokenStore(tokenStore)
@@ -259,9 +261,9 @@ class PooledStreamingEventProcessorTest {
         mockEventHandlerInvoker();
         doAnswer(
                 answer -> {
-                    Map<String, Object> resources = CurrentUnitOfWork.get().resources();
-                    boolean containsSegment = resources.containsKey("Processor[" + PROCESSOR_NAME + "]/SegmentId");
-                    boolean containsToken = resources.containsKey("Processor[" + PROCESSOR_NAME + "]/Token");
+                    var processingContext = answer.getArgument(1, ProcessingContext.class);
+                    boolean containsSegment = Segment.fromContext(processingContext).isPresent();
+                    boolean containsToken = TrackingToken.fromContext(processingContext).isPresent();
                     if (!containsSegment) {
                         logger.error("UoW didn't contain the segment!");
                         return null;
@@ -1243,10 +1245,24 @@ class PooledStreamingEventProcessorTest {
         setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
 
         CountDownLatch countDownLatch = new CountDownLatch(3);
-        testSubject.registerHandlerInterceptor(((unitOfWork, context, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync(context);
-        }));
+        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {
+            @Override
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @Nonnull ProcessingContext context,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
+                unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+                return interceptorChain.proceedSync(context);
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @Nonnull M message,
+                    @Nonnull ProcessingContext context,
+                    @Nonnull InterceptorChain<M, R> interceptorChain) {
+                context.doFinally(uow -> countDownLatch.countDown());
+                return interceptorChain.proceed(message, context);
+            }
+        });
         createEvents(3).forEach(stubMessageSource::publishMessage);
 
         testSubject.start();
@@ -1262,10 +1278,23 @@ class PooledStreamingEventProcessorTest {
         setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
 
         CountDownLatch countDownLatch = new CountDownLatch(3);
-        testSubject.registerHandlerInterceptor(((unitOfWork, context, interceptorChain) -> {
-            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceedSync(context);
-        }));
+        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
+            @Override
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @Nonnull ProcessingContext context,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
+                unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+                return interceptorChain.proceedSync(context);
+            }
+
+            @Override
+            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                    @Nonnull M message, @Nonnull ProcessingContext context,
+                    @Nonnull InterceptorChain<M, R> interceptorChain) {
+                context.doFinally(uow -> countDownLatch.countDown());
+                return interceptorChain.proceed(message, context);
+            }
+        });
         stubMessageSource.publishMessage(EventTestUtils.asEventMessage(0));
         stubMessageSource.publishMessage(EventTestUtils.asEventMessage(1));
 

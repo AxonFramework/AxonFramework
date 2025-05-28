@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import javax.sql.DataSource;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;

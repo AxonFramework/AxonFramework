@@ -26,10 +26,10 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;
-import javax.annotation.Nonnull;
 
 /**
  * Test class validating the registration of {@link MessageHandlerInterceptor} instances through the

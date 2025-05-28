@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.*;

@@ -17,6 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.thoughtworks.xstream.XStream;
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -29,6 +30,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryGateway;
@@ -581,10 +583,23 @@ class InterceptorConfigurationTest {
             public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
                                  @Nonnull ProcessingContext context,
                                  @Nonnull InterceptorChain interceptorChain) throws Exception {
+                var message = unitOfWork.getMessage();
+                interceptMessage(message);
+                return interceptorChain.proceedSync(context);
+            }
+
+            @Override
+            public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
+                                                                                          @Nonnull ProcessingContext context,
+                                                                                          @Nonnull InterceptorChain<M, R> interceptorChain) {
+                interceptMessage(message);
+                return interceptorChain.proceed(message, context);
+            }
+
+            private void interceptMessage(T message) {
                 invocation.countDown();
                 axonConfiguration.tags();
-                handlingOutcome.add(name + ": " + unitOfWork.getMessage());
-                return interceptorChain.proceedSync(context);
+                handlingOutcome.add(name + ": " + message);
             }
         }
 
@@ -696,17 +711,30 @@ class InterceptorConfigurationTest {
             public Object handle(@Nonnull LegacyUnitOfWork<?> unitOfWork,
                                  @Nonnull ProcessingContext context,
                                  @Nonnull InterceptorChain interceptorChain) throws Exception {
-                if (unitOfWork.getMessage() instanceof CommandMessage) {
+                var message = unitOfWork.getMessage();
+                interceptMessage(message);
+                return interceptorChain.proceedSync(context);
+            }
+
+            @Override
+            public <M extends Message<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
+                                                                                                   @Nonnull ProcessingContext context,
+                                                                                                   @Nonnull InterceptorChain<M, R> interceptorChain) {
+                interceptMessage(message);
+                return interceptorChain.proceed(message, context);
+            }
+
+            private void interceptMessage(Message<?> message) {
+                if (message instanceof CommandMessage) {
                     commandInvocation.countDown();
                     commandHandlingOutcome.add(name);
-                } else if (unitOfWork.getMessage() instanceof QueryMessage) {
+                } else if (message instanceof QueryMessage) {
                     queryInvocation.countDown();
                     queryHandlingOutcome.add(name);
                 } else {
                     eventInvocation.countDown();
                     eventHandlingOutcome.add(name);
                 }
-                return interceptorChain.proceedSync(context);
             }
         }
 

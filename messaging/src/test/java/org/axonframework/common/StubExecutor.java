@@ -19,7 +19,7 @@ package org.axonframework.common;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.Executor;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of the Executor that executes tasks in the calling threads. The {@link #enqueueTasks()} method can be

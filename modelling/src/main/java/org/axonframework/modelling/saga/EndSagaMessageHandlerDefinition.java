@@ -24,8 +24,8 @@ import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * A {@link HandlerEnhancerDefinition} inspecting the existence of the {@link EndSaga} annotation on

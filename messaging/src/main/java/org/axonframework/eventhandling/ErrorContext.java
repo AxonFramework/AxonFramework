@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import java.util.List;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Describes the context of an error.
