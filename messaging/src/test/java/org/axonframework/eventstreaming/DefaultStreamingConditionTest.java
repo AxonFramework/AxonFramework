@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.QualifiedName;

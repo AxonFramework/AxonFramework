@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.eventstreaming.EventCriteria;
 
 /**
  * Exception indicating that a transaction was rejected due to conflicts detected in the events to append.

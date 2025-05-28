@@ -15,11 +15,17 @@
  */
 package org.axonframework.eventsourcing.annotations;
 
-import java.lang.annotation.*;
+import org.axonframework.eventstreaming.Tag;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Field or method level annotation that marks a field or method providing the Tag for the Event. The member name will
- * be used as the {@link org.axonframework.eventsourcing.eventstore.Tag#key} by default, except for Map values without
+ * be used as the {@link Tag#key} by default, except for Map values without
  * an explicit key (see below).
  * <p>
  * For both fields and methods, the value is obtained by calling {@code toString()} on the field value or method return

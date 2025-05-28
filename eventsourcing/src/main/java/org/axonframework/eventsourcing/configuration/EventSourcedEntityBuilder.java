@@ -21,12 +21,13 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.configuration.EntityBuilder;
 
 import java.util.Objects;
@@ -122,7 +123,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
      * <p>
      * Enforces providing the {@link #criteriaResolver(ComponentBuilder) criteria resolver} for the event sourced entity
      * that's being built. A {@code CriteriaResolver} receives the entity's identifier of type {@code I} and expects the
-     * {@link org.axonframework.eventsourcing.eventstore.EventCriteria} as as result. The resulting
+     * {@link EventCriteria} as as result. The resulting
      * {@code EventCriteria} is used to
      * {@link org.axonframework.eventsourcing.eventstore.EventStoreTransaction#source(SourcingCondition) source} the
      * entity from the {@link org.axonframework.eventsourcing.eventstore.EventStore}.
@@ -136,13 +137,13 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * Registers the given {@code criteriaResolver} as a factory method for the event sourced entity being built.
          * <p>
          * A {@code CriteriaResolver} receives the entity's identifier of type {@code I} and expects the
-         * {@link org.axonframework.eventsourcing.eventstore.EventCriteria} as as result. The resulting
+         * {@link EventCriteria} as as result. The resulting
          * {@code EventCriteria} is used to
          * {@link org.axonframework.eventsourcing.eventstore.EventStoreTransaction#source(SourcingCondition) source} the
          * entity from the {@link org.axonframework.eventsourcing.eventstore.EventStore}.
          *
          * @param criteriaResolver A factory method constructing the {@link CriteriaResolver}, used to resolve the
-         *                         {@link org.axonframework.eventsourcing.eventstore.EventCriteria} based on the
+         *                         {@link EventCriteria} based on the
          *                         identifier of type {@code I} to source the entity.
          * @return The event sourcing handler phase of the builder, for a fluent API.
          */
@@ -161,7 +162,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
      * the builder into an {@link EntityEvolver}.
      * <p>
      * The {@code EntityEvolver} is the component that rehydrates the entity of type {@code E} based on all the events
-     * that are sourced as a consequence of the {@link org.axonframework.eventsourcing.eventstore.EventCriteria}
+     * that are sourced as a consequence of the {@link EventCriteria}
      * returned by the {@link CriteriaResolver}.
      * <p>
      * Note that the setting a single {@code EntityEvolver} will replace <b>any</b> registered event sourcing handlers.
@@ -176,7 +177,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * <p>
          * The {@code EntityEvolver} is the component that rehydrates the entity of type {@code E} based on all the
          * events that are sourced as a consequence of the
-         * {@link org.axonframework.eventsourcing.eventstore.EventCriteria} returned by the {@link CriteriaResolver}.
+         * {@link EventCriteria} returned by the {@link CriteriaResolver}.
          * While doing so, it {@link EntityEvolver#evolve(Object, EventMessage, ProcessingContext) evolves} the entity
          * one event at a time.
          * <p>
