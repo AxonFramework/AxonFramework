@@ -21,7 +21,6 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.ExceptionUtils;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -71,6 +70,8 @@ import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ProcessUtils.executeWithRetry;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
@@ -686,8 +687,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset");
         Assert.state(!isRunning() && activeProcessorThreads() == 0 && !workLauncherRunning.get(),
                      () -> "TrackingProcessor must be shut down before triggering a reset");
-        // TODO - Create a ProcessingContext instead of just a transactionManager
-        transactionManager.executeInTransaction(() -> {
+        var unitOfWork = transactionalUnitOfWorkFactory.create();
+        var future = unitOfWork.executeWithResult(context -> {
             int[] segments = tokenStore.fetchSegments(getName());
             TrackingToken[] tokens = new TrackingToken[segments.length];
             for (int i = 0; i < segments.length; i++) {
@@ -701,7 +702,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                       getName(),
                                       segments[i]);
             }
+            return CompletableFuture.completedFuture(null);
         });
+        joinAndUnwrap(future);
     }
 
     @Override
@@ -756,7 +759,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private CompletableFuture<Void> awaitTermination() {
         if (activeProcessorThreads() <= 0 && !workLauncherRunning.get()) {
-            return FutureUtils.emptyCompletedFuture();
+            return emptyCompletedFuture();
         }
 
         logger.info("Processor '{}' awaiting termination...", getName());
@@ -786,7 +789,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                 }
                             }))
                             .reduce(CompletableFuture::allOf)
-                            .orElse(FutureUtils.emptyCompletedFuture());
+                            .orElse(emptyCompletedFuture());
     }
 
     /**
@@ -1163,7 +1166,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
         public void run() {
             try {
-                executeWithRetry(() -> transactionManager.executeInTransaction(() -> result.complete(runSafe())),
+                executeWithRetry(() -> {
+                                     var unitOfWork = transactionalUnitOfWorkFactory.create();
+                                     var future = unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(result.complete(
+                                             runSafe())));
+                                     joinAndUnwrap(future);
+                                 },
                                  re -> ExceptionUtils.findException(re, UnableToClaimTokenException.class).isPresent(),
                                  tokenClaimInterval, MILLISECONDS, 10);
             } catch (Exception e) {

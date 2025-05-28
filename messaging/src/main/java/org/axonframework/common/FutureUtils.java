@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,5 +91,44 @@ public abstract class FutureUtils {
         return exception instanceof CompletionException || exception instanceof ExecutionException
                 ? exception.getCause()
                 : exception;
+    }
+
+    /**
+     * Joins a {@link CompletableFuture} and unwraps any {@link CompletionException} to throw the actual cause,
+     * preserving the exact exception type without wrapping checked exceptions.
+     * <p>
+     * This method uses the "sneaky throw" technique to re-throw checked exceptions without declaring them, which
+     * preserves the original exception type completely. Use this when you need precise exception type preservation and
+     * are certain about the exception handling contract.
+     *
+     * @param future the {@link CompletableFuture} to join
+     * @param <T>    the type of the future's result
+     * @return the result of the future
+     * @throws Throwable the unwrapped cause if the future completed exceptionally (exact type preserved)
+     */
+    public static <T> T joinAndUnwrap(CompletableFuture<T> future) {
+        try {
+            return future.join();
+        } catch (CompletionException e) {
+            sneakyThrow(e.getCause());
+            return null; // unreachable, but needed for compilation
+        }
+    }
+
+    /**
+     * Utility method to throw checked exceptions without declaring them in the method signature. This uses type erasure
+     * to bypass Java's checked exception mechanism, allowing the preservation of the exact exception type when
+     * rethrowing.
+     * <p>
+     * This method should be used carefully and only when you're certain about the exception handling contract of your
+     * calling code.
+     *
+     * @param exception the exception to throw
+     * @param <E>       the type of exception (inferred)
+     * @throws E the exception with its original type
+     */
+    @SuppressWarnings("unchecked")
+    private static <E extends Throwable> void sneakyThrow(Throwable exception) throws E {
+        throw (E) exception;
     }
 }
