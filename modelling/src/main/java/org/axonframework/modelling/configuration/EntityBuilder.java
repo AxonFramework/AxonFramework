@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.configuration;
 
-import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.modelling.repository.Repository;
 
 /**
@@ -46,15 +46,14 @@ public interface EntityBuilder<I, E> {
     String entityName();
 
     /**
-     * The factory to construct the {@link Repository} providing access to the entity that's being built.
+     * The builder to construct the {@link Repository} providing access to the entity that's being built.
      * <p>
-     * The factory is used as is when
-     * {@link org.axonframework.configuration.ApplicationConfigurer#registerComponent(Class, String, ComponentFactory)
+     * The builder is used as is when
+     * {@link org.axonframework.configuration.ComponentRegistry#registerComponent(Class, String, ComponentBuilder)
      * registering} it with the {@link org.axonframework.configuration.ApplicationConfigurer}. During registration, the
-     * {@link Class} used is {@code AsyncRepository} and the name used is the result of the {@link #entityName()}
-     * method.
+     * {@link Class} used is {@code Repository} and the name used is the result of the {@link #entityName()} method.
      *
-     * @return The factory to construct the {@link Repository} providing access to the entity that's being built.
+     * @return The builder to construct the {@link Repository} providing access to the entity that's being built.
      */
-    ComponentFactory<Repository<I, E>> repository();
+    ComponentBuilder<Repository<I, E>> repository();
 }

@@ -23,7 +23,7 @@ import jakarta.annotation.Nonnull;
  * taking effect during {@link ApplicationConfigurer#build() build} of the configurer.
  * <p>
  * Through implementing the {@link #enhance(ComponentRegistry)} operation a {@code ConfigurationEnhancer} is able to,
- * for example, {@link ComponentRegistry#registerComponent(Class, ComponentFactory) register} components and
+ * for example, {@link ComponentRegistry#registerComponent(Class, ComponentBuilder) register} components and
  * {@link ComponentRegistry#registerDecorator(Class, int, ComponentDecorator) register} decorators. The registration of
  * components and/or decorators can be made conditional by using the {@link ComponentRegistry#hasComponent(Class)}
  * operation.
