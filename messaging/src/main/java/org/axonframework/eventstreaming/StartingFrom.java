@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.TrackingToken;
-
 import jakarta.annotation.Nullable;
+import org.axonframework.eventhandling.TrackingToken;
 
 /**
  * An implementation of the {@link StreamingCondition} that will start

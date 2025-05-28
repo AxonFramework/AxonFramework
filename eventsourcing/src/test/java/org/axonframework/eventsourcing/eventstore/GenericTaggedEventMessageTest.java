@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 

@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageStream;
 
 import java.util.function.Consumer;
@@ -38,6 +39,9 @@ public interface EventStoreTransaction {
     /**
      * Sources a {@link MessageStream} of type {@link EventMessage} based on the given {@code condition} that can be
      * used to rehydrate a model.
+     * <p>
+     * Note that the usage of {@link EventCriteria#havingAnyTag criteria} does not make sense for sourcing, as it is
+     * <b>not</b> recommended to source the entire event store.
      *
      * @param condition The {@link SourcingCondition} used to retrieve the {@link MessageStream} containing the sequence
      *                  of events that can rehydrate a model.
@@ -49,6 +53,9 @@ public interface EventStoreTransaction {
     /**
      * Appends an {@code eventMessage} to be appended to an {@link EventStore} in this transaction with the given
      * {@code condition}.
+     * <p>
+     * Use the {@link org.axonframework.eventstreaming.EventCriteria#havingAnyTag} when there are no consistency
+     * boundaries to validate during appending.
      *
      * @param eventMessage The {@link EventMessage} to append.
      */

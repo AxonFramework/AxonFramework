@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
@@ -25,35 +25,41 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Filtered {@link EventCriteria} that matches events based on only their tags. The tags of the event must contain all
- * tags in the {@code tags} set to match.
+ * Filtered {@link EventCriteria} that takes both the tags and the event's type into consideration.
  * <p>
- * You can limit the types of events to be matched by using the {@link AnyEvent#andBeingOneOfTypes(Set)} method, which
- * will return a new {@link EventCriteria} that matches only the specified types.
+ * Events match if the following conditions are met:
+ * <ol>
+ *     <li>The event's type is in the {@code types} set, or the {@code types} set is empty.</li>
+ *     <li>The event tags contain all tags in the {@code tags} set, or the {@code tags} set is empty.</li>
+ * </ol>
  *
- *
- * @param tags The tags that events are expected to have.
+ * @param types The types that this criteria instance matches with.
+ * @param tags  The tags that events are expected to have.
  * @author Steven van Beelen
  * @author Allard Buijze
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-record TagFilteredEventCriteria(@Nonnull Set<Tag> tags)
-        implements EventCriteria, EventCriterion, EventTypeRestrictableEventCriteria {
+record TagAndTypeFilteredEventCriteria(@Nonnull Set<QualifiedName> types,
+                                       @Nonnull Set<Tag> tags) implements EventCriteria, EventCriterion {
 
     /**
-     * Constructs an {@link EventCriteria} that matches against the given {@code tags}. If the {@code tags} set is
-     * empty, the criteria will match against any tags.
+     * Constructs an {@link EventCriteria} that matches against given {@code types} and the given {@code tags}. If the
+     * {@code types} set is empty, the criteria will match against any type. If the {@code tags} set is empty, the
+     * criteria will match against any tags.
      *
-     * @param tags The tags that events are expected to have.
+     * @param types The types that this criteria instance matches with.
+     * @param tags  The tags that events are expected to have.
      */
-    TagFilteredEventCriteria(@Nonnull Set<Tag> tags) {
+    TagAndTypeFilteredEventCriteria(@Nonnull Set<QualifiedName> types,
+                                    @Nonnull Set<Tag> tags) {
+        this.types = Set.copyOf(requireNonNull(types, "The types cannot be null"));
         this.tags = Set.copyOf(requireNonNull(tags, "The tags cannot be null"));
     }
 
     @Override
     public Set<EventCriterion> flatten() {
-        if (tags.isEmpty()) {
+        if (types.isEmpty() && tags.isEmpty()) {
             return Collections.emptySet();
         }
         return Set.of(this);
@@ -61,7 +67,7 @@ record TagFilteredEventCriteria(@Nonnull Set<Tag> tags)
 
     @Override
     public Set<QualifiedName> types() {
-        return Collections.emptySet();
+        return types;
     }
 
     @Override
@@ -71,7 +77,11 @@ record TagFilteredEventCriteria(@Nonnull Set<Tag> tags)
 
     @Override
     public boolean matches(@Nonnull QualifiedName type, @Nonnull Set<Tag> tags) {
-        return matchesTags(tags);
+        return matchesType(type) && matchesTags(tags);
+    }
+
+    private boolean matchesType(QualifiedName type) {
+        return types.isEmpty() || types.contains(type);
     }
 
     private boolean matchesTags(Set<Tag> tags) {
@@ -97,11 +107,6 @@ record TagFilteredEventCriteria(@Nonnull Set<Tag> tags)
 
     @Override
     public boolean hasCriteria() {
-        return !tags.isEmpty();
-    }
-
-    @Override
-    public EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types) {
-        return new TagAndTypeFilteredEventCriteria(types, tags);
+        return !tags.isEmpty() || !types.isEmpty();
     }
 }

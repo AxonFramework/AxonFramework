@@ -16,15 +16,18 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
