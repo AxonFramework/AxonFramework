@@ -82,7 +82,7 @@
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
         <hibernate-core.6.version>6.6.16.Final</hibernate-core.6.version>
         <mysql-connector-java.version>9.3.0</mysql-connector-java.version>
-        <postgresql.version>42.7.5</postgresql.version>
+        <postgresql.version>42.7.6</postgresql.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>2.1.1</jakarta.annotation.version><!-- Don't upgrade due to JDK8 -->
         <jakarta.el.version>4.0.0</jakarta.el.version><!-- Don't upgrade due to JDK11 -->
@@ -139,7 +139,7 @@
         <testcontainers.version>1.21.0</testcontainers.version>
         <!-- Validation -->
         <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
-        <hibernate-validator.8.version>8.0.1.Final</hibernate-validator.8.version>
+        <hibernate-validator.8.version>8.0.2.Final</hibernate-validator.8.version>
         <!-- Build / Plugin -->
         <central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
         <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
