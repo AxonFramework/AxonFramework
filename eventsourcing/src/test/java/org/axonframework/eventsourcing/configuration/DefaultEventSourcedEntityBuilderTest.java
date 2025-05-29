@@ -22,7 +22,7 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;

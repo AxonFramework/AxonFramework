@@ -30,8 +30,9 @@ import java.util.Set;
 /**
  * The model of an entity, containing the information needed to handle commands and events for a specific entity type
  * {@code E}. An {@link EntityModel} can be created through the builder by using the {@link #forEntityType(Class)}
- * method. The model can then be used to handle commands and events for an entity instance through the
- * {@link #handleInstance} and {@link #evolve} methods.
+ * method. The model can then be used to handle commands and events for an entity. If the entity already exists,
+ * the {@link #handleInstance} method should be used to handle commands for the entity. If the entity is new,
+ * the {@link #handleCreate} method should be used to handle commands for creating the entity.
  *
  * @param <E> The type of the entity modeled by this interface.
  * @author Mitchell Herrijgers
@@ -52,7 +53,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      * handler to create the entity.
      * <p>
      * This method is used to handle commands for new entities. If you want to handle commands for existing entities,
-     * use the {@link #handleInstance} method instead. If the command handler is only known as a creational command
+     * use the {@link #handleInstance} method instead. If the command handler is only known as an instance command
      * handler and this method is called, it will result in a failed message stream.
      *
      * @param message The {@link CommandMessage} to handle.
@@ -62,7 +63,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      */
     @Nonnull
     MessageStream.Single<CommandResultMessage<?>> handleCreate(
-            CommandMessage<?> message, ProcessingContext context
+            @Nonnull CommandMessage<?> message, @Nonnull ProcessingContext context
     );
 
     /**

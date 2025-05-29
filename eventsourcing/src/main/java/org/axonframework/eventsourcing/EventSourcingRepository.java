@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
@@ -148,8 +147,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         if (entity.entity() == null) {
             E createdEntity = entityFactory.create(identifier, null);
             if (createdEntity == null) {
-                throw new IllegalStateException(("The EventSourcedEntityFactory returned a null entity while loadOrCreate was called for identifier: [%s]. Adjust your EventSourcedEntityFactory to return a non-null entity when no first event message is present and using loadOrCreate.").formatted(
-                        identifier));
+                throw new EntityMissingAfterLoadOrCreateException(identifier);
             }
             return new EventSourcedEntity<>(identifier, createdEntity);
         }
@@ -160,10 +158,10 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         return eventStore
                 .transaction(processingContext)
                 .source(SourcingCondition.conditionFor(criteriaResolver.resolve(identifier)))
-                .reduce(new EventSourcedEntity<>(identifier, null),
+                .reduce(new EventSourcedEntity<>(identifier),
                         (entity, entry) -> {
                             if (entity.entity() == null) {
-                                createEntityBasedOnFirstEvent(identifier, entity, entry);
+                                createInitialEntityStateBasedOnEvent(identifier, entity, entry);
                             }
                             entity.evolve(entry.message(), entityEvolver, processingContext);
                             return entity;
@@ -183,12 +181,11 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         }).resultNow();
     }
 
-    private void createEntityBasedOnFirstEvent(ID identifier, EventSourcedEntity<ID, E> entity,
-                                               MessageStream.Entry<? extends EventMessage<?>> entry) {
+    private void createInitialEntityStateBasedOnEvent(ID identifier, EventSourcedEntity<ID, E> entity,
+                                                      MessageStream.Entry<? extends EventMessage<?>> entry) {
         E createdEntity = entityFactory.create(identifier, entry.message());
         if (createdEntity == null) {
-            throw new IllegalStateException(("The EventSourcedEntityFactory returned a null entity while the first event message was non-null for identifier: [%s]. Adjust your EventSourcedEntityFactory to always return a non-null entity when an event message is present.").formatted(
-                    identifier));
+            throw new EntityMissingAfterFirstEventException(identifier);
         }
         entity.applyStateChange(e -> createdEntity);
     }
@@ -241,6 +238,10 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
 
         private final ID identifier;
         private final AtomicReference<M> currentState;
+
+        private EventSourcedEntity(ID identifier) {
+            this(identifier, null);
+        }
 
         private EventSourcedEntity(ID identifier, M currentState) {
             this.identifier = identifier;

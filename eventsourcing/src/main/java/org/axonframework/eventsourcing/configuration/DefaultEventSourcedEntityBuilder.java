@@ -24,7 +24,7 @@ import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.PayloadBasedEntityEvolver;
 import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.repository.Repository;

@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 
 import java.util.Map;
 import java.util.Objects;
@@ -35,6 +36,7 @@ import static org.axonframework.common.ConstructorUtils.factoryForTypeWithOption
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
+ * @param <E> The type of the entity to create.
  */
 public class ConstructorBasedEventSourcedEntityFactory<E>
         implements EventSourcedEntityFactory<Object, E>, DescribableComponent {

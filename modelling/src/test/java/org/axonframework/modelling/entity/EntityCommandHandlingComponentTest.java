@@ -96,7 +96,6 @@ class EntityCommandHandlingComponentTest {
         @Test
         void executesCreationalCommandHandlerAfterLoadGivesNullResult() {
             setupLoadEntity(null);
-
             CommandResultMessage<?> resultMessage = testComponent.handle(creationalCommandMessage, context)
                                                                  .first().asCompletableFuture().join().message();
 

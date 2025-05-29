@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.annotation;
+package org.axonframework.eventsourcing;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.EntityCommandHandler;
 import org.axonframework.modelling.entity.EntityModelBuilder;
 
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -90,12 +90,13 @@ public interface EventSourcedEntityFactory<ID, E> {
      * Invocations with a non-null {@code firstEventMessage} must always return a non-null entity, while invocations
      * with a null {@code firstEventMessage} may return null.
      * <p>
-     * Whether to return {@code null} from a {@code null} {@code firstEventMessage} invocation depends on the which type
-     * of command handler should be invoked when the entity does not exist. If this is a
+     * Whether to return {@code null} from a {@code null} {@code firstEventMessage} invocation depends on the type
+     * of command handler which should be invoked when the entity does not exist. If this is a
      * {@link EntityModelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command handler},
      * this should return {@code null}. If this is a
      * {@link EntityModelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handler}, this
-     * should return an empty representation of the entity.
+     * should return the non-null initial state of the entity. For example using the no-argument constructor of the
+     * entity, or a constructor that takes the identifier as parameter.
      * <p>
      * It is recommended to use {@link #fromNoArgument(Supplier)}, {@link #fromIdentifier(Function)} or
      * {@link #fromEventMessage(BiFunction)} to create a factory that creates the entity based on the constructor of the
@@ -122,7 +123,8 @@ public interface EventSourcedEntityFactory<ID, E> {
      * @param <E>     The type of the entity.
      * @return A factory that creates the entity using the no-argument constructor.
      */
-    static <ID, E> EventSourcedEntityFactory<ID, E> fromNoArgument(Supplier<E> creator) {
+    static <ID, E> EventSourcedEntityFactory<ID, E> fromNoArgument(@Nonnull Supplier<E> creator) {
+        Objects.requireNonNull(creator, "The creator must not be null.");
         return (id, evt) -> creator.get();
     }
 
@@ -140,7 +142,8 @@ public interface EventSourcedEntityFactory<ID, E> {
      * @param <E>     The type of the entity.
      * @return A factory that creates the entity using the constructor with the identifier as parameter.
      */
-    static <ID, E> EventSourcedEntityFactory<ID, E> fromIdentifier(Function<ID, E> creator) {
+    static <ID, E> EventSourcedEntityFactory<ID, E> fromIdentifier(@Nonnull Function<ID, E> creator) {
+        Objects.requireNonNull(creator, "The creator must not be null.");
         return (id, evt) -> creator.apply(id);
     }
 
@@ -165,7 +168,8 @@ public interface EventSourcedEntityFactory<ID, E> {
      * parameters.
      */
     static <ID, E> EventSourcedEntityFactory<ID, E> fromEventMessage(
-            BiFunction<ID, EventMessage<?>, E> creator) {
+            @Nonnull BiFunction<ID, EventMessage<?>, E> creator) {
+        Objects.requireNonNull(creator, "The creator must not be null.");
         return (id, evt) -> evt == null
                 ? null
                 : creator.apply(id, evt);

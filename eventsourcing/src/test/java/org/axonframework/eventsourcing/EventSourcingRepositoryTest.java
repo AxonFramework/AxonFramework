@@ -69,7 +69,7 @@ class EventSourcingRepositoryTest {
                 String.class,
                 eventStore,
                 (id, event) -> {
-                    if(event != null) {
+                    if (event != null) {
                         return id + "(" + event.getPayload() + ")";
                     }
                     return id + "()";

@@ -32,6 +32,8 @@ import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -111,25 +113,25 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     @Nonnull
     @Override
     public Set<QualifiedName> supportedCommands() {
-        return supportedCommandNames;
+        return Collections.unmodifiableSet(supportedCommandNames);
     }
 
     @Override
     @Nonnull
     public Set<QualifiedName> supportedCreationalCommands() {
-        return supportedCreationalCommandNames;
+        return Collections.unmodifiableSet(supportedCreationalCommandNames);
     }
 
     @Override
     @Nonnull
     public Set<QualifiedName> supportedInstanceCommands() {
-        return supportedInstanceCommandNames;
+        return Collections.unmodifiableSet(supportedInstanceCommandNames);
     }
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handleCreate(CommandMessage<?> message,
-                                                                      ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage<?> message,
+                                                                      @Nonnull ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
             return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
         }

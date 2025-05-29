@@ -21,7 +21,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;

@@ -21,7 +21,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
@@ -66,10 +66,11 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableTask.class))
                 .instanceCommandHandler(typeResolver.resolve(CompleteTaskCommand.class).qualifiedName(),
                                         (command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                                    entity.handle((CompleteTaskCommand) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                })
+                                            EventAppender eventAppender = EventAppender.forContext(context,
+                                                                                                   configuration);
+                                            entity.handle((CompleteTaskCommand) command.getPayload(), eventAppender);
+                                            return MessageStream.empty().cast();
+                                        })
                 .build();
 
         // SalaryInformation is the singular child-model of Employee
@@ -78,11 +79,11 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableSalaryInformation.class))
                 .instanceCommandHandler(typeResolver.resolve(GiveRaise.class).qualifiedName(),
                                         (command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                           configuration);
-                                    entity.handle((GiveRaise) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                })
+                                            EventAppender eventAppender = EventAppender.forContext(context,
+                                                                                                   configuration);
+                                            entity.handle((GiveRaise) command.getPayload(), eventAppender);
+                                            return MessageStream.empty().cast();
+                                        })
                 .build();
 
         // Employee is a concrete entity type
@@ -99,10 +100,11 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                           }))
                 .instanceCommandHandler(typeResolver.resolve(AssignTaskCommand.class).qualifiedName(),
                                         ((command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                                    entity.handle((AssignTaskCommand) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                }))
+                                            EventAppender eventAppender = EventAppender.forContext(context,
+                                                                                                   configuration);
+                                            entity.handle((AssignTaskCommand) command.getPayload(), eventAppender);
+                                            return MessageStream.empty().cast();
+                                        }))
                 .addChild(EntityChildModel
                                   .list(ImmutableEmployee.class, taskModel)
                                   .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterEvolver(
@@ -156,10 +158,11 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutablePerson.class))
                 .instanceCommandHandler(typeResolver.resolve(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                                    entity.handle((ChangeEmailAddress) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                })
+                                            EventAppender eventAppender = EventAppender.forContext(context,
+                                                                                                   configuration);
+                                            entity.handle((ChangeEmailAddress) command.getPayload(), eventAppender);
+                                            return MessageStream.empty().cast();
+                                        })
                 .build();
 
         EventSourcingRepository<PersonIdentifier, ImmutablePerson> repository = new EventSourcingRepository<>(

@@ -21,8 +21,8 @@ import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.Repository;
 import org.axonframework.modelling.repository.ManagedEntity;
+import org.axonframework.modelling.repository.Repository;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -32,9 +32,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
- * Simple implementation of the {@link StateManager}. Keeps a list of all registered
- * {@link Repository repositories} and delegates the loading of entities to the appropriate repository. Throws a
- * {@link MissingRepositoryException} if no repository is found for the given entity type and the provided id.
+ * Simple implementation of the {@link StateManager}. Keeps a list of all registered {@link Repository repositories} and
+ * delegates the loading of entities to the appropriate repository through the use of
+ * {@link Repository#loadOrCreate(Object, ProcessingContext)}. Throws a {@link MissingRepositoryException} if no
+ * repository is found for the given entity type and the provided id.
  *
  * @author Mitchell Herrijgers
  * @see StateManager
@@ -135,11 +136,10 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
          * repositories. If a repository with the same combination is already registered, a
          * {@link ConflictingRepositoryAlreadyRegisteredException} is thrown.
          * <p>
-         * The combination of {@link Repository#entityType() entity type} and
-         * {@link Repository#idType() id type} of all repositories must be unique and unambigious. This means you
-         * can not register a repository if another conflicting repository already exists. If you do, a
-         * {@link ConflictingRepositoryAlreadyRegisteredException} will be thrown. Note that superclasses and subclasses
-         * of each other are considered conflicting.
+         * The combination of {@link Repository#entityType() entity type} and {@link Repository#idType() id type} of all
+         * repositories must be unique and unambigious. This means you can not register a repository if another
+         * conflicting repository already exists. If you do, a {@link ConflictingRepositoryAlreadyRegisteredException}
+         * will be thrown. Note that superclasses and subclasses of each other are considered conflicting.
          *
          * @param repository The {@link Repository} to use for loading state.
          * @param <I>        The type of id.
@@ -168,11 +168,10 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
          * whether registered through this method or {@link #register(Repository)}. If a repository with the same
          * combination is already registered, a {@link ConflictingRepositoryAlreadyRegisteredException} is thrown.
          * <p>
-         * The combination of {@link Repository#entityType() entity type} and
-         * {@link Repository#idType() id type} of all repositories must be unique and unambigious. This means you
-         * can not register a repository if another conflicting repository already exists. If you do, a
-         * {@link ConflictingRepositoryAlreadyRegisteredException} will be thrown. Note that superclasses and subclasses
-         * of each other are considered conflicting.
+         * The combination of {@link Repository#entityType() entity type} and {@link Repository#idType() id type} of all
+         * repositories must be unique and unambigious. This means you can not register a repository if another
+         * conflicting repository already exists. If you do, a {@link ConflictingRepositoryAlreadyRegisteredException}
+         * will be thrown. Note that superclasses and subclasses of each other are considered conflicting.
          *
          * @param idType     The type of the identifier.
          * @param entityType The type of the state.
