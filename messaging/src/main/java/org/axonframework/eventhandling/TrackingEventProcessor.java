@@ -601,12 +601,21 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             BlockingStream<TrackedEventMessage<?>> eventStreamIn, Segment segment) {
         BlockingStream<TrackedEventMessage<?>> eventStream = eventStreamIn;
         if (eventStream == null && state.get().isRunning()) {
-            final TrackingToken trackingToken = transactionManager.fetchInTransaction(
-                    () -> tokenStore.fetchToken(getName(), segment.getSegmentId())
+            final TrackingToken trackingToken = joinAndUnwrap(
+                    transactionalUnitOfWorkFactory
+                            .create()
+                            .executeWithResult(context ->
+                                                       CompletableFuture.completedFuture(
+                                                               tokenStore.fetchToken(getName(), segment.getSegmentId())
+                                                       )
+                            )
             );
             logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
-            eventStream = transactionManager.fetchInTransaction(
-                    () -> doOpenStream(trackingToken));
+            eventStream = joinAndUnwrap(
+                    transactionalUnitOfWorkFactory
+                            .create()
+                            .executeWithResult(context -> CompletableFuture.completedFuture(doOpenStream(trackingToken)))
+            );
         }
         return eventStream;
     }
