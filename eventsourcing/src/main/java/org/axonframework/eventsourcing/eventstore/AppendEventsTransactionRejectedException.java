@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.eventstreaming.EventCriteria;
 
@@ -28,7 +29,12 @@ import org.axonframework.eventstreaming.EventCriteria;
  */
 public class AppendEventsTransactionRejectedException extends AxonNonTransientException {
 
-    private AppendEventsTransactionRejectedException(String message) {
+    /**
+     * Constructs an {@code AppendConditionAssertionException} with the given {@code message}.
+     *
+     * @param message The message of the {@code AppendConditionAssertionException} under construction.
+     */
+    public AppendEventsTransactionRejectedException(String message) {
         super(message);
     }
 
@@ -38,13 +44,15 @@ public class AppendEventsTransactionRejectedException extends AxonNonTransientEx
      *
      * @param consistencyMarker The pointer in the {@link EventStorageEngine} after which no events should've been
      *                          appended that match the {@link EventCriteria} of an {@link AppendCondition}.
-     * @return An {@code AppendConditionAssertionException} noting that the {@link EventStorageEngine} contains
-     * events matching the {@link AppendCondition#criteria() criteria} passed the given {@code consistencyMarker}.
+     * @return An {@code AppendConditionAssertionException} noting that the {@link EventStorageEngine} contains events
+     * matching the {@link AppendCondition#criteria() criteria} passed the given {@code consistencyMarker}.
      */
     public static AppendEventsTransactionRejectedException conflictingEventsDetected(
-            ConsistencyMarker consistencyMarker) {
+            @Nonnull ConsistencyMarker consistencyMarker
+    ) {
         return new AppendEventsTransactionRejectedException(
-                "Event matching append criteria have been detected beyond provided consistency marker: " + consistencyMarker
+                "Event matching append criteria have been detected beyond provided consistency marker: "
+                        + consistencyMarker
         );
     }
 }

@@ -176,20 +176,18 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
 
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
-        var resultingStream = condition
-                .criteria()
-                .flatten()
-                .stream()
-                .map(criterion -> this.eventsForCriterion(condition, criterion))
-                .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
+        var allCriteriaStream = condition.criteria()
+                                         .flatten()
+                                         .stream()
+                                         .map(criterion -> this.eventsForCriterion(condition, criterion))
+                                         .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
 
-        AtomicReference<ConsistencyMarker> consistencyMarker = new AtomicReference<>();
-        return resultingStream.map(e -> {
-            ConsistencyMarker newMarker = consistencyMarker
-                    .accumulateAndGet(
-                            e.getResource(ConsistencyMarker.RESOURCE_KEY),
-                            (m1, m2) -> m1 == null ? m2 : m1.upperBound(m2)
-                    );
+        AtomicReference<ConsistencyMarker> markerReference = new AtomicReference<>();
+        return allCriteriaStream.map(e -> {
+            ConsistencyMarker newMarker = markerReference.accumulateAndGet(
+                    e.getResource(ConsistencyMarker.RESOURCE_KEY),
+                    (m1, m2) -> m1 == null ? m2 : m1.upperBound(m2)
+            );
             return e.withResource(ConsistencyMarker.RESOURCE_KEY, newMarker);
         });
     }
@@ -204,13 +202,19 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         return MessageStream.fromStream(
                 aggregateStream.asStream(),
                 this::convertToMessage,
-                event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
-                                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
-                                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                              event.getAggregateSequenceNumber())
-                                .withResource(ConsistencyMarker.RESOURCE_KEY,
-                                              new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
-                                                                                  event.getAggregateSequenceNumber())));
+                AggregateBasedAxonServerEventStorageEngine::eventMessageContext
+        );
+    }
+
+    private static Context eventMessageContext(Event event) {
+        Context legacyContext =
+                Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
+                       .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
+                       .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, event.getAggregateSequenceNumber());
+        return ConsistencyMarker.addToContext(
+                legacyContext,
+                new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(), event.getAggregateSequenceNumber())
+        );
     }
 
     private EventMessage<byte[]> convertToMessage(Event event) {

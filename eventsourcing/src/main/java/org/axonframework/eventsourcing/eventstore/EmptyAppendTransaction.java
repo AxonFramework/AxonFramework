@@ -21,9 +21,15 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Represents an empty append transaction. This transaction does nothing and always succeeds. It is used when there are
  * no events to persist.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
  */
 public record EmptyAppendTransaction() implements EventStorageEngine.AppendTransaction {
 
+    /**
+     * The single instance of the {@code EmptyAppendTransaction}.
+     */
     public static final EventStorageEngine.AppendTransaction INSTANCE = new EmptyAppendTransaction();
 
     /**

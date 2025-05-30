@@ -29,7 +29,6 @@ import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventstreaming.EventsCondition;
 import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -53,6 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 
 import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
@@ -69,12 +69,14 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final NavigableMap<Long, TaggedEventMessage<? extends EventMessage<?>>> eventStorage = new ConcurrentSkipListMap<>();
-    private final ReentrantLock appendLock = new ReentrantLock();
+    private static final boolean WITH_MARKER = true;
+    private static final boolean WITHOUT_MARKER = false;
 
-    private final Set<MapBackedMessageStream> openStreams = new CopyOnWriteArraySet<>();
-
+    private final NavigableMap<Long, TaggedEventMessage<? extends EventMessage<?>>> eventStorage =
+            new ConcurrentSkipListMap<>();
     private final long offset;
+    private final ReentrantLock appendLock = new ReentrantLock();
+    private final Set<MapBackedMessageStream> openStreams = new CopyOnWriteArraySet<>();
 
     /**
      * Initializes an in-memory {@link EventStorageEngine}.
@@ -111,6 +113,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                 if (finished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
+
                 appendLock.lock();
                 try {
                     if (containsConflicts(condition)) {
@@ -120,6 +123,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                             events.stream()
                                   .map(event -> {
                                       long next = nextIndex();
+                                      long marker = next + 1;
                                       eventStorage.put(next, event);
 
                                       if (logger.isDebugEnabled()) {
@@ -128,7 +132,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                                                        next,
                                                        event.event().getTimestamp());
                                       }
-                                      return (ConsistencyMarker) new GlobalIndexConsistencyMarker(next);
+                                      return (ConsistencyMarker) new GlobalIndexConsistencyMarker(marker);
                                   })
                                   .reduce(ConsistencyMarker::upperBound);
 
@@ -152,14 +156,16 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     private boolean containsConflicts(AppendCondition condition) {
         if (Objects.equals(condition.consistencyMarker(), ConsistencyMarker.INFINITY)) {
-            return false;
+            return WITHOUT_MARKER;
         }
 
         return this.eventStorage.tailMap(GlobalIndexConsistencyMarker.position(condition.consistencyMarker()) + 1)
                                 .values()
                                 .stream()
                                 .map(event -> (TaggedEventMessage<?>) event)
-                                .anyMatch(taggedEvent -> condition.matches(taggedEvent.event().type().qualifiedName(), taggedEvent.tags()));
+                                .anyMatch(taggedEvent -> condition.matches(
+                                        taggedEvent.event().type().qualifiedName(), taggedEvent.tags()
+                                ));
     }
 
     @Override
@@ -168,9 +174,11 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
 
+        // Set end to the CURRENT last position, to reflect it's a finite stream.
         return eventsToMessageStream(condition.start(),
-                                     eventStorage.isEmpty() ? -1 : Math.min(condition.end(), eventStorage.lastKey()),
-                                     condition);
+                                     eventStorage.isEmpty() ? -1 : eventStorage.lastKey(),
+                                     condition,
+                                     WITH_MARKER);
     }
 
     @Override
@@ -179,13 +187,27 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
 
-        return eventsToMessageStream(condition.position().position().orElse(-1) + 1, Long.MAX_VALUE, condition);
+        // Set end to the Long.MAX-VALUE, to reflect it's an infinite stream.
+        return eventsToMessageStream(condition.position().position().orElse(-1),
+                                     Long.MAX_VALUE,
+                                     condition,
+                                     WITHOUT_MARKER);
     }
 
-    private MessageStream<EventMessage<?>> eventsToMessageStream(long start, long end, EventsCondition condition) {
-        MapBackedMessageStream mapBackedMessageStream = new MapBackedMessageStream(start, end, condition);
-        openStreams.add(mapBackedMessageStream);
-        return mapBackedMessageStream;
+    private MessageStream<EventMessage<?>> eventsToMessageStream(long start,
+                                                                 long end,
+                                                                 EventsCondition condition,
+                                                                 boolean withMarker) {
+        MapBackedMessageStream messageStream = new MapBackedMessageStream(start, end, condition, position -> {
+            Context context = Context.empty();
+            context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position + 1));
+            if (withMarker) {
+                context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(position));
+            }
+            return context;
+        });
+        openStreams.add(messageStream);
+        return messageStream;
     }
 
     private static boolean match(TaggedEventMessage<?> taggedEvent, EventsCondition condition) {
@@ -202,7 +224,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? new GlobalSequenceTrackingToken(offset - 1)
-                        : new GlobalSequenceTrackingToken(eventStorage.firstKey() - 1)
+                        : new GlobalSequenceTrackingToken(eventStorage.firstKey())
         );
     }
 
@@ -215,7 +237,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? new GlobalSequenceTrackingToken(offset - 1)
-                        : new GlobalSequenceTrackingToken(eventStorage.lastKey())
+                        : new GlobalSequenceTrackingToken(eventStorage.lastKey() + 1)
         );
     }
 
@@ -230,7 +252,6 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                            .filter(positionToEventEntry -> {
                                EventMessage<?> event = positionToEventEntry.getValue().event();
                                Instant eventTimestamp = event.getTimestamp();
-                               logger.debug("instant [{}]", eventTimestamp);
                                return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
                            })
                            .map(Map.Entry::getKey)
@@ -250,15 +271,20 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     private class MapBackedMessageStream implements MessageStream<EventMessage<?>> {
 
         private final AtomicLong position;
-        private final AtomicReference<Runnable> callback;
         private final long end;
         private final EventsCondition condition;
+        private final Function<Long, Context> contextBuilder;
+        private final AtomicReference<Runnable> callback;
 
-        public MapBackedMessageStream(long start, long end, EventsCondition condition) {
+        private MapBackedMessageStream(long start,
+                                       long end,
+                                       EventsCondition condition,
+                                       Function<Long, Context> contextBuilder) {
+            this.position = new AtomicLong(start);
             this.end = end;
             this.condition = condition;
-            position = new AtomicLong(start);
-            callback = new AtomicReference<>(() -> {
+            this.contextBuilder = contextBuilder;
+            this.callback = new AtomicReference<>(() -> {
             });
         }
 
@@ -267,15 +293,10 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             long currentPosition = position.get();
             while (currentPosition <= end
                     && eventStorage.containsKey(currentPosition)
-                    && position.compareAndSet(currentPosition,
-                                              currentPosition + 1)) {
+                    && position.compareAndSet(currentPosition, currentPosition + 1)) {
                 TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
                 if (match(nextEvent, condition)) {
-                    Context context = Context.empty();
-                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition));
-                    context = Tag.addToContext(context, nextEvent.tags());
-                    context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(end));
-                    return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
+                    return Optional.of(new SimpleEntry<>(nextEvent.event(), contextBuilder.apply(currentPosition)));
                 }
                 currentPosition = position.get();
             }

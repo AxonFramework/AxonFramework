@@ -236,10 +236,11 @@ class SimpleEventStoreTest {
     }
 
     private static @Nonnull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
-        return MessageStream.fromStream(IntStream.range(0, messageCount).boxed(),
-                                        SimpleEventStoreTest::eventMessage,
-                                        i -> Context.with(ConsistencyMarker.RESOURCE_KEY,
-                                                          new GlobalIndexConsistencyMarker(i)));
+        return MessageStream.fromStream(
+                IntStream.range(0, messageCount).boxed(),
+                SimpleEventStoreTest::eventMessage,
+                i -> ConsistencyMarker.addToContext(Context.empty(), new GlobalIndexConsistencyMarker(i))
+        );
     }
 
     @SafeVarargs
@@ -256,7 +257,6 @@ class SimpleEventStoreTest {
             throw assertionFailedError;
         }
     }
-
 
     // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?
     private static EventMessage<?> eventMessage(int seq) {
