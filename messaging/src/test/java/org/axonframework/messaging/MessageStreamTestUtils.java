@@ -28,7 +28,6 @@ public class MessageStreamTestUtils {
         // Prevent instantiation
     }
 
-
     /**
      * Asserts that the given {@code stream} completed exceptionally with the given {@code expectedExceptionType}
      * @param stream The {@link MessageStream} to assert.

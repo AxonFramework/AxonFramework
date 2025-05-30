@@ -261,7 +261,6 @@ class EventSourcingRepositoryTest {
         assertNull(loaded.resultNow().entity());
     }
 
-
     @Test
     void loadOrCreateShouldReturnNoEventMessageConstructorEntityWhenNoEventsAreReturned() {
         StubProcessingContext processingContext = new StubProcessingContext();

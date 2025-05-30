@@ -17,15 +17,15 @@
 package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.configuration.ApplicationConfigurerTestSuite;
-import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.PayloadBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
