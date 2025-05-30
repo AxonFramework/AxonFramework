@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.pooled;
 
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
@@ -29,6 +28,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.utils.DelegateScheduledExecutorService;
@@ -92,7 +92,7 @@ class WorkPackageTest {
         testSubjectBuilder = WorkPackage.builder()
                                         .name(PROCESSOR_NAME)
                                         .tokenStore(tokenStore)
-                                        .transactionManager(NoTransactionManager.instance())
+                                        .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                                         .executorService(executorService)
                                         .eventFilter(eventFilter)
                                         .batchProcessor(batchProcessor)

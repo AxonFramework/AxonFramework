@@ -41,6 +41,7 @@ import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -95,7 +96,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
-    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
+    private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
@@ -131,7 +132,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
         this.transactionManager = builder.transactionManager;
-        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(transactionManager);
+        this.unitOfWorkFactory = new TransactionalUnitOfWorkFactory(transactionManager);
         this.workerExecutor = builder.workerExecutorBuilder.apply(name);
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
@@ -233,7 +234,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     }
 
     private String calculateIdentifier() {
-        var unitOfWork = transactionalUnitOfWorkFactory.create();
+        var unitOfWork = unitOfWorkFactory.create();
         return joinAndUnwrap(
                 unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(
                         tokenStore.retrieveStorageIdentifier().orElse("--unknown--"))
@@ -324,7 +325,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
         Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
 
-        var unitOfWork = transactionalUnitOfWorkFactory.create();
+        var unitOfWork = unitOfWorkFactory.create();
         var resetTokensFuture = unitOfWork.executeWithResult((processingContext) -> {
             // Find all segments and fetch all tokens
             int[] segments = tokenStore.fetchSegments(getName());
@@ -372,7 +373,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         return WorkPackage.builder()
                           .name(name)
                           .tokenStore(tokenStore)
-                          .transactionManager(transactionManager)
+                          .unitOfWorkFactory(unitOfWorkFactory)
                           .executorService(workerExecutor)
                           .eventFilter(this::canHandle)
                           .batchProcessor(batchProcessor)
