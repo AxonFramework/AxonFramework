@@ -154,7 +154,7 @@ public interface AxonTestPhase {
          * @param metaData The metadata to attach to the event.
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given event(@Nonnull Object payload, @Nonnull Map<String, ?> metaData) {
+        default Given event(@Nonnull Object payload, @Nonnull Map<String, String> metaData) {
             return event(payload, MetaData.from(metaData));
         }
 
@@ -225,7 +225,7 @@ public interface AxonTestPhase {
          * @param metaData The metadata to attach to the command.
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given command(@Nonnull Object payload, @Nonnull Map<String, ?> metaData) {
+        default Given command(@Nonnull Object payload, @Nonnull Map<String, String> metaData) {
             return command(payload, MetaData.from(metaData));
         }
 
@@ -336,7 +336,7 @@ public interface AxonTestPhase {
          * @param metaData The metadata to attach to the command.
          * @return The current When instance, for fluent interfacing.
          */
-        default Command command(@Nonnull Object payload, @Nonnull Map<String, ?> metaData) {
+        default Command command(@Nonnull Object payload, @Nonnull Map<String, String> metaData) {
             return command(payload, MetaData.from(metaData));
         }
 

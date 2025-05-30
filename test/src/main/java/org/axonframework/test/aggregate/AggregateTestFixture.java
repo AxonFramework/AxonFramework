@@ -501,7 +501,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public ResultValidator<T> when(Object command, Map<String, ?> metaData) {
+    public ResultValidator<T> when(Object command, Map<String, String> metaData) {
         return when(resultValidator -> {
             CommandMessage<Object> commandMessage =
                     new GenericCommandMessage<>(new MessageType(command.getClass()), command, metaData);

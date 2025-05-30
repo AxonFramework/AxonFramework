@@ -115,12 +115,12 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public QueryResponseMessage<R> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public QueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new ConvertingResponseMessage<>(expectedResponseType, responseMessage.withMetaData(metaData));
     }
 
     @Override
-    public QueryResponseMessage<R> andMetaData(@Nonnull Map<String, ?> additionalMetaData) {
+    public QueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new ConvertingResponseMessage<>(expectedResponseType, responseMessage.andMetaData(additionalMetaData));
     }
 }

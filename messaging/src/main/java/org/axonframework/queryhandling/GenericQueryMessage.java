@@ -84,12 +84,12 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
     }
 
     @Override
-    public QueryMessage<P, R> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public QueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericQueryMessage<>(getDelegate().withMetaData(metaData), responseType);
     }
 
     @Override
-    public QueryMessage<P, R> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public QueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericQueryMessage<>(getDelegate().andMetaData(metaData), responseType);
     }
 

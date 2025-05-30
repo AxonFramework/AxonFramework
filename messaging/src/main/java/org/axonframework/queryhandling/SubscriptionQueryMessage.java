@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,8 +48,8 @@ public interface SubscriptionQueryMessage<P, I, U> extends QueryMessage<P, I> {
     ResponseType<U> getUpdateResponseType();
 
     @Override
-    SubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, ?> metaData);
+    SubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
-    SubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, ?> additionalMetaData);
+    SubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> additionalMetaData);
 }

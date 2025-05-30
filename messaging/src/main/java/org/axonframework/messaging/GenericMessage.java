@@ -31,13 +31,13 @@ import java.util.Map;
  * Generic implementation of the {@link Message} interface containing the {@link #getPayload() payload} and
  * {@link #getMetaData() metadata} in deserialized form.
  * <p>
- * If a {@link GenericMessage} is created while a {@link LegacyUnitOfWork} is active it
- * copies over the correlation data of the {@code UnitOfWork} to the created message.
+ * If a {@link GenericMessage} is created while a {@link LegacyUnitOfWork} is active it copies over the correlation data
+ * of the {@code UnitOfWork} to the created message.
  *
  * @param <P> The type of {@link #getPayload() payload} contained in this {@link Message}.
  * @author Allard Buijze
  * @author Steven van Beelen
- * @since 2.0
+ * @since 2.0.0
  */
 public class GenericMessage<P> extends AbstractMessage<P> {
 
@@ -50,7 +50,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     private final Class<P> payloadType;
 
     /**
-     * Constructs a {@link GenericMessage} for the given {@code type} and {@code payload}.
+     * Constructs a {@code GenericMessage} for the given {@code type} and {@code payload}.
      * <p>
      * Uses the correlation data of the current Unit of Work, if present.
      *
@@ -63,7 +63,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     }
 
     /**
-     * Constructs a {@link GenericMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
+     * Constructs a {@code GenericMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
      * <p>
      * The given {@code metaData} is merged with the {@link MetaData} from the correlation data of the current Unit of
      * Work, if present. In case the {@code payload == null}, {@link Void} will be used as the {@code payloadType}.
@@ -74,12 +74,12 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      */
     public GenericMessage(@Nonnull MessageType type,
                           @Nullable P payload,
-                          @Nonnull Map<String, ?> metaData) {
+                          @Nonnull Map<String, String> metaData) {
         this(type, payload, metaData, getDeclaredPayloadType(payload));
     }
 
     /**
-     * Constructs a {@link GenericMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
+     * Constructs a {@code GenericMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
      * <p>
      * The given {@code metaData} is merged with the MetaData from the correlation data of the current Unit of Work, if
      * present.
@@ -97,12 +97,12 @@ public class GenericMessage<P> extends AbstractMessage<P> {
                           @Deprecated Class<P> declaredPayloadType) {
         this(IdentifierFactory.getInstance().generateIdentifier(),
              type, payload,
-             CurrentUnitOfWork.correlationData().mergedWith(MetaData.from(metaData)),
+             CurrentUnitOfWork.correlationData().mergedWith(MetaData.from((Map<String, String>) metaData)),
              declaredPayloadType);
     }
 
     /**
-     * Constructs a {@link GenericMessage} for the given {@code identifier}, {@code type}, {@code payload}, and
+     * Constructs a {@code GenericMessage} for the given {@code identifier}, {@code type}, {@code payload}, and
      * {@code metaData}, intended to reconstruct another {@link Message}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -117,7 +117,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     public GenericMessage(@Nonnull String identifier,
                           @Nonnull MessageType type,
                           @Nullable P payload,
-                          @Nonnull Map<String, ?> metaData) {
+                          @Nonnull Map<String, String> metaData) {
         this(identifier, type, payload, metaData, getDeclaredPayloadType(payload));
     }
 
@@ -144,7 +144,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
                           @Deprecated Class<P> declaredPayloadType) {
         super(identifier, type);
         this.payload = payload;
-        this.metaData = MetaData.from(metaData);
+        this.metaData = MetaData.from((Map<String, String>) metaData);
         this.payloadType = declaredPayloadType;
     }
 

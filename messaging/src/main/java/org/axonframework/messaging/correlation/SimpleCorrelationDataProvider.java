@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.correlation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 
@@ -25,32 +26,33 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * CorrelationDataProvider implementation defines correlation headers by the header names. The headers from messages
- * with these keys are returned as correlation data.
+ * {@code CorrelationDataProvider} implementation defines correlation headers by the header names. The headers from
+ * messages with these keys are returned as correlation data.
  *
  * @author Allard Buijze
- * @since 2.3
+ * @since 2.3.0
  */
 public class SimpleCorrelationDataProvider implements CorrelationDataProvider {
 
     private final String[] headerNames;
 
     /**
-     * Initializes the CorrelationDataProvider to return the meta data of messages with given {@code metaDataKeys}
-     * as correlation data.
+     * Initializes the CorrelationDataProvider to return the metadata of messages with given {@code metaDataKeys} as
+     * correlation data.
      *
-     * @param metaDataKeys The keys of the meta data entries from messages to return as correlation data
+     * @param metaDataKeys The keys of the metadata entries from messages to return as correlation data.
      */
     public SimpleCorrelationDataProvider(String... metaDataKeys) {
         this.headerNames = Arrays.copyOf(metaDataKeys, metaDataKeys.length);
     }
 
+    @Nonnull
     @Override
-    public Map<String, ?> correlationDataFor(Message<?> message) {
+    public Map<String, String> correlationDataFor(@Nonnull Message<?> message) {
         if (headerNames.length == 0) {
             return Collections.emptyMap();
         }
-        Map<String, Object> data = new HashMap<>();
+        Map<String, String> data = new HashMap<>();
         final MetaData metaData = message.getMetaData();
         for (String headerName : headerNames) {
             if (metaData.containsKey(headerName)) {

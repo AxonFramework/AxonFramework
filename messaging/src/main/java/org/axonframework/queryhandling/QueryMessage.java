@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,9 @@ public interface QueryMessage<P, R> extends Message<P> {
      */
     ResponseType<R> getResponseType();
 
-    QueryMessage<P, R> withMetaData(@Nonnull Map<String, ?> metaData);
+    @Override
+    QueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData);
 
-    QueryMessage<P, R> andMetaData(@Nonnull Map<String, ?> additionalMetaData);
+    @Override
+    QueryMessage<P, R> andMetaData(@Nonnull Map<String, String> additionalMetaData);
 }

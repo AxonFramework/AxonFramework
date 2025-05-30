@@ -74,7 +74,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      */
     public GenericCommandResultMessage(@Nonnull MessageType type,
                                        @Nonnull R commandResult,
-                                       @Nonnull Map<String, ?> metaData) {
+                                       @Nonnull Map<String, String> metaData) {
         super(type, commandResult, metaData);
     }
 
@@ -89,7 +89,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      */
     public GenericCommandResultMessage(@Nonnull MessageType type,
                                        @Nonnull Throwable exception,
-                                       @Nonnull Map<String, ?> metaData) {
+                                       @Nonnull Map<String, String> metaData) {
         super(type, exception, metaData);
     }
 
@@ -127,13 +127,13 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     }
 
     @Override
-    public GenericCommandResultMessage<R> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericCommandResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
         return new GenericCommandResultMessage<>(getDelegate().withMetaData(metaData), exception);
     }
 
     @Override
-    public GenericCommandResultMessage<R> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericCommandResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
         return new GenericCommandResultMessage<>(getDelegate().andMetaData(metaData), exception);
     }

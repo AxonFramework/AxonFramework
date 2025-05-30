@@ -241,11 +241,17 @@ class AxonServerEventStoreTest {
 
             @Override
             protected IntermediateEventRepresentation doUpcast(
-                    IntermediateEventRepresentation intermediateRepresentation, AtomicInteger context) {
-                return intermediateRepresentation.upcast(intermediateRepresentation.getType(),
-                                                         String.class,
-                                                         Function.identity(),
-                                                         m -> m.and("counter", context.getAndIncrement()));
+                    IntermediateEventRepresentation intermediateRepresentation, AtomicInteger context
+            ) {
+                return intermediateRepresentation.upcast(
+                        intermediateRepresentation.getType(),
+                        String.class,
+                        Function.identity(),
+                        m -> m.and(
+                                "counter",
+                                Integer.toString(context.getAndIncrement())
+                        )
+                );
             }
 
             @Override
@@ -268,9 +274,9 @@ class AxonServerEventStoreTest {
 
         DomainEventStream actual = testSubject.readEvents(AGGREGATE_ID);
         assertTrue(actual.hasNext());
-        assertEquals(0, actual.next().getMetaData().get("counter"));
-        assertEquals(1, actual.next().getMetaData().get("counter"));
-        assertEquals(2, actual.next().getMetaData().get("counter"));
+        assertEquals("0", actual.next().getMetaData().get("counter"));
+        assertEquals("1", actual.next().getMetaData().get("counter"));
+        assertEquals("2", actual.next().getMetaData().get("counter"));
         assertFalse(actual.hasNext());
     }
 
@@ -539,7 +545,7 @@ class AxonServerEventStoreTest {
         String testPayloadTwo = "Test2";
         String testPayloadThree = "Test3";
         //noinspection unchecked
-        Map<String, Object> testMetaData = Collections.EMPTY_MAP;
+        Map<String, String> testMetaData = Collections.EMPTY_MAP;
 
         DomainEventMessage<String> testSnapshot = new GenericDomainEventMessage<>(
                 AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("snapshot"),

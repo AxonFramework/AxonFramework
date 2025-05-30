@@ -44,9 +44,9 @@ class DeadlineDetailsSerializationTest {
 
     @BeforeAll
     static void setUp() {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, String> map = new HashMap<>();
         map.put("someStringValue", "foo");
-        map.put("someIntValue", 2);
+        map.put("someIntValue", "2");
         metaData = new MetaData(map);
         message = new GenericDeadlineMessage<>(
                 TEST_DEADLINE_NAME,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -303,8 +303,9 @@ public class Reporter {
      * @param missingEntries    The expected key-value pairs that where not present in the metadata
      * @param additionalEntries Key-value pairs that where present in the metadata but not expected
      */
-    public void reportDifferentMetaData(Class<?> messageType, Map<String, Object> missingEntries,
-                                        Map<String, Object> additionalEntries) {
+    public void reportDifferentMetaData(Class<?> messageType,
+                                        Map<String, String> missingEntries,
+                                        Map<String, String> additionalEntries) {
         StringBuilder sb = new StringBuilder("One of the messages contained different metadata than expected");
         sb.append(NEWLINE)
           .append(NEWLINE)
@@ -315,7 +316,7 @@ public class Reporter {
             sb.append("metadata entries")
               .append(NEWLINE)
               .append("[");
-            for (Map.Entry<String, Object> entry : additionalEntries.entrySet()) {
+            for (Map.Entry<String, String> entry : additionalEntries.entrySet()) {
                 sb.append(entryAsString(entry))
                   .append(", ");
             }
@@ -328,7 +329,7 @@ public class Reporter {
             sb.append("metadata entries ")
               .append(NEWLINE)
               .append("[");
-            for (Map.Entry<String, Object> entry : missingEntries.entrySet()) {
+            for (Map.Entry<String, String> entry : missingEntries.entrySet()) {
                 sb.append(entryAsString(entry))
                   .append(", ");
             }

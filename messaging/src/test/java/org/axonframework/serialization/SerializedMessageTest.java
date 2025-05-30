@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ class SerializedMessageTest {
 
     @Test
     void withMetaDataReplacesOriginalMetaData() {
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
 
@@ -76,7 +76,7 @@ class SerializedMessageTest {
 
         Message<Object> resultOne = testSubject.withMetaData(MetaData.emptyInstance());
         Message<Object> resultTwo =
-                testSubject.withMetaData(MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
+                testSubject.withMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(0, resultOne.getMetaData().size());
         assertEquals(1, resultTwo.getMetaData().size());
@@ -84,7 +84,7 @@ class SerializedMessageTest {
 
     @Test
     void andMetaDataAppendsToOriginalMetaData() {
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
 
@@ -96,7 +96,7 @@ class SerializedMessageTest {
         assertEquals("value", resultOne.getMetaData().get("key"));
 
         Message<Object> resultTwo =
-                testSubject.andMetaData(MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
+                testSubject.andMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
         assertEquals(1, resultTwo.getMetaData().size());
         assertEquals("otherValue", resultTwo.getMetaData().get("key"));
     }

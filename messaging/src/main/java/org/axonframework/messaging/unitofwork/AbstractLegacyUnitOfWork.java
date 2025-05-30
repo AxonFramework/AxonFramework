@@ -165,13 +165,10 @@ public abstract class AbstractLegacyUnitOfWork<T extends Message<?>> implements 
         if (correlationDataProviders.isEmpty()) {
             return MetaData.emptyInstance();
         }
-        Map<String, Object> result = new HashMap<>();
+        Map<String, String> result = new HashMap<>();
         for (CorrelationDataProvider correlationDataProvider : correlationDataProviders) {
             try {
-                final Map<String, ?> extraData = correlationDataProvider.correlationDataFor(getMessage());
-                if (extraData != null) {
-                    result.putAll(extraData);
-                }
+                result.putAll(correlationDataProvider.correlationDataFor(getMessage()));
             } catch (Exception e) {
                 logger.warn(
                         "Encountered exception creating correlation data for message with id: '{}' "

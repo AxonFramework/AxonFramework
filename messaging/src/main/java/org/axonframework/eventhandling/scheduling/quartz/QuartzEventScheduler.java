@@ -315,7 +315,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             return serializer.deserialize(serializedPayload);
         }
 
-        private Map<String, ?> deserializeMetaData(JobDataMap jobDataMap) {
+        private Map<String, String> deserializeMetaData(JobDataMap jobDataMap) {
             SimpleSerializedObject<byte[]> serializedDeadlineMetaData = new SimpleSerializedObject<>(
                     (byte[]) jobDataMap.get(MESSAGE_METADATA), byte[].class, MetaData.class.getName(), null
             );

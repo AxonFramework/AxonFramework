@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,49 @@
 
 package org.axonframework.spring.authorization;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import jakarta.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 /**
  * A {@link MessageDispatchInterceptor} that adds the {$code username} and {$code authorities} from the authorized
  * principle.
  *
+ * @param <T> The message type this interceptor can process
  * @author Roald Bankras
  * @since 4.11.0
  */
 public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> implements MessageDispatchInterceptor<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageAuthorizationDispatchInterceptor.class);
+
+    private final Converter converter;
+
+    /**
+     * Construct a {@code MessageAuthorizationDispatchInterceptor} using the given {@code converter} to convert the
+     * {@link Authentication#getPrincipal() principal} and {@link Authentication#getAuthorities()} before they are
+     * stored in the {@link org.axonframework.messaging.MetaData} of the outgoing {@link Message} of type {@code T}.
+     *
+     * @param converter The {@code Converter} converting the {@link Authentication#getPrincipal() principal} and
+     *                  {@link Authentication#getAuthorities()} before they go into the
+     *                  {@link org.axonframework.messaging.MetaData} of the outgoing {@link Message} of type {@code T}.
+     */
+    public MessageAuthorizationDispatchInterceptor(@Nonnull Converter converter) {
+        this.converter = Objects.requireNonNull(converter, "Converter must not be null.");
+    }
 
     @Nonnull
     @Override
@@ -49,9 +70,13 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> imple
         }
 
         logger.debug("Adding message metadata for username & authorities.");
-        Map<String, Object> authenticationDetails = new java.util.HashMap<>();
-        authenticationDetails.put("username", authentication.getPrincipal());
-        authenticationDetails.put("authorities", authentication.getAuthorities());
+        Map<String, String> authenticationDetails = new java.util.HashMap<>();
+        authenticationDetails.put("username", converter.convert(authentication.getPrincipal(), String.class));
+        String authorities = authentication.getAuthorities()
+                                           .stream()
+                                           .map(GrantedAuthority::getAuthority)
+                                           .collect(Collectors.joining(","));
+        authenticationDetails.put("authorities", authorities);
         //noinspection unchecked
         return (T) message.andMetaData(authenticationDetails);
     }

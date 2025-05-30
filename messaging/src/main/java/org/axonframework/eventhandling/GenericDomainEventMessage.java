@@ -42,7 +42,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
     private final long sequenceNumber;
 
     /**
-     * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
+     * Constructs a {@code GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
      * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code type}, and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
@@ -62,7 +62,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
     }
 
     /**
-     * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
+     * Constructs a {@code GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
      * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code type}, {@code payload}, and
      * {@code metaData}.
      *
@@ -78,7 +78,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
                                      long sequenceNumber,
                                      @Nonnull MessageType type,
                                      @Nonnull P payload,
-                                     @Nonnull Map<String, ?> metaData) {
+                                     @Nonnull Map<String, String> metaData) {
         this(aggregateType,
              aggregateIdentifier,
              sequenceNumber,
@@ -87,7 +87,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
     }
 
     /**
-     * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
+     * Constructs a {@code GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
      * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code messageIdentifier}, {@code type},
      * {@code payload}, {@code metaData}, and {@code timestamp}.
      *
@@ -107,7 +107,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
                                      @Nonnull String messageIdentifier,
                                      @Nonnull MessageType type,
                                      @Nonnull P payload,
-                                     @Nonnull Map<String, ?> metaData,
+                                     @Nonnull Map<String, String> metaData,
                                      @Nonnull Instant timestamp) {
         this(aggregateType,
              aggregateIdentifier,
@@ -117,7 +117,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
     }
 
     /**
-     * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
+     * Constructs a {@code GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
      * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code delegate}, and
      * {@code timestampSupplier}, intended to reconstruct another {@link DomainEventMessage}.
      * <p>
@@ -149,7 +149,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
     }
 
     /**
-     * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
+     * Constructs a {@code GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
      * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code delegate}, and {@code timestamp},
      * intended to reconstruct another {@link DomainEventMessage}.
      * <p>
@@ -197,7 +197,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
     }
 
     @Override
-    public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         if (getMetaData().equals(metaData)) {
             return this;
         }
@@ -209,7 +209,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
     }
 
     @Override
-    public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         //noinspection ConstantConditions
         if (metaData == null || metaData.isEmpty() || getMetaData().equals(metaData)) {
             return this;

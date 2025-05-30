@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -275,10 +275,10 @@ public interface FixtureConfiguration {
      * This event is sent to the associated sagas.
      *
      * @param event The event to publish
-     * @param metaData The meta data to attach to the event
+     * @param metaData The metadata to attach to the event
      * @return an object that allows chaining of more given state
      */
-    ContinuedGivenState givenAPublished(Object event, Map<String, ?> metaData);
+    ContinuedGivenState givenAPublished(Object event, Map<String, String> metaData);
 
     /**
      * Indicates that no relevant activity has occurred in the past.

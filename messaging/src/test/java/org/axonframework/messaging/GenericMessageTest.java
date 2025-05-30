@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
  */
 class GenericMessageTest {
 
-    private final Map<String, ?> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
+    private final Map<String, String> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
 
     private LegacyUnitOfWork<?> unitOfWork;
 
@@ -80,7 +80,7 @@ class GenericMessageTest {
         Message<Object> testMessage = new GenericMessage<>(new MessageType("message"), new Object());
         assertEquals(correlationData, new HashMap<>(testMessage.getMetaData()));
 
-        MetaData newMetaData = MetaData.from(Collections.singletonMap("whatever", new Object()));
+        MetaData newMetaData = MetaData.from(Collections.singletonMap("what", "ever"));
         Message<Object> testMessageWithMetaData =
                 new GenericMessage<>(new MessageType("message"), new Object(), newMetaData);
         assertEquals(newMetaData.mergedWith(correlationData), testMessageWithMetaData.getMetaData());

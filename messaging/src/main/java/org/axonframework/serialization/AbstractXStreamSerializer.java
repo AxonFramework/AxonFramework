@@ -453,7 +453,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
             if (!reader.hasMoreChildren()) {
                 return MetaData.emptyInstance();
             }
-            Map<String, Object> contents = new HashMap<>();
+            Map<String, String> contents = new HashMap<>();
             populateMap(reader, context, contents);
             if (contents.isEmpty()) {
                 return MetaData.emptyInstance();

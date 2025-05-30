@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ public interface DeadlineMessage<P> extends EventMessage<P> {
     String getDeadlineName();
 
     @Override
-    DeadlineMessage<P> withMetaData(@Nonnull Map<String, ?> metaData);
+    DeadlineMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
-    DeadlineMessage<P> andMetaData(@Nonnull Map<String, ?> additionalMetaData);
+    DeadlineMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData);
 }

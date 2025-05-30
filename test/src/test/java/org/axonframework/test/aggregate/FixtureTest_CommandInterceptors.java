@@ -155,7 +155,7 @@ class FixtureTest_CommandInterceptors {
         fixture.registerCommandHandlerInterceptor(mockCommandHandlerInterceptor);
 
         TestCommand expectedCommand = new TestCommand(AGGREGATE_IDENTIFIER);
-        Map<String, Object> expectedMetaDataMap = new HashMap<>();
+        Map<String, String> expectedMetaDataMap = new HashMap<>();
         expectedMetaDataMap.put(HANDLER_META_DATA_KEY, HANDLER_META_DATA_VALUE);
 
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
@@ -181,7 +181,7 @@ class FixtureTest_CommandInterceptors {
 
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
-        Map<String, Object> expectedMetaDataMap = new HashMap<>();
+        Map<String, String> expectedMetaDataMap = new HashMap<>();
         expectedMetaDataMap.put(HANDLER_META_DATA_KEY, HANDLER_META_DATA_VALUE);
 
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
@@ -194,7 +194,7 @@ class FixtureTest_CommandInterceptors {
     void registeredCommandHandlerInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
-        Map<String, Object> expectedMetaDataMap = new HashMap<>();
+        Map<String, String> expectedMetaDataMap = new HashMap<>();
         expectedMetaDataMap.put(HANDLER_META_DATA_KEY, HANDLER_META_DATA_VALUE);
 
         fixture.givenCommands(new CreateStandardAggregateCommand(AGGREGATE_IDENTIFIER))
@@ -212,10 +212,10 @@ class FixtureTest_CommandInterceptors {
         fixture.registerCommandDispatchInterceptor(new TestCommandDispatchInterceptor());
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
-        Map<String, Object> testMetaDataMap = new HashMap<>();
+        Map<String, String> testMetaDataMap = new HashMap<>();
         testMetaDataMap.put(HANDLER_META_DATA_KEY, HANDLER_META_DATA_VALUE);
 
-        Map<String, Object> expectedMetaDataMap = new HashMap<>(testMetaDataMap);
+        Map<String, String> expectedMetaDataMap = new HashMap<>(testMetaDataMap);
         expectedMetaDataMap.put(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE);
 
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
@@ -442,7 +442,7 @@ class FixtureTest_CommandInterceptors {
                 @Nonnull List<? extends CommandMessage<?>> messages
         ) {
             return (index, message) -> {
-                Map<String, Object> testMetaDataMap = new HashMap<>();
+                Map<String, String> testMetaDataMap = new HashMap<>();
                 testMetaDataMap.put(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE);
                 message = message.andMetaData(testMetaDataMap);
                 return message;

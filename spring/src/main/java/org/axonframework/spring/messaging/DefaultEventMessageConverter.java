@@ -70,10 +70,13 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
     @Override
     public <T> EventMessage<T> convertFromInboundMessage(Message<T> message) {
         MessageHeaders headers = message.getHeaders();
-        Map<String, ?> metaData = headers.entrySet()
-                                         .stream()
-                                         .filter(entry -> !entry.getKey().startsWith(AXON_MESSAGE_PREFIX))
-                                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, String> metaData = headers.entrySet()
+                                              .stream()
+                                              .filter(entry -> !entry.getKey().startsWith(AXON_MESSAGE_PREFIX))
+                                              .collect(Collectors.toMap(
+                                                      Map.Entry::getKey,
+                                                      entry -> entry.getValue().toString()
+                                              ));
 
         String messageId = Objects.toString(headers.get(MESSAGE_ID));
         MessageType type = getType(message);
@@ -82,6 +85,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
         org.axonframework.messaging.GenericMessage<T> genericMessage
                 = new org.axonframework.messaging.GenericMessage<>(messageId, type, message.getPayload(), metaData);
         if (headers.containsKey(AGGREGATE_ID)) {
+            //noinspection DataFlowIssue - Just let it throw a NullPointerException if the sequence or timestamp is null
             return new GenericDomainEventMessage<>(Objects.toString(headers.get(AGGREGATE_TYPE)),
                                                    Objects.toString(headers.get(AGGREGATE_ID)),
                                                    NumberUtils.convertNumberToTargetClass(
@@ -89,6 +93,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
                                                    ),
                                                    genericMessage, () -> Instant.ofEpochMilli(timestamp));
         } else {
+            //noinspection DataFlowIssue - Just let it throw a NullPointerException if the timestamp is null
             return new GenericEventMessage<>(genericMessage, () -> Instant.ofEpochMilli(timestamp));
         }
     }

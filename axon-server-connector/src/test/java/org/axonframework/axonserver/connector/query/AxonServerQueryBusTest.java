@@ -692,10 +692,11 @@ class AxonServerQueryBusTest {
         CountDownLatch startProcessingGate = new CountDownLatch(1);
         CountDownLatch finishProcessingGate = new CountDownLatch(queryCount);
 
-        List<Long> expected = LongStream.range(0, queryCount)
-                                        .boxed()
-                                        .collect(Collectors.toList());
-        List<Long> actual = new CopyOnWriteArrayList<>();
+        List<String> expected = LongStream.range(0, queryCount)
+                                          .boxed()
+                                          .map(Object::toString)
+                                          .collect(Collectors.toList());
+        List<String> actual = new CopyOnWriteArrayList<>();
 
         AtomicReference<QueryHandler> queryHandlerRef = new AtomicReference<>();
         doAnswer(i -> {
@@ -707,7 +708,7 @@ class AxonServerQueryBusTest {
         when(localSegment.query(any())).thenAnswer(i -> {
             startProcessingGate.await();
             QueryMessage<?, ?> message = i.getArgument(0);
-            actual.add((long) message.getMetaData().get("index"));
+            actual.add(message.getMetaData().get("index"));
             finishProcessingGate.countDown();
             return CompletableFuture.completedFuture(
                     new GenericQueryResponseMessage<>(new MessageType("query"), "ok")
@@ -855,7 +856,7 @@ class AxonServerQueryBusTest {
             QueryResponseMessage<?> queryResponse = new GenericQueryResponseMessage<>(
                     new MessageType("query"),
                     message.getPayload(),
-                    MetaData.with("response", message.getPayload())
+                    MetaData.with("response", message.getPayload().toString())
             );
             return CompletableFuture.completedFuture(queryResponse);
         });

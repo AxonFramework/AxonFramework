@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,10 @@ import java.util.function.Function;
 public interface CommandMessage<P> extends Message<P> {
 
     @Override
-    CommandMessage<P> withMetaData(@Nonnull Map<String, ?> metaData);
+    CommandMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
-    CommandMessage<P> andMetaData(@Nonnull Map<String, ?> metaData);
+    CommandMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     <C> CommandMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion);

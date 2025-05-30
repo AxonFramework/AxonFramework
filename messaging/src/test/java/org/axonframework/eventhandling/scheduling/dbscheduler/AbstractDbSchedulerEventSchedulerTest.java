@@ -104,7 +104,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.get(0);
+        EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(1, publishedMessage.getPayload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
@@ -118,14 +118,14 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.get(0);
+        EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(1, publishedMessage.getPayload());
     }
 
     @Test
     void whenScheduleIsCalledWithEventMessageMetadataShouldBePreserved() {
-        Map<String, Object> metadata = new HashMap<>();
+        Map<String, String> metadata = new HashMap<>();
         metadata.put("foo", "bar");
         EventMessage<?> originalMessage =
                 new GenericEventMessage<>(new MessageType("event"), 2, metadata);
@@ -135,7 +135,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.get(0);
+        EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(2, publishedMessage.getPayload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
@@ -150,7 +150,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.get(0);
+        EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(new PayloadWithRevision(), publishedMessage.getPayload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
@@ -159,7 +159,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
 
     @Test
     void whenScheduleIsCalledWithEventThatHasARevisionPayloadMessageMetadataShouldBePreserved() {
-        Map<String, Object> metadata = new HashMap<>();
+        Map<String, String> metadata = new HashMap<>();
         metadata.put("foo", "bar");
         EventMessage<?> originalMessage = new GenericEventMessage<>(
                 new MessageType("event"), new PayloadWithRevision(), metadata
@@ -170,7 +170,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.get(0);
+        EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(new PayloadWithRevision(), publishedMessage.getPayload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
@@ -185,7 +185,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.get(0);
+        EventMessage<?> publishedMessage = publishedMessages.getFirst();
         assertEquals(4, publishedMessage.getPayload());
     }
 
@@ -197,7 +197,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.get(0);
+        EventMessage<?> publishedMessage = publishedMessages.getFirst();
         assertEquals(6, publishedMessage.getPayload());
     }
 
