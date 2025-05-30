@@ -32,7 +32,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Created on 04/02/17.
+ * Test class validating the {@link DefaultEventMessageConverter}.
  *
  * @author Reda.Housni-Alaoui
  */

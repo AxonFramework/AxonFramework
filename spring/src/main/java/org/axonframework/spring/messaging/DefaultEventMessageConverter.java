@@ -60,7 +60,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
         headers.put(MESSAGE_TYPE, event.type().toString());
         if (event instanceof DomainEventMessage) {
             headers.put(AGGREGATE_ID, ((DomainEventMessage<?>) event).getAggregateIdentifier());
-            headers.put(AGGREGATE_SEQ, Long.toString(((DomainEventMessage<?>) event).getSequenceNumber()));
+            headers.put(AGGREGATE_SEQ, ((DomainEventMessage<?>) event).getSequenceNumber());
             headers.put(AGGREGATE_TYPE, ((DomainEventMessage<?>) event).getType());
         }
         return new GenericMessage<>(event.getPayload(),
@@ -88,7 +88,9 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
             //noinspection DataFlowIssue - Just let it throw a NullPointerException if the sequence or timestamp is null
             return new GenericDomainEventMessage<>(Objects.toString(headers.get(AGGREGATE_TYPE)),
                                                    Objects.toString(headers.get(AGGREGATE_ID)),
-                                                   Long.parseLong(headers.get(AGGREGATE_SEQ, String.class)),
+                                                   NumberUtils.convertNumberToTargetClass(
+                                                           headers.get(AGGREGATE_SEQ, Number.class), Long.class
+                                                   ),
                                                    genericMessage, () -> Instant.ofEpochMilli(timestamp));
         } else {
             //noinspection DataFlowIssue - Just let it throw a NullPointerException if the timestamp is null
