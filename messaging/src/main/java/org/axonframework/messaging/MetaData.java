@@ -268,7 +268,7 @@ public class MetaData implements Map<String, String> {
      * @return The value present for the given {@code key}, converted to {@code R} by the given {@code converter}.
      */
     @Nullable
-    public <R> R get(@Nonnull Object key, @Nonnull Class<R> valueType, @Nonnull Converter converter) {
+    public <R> R get(@Nonnull String key, @Nonnull Class<R> valueType, @Nonnull Converter converter) {
         String value = values.get(key);
         return value == null ? null : converter.convert(value, valueType);
     }
