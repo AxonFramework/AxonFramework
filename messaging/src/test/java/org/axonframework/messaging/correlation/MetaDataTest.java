@@ -232,6 +232,37 @@ class MetaDataTest {
     }
 
     @Test
+    void getOrDefaultWithConverterDoesNotConvertForNullValue() {
+        MetaDataValue defaultValue = new MetaDataValue("defaultVal", Long.MAX_VALUE);
+
+        MetaData testSubject = MetaData.emptyInstance();
+
+        MetaDataValue result = testSubject.getOrDefault("some-non-existing-key",
+                                                        MetaDataValue.class,
+                                                        converter,
+                                                        defaultValue);
+
+        assertEquals(defaultValue, result);
+        verifyNoInteractions(converter);
+    }
+
+    @Test
+    void getOrDefaultWithConverterConvertsTheUncoveredValue() {
+        Converter mockedConverter = mock(Converter.class);
+        String testKey = "key";
+        MetaDataValue testValue = new MetaDataValue("val1", 1L);
+        MetaDataValue defaultValue = new MetaDataValue("defaultVal", Long.MAX_VALUE);
+        when(mockedConverter.convert(testValue, String.class)).thenReturn(testValue.toString());
+        when(mockedConverter.convert(testValue.toString(), MetaDataValue.class)).thenReturn(testValue);
+
+        MetaData testSubject = MetaData.with(testKey, testValue, mockedConverter);
+
+        MetaDataValue result = testSubject.getOrDefault(testKey, MetaDataValue.class, mockedConverter, defaultValue);
+        assertEquals(testValue, result);
+        assertNotEquals(defaultValue, result);
+    }
+
+    @Test
     void metaDataModification_Clear() {
         MetaData metaData = new MetaData(Collections.emptyMap());
 

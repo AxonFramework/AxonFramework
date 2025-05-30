@@ -274,6 +274,28 @@ public class MetaData implements Map<String, String> {
     }
 
     /**
+     * Returns the value stored under the given {@code key}, converting it to the given {@code valueType} with the given
+     * {@code converter} if the {@code key} is contained in this instance.
+     * <p>
+     * If the given {@code key} does not exist in this collection, the {@code defaultValue} is returned. The
+     * {@code converter} is not invoked when the {@code defaultValue} is returned.
+     *
+     * @param key          The key for which to retrieve a value.
+     * @param valueType    The desired type of the value to return, used during conversion.
+     * @param converter    The {@code Converter} used to convert the recovered value to the given {@code valueType}.
+     * @param defaultValue The default value to return when there is no {@code key} present in this collection.
+     * @param <R>          The desired value type to return.
+     * @return The value present for the given {@code key}, converted to {@code R} by the given {@code converter}.
+     */
+    @Nonnull
+    public <R> R getOrDefault(@Nonnull String key,
+                              @Nonnull Class<R> valueType,
+                              @Nonnull Converter converter,
+                              @Nonnull R defaultValue) {
+        return values.containsKey(key) ? converter.convert(values.get(key), valueType) : defaultValue;
+    }
+
+    /**
      * <strong>This operation is not supported since {@code MetaData} is an immutable object.</strong>
      * <p>
      * {@inheritDoc}

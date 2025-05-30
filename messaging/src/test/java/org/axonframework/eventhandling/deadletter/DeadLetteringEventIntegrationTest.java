@@ -21,9 +21,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.StreamingEventProcessor;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -35,7 +35,7 @@ import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.serialization.Converter;
 import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -150,11 +150,12 @@ public abstract class DeadLetteringEventIntegrationTest {
         transactionManager = getTransactionManager();
         eventHandlingComponent = new ProblematicEventHandlingComponent();
         deadLetterQueue = buildDeadLetterQueue();
+        Converter integerToStringConverter = new IntegerToStringConverter();
 
         // A policy that ensure a letter is only retried once by adding diagnostics.
         EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> {
-            // TODO use a getWithConverter here
-            int retries = Integer.parseInt(letter.diagnostics().getOrDefault("retries", "0"));
+            int retries = letter.diagnostics()
+                                .getOrDefault("retries", Integer.class, integerToStringConverter, 0);
             if (retries < maxRetries.get()) {
                 Throwable decisionThrowable = cause;
                 if (returnReferenceErrorFromPolicy.get()) {
@@ -162,10 +163,11 @@ public abstract class DeadLetteringEventIntegrationTest {
                 }
                 return Decisions.enqueue(
                         ThrowableCause.truncated(decisionThrowable),
-                        // TODO use a withWithConverter here
                         l -> MetaData.with(
                                 "retries",
-                                Integer.toString(Integer.parseInt(l.diagnostics().getOrDefault("retries", "0")) + 1)
+                                letter.diagnostics()
+                                      .getOrDefault("retries", Integer.class, integerToStringConverter, 0) + 1,
+                                integerToStringConverter
                         )
                 );
             } else {
@@ -884,6 +886,28 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         ReferenceException(UUID reference) {
             super(reference.toString());
+        }
+    }
+
+    private class IntegerToStringConverter implements Converter {
+
+        @Override
+        public boolean canConvert(Class<?> sourceType, Class<?> targetType) {
+            return sourceType.isAssignableFrom(Integer.class) || sourceType.isAssignableFrom(String.class);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T convert(Object original, Class<?> sourceType, Class<T> targetType) {
+            if (targetType.isAssignableFrom(String.class)) {
+                return (T) original.toString();
+            }
+            if (targetType.isAssignableFrom(Integer.class)) {
+                return (T) Integer.valueOf(original.toString());
+            }
+            throw new UnsupportedOperationException(
+                    "This converter can only convert from Integer to String and vice versa."
+            );
         }
     }
 }
