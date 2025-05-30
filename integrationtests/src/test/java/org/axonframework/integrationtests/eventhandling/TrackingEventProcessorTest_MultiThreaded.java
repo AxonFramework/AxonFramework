@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventHandlerInvoker;
@@ -39,7 +40,6 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -81,7 +81,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
         mockHandler = mock(EventMessageHandler.class);
-        when(mockHandler.canHandle(any())).thenReturn(true);
+        when(mockHandler.canHandle(any(), any())).thenReturn(true);
         eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
                                          .eventHandlers(singletonList(mockHandler))
@@ -281,7 +281,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
 
         testSubject.start();
         eventBus.publish(createEvents(4));
@@ -301,7 +301,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
         testSubject.start();
         eventBus.publish(createEvents(2));
         assertTrue(countDownLatch.await(5, SECONDS), "Expected Handler to have received 2 published events");
@@ -315,16 +315,18 @@ class TrackingEventProcessorTest_MultiThreaded {
         //noinspection resource
         testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
             @Override
-            public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @Nonnull ProcessingContext context,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
                 unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
 
             @Override
             public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @NotNull M message, @NotNull ProcessingContext context,
-                    @NotNull InterceptorChain<M, R> interceptorChain) {
+                    @Nonnull M message,
+                    @Nonnull ProcessingContext context,
+                    @Nonnull InterceptorChain<M, R> interceptorChain) {
                 context.doFinally(uow -> countDownLatch.countDown());
                 return interceptorChain.proceed(message, context);
             }
@@ -352,7 +354,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
 
         configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         testSubject.start();
@@ -376,7 +378,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
         testSubject.start();
 
         eventBus.publish(events.subList(0, 2));
@@ -412,7 +414,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch2.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
 
         eventBus.publish(events.subList(2, 4));
         assertEquals(2, countDownLatch2.getCount());
@@ -446,7 +448,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handleSync(any());
+        }).when(mockHandler).handleSync(any(), any());
 
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -469,20 +471,22 @@ class TrackingEventProcessorTest_MultiThreaded {
         //noinspection Duplicates,resource
         testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {
             @Override
-            public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @Nonnull ProcessingContext context,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
                 unitOfWork.onCommit(uow -> {
                     if (uow.getMessage().equals(events.get(1))) {
                         throw new MockException();
                     }
                 });
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
 
             @Override
             public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @NotNull M message, @NotNull ProcessingContext context,
-                    @NotNull InterceptorChain<M, R> interceptorChain) {
+                    @Nonnull M message,
+                    @Nonnull ProcessingContext context,
+                    @Nonnull InterceptorChain<M, R> interceptorChain) {
                 context.runOnCommit(uow -> {
                     if (message.equals(events.get(1))) {
                         throw new MockException();
@@ -494,16 +498,18 @@ class TrackingEventProcessorTest_MultiThreaded {
         //noinspection resource
         testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
             @Override
-            public Object handle(@NotNull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @Nonnull ProcessingContext context,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
                 unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
 
             @Override
             public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @NotNull M message, @NotNull ProcessingContext context,
-                    @NotNull InterceptorChain<M, R> interceptorChain) {
+                    @Nonnull M message,
+                    @Nonnull ProcessingContext context,
+                    @Nonnull InterceptorChain<M, R> interceptorChain) {
                 context.doFinally(uow -> countDownLatch.countDown());
                 return interceptorChain.proceed(message, context);
             }

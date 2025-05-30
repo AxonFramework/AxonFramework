@@ -53,6 +53,7 @@ import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import jakarta.annotation.Nonnull;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -579,11 +580,12 @@ class InterceptorConfigurationTest {
             }
 
             @Override
-            public Object handle(LegacyUnitOfWork<? extends T> unitOfWork,
-                                 InterceptorChain interceptorChain) throws Exception {
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
+                                 @Nonnull ProcessingContext context,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
                 var message = unitOfWork.getMessage();
                 interceptMessage(message);
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
 
             @Override
@@ -706,11 +708,12 @@ class InterceptorConfigurationTest {
 
             @Nonnull
             @Override
-            public Object handle(LegacyUnitOfWork<?> unitOfWork,
-                                 InterceptorChain interceptorChain) throws Exception {
+            public Object handle(@Nonnull LegacyUnitOfWork<?> unitOfWork,
+                                 @Nonnull ProcessingContext context,
+                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
                 var message = unitOfWork.getMessage();
                 interceptMessage(message);
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
 
             @Override
@@ -774,8 +777,9 @@ class InterceptorConfigurationTest {
 
             @Override
             public Object handle(@Nonnull LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWork,
+                                 @Nonnull ProcessingContext context,
                                  @Nonnull InterceptorChain interceptorChain) throws Exception {
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
         }
     }

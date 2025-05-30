@@ -25,6 +25,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -205,8 +206,9 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
         }
     }
 
+    @Nonnull
     @Override
-    public EventCriteria apply(Object id) {
+    public EventCriteria resolve(@Nonnull Object id, @Nonnull ProcessingContext context) {
         Optional<Object> builderResult = builderMap
                 .keySet()
                 .stream()

@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.PayloadBasedEntityEvolver;
 import org.junit.jupiter.api.*;
 
@@ -46,7 +46,7 @@ class PayloadBasedEntityEvolverTest {
     void evolveAppliesEventWhenPayloadTypeIsConvertible() {
         EventMessage<String> testEvent = new GenericEventMessage<>(new MessageType(String.class), PAYLOAD);
 
-        String result = testSubject.evolve(ENTITY, testEvent, ProcessingContext.NONE);
+        String result = testSubject.evolve(ENTITY, testEvent, StubProcessingContext.forMessage(testEvent));
 
         assertEquals(ENTITY + PAYLOAD, result);
     }
@@ -56,14 +56,14 @@ class PayloadBasedEntityEvolverTest {
         EventMessage<StringBuilder> testEvent =
                 new GenericEventMessage<>(new MessageType(String.class), new StringBuilder());
 
-        assertThrows(ClassCastException.class, () -> testSubject.evolve(ENTITY, testEvent, ProcessingContext.NONE));
+        assertThrows(ClassCastException.class, () -> testSubject.evolve(ENTITY, testEvent, StubProcessingContext.forMessage(testEvent)));
     }
 
     @Test
     void evolveIsInvokedSuccessfullyRegardlessOfQualifiedNameMismatch() {
         EventMessage<String> testEvent = new GenericEventMessage<>(new MessageType(Integer.class), PAYLOAD);
 
-        String result = testSubject.evolve(ENTITY, testEvent, ProcessingContext.NONE);
+        String result = testSubject.evolve(ENTITY, testEvent, StubProcessingContext.forMessage(testEvent));
 
         assertEquals(ENTITY + PAYLOAD, result);
     }
@@ -73,13 +73,13 @@ class PayloadBasedEntityEvolverTest {
         EventMessage<String> testEvent = new GenericEventMessage<>(new MessageType(String.class), PAYLOAD);
 
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.evolve(null, testEvent, ProcessingContext.NONE));
+        assertThrows(NullPointerException.class, () -> testSubject.evolve(null, testEvent, StubProcessingContext.forMessage(testEvent)));
     }
 
     @Test
     void evolveThrowsNullPointerExceptionForNullEvent() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.evolve(ENTITY, null, ProcessingContext.NONE));
+        assertThrows(NullPointerException.class, () -> testSubject.evolve(ENTITY, null, null));
     }
 
     @Test

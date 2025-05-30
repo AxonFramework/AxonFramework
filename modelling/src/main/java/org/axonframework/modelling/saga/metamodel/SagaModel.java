@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package org.axonframework.modelling.saga.metamodel;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.saga.AssociationValue;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,30 +33,33 @@ import java.util.Optional;
 public interface SagaModel<T> {
 
     /**
-     * Returns the {@link AssociationValue} used to find sagas of type {@code T} that can handle the given {@code
-     * eventMessage}. If the saga type does not handle events of this type an empty Optional is returned.
+     * Returns the {@link AssociationValue} used to find sagas of type {@code T} that can handle the given
+     * {@code eventMessage}. If the saga type does not handle events of this type an empty Optional is returned.
      *
-     * @param eventMessage The event to find the association value for
+     * @param eventMessage The event to find the association value for.
+     * @param context The {@link ProcessingContext} in which the event is being processed.
      * @return Optional of the AssociationValue for the event, or an empty Optional if the saga doesn't handle the event
      */
-    Optional<AssociationValue> resolveAssociation(EventMessage<?> eventMessage);
+    Optional<AssociationValue> resolveAssociation(EventMessage<?> eventMessage, ProcessingContext context);
 
     /**
      * Returns a {@link List} of {@link MessageHandlingMember} that can handle the given event.
      *
-     * @param event The {@link EventMessage} to be handled
-     * @return event message handlers for the given {@code event}
+     * @param event   The {@link EventMessage} to be handled.
+     * @param context The {@link ProcessingContext} in which the event is being processed.
+     * @return Event message handlers for the given {@code event}.
      */
-    List<MessageHandlingMember<? super T>> findHandlerMethods(EventMessage<?> event);
+    List<MessageHandlingMember<? super T>> findHandlerMethods(EventMessage<?> event, ProcessingContext context);
 
     /**
      * Indicates whether the Saga described by this model has a handler for the given {@code eventMessage}
      *
-     * @param eventMessage The message to check the availability of a handler for
-     * @return {@code true} if there the Saga has a handler for this message, otherwise {@code false}
+     * @param eventMessage The message to check the availability of a handler for.
+     * @param context The {@link ProcessingContext} in which the event is being processed.
+     * @return {@code true} if there the Saga has a handler for this message, otherwise {@code false}.
      */
-    default boolean hasHandlerMethod(EventMessage<?> eventMessage) {
-        return !findHandlerMethods(eventMessage).isEmpty();
+    default boolean hasHandlerMethod(EventMessage<?> eventMessage, ProcessingContext context) {
+        return !findHandlerMethods(eventMessage, context).isEmpty();
     }
 
     /**

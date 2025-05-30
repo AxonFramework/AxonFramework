@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -32,8 +31,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.argThat;
 
 /**
  * This class validating the {@link DefaultEventGateway}.

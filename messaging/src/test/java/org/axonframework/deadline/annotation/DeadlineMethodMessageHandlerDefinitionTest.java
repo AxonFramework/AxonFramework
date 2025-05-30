@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,9 +41,10 @@ class DeadlineMethodMessageHandlerDefinitionTest {
 
     @Test
     void deadlineManagerIsEvaluatedBeforeGenericEventHandler() throws Exception {
-        handlerAdapter.handleSync(new GenericDeadlineMessage<>(
+        GenericDeadlineMessage<String> event = new GenericDeadlineMessage<>(
                 "someDeadline", new MessageType("deadline"), "test"
-        ));
+        );
+        handlerAdapter.handleSync(event, StubProcessingContext.forMessage(event));
 
         assertThat("Deadline handler is invoked", listener.deadlineCounter.get() == 1);
         assertThat("Event handler was not invoked", listener.eventCounter.get() == 0);
@@ -50,9 +52,10 @@ class DeadlineMethodMessageHandlerDefinitionTest {
 
     @Test
     void namedDeadlineManagerIsEvaluatedBeforeGenericOne() throws Exception {
-        handlerAdapter.handleSync(new GenericDeadlineMessage<>(
+        GenericDeadlineMessage<String> event = new GenericDeadlineMessage<>(
                 "specificDeadline", new MessageType("deadline"), "test"
-        ));
+        );
+        handlerAdapter.handleSync(event, StubProcessingContext.forMessage(event));
 
         assertThat("Generic Deadline handler was not invoked", listener.deadlineCounter.get() == 0);
         assertThat("Specific Deadline handler was invoked", listener.specificDeadlineCounter.get() == 1);

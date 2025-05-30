@@ -121,13 +121,13 @@ public class EventSourcingRepository<I, E> implements Repository.LifecycleManage
 
     @Override
     public CompletableFuture<ManagedEntity<I, E>> load(@Nonnull I identifier,
-                                                       @Nonnull ProcessingContext processingContext) {
-        var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
+                                                       @Nonnull ProcessingContext context) {
+        var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
                 identifier,
-                id -> eventStore.transaction(processingContext)
-                                .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id)))
+                id -> eventStore.transaction(context)
+                                .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id, context)))
                                 .reduce(new EventSourcedEntity<>(
                                                 identifier,
                                                 entityFactory.createEntity(entityType(), identifier)
@@ -135,12 +135,12 @@ public class EventSourcingRepository<I, E> implements Repository.LifecycleManage
                                         (entity, entry) -> {
                                             entity.evolve(entry.message(),
                                                           entityEvolver,
-                                                          processingContext);
+                                                          context);
                                             return entity;
                                         })
                                 .whenComplete((entity, exception) -> {
                                     if (exception == null) {
-                                        updateActiveEntity(entity, processingContext);
+                                        updateActiveEntity(entity, context);
                                     }
                                 })
         ).thenApply(Function.identity());
@@ -148,8 +148,8 @@ public class EventSourcingRepository<I, E> implements Repository.LifecycleManage
 
     @Override
     public CompletableFuture<ManagedEntity<I, E>> loadOrCreate(@Nonnull I identifier,
-                                                               @Nonnull ProcessingContext processingContext) {
-        return load(identifier, processingContext).thenApply(
+                                                               @Nonnull ProcessingContext context) {
+        return load(identifier, context).thenApply(
                 managedEntity -> {
                     managedEntity.applyStateChange(
                             entity -> entity != null

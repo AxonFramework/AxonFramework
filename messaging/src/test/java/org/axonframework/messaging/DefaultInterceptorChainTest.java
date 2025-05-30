@@ -18,6 +18,7 @@ package org.axonframework.messaging;
 
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import static java.util.Arrays.asList;
@@ -38,19 +39,20 @@ class DefaultInterceptorChainTest {
     void setUp() throws Exception {
         unitOfWork = new LegacyDefaultUnitOfWork<>(null);
         mockHandler = mock(MessageHandler.class);
-        when(mockHandler.handleSync(isA(Message.class))).thenReturn("Result");
+        when(mockHandler.handleSync(isA(Message.class), any())).thenReturn("Result");
     }
 
     @Test
     @SuppressWarnings("unchecked")
     void chainWithDifferentProceedCalls() throws Exception {
-        MessageHandlerInterceptor interceptor1 = (unitOfWork, interceptorChain) -> {
+        MessageHandlerInterceptor interceptor1 = (unitOfWork, context, interceptorChain) -> {
             unitOfWork.transformMessage(m -> new GenericMessage<>(
                     new MessageType("message"), "testing"
             ));
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         };
-        MessageHandlerInterceptor interceptor2 = (unitOfWork, interceptorChain) -> interceptorChain.proceedSync();
+        MessageHandlerInterceptor interceptor2 = (unitOfWork, context, interceptorChain) -> interceptorChain.proceedSync(
+                context);
 
 
         unitOfWork.transformMessage(m -> new GenericMessage<>(
@@ -60,9 +62,9 @@ class DefaultInterceptorChainTest {
                 unitOfWork, asList(interceptor1, interceptor2), mockHandler
         );
 
-        String actual = (String) testSubject.proceedSync();
+        String actual = (String) testSubject.proceedSync(StubProcessingContext.forUnitOfWork(unitOfWork));
 
         assertSame("Result", actual);
-        verify(mockHandler).handleSync(argThat(x -> (x != null) && x.getPayload().equals("testing")));
+        verify(mockHandler).handleSync(argThat(x -> (x != null) && x.getPayload().equals("testing")), any());
     }
 }

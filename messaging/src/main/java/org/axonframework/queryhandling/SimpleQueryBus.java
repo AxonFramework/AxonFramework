@@ -514,9 +514,9 @@ public class SimpleQueryBus implements QueryBus {
             LegacyUnitOfWork<QueryMessage<Q, R>> uow,
             MessageHandler<? super QueryMessage<?, R>, ? extends QueryResponseMessage<?>> handler
     ) {
-        return uow.executeWithResult(() -> {
+        return uow.executeWithResult((ctx) -> {
             ResponseType<R> responseType = uow.getMessage().getResponseType();
-            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceedSync();
+            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceedSync(ctx);
             if (queryResponse instanceof CompletableFuture) {
                 return ((CompletableFuture<?>) queryResponse).thenCompose(
                         result -> buildCompletableFuture(responseType, result));
@@ -587,8 +587,8 @@ public class SimpleQueryBus implements QueryBus {
             MessageHandler<? super StreamingQueryMessage<?, R>, ? extends QueryResponseMessage<?>> handler, Span span) {
         try (SpanScope unused = span.makeCurrent()) {
             LegacyDefaultUnitOfWork<StreamingQueryMessage<Q, R>> uow = LegacyDefaultUnitOfWork.startAndGet(query);
-            return uow.executeWithResult(() -> {
-                Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceedSync();
+            return uow.executeWithResult((ctx) -> {
+                Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceedSync(ctx);
                 return Flux.from(query.getResponseType()
                                       .convert(queryResponse))
                            .map(this::asResponseMessage);

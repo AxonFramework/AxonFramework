@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package org.axonframework.modelling.saga;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.metamodel.SagaModel;
 
 import java.util.Set;
@@ -96,8 +98,8 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
-    public final boolean canHandle(EventMessage<?> event) {
-        return isActive && metaModel.findHandlerMethods(event).stream()
+    public final boolean canHandle(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+        return isActive && metaModel.findHandlerMethods(event, context).stream()
                                     .anyMatch(h -> h.unwrap(SagaMethodMessageHandlingMember.class)
                                                     .map(sh -> getAssociationValues().contains(
                                                             sh.getAssociationValue(event)
@@ -107,23 +109,25 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
-    public final Object handleSync(EventMessage<?> event) {
+    public final Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         if (isActive) {
-            return metaModel.findHandlerMethods(event).stream()
+            return metaModel.findHandlerMethods(event, context).stream()
                             .filter(handler -> handler.unwrap(SagaMethodMessageHandlingMember.class)
                                                       .map(sh -> getAssociationValues()
                                                               .contains(sh.getAssociationValue(event)))
                                                       .orElse(true))
                             .findFirst()
-                            .map(handler -> handle(handler, event))
+                            .map(handler -> handle(handler, event, context))
                             .orElse(null);
         }
         return null;
     }
 
-    private Object handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
+    private Object handle(MessageHandlingMember<? super T> handler, EventMessage<?> event, ProcessingContext context) {
         try {
-            return executeWithResult(() -> chainedInterceptor.handleSync(event, sagaInstance, handler));
+            return executeWithResult(() -> chainedInterceptor.handleSync(
+                    event, context, sagaInstance, handler)
+            );
         } catch (RuntimeException | Error e) {
             throw e;
         } catch (Exception e) {

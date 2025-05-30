@@ -28,6 +28,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
@@ -150,7 +151,7 @@ class FixtureTest_CommandInterceptors {
     void registeredCommandHandlerInterceptorsAreInvoked() throws Exception {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
         //noinspection unchecked
-        when(mockCommandHandlerInterceptor.handle(any(LegacyUnitOfWork.class), any(InterceptorChain.class)))
+        when(mockCommandHandlerInterceptor.handle(any(LegacyUnitOfWork.class), any(), any(InterceptorChain.class)))
                 .thenAnswer(InvocationOnMock::getArguments);
         fixture.registerCommandHandlerInterceptor(mockCommandHandlerInterceptor);
 
@@ -165,7 +166,7 @@ class FixtureTest_CommandInterceptors {
         ArgumentCaptor<LegacyUnitOfWork<? extends CommandMessage<?>>> unitOfWorkCaptor =
                 ArgumentCaptor.forClass(LegacyUnitOfWork.class);
         ArgumentCaptor<InterceptorChain> interceptorChainCaptor = ArgumentCaptor.forClass(InterceptorChain.class);
-        verify(mockCommandHandlerInterceptor).handle(unitOfWorkCaptor.capture(), interceptorChainCaptor.capture());
+        verify(mockCommandHandlerInterceptor).handle(unitOfWorkCaptor.capture(), any(), interceptorChainCaptor.capture());
         LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWorkResult = unitOfWorkCaptor.getValue();
         Message<?> messageResult = unitOfWorkResult.getMessage();
         assertEquals(expectedCommand, messageResult.getPayload());
@@ -227,9 +228,9 @@ class FixtureTest_CommandInterceptors {
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredHandlerInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
         AtomicInteger invocations = new AtomicInteger(0);
-        fixture.registerCommandHandlerInterceptor((unitOfWork, interceptorChain) -> {
+        fixture.registerCommandHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
             invocations.incrementAndGet();
-            interceptorChain.proceedSync();
+            interceptorChain.proceedSync(context);
             return null;
         });
 
@@ -320,11 +321,11 @@ class FixtureTest_CommandInterceptors {
         }
 
         @CommandHandlerInterceptor
-        public String intercept(DoWithEntityCommand command, InterceptorChain interceptorChain) throws Exception {
+        public String intercept(DoWithEntityCommand command, InterceptorChain interceptorChain, ProcessingContext context) throws Exception {
             if (this.entity == null) {
                 return "invoked-without-entity";
             }
-            return (String) interceptorChain.proceedSync();
+            return (String) interceptorChain.proceedSync(context);
         }
 
         @CommandHandlerInterceptor
@@ -362,9 +363,11 @@ class FixtureTest_CommandInterceptors {
 
         @CommandHandlerInterceptor
         public void intercept(CommandMessage<?> command,
-                              InterceptorChain interceptorChain) throws Exception {
+                              InterceptorChain interceptorChain,
+                              ProcessingContext context
+        ) throws Exception {
             intercepted.set(true);
-            interceptorChain.proceedSync();
+            interceptorChain.proceedSync(context);
         }
 
         @CommandHandler
@@ -454,9 +457,9 @@ class FixtureTest_CommandInterceptors {
 
         @Override
         public Object handle(@Nonnull LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWork,
-                             @Nonnull InterceptorChain interceptorChain) throws Exception {
+                             @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.registerCorrelationDataProvider(new SimpleCorrelationDataProvider(HANDLER_META_DATA_KEY));
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         }
     }
 

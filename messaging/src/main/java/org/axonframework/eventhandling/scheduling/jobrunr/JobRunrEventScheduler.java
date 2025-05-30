@@ -278,7 +278,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
     private void publishEventMessage(EventMessage eventMessage) {
         LegacyUnitOfWork<EventMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
         unitOfWork.attachTransaction(transactionManager);
-        unitOfWork.execute(() -> eventBus.publish(eventMessage));
+        unitOfWork.execute((ctx) -> eventBus.publish(eventMessage));
     }
 
     /**

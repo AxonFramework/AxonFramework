@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.messaging.Message;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -26,27 +27,31 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
- * No-op implementation of the {@link ProcessingContext}.
+ * Legacy implementation of the {@link ProcessingContext} that should only be used for legacy components. Can only be
+ * constructed with a {@link org.axonframework.messaging.Message} as parameter that serves as its only resource. Any
+ * operation except getting the message from the context will fail.
  *
- * @author Allard Buijze
+ * @author Mitchell Herrijgers
  * @since 5.0.0
+ * @deprecated Only in use for legacy "sync" components.
  */
-public class NoProcessingContext implements ProcessingContext {
-
-    /**
-     * Constant of the {@link NoProcessingContext} to be used as a single reference.
-     */
-    public static final NoProcessingContext INSTANCE = new NoProcessingContext();
+@Deprecated
+public class LegacyMessageSupportingContext implements ProcessingContext {
 
     private static final String UNSUPPORTED_MESSAGE = "Cannot register lifecycle actions in this ProcessingContext";
+    private final Message<?> message;
 
-    private NoProcessingContext() {
-        // No-arg constructor
+    /**
+     * Initialize the {@link ProcessingContext} with the given {@code message} as the only resource.
+     * @param message The message to be used as the only resource in this context.
+     */
+    public LegacyMessageSupportingContext(@Nonnull Message<?> message) {
+        this.message = message;
     }
 
     @Override
     public boolean isStarted() {
-        return false;
+        return true;
     }
 
     @Override
@@ -81,18 +86,16 @@ public class NoProcessingContext implements ProcessingContext {
 
     @Override
     public boolean containsResource(@Nonnull ResourceKey<?> key) {
-        return false;
+        return key.equals(Message.RESOURCE_KEY);
     }
 
     @Override
     public <T> T getResource(@Nonnull ResourceKey<T> key) {
+        if (key.equals(Message.RESOURCE_KEY)) {
+            //noinspection unchecked
+            return (T) message;
+        }
         return null;
-    }
-
-    @Override
-    public <T> ProcessingContext withResource(@Nonnull ResourceKey<T> key,
-                                              @Nonnull T resource) {
-        return this;
     }
 
     @Override

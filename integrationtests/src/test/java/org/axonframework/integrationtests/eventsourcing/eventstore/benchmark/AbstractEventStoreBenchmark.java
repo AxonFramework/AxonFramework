@@ -85,7 +85,7 @@ public abstract class AbstractEventStoreBenchmark {
         SimpleEventHandlerInvoker eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
                                          .eventHandlers(
-                                                 (EventMessageHandler) eventHandler -> {
+                                                 (EventMessageHandler) (eventHandler, ctx) -> {
                                                      if (readEvents.add(eventHandler.getIdentifier())) {
                                                          remainingEvents.countDown();
                                                      } else {
@@ -180,7 +180,7 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected void executeStorageJob(EventMessage<?>... events) {
         LegacyUnitOfWork<?> unitOfWork = new LegacyDefaultUnitOfWork<>(null);
-        unitOfWork.execute(() -> storeEvents(events));
+        unitOfWork.execute((ctx) -> storeEvents(events));
     }
 
     protected void storeEvents(EventMessage<?>... events) {

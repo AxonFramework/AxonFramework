@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling;
 
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
@@ -56,7 +56,7 @@ class SimpleStateManagerTest {
 
         // when & then
         assertThrows(MissingRepositoryException.class,
-                     () -> testSubject.loadEntity(Integer.class, "42", ProcessingContext.NONE).join());
+                     () -> testSubject.loadEntity(Integer.class, "42", new StubProcessingContext()).join());
     }
 
     @Test

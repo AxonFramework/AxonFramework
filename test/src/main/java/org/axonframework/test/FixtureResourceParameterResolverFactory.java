@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.test;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Priority;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -42,7 +42,7 @@ import static org.axonframework.common.Priority.LAST;
 public final class FixtureResourceParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         return new FailingParameterResolver(parameters[parameterIndex].getType());
     }
 
@@ -55,13 +55,13 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
         }
 
         @Override
-        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
+        public Object resolveParameterValue(@Nonnull ProcessingContext context) {
             throw new FixtureExecutionException("No resource of type [" + parameterType.getName()
                                                         + "] has been registered. It is required for one of the handlers being executed.");
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext context) {
             return true;
         }
     }

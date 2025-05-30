@@ -59,7 +59,7 @@ public class DistributedCommandBus implements CommandBus {
                                  @Nonnull Connector connector) {
         this.delegate = Objects.requireNonNull(delegate, "Given CommandBus delegate cannot be null.");
         this.connector = Objects.requireNonNull(connector, "Given Connector cannot be null.");
-        connector.onIncomingCommand((command, callback) -> delegate.dispatch(command, ProcessingContext.NONE)
+        connector.onIncomingCommand((command, callback) -> delegate.dispatch(command, null)
                                                                    .whenComplete((chr, e) -> {
                                                                        if (e == null) {
                                                                            callback.success(chr);

@@ -111,7 +111,7 @@ class PooledStreamingEventProcessorTest {
         setTestSubject(createTestSubject());
 
         when(stubEventHandler.canHandleType(any())).thenReturn(true);
-        when(stubEventHandler.canHandle(any(), any())).thenReturn(true);
+        when(stubEventHandler.canHandle(any(), any(), any())).thenReturn(true);
     }
 
     private void setTestSubject(PooledStreamingEventProcessor testSubject) {
@@ -373,7 +373,7 @@ class PooledStreamingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
         assertEquals(8, tokenStore.fetchSegments(PROCESSOR_NAME).length);
 
-        verify(stubEventHandler, never()).canHandle(any(), any());
+        verify(stubEventHandler, never()).canHandle(any(), any(), any());
 
         events.forEach(e -> stubMessageSource.publishMessage(e));
 
@@ -417,7 +417,7 @@ class PooledStreamingEventProcessorTest {
     void handlingUnknownMessageTypeWillAdvanceToken() {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
 
-        when(stubEventHandler.canHandle(any(), any())).thenReturn(false);
+        when(stubEventHandler.canHandle(any(), any(), any())).thenReturn(false);
         when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
 
         EventMessage<Integer> eventToIgnoreOne = EventTestUtils.asEventMessage(1337);
@@ -435,7 +435,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void tokenStoreReturningSingleNullToken() {
-        when(stubEventHandler.canHandle(any(), any())).thenReturn(false);
+        when(stubEventHandler.canHandle(any(), any(), any())).thenReturn(false);
         when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
 
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
@@ -453,10 +453,10 @@ class PooledStreamingEventProcessorTest {
         // The custom ArgumentMatcher, for some reason, first runs the assertion with null, failing the current check.
         // Hence, a null check is added to the matcher.
         when(stubEventHandler.canHandle(
-                argThat(argument -> argument != null && Integer.class.equals(argument.getPayloadType())), any()
+                argThat(argument -> argument != null && Integer.class.equals(argument.getPayloadType())), any(), any()
         )).thenReturn(false);
         when(stubEventHandler.canHandle(
-                argThat(argument -> argument != null && String.class.equals(argument.getPayloadType())), any()
+                argThat(argument -> argument != null && String.class.equals(argument.getPayloadType())), any(), any()
         )).thenReturn(true);
         when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
         when(stubEventHandler.canHandleType(String.class)).thenReturn(true);
@@ -493,7 +493,7 @@ class PooledStreamingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
         // noinspection unchecked
         ArgumentCaptor<EventMessage<?>> validatedEventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-        verify(stubEventHandler, timeout(500).times(5)).canHandle(validatedEventCaptor.capture(), any());
+        verify(stubEventHandler, timeout(500).times(5)).canHandle(validatedEventCaptor.capture(), any(), any());
 
         List<EventMessage<?>> validatedEvents = validatedEventCaptor.getAllValues();
         assertEquals(5, validatedEvents.size());
@@ -591,7 +591,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void startFailsWhenShutdownIsInProgress() throws Exception {
-        when(stubEventHandler.canHandle(any(), any())).thenReturn(true);
+        when(stubEventHandler.canHandle(any(), any(), any())).thenReturn(true);
         // Use CountDownLatch to block worker threads from actually doing work, and thus shutting down successfully.
         CountDownLatch latch = new CountDownLatch(1);
         doAnswer(i -> latch.await(10, TimeUnit.MILLISECONDS)).when(stubEventHandler)
@@ -994,10 +994,10 @@ class PooledStreamingEventProcessorTest {
 
     private void mockEventHandlerInvoker() {
         when(stubEventHandler.canHandleType(any())).thenReturn(true);
-        when(stubEventHandler.canHandle(any(), any())).thenAnswer(
+        when(stubEventHandler.canHandle(any(), any(), any())).thenAnswer(
                 answer -> answer.getArgument(0, EventMessage.class)
                                 .getPayload()
-                                .equals(answer.getArgument(1, Segment.class).getSegmentId())
+                                .equals(answer.getArgument(2, Segment.class).getSegmentId())
         );
     }
 
@@ -1248,14 +1248,16 @@ class PooledStreamingEventProcessorTest {
         testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {
             @Override
             public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @Nonnull ProcessingContext context,
                                  @Nonnull InterceptorChain interceptorChain) throws Exception {
                 unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
 
             @Override
             public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message, @Nonnull ProcessingContext context,
+                    @Nonnull M message,
+                    @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain<M, R> interceptorChain) {
                 context.doFinally(uow -> countDownLatch.countDown());
                 return interceptorChain.proceed(message, context);
@@ -1279,9 +1281,10 @@ class PooledStreamingEventProcessorTest {
         testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
             @Override
             public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @Nonnull ProcessingContext context,
                                  @Nonnull InterceptorChain interceptorChain) throws Exception {
                 unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
 
             @Override

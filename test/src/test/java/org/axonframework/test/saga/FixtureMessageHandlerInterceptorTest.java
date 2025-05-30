@@ -69,9 +69,10 @@ class FixtureMessageHandlerInterceptorTest {
 
         @Override
         public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                             @Nonnull ProcessingContext context,
                              @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.transformMessage(event -> event.withMetaData(MetaData.with(META_DATA_KEY, value)));
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         }
     }
 
@@ -141,8 +142,9 @@ class FixtureMessageHandlerInterceptorTest {
         @SagaEventHandler(associationProperty = "identifier")
         public void on(SagaStartEvent event,
                        @MetaDataValue(META_DATA_KEY) String value,
-                       CommandGateway commandGateway) {
-            commandGateway.send(new StartProcessCommand(event.getIdentifier(), value), ProcessingContext.NONE);
+                       CommandGateway commandGateway,
+                       ProcessingContext context) {
+            commandGateway.send(new StartProcessCommand(event.getIdentifier(), value), context);
         }
     }
 }

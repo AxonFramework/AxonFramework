@@ -26,6 +26,7 @@ import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
 import org.junit.jupiter.api.*;
@@ -97,9 +98,9 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        assertTrue(resolver.matches(testCommand, null));
-        assertTrue(resolver.matches(testEvent, null));
-        assertTrue(resolver.matches(testQuery, null));
+        assertTrue(resolver.matches(StubProcessingContext.forMessage(testCommand)));
+        assertTrue(resolver.matches(StubProcessingContext.forMessage(testEvent)));
+        assertTrue(resolver.matches(StubProcessingContext.forMessage(testQuery)));
     }
 
     @Test
@@ -114,7 +115,8 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        DeadLetter<?> result = resolver.resolveParameterValue(testMessage, null);
+        DeadLetter<?> result = resolver.resolveParameterValue(org.axonframework.messaging.unitofwork.StubProcessingContext.forUnitOfWork(
+                uow));
         assertEquals(expected, result);
     }
 
@@ -125,7 +127,7 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        assertNull(resolver.resolveParameterValue(testMessage, null));
+        assertNull(resolver.resolveParameterValue(StubProcessingContext.forMessage(testMessage)));
     }
 
     @Test
@@ -136,6 +138,6 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        assertNull(resolver.resolveParameterValue(testMessage, null));
+        assertNull(resolver.resolveParameterValue(StubProcessingContext.forMessage(testMessage)));
     }
 }

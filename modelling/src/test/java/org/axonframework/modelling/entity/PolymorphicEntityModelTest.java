@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.junit.jupiter.api.*;
@@ -92,7 +92,7 @@ class PolymorphicEntityModelTest {
         CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(CONCRETE_ONE_COMMAND),
                                                                        "concrete-one");
 
-        ProcessingContext context = new StubProcessingContext();
+        ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
         MessageStream<CommandResultMessage<?>> result = polymorphicModel.handle(commandMessage, entity, context);
 
@@ -108,7 +108,7 @@ class PolymorphicEntityModelTest {
         CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(CONCRETE_TWO_COMMAND),
                                                                        "concrete-two");
 
-        ProcessingContext context = new StubProcessingContext();
+        ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         ConcreteTestEntityTwo entity = new ConcreteTestEntityTwo();
         MessageStream<CommandResultMessage<?>> result = polymorphicModel.handle(commandMessage, entity, context);
 
@@ -123,7 +123,7 @@ class PolymorphicEntityModelTest {
         CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(SUPER_TYPE_COMMAND),
                                                                        "concrete-one");
 
-        ProcessingContext context = new StubProcessingContext();
+        ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
         MessageStream<CommandResultMessage<?>> result = polymorphicModel.handle(commandMessage, entity, context);
 
@@ -138,7 +138,7 @@ class PolymorphicEntityModelTest {
         CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(SUPER_TYPE_COMMAND),
                                                                        "concrete-two");
 
-        ProcessingContext context = new StubProcessingContext();
+        ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         ConcreteTestEntityTwo entity = new ConcreteTestEntityTwo();
         MessageStream<CommandResultMessage<?>> result = polymorphicModel.handle(commandMessage, entity, context);
 
@@ -152,7 +152,7 @@ class PolymorphicEntityModelTest {
     void callsSuperTypeAndConcreteOneEntityEvolverForConcreteTypeOne() {
         EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(CONCRETE_ONE_EVENT), "event");
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
-        ProcessingContext context = new StubProcessingContext();
+        ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
 
         polymorphicModel.evolve(entity, eventMessage, context);
 
@@ -166,7 +166,7 @@ class PolymorphicEntityModelTest {
     void callsSuperTypeAndConcreteOneEntityEvolverForConcreteTypeTwo() {
         EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(CONCRETE_TWO_EVENT), "event");
         ConcreteTestEntityTwo entity = new ConcreteTestEntityTwo();
-        ProcessingContext context = new StubProcessingContext();
+        ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
 
         polymorphicModel.evolve(entity, eventMessage, context);
 
@@ -184,7 +184,7 @@ class PolymorphicEntityModelTest {
         when(concreteTestEntityTwoEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
         EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(SUPER_TYPE_EVENT), "event");
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
-        ProcessingContext context = new StubProcessingContext();
+        ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
         AbstractTestEntity result = polymorphicModel.evolve(entity, eventMessage, context);
         assertInstanceOf(ConcreteTestEntityTwo.class, result);
     }
@@ -198,7 +198,7 @@ class PolymorphicEntityModelTest {
         when(concreteTestEntityTwoEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
         EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(SUPER_TYPE_EVENT), "event");
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
-        ProcessingContext context = new StubProcessingContext();
+        ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
         AbstractTestEntity result = polymorphicModel.evolve(entity, eventMessage, context);
         assertInstanceOf(ConcreteTestEntityTwo.class, result);
     }

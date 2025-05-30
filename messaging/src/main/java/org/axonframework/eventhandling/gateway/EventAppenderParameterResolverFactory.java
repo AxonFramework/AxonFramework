@@ -16,8 +16,9 @@
 
 package org.axonframework.eventhandling.gateway;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -46,17 +47,19 @@ public class EventAppenderParameterResolverFactory implements ParameterResolverF
         this.configuration = configuration;
     }
 
+    @Nullable
     @Override
-    public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (EventAppender.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return new ParameterResolver<>() {
+                @Nullable
                 @Override
-                public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
-                    return EventAppender.forContext(processingContext, configuration);
+                public Object resolveParameterValue(@Nonnull ProcessingContext context) {
+                    return EventAppender.forContext(context, configuration);
                 }
 
                 @Override
-                public boolean matches(Message<?> message, ProcessingContext processingContext) {
+                public boolean matches(@Nonnull ProcessingContext context) {
                     return true;
                 }
             };

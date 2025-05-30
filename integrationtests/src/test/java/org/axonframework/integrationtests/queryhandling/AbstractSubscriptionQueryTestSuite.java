@@ -594,11 +594,11 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         queryBus.registerDispatchInterceptor(
                 messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value"))
         );
-        queryBus.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
+        queryBus.registerHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
             if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
                 return interceptedResponse;
             }
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         });
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 new MessageType("chatMessages"), TEST_PAYLOAD,

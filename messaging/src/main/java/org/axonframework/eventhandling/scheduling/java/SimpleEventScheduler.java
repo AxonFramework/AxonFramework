@@ -244,7 +244,7 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
             try {
                 LegacyUnitOfWork<EventMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(null);
                 unitOfWork.attachTransaction(transactionManager);
-                unitOfWork.execute(() -> eventBus.publish(eventMessage));
+                unitOfWork.execute((ctx) -> eventBus.publish(eventMessage));
             } finally {
                 tokens.remove(tokenId);
             }

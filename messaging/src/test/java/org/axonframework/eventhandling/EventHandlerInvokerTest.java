@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,12 +33,12 @@ class EventHandlerInvokerTest {
 
     private final EventHandlerInvoker testSubject = spy(new EventHandlerInvoker() {
         @Override
-        public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull Segment segment) {
+        public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
             return true;
         }
 
         @Override
-        public void handle(@Nonnull EventMessage<?> message, ProcessingContext processingContext,
+        public void handle(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext processingContext,
                            @Nonnull Segment segment) throws Exception {
             // Do nothing
         }

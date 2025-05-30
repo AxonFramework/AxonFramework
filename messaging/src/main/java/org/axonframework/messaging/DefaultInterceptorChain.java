@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
@@ -52,20 +53,20 @@ public class DefaultInterceptorChain<T extends Message<?>, R extends Message<?>>
     }
 
     @Override
-    public Object proceedSync() throws Exception {
+    public Object proceedSync(@Nonnull ProcessingContext context) throws Exception {
         if (chain.hasNext()) {
-            return chain.next().handle(unitOfWork, this);
+            return chain.next().handle(unitOfWork, context, this);
         } else {
-            return handler.handleSync(unitOfWork.getMessage());
+            return handler.handleSync(unitOfWork.getMessage(), context);
         }
     }
 
     @Override
-    public MessageStream<R> proceed(T message, ProcessingContext processingContext) {
+    public MessageStream<R> proceed(@Nonnull T message, @Nonnull ProcessingContext context) {
         if (chain.hasNext()) {
-            return chain.next().interceptOnHandle(message, processingContext, this);
+            return chain.next().interceptOnHandle(message, context, this);
         } else {
-            return handler.handle(message, processingContext);
+            return handler.handle(message, context);
         }
     }
 }

@@ -17,16 +17,19 @@
 package org.axonframework.modelling.command.inspection;
 
 import jakarta.persistence.Id;
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
@@ -77,8 +80,14 @@ class AnnotatedAggregateMetaModelFactoryTest {
         CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "ok");
         CommandMessage<String> faultyCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "ko");
 
-        assertEquals(true, getHandler(inspector, testCommand).handleSync(testCommand, new SomeAnnotatedHandlers()));
-        assertEquals(false, getHandler(inspector, testCommand).handleSync(faultyCommand, new SomeAnnotatedHandlers()));
+        assertEquals(true,
+                     getHandler(inspector, testCommand).handleSync(testCommand,
+                                                                   StubProcessingContext.forMessage(testCommand),
+                                                                   new SomeAnnotatedHandlers()));
+        assertEquals(false,
+                     getHandler(inspector, testCommand).handleSync(faultyCommand,
+                                                                   StubProcessingContext.forMessage(faultyCommand),
+                                                                   new SomeAnnotatedHandlers()));
     }
 
     @Test
@@ -90,8 +99,14 @@ class AnnotatedAggregateMetaModelFactoryTest {
         CommandMessage<String> faultyCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "ok");
         SomeSubclass target = new SomeSubclass();
 
-        assertEquals(true, getHandler(inspector, testCommand).handleSync(testCommand, target));
-        assertEquals(false, getHandler(inspector, testCommand).handleSync(faultyCommand, target));
+        assertEquals(true,
+                     getHandler(inspector, testCommand).handleSync(testCommand,
+                                                                   StubProcessingContext.forMessage(testCommand),
+                                                                   target));
+        assertEquals(false,
+                     getHandler(inspector, testCommand).handleSync(faultyCommand,
+                                                                   StubProcessingContext.forMessage(faultyCommand),
+                                                                   target));
     }
 
     @Test
@@ -250,7 +265,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
                 new GenericCommandMessage<>(new MessageType(BigDecimal.class), BigDecimal.ONE);
         SomeSubclass target = new SomeSubclass();
         MessageHandlingMember<? super SomeSubclass> handler = getHandler(inspector, message);
-        assertEquals("1", handler.handleSync(message, target));
+        assertEquals("1", handler.handleSync(message, StubProcessingContext.forMessage(message), target));
     }
 
     @Test
@@ -431,8 +446,9 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
     @SuppressWarnings("unchecked")
     private <T> MessageHandlingMember<T> getHandler(AggregateModel<T> member, CommandMessage<?> message) {
+        ProcessingContext processingContext = StubProcessingContext.forMessage(message);
         return (MessageHandlingMember<T>) member.commandHandlers(member.entityClass())
-                                                .filter(ch -> ch.canHandle(message, null))
+                                                .filter(ch -> ch.canHandle(message, processingContext))
                                                 .findFirst()
                                                 .orElseThrow(() -> new AssertionError(
                                                         "Expected handler for this message"

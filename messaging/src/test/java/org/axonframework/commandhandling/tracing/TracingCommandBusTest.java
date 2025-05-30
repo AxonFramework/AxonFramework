@@ -26,7 +26,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -68,7 +68,7 @@ class TracingCommandBusTest {
                 }
         );
 
-        testSubject.dispatch(testCommand, ProcessingContext.NONE);
+        testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
         spanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
     }
 
@@ -88,7 +88,7 @@ class TracingCommandBusTest {
                                   throw new RuntimeException("Some exception");
                               });
 
-        var actual = testSubject.dispatch(testCommand, ProcessingContext.NONE);
+        var actual = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
 
         assertTrue(actual.isCompletedExceptionally());
 
@@ -111,7 +111,7 @@ class TracingCommandBusTest {
                                   ));
                               });
 
-        captor.getValue().handle(testCommand, ProcessingContext.NONE);
+        captor.getValue().handle(testCommand, StubProcessingContext.forMessage(testCommand));
         spanFactory.verifySpanCompleted("CommandBus.handleCommand");
     }
 
@@ -128,7 +128,7 @@ class TracingCommandBusTest {
                               });
 
         try {
-            captor.getValue().handle(testCommand, ProcessingContext.NONE);
+            captor.getValue().handle(testCommand, StubProcessingContext.forMessage(testCommand));
             fail("Expected a MockException to be thrown from handling a command!");
         } catch (MockException e) {
             spanFactory.verifySpanCompleted("CommandBus.handleCommand");

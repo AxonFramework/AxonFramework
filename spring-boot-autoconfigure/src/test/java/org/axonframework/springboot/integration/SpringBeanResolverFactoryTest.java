@@ -30,6 +30,7 @@ import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.spring.config.annotation.SpringBeanDependencyResolverFactory;
 import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
@@ -78,7 +79,7 @@ class SpringBeanResolverFactoryTest {
     @BeforeEach
     void setUp() {
         COUNTER.set(0);
-        processingContext = mock(ProcessingContext.class);
+        processingContext = new LegacyMessageSupportingContext(EVENT_MESSAGE);
         testApplicationContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false")
                                                                .withUserConfiguration(TestContext.class);
     }

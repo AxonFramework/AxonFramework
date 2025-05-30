@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -52,10 +53,10 @@ class AnnotationBasedEventCriteriaResolverTest {
                                                                   Object.class,
                                                                   configuration);
 
-        var criteriaString = resolver.resolve("id");
+        var criteriaString = resolver.resolve("id", new StubProcessingContext());
         assertEquals(EventCriteria.havingTags("aggregateIdentifierOfString", "id"), criteriaString);
 
-        var criteriaLong = resolver.resolve(1L);
+        var criteriaLong = resolver.resolve(1L, new StubProcessingContext());
         assertEquals(EventCriteria.havingTags("aggregateIdentifierOfLong", "1"), criteriaLong);
     }
 
@@ -67,7 +68,7 @@ class AnnotationBasedEventCriteriaResolverTest {
 
         var exception = Assertions.assertThrows(
                 IllegalArgumentException.class,
-                () -> resolver.resolve(1)
+                () -> resolver.resolve(1, new StubProcessingContext())
         );
         assertEquals(
                 "The @EventCriteriaBuilder method returned null. The method must return a non-null EventCriteria. Violating method: buildCriteria(java.lang.Integer)",
@@ -81,7 +82,7 @@ class AnnotationBasedEventCriteriaResolverTest {
                                                                   Object.class,
                                                                   configuration);
 
-        var criteria = resolver.resolve(0.0);
+        var criteria = resolver.resolve(0.0, new StubProcessingContext());
         assertEquals(EventCriteria.havingTags("fallbackTagKey", "0.0"), criteria);
     }
 
@@ -113,7 +114,7 @@ class AnnotationBasedEventCriteriaResolverTest {
                                                                   Object.class,
                                                                   configuration);
 
-        var criteria = resolver.resolve("id");
+        var criteria = resolver.resolve("id", new StubProcessingContext());
         assertEquals(EventCriteria.havingTags("DefaultEventSourcedEntity", "id"), criteria);
     }
 
@@ -128,7 +129,7 @@ class AnnotationBasedEventCriteriaResolverTest {
                                                                   Object.class,
                                                                   configuration);
 
-        var criteria = resolver.resolve("id");
+        var criteria = resolver.resolve("id", new StubProcessingContext());
         assertEquals(EventCriteria.havingTags("aggregateIdentifier", "id"), criteria);
     }
 
@@ -227,7 +228,7 @@ class AnnotationBasedEventCriteriaResolverTest {
             var resolver = new AnnotationBasedEventCriteriaResolver<>(EntityWithPrivateEventCriteriaBuilder.class,
                                                                       Object.class,
                                                                       configuration);
-            var criteria = resolver.resolve("id");
+            var criteria = resolver.resolve("id", new StubProcessingContext());
             assertEquals(EventCriteria.havingTags("aggregateIdentifier", "id"), criteria);
         }
 
@@ -296,7 +297,7 @@ class AnnotationBasedEventCriteriaResolverTest {
                     configuration
             );
 
-            var criteria = resolver.resolve("id");
+            var criteria = resolver.resolve("id", new StubProcessingContext());
             assertEquals(EventCriteria.havingTags("aggregateIdentifier", "id")
                                       .andBeingOneOfTypes("MyMessageType"), criteria);
         }

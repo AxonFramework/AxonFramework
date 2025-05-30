@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -211,7 +211,7 @@ class FixtureTest_MatcherParams {
                 .when(new StrangeCommand("aggregateId"), Collections.singletonMap("meta", "value"));
 
         final ArgumentCaptor<CommandMessage> captor = ArgumentCaptor.forClass(CommandMessage.class);
-        verify(mockCommandHandler).handleSync(captor.capture());
+        verify(mockCommandHandler).handleSync(captor.capture(), any());
         List<CommandMessage> dispatched = captor.getAllValues();
         assertEquals(1, dispatched.size());
         assertEquals(1, dispatched.get(0).getMetaData().size());

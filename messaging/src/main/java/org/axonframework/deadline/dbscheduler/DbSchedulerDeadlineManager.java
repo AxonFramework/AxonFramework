@@ -51,6 +51,7 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -366,8 +367,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
             InterceptorChain chain = new DefaultInterceptorChain<>(
                     unitOfWork,
                     handlerInterceptors(),
-                    interceptedDeadlineMessage -> {
-                        executeScheduledDeadline(interceptedDeadlineMessage, scopeDescriptor);
+                    (interceptedDeadlineMessage, ctx) -> {
+                        executeScheduledDeadline(interceptedDeadlineMessage, ctx, scopeDescriptor);
                         return null;
                     });
             ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
@@ -382,12 +383,12 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         }
     }
 
-    private void executeScheduledDeadline(DeadlineMessage<?> deadlineMessage, ScopeDescriptor deadlineScope) {
+    private void executeScheduledDeadline(DeadlineMessage<?> deadlineMessage, ProcessingContext context, ScopeDescriptor deadlineScope) {
         scopeAwareProvider.provideScopeAwareStream(deadlineScope)
                           .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
                           .forEach(scopeAwareComponent -> {
                               try {
-                                  scopeAwareComponent.send(deadlineMessage, deadlineScope);
+                                  scopeAwareComponent.send(deadlineMessage, context, deadlineScope);
                               } catch (Exception e) {
                                   String exceptionMessage = format(
                                           "Failed to send a DeadlineMessage for scope [%s]",

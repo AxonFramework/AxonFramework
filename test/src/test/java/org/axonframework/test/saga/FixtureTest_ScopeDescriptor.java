@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,8 +82,8 @@ class FixtureTest_ScopeDescriptor {
 
         @StartSaga
         @SagaEventHandler(associationProperty = "identifier")
-        public void on(SagaStartEvent event, ScopeDescriptor scopeDescriptor, CommandGateway commandGateway) {
-            commandGateway.send(new ScopeDescriptorCommand(scopeDescriptor), ProcessingContext.NONE);
+        public void on(SagaStartEvent event, ScopeDescriptor scopeDescriptor, CommandGateway commandGateway, ProcessingContext context) {
+            commandGateway.send(new ScopeDescriptorCommand(scopeDescriptor), context);
         }
     }
 }

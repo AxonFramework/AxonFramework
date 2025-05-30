@@ -36,6 +36,8 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -124,10 +126,11 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
+        ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
+        testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handleSync(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
         ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
@@ -147,10 +150,11 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
+        ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
+        testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handleSync(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT, context);
 
         verify(queue, never()).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
 
@@ -165,11 +169,11 @@ class DeadLetteringEventHandlerInvokerTest {
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
-
-        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
+        ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
+        testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handleSync(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT, context);
 
         verify(queue, times(1)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
 
@@ -189,9 +193,11 @@ class DeadLetteringEventHandlerInvokerTest {
         EventMessage<?> eventMessageTwo = createEvent("bar", 2);
         EventMessage<?> eventMessageThree = createEvent("foo", 3);
 
-        testSubject.handle(eventMessageOne, null, Segment.ROOT_SEGMENT);
-        testSubject.handle(eventMessageTwo, null, Segment.ROOT_SEGMENT);
-        testSubject.handle(eventMessageThree, null, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageOne, StubProcessingContext.forMessage(eventMessageOne), Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageTwo, StubProcessingContext.forMessage(eventMessageTwo), Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageThree,
+                           StubProcessingContext.forMessage(eventMessageThree),
+                           Segment.ROOT_SEGMENT);
 
         verify(queue, times(1)).enqueueIfPresent(eq("foo"), any());
         verify(queue, times(1)).enqueueIfPresent(eq("bar"), any());
@@ -214,11 +220,13 @@ class DeadLetteringEventHandlerInvokerTest {
         DomainEventMessage<?> eventMessageTwo = createEvent("bar", 2);
         DomainEventMessage<?> eventMessageThree = nextMessage(eventMessageOne);
 
-        testSubject.handle(eventMessageOne, null, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageOne, StubProcessingContext.forMessage(eventMessageOne), Segment.ROOT_SEGMENT);
         // as eventMessageTwo has a different sequence identifier, and the size of the sequenceIdentifierCache is set
         // to just 1, we expect the object identifier of eventMessageOne to be removed.
-        testSubject.handle(eventMessageTwo, null, Segment.ROOT_SEGMENT);
-        testSubject.handle(eventMessageThree, null, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageTwo, StubProcessingContext.forMessage(eventMessageTwo), Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageThree,
+                           StubProcessingContext.forMessage(eventMessageThree),
+                           Segment.ROOT_SEGMENT);
 
         verify(queue, times(2)).enqueueIfPresent(eq("foo"), any());
         verify(queue, times(1)).enqueueIfPresent(eq("bar"), any());
@@ -267,13 +275,14 @@ class DeadLetteringEventHandlerInvokerTest {
         DeadLetter<EventMessage<?>> expectedEnqueuedLetter =
                 new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT, testCause);
 
-        doThrow(testCause).when(handler).handleSync(TEST_EVENT);
+        ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
+        doThrow(testCause).when(handler).handleSync(TEST_EVENT, context);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handleSync(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
         ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
@@ -298,17 +307,18 @@ class DeadLetteringEventHandlerInvokerTest {
         setTestSubject(createTestSubject(DeadLetteringEventHandlerInvoker.Builder::enableSequenceIdentifierCache));
         doReturn(0L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+        ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
 
         RuntimeException testCause = new RuntimeException("some-cause");
 
-        doThrow(testCause).when(handler).handleSync(TEST_EVENT);
+        doThrow(testCause).when(handler).handleSync(TEST_EVENT, context);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
-        testSubject.handle(nextMessage(TEST_EVENT), null, Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
+        testSubject.handle(nextMessage(TEST_EVENT), context, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handleSync(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT, context);
 
         verify(queue, times(1)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
     }
@@ -325,13 +335,14 @@ class DeadLetteringEventHandlerInvokerTest {
                 new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
         DeadLetter<EventMessage<?>> expectedEnqueuedLetter =
                 new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT, testCause);
+        ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
 
-        doThrow(testCause).when(handler).handleSync(TEST_EVENT);
+        doThrow(testCause).when(handler).handleSync(TEST_EVENT, context);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
-        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handleSync(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
         ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
@@ -351,11 +362,11 @@ class DeadLetteringEventHandlerInvokerTest {
     @Test
     void handleMethodDoesNotHandleEventOnDelegateWhenEnqueueIfPresentReturnsTrue() throws Exception {
         when(queue.enqueueIfPresent(any(), any())).thenReturn(true);
-
-        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
+        ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
+        testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler, never()).handleSync(TEST_EVENT);
+        verify(handler, never()).handleSync(TEST_EVENT, context);
         verify(queue, never()).enqueue(TEST_SEQUENCE_ID, TEST_DEAD_LETTER);
         verifyNoInteractions(transactionManager);
     }
@@ -379,7 +390,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
         verify(queue).clear();
         verify(transactionManager).executeInTransaction(any());
-        verify(handler).prepareReset(null,null );
+        verify(handler).prepareReset(null, null);
     }
 
     @Test
@@ -388,11 +399,11 @@ class DeadLetteringEventHandlerInvokerTest {
 
         String testContext = "some-reset-context";
 
-        testSubject.performReset(testContext,null );
+        testSubject.performReset(testContext, null);
 
         verifyNoInteractions(queue);
         verifyNoInteractions(transactionManager);
-        verify(handler).prepareReset(testContext,null );
+        verify(handler).prepareReset(testContext, null);
     }
 
     @Test
@@ -401,11 +412,11 @@ class DeadLetteringEventHandlerInvokerTest {
 
         String testContext = "some-reset-context";
 
-        testSubject.performReset(testContext,null );
+        testSubject.performReset(testContext, null);
 
         verify(queue).clear();
         verify(transactionManager).executeInTransaction(any());
-        verify(handler).prepareReset(testContext,null );
+        verify(handler).prepareReset(testContext, null);
     }
 
     @Test

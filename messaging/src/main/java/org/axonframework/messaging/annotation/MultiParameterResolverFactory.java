@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
 
 import java.lang.reflect.Executable;
@@ -108,7 +109,7 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
 
 
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         for (ParameterResolverFactory factory : factories) {
             ParameterResolver resolver = factory.createInstance(executable, parameters, parameterIndex);
             if (resolver != null) {

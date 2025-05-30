@@ -20,12 +20,14 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
+import static org.axonframework.messaging.unitofwork.StubProcessingContext.forMessage;
 import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -43,36 +45,43 @@ class ConcludesBatchParameterResolverFactoryTest {
 
     @Test
     void onlyMatchesEventMessages() {
-        assertTrue(testSubject.matches(asEventMessage("testEvent"), null));
-        assertFalse(testSubject.matches(new GenericCommandMessage<>(
-                new MessageType("command"), "testCommand"), null
-        ));
+        assertTrue(testSubject.matches(forMessage(asEventMessage("testEvent"))));
+        assertFalse(testSubject.matches(forMessage(new GenericCommandMessage<>(
+                new MessageType("command"), "testCommand")
+        )));
     }
 
     @Test
     void resolvesToTrueWithoutUnitOfWork() {
-        assertTrue(testSubject.resolveParameterValue(asEventMessage("testEvent"), null));
+        assertEquals(true,
+                     testSubject.resolveParameterValue(forMessage(asEventMessage("testEvent"))));
     }
 
     @Test
     void resolvesToTrueWithRegularUnitOfWork() {
         EventMessage<?> event = asEventMessage("testEvent");
         LegacyDefaultUnitOfWork.startAndGet(event)
-                               .execute(() -> assertTrue(testSubject.resolveParameterValue(event, null)));
+                               .execute((ctx) -> assertEquals(Boolean.TRUE, testSubject.resolveParameterValue(ctx)));
     }
 
     @Test
     void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsNotLast() {
         List<? extends EventMessage<?>> events = createEvents(5);
         new LegacyBatchingUnitOfWork<>(events)
-                .execute(() -> assertFalse(testSubject.resolveParameterValue(events.get(0), null)));
+                .execute((ctx) -> {
+                    ProcessingContext event0Context = forMessage(events.get(0));
+                    assertFalse(testSubject.resolveParameterValue(event0Context));
+                });
     }
 
     @Test
-    void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsLast() {
+    void resolvesToTrueWithBatchingUnitOfWorkIfMessageIsLast() {
         List<? extends EventMessage<?>> events = createEvents(5);
         new LegacyBatchingUnitOfWork<>(events)
-                .execute(() -> assertTrue(testSubject.resolveParameterValue(events.get(4), null)));
+                .execute((ctx) -> {
+                    ProcessingContext lastEventContext = forMessage(events.get(4));
+                    assertTrue(testSubject.resolveParameterValue(lastEventContext));
+                });
     }
 
     @SuppressWarnings("unused")

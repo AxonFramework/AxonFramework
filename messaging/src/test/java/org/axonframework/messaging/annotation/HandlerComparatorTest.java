@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,7 +149,7 @@ class HandlerComparatorTest {
             implements MessageHandlingMember<Object> {
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
@@ -160,7 +160,7 @@ class HandlerComparatorTest {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, Object target) {
+        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
@@ -187,7 +187,7 @@ class HandlerComparatorTest {
             implements MessageHandlingMember<Object> {
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
@@ -198,7 +198,7 @@ class HandlerComparatorTest {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, Object target) {
+        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

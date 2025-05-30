@@ -16,11 +16,13 @@
 package org.axonframework.messaging.timeout;
 
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -59,9 +61,12 @@ class TimeoutWrappedMessageHandlingMemberTest {
                 original, 300, 200, 50
         );
 
+        EventMessage<Object> eventMessage = EventTestUtils.asEventMessage("my-message");
         assertThrows(
                 TimeoutException.class,
-                () -> wrappedHandler.handleSync(EventTestUtils.asEventMessage("my-message"), new TestMessageHandler())
+                () -> wrappedHandler.handleSync(eventMessage,
+                                                StubProcessingContext.forMessage(eventMessage),
+                                                new TestMessageHandler())
         );
     }
 

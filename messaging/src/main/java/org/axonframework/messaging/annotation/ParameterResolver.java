@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,36 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.messaging.Message;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
- * Interface for a mechanism that resolves handler method parameter values from a given {@link Message}.
+ * Interface for a mechanism that resolves handler method parameter values from a given {@link ProcessingContext}.
  *
- * @param <T> The type of parameter returned by this resolver
+ * @param <T> The type of parameter returned by this resolver.
  * @author Allard Buijze
  * @since 2.0
  */
 public interface ParameterResolver<T> {
 
     /**
-     * Resolves the parameter value to use for the given {@code message}, or {@code null} if no suitable parameter value
+     * Resolves the parameter value to for the {@code context}, or {@code null} if no suitable parameter value
      * can be resolved.
      *
-     * @param message           The message to resolve the value from
-     * @param processingContext
-     * @return the parameter value for the handler
+     * @param context The current processing context.
+     * @return The parameter value for the handler.
      */
-    T resolveParameterValue(Message<?> message, ProcessingContext processingContext);
+    @Nullable
+    T resolveParameterValue(@Nonnull ProcessingContext context);
 
     /**
-     * Indicates whether this resolver is capable of providing a value for the given {@code message}.
+     * Indicates whether this resolver is capable of providing a value for the given {@code context}.
      *
-     * @param message           The message to evaluate
-     * @param processingContext
-     * @return {@code true} if this resolver can provide a value for the message, otherwise {@code false}
+     * @param context The current processing context.
+     * @return Returns {@code true} if this resolver can provide a value for the message, otherwise {@code false}.
      */
-    boolean matches(Message<?> message, ProcessingContext processingContext);
+    boolean matches(@Nonnull ProcessingContext context);
 
     /**
      * Returns the class of the payload that is supported by this resolver. Defaults to the {@link Object} class

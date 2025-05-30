@@ -77,9 +77,10 @@ class AbstractEventProcessorTest {
         testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {
             @Override
             public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 @Nonnull ProcessingContext context,
                                  @Nonnull InterceptorChain interceptorChain) throws Exception {
                 unitOfWork.transformMessage(m -> createEvent());
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
 
             @Override

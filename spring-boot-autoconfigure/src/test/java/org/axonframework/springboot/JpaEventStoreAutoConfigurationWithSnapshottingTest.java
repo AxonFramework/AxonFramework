@@ -80,9 +80,9 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
             assertNotNull(context.getBean(LegacyJpaEventStorageEngine.class));
 
             CommandGateway commandGateway = context.getBean(CommandGateway.class);
-            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), ProcessingContext.NONE)
+            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), null)
                           .getResultMessage().get();
-            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID), ProcessingContext.NONE)
+            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID), null)
                           .getResultMessage().get();
 
             verify(snapshotTriggerDefinition, atLeastOnce()).prepareTrigger(TestContext.TestAggregate.class);
@@ -99,9 +99,9 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
             assertNotNull(context.getBean(LegacyJpaEventStorageEngine.class));
 
             CommandGateway commandGateway = context.getBean(CommandGateway.class);
-            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), ProcessingContext.NONE)
+            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), null)
                           .getResultMessage().get();
-            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID), ProcessingContext.NONE)
+            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID), null)
                           .getResultMessage().get();
 
             LegacyEventStore eventStore = context.getBean(LegacyEventStore.class);

@@ -864,10 +864,10 @@ public abstract class DeadLetteringEventIntegrationTest {
     }
 
     private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
-        return (unitOfWork, chain) -> {
+        return (unitOfWork, context, chain) -> {
             invoked.set(true);
             try {
-                chain.proceedSync();
+                chain.proceedSync(context);
             } catch (RuntimeException e) {
                 return unitOfWork;
             }
