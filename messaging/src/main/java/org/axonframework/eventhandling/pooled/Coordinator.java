@@ -16,9 +16,7 @@
 
 package org.axonframework.eventhandling.pooled;
 
-import org.axonframework.common.FutureUtils;
 import org.axonframework.common.stream.BlockingStream;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
@@ -29,7 +27,6 @@ import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +55,8 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ProcessUtils.executeUntilTrue;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
@@ -84,7 +83,6 @@ class Coordinator {
     private final String name;
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
-    private final TransactionManager transactionManager;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService executorService;
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
@@ -122,8 +120,7 @@ class Coordinator {
         this.name = builder.name;
         this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
-        this.transactionManager = builder.transactionManager;
-        this.unitOfWorkFactory = new TransactionalUnitOfWorkFactory(transactionManager);
+        this.unitOfWorkFactory = builder.unitOfWorkFactory;
         this.executorService = builder.executorService;
         this.workPackageFactory = builder.workPackageFactory;
         this.eventFilter = builder.eventFilter;
@@ -245,7 +242,7 @@ class Coordinator {
      */
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
-        coordinatorTasks.add(new SplitTask(result, name, segmentId, workPackages, tokenStore, transactionManager));
+        coordinatorTasks.add(new SplitTask(result, name, segmentId, workPackages, tokenStore, unitOfWorkFactory));
         scheduleCoordinator();
         return result;
     }
@@ -291,27 +288,35 @@ class Coordinator {
                                            workPackages,
                                            releasesDeadlines,
                                            tokenStore,
-                                           transactionManager));
+                                           unitOfWorkFactory));
         scheduleCoordinator();
         return result;
     }
 
     private boolean initializeTokenStore() {
         AtomicBoolean tokenStoreInitialized = new AtomicBoolean(false);
-        transactionManager.executeInTransaction(() -> {
-            int[] segments = tokenStore.fetchSegments(name);
-            try {
-                if (segments == null || segments.length == 0) {
-                    logger.info("Initializing segments for processor [{}] ({} segments)", name, initialSegmentCount);
-                    tokenStore.initializeTokenSegments(name, initialSegmentCount, initialToken.apply(messageSource));
-                }
-                tokenStoreInitialized.set(true);
-            } catch (Exception e) {
-                logger.info(
-                        "Error while initializing the Token Store. This may simply indicate concurrent attempts to initialize.",
-                        e);
-            }
-        });
+        try {
+            joinAndUnwrap(
+                    unitOfWorkFactory.create()
+                                     .executeWithResult(context -> {
+                                         int[] segments = tokenStore.fetchSegments(name);
+                                         if (segments == null || segments.length == 0) {
+                                             logger.info("Initializing segments for processor [{}] ({} segments)",
+                                                         name,
+                                                         initialSegmentCount);
+                                             tokenStore.initializeTokenSegments(name,
+                                                                                initialSegmentCount,
+                                                                                initialToken.apply(messageSource));
+                                         }
+                                         tokenStoreInitialized.set(true);
+                                         return emptyCompletedFuture();
+                                     })
+            );
+        } catch (Exception e) {
+            logger.info(
+                    "Error while initializing the Token Store. This may simply indicate concurrent attempts to initialize.",
+                    e);
+        }
         return tokenStoreInitialized.get();
     }
 
@@ -338,7 +343,7 @@ class Coordinator {
         }
 
         public static RunState initial(Runnable shutdownAction) {
-            return new RunState(false, false, FutureUtils.emptyCompletedFuture(), shutdownAction);
+            return new RunState(false, false, emptyCompletedFuture(), shutdownAction);
         }
 
         public RunState attemptStart() {
@@ -404,7 +409,7 @@ class Coordinator {
         private String name;
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
-        private TransactionManager transactionManager;
+        private UnitOfWorkFactory unitOfWorkFactory;
         private ScheduledExecutorService executorService;
         private BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
         private EventFilter eventFilter;
@@ -457,14 +462,16 @@ class Coordinator {
         }
 
         /**
-         * A {@link TransactionManager} used to invoke all {@link TokenStore} operations inside a transaction.
+         * A {@link UnitOfWorkFactory} that spawns {@link org.axonframework.messaging.unitofwork.UnitOfWork} used to
+         * invoke all {@link TokenStore} operations inside a unit of work.
          *
-         * @param transactionManager a {@link TransactionManager} used to invoke all {@link TokenStore} operations
-         *                           inside a transaction
+         * @param unitOfWorkFactory a {@link UnitOfWorkFactory} that spawns
+         *                          {@link org.axonframework.messaging.unitofwork.UnitOfWork} used to invoke all
+         *                          {@link TokenStore} operations inside a unit of work
          * @return the current Builder instance, for fluent interfacing
          */
-        Builder transactionManager(TransactionManager transactionManager) {
-            this.transactionManager = transactionManager;
+        Builder unitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
+            this.unitOfWorkFactory = unitOfWorkFactory;
             return this;
         }
 
@@ -867,7 +874,7 @@ class Coordinator {
             return workPackages.values().stream()
                                .map(wp -> abortWorkPackage(wp, cause))
                                .reduce(CompletableFuture::allOf)
-                               .orElse(FutureUtils.emptyCompletedFuture())
+                               .orElse(emptyCompletedFuture())
                                .thenRun(workPackages::clear);
         }
 
@@ -903,8 +910,11 @@ class Coordinator {
          */
         private Map<Segment, TrackingToken> claimNewSegments() {
             Map<Segment, TrackingToken> newClaims = new HashMap<>();
-            List<Segment> segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchAvailableSegments(name));
-
+            List<Segment> segments = joinAndUnwrap(
+                    unitOfWorkFactory.create()
+                                     .executeWithResult(context -> CompletableFuture.completedFuture(tokenStore.fetchAvailableSegments(
+                                             name)))
+            );
             // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
             List<Segment> unClaimedSegments = segments.stream()
                                                       .filter(segment -> !workPackages.containsKey(segment.getSegmentId()))
@@ -922,8 +932,10 @@ class Coordinator {
                 }
                 if (newClaims.size() < maxSegmentsToClaim) {
                     try {
-                        TrackingToken token = transactionManager.fetchInTransaction(
-                                () -> tokenStore.fetchToken(name, segment)
+                        TrackingToken token = joinAndUnwrap(
+                                unitOfWorkFactory.create()
+                                                 .executeWithResult(context -> CompletableFuture.completedFuture(
+                                                         tokenStore.fetchToken(name, segment)))
                         );
                         newClaims.put(segment, token);
                         logger.info("Processor [{}] claimed the token for segment {}.", name, segmentId);
@@ -1118,13 +1130,15 @@ class Coordinator {
                                logger.debug("Processor [{}] released claim on {}.", name, work.segment());
                            }
                        })
-                       .thenRun(() -> transactionManager.executeInTransaction(
-                               () -> {
-                                   tokenStore.releaseClaim(name, segmentId);
-                                   segmentReleasedAction.accept(work.segment());
-                               }
-                       ))
-
+                       .thenRun(() -> joinAndUnwrap(
+                               unitOfWorkFactory
+                                       .create()
+                                       .executeWithResult(context -> {
+                                           tokenStore.releaseClaim(name, segmentId);
+                                           segmentReleasedAction.accept(work.segment());
+                                           return emptyCompletedFuture();
+                                       }))
+                       )
                        .exceptionally(throwable -> {
                            logger.info("An exception occurred during the abort of work package [{}] on [{}] processor.",
                                        segmentId, name, throwable);

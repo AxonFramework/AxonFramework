@@ -95,7 +95,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     private final String name;
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
-    private final TransactionManager transactionManager;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
@@ -131,8 +130,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         this.name = builder.name();
         this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
-        this.transactionManager = builder.transactionManager;
-        this.unitOfWorkFactory = new TransactionalUnitOfWorkFactory(transactionManager);
+        this.unitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
         this.workerExecutor = builder.workerExecutorBuilder.apply(name);
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
@@ -145,7 +143,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
                                       .name(name)
                                       .messageSource(messageSource)
                                       .tokenStore(tokenStore)
-                                      .transactionManager(transactionManager)
+                                      .unitOfWorkFactory(unitOfWorkFactory)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
                                       .eventFilter(event -> canHandleType(event.getPayloadType()))
