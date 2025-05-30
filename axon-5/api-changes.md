@@ -217,7 +217,21 @@ The reason for this shift can be broken down in three main pillars:
 Although this may seem like a devolution of the `Message`, we believe this stricter guardrails will help all users in
 the long run.
 
-TODO - Add specifics on the get/put with a `Converter`
+For those that do require more complex objects to reside inside the `MetaData`, we added construct and get operations
+that take in a `Converter`.
+The given `Converter` in these cases is used to convert to `String` upon insertion and to the requested type on request.
+Since `MetaData` is immutable, there are no put or merge operations with a `Converter` parameter.
+
+For construction, you can use the following "with converter" methods:
+
+* `MetaData#with(String key, Object value, Converter converter)`
+* `MetaData#and(String key, Object value, Converter converter)`
+* `MetaData#andIfNotPresent(String key, Supplier<Object> value, Converter converter)`
+
+For retrieval, we provide the following operations:
+
+* `MetaData#get(String key, Class<R> valueType, Converter converter)`
+* `MetaData#getOrDefault(String key, Class<R> valueType, Converter converter, R defaultValue)`
 
 ## Adjusted APIs
 
