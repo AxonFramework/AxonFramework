@@ -205,12 +205,14 @@ originate from an aggregate-based event store (thus a pre-Dynamic Consistency Bo
 The `MetaData` class in Axon Framework changed its implementation. Originally, it was a `Map<String, ?>` implementation.
 As of Axon Framework 5, it is a `Map<String, String>`.
 
-The reason for this shift can be broken down in two main pillars:
+The reason for this shift can be broken down in three main pillars:
 
 1. It greatly simplifies de-/serialization for storing `Messages` and putting `Messages` over the wire, since any value
    is a `String` in all cases.
 2. It aligns better with how other services, libraries, and frameworks view metadata, which tends to be a `String` or
    byte array.
+3. Depending on application requirements, the de-/serialization of specific values can be different. By enforcing a
+   `String`, we streamline the process.
 
 Although this may seem like a devolution of the `Message`, we believe this stricter guardrails will help all users in
 the long run.

@@ -97,7 +97,7 @@ public interface Message<P> {
     Class<P> getPayloadType();
 
     /**
-     * Returns a copy of {@code this Message (implementation)} with the given {@code metaData}.
+     * Returns a copy of this {@code Message} (implementation) with the given {@code metaData}.
      * <p>
      * All others fields, like for example the {@link #getPayload()}, remain unchanged.
      * <p/>
@@ -110,7 +110,7 @@ public interface Message<P> {
     Message<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     /**
-     * Returns a copy of {@code this Message (implementation)} with its {@link Message#getMetaData() metadata} merged
+     * Returns a copy of this {@code Message} (implementation) with its {@link Message#getMetaData() metadata} merged
      * with the given {@code metaData}.
      * <p>
      * All others fields, like for example the {@link #getPayload()}, remain unchanged.
