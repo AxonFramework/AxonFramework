@@ -203,7 +203,7 @@ originate from an aggregate-based event store (thus a pre-Dynamic Consistency Bo
 ### MetaData with String values
 
 The `MetaData` class in Axon Framework changed its implementation. Originally, it was a `Map<String, ?>` implementation.
-As of Axon Framework 5, it is a `Map<String, String`.
+As of Axon Framework 5, it is a `Map<String, String>`.
 
 The reason for this shift can be broken down in two main pillars:
 
