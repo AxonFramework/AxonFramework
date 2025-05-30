@@ -270,20 +270,6 @@ class JacksonSerializerTest {
         assertEquals(1, actual.size());
     }
 
-    // TODO Replace for withWithConverter validation
-    @Test
-    @Disabled
-    void serializeMetaDataWithComplexObjects() {
-        // Typing must be enabled for this (which we expect end-users to do)
-//        JacksonSerializer testSubject = JacksonSerializer.builder().defaultTyping().build();
-//
-//        MetaData metaData = MetaData.with("myKey", new ComplexObject("String1", "String2", 3));
-//        SerializedObject<byte[]> serialized = testSubject.serialize(metaData, byte[].class);
-//        MetaData actual = testSubject.deserialize(serialized);
-//
-//        assertEquals(metaData, actual);
-    }
-
     /**
      * Test case corresponding with a {@link QueryHandler} annotated method which
      * returns a {@link List} of {@link ComplexObject}. Upon deserialization, the type info is required by the
