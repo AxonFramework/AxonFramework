@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.correlation;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
@@ -338,7 +337,6 @@ class MetaDataTest {
         assertEquals("value", metaData.get("otherkey"));
     }
 
-    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private record MetaDataValue(String text, Long value) {
 
     }
