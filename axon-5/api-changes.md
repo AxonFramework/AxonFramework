@@ -737,6 +737,14 @@ This section contains two tables:
 | org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
 | org.axonframework.modelling.command.AggregateLifecycle          | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
 
+### Changed implements or extends
+
+Note that **any**  changes here may have far extending impact on the original class.
+
+| Class       | Before           | After            | Explanation                                                  | 
+|-------------|------------------|------------------|--------------------------------------------------------------|
+| `MetaData`  | `Map<String, ?>` | `Map<String, ?>` | See the [metadata description](#metadata-with-string-values) |
+
 ## Method Signature Changes
 
 This section contains three subsections, called:
@@ -816,3 +824,9 @@ This section contains three subsections, called:
 | `org.axonframework.eventsourcing.eventstore.EventStorageEngine#storeSnapshot(DomainEventMessage<?>)` | Replaced for a dedicated `SnapshotStore`.                                                |
 | `org.axonframework.eventsourcing.eventstore.EventStorageEngine#readSnapshot(String)`                 | Replaced for a dedicated `SnapshotStore`.                                                |
 | `org.axonframework.eventsourcing.eventstore.EventStorageEngine#lastSequenceNumberFor(String)`        | No longer necessary to support through the introduction of DCB.                          |
+
+### Changed method return types
+
+| Method                                         | Before               | After           |
+|------------------------------------------------|----------------------|-----------------|
+| `CorrelationDataProvider#correlationDataFor()` | Map<String, String>  | Map<String, ?>  | 
