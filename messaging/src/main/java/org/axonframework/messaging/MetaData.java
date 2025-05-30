@@ -256,6 +256,24 @@ public class MetaData implements Map<String, String> {
     }
 
     /**
+     * Returns the value stored under the given {@code key}, converting it to the given {@code valueType} with the given
+     * {@code converter}.
+     * <p>
+     * The {@code converter} is not invoked when there is no value present for the given {@code key}.
+     *
+     * @param key       The key for which to retrieve a value.
+     * @param valueType The desired type of the value to return, used during conversion.
+     * @param converter The {@code Converter} used to convert the recovered value to the given {@code valueType}.
+     * @param <R>       The desired value type to return.
+     * @return The value present for the given {@code key}, converted to {@code R} by the given {@code converter}.
+     */
+    @Nullable
+    public <R> R get(@Nonnull Object key, @Nonnull Class<R> valueType, @Nonnull Converter converter) {
+        String value = values.get(key);
+        return value == null ? null : converter.convert(value, valueType);
+    }
+
+    /**
      * <strong>This operation is not supported since {@code MetaData} is an immutable object.</strong>
      * <p>
      * {@inheritDoc}

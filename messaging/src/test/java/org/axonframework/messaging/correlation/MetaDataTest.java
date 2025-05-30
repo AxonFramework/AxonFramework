@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link MetaData}.
@@ -40,7 +41,7 @@ class MetaDataTest {
 
     @BeforeEach
     void setUp() {
-        converter = new ToStringConverter();
+        converter = spy(new ToStringConverter());
     }
 
     @Test
@@ -206,6 +207,28 @@ class MetaDataTest {
 
         assertEquals("firstVal", result.get("firstKey"));
         assertEquals(1, result.size());
+    }
+
+    @Test
+    void getWithConverterDoesNotConvertForNullValue() {
+        MetaData testSubject = MetaData.emptyInstance();
+
+        assertNull(testSubject.get("some-non-existing-key", MetaDataValue.class, converter));
+        verifyNoInteractions(converter);
+    }
+
+    @Test
+    void getWithConverterConvertsTheUncoveredValue() {
+        Converter mockedConverter = mock(Converter.class);
+        String testKey = "key";
+        MetaDataValue testValue = new MetaDataValue("val1", 1L);
+        when(mockedConverter.convert(testValue, String.class)).thenReturn(testValue.toString());
+        when(mockedConverter.convert(testValue.toString(), MetaDataValue.class)).thenReturn(testValue);
+
+        MetaData testSubject = MetaData.with(testKey, testValue, mockedConverter);
+
+        MetaDataValue result = testSubject.get(testKey, MetaDataValue.class, mockedConverter);
+        assertEquals(testValue, result);
     }
 
     @Test
