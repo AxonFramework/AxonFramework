@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.FutureUtils;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
@@ -57,7 +57,7 @@ class SplitTaskTest {
         result = new CompletableFuture<>();
 
         testSubject = new SplitTask(
-                result, PROCESSOR_NAME, SEGMENT_ID, workPackages, tokenStore, NoTransactionManager.instance()
+                result, PROCESSOR_NAME, SEGMENT_ID, workPackages, tokenStore, new SimpleUnitOfWorkFactory()
         );
     }
 
