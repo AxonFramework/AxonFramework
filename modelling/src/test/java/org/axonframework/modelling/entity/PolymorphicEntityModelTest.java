@@ -359,6 +359,21 @@ class PolymorphicEntityModelTest {
         }
 
         @Test
+        void cannotAddConcreteTypeWithConflictingCreationalCommandHandlerOfOther() {
+            when(concreteTestEntityOneEntityModel.supportedCreationalCommands()).thenReturn(Set.of(
+                    CONCRETE_ONE_CREATIONAL_COMMAND, CONCRETE_TWO_CREATIONAL_COMMAND));
+            when(concreteTestEntityTwoEntityModel.supportedCreationalCommands()).thenReturn(Set.of(
+                    CONCRETE_TWO_CREATIONAL_COMMAND));
+            PolymorphicEntityModelBuilder<AbstractTestEntity> builder = PolymorphicEntityModel
+                    .forSuperType(AbstractTestEntity.class)
+                    .addConcreteType(concreteTestEntityOneEntityModel);
+
+            assertThrows(IllegalArgumentException.class, () -> {
+                builder.addConcreteType(concreteTestEntityTwoEntityModel);
+            });
+        }
+
+        @Test
         void canNotAddNullChildEntityModel() {
             PolymorphicEntityModelBuilder<AbstractTestEntity> builder = PolymorphicEntityModel.forSuperType(
                     AbstractTestEntity.class);

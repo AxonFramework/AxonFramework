@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -52,6 +53,9 @@ class EntityCommandHandlingComponentTest {
                                                                                          "command");
     private final MessageType mixedMessageType = new MessageType("MixedCommand");
     private final CommandMessage<?> mixedCommandMessage = new GenericCommandMessage<>(mixedMessageType, "command");
+    private final MessageType missingMessageType = new MessageType("MissingCommand");
+    private final CommandMessage<?> missingCommandMessage = new GenericCommandMessage<>(missingMessageType,
+                                                                                           "command");
     private final String entityId = "myEntityId456";
 
     @Mock
@@ -88,6 +92,14 @@ class EntityCommandHandlingComponentTest {
                 instanceMessageType.qualifiedName(),
                 mixedMessageType.qualifiedName()
         ), result);
+    }
+
+    @Test
+    void resultsInNoHandlerExceptionWhenIsUnknownCommand() {
+        MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent
+                .handle(missingCommandMessage, context);
+
+        assertCompletedExceptionally(componentResult, NoHandlerForCommandException.class, "No handler for command [MissingCommand]");
     }
 
     @Nested
@@ -129,6 +141,7 @@ class EntityCommandHandlingComponentTest {
             assertEquals("Failed to load entity", exception.getCause().getMessage());
         }
     }
+
     @Nested
     class OnlyInstanceCommandHandler {
 

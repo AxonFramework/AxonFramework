@@ -55,6 +55,7 @@ class EventSourcingRepositoryTest {
 
     private EventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;
+    private EventSourcedEntityFactory<String, String> factory;
 
     private EventSourcingRepository<String, String> testSubject;
 
@@ -64,16 +65,17 @@ class EventSourcingRepositoryTest {
         eventStoreTransaction = mock();
         when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
 
+        factory = (id, event) -> {
+            if (event != null) {
+                return id + "(" + event.getPayload() + ")";
+            }
+            return id + "()";
+        };
         testSubject = new EventSourcingRepository<>(
                 String.class,
                 String.class,
                 eventStore,
-                (id, event) -> {
-                    if (event != null) {
-                        return id + "(" + event.getPayload() + ")";
-                    }
-                    return id + "()";
-                },
+                (identifier, event) -> factory.create(identifier, event),
                 identifier -> TEST_CRITERIA,
                 (entity, event, context) -> entity + "-" + event.getPayload()
         );
@@ -203,6 +205,40 @@ class EventSourcingRepositoryTest {
                 testSubject.load("test", processingContext);
 
         assertEquals("test(0)-0-1", result.resultNow().entity());
+    }
+
+    @Test
+    void loadOrCreateThrowsExceptionWhenEventStreamIsEmptyAndNullEntityIsCreated() {
+        ProcessingContext processingContext = new StubProcessingContext();
+        factory = (id, event) -> {
+            if (event != null) {
+                return id + "(" + event.getPayload() + ")";
+            }
+            return null; // Simulating a null entity creation
+        };
+        doReturn(MessageStream.fromStream(Stream.of()))
+                .when(eventStoreTransaction)
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+
+        CompletableFuture<ManagedEntity<String, String>> result = testSubject.loadOrCreate("test", processingContext);
+        assertTrue(result.isCompletedExceptionally());
+        assertInstanceOf(EntityMissingAfterLoadOrCreateException.class, result.exceptionNow());
+    }
+
+    @Test
+    void loadThrowsExceptionIfNullEntityIsReturnedAfterFirstEvent() {
+        ProcessingContext processingContext = new StubProcessingContext();
+        factory = (id, event) -> {
+            return null; // Simulating a null entity creation
+        };
+        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0))))
+                .when(eventStoreTransaction)
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+
+        CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
+
+        assertTrue(result.isCompletedExceptionally());
+        assertInstanceOf(EntityMissingAfterFirstEventException.class, result.exceptionNow());
     }
 
     @Test

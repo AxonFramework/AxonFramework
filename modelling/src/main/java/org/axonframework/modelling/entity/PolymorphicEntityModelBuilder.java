@@ -18,6 +18,7 @@ package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
@@ -38,6 +39,11 @@ public interface PolymorphicEntityModelBuilder<E> extends EntityModelBuilder<E> 
     @Override
     PolymorphicEntityModelBuilder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
                                                             @Nonnull EntityCommandHandler<E> messageHandler);
+
+    @Nonnull
+    @Override
+    PolymorphicEntityModelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                              @Nonnull CommandHandler messageHandler);
 
     @Nonnull
     @Override

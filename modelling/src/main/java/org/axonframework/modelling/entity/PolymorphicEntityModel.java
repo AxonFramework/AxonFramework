@@ -216,8 +216,8 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
         @Nonnull
         @Override
-        public EntityModelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
-                                                              @Nonnull CommandHandler messageHandler) {
+        public Builder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                   @Nonnull CommandHandler messageHandler) {
             superTypeBuilder.creationalCommandHandler(qualifiedName, messageHandler);
             return this;
         }
@@ -244,6 +244,15 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
             if (polymorphicModels.stream().anyMatch(p -> p.entityType().equals(entityModel.entityType()))) {
                 throw new IllegalArgumentException("Concrete type [%s] already registered for this model.".formatted(
                         entityModel.entityType().getName()));
+            }
+            // Check if any existing polymorphic model clashes with the creational commands of the new model.
+            for (EntityModel<? extends E> existingModel : polymorphicModels) {
+                if (existingModel.supportedCreationalCommands().stream()
+                        .anyMatch(entityModel.supportedCreationalCommands()::contains)) {
+                    throw new IllegalArgumentException(
+                            "Concrete type [%s] has creational commands that clash with existing concrete type [%s]."
+                                    .formatted(entityModel.entityType().getName(), existingModel.entityType().getName()));
+                }
             }
             polymorphicModels.add(entityModel);
             return this;
