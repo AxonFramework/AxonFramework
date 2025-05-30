@@ -74,7 +74,6 @@ public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinitio
         }
 
         private boolean hasRequiredRoles(@Nonnull Message<?> message) {
-
             Set<String> authorities = new HashSet<>();
             if (message.getMetaData().containsKey("authorities")) {
                 authorities.addAll(Arrays.asList(message.getMetaData().get("authorities").split(",")));
