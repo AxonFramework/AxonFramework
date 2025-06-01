@@ -63,14 +63,14 @@
         <slf4j.version>2.0.17</slf4j.version>
         <log4j.version>2.13.3</log4j.version>
         <!-- Testing -->
-        <junit.jupiter.version>5.12.2</junit.jupiter.version>
+        <junit.jupiter.version>5.13.0</junit.jupiter.version>
         <mockk.version>1.12.4</mockk.version>
         <!-- Build -->
         <central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
         <dokka.version>2.0.0</dokka.version>
         <jacoco-maven.version>0.8.13</jacoco-maven.version>
         <maven-assembly.version>3.7.1</maven-assembly.version>
-        <maven-clean.version>3.4.1</maven-clean.version>
+        <maven-clean.version>3.5.0</maven-clean.version>
         <maven-compiler.version>3.14.0</maven-compiler.version>
         <maven-enforcer.version>3.5.0</maven-enforcer.version>
         <maven-gpg.version>3.2.7</maven-gpg.version>
