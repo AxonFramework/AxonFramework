@@ -101,10 +101,10 @@ public abstract class FutureUtils {
      * preserves the original exception type completely. Use this when you need precise exception type preservation and
      * are certain about the exception handling contract.
      *
-     * @param future the {@link CompletableFuture} to join
-     * @param <T>    the type of the future's result
-     * @return the result of the future
-     * @throws Throwable the unwrapped cause if the future completed exceptionally (exact type preserved)
+     * @param future The {@link CompletableFuture} to join.
+     * @param <T>    The type of the future's result.
+     * @return The result of the future.
+     * @throws Throwable the unwrapped cause if the future completed exceptionally (exact type preserved).
      */
     public static <T> T joinAndUnwrap(CompletableFuture<T> future) {
         try {
@@ -123,9 +123,9 @@ public abstract class FutureUtils {
      * This method should be used carefully and only when you're certain about the exception handling contract of your
      * calling code.
      *
-     * @param exception the exception to throw
-     * @param <E>       the type of exception (inferred)
-     * @throws E the exception with its original type
+     * @param exception The exception to throw.
+     * @param <E>       The type of exception (inferred)
+     * @throws E The exception with its original type.
      */
     @SuppressWarnings("unchecked")
     private static <E extends Throwable> void sneakyThrow(Throwable exception) throws E {

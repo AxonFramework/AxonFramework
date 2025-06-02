@@ -59,20 +59,20 @@ class ClaimTask extends CoordinatorTask {
     /**
      * Constructs a {@link ClaimTask}.
      *
-     * @param result            the {@link CompletableFuture} to {@link #complete(Boolean, Throwable)} once
-     *                          {@link #run()} has finalized
-     * @param name              the name of the {@link Coordinator} this instruction will be ran in. Used to correctly
-     *                          deal with the {@code tokenStore}
-     * @param segmentId         the identifier of the {@link Segment} this instruction should claim
-     * @param workPackages      the collection of {@link WorkPackage}s controlled by the {@link Coordinator}. Will be
+     * @param result            The {@link CompletableFuture} to {@link #complete(Boolean, Throwable)} once
+     *                          {@link #run()} has finalized.
+     * @param name              The name of the {@link Coordinator} this instruction will be ran in. Used to correctly
+     *                          deal with the {@code tokenStore}.
+     * @param segmentId         The identifier of the {@link Segment} this instruction should claim.
+     * @param workPackages      The collection of {@link WorkPackage}s controlled by the {@link Coordinator}. Will be
      *                          queried for the presence of the given {@code segmentId} and the segment to merge it
-     *                          with
-     * @param releasesDeadlines the map of release deadlines for each segment
-     * @param tokenStore        the storage solution for {@link TrackingToken}s. Used to claim the {@code segmentId} if
+     *                          with.
+     * @param releasesDeadlines The map of release deadlines for each segment.
+     * @param tokenStore        The storage solution for {@link TrackingToken}s. Used to claim the {@code segmentId} if
      *                          it is not present in the {@code workPackages}, to remove one of the segments and merge
-     *                          the merged token
-     * @param unitOfWorkFactory a {@link UnitOfWorkFactory} that spawns {@link UnitOfWork UnitOfWorks} used to invoke
-     *                          all {@link TokenStore} operations inside a unit of work
+     *                          the merged token.
+     * @param unitOfWorkFactory The {@link UnitOfWorkFactory} that spawns {@link UnitOfWork UnitOfWorks} used to invoke
+     *                          all {@link TokenStore} operations inside a unit of work.
      */
     ClaimTask(CompletableFuture<Boolean> result,
               String name,
