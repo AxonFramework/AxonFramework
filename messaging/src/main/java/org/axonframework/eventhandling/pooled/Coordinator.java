@@ -37,10 +37,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -710,7 +710,6 @@ class Coordinator {
         private final AtomicBoolean scheduledGate = new AtomicBoolean();
         private final AtomicBoolean interruptibleScheduledGate = new AtomicBoolean();
         private MessageStream<EventMessage<?>> eventStream;
-        private Iterator<MessageStream.Entry<EventMessage<?>>> eventIterator;
         private TrackingToken lastScheduledToken = NoToken.INSTANCE;
         private boolean availabilityCallbackSupported;
         private long unclaimedSegmentValidationThreshold;
@@ -819,7 +818,6 @@ class Coordinator {
                 lastScheduledToken = NoToken.INSTANCE;
                 closeStream();
                 eventStream = null;
-                eventIterator = null;
                 processingGate.set(false);
                 scheduleDelayedCoordinationTask(tokenClaimInterval);
                 return;
@@ -856,16 +854,6 @@ class Coordinator {
                     Thread.currentThread().interrupt();
                 } else {
                     abortAndScheduleRetry(e);
-                }
-            }
-        }
-
-        private void closeStream() {
-            if (eventStream != null) {
-                try {
-                    eventStream.close();
-                } catch (Exception e) {
-                    logger.debug("Exception occurred while closing event stream for Processor [{}].", name, e);
                 }
             }
         }
@@ -979,13 +967,11 @@ class Coordinator {
                 logger.debug("Processor [{}] will close the current stream.", name);
                 closeStream();
                 eventStream = null;
-                eventIterator = null;
                 lastScheduledToken = NoToken.INSTANCE;
             }
 
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
                 eventStream = eventSource.open(StreamingCondition.startingFrom(trackingToken));
-                eventIterator = eventStream.asFlux().toIterable().iterator();
                 logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
                 // Note: MessageStream doesn't have setOnAvailableCallback, so we set this to false
                 availabilityCallbackSupported = false;
@@ -1004,11 +990,15 @@ class Coordinator {
         }
 
         private boolean hasNextEvent() {
-            return eventIterator != null && eventIterator.hasNext();
+            return eventStream != null && eventStream.hasNextAvailable();
         }
 
         private MessageStream.Entry<EventMessage<?>> nextEvent() {
-            return eventIterator.next();
+            if (eventStream == null) {
+                return null;
+            }
+            Optional<MessageStream.Entry<EventMessage<?>>> next = eventStream.next();
+            return next.orElse(null);
         }
 
         /**
@@ -1062,7 +1052,7 @@ class Coordinator {
 
         private boolean eventsEqualingLastScheduledToken(TrackingToken lastScheduledToken) {
             // Note: MessageStream iterator doesn't support peeking like BlockingStream did.
-            // This optimization for grouping events with the same token (from upcasting) 
+            // This optimization for grouping events with the same token (from upcasting)
             // is simplified for now. A more sophisticated implementation could buffer events
             // to achieve the same grouping behavior.
             return false;
@@ -1196,6 +1186,16 @@ class Coordinator {
                         return releaseDeadline;
                     }
             );
+        }
+    }
+
+    private void closeStream() {
+        if (eventStream != null) {
+            try {
+                eventStream.close();
+            } catch (Exception e) {
+                logger.debug("Exception occurred while closing event stream for Processor [{}].", name, e);
+            }
         }
     }
 }
