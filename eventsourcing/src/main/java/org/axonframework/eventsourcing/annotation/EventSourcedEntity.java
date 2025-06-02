@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.annotation;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.annotation.reflection.AnnotationBasedEventSourcedEntityFactoryDefinition;
 import org.axonframework.eventstreaming.EventCriteria;
 
 import java.lang.annotation.ElementType;
@@ -98,9 +99,9 @@ public @interface EventSourcedEntity {
     /**
      * The definition of the {@link EventSourcedEntityFactory} to use to create a new instance of the entity. A custom
      * definition can be provided to override the default behavior of the
-     * {@link ConstructorBasedEventSourcedEntityFactory}.
+     * {@link AnnotationBasedEventSourcedEntityFactoryDefinition}.
      *
      * @return The definition to construct an {@link EventSourcedEntityFactory}.
      */
-    Class<? extends EventSourcedEntityFactoryDefinition> entityFactoryDefinition() default ConstructorBasedEventSourcedEntityFactoryDefinition.class;
+    Class<? extends EventSourcedEntityFactoryDefinition> entityFactoryDefinition() default AnnotationBasedEventSourcedEntityFactoryDefinition.class;
 }
