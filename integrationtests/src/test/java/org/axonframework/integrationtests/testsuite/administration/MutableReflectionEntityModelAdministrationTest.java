@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.reflection.AnnotationBasedEventSourcedEntityFactory;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.commands.CompleteTaskCommand;
@@ -171,7 +171,7 @@ public class MutableReflectionEntityModelAdministrationTest extends AbstractAdmi
                                                                Set.of(MutableEmployee.class, MutableCustomer.class),
                                                                configuration.getComponent(ParameterResolverFactory.class),
                                                                configuration.getComponent(MessageTypeResolver.class)),
-                s -> EventCriteria.havingTags("Person", s.key()),
+                (s, ctx) -> EventCriteria.havingTags("Person", s.key()),
                 personModel
         );
 

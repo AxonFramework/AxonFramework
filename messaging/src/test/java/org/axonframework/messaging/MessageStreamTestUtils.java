@@ -18,14 +18,15 @@ package org.axonframework.messaging;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MessageStreamTestUtils {
     private MessageStreamTestUtils() {
         // Prevent instantiation
     }
-
 
     /**
      * Asserts that the given {@code stream} completed exceptionally with the given {@code expectedExceptionType}
@@ -37,8 +38,10 @@ public class MessageStreamTestUtils {
             Class<? extends Throwable> expectedExceptionType
     ) {
         CompletableFuture<? extends MessageStream.Entry<?>> cf = stream.first().asCompletableFuture();
-        var exception = assertThrows(CompletionException.class, cf::join);
-        assertInstanceOf(expectedExceptionType, exception.getCause());
+        await().atMost(10, TimeUnit.SECONDS)
+               .until(cf::isDone);
+        var exception = cf.exceptionNow();
+        assertInstanceOf(expectedExceptionType, exception);
     }
 
     /**

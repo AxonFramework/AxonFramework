@@ -17,9 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-
-import java.util.HashSet;
-import java.util.Set;
+import org.axonframework.eventstreaming.EventCriteria;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 

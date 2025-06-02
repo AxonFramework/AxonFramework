@@ -22,13 +22,13 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.CriteriaResolver;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.annotation.reflection.EntityFactoryMethod;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
@@ -168,8 +168,9 @@ class AnnotatedEventSourcedEntityBuilderTest {
 
     private static class CustomCriteriaResolver<ID> implements CriteriaResolver<ID> {
 
+        @Nonnull
         @Override
-        public EventCriteria apply(ID id) {
+        public EventCriteria resolve(@Nonnull ID id, @Nonnull ProcessingContext context) {
             return EventCriteria.havingAnyTag();
         }
     }

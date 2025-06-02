@@ -20,11 +20,12 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
@@ -52,6 +53,9 @@ class EntityCommandHandlingComponentTest {
                                                                                          "command");
     private final MessageType mixedMessageType = new MessageType("MixedCommand");
     private final CommandMessage<?> mixedCommandMessage = new GenericCommandMessage<>(mixedMessageType, "command");
+    private final MessageType missingMessageType = new MessageType("MissingCommand");
+    private final CommandMessage<?> missingCommandMessage = new GenericCommandMessage<>(missingMessageType,
+                                                                                           "command");
     private final String entityId = "myEntityId456";
 
     @Mock
@@ -90,13 +94,20 @@ class EntityCommandHandlingComponentTest {
         ), result);
     }
 
+    @Test
+    void resultsInNoHandlerExceptionWhenIsUnknownCommand() {
+        MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent
+                .handle(missingCommandMessage, context);
+
+        assertCompletedExceptionally(componentResult, NoHandlerForCommandException.class, "No handler for command [MissingCommand]");
+    }
+
     @Nested
     class OnlyCreationalCommandHandler {
 
         @Test
         void executesCreationalCommandHandlerAfterLoadGivesNullResult() {
             setupLoadEntity(null);
-
             CommandResultMessage<?> resultMessage = testComponent.handle(creationalCommandMessage, context)
                                                                  .first().asCompletableFuture().join().message();
 
@@ -130,6 +141,7 @@ class EntityCommandHandlingComponentTest {
             assertEquals("Failed to load entity", exception.getCause().getMessage());
         }
     }
+
     @Nested
     class OnlyInstanceCommandHandler {
 

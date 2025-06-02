@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.DelayedMessageStream;
@@ -27,10 +28,12 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A {@link CommandHandlingComponent} that handles commands for an entity. It will resolve the identifier of the entity
@@ -77,12 +80,8 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
         try {
             ID id = idResolver.resolve(command, context);
             QualifiedName messageName = command.type().qualifiedName();
-            var isCreationalHandler = entityModel.supportedCreationalCommands().contains(messageName);
-            var isInstanceHandler = entityModel.supportedInstanceCommands().contains(messageName);
 
-            var loadFuture = isInstanceHandler && !isCreationalHandler ?
-                    repository.loadOrCreate(id, context) :
-                    repository.load(id, context);
+            var loadFuture = loadFromRepository(context, id, messageName);
             return DelayedMessageStream.createSingle(loadFuture.thenApply(me -> {
                 if (me.entity() != null) {
                     return entityModel.handleInstance(command, me.entity(), context).first();
@@ -94,6 +93,38 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
         }
     }
 
+    /**
+     * As creational command handlers do require the entity to be absent, and instance command handlers do require the
+     * entity to be present, this method will load the entity from the repository with the right method. As load will
+     * return a null {@link ManagedEntity#entity()} if it doesn't exist, and loadOrCreate will create an initial state
+     * if it doesn't exist yet, we need to use the right method based on the {@code messageName} of the command being
+     * handled.
+     * <p>
+     * If a command is creational, or both a creational and an instance command, we will call
+     * {@link Repository#load(Object, ProcessingContext)}. If a command is an instance command, we will call
+     * {@link Repository#loadOrCreate(Object, ProcessingContext)}. If it is creational, we will call
+     * {@link Repository#load(Object, ProcessingContext)}.
+     */
+    private CompletableFuture<ManagedEntity<ID, E>> loadFromRepository(
+            ProcessingContext context, ID id, QualifiedName messageName) {
+        var isCreationalHandler = entityModel.supportedCreationalCommands().contains(messageName);
+        var isInstanceHandler = entityModel.supportedInstanceCommands().contains(messageName);
+        if (isCreationalHandler) {
+            // With a creational command, we don't want to create an initial state if it doesn't exist yet.
+            // As such, we call load.
+            return repository.load(id, context);
+        }
+        if (isInstanceHandler) {
+            // With an instance command, we want to load the entity if it exists, or create it if it doesn't as we always
+            // need an entity to handle the command. As such, we call loadOrCreate.
+            return repository.loadOrCreate(id, context);
+        }
+        // If the command is neither creational nor instance, we don't know what to do with it.
+        throw new NoHandlerForCommandException(
+                ("No handler for command [%s] in entity [%s] with id [%s]. "
+                        + "Ensure that the command is either a creational or an instance command.").formatted(
+                        messageName, entityModel.entityType().getName(), id));
+    }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {

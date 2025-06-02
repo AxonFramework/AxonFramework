@@ -148,14 +148,6 @@ public interface EventProcessingConfiguration {
     SequencingPolicy<? super EventMessage<?>> sequencingPolicy(String processingGroup);
 
     /**
-     * Returns the {@link RollbackConfiguration} tied to the given {@code processorName}.
-     *
-     * @param processorName a {@link String} specifying a processing group
-     * @return the {@link RollbackConfiguration} belonging to the given {@code processorName}
-     */
-    RollbackConfiguration rollbackConfiguration(String processorName);
-
-    /**
      * Returns the {@link ErrorHandler} tied to the given {@code processorName}.
      *
      * @param processorName a {@link String} specifying a processing group

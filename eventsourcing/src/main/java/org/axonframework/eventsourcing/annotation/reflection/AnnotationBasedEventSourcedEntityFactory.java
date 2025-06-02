@@ -21,7 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -246,8 +246,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                             .formatted(id, eventMessage, factoryMethods));
         }
         Set<ScannedFactoryMethod> matchingMethods = compatibleMethods.stream()
-                                                                     .filter(e -> e.parametersMatch(eventMessage,
-                                                                                                    context))
+                                                                     .filter(e -> e.parametersMatch(context))
                                                                      .collect(Collectors.toSet());
         if (matchingMethods.isEmpty()) {
             throw new AxonConfigurationException(
@@ -262,9 +261,12 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     @Nullable
     @Override
     public E create(@Nonnull ID id, @Nullable EventMessage<?> firstEventMessage, @Nonnull ProcessingContext context) {
-        ProcessingContext contextWithId = context.withResource(ID_KEY, id);
-        return findMostSpecificMethod(id, firstEventMessage, contextWithId)
-                .invoke(id, firstEventMessage, contextWithId);
+        ProcessingContext preparedContext = context.withResource(ID_KEY, id);
+        if(firstEventMessage != null) {
+            preparedContext = Message.addToContext(preparedContext, firstEventMessage);
+        }
+        return findMostSpecificMethod(id, firstEventMessage, preparedContext)
+                .invoke(id, preparedContext);
     }
 
     /**
@@ -291,11 +293,11 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             this.concreteIdType = concreteIdType;
         }
 
-        private E invoke(ID id, EventMessage<?> eventMessage, ProcessingContext context) {
+        private E invoke(ID id, ProcessingContext context) {
             ProcessingContext contextWithId = context.withResource(ID_KEY, id);
             Object[] args = new Object[executable.getParameterCount()];
             for (int i = 0; i < args.length; i++) {
-                args[i] = parameterResolvers[i].resolveParameterValue(eventMessage, contextWithId);
+                args[i] = parameterResolvers[i].resolveParameterValue(contextWithId);
             }
             return constructEntityWithArguments(args);
         }
@@ -308,9 +310,9 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             return parameterResolvers.length;
         }
 
-        private boolean parametersMatch(EventMessage<?> message, ProcessingContext processingContext) {
+        private boolean parametersMatch(ProcessingContext processingContext) {
             return Arrays.stream(parameterResolvers)
-                         .allMatch(f -> f.matches(message, processingContext));
+                         .allMatch(f -> f.matches(processingContext));
         }
 
         private boolean isWithoutPayload() {
@@ -350,12 +352,12 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     private class IdTypeParameterResolver implements ParameterResolver<ID> {
 
         @Override
-        public ID resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+        public ID resolveParameterValue(ProcessingContext processingContext) {
             return processingContext.getResource(ID_KEY);
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(ProcessingContext processingContext) {
             return processingContext.containsResource(ID_KEY);
         }
     }

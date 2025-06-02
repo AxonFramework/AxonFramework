@@ -22,6 +22,7 @@ import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
@@ -29,6 +30,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -64,14 +66,14 @@ class AnnotationEventHandlerAdapterTest {
 
     @Test
     void invokeResetHandler() {
-        testSubject.prepareReset(null);
+        testSubject.prepareReset(new StubProcessingContext());
 
         assertTrue(annotatedEventListener.invocations.contains("reset"));
     }
 
     @Test
     void invokeResetHandlerWithResetContext() {
-        testSubject.prepareReset("resetContext", null);
+        testSubject.prepareReset("resetContext", new StubProcessingContext());
 
         assertTrue(annotatedEventListener.invocations.contains("resetWithContext"));
     }
@@ -83,7 +85,8 @@ class AnnotationEventHandlerAdapterTest {
                                                         parameterResolverFactory,
                                                         messageTypeResolver);
 
-        testSubject.handleSync(asEventMessage("count"));
+        EventMessage<Object> eventMessage = asEventMessage("count");
+        testSubject.handleSync(eventMessage, StubProcessingContext.forMessage(eventMessage));
         assertEquals(3, annotatedEventListener.invocations.stream().filter("count"::equals).count());
     }
 
@@ -92,6 +95,7 @@ class AnnotationEventHandlerAdapterTest {
     void wrapExceptionInResultInterceptor() {
         EventMessage<Object> testEventMessage =
                 asEventMessage("testing").andMetaData(MetaData.with("key", "value"));
+        ProcessingContext context = StubProcessingContext.forMessage(testEventMessage);
 
         SomeExceptionHandler annotatedEventListener = new SomeExceptionHandler();
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener,
@@ -99,7 +103,7 @@ class AnnotationEventHandlerAdapterTest {
                                                         messageTypeResolver);
 
         try {
-            testSubject.handleSync(testEventMessage);
+            testSubject.handleSync(testEventMessage, context);
             fail("Expected exception");
         } catch (Exception e) {
             assertEquals(RuntimeException.class, e.getClass());
@@ -113,6 +117,7 @@ class AnnotationEventHandlerAdapterTest {
     void mismatchingExceptionTypeFromHandlerIgnored() {
         EventMessage<Object> testEventMessage =
                 asEventMessage("testing").andMetaData(MetaData.with("key", "value"));
+        ProcessingContext context = StubProcessingContext.forMessage(testEventMessage);
 
         SomeMismatchingExceptionHandler annotatedEventListener = new SomeMismatchingExceptionHandler();
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener,
@@ -120,7 +125,7 @@ class AnnotationEventHandlerAdapterTest {
                                                         messageTypeResolver);
 
         try {
-            testSubject.handleSync(testEventMessage);
+            testSubject.handleSync(testEventMessage, context);
             fail("Expected exception");
         } catch (Exception e) {
             assertEquals(IllegalArgumentException.class, e.getClass());
@@ -233,9 +238,9 @@ class AnnotationEventHandlerAdapterTest {
     public static class SomeInterceptingHandler extends SomeHandler {
 
         @MessageHandlerInterceptor
-        public void intercept(String event, InterceptorChain chain) throws Exception {
+        public void intercept(String event, ProcessingContext context, InterceptorChain chain) throws Exception {
             invocations.add(event);
-            chain.proceedSync();
+            chain.proceedSync(context);
         }
 
         @MessageHandlerInterceptor

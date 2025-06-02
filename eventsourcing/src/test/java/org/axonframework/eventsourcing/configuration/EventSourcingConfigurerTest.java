@@ -17,19 +17,19 @@
 package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.configuration.ApplicationConfigurerTestSuite;
-import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.PayloadBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
@@ -84,7 +84,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
         EventSourcedEntityBuilder<String, Object> testEntityBuilder =
                 EventSourcedEntityBuilder.entity(String.class, Object.class)
                                          .entityFactory( c-> EventSourcedEntityFactory.fromIdentifier(id -> null))
-                                         .criteriaResolver(c -> event -> EventCriteria.havingAnyTag())
+                                         .criteriaResolver(c -> (event, ctx) -> EventCriteria.havingAnyTag())
                                          .entityEvolver(c -> (entity, event, context) -> entity);
         ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
                 StatefulCommandHandlingModule.named("test")

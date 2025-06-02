@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.messaging.unitofwork;
 
-import org.junit.jupiter.api.*;
+/**
+ * Factory for creating simple {@link UnitOfWork} instances. Create units of work by invoking the {@link UnitOfWork}
+ * constructor.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
+public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
 
-import static org.junit.jupiter.api.Assertions.*;
-
-class AnyEventTest {
-
-    @Test
-    void anyEventDoesNotFlattenToCriterion() {
-        AnyEvent testSubject = AnyEvent.INSTANCE;
-
-        assertTrue(testSubject.flatten().isEmpty());
+    @Override
+    public UnitOfWork create() {
+        return new UnitOfWork();
     }
 }

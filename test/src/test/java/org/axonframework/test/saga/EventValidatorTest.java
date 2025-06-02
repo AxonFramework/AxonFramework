@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.MyOtherEvent;
 import org.axonframework.test.matchers.AllFieldsFilter;
@@ -56,23 +57,25 @@ class EventValidatorTest {
 
     @Test
     void assertPublishedEventsWithNoEventsMatcherThrowsAssertionErrorIfEventWasPublished() {
-        testSubject.handleSync(asEventMessage(new MyOtherEvent()));
+        EventMessage<MyOtherEvent> eventMessage = asEventMessage(new MyOtherEvent());
+        testSubject.handleSync(eventMessage, new LegacyMessageSupportingContext(eventMessage));
 
         assertThrows(AxonAssertionError.class, () -> testSubject.assertPublishedEventsMatching(Matchers.noEvents()));
     }
 
     @Test
     void assertPublishedEventsThrowsAssertionErrorIfEventWasPublished() {
-        testSubject.handleSync(asEventMessage(new MyOtherEvent()));
+        EventMessage<MyOtherEvent> eventMessage = asEventMessage(new MyOtherEvent());
+        testSubject.handleSync(eventMessage, new LegacyMessageSupportingContext(eventMessage));
 
         assertThrows(AxonAssertionError.class, testSubject::assertPublishedEvents);
     }
 
     @Test
     void assertPublishedEventsForEventMessages() {
-        EventMessage<MyOtherEvent> testEventMessage = asEventMessage(new MyOtherEvent());
-        testSubject.handleSync(testEventMessage);
+        EventMessage<MyOtherEvent> eventMessage = asEventMessage(new MyOtherEvent());
+        testSubject.handleSync(eventMessage, new LegacyMessageSupportingContext(eventMessage));
 
-        testSubject.assertPublishedEvents(testEventMessage);
+        testSubject.assertPublishedEvents(eventMessage);
     }
 }

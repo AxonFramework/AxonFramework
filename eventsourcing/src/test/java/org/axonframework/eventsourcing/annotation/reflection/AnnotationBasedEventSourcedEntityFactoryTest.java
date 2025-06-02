@@ -23,11 +23,10 @@ import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -49,9 +48,6 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
     @Mock
     private EventMessage<?> eventMessage;
-
-    @Spy
-    private ProcessingContext processingContext = new StubProcessingContext();
 
 
     @BeforeEach
@@ -76,7 +72,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
         @Test
         void usesIdConstructorWithoutMessage() {
-            EventMessageTestEntity entity = factory.create("test-id", null, processingContext);
+            EventMessageTestEntity entity = factory.create("test-id", null, new StubProcessingContext());
             assertNotNull(entity);
             assertEquals("test-id", entity.getId());
             assertNull(entity.getEventMessage());
@@ -84,7 +80,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
         @Test
         void usesEventMessageConstructorWithEventMessage() {
-            EventMessageTestEntity entity = factory.create("test-id", eventMessage, processingContext);
+            EventMessageTestEntity entity = factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             assertNotNull(entity);
             assertEquals("test-id", entity.getId());
             assertSame(eventMessage, entity.getEventMessage());
@@ -135,7 +131,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
         @Test
         void usesEventMessageConstructorWithCorrectPayloadType() {
-            PayloadTypeSpecificTestEntity entity = factory.create("test-id", eventMessage, processingContext);
+            PayloadTypeSpecificTestEntity entity = factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             assertNotNull(entity);
             assertSame(eventMessage, entity.getEventMessage());
         }
@@ -144,7 +140,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
         void throwsErrorIfNoMatchingPayloadType() {
             when(eventMessage.type()).thenReturn(new MessageType("non-matching-test-type"));
             AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
-                factory.create("test-id", eventMessage, processingContext);
+                factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
             assertTrue(exception.getMessage().contains("No suitable @EntityFactoryMethods found"));
         }
@@ -183,7 +179,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
         @Test
         void usesEventPayloadConstructorWithCorrectPayloadType() {
             eventMessage = new GenericEventMessage<>(new MessageType(PayloadSpecificPayload.class), new PayloadSpecificPayload("my-specific-payload"));
-            PayloadSpecificTestEntity entity = factory.create("test-id", eventMessage, processingContext);
+            PayloadSpecificTestEntity entity = factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             assertNotNull(entity);
             assertEquals("my-specific-payload", entity.getPayload());
         }
@@ -192,7 +188,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
         void throwsErrorIfNoMatchingPayloadType() {
             eventMessage = new GenericEventMessage<>(new MessageType("non-matching-test-type"), new PayloadSpecificPayload("my-specific-payload"));
             AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
-                factory.create("test-id", eventMessage, processingContext);
+                factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
             assertTrue(exception.getMessage().contains("No suitable @EntityFactoryMethods found"));
         }
@@ -233,7 +229,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
         @Test
         void usesIdFactoryMethodForNullEventMessage() {
-            FactoryMethodsTestEntity entity = factory.create("test-id", null, processingContext);
+            FactoryMethodsTestEntity entity = factory.create("test-id", null, new StubProcessingContext());
             assertNotNull(entity);
             assertEquals("test-id", entity.getId());
             assertNull(entity.getEventMessage());
@@ -241,7 +237,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
         @Test
         void usesEventMessageFactoryMethodForEventMessage() {
-            FactoryMethodsTestEntity entity = factory.create("test-id", eventMessage, processingContext);
+            FactoryMethodsTestEntity entity = factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             assertNotNull(entity);
             assertEquals("test-id", entity.getId());
             assertSame(eventMessage, entity.getEventMessage());
@@ -290,7 +286,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             );
 
             when(eventMessage.getMetaData()).thenReturn(MetaData.from(Collections.singletonMap("blabla", "blabla")));
-            var entity = factory.create("test-id", eventMessage, processingContext);
+            var entity = factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             assertEquals("id-and-metadata", entity.invoked);
         }
 
@@ -304,7 +300,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             );
 
             when(eventMessage.getMetaData()).thenReturn(MetaData.emptyInstance());
-            var entity = factory.create("test-id", eventMessage, processingContext);
+            var entity = factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             assertEquals("simply-id", entity.invoked);
         }
 
@@ -317,7 +313,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     messageTypeResolver
             );
 
-            var entity = factory.create("test-id", null, processingContext);
+            var entity = factory.create("test-id", null, new StubProcessingContext());
             assertEquals("simply-id", entity.invoked);
         }
 

@@ -17,12 +17,12 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nullable;
+import org.axonframework.eventstreaming.Tag;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 

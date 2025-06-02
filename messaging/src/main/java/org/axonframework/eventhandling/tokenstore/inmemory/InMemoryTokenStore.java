@@ -73,6 +73,7 @@ public class InMemoryTokenStore implements TokenStore {
         }
     }
 
+    // TODO #3432 - CurrentUnitOfWork is here to mimic transactional behavior, adjust it by mean of ProcessingContext
     @Override
     public void storeToken(TrackingToken token, @Nonnull String processorName, int segment) {
         if (CurrentUnitOfWork.isStarted()) {

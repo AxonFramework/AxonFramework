@@ -669,6 +669,26 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
+    void errorInReduceFunctionLeadsToFailedStream() {
+        AtomicBoolean invoked = new AtomicBoolean();
+        RuntimeException expected = new RuntimeException("oops");
+
+        MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage(), createRandomMessage()));
+
+        CompletableFuture<String> result = testSubject.reduce(
+                "",
+                (base, entry) -> {
+                    invoked.set(true);
+                    throw expected;
+                }
+        );
+
+        assertTrue(result.isCompletedExceptionally());
+        assertEquals(expected, result.exceptionNow());
+        assertTrue(invoked.get());
+    }
+
+    @Test
     void shouldReturnIdentityWhenReducingEmptyStream() {
         String expected = "42";
         AtomicBoolean invoked = new AtomicBoolean();

@@ -109,11 +109,12 @@ public class LoggingInterceptor<T extends Message<?>>
     @Deprecated
     @Override
     public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
+                         @Nonnull ProcessingContext context,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         T message = unitOfWork.getMessage();
         logger.info("Incoming message: [{}]", message.getPayloadType().getSimpleName());
         try {
-            Object returnValue = interceptorChain.proceedSync();
+            Object returnValue = interceptorChain.proceedSync(context);
             logger.info("[{}] executed successfully with a [{}] return value",
                         message.getPayloadType().getSimpleName(),
                         returnValue == null ? "null" : returnValue.getClass().getSimpleName());

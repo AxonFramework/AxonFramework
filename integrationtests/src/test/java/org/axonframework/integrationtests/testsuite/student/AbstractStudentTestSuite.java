@@ -22,11 +22,11 @@ import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
@@ -143,7 +143,7 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Course" and the given model id.
      */
     protected CriteriaResolver<String> courseCriteriaResolver(Configuration config) {
-        return courseId -> EventCriteria.havingTags(new Tag("Course", courseId));
+        return (courseId, ctx) -> EventCriteria.havingTags(new Tag("Course", courseId));
     }
 
     /**
@@ -151,7 +151,7 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Student" and the given model id.
      */
     protected CriteriaResolver<String> studentCriteriaResolver(Configuration config) {
-        return studentId -> EventCriteria.havingTags(new Tag("Student", studentId));
+        return (studentId, ctx) -> EventCriteria.havingTags(new Tag("Student", studentId));
     }
 
     /**

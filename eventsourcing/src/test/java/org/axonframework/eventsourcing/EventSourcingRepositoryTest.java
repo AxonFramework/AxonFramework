@@ -20,16 +20,16 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -55,6 +55,7 @@ class EventSourcingRepositoryTest {
 
     private EventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;
+    private EventSourcedEntityFactory<String, String> factory;
 
     private EventSourcingRepository<String, String> testSubject;
 
@@ -64,17 +65,18 @@ class EventSourcingRepositoryTest {
         eventStoreTransaction = mock();
         when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
 
+        factory = (id, event, ctx) -> {
+            if (event != null) {
+                return id + "(" + event.getPayload() + ")";
+            }
+            return id + "()";
+        };
         testSubject = new EventSourcingRepository<>(
                 String.class,
                 String.class,
                 eventStore,
-                (id, event, context) -> {
-                    if(event != null) {
-                        return id + "(" + event.getPayload() + ")";
-                    }
-                    return id + "()";
-                },
-                identifier -> TEST_CRITERIA,
+                (id, event, context) -> factory.create(id, event, context),
+                (identifier, ctx) -> TEST_CRITERIA,
                 (entity, event, context) -> entity + "-" + event.getPayload()
         );
     }
@@ -206,6 +208,40 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
+    void loadOrCreateThrowsExceptionWhenEventStreamIsEmptyAndNullEntityIsCreated() {
+        ProcessingContext processingContext = new StubProcessingContext();
+        factory = (id, event, ctx) -> {
+            if (event != null) {
+                return id + "(" + event.getPayload() + ")";
+            }
+            return null; // Simulating a null entity creation
+        };
+        doReturn(MessageStream.fromStream(Stream.of()))
+                .when(eventStoreTransaction)
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+
+        CompletableFuture<ManagedEntity<String, String>> result = testSubject.loadOrCreate("test", processingContext);
+        assertTrue(result.isCompletedExceptionally());
+        assertInstanceOf(EntityMissingAfterLoadOrCreateException.class, result.exceptionNow());
+    }
+
+    @Test
+    void loadThrowsExceptionIfNullEntityIsReturnedAfterFirstEvent() {
+        ProcessingContext processingContext = new StubProcessingContext();
+        factory = (id, event, ctx) -> {
+            return null; // Simulating a null entity creation
+        };
+        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0))))
+                .when(eventStoreTransaction)
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+
+        CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
+
+        assertTrue(result.isCompletedExceptionally());
+        assertInstanceOf(EntityMissingAfterFirstEventException.class, result.exceptionNow());
+    }
+
+    @Test
     void loadShouldReturnNullEntityWhenNoEventsAreReturned() {
         StubProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.empty())
@@ -225,10 +261,9 @@ class EventSourcingRepositoryTest {
         assertNull(loaded.resultNow().entity());
     }
 
-
     @Test
     void loadOrCreateShouldReturnNoEventMessageConstructorEntityWhenNoEventsAreReturned() {
-        StubProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.empty())
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));

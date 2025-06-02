@@ -22,9 +22,11 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import static org.mockito.Mockito.*;
@@ -41,6 +43,7 @@ class TransactionManagingInterceptorTest {
     private TransactionManager transactionManager;
     private Transaction transaction;
     private TransactionManagingInterceptor<Message<?>> subject;
+    private ProcessingContext context;
 
     @BeforeEach
     void setUp() {
@@ -49,6 +52,7 @@ class TransactionManagingInterceptorTest {
         }
         interceptorChain = mock(InterceptorChain.class);
         Message<?> message = new GenericMessage<>(new MessageType("message"), new Object());
+        context = StubProcessingContext.forMessage(message);
         unitOfWork = LegacyDefaultUnitOfWork.startAndGet(message);
         transactionManager = mock(TransactionManager.class);
         transaction = mock(Transaction.class);
@@ -60,9 +64,9 @@ class TransactionManagingInterceptorTest {
     void startTransaction() throws Exception {
         LegacyUnitOfWork<Message<?>> unitOfWork = spy(this.unitOfWork);
 
-        subject.handle(unitOfWork, interceptorChain);
+        subject.handle(unitOfWork, context, interceptorChain);
         verify(transactionManager).startTransaction();
-        verify(interceptorChain).proceedSync();
+        verify(interceptorChain).proceedSync(context);
 
         verify(unitOfWork).onCommit(any());
         verify(unitOfWork).onRollback(any());
@@ -70,7 +74,7 @@ class TransactionManagingInterceptorTest {
 
     @Test
     void unitOfWorkCommit() throws Exception {
-        subject.handle(unitOfWork, interceptorChain);
+        subject.handle(unitOfWork, context, interceptorChain);
         unitOfWork.commit();
 
         verify(transaction).commit();

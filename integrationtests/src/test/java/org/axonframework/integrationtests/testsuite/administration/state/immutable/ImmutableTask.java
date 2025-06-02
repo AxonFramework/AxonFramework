@@ -39,15 +39,6 @@ public record ImmutableTask(
         eventAppender.append(new TaskCompleted(command.identifier(), command.taskId()));
     }
 
-    @CommandHandler
-    public static void handle(AssignTaskCommand command, EventAppender eventAppender) {
-        eventAppender.append(new TaskAssigned(
-                command.identifier(),
-                command.id(),
-                command.description()
-        ));
-    }
-
     @EventSourcingHandler
     public ImmutableTask on(TaskCompleted event) {
         return new ImmutableTask(event.taskId(), true);

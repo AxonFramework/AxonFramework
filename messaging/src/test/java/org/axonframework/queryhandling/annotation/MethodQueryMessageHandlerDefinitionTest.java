@@ -20,12 +20,14 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.junit.jupiter.api.*;
 
@@ -73,9 +75,10 @@ class MethodQueryMessageHandlerDefinitionTest {
                 new MessageType(String.class), "mock", ResponseTypes.instanceOf(String.class)
         );
 
-        assertTrue(handler.canHandle(message, null));
+        ProcessingContext context = StubProcessingContext.forMessage(message);
+        assertTrue(handler.canHandle(message, context));
 
-        Object invocationResult = handler.handleSync(message, this);
+        Object invocationResult = handler.handleSync(message, context, this);
         assertNull(invocationResult);
     }
 

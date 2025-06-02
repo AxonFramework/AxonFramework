@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -72,13 +74,13 @@ public interface Aggregate<T> {
     /**
      * Handle the given {@code message} on the aggregate root or one of its child entities.
      *
-     * @param message The message to be handled by the aggregate
+     * @param message The message to be handled by the aggregate.
+     * @param context The context of the message being handled.
      * @return The result of message handling. Might returns {@code null} if for example handling a
-     * {@link CommandMessage} yields no results
-     *
-     * @throws Exception in case one is triggered during message processing
+     * {@link CommandMessage} yields no results.
+     * @throws Exception in case one is triggered during message processing.
      */
-    Object handle(Message<?> message) throws Exception;
+    Object handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) throws Exception;
 
     /**
      * Invoke a method on the underlying aggregate root or one of its instances. Use this over {@link

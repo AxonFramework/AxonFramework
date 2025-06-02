@@ -75,7 +75,7 @@ public sealed interface Repository<ID, E>
      * constructed entity instance based on the {@code factoryMethod}.
      */
     CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
-                                                 @Nonnull ProcessingContext processingContext);
+                                                         @Nonnull ProcessingContext processingContext);
 
     /**
      * Persists the given {@code entity} in this repository

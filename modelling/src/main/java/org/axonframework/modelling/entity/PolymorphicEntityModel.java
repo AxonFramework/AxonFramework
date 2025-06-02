@@ -32,6 +32,8 @@ import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -111,25 +113,25 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     @Nonnull
     @Override
     public Set<QualifiedName> supportedCommands() {
-        return supportedCommandNames;
+        return Collections.unmodifiableSet(supportedCommandNames);
     }
 
     @Override
     @Nonnull
     public Set<QualifiedName> supportedCreationalCommands() {
-        return supportedCreationalCommandNames;
+        return Collections.unmodifiableSet(supportedCreationalCommandNames);
     }
 
     @Override
     @Nonnull
     public Set<QualifiedName> supportedInstanceCommands() {
-        return supportedInstanceCommandNames;
+        return Collections.unmodifiableSet(supportedInstanceCommandNames);
     }
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handleCreate(CommandMessage<?> message,
-                                                                      ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage<?> message,
+                                                                      @Nonnull ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
             return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
         }
@@ -214,8 +216,8 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
         @Nonnull
         @Override
-        public EntityModelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
-                                                              @Nonnull CommandHandler messageHandler) {
+        public Builder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                   @Nonnull CommandHandler messageHandler) {
             superTypeBuilder.creationalCommandHandler(qualifiedName, messageHandler);
             return this;
         }
@@ -242,6 +244,15 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
             if (polymorphicModels.stream().anyMatch(p -> p.entityType().equals(entityModel.entityType()))) {
                 throw new IllegalArgumentException("Concrete type [%s] already registered for this model.".formatted(
                         entityModel.entityType().getName()));
+            }
+            // Check if any existing polymorphic model clashes with the creational commands of the new model.
+            for (EntityModel<? extends E> existingModel : polymorphicModels) {
+                if (existingModel.supportedCreationalCommands().stream()
+                        .anyMatch(entityModel.supportedCreationalCommands()::contains)) {
+                    throw new IllegalArgumentException(
+                            "Concrete type [%s] has creational commands that clash with existing concrete type [%s]."
+                                    .formatted(entityModel.entityType().getName(), existingModel.entityType().getName()));
+                }
             }
             polymorphicModels.add(entityModel);
             return this;
