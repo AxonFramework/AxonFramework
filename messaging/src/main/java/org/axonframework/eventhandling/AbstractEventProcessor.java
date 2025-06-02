@@ -59,7 +59,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
 
     private final String name;
-    protected final EventHandlerInvoker eventHandlerInvoker;
+    private final EventHandlerInvoker eventHandlerInvoker;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
