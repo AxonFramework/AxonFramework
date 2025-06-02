@@ -35,6 +35,7 @@ import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
+import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -120,7 +121,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     private ProblematicEventHandlingComponent eventHandlingComponent;
     private SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue;
     private DeadLetteringEventHandlerInvoker deadLetteringInvoker;
-    private InMemoryStreamableEventSource eventSource;
+    private AsyncInMemoryStreamableEventSource eventSource;
     private StreamingEventProcessor streamingProcessor;
     protected TransactionManager transactionManager;
     private final AtomicInteger maxRetries = new AtomicInteger(DEFAULT_RETRIES);
@@ -179,7 +180,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         }
         deadLetteringInvoker = invokerBuilder.build();
 
-        eventSource = new InMemoryStreamableEventSource();
+        eventSource = new AsyncInMemoryStreamableEventSource();
         streamingProcessor =
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSING_GROUP)

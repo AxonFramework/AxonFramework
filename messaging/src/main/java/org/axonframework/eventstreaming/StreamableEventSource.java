@@ -62,21 +62,21 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
     MessageStream<E> open(@Nonnull StreamingCondition condition);
 
     /**
-     * Creates a {@link TrackingToken} pointing at the start of the {@link MessageStream event stream}.
-     * <p>
-     * The start of an event stream represents the token of the very first event in the stream.
-     *
-     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the start of the
-     * {@link MessageStream event stream}.
-     */
-    CompletableFuture<TrackingToken> headToken();
-
-    /**
      * Creates a {@link TrackingToken} pointing at the end of the {@link MessageStream event stream}.
      * <p>
      * The end of an event stream represents the token of the very last event in the stream.
      *
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the end of the
+     * {@link MessageStream event stream}.
+     */
+    CompletableFuture<TrackingToken> headToken();
+
+    /**
+     * Creates a {@link TrackingToken} pointing at the start of the {@link MessageStream event stream}.
+     * <p>
+     * The start of an event stream represents the token of the very first event in the stream.
+     *
+     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the start of the
      * {@link MessageStream event stream}.
      */
     CompletableFuture<TrackingToken> tailToken();
