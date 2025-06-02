@@ -493,7 +493,6 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @return the resulting message
      */
     protected <P> EventMessage<P> createMessage(P payload, MetaData metaData) {
-        // TODO #3068 - This operation should expect the MessageType as well. Omitted from #3085 for brevity.
         MessageType type = new MessageType(payload.getClass());
         if (lastKnownSequence != null) {
             String aggregateType = inspector.declaredType(rootType())

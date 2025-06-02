@@ -80,7 +80,6 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
     private final LegacyRepository<T> repository;
     private final CommandTargetResolver commandTargetResolver;
-    // TODO replace these MessageHandlers for MessageHandlingMembers, as the latter dictate the use of annotations
     private final List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlers;
     private final Set<QualifiedName> supportedCommands;
     private final Map<String, Set<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>>> supportedCommandsByName;
