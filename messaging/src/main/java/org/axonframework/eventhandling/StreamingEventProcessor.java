@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.eventstreaming.StreamableEventSource;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 
 /**
@@ -182,7 +182,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param initialTrackingTokenSupplier a function returning the token representing the position to reset to
      */
     void resetTokens(
-            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier
+            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
     );
 
     /**
@@ -201,9 +201,10 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param <R>                          the type of the provided {@code resetContext}
      */
     <R> void resetTokens(
-            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
+            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             @Nullable R resetContext
     );
+
 
     /**
      * Resets tokens to the given {@code startPosition}. This effectively causes a replay of events since that
