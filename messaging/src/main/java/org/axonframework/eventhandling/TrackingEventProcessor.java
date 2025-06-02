@@ -31,9 +31,9 @@ import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -558,7 +558,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * @return whether the given message should be handled as part of anyof the give segments
      * @throws Exception when an exception occurs evaluating the message
      */
-    protected boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Collection<Segment> segments) throws Exception {
+    protected boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Collection<Segment> segments)
+            throws Exception {
         for (Segment segment : segments) {
             if (canHandle(eventMessage, context, segment)) {
                 return true;
@@ -601,21 +602,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             BlockingStream<TrackedEventMessage<?>> eventStreamIn, Segment segment) {
         BlockingStream<TrackedEventMessage<?>> eventStream = eventStreamIn;
         if (eventStream == null && state.get().isRunning()) {
-            final TrackingToken trackingToken = joinAndUnwrap(
-                    unitOfWorkFactory
-                            .create()
-                            .executeWithResult(context ->
-                                                       CompletableFuture.completedFuture(
-                                                               tokenStore.fetchToken(getName(), segment.getSegmentId())
-                                                       )
-                            )
-            );
-            logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
             eventStream = joinAndUnwrap(
                     unitOfWorkFactory
                             .create()
-                            .executeWithResult(context -> CompletableFuture.completedFuture(doOpenStream(trackingToken)))
-            );
+                            .executeWithResult(context -> {
+                                var trackingToken = tokenStore.fetchToken(getName(), segment.getSegmentId());
+                                logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
+                                return CompletableFuture.completedFuture(doOpenStream(trackingToken));
+                            }));
         }
         return eventStream;
     }

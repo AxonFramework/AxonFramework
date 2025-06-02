@@ -130,11 +130,11 @@ class MergeTask extends CoordinatorTask {
         return workPackages.containsKey(segmentId)
                 ? workPackages.remove(segmentId)
                               .abort(null)
-                              .thenCompose(e -> fetchTokenInTransaction(segmentId))
-                : fetchTokenInTransaction(segmentId);
+                              .thenCompose(e -> fetchTokenInUnitOfWork(segmentId))
+                : fetchTokenInUnitOfWork(segmentId);
     }
 
-    private CompletableFuture<TrackingToken> fetchTokenInTransaction(int segmentId) {
+    private CompletableFuture<TrackingToken> fetchTokenInUnitOfWork(int segmentId) {
         return unitOfWorkFactory
                 .create()
                 .executeWithResult(context ->
