@@ -17,6 +17,7 @@
 package org.axonframework.modelling.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -59,8 +60,9 @@ public class InjectEntityParameterResolverFactory implements ParameterResolverFa
         this.configuration = requireNonNull(configuration, "The Configuration is required");
     }
 
+    @Nullable
     @Override
-    public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         Parameter parameter = parameters[parameterIndex];
         if (!parameter.isAnnotationPresent(InjectEntity.class)) {
             return null;

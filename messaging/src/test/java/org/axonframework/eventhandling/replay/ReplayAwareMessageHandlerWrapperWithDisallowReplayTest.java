@@ -26,6 +26,8 @@ import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -64,14 +66,17 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
                                                                                           asEventMessage("1"));
         GenericTrackedEventMessage<Object> longEvent = new GenericTrackedEventMessage<>(replayToken,
                                                                                         asEventMessage(1L));
-        assertTrue(testSubject.canHandle(stringEvent));
-        assertTrue(testMethodSubject.canHandle(stringEvent));
-        assertTrue(testSubject.canHandle(longEvent));
-        assertTrue(testMethodSubject.canHandle(longEvent));
-        testSubject.handleSync(stringEvent);
-        testMethodSubject.handleSync(stringEvent);
-        testSubject.handleSync(longEvent);
-        testMethodSubject.handleSync(longEvent);
+        ProcessingContext stringContext = StubProcessingContext.forMessage(stringEvent);
+        ProcessingContext longContext = StubProcessingContext.forMessage(longEvent);
+
+        assertTrue(testSubject.canHandle(stringEvent, stringContext));
+        assertTrue(testMethodSubject.canHandle(stringEvent, stringContext));
+        assertTrue(testSubject.canHandle(longEvent, longContext));
+        assertTrue(testMethodSubject.canHandle(longEvent, longContext));
+        testSubject.handleSync(stringEvent, stringContext);
+        testMethodSubject.handleSync(stringEvent, stringContext);
+        testSubject.handleSync(longEvent, longContext);
+        testMethodSubject.handleSync(longEvent, longContext);
 
         assertTrue(handler.receivedLongs.isEmpty());
         assertTrue(methodHandler.receivedLongs.isEmpty());

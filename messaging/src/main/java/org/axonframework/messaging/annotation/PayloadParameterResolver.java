@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,16 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+
+import java.util.Optional;
 
 /**
  * Implementation of a {@link ParameterResolver} that resolves the Message payload as parameter in a handler method.
  */
-public class PayloadParameterResolver implements ParameterResolver {
+public class PayloadParameterResolver implements ParameterResolver<Object> {
 
     private final Class<?> payloadType;
 
@@ -38,13 +41,16 @@ public class PayloadParameterResolver implements ParameterResolver {
     }
 
     @Override
-    public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
-        return message.getPayload();
+    public Object resolveParameterValue(@Nonnull ProcessingContext context) {
+        return Message.fromContext(context).getPayload();
     }
 
     @Override
-    public boolean matches(Message message, ProcessingContext processingContext) {
-        return message.getPayloadType() != null && payloadType.isAssignableFrom(message.getPayloadType());
+    public boolean matches(@Nonnull ProcessingContext context) {
+        return Optional.ofNullable(Message.fromContext(context))
+                       .map(Message::getPayloadType)
+                       .map(payloadType::isAssignableFrom)
+                       .orElse(false);
     }
 
     @Override

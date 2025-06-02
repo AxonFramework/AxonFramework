@@ -16,11 +16,13 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -46,14 +48,16 @@ public class ConcludesBatchParameterResolverFactory extends AbstractAnnotatedPar
         return this;
     }
 
+    @Nullable
     @Override
-    public Boolean resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+    public Boolean resolveParameterValue(@Nonnull ProcessingContext context) {
+        Message<?> message = Message.fromContext(context);
         return CurrentUnitOfWork.map(unitOfWork -> !(unitOfWork instanceof LegacyBatchingUnitOfWork<?>) ||
                 ((LegacyBatchingUnitOfWork<?>) unitOfWork).isLastMessage(message)).orElse(true);
     }
 
     @Override
-    public boolean matches(Message<?> message, ProcessingContext processingContext) {
-        return message instanceof EventMessage<?>;
+    public boolean matches(@Nonnull ProcessingContext context) {
+        return Message.fromContext(context) instanceof EventMessage<?>;
     }
 }
