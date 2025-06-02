@@ -21,9 +21,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.StreamingEventProcessor;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -35,8 +35,6 @@ import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -186,7 +184,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSING_GROUP)
                                              .eventHandlerInvoker(deadLetteringInvoker)
-                                             .messageSource(eventSource)
+                                             .eventSource(eventSource)
                                              .tokenStore(new InMemoryTokenStore())
                                              .transactionManager(transactionManager)
                                              .coordinatorExecutor(Executors.newSingleThreadScheduledExecutor())

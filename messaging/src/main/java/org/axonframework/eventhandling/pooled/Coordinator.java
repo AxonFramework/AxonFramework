@@ -858,6 +858,16 @@ class Coordinator {
             }
         }
 
+        private void closeStream() {
+            if (eventStream != null) {
+                try {
+                    eventStream.close();
+                } catch (Exception e) {
+                    logger.debug("Exception occurred while closing event stream for Processor [{}].", name, e);
+                }
+            }
+        }
+
         private WorkPackage createWorkPackage(Segment segment, TrackingToken token) {
             WorkPackage workPackage = workPackageFactory.apply(segment, token);
             workPackage.onBatchProcessed(() -> resetRetryExponentialBackoff(segment.getSegmentId()));
@@ -1186,16 +1196,6 @@ class Coordinator {
                         return releaseDeadline;
                     }
             );
-        }
-    }
-
-    private void closeStream() {
-        if (eventStream != null) {
-            try {
-                eventStream.close();
-            } catch (Exception e) {
-                logger.debug("Exception occurred while closing event stream for Processor [{}].", name, e);
-            }
         }
     }
 }

@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
@@ -28,6 +29,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -678,22 +680,31 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     @Override
     public <R> void resetTokens(R resetContext) {
-        resetTokens(initialTrackingTokenBuilder, resetContext);
+//        resetTokens(initialTrackingTokenBuilder, resetContext);
     }
 
-    @Override
     public void resetTokens(
-            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier) {
-        resetTokens(initialTrackingTokenSupplier.apply(messageSource));
+            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier) {
+
     }
 
-    @Override
     public <R> void resetTokens(
-            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
-            R resetContext
-    ) {
-        resetTokens(initialTrackingTokenSupplier.apply(messageSource), resetContext);
+            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
+            @Nullable R resetContext) {
+
     }
+
+//    public void resetTokens(
+//            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier) {
+//        resetTokens(initialTrackingTokenSupplier.apply(messageSource));
+//    }
+//
+//    public <R> void resetTokens(
+//            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
+//            R resetContext
+//    ) {
+//        resetTokens(initialTrackingTokenSupplier.apply(messageSource), resetContext);
+//    }
 
     @Override
     public void resetTokens(@Nonnull TrackingToken startPosition) {

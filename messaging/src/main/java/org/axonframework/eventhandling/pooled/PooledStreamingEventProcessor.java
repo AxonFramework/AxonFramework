@@ -40,6 +40,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -376,7 +377,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
                           .tokenStore(tokenStore)
                           .unitOfWorkFactory(unitOfWorkFactory)
                           .executorService(workerExecutor)
-                          .eventFilter(this::canHandle)
+                          .eventFilter((m, s) -> canHandle(m, new LegacyMessageSupportingContext(m), s))
                           .batchProcessor(batchProcessor)
                           .segment(segment)
                           .initialToken(initialToken)
