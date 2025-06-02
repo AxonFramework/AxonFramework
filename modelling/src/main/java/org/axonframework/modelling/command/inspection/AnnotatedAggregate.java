@@ -307,7 +307,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     /**
      * Returns the last sequence of any event published, or {@code null} if no events have been published yet. If
-     * sequences aren't enabled for this Aggregate, the this method will also return null;
+     * sequences aren't enabled for this Aggregate, this method will also return null.
      *
      * @return the last sequence of any event published, or {@code null} if no events have been published yet
      */

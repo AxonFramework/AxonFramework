@@ -16,14 +16,14 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.repository.Repository;
 
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 /**
  * The {@link LegacyRepository} provides an abstraction of the storage of aggregates.
@@ -57,10 +57,12 @@ public interface LegacyRepository<T> extends ScopeAware {
      * @param aggregateIdentifier The identifier of the aggregate to load
      * @param expectedVersion     The expected version of the loaded aggregate
      * @return The aggregate root with the given identifier.
-     *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
+     * @deprecated Aggregate versioning will completely be removed from 5.0.0, as it does not align with the adjusted
+     * sequencing approach of a DCB-supporting event store at the moment.
      */
-    Aggregate<T> load(@Nonnull String aggregateIdentifier, @Nullable Long expectedVersion);
+    Aggregate<T> load(@Nonnull String aggregateIdentifier,
+                      @Deprecated(since = "5.0.0") @Nullable Long expectedVersion);
 
     /**
      * Creates a new managed instance for the aggregate, using the given {@code factoryMethod}
@@ -98,8 +100,8 @@ public interface LegacyRepository<T> extends ScopeAware {
      * @param factoryMethod       The method to create the aggregate's root instance
      * @return The aggregate root with the given identifier.
      */
-    default Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod)
-            throws Exception {
+    default Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier,
+                                      @Nonnull Callable<T> factoryMethod) throws Exception {
         throw new UnsupportedOperationException("loadOrCreate not implemented on this repository");
     }
 }

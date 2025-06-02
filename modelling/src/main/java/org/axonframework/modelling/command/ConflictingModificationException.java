@@ -22,12 +22,15 @@ import org.axonframework.common.AxonNonTransientException;
  * Root of a hierarchy of exceptions indicating the detection of conflicting concurrent modifications. These conflicts
  * are typically detected when aggregates are loaded or saved while another action has made changes to them.
  * <p/>
- * This exception is non-transient, meaning that the the exception will occur when retrying the action. Typically, user
+ * This exception is non-transient, meaning that the exception will occur when retrying the action. Typically, user
  * interaction or confirmation is needed before the failed action can be retried.
  *
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated Aggregate versioning will completely be removed from 5.0.0, as it does not align with the adjusted
+ * sequencing approach of a DCB-supporting event store at the moment.
  */
+@Deprecated(since = "5.0.0")
 public class ConflictingModificationException extends AxonNonTransientException {
 
     /**

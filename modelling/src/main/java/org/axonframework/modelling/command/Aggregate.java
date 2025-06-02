@@ -68,7 +68,10 @@ public interface Aggregate<T> {
      * applied event.
      *
      * @return The aggregate's version
+     * @deprecated Aggregate versioning will completely be removed from 5.0.0, as it does not align with the adjusted
+     * sequencing approach of a DCB-supporting event store at the moment.
      */
+    @Deprecated(since = "5.0.0")
     Long version();
 
     /**
@@ -76,7 +79,7 @@ public interface Aggregate<T> {
      *
      * @param message The message to be handled by the aggregate.
      * @param context The context of the message being handled.
-     * @return The result of message handling. Might returns {@code null} if for example handling a
+     * @return The result of message handling. Might return {@code null} if for example handling a
      * {@link CommandMessage} yields no results.
      * @throws Exception in case one is triggered during message processing.
      */

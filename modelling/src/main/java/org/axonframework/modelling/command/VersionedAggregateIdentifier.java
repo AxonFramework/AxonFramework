@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,10 @@ import jakarta.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @since 1.2
+ * @deprecated Aggregate versioning will completely be removed from 5.0.0, as it does not align with the adjusted
+ * sequencing approach of a DCB-supporting event store at the moment.
  */
+@Deprecated(since = "5.0.0")
 public class VersionedAggregateIdentifier {
 
     private final Object identifier;

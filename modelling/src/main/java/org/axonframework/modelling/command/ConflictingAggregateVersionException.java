@@ -23,7 +23,10 @@ package org.axonframework.modelling.command;
  *
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated Aggregate versioning will completely be removed from 5.0.0, as it does not align with the adjusted
+ * sequencing approach of a DCB-supporting event store at the moment.
  */
+@Deprecated(since = "5.0.0")
 public class ConflictingAggregateVersionException extends ConflictingModificationException {
 
     private final String aggregateIdentifier;
@@ -38,7 +41,8 @@ public class ConflictingAggregateVersionException extends ConflictingModificatio
      * @param actualVersion       The actual version of the aggregate
      */
     public ConflictingAggregateVersionException(String aggregateIdentifier,
-                                                long expectedVersion, long actualVersion) {
+                                                long expectedVersion,
+                                                long actualVersion) {
         super(String.format("The version of aggregate [%s] was not as expected. "
                                     + "Expected [%s], but repository found [%s]",
                             aggregateIdentifier, expectedVersion, actualVersion));
@@ -56,7 +60,9 @@ public class ConflictingAggregateVersionException extends ConflictingModificatio
      * @param cause               The underlying cause of the exception
      */
     public ConflictingAggregateVersionException(String aggregateIdentifier,
-                                                long expectedVersion, long actualVersion, Throwable cause) {
+                                                long expectedVersion,
+                                                long actualVersion,
+                                                Throwable cause) {
         super(String.format("The version of aggregate [%s] was not as expected. "
                                     + "Expected [%s], but repository found [%s]",
                             aggregateIdentifier, expectedVersion, actualVersion),

@@ -113,7 +113,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
      * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
      * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
-     * AxonConfigurationException is thrown if this criteria is not met.
+     * AxonConfigurationException is thrown if the criteria is not met.
      *
      * @param builder the {@link Builder} used to instantiate a {@code AggregateAnnotationCommandHandler} instance
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,16 @@ import java.lang.annotation.Target;
  * done either by converting it, if it is a numeric value, or by parsing the result of the value's {@code toString()}
  * result.
  * <p/>
- * If place on a field, the value is converted to a Long in an identical fashion.
+ * If placed on a field, the value is converted to a Long in an identical fashion.
  *
  * @author Allard Buijze
  * @since 1.2
+ * @deprecated Aggregate versioning will completely be removed from 5.0.0, as it does not align with the adjusted
+ * sequencing approach of a DCB-supporting event store at the moment.
  */
+@Deprecated(since = "5.0.0")
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface TargetAggregateVersion {
+
 }
