@@ -40,8 +40,8 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
+import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.axonframework.utils.DelegateScheduledExecutorService;
-import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -93,7 +93,7 @@ class PooledStreamingEventProcessorTest {
 
     private PooledStreamingEventProcessor testSubject;
     private EventHandlerInvoker stubEventHandler;
-    private InMemoryStreamableEventSource stubMessageSource;
+    private AsyncInMemoryStreamableEventSource stubMessageSource;
     private InMemoryTokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
     private ScheduledExecutorService workerExecutor;
@@ -101,7 +101,7 @@ class PooledStreamingEventProcessorTest {
 
     @BeforeEach
     void setUp() {
-        stubMessageSource = new InMemoryStreamableEventSource();
+        stubMessageSource = new AsyncInMemoryStreamableEventSource();
         stubEventHandler = mock(EventHandlerInvoker.class);
         tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(2));
@@ -130,7 +130,7 @@ class PooledStreamingEventProcessorTest {
                                              .name(PROCESSOR_NAME)
                                              .eventHandlerInvoker(stubEventHandler)
                                              .errorHandler(PropagatingErrorHandler.instance())
-                                             .messageSource(stubMessageSource)
+                                             .eventSource(stubMessageSource)
                                              .tokenStore(tokenStore)
                                              .transactionManager(NoTransactionManager.instance())
                                              .coordinatorExecutor(coordinatorExecutor)
@@ -399,7 +399,7 @@ class PooledStreamingEventProcessorTest {
     void workPackageIsAbortedWhenExtendingClaimFails() {
         InMemoryTokenStore spy = spy(tokenStore);
         setTestSubject(createTestSubject(b -> b.tokenStore(spy)
-                                               .messageSource(new InMemoryStreamableEventSource(true))
+                                               .eventSource(new AsyncInMemoryStreamableEventSource(true))
                                                .claimExtensionThreshold(10)));
 
         doThrow(new MockException("Simulated failure")).when(spy)
@@ -522,8 +522,9 @@ class PooledStreamingEventProcessorTest {
     @Test
     void coordinationIsTriggeredThroughEventAvailabilityCallback() {
         boolean streamCallbackSupported = true;
-        InMemoryStreamableEventSource testMessageSource = new InMemoryStreamableEventSource(streamCallbackSupported);
-        setTestSubject(createTestSubject(builder -> builder.messageSource(testMessageSource)));
+        AsyncInMemoryStreamableEventSource testMessageSource = new AsyncInMemoryStreamableEventSource(
+                streamCallbackSupported);
+        setTestSubject(createTestSubject(builder -> builder.eventSource(testMessageSource)));
         mockEventHandlerInvoker();
 
         Stream.of(0, 1, 2, 3)
@@ -632,7 +633,7 @@ class PooledStreamingEventProcessorTest {
 
         assertFalse(testSubject.isError());
 
-        stubMessageSource.publishMessage(InMemoryStreamableEventSource.FAIL_EVENT);
+        stubMessageSource.publishMessage(AsyncInMemoryStreamableEventSource.FAIL_EVENT);
 
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.isError()));
 
@@ -645,10 +646,10 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void isErrorWhenOpeningTheStreamFails() {
-        StreamableMessageSource<TrackedEventMessage<?>> spiedMessageSource = spy(new InMemoryStreamableEventSource());
+        StreamableMessageSource<TrackedEventMessage<?>> spiedMessageSource = spy(new AsyncInMemoryStreamableEventSource());
         when(spiedMessageSource.openStream(any())).thenThrow(new IllegalStateException("Failed to open the stream"))
                                                   .thenCallRealMethod();
-        setTestSubject(createTestSubject(builder -> builder.messageSource(spiedMessageSource)));
+        setTestSubject(createTestSubject(builder -> builder.eventSource(spiedMessageSource)));
 
         assertFalse(testSubject.isError());
 
@@ -1006,7 +1007,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         //noinspection ConstantConditions
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.messageSource(null));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.eventSource(null));
     }
 
     @Test
@@ -1033,7 +1034,7 @@ class PooledStreamingEventProcessorTest {
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
                                              .eventHandlerInvoker(stubEventHandler)
-                                             .messageSource(stubMessageSource)
+                                             .eventSource(stubMessageSource)
                                              .transactionManager(NoTransactionManager.INSTANCE);
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
@@ -1053,7 +1054,7 @@ class PooledStreamingEventProcessorTest {
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
                                              .eventHandlerInvoker(stubEventHandler)
-                                             .messageSource(stubMessageSource)
+                                             .eventSource(stubMessageSource)
                                              .tokenStore(new InMemoryTokenStore());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
@@ -1087,7 +1088,7 @@ class PooledStreamingEventProcessorTest {
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
                                              .eventHandlerInvoker(stubEventHandler)
-                                             .messageSource(stubMessageSource)
+                                             .eventSource(stubMessageSource)
                                              .tokenStore(new InMemoryTokenStore())
                                              .transactionManager(NoTransactionManager.instance());
 
@@ -1122,7 +1123,7 @@ class PooledStreamingEventProcessorTest {
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
                                              .eventHandlerInvoker(stubEventHandler)
-                                             .messageSource(stubMessageSource)
+                                             .eventSource(stubMessageSource)
                                              .tokenStore(new InMemoryTokenStore())
                                              .transactionManager(NoTransactionManager.instance())
                                              .coordinatorExecutor(coordinatorExecutor);
