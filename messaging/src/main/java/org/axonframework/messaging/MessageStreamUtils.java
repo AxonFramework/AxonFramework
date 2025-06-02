@@ -160,6 +160,7 @@ public abstract class MessageStreamUtils {
             this.intermediateResult = new AtomicReference<>(identity);
             this.accumulator = accumulator;
             this.result = new CompletableFuture<>();
+
         }
 
         public CompletableFuture<R> result() {
@@ -178,6 +179,9 @@ public abstract class MessageStreamUtils {
                         source.error().ifPresentOrElse(result::completeExceptionally,
                                                        () -> result.complete(intermediateResult.get()));
                     }
+                } catch (Exception e) {
+                    result.completeExceptionally(e);
+                    source.close();
                 } finally {
                     processingGate.set(false);
                 }

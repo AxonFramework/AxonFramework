@@ -126,21 +126,21 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
 
         return managedEntities.computeIfAbsent(
                 identifier,
-                id -> doLoad(identifier, processingContext)
-                        .whenComplete((entity, exception) -> updateActiveEntity(entity, processingContext, exception))
+                id -> doLoad(identifier, context)
+                        .whenComplete((entity, exception) -> updateActiveEntity(entity, context, exception))
         ).thenApply(Function.identity());
     }
 
     @Override
     public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
                                                                 @Nonnull ProcessingContext context) {
-        var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
+        var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
                 identifier,
                 id -> doLoad(identifier, context)
                         .thenApply((entity) -> createEntityIfNullFromLoad(identifier, entity))
-                        .whenComplete((entity, exception) -> updateActiveEntity(entity, processingContext, exception))
+                        .whenComplete((entity, exception) -> updateActiveEntity(entity, context, exception))
         ).thenApply(Function.identity());
     }
 
@@ -155,16 +155,16 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         return entity;
     }
 
-    private CompletableFuture<EventSourcedEntity<ID, E>> doLoad(ID identifier, ProcessingContext processingContext) {
+    private CompletableFuture<EventSourcedEntity<ID, E>> doLoad(ID identifier, ProcessingContext context) {
         return eventStore
-                .transaction(processingContext)
-                .source(SourcingCondition.conditionFor(criteriaResolver.resolve(identifier)))
+                .transaction(context)
+                .source(SourcingCondition.conditionFor(criteriaResolver.resolve(identifier, context)))
                 .reduce(new EventSourcedEntity<>(identifier),
                         (entity, entry) -> {
                             if (entity.entity() == null) {
                                 createInitialEntityStateBasedOnEvent(identifier, entity, entry);
                             }
-                            entity.evolve(entry.message(), entityEvolver, processingContext);
+                            entity.evolve(entry.message(), entityEvolver, context);
                             return entity;
                         });
     }
