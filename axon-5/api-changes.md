@@ -748,6 +748,19 @@ This section contains two tables:
 | org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver               | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
 | org.axonframework.eventsourcing.conflictresolution.NoConflictResolver                    | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
 
+### Marked for removal Classes
+
+All classes in this table have been moved to the legacy package for ease in migration.
+However, they will eventually be removed entirely from Axon Framework 5, as we expect users to migrate to the new (and per class described) approoach.
+
+| Class                                                                    |
+|--------------------------------------------------------------------------|
+| org.axonframework.modelling.command.ConflictingAggregateVersionException |
+| org.axonframework.modelling.command.ConflictingModificationException     |
+| org.axonframework.modelling.command.Repository                           |
+| org.axonframework.modelling.command.TargetAggregateVersion               |
+| org.axonframework.modelling.command.VersionedAggregateIdentifier         |
+
 ## Method Signature Changes
 
 This section contains three subsections, called:
