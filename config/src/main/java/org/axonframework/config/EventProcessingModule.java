@@ -42,6 +42,7 @@ import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvok
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventstreaming.LegacyStreamableEventSource;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
@@ -1004,7 +1005,7 @@ public class EventProcessingModule
                                              .eventHandlerInvoker(eventHandlerInvoker)
                                              .errorHandler(errorHandler(name))
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
-                                             .eventSource(messageSource)
+                                             .eventSource(LegacyStreamableEventSource.forTrackedMessages(messageSource))
                                              .tokenStore(tokenStore(name))
                                              .transactionManager(transactionManager(name))
                                              .coordinatorExecutor(processorName -> {

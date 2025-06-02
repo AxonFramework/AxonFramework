@@ -27,16 +27,15 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
@@ -511,9 +510,9 @@ class PooledStreamingEventProcessorTest {
             assertTrue(eventsToHandle.contains(validatedEvent.getPayload()));
         }
 
-        List<TrackedEventMessage<?>> ignoredEvents = stubMessageSource.getIgnoredEvents();
+        List<EventMessage<?>> ignoredEvents = stubMessageSource.getIgnoredEvents();
         assertEquals(3, ignoredEvents.size());
-        for (TrackedEventMessage<?> ignoredMessage : ignoredEvents) {
+        for (EventMessage<?> ignoredMessage : ignoredEvents) {
             //noinspection SuspiciousMethodCalls
             assertTrue(eventsToIgnore.contains(ignoredMessage.getPayload()));
         }
@@ -646,9 +645,9 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void isErrorWhenOpeningTheStreamFails() {
-        StreamableMessageSource<TrackedEventMessage<?>> spiedMessageSource = spy(new AsyncInMemoryStreamableEventSource());
-        when(spiedMessageSource.openStream(any())).thenThrow(new IllegalStateException("Failed to open the stream"))
-                                                  .thenCallRealMethod();
+        StreamableEventSource<EventMessage<?>> spiedMessageSource = spy(new AsyncInMemoryStreamableEventSource());
+        when(spiedMessageSource.open(any())).thenThrow(new IllegalStateException("Failed to open the stream"))
+                                            .thenCallRealMethod();
         setTestSubject(createTestSubject(builder -> builder.eventSource(spiedMessageSource)));
 
         assertFalse(testSubject.isError());
@@ -859,7 +858,8 @@ class PooledStreamingEventProcessorTest {
 
         when(stubEventHandler.supportsReset()).thenReturn(true);
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
-                                                           .initialToken(source -> expectedToken)));
+                                                           .initialToken(source -> CompletableFuture.completedFuture(
+                                                                   expectedToken))));
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
@@ -886,7 +886,8 @@ class PooledStreamingEventProcessorTest {
 
         when(stubEventHandler.supportsReset()).thenReturn(true);
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
-                                                           .initialToken(source -> expectedToken)));
+                                                           .initialToken(source -> CompletableFuture.completedFuture(
+                                                                   expectedToken))));
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
@@ -917,7 +918,8 @@ class PooledStreamingEventProcessorTest {
 
         when(stubEventHandler.supportsReset()).thenReturn(true);
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
-                                                           .initialToken(source -> testToken)));
+                                                           .initialToken(source -> CompletableFuture.completedFuture(
+                                                                   testToken))));
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
@@ -926,7 +928,7 @@ class PooledStreamingEventProcessorTest {
                      () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length));
         testSubject.shutDown();
 
-        testSubject.resetTokens(StreamableMessageSource::createTailToken);
+        testSubject.resetTokens(source -> source.tailToken());
 
         verify(stubEventHandler).performReset(isNull(), any());
 
@@ -945,7 +947,8 @@ class PooledStreamingEventProcessorTest {
 
         when(stubEventHandler.supportsReset()).thenReturn(true);
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
-                                                           .initialToken(source -> testToken)));
+                                                           .initialToken(source -> CompletableFuture.completedFuture(
+                                                                   testToken))));
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
@@ -954,7 +957,7 @@ class PooledStreamingEventProcessorTest {
                      () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length));
         testSubject.shutDown();
 
-        testSubject.resetTokens(StreamableMessageSource::createTailToken, expectedContext);
+        testSubject.resetTokens(source -> source.tailToken(), expectedContext);
 
         verify(stubEventHandler).performReset(eq(expectedContext), any());
 
@@ -1202,7 +1205,7 @@ class PooledStreamingEventProcessorTest {
         );
 
         testSubject.shutDown();
-        testSubject.resetTokens(StreamableMessageSource::createTailToken);
+        testSubject.resetTokens(source -> source.tailToken());
         testSubject.start();
 
         assertWithin(

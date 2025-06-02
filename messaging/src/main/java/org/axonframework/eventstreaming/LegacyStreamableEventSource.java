@@ -20,8 +20,11 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.StreamableMessageSource;
 
 import java.time.Instant;
@@ -79,12 +82,47 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
         this.executor = executor != null ? executor : Executors.newVirtualThreadPerTaskExecutor();
     }
 
+    /**
+     * Convenience factory method for adapting a {@link StreamableMessageSource} of {@link TrackedEventMessage}. This is
+     * the most common use case for legacy event sources.
+     *
+     * @param trackedMessageSource The legacy source providing {@link TrackedEventMessage} instances.
+     * @return A modern {@link StreamableEventSource} adapter.
+     */
+    public static LegacyStreamableEventSource<TrackedEventMessage<?>> forTrackedMessages(
+            @Nonnull StreamableMessageSource<TrackedEventMessage<?>> trackedMessageSource) {
+        return new LegacyStreamableEventSource<>(trackedMessageSource);
+    }
+
+    /**
+     * Convenience factory method for adapting a {@link StreamableMessageSource} of {@link TrackedEventMessage} with a
+     * custom executor.
+     *
+     * @param trackedMessageSource The legacy source providing {@link TrackedEventMessage} instances.
+     * @param executor             The {@link Executor} to use for async operations.
+     * @return A modern {@link StreamableEventSource} adapter.
+     */
+    public static LegacyStreamableEventSource<TrackedEventMessage<?>> forTrackedMessages(
+            @Nonnull StreamableMessageSource<TrackedEventMessage<?>> trackedMessageSource,
+            @Nonnull Executor executor) {
+        return new LegacyStreamableEventSource<>(trackedMessageSource, executor);
+    }
+
     @Override
     public MessageStream<E> open(@Nonnull StreamingCondition condition) {
         TrackingToken position = condition.position();
         try (var blockingStream = delegate.openStream(position)) {
-            return MessageStream.fromStream(blockingStream.asStream());
+            return MessageStream.fromStream(blockingStream.asStream(), this::createEntryForMessage);
         }
+    }
+
+    // todo: is it needed?
+    private MessageStream.Entry<E> createEntryForMessage(E message) {
+        Context context = Context.empty();
+        if (message instanceof TrackedEventMessage<?> trackedMessage) {
+            context = TrackingToken.addToContext(context, trackedMessage.trackingToken());
+        }
+        return new SimpleEntry<>(message, context);
     }
 
     @Override
