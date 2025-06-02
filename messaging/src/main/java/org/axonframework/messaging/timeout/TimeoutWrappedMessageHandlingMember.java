@@ -18,9 +18,10 @@ package org.axonframework.messaging.timeout;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.TimeoutException;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Represents a {@link MessageHandlingMember} that wraps another {@link MessageHandlingMember} and enforces a timeout on
@@ -61,7 +62,7 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
     }
 
     @Override
-    public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
+    public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, T target) throws Exception {
         String taskName = String.format("Message [%s] for handler [%s]",
                                         message.getPayloadType().getName(),
                                         target != null ? target.getClass().getName() : null);
@@ -73,7 +74,7 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
         );
         taskTimeout.start();
         try {
-            return super.handleSync(message, target);
+            return super.handleSync(message, context, target);
         } catch (InterruptedException e) {
             throw new TimeoutException(String.format("%s has timed out", taskName));
         } finally {

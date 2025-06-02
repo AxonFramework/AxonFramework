@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -64,7 +65,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
      * apply state transitions to the entity based on the events received, and given {@code criteriaResolver} to resolve
-     * the {@link org.axonframework.eventsourcing.eventstore.EventCriteria} of the given identifier type used to source
+     * the {@link EventCriteria} of the given identifier type used to source
      * an entity.
      *
      * @param idType           The type of the identifier for the event sourced entity this repository serves.
@@ -73,7 +74,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
      * @param entityFactory    A factory method to create new instances of the entity based on the entity's type and a
      *                         provided identifier.
      * @param criteriaResolver Converts the given identifier to an
-     *                         {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
+     *                         {@link EventCriteria} used to load a matching
      *                         event stream.
      * @param entityEvolver    The function used to evolve the state of loaded entities based on events.
      */
@@ -120,8 +121,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
 
     @Override
     public CompletableFuture<ManagedEntity<ID, E>> load(@Nonnull ID identifier,
-                                                        @Nonnull ProcessingContext processingContext) {
-        var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
+                                                        @Nonnull ProcessingContext context) {
+        var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
                 identifier,
@@ -132,12 +133,12 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
 
     @Override
     public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
-                                                                @Nonnull ProcessingContext processingContext) {
+                                                                @Nonnull ProcessingContext context) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
                 identifier,
-                id -> doLoad(identifier, processingContext)
+                id -> doLoad(identifier, context)
                         .thenApply((entity) -> createEntityIfNullFromLoad(identifier, entity))
                         .whenComplete((entity, exception) -> updateActiveEntity(entity, processingContext, exception))
         ).thenApply(Function.identity());

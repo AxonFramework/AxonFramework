@@ -128,6 +128,32 @@ To conclude, here is a list of changes to take into account concerning the `Unit
 Note that the rewrite of the `UnitOfWork` has caused _a lot_ of API changes and numerous removals. For an exhaustive
 list of the latter, please check [here](#removed-classes).
 
+## Legacy components
+
+During the development of Axon Framework 5, we have decided that some features move to the legacy package, such as
+Sagas. These are features that we think should be either removed, or that deserve a big overhaul in a future version.
+Meanwhile, users can thus use the legacy package to continue using these features, while we can focus on the new
+features and improvements in Axon Framework 5.
+
+However, even these legacy components have seen some changes. The most notable one is that most of these components
+require a `ProcessingContext` to be passed in. This is to ensure good cooperation between old and new parts of the
+framework. This means that some changes might be necessary in your code, such as passing in the
+`ProcessingContext` to the `InterceptorChain`:
+
+```java
+public class MyInterceptingEventHandler {
+
+    @MessageHandlerInterceptor
+    public void handle(MyEvent event, InterceptorChain chain, ProcessingContext context) {
+        chain.proceedSync(context);
+    }
+}
+```
+
+You are able inject the `ProcessingContext` in any message-handling method, so this is always available. Any code that uses the old `UnitOfWork` should be rewritten to put resources in this context. 
+
+We will provide a migration guide, as well as OpenWrite recipes for these scenarios. 
+
 ## Message
 
 ### Message Type and Qualified Name
@@ -862,6 +888,8 @@ Minor API Changes
   as described in the [Event Store](#event-store) section. Furthermore, operations have been made "async-native," as
   described [here](#adjusted-apis). This is marked as a minor API changes since the `EventStorageEngine` should not be
   used directly
+* The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all EventProcessor builders. 
+  Exceptions need to be handled by an interceptor, or otherwise they are always considered an error.
 
 Stored Format Changes
 =====================

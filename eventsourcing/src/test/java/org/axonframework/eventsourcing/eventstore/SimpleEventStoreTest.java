@@ -16,16 +16,18 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import junit.framework.AssertionFailedError;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -233,7 +235,7 @@ class SimpleEventStoreTest {
         verify(descriptor).describeProperty("eventStorageEngine", mockStorageEngine);
     }
 
-    private static @NotNull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
+    private static @Nonnull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
         return MessageStream.fromStream(IntStream.range(0, messageCount).boxed(),
                                         SimpleEventStoreTest::eventMessage,
                                         i -> Context.with(ConsistencyMarker.RESOURCE_KEY,

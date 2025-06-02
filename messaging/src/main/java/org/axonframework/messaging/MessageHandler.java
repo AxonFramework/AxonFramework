@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -36,14 +37,18 @@ public interface MessageHandler<T extends Message<?>, R extends Message<?>> {
      */
     // TODO replace this operation for the new handle method
     @Deprecated
-    Object handleSync(T message) throws Exception;
+    Object handleSync(@Nonnull T message, @Nonnull ProcessingContext context) throws Exception;
 
     /**
-     * TODO Add documentation
+     * Handles the given {@code message} and returns a {@link MessageStream} containing the result of the processing.
+     *
+     * @param message The message to be processed.
+     * @param context The {@code ProcessingContext} in which the reset is being prepared.
+     * @return A {@link MessageStream} containing the result of the message processing.
      */
-    default MessageStream<R> handle(T message, ProcessingContext processingContext) {
+    default MessageStream<R> handle(@Nonnull T message, @Nonnull ProcessingContext context) {
         try {
-            return MessageStream.just((R) GenericResultMessage.asResultMessage(handleSync(message)));
+            return MessageStream.just((R) GenericResultMessage.asResultMessage(handleSync(message, context)));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }
@@ -56,7 +61,7 @@ public interface MessageHandler<T extends Message<?>, R extends Message<?>> {
      * @return {@code true} if this handler can handle the message, otherwise {@code false}
      */
     @Deprecated
-    default boolean canHandle(T message) {
+    default boolean canHandle(@Nonnull T message, @Nonnull ProcessingContext context) {
         return true;
     }
 

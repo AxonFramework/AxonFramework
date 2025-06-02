@@ -24,15 +24,13 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -50,7 +48,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
 
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
-    private final TransactionManager transactionManager;
+    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
 
     private volatile Registration eventBusRegistration;
 
@@ -67,13 +65,12 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
         super(builder);
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
-        this.transactionManager = builder.transactionManager;
+        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
     }
 
     /**
      * Instantiate a Builder to be able to create a {@link SubscribingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a
      * {@link DirectEventProcessingStrategy}, the {@link EventProcessorSpanFactory} defaults to a
@@ -130,9 +127,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      */
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
-            LegacyBatchingUnitOfWork<? extends EventMessage<?>> unitOfWork =
-                    new LegacyBatchingUnitOfWork<>(eventMessages);
-            unitOfWork.attachTransaction(transactionManager);
+            var unitOfWork = transactionalUnitOfWorkFactory.create();
             processInUnitOfWork(eventMessages, unitOfWork);
         } catch (RuntimeException e) {
             throw e;
@@ -167,7 +162,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
     /**
      * Builder class to instantiate a {@link SubscribingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link EventProcessorSpanFactory} is defaulted to a {@link DefaultEventProcessorSpanFactory} backed by a
      * {@link org.axonframework.tracing.NoOpSpanFactory}, the {@link MessageMonitor} defaults to a
@@ -183,7 +177,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
 
         public Builder() {
-            super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
+            super();
         }
 
         @Override
@@ -195,15 +189,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
         @Override
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
             super.eventHandlerInvoker(eventHandlerInvoker);
-            return this;
-        }
-
-        /**
-         * {@inheritDoc}. Defaults to a {@link RollbackConfigurationType#ANY_THROWABLE})
-         */
-        @Override
-        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
-            super.rollbackConfiguration(rollbackConfiguration);
             return this;
         }
 

@@ -46,9 +46,9 @@ import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
-import org.axonframework.eventsourcing.LegacyCachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.LegacyCachingEventSourcingRepository;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
@@ -62,7 +62,6 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -138,7 +137,7 @@ class DefaultConfigurerTest {
                                        .buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(LegacyEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
@@ -149,7 +148,7 @@ class DefaultConfigurerTest {
     @Test
     void defaultConfigurationWithTrackingProcessorConfigurationInMainConfig() {
         LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
-        configurer.eventProcessing().registerEventHandler(c -> (EventMessageHandler) event -> null);
+        configurer.eventProcessing().registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
         LegacyConfiguration config = configurer.registerComponent(
                                                        TrackingEventProcessorConfiguration.class,
                                                        c -> TrackingEventProcessorConfiguration.forParallelProcessing(2)
@@ -180,7 +179,7 @@ class DefaultConfigurerTest {
                                                   c -> TrackingEventProcessorConfiguration.forParallelProcessing(2))
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
-                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
+                  .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
         LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();
         try {
@@ -207,7 +206,7 @@ class DefaultConfigurerTest {
                                                                                           .andAutoStart(false))
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
-                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
+                  .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
         LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();
 
@@ -232,7 +231,7 @@ class DefaultConfigurerTest {
                                                                                           .andAutoStart(false))
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
-                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
+                  .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
         LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();
         try {
@@ -329,7 +328,7 @@ class DefaultConfigurerTest {
                                        .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
@@ -355,7 +354,7 @@ class DefaultConfigurerTest {
                                        .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertTrue(config.getModules().stream().anyMatch(m -> m instanceof AggregateConfiguration));
@@ -407,7 +406,7 @@ class DefaultConfigurerTest {
                                        .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
@@ -434,7 +433,7 @@ class DefaultConfigurerTest {
                                                             .buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertEquals(1, defaultMonitor.getMessages().size());
         assertEquals(1, commandBusMonitor.getMessages().size());
@@ -478,8 +477,7 @@ class DefaultConfigurerTest {
                                                             .buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(TEST_COMMAND,
-                                                  ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, null);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(LegacyCachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());

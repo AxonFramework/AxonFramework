@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.TrackingToken;
 
 
 /**
- * Interface describing the condition to {@link StreamableEventSource#open(String, StreamingCondition) stream} events
- * from an Event Store.
+ * Interface describing the condition to {@link StreamableEventSource#open(StreamingCondition) stream} from a streamable
+ * event source (like an Event Store).
  * <p>
  * This condition has a mandatory {@link #position()} that dictates from what point streaming should commence.
  * Additionally, an {@link #criteria()} can be set to filter the stream of events.

@@ -21,13 +21,14 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -46,10 +47,12 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
 
     @Override
     public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
-                         @Nonnull InterceptorChain interceptorChain) throws Exception {
+                         @Nonnull ProcessingContext context,
+                         @Nonnull InterceptorChain interceptorChain
+    ) throws Exception {
         T message = unitOfWork.getMessage();
         if (!AnnotationUtils.isAnnotationPresent(message.getPayloadType(), Secured.class)) {
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         }
         Secured annotation = message.getPayloadType()
                                     .getAnnotation(Secured.class);
@@ -75,7 +78,7 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
                                     .map(SimpleGrantedAuthority::new)
                                     .collect(Collectors.toSet()));
         if (!authorities.isEmpty()) {
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         }
         throw new UnauthorizedMessageException(
                 "Unauthorized message with identifier [" + message.getIdentifier() + "]"

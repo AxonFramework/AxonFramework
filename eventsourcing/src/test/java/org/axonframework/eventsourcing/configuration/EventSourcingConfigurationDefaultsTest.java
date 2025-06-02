@@ -16,9 +16,10 @@
 
 package org.axonframework.eventsourcing.configuration;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
@@ -26,10 +27,9 @@ import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
-import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.jetbrains.annotations.NotNull;
+import org.axonframework.eventstreaming.Tag;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -90,7 +90,7 @@ class EventSourcingConfigurationDefaultsTest {
     private static class TestTagResolver implements TagResolver {
 
         @Override
-        public Set<Tag> resolve(@NotNull EventMessage<?> event) {
+        public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
             throw new UnsupportedOperationException();
         }
     }

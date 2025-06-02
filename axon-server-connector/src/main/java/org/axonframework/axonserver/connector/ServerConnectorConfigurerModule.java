@@ -39,7 +39,7 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Configurer module which is auto-loadable by the {@link LegacyDefaultConfigurer} that sets sensible

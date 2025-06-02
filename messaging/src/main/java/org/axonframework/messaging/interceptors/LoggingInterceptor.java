@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * {@link MessageDispatchInterceptor} and {@link MessageHandlerInterceptor} implementation that logs dispatched and
@@ -109,11 +109,12 @@ public class LoggingInterceptor<T extends Message<?>>
     @Deprecated
     @Override
     public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
+                         @Nonnull ProcessingContext context,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         T message = unitOfWork.getMessage();
         logger.info("Incoming message: [{}]", message.getPayloadType().getSimpleName());
         try {
-            Object returnValue = interceptorChain.proceedSync();
+            Object returnValue = interceptorChain.proceedSync(context);
             logger.info("[{}] executed successfully with a [{}] return value",
                         message.getPayloadType().getSimpleName(),
                         returnValue == null ? "null" : returnValue.getClass().getSimpleName());

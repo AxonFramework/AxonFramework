@@ -42,7 +42,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -144,7 +144,7 @@ class GenericJpaRepositoryTest {
                                                 .identifierConverter(identifierConverter)
                                                 .build();
 
-        LegacyDefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
+        LegacyDefaultUnitOfWork.startAndGet(null).executeWithResult((ctx) -> {
             Aggregate<StubJpaAggregate> agg =
                     testSubject.newInstance(() -> new StubJpaAggregate("id", "test1", "test2"));
             agg.execute(e -> e.doSomething("test3"));
@@ -187,7 +187,7 @@ class GenericJpaRepositoryTest {
                                                 .identifierConverter(identifierConverter)
                                                 .build();
 
-        LegacyDefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
+        LegacyDefaultUnitOfWork.startAndGet(null).executeWithResult((ctx) -> {
             Aggregate<StubJpaAggregate> agg = testSubject.load(aggregateId);
             agg.execute(e -> e.doSomething("test2"));
             return null;
@@ -223,7 +223,7 @@ class GenericJpaRepositoryTest {
                                                 .build();
 
         LegacyDefaultUnitOfWork.startAndGet(null)
-                               .executeWithResult(() -> {
+                               .executeWithResult((ctx) -> {
                                    Aggregate<StubJpaAggregate> aggregate = testSubject.newInstance(
                                            () -> new StubJpaAggregate("id", expectedFirstPayload, expectedSecondPayload)
                                    );

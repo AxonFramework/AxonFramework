@@ -25,7 +25,8 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStreamTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.child.mock.RecordingChildEntity;
@@ -52,7 +53,6 @@ class SingleEntityChildModelTest {
             .childEntityFieldDefinition(childEntityFieldDefinition)
             .build();
 
-    private final StubProcessingContext context = new StubProcessingContext();
     private final RecordingParentEntity parentEntity = new RecordingParentEntity();
 
     @Nested
@@ -62,6 +62,7 @@ class SingleEntityChildModelTest {
         private final CommandMessage<String> commandMessage = new GenericCommandMessage<>(
                 new MessageType(COMMAND), "myPayload"
         );
+        private final ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
 
         @BeforeEach
         void setUp() {
@@ -119,6 +120,7 @@ class SingleEntityChildModelTest {
     public class EventHandling {
 
         private final EventMessage<String> event = new GenericEventMessage<>(new MessageType(EVENT), "myPayload");
+        private final ProcessingContext context = StubProcessingContext.forMessage(event);
 
 
         @Test

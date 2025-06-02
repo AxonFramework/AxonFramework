@@ -45,8 +45,8 @@ import java.util.NoSuchElementException;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Stub implementation of {@link DeadlineManager}. Records all scheduled, canceled and met deadlines.
@@ -263,7 +263,7 @@ public class StubDeadlineManager implements DeadlineManager {
                                                ScheduledDeadlineInfo scheduledDeadlineInfo) {
         LegacyDefaultUnitOfWork<? extends DeadlineMessage<?>> uow =
                 LegacyDefaultUnitOfWork.startAndGet(scheduledDeadlineInfo.deadlineMessage());
-        InterceptorChain chain = new DefaultInterceptorChain<>(uow, handlerInterceptors, deadlineMessage -> {
+        InterceptorChain chain = new DefaultInterceptorChain<>(uow, handlerInterceptors, (deadlineMessage, ctx) -> {
             deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), deadlineMessage);
             return deadlineMessage;
         });

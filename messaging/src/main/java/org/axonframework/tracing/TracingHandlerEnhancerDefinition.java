@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,13 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Enhances message handlers with the provided {@link SpanFactory}, wrapping handling of the message in a {@link Span}
@@ -79,9 +80,10 @@ public class TracingHandlerEnhancerDefinition implements HandlerEnhancerDefiniti
         String signature = toMethodSignature(unwrap.get());
         return new WrappedMessageHandlingMember<T>(original) {
             @Override
-            public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
+            public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, T target)
+                    throws Exception {
                 return spanFactory.createInternalSpan(() -> getSpanName(target, signature))
-                                  .runCallable(() -> super.handleSync(message, target));
+                                  .runCallable(() -> super.handleSync(message, context, target));
             }
         };
     }

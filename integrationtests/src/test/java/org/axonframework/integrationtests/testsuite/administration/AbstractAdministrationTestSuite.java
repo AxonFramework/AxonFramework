@@ -155,7 +155,7 @@ public abstract class AbstractAdministrationTestSuite {
     }
 
     private void sendCommand(Object command) {
-        commandGateway.send(command, ProcessingContext.NONE).getResultMessage().join();
+        commandGateway.send(command, null).getResultMessage().join();
     }
 
     private void doSetupFor(Function<Configuration, CommandHandlingComponent> commandHandlingComponentFactory) {

@@ -18,6 +18,7 @@ package org.axonframework.modelling.annotation;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -29,10 +30,10 @@ class AnnotationBasedEntityIdResolverTest {
     void resolvesIdOfSingleTargetCommand() {
         // given
         SingleTargetCommand command = new SingleTargetCommand("id-2792793");
+        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
 
         // when
-        Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command),
-                                            ProcessingContext.NONE);
+        Object result = testSubject.resolve(message, StubProcessingContext.forMessage(message));
 
         // then
         Assertions.assertEquals("id-2792793", result);
@@ -43,10 +44,10 @@ class AnnotationBasedEntityIdResolverTest {
     void resolvesIdOfSingleTargetCommandWithGetterAnnotated() {
         // given
         SingleTargetGetterCommand command = new SingleTargetGetterCommand("id-2792794");
+        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
 
         // when
-        Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command),
-                                            ProcessingContext.NONE);
+        Object result = testSubject.resolve(message, StubProcessingContext.forMessage(message));
 
         // then
         Assertions.assertEquals("id-2792794", result);
@@ -56,10 +57,10 @@ class AnnotationBasedEntityIdResolverTest {
     void resolvesIdOfSingleTargetCommandWithRecord() {
         // given
         SingleTargetRecordCommand command = new SingleTargetRecordCommand("id-2792795");
+        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
 
         // when
-        Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command),
-                                            ProcessingContext.NONE);
+        Object result = testSubject.resolve(message, StubProcessingContext.forMessage(message));
 
         // then
         Assertions.assertEquals("id-2792795", result);
@@ -69,10 +70,11 @@ class AnnotationBasedEntityIdResolverTest {
     void throwsExceptionWhenMultipleTargetAnnotationsArePresentThatDontMatch() {
         // given
         MultipleTargetCommand command = new MultipleTargetCommand("id-2792796", "id-2792797");
+        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
 
         // then
         Assertions.assertThrows(MultipleTargetEntityIdsFoundInPayload.class, () -> testSubject.resolve(
-                new GenericCommandMessage<>(new MessageType(command.getClass()), command), ProcessingContext.NONE));
+                message, StubProcessingContext.forMessage(message)));
     }
 
 
@@ -82,8 +84,8 @@ class AnnotationBasedEntityIdResolverTest {
         MultipleTargetCommand command = new MultipleTargetCommand("id-2792798", null);
 
         // when
-        Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command),
-                                            ProcessingContext.NONE);
+        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
+        Object result = testSubject.resolve(message, StubProcessingContext.forMessage(message));
 
         // then
         Assertions.assertEquals("id-2792798", result);
@@ -93,10 +95,10 @@ class AnnotationBasedEntityIdResolverTest {
     void resolvesNonNullIdWhenAllTargetIdFieldsHaveSameValue() {
         // given
         MultipleTargetCommand command = new MultipleTargetCommand("id-2792700", "id-2792700");
+        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
 
         // when
-        Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command),
-                                            ProcessingContext.NONE);
+        Object result = testSubject.resolve(message, StubProcessingContext.forMessage(message));
 
         // then
         Assertions.assertEquals("id-2792700", result);
@@ -112,7 +114,7 @@ class AnnotationBasedEntityIdResolverTest {
 
         // when & then
         Assertions.assertThrows(NoEntityIdFoundInPayload.class, () -> {
-            testSubject.resolve(commandMessage, ProcessingContext.NONE);
+            testSubject.resolve(commandMessage, StubProcessingContext.forMessage(commandMessage));
         });
     }
 

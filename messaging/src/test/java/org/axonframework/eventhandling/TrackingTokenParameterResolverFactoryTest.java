@@ -17,7 +17,9 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -36,18 +38,26 @@ class TrackingTokenParameterResolverFactoryTest {
     }
 
     @Test
-    void createInstance() {
+    void doesNotMatchForGenericEventMessage() {
         assertNull(testSubject.createInstance(method, method.getParameters(), 0));
         ParameterResolver<?> resolver = testSubject.createInstance(method, method.getParameters(), 1);
 
         assertNotNull(resolver);
         EventMessage<String> message = new GenericEventMessage<>(new MessageType("event"), "test");
-        assertFalse(resolver.matches(message, null));
+        ProcessingContext contextWithGenericMessage = StubProcessingContext.forMessage(message);
+        assertFalse(resolver.matches(contextWithGenericMessage));
+    }
+
+    @Test
+    void returnsTrackingTokenForTrackedEventMessage() {
+        ParameterResolver<?> resolver = testSubject.createInstance(method, method.getParameters(), 1);
         GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(1L);
-        GenericTrackedEventMessage<String> trackedEventMessage = new GenericTrackedEventMessage<>(trackingToken,
-                                                                                                  message);
-        assertTrue(resolver.matches(trackedEventMessage, null));
-        assertSame(trackingToken, resolver.resolveParameterValue(trackedEventMessage, null));
+        GenericTrackedEventMessage<String> trackedEventMessage = new GenericTrackedEventMessage<>(
+                trackingToken,
+                new GenericEventMessage<>(new MessageType("event"), "test"));
+        ProcessingContext contextWithTrackedMessage = StubProcessingContext.forMessage(trackedEventMessage);
+        assertTrue(resolver.matches(contextWithTrackedMessage));
+        assertSame(trackingToken, resolver.resolveParameterValue(contextWithTrackedMessage));
     }
 
     @SuppressWarnings("unused")

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.MessageType;
@@ -68,7 +68,7 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
      */
     default EventCriteria andBeingOneOfTypes(@Nonnull MessageTypeResolver typeResolver, @Nonnull Class<?>... types) {
         return andBeingOneOfTypes(Arrays.stream(types)
-                                        .map(typeResolver::resolve)
+                                        .map(typeResolver::resolveOrThrow)
                                         .map(MessageType::qualifiedName)
                                         .collect(Collectors.toSet()));
     }

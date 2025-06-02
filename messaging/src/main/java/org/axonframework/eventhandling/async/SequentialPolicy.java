@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.async;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * SequencingPolicy that requires sequential handling of all events delivered to an event handler.

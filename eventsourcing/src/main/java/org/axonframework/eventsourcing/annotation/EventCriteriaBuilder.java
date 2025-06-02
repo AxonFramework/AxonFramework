@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.modelling.annotation.TargetEntityId;
 
 import java.lang.annotation.ElementType;

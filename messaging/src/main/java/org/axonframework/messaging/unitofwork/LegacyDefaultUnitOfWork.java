@@ -26,7 +26,7 @@ import org.axonframework.messaging.ResultMessage;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 
@@ -68,7 +68,7 @@ public class LegacyDefaultUnitOfWork<T extends Message<?>> extends AbstractLegac
     }
 
     @Override
-    public <R> ResultMessage<R> executeWithResult(Callable<R> task,
+    public <R> ResultMessage<R> executeWithResult(ProcessingContextCallable<R> task,
                                                   @Nonnull RollbackConfiguration rollbackConfiguration) {
         if (phase() == Phase.NOT_STARTED) {
             start();
@@ -78,8 +78,9 @@ public class LegacyDefaultUnitOfWork<T extends Message<?>> extends AbstractLegac
         R result;
         ResultMessage<R> resultMessage;
         try {
+            ProcessingContext context = new LegacyMessageSupportingContext(getMessage());
             //noinspection DuplicatedCode
-            result = task.call();
+            result = task.call(context);
             if (result instanceof ResultMessage) {
                 //noinspection unchecked
                 resultMessage = (ResultMessage<R>) result;

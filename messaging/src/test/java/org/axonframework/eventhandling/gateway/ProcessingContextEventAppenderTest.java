@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -63,11 +63,11 @@ class ProcessingContextEventAppenderTest {
         assertEquals(payload1, publishedEvent1.getPayload());
         assertEquals(payload2, publishedEvent2.getPayload());
         assertEquals(
-                messageTypeResolver.resolve(payload1).qualifiedName(),
+                messageTypeResolver.resolveOrThrow(payload1).qualifiedName(),
                 publishedEvent1.type().qualifiedName()
         );
         assertEquals(
-                messageTypeResolver.resolve(payload2).qualifiedName(),
+                messageTypeResolver.resolveOrThrow(payload2).qualifiedName(),
                 publishedEvent2.type().qualifiedName()
         );
     }

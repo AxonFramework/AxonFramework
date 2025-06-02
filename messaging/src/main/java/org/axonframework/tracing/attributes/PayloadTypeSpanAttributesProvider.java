@@ -22,7 +22,7 @@ import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.Collections;
 import java.util.Map;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Adds the {@link Message#getPayloadType payload type} as an attribute to the {@link Span}.

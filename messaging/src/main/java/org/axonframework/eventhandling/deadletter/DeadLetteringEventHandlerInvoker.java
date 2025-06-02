@@ -49,7 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
@@ -125,7 +125,7 @@ public class DeadLetteringEventHandlerInvoker
     }
 
     @Override
-    public void handle(@Nonnull EventMessage<?> message, ProcessingContext processingContext, @Nonnull Segment segment) throws Exception {
+    public void handle(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext context, @Nonnull Segment segment) throws Exception {
         if (!super.sequencingPolicyMatchesSegment(message, segment)) {
             logger.trace("Ignoring event with id [{}] as it is not assigned to segment [{}].",
                          message.getIdentifier(), segment);
@@ -144,7 +144,7 @@ public class DeadLetteringEventHandlerInvoker
             if (mightBePresent) {
                 markNotEnqueued(sequenceIdentifier, segment);
             }
-            invokeHandlers(message, segment, sequenceIdentifier);
+            invokeHandlers(message, context, segment, sequenceIdentifier);
         }
     }
 
@@ -165,14 +165,14 @@ public class DeadLetteringEventHandlerInvoker
         );
     }
 
-    private void invokeHandlers(@Nonnull EventMessage<?> message, @Nonnull Segment segment, Object sequenceIdentifier) {
+    private void invokeHandlers(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext context, @Nonnull Segment segment, Object sequenceIdentifier) {
         if (logger.isTraceEnabled()) {
             logger.trace("Event [{}] with queue id [{}] is not present in the dead-letter queue."
                                  + "Handle operation is delegated to the wrapped EventHandlerInvoker.",
                          message, sequenceIdentifier);
         }
         try {
-            super.invokeHandlers(message);
+            super.invokeHandlers(message, context);
         } catch (Exception e) {
             DeadLetter<EventMessage<?>> letter = new GenericDeadLetter<>(sequenceIdentifier, message, e);
             EnqueueDecision<EventMessage<?>> decision = enqueuePolicy.decide(letter, e);
@@ -213,19 +213,19 @@ public class DeadLetteringEventHandlerInvoker
     }
 
     @Override
-    public void performReset(ProcessingContext processingContext) {
+    public void performReset(ProcessingContext context) {
         if (allowReset) {
             transactionManager.executeInTransaction(queue::clear);
         }
-        super.performReset(null, processingContext);
+        super.performReset(null, context);
     }
 
     @Override
-    public <R> void performReset(R resetContext, ProcessingContext processingContext) {
+    public <R> void performReset(R resetContext, ProcessingContext context) {
         if (allowReset) {
             transactionManager.executeInTransaction(queue::clear);
         }
-        super.performReset(resetContext, processingContext);
+        super.performReset(resetContext, context);
     }
 
     @Override
@@ -237,7 +237,7 @@ public class DeadLetteringEventHandlerInvoker
                                                     transactionManager);
         LegacyUnitOfWork<?> uow = new LegacyDefaultUnitOfWork<>(null);
         uow.attachTransaction(transactionManager);
-        return uow.executeWithResult(() -> queue.process(sequenceFilter, processingTask::process)).getPayload();
+        return uow.executeWithResult((ctx) -> queue.process(sequenceFilter, processingTask::process)).getPayload();
     }
 
     @Override

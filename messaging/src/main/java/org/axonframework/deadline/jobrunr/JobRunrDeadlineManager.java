@@ -41,6 +41,7 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -56,8 +57,8 @@ import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.util.UUID;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -227,8 +228,9 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
             InterceptorChain chain = new DefaultInterceptorChain<>(
                     unitOfWork,
                     handlerInterceptors(),
-                    interceptedDeadlineMessage -> {
+                    (interceptedDeadlineMessage, ctx) -> {
                         executeScheduledDeadline(interceptedDeadlineMessage,
+                                                 ctx,
                                                  deadlineDetails.getDeserializedScopeDescriptor(serializer));
                         return null;
                     });
@@ -246,12 +248,12 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
     }
 
     @SuppressWarnings("Duplicates")
-    private void executeScheduledDeadline(DeadlineMessage<?> deadlineMessage, ScopeDescriptor deadlineScope) {
+    private void executeScheduledDeadline(DeadlineMessage<?> deadlineMessage, ProcessingContext context, ScopeDescriptor deadlineScope) {
         scopeAwareProvider.provideScopeAwareStream(deadlineScope)
                           .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
                           .forEach(scopeAwareComponent -> {
                               try {
-                                  scopeAwareComponent.send(deadlineMessage, deadlineScope);
+                                  scopeAwareComponent.send(deadlineMessage, context, deadlineScope);
                               } catch (Exception e) {
                                   String exceptionMessage = format(
                                           "Failed to send a DeadlineMessage for scope [%s]",

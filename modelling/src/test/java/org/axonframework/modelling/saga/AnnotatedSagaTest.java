@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.NoMoreInterceptors;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
@@ -31,7 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.modelling.saga.SagaLifecycle.removeAssociationWith;
 import static org.junit.jupiter.api.Assertions.*;
@@ -61,15 +62,15 @@ class AnnotatedSagaTest {
     @Test
     void invokeSaga() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new RegularEvent("id"))
-        );
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new RegularEvent("wrongId"))
-        );
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new Object())
-        );
+
+        var event1 = new GenericEventMessage<>(new MessageType("event"), new RegularEvent("id"));
+        testSubject.handleSync(event1, StubProcessingContext.forMessage(event1));
+
+        var event2 = new GenericEventMessage<>(new MessageType("event"), new RegularEvent("wrongId"));
+        testSubject.handleSync(event2, StubProcessingContext.forMessage(event2));
+
+        var event3 = new GenericEventMessage<>(new MessageType("event"), new Object());
+        testSubject.handleSync(event3, StubProcessingContext.forMessage(event3));
 
         assertEquals(1, testSaga.invocationCount);
     }
@@ -94,13 +95,14 @@ class AnnotatedSagaTest {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("propertyName", "id");
-        EventMessage<EventWithoutProperties> testEvent = new GenericEventMessage<>(
+        EventMessage<EventWithoutProperties> eventWithMetadata = new GenericEventMessage<>(
                 new MessageType("event"), new EventWithoutProperties(), new MetaData(metaData)
         );
-        testSubject.handleSync(testEvent);
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new EventWithoutProperties())
-        );
+        testSubject.handleSync(eventWithMetadata, StubProcessingContext.forMessage(eventWithMetadata));
+        GenericEventMessage<EventWithoutProperties> eventWithoutMetadata = new GenericEventMessage<>(new MessageType(
+                "event"),
+                                                                                                     new EventWithoutProperties());
+        testSubject.handleSync(eventWithoutMetadata, StubProcessingContext.forMessage(eventWithoutMetadata));
 
         assertEquals(1, testSaga.invocationCount);
     }
@@ -116,15 +118,14 @@ class AnnotatedSagaTest {
     @Test
     void endedAfterInvocationBeanProperty() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new RegularEvent("id"))
-        );
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new Object())
-        );
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new SagaEndEvent("id"))
-        );
+        var event1 = new GenericEventMessage<>(new MessageType("event"),
+                                               new RegularEvent("id"));
+        testSubject.handleSync(event1, StubProcessingContext.forMessage(event1));
+        var event2 = new GenericEventMessage<>(new MessageType("event"), new Object());
+        testSubject.handleSync(event2, StubProcessingContext.forMessage(event2));
+        var event3 = new GenericEventMessage<>(new MessageType("event"),
+                                               new SagaEndEvent("id"));
+        testSubject.handleSync(event3, StubProcessingContext.forMessage(event3));
 
         assertEquals(2, testSaga.invocationCount);
         assertFalse(testSubject.isActive());
@@ -140,15 +141,14 @@ class AnnotatedSagaTest {
         );
 
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new RegularEvent("id"))
-        );
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new Object())
-        );
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new SagaEndEvent("id"))
-        );
+        var event1 = new GenericEventMessage<>(new MessageType("event"),
+                                               new RegularEvent("id"));
+        testSubject.handleSync(event1, StubProcessingContext.forMessage(event1));
+        var event2 = new GenericEventMessage<>(new MessageType("event"), new Object());
+        testSubject.handleSync(event2, StubProcessingContext.forMessage(event2));
+        var event3 = new GenericEventMessage<>(new MessageType("event"),
+                                               new SagaEndEvent("id"));
+        testSubject.handleSync(event3, StubProcessingContext.forMessage(event3));
 
         assertEquals(2, testSaga.invocationCount);
         assertFalse(testSubject.isActive());
@@ -157,15 +157,12 @@ class AnnotatedSagaTest {
     @Test
     void endedAfterInvocationUniformAccessPrinciple() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new UniformAccessEvent("id"))
-        );
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new Object())
-        );
-        testSubject.handleSync(
-                new GenericEventMessage<>(new MessageType("event"), new SagaEndEvent("id"))
-        );
+        var event1 = new GenericEventMessage<>(new MessageType("event"), new UniformAccessEvent("id"));
+        testSubject.handleSync(event1, StubProcessingContext.forMessage(event1));
+        var event2 = new GenericEventMessage<>(new MessageType("event"), new Object());
+        testSubject.handleSync(event2, StubProcessingContext.forMessage(event2));
+        var event3 = new GenericEventMessage<>(new MessageType("event"), new SagaEndEvent("id"));
+        testSubject.handleSync(event3, StubProcessingContext.forMessage(event3));
 
         assertEquals(2, testSaga.invocationCount);
         assertFalse(testSubject.isActive());

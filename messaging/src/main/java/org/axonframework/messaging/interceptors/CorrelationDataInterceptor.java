@@ -25,7 +25,7 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -63,10 +63,10 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     }
 
     @Override
-    public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
+    public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork, @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain)
             throws Exception {
         correlationDataProviders.forEach(unitOfWork::registerCorrelationDataProvider);
-        return interceptorChain.proceedSync();
+        return interceptorChain.proceedSync(context);
     }
 
     @Override

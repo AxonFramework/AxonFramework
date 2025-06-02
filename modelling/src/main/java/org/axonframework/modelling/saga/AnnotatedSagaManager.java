@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.modelling.saga.metamodel.SagaModel;
 import org.axonframework.tracing.SpanFactory;
@@ -30,7 +31,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -92,15 +93,15 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
 
     @Override
-    public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull Segment segment) {
+    public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
         // The segment is used to filter Saga instances, so all events match when there's a handler
-        return sagaMetaModel.hasHandlerMethod(eventMessage);
+        return sagaMetaModel.hasHandlerMethod(eventMessage, context);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event) {
-        return sagaMetaModel.findHandlerMethods(event).stream()
+    protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event, ProcessingContext context) {
+        return sagaMetaModel.findHandlerMethods(event, context).stream()
                             .map(h -> h.unwrap(SagaMethodMessageHandlingMember.class).orElse(null))
                             .filter(Objects::nonNull)
                             .filter(sh -> sh.getCreationPolicy() != SagaCreationPolicy.NONE)
@@ -113,8 +114,8 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event) {
-        return sagaMetaModel.findHandlerMethods(event).stream()
+    protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event, ProcessingContext context) {
+        return sagaMetaModel.findHandlerMethods(event, context).stream()
                             .map(h -> h.unwrap(SagaMethodMessageHandlingMember.class).orElse(null))
                             .filter(Objects::nonNull)
                             .map(h -> h.getAssociationValue(event))

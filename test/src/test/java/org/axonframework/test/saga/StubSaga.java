@@ -104,11 +104,11 @@ public class StubSaga {
     }
 
     @SagaEventHandler(associationProperty = "identifier")
-    public void handle(ParameterResolvedEvent event, AtomicBoolean assertion) {
+    public void handle(ParameterResolvedEvent event, AtomicBoolean assertion, ProcessingContext context) {
         handledEvents.add(event);
         assertFalse(assertion.get());
         assertion.set(true);
-        commandGateway.send(new ResolveParameterCommand(event.getIdentifier(), assertion), ProcessingContext.NONE);
+        commandGateway.send(new ResolveParameterCommand(event.getIdentifier(), assertion), context);
     }
 
     @EndSaga
@@ -124,11 +124,11 @@ public class StubSaga {
     }
 
     @SagaEventHandler(associationProperty = "identifier")
-    public void handleTriggerEvent(TimerTriggeredEvent event) {
+    public void handleTriggerEvent(TimerTriggeredEvent event, ProcessingContext context) {
         handledEvents.add(event);
-        String result = commandGateway.send("Say hi!", ProcessingContext.NONE, String.class).join();
+        String result = commandGateway.send("Say hi!", context, String.class).join();
         if (result != null) {
-            commandGateway.send(result, ProcessingContext.NONE);
+            commandGateway.send(result, context);
         }
     }
 

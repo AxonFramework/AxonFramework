@@ -17,6 +17,7 @@
 package org.axonframework.messaging.configuration.reflection;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
@@ -52,8 +53,9 @@ public class ConfigurationParameterResolverFactory implements ParameterResolverF
         this.configuration = Objects.requireNonNull(configuration, "The configuration cannot be null.");
     }
 
+    @Nullable
     @Override
-    public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         // TODO #3360 - This block is up for improvements per referenced issue number.
         Class<?> componentType = parameters[parameterIndex].getType();
         return configuration.getOptionalComponent(componentType)
