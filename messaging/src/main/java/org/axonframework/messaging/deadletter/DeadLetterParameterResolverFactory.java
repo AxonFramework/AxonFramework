@@ -17,6 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -43,6 +44,7 @@ import java.lang.reflect.Parameter;
  */
 public class DeadLetterParameterResolverFactory implements ParameterResolverFactory {
 
+    @Nullable
     @Override
     public ParameterResolver<DeadLetter<?>> createInstance(@Nonnull Executable executable,
                                                            @Nonnull Parameter[] parameters,
@@ -59,6 +61,7 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
      */
     static class DeadLetterParameterResolver implements ParameterResolver<DeadLetter<?>> {
 
+        @Nullable
         @Override
         public DeadLetter<?> resolveParameterValue(@Nonnull ProcessingContext context) {
             return CurrentUnitOfWork.isStarted()

@@ -17,6 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -38,6 +39,7 @@ public class ProcessingContextParameterResolverFactory implements ParameterResol
 
     private static final ProcessingContextParameterResolver INSTANCE = new ProcessingContextParameterResolver();
 
+    @Nullable
     @Override
     public ParameterResolver<ProcessingContext> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
                                                                int parameterIndex) {
@@ -51,6 +53,7 @@ public class ProcessingContextParameterResolverFactory implements ParameterResol
 
     private static class ProcessingContextParameterResolver implements ParameterResolver<ProcessingContext> {
 
+        @Nullable
         @Override
         public ProcessingContext resolveParameterValue(@Nonnull ProcessingContext context) {
             return context;

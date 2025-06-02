@@ -129,6 +129,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
             this.assertion = assertion;
         }
 
+        @Nullable
         @Override
         public ParameterResolver<AtomicBoolean> createInstance(@Nonnull Executable executable,
                                                                @Nonnull Parameter[] parameters,

@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
@@ -38,6 +39,7 @@ import java.util.Optional;
 @Priority(Priority.LOW)
 public class DefaultParameterResolverFactory implements ParameterResolverFactory {
 
+    @Nullable
     @Override
     public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
                                             int parameterIndex) {
@@ -106,6 +108,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         private MetaDataParameterResolver() {
         }
 
+        @Nullable
         @Override
         public MetaData resolveParameterValue(@Nonnull ProcessingContext context) {
             Message<?> message = Message.fromContext(context);
@@ -126,6 +129,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             this.parameterType = parameterType;
         }
 
+        @Nullable
         @Override
         public Message<?> resolveParameterValue(@Nonnull ProcessingContext context) {
             return Message.fromContext(context);

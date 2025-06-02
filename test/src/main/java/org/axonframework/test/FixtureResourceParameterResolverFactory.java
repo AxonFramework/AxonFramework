@@ -17,6 +17,7 @@
 package org.axonframework.test;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -54,6 +55,7 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
             this.parameterType = parameterType;
         }
 
+        @Nullable
         @Override
         public Object resolveParameterValue(@Nonnull ProcessingContext context) {
             throw new FixtureExecutionException("No resource of type [" + parameterType.getName()

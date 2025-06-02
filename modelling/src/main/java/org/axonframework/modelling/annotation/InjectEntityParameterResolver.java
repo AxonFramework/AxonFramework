@@ -17,6 +17,7 @@
 package org.axonframework.modelling.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -69,6 +70,7 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
         this.managedEntity = managedEntity;
     }
 
+    @Nullable
     @Override
     public Object resolveParameterValue(@Nonnull ProcessingContext context) {
         Message<?> message = Message.fromContext(context);

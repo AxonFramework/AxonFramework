@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.replay;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.Message;
@@ -40,6 +41,7 @@ import java.lang.reflect.Parameter;
  */
 public class ReplayContextParameterResolverFactory implements ParameterResolverFactory {
 
+    @Nullable
     @Override
     public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         Parameter parameter = parameters[parameterIndex];
@@ -57,6 +59,7 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
             this.type = type;
         }
 
+        @Nullable
         @Override
         public Object resolveParameterValue(@Nonnull ProcessingContext context) {
             if(Message.fromContext(context) instanceof TrackedEventMessage<?> trackedEventMessage) {

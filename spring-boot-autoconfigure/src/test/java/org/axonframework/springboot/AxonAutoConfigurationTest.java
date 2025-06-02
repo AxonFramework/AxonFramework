@@ -17,6 +17,7 @@
 package org.axonframework.springboot;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
@@ -302,6 +303,7 @@ class AxonAutoConfigurationTest {
                 this.eventBus = eventBus;
             }
 
+            @Nullable
             @Override
             public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
                 if (Integer.class.isAssignableFrom(parameters[parameterIndex].getType())) {

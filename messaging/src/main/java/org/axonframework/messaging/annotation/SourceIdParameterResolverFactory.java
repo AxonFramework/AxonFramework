@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.Message;
@@ -53,6 +54,7 @@ public final class SourceIdParameterResolverFactory
      */
     static class SourceIdParameterResolver implements ParameterResolver<String> {
 
+        @Nullable
         @Override
         public String resolveParameterValue(@Nonnull ProcessingContext context) {
             if (Message.fromContext(context) instanceof DomainEventMessage message) {

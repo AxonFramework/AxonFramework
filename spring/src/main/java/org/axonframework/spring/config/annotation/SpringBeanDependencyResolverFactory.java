@@ -59,6 +59,7 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
         this.applicationContext = applicationContext;
     }
 
+    @Nullable
     @Override
     public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         final Optional<Boolean> ann =

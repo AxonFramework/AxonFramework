@@ -17,6 +17,7 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -65,7 +66,8 @@ public interface Message<P> {
      * @param message The {@link Message} to add to the {@code context}.
      * @return The updated {@link ProcessingContext} with the {@code message} added under the {@link #RESOURCE_KEY}.
      */
-    static ProcessingContext addToContext(ProcessingContext context, Message<?> message) {
+    @Nonnull
+    static ProcessingContext addToContext(@Nonnull ProcessingContext context, @Nonnull Message<?> message) {
         return context.withResource(RESOURCE_KEY, message);
     }
 
@@ -76,7 +78,8 @@ public interface Message<P> {
      * @return The {@link Message} stored in the {@code context} under the {@link #RESOURCE_KEY}, or {@code null} if not
      * found.
      */
-    static Message<?> fromContext(ProcessingContext context) {
+    @Nullable
+    static Message<?> fromContext(@Nonnull ProcessingContext context) {
         return context.getResource(RESOURCE_KEY);
     }
 

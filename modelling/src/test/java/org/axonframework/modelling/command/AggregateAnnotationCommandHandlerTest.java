@@ -17,6 +17,7 @@
 package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -1256,6 +1257,7 @@ class AggregateAnnotationCommandHandlerTest {
     @Priority(Priority.LAST)
     private static class CustomParameterResolverFactory implements ParameterResolverFactory {
 
+        @Nullable
         @SuppressWarnings("rawtypes")
         @Override
         public ParameterResolver createInstance(@Nonnull Executable member, @Nonnull Parameter[] params, int index) {

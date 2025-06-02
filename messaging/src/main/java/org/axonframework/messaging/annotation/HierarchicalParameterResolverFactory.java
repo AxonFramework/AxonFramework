@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 
 import java.lang.reflect.Executable;
@@ -59,6 +60,7 @@ public class HierarchicalParameterResolverFactory implements ParameterResolverFa
         return new HierarchicalParameterResolverFactory(parent, child);
     }
 
+    @Nullable
     @Override
     public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         ParameterResolver<?> resolver = child.createInstance(executable, parameters, parameterIndex);

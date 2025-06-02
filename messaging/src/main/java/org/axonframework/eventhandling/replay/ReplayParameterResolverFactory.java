@@ -41,6 +41,7 @@ import java.lang.reflect.Parameter;
  */
 public class ReplayParameterResolverFactory implements ParameterResolverFactory {
 
+    @Nullable
     @Override
     public ParameterResolver<ReplayStatus> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (ReplayStatus.class.isAssignableFrom(parameters[parameterIndex].getType())) {

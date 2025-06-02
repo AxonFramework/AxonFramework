@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.InterceptorChain;
@@ -108,6 +109,7 @@ public class InterceptorChainParameterResolverFactory
         return (InterceptorChain<M, R>) processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
     }
 
+    @Nullable
     @Override
     public InterceptorChain resolveParameterValue(@Nonnull ProcessingContext context) {
         InterceptorChain interceptorChain = context == null
@@ -128,6 +130,7 @@ public class InterceptorChainParameterResolverFactory
                 || (context != null && context.containsResource(INTERCEPTOR_CHAIN_KEY));
     }
 
+    @Nullable
     @Override
     public ParameterResolver<InterceptorChain> createInstance(@Nonnull Executable executable,
                                                               @Nonnull Parameter[] parameters,

@@ -17,6 +17,7 @@
 package org.axonframework.spring.config.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -72,6 +73,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
         this.applicationContext = applicationContext;
     }
 
+    @Nullable
     @Override
     public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (applicationContext == null) {

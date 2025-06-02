@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -36,6 +37,7 @@ import static org.axonframework.messaging.NoScopeDescriptor.INSTANCE;
  */
 public class ScopeDescriptorParameterResolverFactory implements ParameterResolverFactory {
 
+    @Nullable
     @Override
     public ParameterResolver<ScopeDescriptor> createInstance(@Nonnull Executable executable,
                                                              @Nonnull Parameter[] parameters,

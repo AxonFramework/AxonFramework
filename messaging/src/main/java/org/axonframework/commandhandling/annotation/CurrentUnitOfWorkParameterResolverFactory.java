@@ -48,6 +48,7 @@ public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResol
         return null;
     }
 
+    @Nullable
     @Override
     public Object resolveParameterValue(@Nonnull ProcessingContext context) {
         if (!CurrentUnitOfWork.isStarted()) {

@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.interceptors.ResultHandler;
@@ -91,6 +92,7 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
 
     }
 
+    @Nullable
     @Override
     public ParameterResolver<Object> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (Exception.class.isAssignableFrom(parameters[parameterIndex].getType())
@@ -108,6 +110,7 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
             this.parameterType = resultType;
         }
 
+        @Nullable
         @Override
         public Object resolveParameterValue(@Nonnull ProcessingContext context) {
             return REGISTERED_RESULT.get();

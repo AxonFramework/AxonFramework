@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
 
 import java.lang.reflect.Executable;
@@ -108,6 +109,7 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
     }
 
 
+    @Nullable
     @Override
     public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         for (ParameterResolverFactory factory : factories) {

@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
@@ -128,6 +129,7 @@ class MultiParameterResolverFactoryTest {
 
     private static class AbstractNoopParameterResolverFactory implements ParameterResolverFactory {
 
+        @Nullable
         @Override
         public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
             return null;

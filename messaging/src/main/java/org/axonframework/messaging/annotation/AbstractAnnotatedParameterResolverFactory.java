@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -61,6 +62,7 @@ public abstract class AbstractAnnotatedParameterResolverFactory<A extends Annota
      */
     protected abstract ParameterResolver<P> getResolver();
 
+    @Nullable
     @Override
     public ParameterResolver<P> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (AnnotationUtils.isAnnotationPresent(parameters[parameterIndex], annotationType)) {

@@ -46,6 +46,7 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
     private static class TrackingTokenParameterResolver implements ParameterResolver<TrackingToken> {
 
+        @Nullable
         @Override
         public TrackingToken resolveParameterValue(@Nonnull ProcessingContext context) {
             if (Message.fromContext(context) instanceof TrackedEventMessage<?> trackedEventMessage) {
