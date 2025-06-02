@@ -727,17 +727,26 @@ This section contains two tables:
 
 ### Removed Classes
 
-| Class                                                           | Why                                                                                                                                            |
-|-----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| org.axonframework.config.Configurer                             | Made obsolete through introduction of several `ApplicationConfigurer` instances (see [Configuration](#applicationconfigurer-and-configuration) |
-| org.axonframework.messaging.unitofwork.AbstractUnitOfWork       | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.messaging.unitofwork.BatchingUnitOfWork       | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.messaging.unitofwork.CurrentUnitOfWork        | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.messaging.unitofwork.DefaultUnitOfWork        | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.messaging.unitofwork.ExecutionResult          | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.messaging.unitofwork.MessageProcessingContext | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
-| org.axonframework.modelling.command.AggregateLifecycle          | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
+| Class                                                                                    | Why                                                                                                                                            |
+|------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| org.axonframework.config.Configurer                                                      | Made obsolete through introduction of several `ApplicationConfigurer` instances (see [Configuration](#applicationconfigurer-and-configuration) |
+| org.axonframework.messaging.unitofwork.AbstractUnitOfWork                                | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.BatchingUnitOfWork                                | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.CurrentUnitOfWork                                 | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.DefaultUnitOfWork                                 | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.ExecutionResult                                   | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.MessageProcessingContext                          | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.eventsourcing.eventstore.AbstractEventStore                            | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
+| org.axonframework.modelling.command.AggregateLifecycle                                   | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
+| org.axonframework.eventsourcing.conflictresolution.ConflictDescription                   | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.ConflictExceptionSupplier             | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.ConflictResolution                    | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.ConflictResolver                      | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.Conflicts                             | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.ContextAwareConflictExceptionSupplier | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.DefaultConflictDescription            | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver               | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.NoConflictResolver                    | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
 
 ## Method Signature Changes
 
