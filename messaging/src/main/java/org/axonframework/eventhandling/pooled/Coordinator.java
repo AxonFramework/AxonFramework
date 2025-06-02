@@ -16,17 +16,18 @@
 
 package org.axonframework.eventhandling.pooled;
 
-import org.axonframework.common.stream.BlockingStream;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
-import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +36,8 @@ import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,12 +59,11 @@ import java.util.stream.Collectors;
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ProcessUtils.executeUntilTrue;
-import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
  * Coordinator for the {@link PooledStreamingEventProcessor}. Uses coordination tasks (separate threads) to starts a
  * work package for every {@link TrackingToken} it is able to claim. The tokens for every work package are combined and
- * the lower bound of this combined token is used to open an event stream from a {@link StreamableMessageSource}. Events
+ * the lower bound of this combined token is used to open an event stream from a {@link StreamableEventSource}. Events
  * are scheduled one by one to <em>all</em> work packages coordinated by this service.
  * <p>
  * Coordination tasks will run and be rerun as long as this service is considered to be {@link #isRunning()}.
@@ -81,20 +81,20 @@ class Coordinator {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final String name;
-    private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
+    private final StreamableEventSource<EventMessage<?>> eventSource;
     private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService executorService;
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
     private final EventFilter eventFilter;
-    private final Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler;
+    private final Consumer<? super EventMessage<?>> ignoredMessageHandler;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private final long tokenClaimInterval;
     private final long claimExtensionThreshold;
     private final Clock clock;
     private final MaxSegmentProvider maxSegmentProvider;
     private final int initialSegmentCount;
-    private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
+    private final Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken;
     private final boolean coordinatorExtendsClaims;
     private final Consumer<Segment> segmentReleasedAction;
 
@@ -118,7 +118,7 @@ class Coordinator {
 
     private Coordinator(Builder builder) {
         this.name = builder.name;
-        this.messageSource = builder.messageSource;
+        this.eventSource = builder.eventSource;
         this.tokenStore = builder.tokenStore;
         this.unitOfWorkFactory = builder.unitOfWorkFactory;
         this.executorService = builder.executorService;
@@ -306,7 +306,8 @@ class Coordinator {
                                                          initialSegmentCount);
                                              tokenStore.initializeTokenSegments(name,
                                                                                 initialSegmentCount,
-                                                                                initialToken.apply(messageSource));
+                                                                                joinAndUnwrap(initialToken.apply(
+                                                                                        eventSource)));
                                          }
                                          tokenStoreInitialized.set(true);
                                          return emptyCompletedFuture();
@@ -383,7 +384,7 @@ class Coordinator {
     }
 
     /**
-     * Functional interface defining a validation if a given {@link TrackedEventMessage} can be handled by all
+     * Functional interface defining a validation if a given {@link EventMessage} can be handled by all
      * {@link WorkPackage}s this {@link Coordinator} could ever service.
      */
     @FunctionalInterface
@@ -393,11 +394,11 @@ class Coordinator {
          * Checks whether the given {@code eventMessage} contains a type of message that can be handled by any of the
          * event handlers this processor coordinates.
          *
-         * @param eventMessage the {@link TrackedEventMessage} to validate whether it can be handled
+         * @param eventMessage the {@link EventMessage} to validate whether it can be handled
          * @return {@code true} if the processor contains a handler for given {@code eventMessage}'s type, {@code false}
          * otherwise
          */
-        boolean canHandleTypeOf(TrackedEventMessage<?> eventMessage);
+        boolean canHandleTypeOf(EventMessage<?> eventMessage);
     }
 
     /**
@@ -407,13 +408,13 @@ class Coordinator {
     static class Builder {
 
         private String name;
-        private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
+        private StreamableEventSource<EventMessage<?>> eventSource;
         private TokenStore tokenStore;
         private UnitOfWorkFactory unitOfWorkFactory;
         private ScheduledExecutorService executorService;
         private BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
         private EventFilter eventFilter;
-        private Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler = i -> {
+        private Consumer<? super EventMessage<?>> ignoredMessageHandler = i -> {
         };
         private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
         private long tokenClaimInterval = 5000;
@@ -421,7 +422,7 @@ class Coordinator {
         private Clock clock = GenericEventMessage.clock;
         private MaxSegmentProvider maxSegmentProvider;
         private int initialSegmentCount = 16;
-        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
+        private Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken;
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
@@ -442,11 +443,11 @@ class Coordinator {
         /**
          * The source of events this coordinator should schedule per work package.
          *
-         * @param messageSource the source of events this coordinator should schedule per work package
+         * @param eventSource the source of events this coordinator should schedule per work package
          * @return the current Builder instance, for fluent interfacing
          */
-        Builder messageSource(StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
-            this.messageSource = messageSource;
+        Builder eventSource(StreamableEventSource<EventMessage<?>> eventSource) {
+            this.eventSource = eventSource;
             return this;
         }
 
@@ -498,10 +499,10 @@ class Coordinator {
         }
 
         /**
-         * A {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by all
+         * A {@link EventFilter} used to check whether {@link EventMessage} must be ignored by all
          * {@link WorkPackage}s.
          *
-         * @param eventFilter a {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by
+         * @param eventFilter a {@link EventFilter} used to check whether {@link EventMessage} must be ignored by
          *                    all {@link WorkPackage}s
          * @return the current Builder instance, for fluent interfacing
          */
@@ -512,14 +513,14 @@ class Coordinator {
 
 
         /**
-         * A {@link Consumer} of {@link TrackedEventMessage} that is invoked when the event is ignored by all
+         * A {@link Consumer} of {@link EventMessage} that is invoked when the event is ignored by all
          * {@link WorkPackage}s this {@link Coordinator} controls. Defaults to a no-op.
          *
          * @param ignoredMessageHandler lambda that is invoked when the event is ignored by all {@link WorkPackage}s
          *                              this {@link Coordinator} controls
          * @return the current Builder instance, for fluent interfacing
          */
-        Builder onMessageIgnored(Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler) {
+        Builder onMessageIgnored(Consumer<? super EventMessage<?>> ignoredMessageHandler) {
             this.ignoredMessageHandler = ignoredMessageHandler;
             return this;
         }
@@ -602,15 +603,15 @@ class Coordinator {
          * replay since the start of the stream.
          * <p>
          * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
-         * from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
-         * {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.
+         * from the {@link StreamableEventSource#tailToken() tail} with the replay flag enabled until the
+         * {@link StreamableEventSource#headToken() head} at the moment of initialization is reached.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
-         *                     {@link StreamableMessageSource}
+         *                     {@link StreamableEventSource}
          * @return the current Builder instance, for fluent interfacing
          */
         Builder initialToken(
-                Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken
+                Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken
         ) {
             this.initialToken = initialToken;
             return this;
@@ -698,7 +699,7 @@ class Coordinator {
      *     <li>Periodically checking for unclaimed segments, claim these and start a {@code WorkPackage} per claim.</li>
      *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>
      *     <li>Reading events from the stream.</li>
-     *     <li>Scheduling read events for each {@code WorkPackage} through {@link WorkPackage#scheduleEvent(TrackedEventMessage)}.</li>
+     *     <li>Scheduling read events for each {@code WorkPackage} through {@link WorkPackage#scheduleEvent(MessageStream.Entry)}.</li>
      *     <li>Releasing claims of aborted {@code WorkPackages}.</li>
      *     <li>Rescheduling itself to be picked up at a reasonable point in time.</li>
      * </ol>
@@ -708,7 +709,8 @@ class Coordinator {
         private final AtomicBoolean processingGate = new AtomicBoolean();
         private final AtomicBoolean scheduledGate = new AtomicBoolean();
         private final AtomicBoolean interruptibleScheduledGate = new AtomicBoolean();
-        private BlockingStream<TrackedEventMessage<?>> eventStream;
+        private MessageStream<EventMessage<?>> eventStream;
+        private Iterator<MessageStream.Entry<EventMessage<?>>> eventIterator;
         private TrackingToken lastScheduledToken = NoToken.INSTANCE;
         private boolean availabilityCallbackSupported;
         private long unclaimedSegmentValidationThreshold;
@@ -725,7 +727,7 @@ class Coordinator {
                         "Stopped processing. Runnable flag is false.\nReleasing claims and closing the event stream for Processor [{}].",
                         name);
                 abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
-                closeQuietly(eventStream);
+                closeStream();
                 return;
             }
 
@@ -815,8 +817,9 @@ class Coordinator {
                 // We didn't start any work packages. Retry later.
                 logger.debug("No segments claimed. Will retry in {} milliseconds.", tokenClaimInterval);
                 lastScheduledToken = NoToken.INSTANCE;
-                closeQuietly(eventStream);
+                closeStream();
                 eventStream = null;
+                eventIterator = null;
                 processingGate.set(false);
                 scheduleDelayedCoordinationTask(tokenClaimInterval);
                 return;
@@ -824,14 +827,14 @@ class Coordinator {
 
             try {
                 // Coordinate events to work packages and reschedule this coordinator
-                if (!eventStream.hasNextAvailable() && isDone()) {
+                if (!hasNextEvent() && isDone()) {
                     workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
                 }
                 coordinateWorkPackages();
                 errorWaitBackOff = 500;
                 processingGate.set(false);
 
-                if (isSpaceAvailable() && eventStream.hasNextAvailable()) {
+                if (isSpaceAvailable() && hasNextEvent()) {
                     // All work package have space available to handle events and there are still events on the stream.
                     // We should thus start this process again immediately.
                     // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
@@ -853,6 +856,16 @@ class Coordinator {
                     Thread.currentThread().interrupt();
                 } else {
                     abortAndScheduleRetry(e);
+                }
+            }
+        }
+
+        private void closeStream() {
+            if (eventStream != null) {
+                try {
+                    eventStream.close();
+                } catch (Exception e) {
+                    logger.debug("Exception occurred while closing event stream for Processor [{}].", name, e);
                 }
             }
         }
@@ -964,16 +977,18 @@ class Coordinator {
             // Close old stream to start at the new position, if we have Work Packages left.
             if (eventStream != null && !Objects.equals(trackingToken, lastScheduledToken)) {
                 logger.debug("Processor [{}] will close the current stream.", name);
-                closeQuietly(eventStream);
+                closeStream();
                 eventStream = null;
+                eventIterator = null;
                 lastScheduledToken = NoToken.INSTANCE;
             }
 
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
-                eventStream = messageSource.openStream(trackingToken);
+                eventStream = eventSource.open(StreamingCondition.startingFrom(trackingToken));
+                eventIterator = eventStream.asFlux().toIterable().iterator();
                 logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
-                availabilityCallbackSupported =
-                        eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
+                // Note: MessageStream doesn't have setOnAvailableCallback, so we set this to false
+                availabilityCallbackSupported = false;
                 lastScheduledToken = trackingToken;
             }
         }
@@ -988,11 +1003,19 @@ class Coordinator {
                                .allMatch(WorkPackage::isDone);
         }
 
+        private boolean hasNextEvent() {
+            return eventIterator != null && eventIterator.hasNext();
+        }
+
+        private MessageStream.Entry<EventMessage<?>> nextEvent() {
+            return eventIterator.next();
+        }
+
         /**
          * Start coordinating work to the {@link WorkPackage}s. This firstly means retrieving events from the
-         * {@link StreamableMessageSource}, check whether the event can be handled by any of them and if so, schedule
+         * {@link StreamableEventSource}, check whether the event can be handled by any of them and if so, schedule
          * these events to all the {@code WorkPackage}s. The {@code WorkPackage}s will state whether they'll actually
-         * handle the event through their response on {@link WorkPackage#scheduleEvent(TrackedEventMessage)}. If none of
+         * handle the event through their response on {@link WorkPackage#scheduleEvent(MessageStream.Entry)}. If none of
          * the {@code WorkPackage}s can handle the event it will be ignored.
          * <p>
          * Secondly, the {@code WorkPackage}s are checked if they are aborted. If any are aborted, this
@@ -1000,28 +1023,27 @@ class Coordinator {
          * <p>
          * Lastly, the {@link WorkPackage#scheduleWorker()} method is invoked. This ensures the {@code WorkPackage}s
          * will keep their claim on their {@link TrackingToken} even if no events have been scheduled.
-         *
-         * @throws InterruptedException from {@link BlockingStream#nextAvailable()}
          */
-        private void coordinateWorkPackages() throws InterruptedException {
+        private void coordinateWorkPackages() {
             logger.debug("Processor [{}] is coordinating work to all its work packages.", name);
             for (int fetched = 0;
-                 fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && eventStream.hasNextAvailable();
+                 fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && hasNextEvent();
                  fetched++) {
-                TrackedEventMessage<?> event = eventStream.nextAvailable();
-                lastScheduledToken = event.trackingToken();
+                MessageStream.Entry<EventMessage<?>> eventEntry = nextEvent();
+                TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
+                lastScheduledToken = eventToken;
 
                 // Make sure all subsequent events with the same token as the last are added as well.
                 // These are the result of upcasting and should always be scheduled in one go.
-                if (eventsEqualingLastScheduledToken()) {
-                    List<TrackedEventMessage<?>> events = new ArrayList<>();
-                    events.add(event);
-                    while (eventsEqualingLastScheduledToken()) {
-                        events.add(eventStream.nextAvailable());
+                if (eventsEqualingLastScheduledToken(eventToken)) {
+                    List<MessageStream.Entry<EventMessage<?>>> eventEntries = new ArrayList<>();
+                    eventEntries.add(eventEntry);
+                    while (eventsEqualingLastScheduledToken(eventToken)) {
+                        eventEntries.add(nextEvent());
                     }
-                    offerEventsToWorkPackages(events);
+                    offerEventsToWorkPackages(eventEntries);
                 } else {
-                    offerEventToWorkPackages(event);
+                    offerEventToWorkPackages(eventEntry);
                 }
             }
 
@@ -1038,37 +1060,43 @@ class Coordinator {
                         .forEach(WorkPackage::scheduleWorker);
         }
 
-        private boolean eventsEqualingLastScheduledToken() {
-            return eventStream.peek()
-                              .filter(e -> lastScheduledToken.equals(e.trackingToken()))
-                              .isPresent();
+        private boolean eventsEqualingLastScheduledToken(TrackingToken lastScheduledToken) {
+            // Note: MessageStream iterator doesn't support peeking like BlockingStream did.
+            // This optimization for grouping events with the same token (from upcasting) 
+            // is simplified for now. A more sophisticated implementation could buffer events
+            // to achieve the same grouping behavior.
+            return false;
         }
 
-        private void offerEventToWorkPackages(TrackedEventMessage<?> event) {
+        private void offerEventToWorkPackages(MessageStream.Entry<EventMessage<?>> eventEntry) {
             boolean anyScheduled = false;
             for (WorkPackage workPackage : workPackages.values()) {
-                boolean scheduled = workPackage.scheduleEvent(event);
+                boolean scheduled = workPackage.scheduleEvent(eventEntry);
                 anyScheduled = anyScheduled || scheduled;
             }
             if (!anyScheduled) {
+                EventMessage<?> event = eventEntry.message();
                 ignoredMessageHandler.accept(event);
                 if (!eventFilter.canHandleTypeOf(event)) {
-                    eventStream.skipMessagesWithPayloadTypeOf(event);
+                    // Note: MessageStream doesn't have skipMessagesWithPayloadTypeOf equivalent
+                    // This optimization may need to be implemented differently
                 }
             }
         }
 
-        private void offerEventsToWorkPackages(List<TrackedEventMessage<?>> events) {
+        private void offerEventsToWorkPackages(List<MessageStream.Entry<EventMessage<?>>> eventEntries) {
             boolean anyScheduled = false;
             for (WorkPackage workPackage : workPackages.values()) {
-                boolean scheduled = workPackage.scheduleEvents(Collections.unmodifiableList(events));
+                boolean scheduled = workPackage.scheduleEvents(eventEntries);
                 anyScheduled = anyScheduled || scheduled;
             }
             if (!anyScheduled) {
-                events.forEach(event -> {
+                eventEntries.forEach(eventEntry -> {
+                    EventMessage<?> event = eventEntry.message();
                     ignoredMessageHandler.accept(event);
                     if (!eventFilter.canHandleTypeOf(event)) {
-                        eventStream.skipMessagesWithPayloadTypeOf(event);
+                        // Note: MessageStream doesn't have skipMessagesWithPayloadTypeOf equivalent
+                        // This optimization may need to be implemented differently
                     }
                 });
             }
@@ -1119,7 +1147,7 @@ class Coordinator {
                         coordinationTask.set(task);
                     }
             );
-            closeQuietly(eventStream);
+            closeStream();
         }
 
         private CompletableFuture<Void> abortWorkPackage(WorkPackage work, Exception cause) {

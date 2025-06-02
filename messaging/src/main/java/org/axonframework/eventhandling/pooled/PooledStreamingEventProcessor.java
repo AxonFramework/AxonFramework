@@ -34,13 +34,12 @@ import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -71,7 +70,7 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
  * A {@link StreamingEventProcessor} implementation which pools its resources to enhance processing speed. It utilizes a
- * {@link Coordinator} as the means to stream events from a {@link StreamableMessageSource} and creates so-called work
+ * {@link Coordinator} as the means to stream events from a {@link StreamableEventSource} and creates so-called work
  * packages. Every work package is in charge of a {@link Segment} of the entire event stream. It is the
  * {@code Coordinator}'s job to retrieve the events from the source and provide the events to all the work packages it
  * is in charge of.
@@ -95,12 +94,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final String name;
-    private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
+    private final StreamableEventSource<EventMessage<?>> eventSource;
     private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
-    private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
+    private final Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken;
     private final long tokenClaimInterval;
     private final MaxSegmentProvider maxSegmentProvider;
     private final long claimExtensionThreshold;
@@ -117,7 +116,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      * <ul>
      *     <li>The Event Processor's {@code name}.</li>
      *     <li>An {@link EventHandlerInvoker}.</li>
-     *     <li>A {@link StreamableMessageSource}.</li>
+     *     <li>A {@link StreamableEventSource}.</li>
      *     <li>A {@link TokenStore}.</li>
      *     <li>A {@link TransactionManager}.</li>
      *     <li>A {@link ScheduledExecutorService} for coordination.</li>
@@ -130,7 +129,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     protected PooledStreamingEventProcessor(PooledStreamingEventProcessor.Builder builder) {
         super(builder);
         this.name = builder.name();
-        this.messageSource = builder.messageSource;
+        this.eventSource = builder.eventSource;
         this.tokenStore = builder.tokenStore;
         this.unitOfWorkFactory = builder.transactionManager == NoTransactionManager.instance()
                 ? new SimpleUnitOfWorkFactory()
@@ -145,7 +144,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
 
         this.coordinator = Coordinator.builder()
                                       .name(name)
-                                      .messageSource(messageSource)
+                                      .eventSource(eventSource)
                                       .tokenStore(tokenStore)
                                       .unitOfWorkFactory(unitOfWorkFactory)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
@@ -172,7 +171,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
-     *     <li>The {@code initialToken} function defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.</li>     *
+     *     <li>The {@code initialToken} function defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming from the {@link StreamableEventSource#tailToken() tail} with the replay flag enabled until the {@link StreamableEventSource#headToken() head} at the moment of initialization is reached.</li>     *
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@link MaxSegmentProvider} (used by {@link #maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
@@ -185,7 +184,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      * <ul>
      *     <li>The name of this {@link EventProcessor}.</li>
      *     <li>An {@link EventHandlerInvoker} which will be given the events handled by this processor</li>
-     *     <li>A {@link StreamableMessageSource} used to retrieve events.</li>
+     *     <li>A {@link StreamableEventSource} used to retrieve events.</li>
      *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
      *     <li>A {@link ScheduledExecutorService} to coordinate events and segment operations.</li>
      *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
@@ -304,17 +303,17 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
 
     @Override
     public void resetTokens(
-            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier
+            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
     ) {
-        resetTokens(initialTrackingTokenSupplier.apply(messageSource));
+        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(eventSource)));
     }
 
     @Override
     public <R> void resetTokens(
-            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
+            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             R resetContext
     ) {
-        resetTokens(initialTrackingTokenSupplier.apply(messageSource), resetContext);
+        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(eventSource)), resetContext);
     }
 
     @Override
@@ -427,8 +426,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
      *     <li>The {@code initialToken} function defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
-     *          from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
-     *          {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.</li>
+     *          from the {@link StreamableEventSource#tailToken() tail} with the replay flag enabled until the
+     *          {@link StreamableEventSource#headToken() head} at the moment of initialization is reached.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@link MaxSegmentProvider} (used by {@link #maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
@@ -441,7 +440,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      * <ul>
      *     <li>The name of this {@link EventProcessor}.</li>
      *     <li>An {@link EventHandlerInvoker} which will be given the events handled by this processor</li>
-     *     <li>A {@link StreamableMessageSource} used to retrieve events.</li>
+     *     <li>A {@link StreamableEventSource} used to retrieve events.</li>
      *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
      *     <li>A {@link ScheduledExecutorService} to coordinate events and segment operations.</li>
      *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
@@ -449,14 +448,14 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      */
     public static class Builder extends AbstractEventProcessor.Builder {
 
-        private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
+        private StreamableEventSource<EventMessage<?>> eventSource;
         private TokenStore tokenStore;
         private TransactionManager transactionManager;
         private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder;
         private Function<String, ScheduledExecutorService> workerExecutorBuilder;
         private int initialSegmentCount = 16;
-        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
-                ms -> ReplayToken.createReplayToken(ms.createHeadToken());
+        private Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken =
+                es -> es.headToken().thenApply(headToken -> ReplayToken.createReplayToken(headToken));
         private long tokenClaimInterval = 5000;
         private MaxSegmentProvider maxSegmentProvider = MaxSegmentProvider.maxShort();
         private long claimExtensionThreshold = 5000;
@@ -498,16 +497,16 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         }
 
         /**
-         * Sets the {@link StreamableMessageSource} (e.g. the {@code EventStore}) which this {@link EventProcessor} will
+         * Sets the {@link StreamableEventSource} (e.g. the {@code EventStore}) which this {@link EventProcessor} will
          * track.
          *
-         * @param messageSource the {@link StreamableMessageSource} (e.g. the {@code EventStore}) which this
-         *                      {@link EventProcessor} will track
+         * @param eventSource the {@link StreamableEventSource} (e.g. the {@code EventStore}) which this
+         *                    {@link EventProcessor} will track
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder messageSource(@Nonnull StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
-            assertNonNull(messageSource, "StreamableMessageSource may not be null");
-            this.messageSource = messageSource;
+        public Builder eventSource(@Nonnull StreamableEventSource<EventMessage<?>> eventSource) {
+            assertNonNull(eventSource, "StreamableEventSource may not be null");
+            this.eventSource = eventSource;
             return this;
         }
 
@@ -612,20 +611,20 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
 
         /**
          * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. The function will be
-         * given the configured {@link StreamableMessageSource}' so that its methods can be invoked for token creation.
+         * given the configured {@link StreamableEventSource} so that its methods can be invoked for token creation.
          * <p>
          * Defaults to an automatic replay since the start of the stream.
          * <p>
          * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
-         * from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
-         * {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.
+         * from the {@link StreamableEventSource#tailToken() tail} with the replay flag enabled until the
+         * {@link StreamableEventSource#headToken() head} at the moment of initialization is reached.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
-         *                     {@link StreamableMessageSource}
+         *                     {@link StreamableEventSource}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder initialToken(
-                @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken
+                @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken
         ) {
             assertNonNull(initialToken, "The initial token builder Function may not be null");
             this.initialToken = initialToken;
@@ -763,7 +762,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         @Override
         protected void validate() throws AxonConfigurationException {
             super.validate();
-            assertNonNull(messageSource, "The StreamableMessageSource is a hard requirement and should be provided");
+            assertNonNull(eventSource, "The StreamableEventSource is a hard requirement and should be provided");
             assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
             assertNonNull(
