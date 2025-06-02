@@ -95,12 +95,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final String name;
-    private final StreamableEventSource<EventMessage<?>> eventSource;
+    private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
-    private final Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken;
+    private final Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken;
     private final long tokenClaimInterval;
     private final MaxSegmentProvider maxSegmentProvider;
     private final long claimExtensionThreshold;
@@ -304,14 +304,14 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
 
     @Override
     public void resetTokens(
-            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
+            @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
     ) {
         resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(eventSource)));
     }
 
     @Override
     public <R> void resetTokens(
-            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
+            @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             R resetContext
     ) {
         resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(eventSource)), resetContext);
@@ -449,13 +449,13 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      */
     public static class Builder extends AbstractEventProcessor.Builder {
 
-        private StreamableEventSource<EventMessage<?>> eventSource;
+        private StreamableEventSource<? extends EventMessage<?>> eventSource;
         private TokenStore tokenStore;
         private TransactionManager transactionManager;
         private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder;
         private Function<String, ScheduledExecutorService> workerExecutorBuilder;
         private int initialSegmentCount = 16;
-        private Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken =
+        private Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken =
                 es -> es.headToken().thenApply(headToken -> ReplayToken.createReplayToken(headToken));
         private long tokenClaimInterval = 5000;
         private MaxSegmentProvider maxSegmentProvider = MaxSegmentProvider.maxShort();
@@ -505,7 +505,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
          *                    {@link EventProcessor} will track
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder eventSource(@Nonnull StreamableEventSource<EventMessage<?>> eventSource) {
+        public Builder eventSource(@Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource) {
             assertNonNull(eventSource, "StreamableEventSource may not be null");
             this.eventSource = eventSource;
             return this;
@@ -625,7 +625,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder initialToken(
-                @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken
+                @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken
         ) {
             assertNonNull(initialToken, "The initial token builder Function may not be null");
             this.initialToken = initialToken;

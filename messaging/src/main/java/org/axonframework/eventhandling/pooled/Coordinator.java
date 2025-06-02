@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,7 +80,7 @@ class Coordinator {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final String name;
-    private final StreamableEventSource<EventMessage<?>> eventSource;
+    private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService executorService;
@@ -94,7 +93,7 @@ class Coordinator {
     private final Clock clock;
     private final MaxSegmentProvider maxSegmentProvider;
     private final int initialSegmentCount;
-    private final Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken;
+    private final Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken;
     private final boolean coordinatorExtendsClaims;
     private final Consumer<Segment> segmentReleasedAction;
 
@@ -408,7 +407,7 @@ class Coordinator {
     static class Builder {
 
         private String name;
-        private StreamableEventSource<EventMessage<?>> eventSource;
+        private StreamableEventSource<? extends EventMessage<?>> eventSource;
         private TokenStore tokenStore;
         private UnitOfWorkFactory unitOfWorkFactory;
         private ScheduledExecutorService executorService;
@@ -422,7 +421,7 @@ class Coordinator {
         private Clock clock = GenericEventMessage.clock;
         private MaxSegmentProvider maxSegmentProvider;
         private int initialSegmentCount = 16;
-        private Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken;
+        private Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken;
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
@@ -446,7 +445,7 @@ class Coordinator {
          * @param eventSource the source of events this coordinator should schedule per work package
          * @return the current Builder instance, for fluent interfacing
          */
-        Builder eventSource(StreamableEventSource<EventMessage<?>> eventSource) {
+        Builder eventSource(StreamableEventSource<? extends EventMessage<?>> eventSource) {
             this.eventSource = eventSource;
             return this;
         }
@@ -611,7 +610,7 @@ class Coordinator {
          * @return the current Builder instance, for fluent interfacing
          */
         Builder initialToken(
-                Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken
+                Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken
         ) {
             this.initialToken = initialToken;
             return this;
@@ -709,7 +708,7 @@ class Coordinator {
         private final AtomicBoolean processingGate = new AtomicBoolean();
         private final AtomicBoolean scheduledGate = new AtomicBoolean();
         private final AtomicBoolean interruptibleScheduledGate = new AtomicBoolean();
-        private MessageStream<EventMessage<?>> eventStream;
+        private MessageStream<? extends EventMessage<?>> eventStream;
         private TrackingToken lastScheduledToken = NoToken.INSTANCE;
         private boolean availabilityCallbackSupported;
         private long unclaimedSegmentValidationThreshold;
@@ -1003,11 +1002,11 @@ class Coordinator {
             return eventStream != null && eventStream.hasNextAvailable();
         }
 
-        private MessageStream.Entry<EventMessage<?>> nextEvent() {
+        private MessageStream.Entry<? extends EventMessage<?>> nextEvent() {
             if (eventStream == null) {
                 return null;
             }
-            Optional<MessageStream.Entry<EventMessage<?>>> next = eventStream.next();
+            var next = eventStream.next();
             return next.orElse(null);
         }
 
@@ -1029,14 +1028,14 @@ class Coordinator {
             for (int fetched = 0;
                  fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && hasNextEvent();
                  fetched++) {
-                MessageStream.Entry<EventMessage<?>> eventEntry = nextEvent();
+                MessageStream.Entry<? extends EventMessage<?>> eventEntry = nextEvent();
                 TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
                 lastScheduledToken = eventToken;
 
                 // Make sure all subsequent events with the same token as the last are added as well.
                 // These are the result of upcasting and should always be scheduled in one go.
                 if (eventsEqualingLastScheduledToken(eventToken)) {
-                    List<MessageStream.Entry<EventMessage<?>>> eventEntries = new ArrayList<>();
+                    List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries = new ArrayList<>();
                     eventEntries.add(eventEntry);
                     while (eventsEqualingLastScheduledToken(eventToken)) {
                         eventEntries.add(nextEvent());
@@ -1068,7 +1067,7 @@ class Coordinator {
             return false;
         }
 
-        private void offerEventToWorkPackages(MessageStream.Entry<EventMessage<?>> eventEntry) {
+        private void offerEventToWorkPackages(MessageStream.Entry<? extends EventMessage<?>> eventEntry) {
             boolean anyScheduled = false;
             for (WorkPackage workPackage : workPackages.values()) {
                 boolean scheduled = workPackage.scheduleEvent(eventEntry);
@@ -1084,7 +1083,7 @@ class Coordinator {
             }
         }
 
-        private void offerEventsToWorkPackages(List<MessageStream.Entry<EventMessage<?>>> eventEntries) {
+        private void offerEventsToWorkPackages(List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries) {
             boolean anyScheduled = false;
             for (WorkPackage workPackage : workPackages.values()) {
                 boolean scheduled = workPackage.scheduleEvents(eventEntries);

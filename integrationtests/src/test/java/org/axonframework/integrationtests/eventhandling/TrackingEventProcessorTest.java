@@ -1092,7 +1092,7 @@ class TrackingEventProcessorTest {
                 .until(() -> handled.size() == 4);
 
         testSubject.shutDown();
-        testSubject.resetTokens(source -> new GlobalSequenceTrackingToken(1L));
+        testSubject.resetTokens(source -> CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(1L)));
         testSubject.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(6, handled.size()));

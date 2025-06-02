@@ -182,7 +182,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param initialTrackingTokenSupplier a function returning the token representing the position to reset to
      */
     void resetTokens(
-            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
+            @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
     );
 
     /**
@@ -201,7 +201,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param <R>                          the type of the provided {@code resetContext}
      */
     <R> void resetTokens(
-            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
+            @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             @Nullable R resetContext
     );
 

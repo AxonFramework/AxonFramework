@@ -684,12 +684,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     public void resetTokens(
-            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier) {
+            @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier) {
 
     }
 
     public <R> void resetTokens(
-            @Nonnull Function<StreamableEventSource<EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
+            @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             @Nullable R resetContext) {
 
     }

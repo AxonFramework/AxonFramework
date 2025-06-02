@@ -152,7 +152,7 @@ class WorkPackage {
      * @return {@code True} if this {@link WorkPackage} scheduled one of the events for execution, otherwise
      * {@code false}.
      */
-    public boolean scheduleEvents(List<MessageStream.Entry<EventMessage<?>>> eventEntries) {
+    public boolean scheduleEvents(List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries) {
         if (eventEntries.isEmpty()) {
             // cannot schedule an empty events list
             return false;
@@ -196,7 +196,7 @@ class WorkPackage {
         return canHandleAny;
     }
 
-    private void assertEqualTokens(List<MessageStream.Entry<EventMessage<?>>> eventEntries) {
+    private void assertEqualTokens(List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries) {
         TrackingToken expectedToken = TrackingToken.fromContext(eventEntries.get(0)).orElse(null);
         Assert.isTrue(
                 eventEntries.stream()
@@ -216,7 +216,7 @@ class WorkPackage {
      * @param eventEntry The event entry to schedule for work in this work package.
      * @return {@code True} if this {@link WorkPackage} scheduled the event for execution, otherwise {@code false}.
      */
-    public boolean scheduleEvent(MessageStream.Entry<EventMessage<?>> eventEntry) {
+    public boolean scheduleEvent(MessageStream.Entry<? extends EventMessage<?>> eventEntry) {
         if (shouldNotSchedule(eventEntry)) {
             TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
             logger.trace("Ignoring event [{}] with position [{}] for work package [{}]. "
@@ -253,7 +253,7 @@ class WorkPackage {
      * @param eventEntry The event entry to validate whether it should be scheduled yes or no.
      * @return {@code true} if the given {@code eventEntry} should not be scheduled, {@code false} otherwise.
      */
-    private boolean shouldNotSchedule(MessageStream.Entry<EventMessage<?>> eventEntry) {
+    private boolean shouldNotSchedule(MessageStream.Entry<? extends EventMessage<?>> eventEntry) {
         TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
         // Null check is done to solve potential NullPointerException.
         return lastDeliveredToken != null && eventToken != null && lastDeliveredToken.covers(eventToken);
@@ -746,10 +746,10 @@ class WorkPackage {
      */
     private static class DefaultProcessingEntry implements ProcessingEntry {
 
-        private final MessageStream.Entry<EventMessage<?>> eventEntry;
+        private final MessageStream.Entry<? extends EventMessage<?>> eventEntry;
         private final boolean canHandle;
 
-        public DefaultProcessingEntry(MessageStream.Entry<EventMessage<?>> eventEntry, boolean canHandle) {
+        public DefaultProcessingEntry(MessageStream.Entry<? extends EventMessage<?>> eventEntry, boolean canHandle) {
             this.eventEntry = eventEntry;
             this.canHandle = canHandle;
         }

@@ -43,6 +43,7 @@ import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.LegacyStreamableEventSource;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
@@ -98,7 +99,7 @@ public class EventProcessingModule
             DEFAULT_TEP_CONFIG.andInitialTrackingToken(StreamableMessageSource::createHeadToken);
     private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
     private static final PooledStreamingProcessorConfiguration DEFAULT_SAGA_PSEP_CONFIG =
-            (config, builder) -> builder.initialToken(StreamableMessageSource::createHeadToken);
+            (config, builder) -> builder.initialToken(StreamableEventSource::headToken);
     private static final Function<Class<?>, String> DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION =
             c -> c.getSimpleName() + "Processor";
 
@@ -1005,7 +1006,7 @@ public class EventProcessingModule
                                              .eventHandlerInvoker(eventHandlerInvoker)
                                              .errorHandler(errorHandler(name))
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
-                                             .eventSource(LegacyStreamableEventSource.forTrackedMessages(messageSource))
+                                             .eventSource(new LegacyStreamableEventSource(messageSource))
                                              .tokenStore(tokenStore(name))
                                              .transactionManager(transactionManager(name))
                                              .coordinatorExecutor(processorName -> {
