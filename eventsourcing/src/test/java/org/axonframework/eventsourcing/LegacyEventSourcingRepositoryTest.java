@@ -199,9 +199,8 @@ class LegacyEventSourcingRepositoryTest {
                 )
         ));
 
-        testSubject.load(identifier, 1L);
         try {
-            CurrentUnitOfWork.commit();
+            testSubject.load(identifier, 1L);
             fail("Expected ConflictingAggregateVersionException");
         } catch (ConflictingAggregateVersionException e) {
             assertEquals(identifier, e.getAggregateIdentifier());
@@ -211,7 +210,7 @@ class LegacyEventSourcingRepositoryTest {
     }
 
     @Test
-    void loadWithConflictingChanges_NoConflictResolverSet_UsingTooHighExpectedVersion() {
+    void loadWithConflictingChanges_UsingTooHighExpectedVersion() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
                 new GenericDomainEventMessage<>(
