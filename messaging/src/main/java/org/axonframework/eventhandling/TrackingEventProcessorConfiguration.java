@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,18 @@
 
 package org.axonframework.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.StreamableMessageSource;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.*;
+import static org.axonframework.eventhandling.ReplayToken.createReplayToken;
 
 /**
  * Configuration object for the {@link TrackingEventProcessor}. The {@code TrackingEventProcessorConfiguration} provides
@@ -49,7 +48,7 @@ public class TrackingEventProcessorConfiguration {
     private final int maxThreadCount;
     private int batchSize;
     private int initialSegmentCount;
-    private Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenBuilder;
+    private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder;
     private Function<String, ThreadFactory> threadFactory;
     private long tokenClaimInterval;
     private int eventAvailabilityTimeout = 1000;
@@ -86,8 +85,7 @@ public class TrackingEventProcessorConfiguration {
         this.tokenClaimInterval = DEFAULT_TOKEN_CLAIM_INTERVAL;
         this.autoStart = true;
         this.workerTerminationTimeout = DEFAULT_WORKER_TERMINATION_TIMEOUT_MS;
-        this.initialTrackingTokenBuilder = messageSource -> messageSource.headToken()
-                                                                         .thenApply(ReplayToken::createReplayToken);
+        this.initialTrackingTokenBuilder = messageSource -> createReplayToken(messageSource.createHeadToken());
     }
 
     /**
@@ -175,7 +173,7 @@ public class TrackingEventProcessorConfiguration {
      * @return {@code this} for method chaining.
      */
     public TrackingEventProcessorConfiguration andInitialTrackingToken(
-            @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenBuilder
+            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder
     ) {
         this.initialTrackingTokenBuilder = initialTrackingTokenBuilder;
         return this;
@@ -267,7 +265,7 @@ public class TrackingEventProcessorConfiguration {
      *
      * @return The builder of initial {@link TrackingToken}.
      */
-    public Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> getInitialTrackingToken() {
+    public Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> getInitialTrackingToken() {
         return initialTrackingTokenBuilder;
     }
 

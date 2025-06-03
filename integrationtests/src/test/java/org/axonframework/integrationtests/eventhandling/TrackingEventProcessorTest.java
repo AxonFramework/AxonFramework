@@ -47,7 +47,6 @@ import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacySequenceEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
-import org.axonframework.eventstreaming.LegacyStreamableEventSource;
 import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -248,7 +247,7 @@ class TrackingEventProcessorTest {
                 TrackingEventProcessor.builder()
                                       .name("test")
                                       .eventHandlerInvoker(eventHandlerInvoker)
-                                      .eventSource(new LegacyStreamableEventSource<>(eventBus))
+                                      .messageSource(eventBus)
                                       .trackingEventProcessorConfiguration(config)
                                       .tokenStore(tokenStore)
                                       .transactionManager(mockTransactionManager);
@@ -288,7 +287,7 @@ class TrackingEventProcessorTest {
                                                                             .storageEngine(sequenceEventStorageEngine)
                                                                             .build();
 
-        initProcessor(builder -> builder.eventSource(new LegacyStreamableEventSource<>(sequenceEventBus)));
+        initProcessor(builder -> builder.messageSource(sequenceEventBus));
 
         historic.appendEvents(createEvent(AGGREGATE, 1L, "message1"), createEvent(AGGREGATE, 2L, "message2"));
         // to make sure tracking tokens match, we need to offset the InMemoryEventStorageEngine
@@ -371,7 +370,7 @@ class TrackingEventProcessorTest {
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                            .eventSource(new LegacyStreamableEventSource<>(mockEventBus))
+                                            .messageSource(mockEventBus)
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();
@@ -541,7 +540,7 @@ class TrackingEventProcessorTest {
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
                                             .trackingEventProcessorConfiguration(tepConfig)
-                                            .eventSource(new LegacyStreamableEventSource<>(eventBus))
+                                            .messageSource(eventBus)
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();
@@ -579,7 +578,7 @@ class TrackingEventProcessorTest {
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
                                             .trackingEventProcessorConfiguration(tepConfig)
-                                            .eventSource(new LegacyStreamableEventSource<>(eventBus))
+                                            .messageSource(eventBus)
                                             .tokenStore(tokenStore)
                                             .transactionManager(() -> mock(Transaction.class))
                                             .build();
@@ -621,7 +620,7 @@ class TrackingEventProcessorTest {
                                             .name("test")
                                             .trackingEventProcessorConfiguration(tepConfig)
                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                            .eventSource(new LegacyStreamableEventSource<>(eventBus))
+                                            .messageSource(eventBus)
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();
@@ -705,8 +704,7 @@ class TrackingEventProcessorTest {
                 CoreMatchers.anyOf(CoreMatchers.nullValue(),
                                    CoreMatchers.equalTo(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
                                                                                            .getInitialTrackingToken()
-                                                                                           .apply(new LegacyStreamableEventSource<>(
-                                                                                                   eventBus))))
+                                                                                           .apply(eventBus)))
         );
     }
 
@@ -730,7 +728,7 @@ class TrackingEventProcessorTest {
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                            .eventSource(new LegacyStreamableEventSource<>(eventBus))
+                                            .messageSource(eventBus)
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();
@@ -802,7 +800,7 @@ class TrackingEventProcessorTest {
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                            .eventSource(new LegacyStreamableEventSource<>(eventBus))
+                                            .messageSource(eventBus)
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();
@@ -841,7 +839,7 @@ class TrackingEventProcessorTest {
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                            .eventSource(new LegacyStreamableEventSource<>(eventBus))
+                                            .messageSource(eventBus)
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();
@@ -919,7 +917,7 @@ class TrackingEventProcessorTest {
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                            .eventSource(new LegacyStreamableEventSource<>(eventBus))
+                                            .messageSource(eventBus)
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();
@@ -1130,13 +1128,12 @@ class TrackingEventProcessorTest {
     void resetOnInitializeWithTokenResetToThatToken() throws Exception {
         TrackingEventProcessorConfiguration config =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
-                                                   .andInitialTrackingToken(ms -> CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(
-                                                           1L)));
+                                                   .andInitialTrackingToken(ms -> new GlobalSequenceTrackingToken(1L));
         TrackingEventProcessor.Builder eventProcessorBuilder =
                 TrackingEventProcessor.builder()
                                       .name("test")
                                       .eventHandlerInvoker(eventHandlerInvoker)
-                                      .eventSource(new LegacyStreamableEventSource<>(eventBus))
+                                      .messageSource(eventBus)
                                       .tokenStore(tokenStore)
                                       .transactionManager(NoTransactionManager.INSTANCE)
                                       .trackingEventProcessorConfiguration(config);
@@ -1252,7 +1249,7 @@ class TrackingEventProcessorTest {
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                            .eventSource(new LegacyStreamableEventSource<>(stubSource))
+                                            .messageSource(stubSource)
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();
@@ -1372,7 +1369,7 @@ class TrackingEventProcessorTest {
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                            .eventSource(new LegacyStreamableEventSource<>(stubSource))
+                                            .messageSource(stubSource)
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE).build();
 
@@ -2081,8 +2078,7 @@ class TrackingEventProcessorTest {
                 };
             }
         };
-        initProcessor(tepConfiguration,
-                      builder -> builder.eventSource(new LegacyStreamableEventSource<>(enhancedEventStore)));
+        initProcessor(tepConfiguration, builder -> builder.messageSource(enhancedEventStore));
         testSubject.start();
 
         assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(hasNextInvoked.get()));

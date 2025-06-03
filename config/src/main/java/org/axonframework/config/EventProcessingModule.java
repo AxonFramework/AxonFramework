@@ -96,7 +96,7 @@ public class EventProcessingModule
     private static final TrackingEventProcessorConfiguration DEFAULT_TEP_CONFIG =
             TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
     private static final TrackingEventProcessorConfiguration DEFAULT_SAGA_TEP_CONFIG =
-            DEFAULT_TEP_CONFIG.andInitialTrackingToken(StreamableEventSource::headToken);
+            DEFAULT_TEP_CONFIG.andInitialTrackingToken(StreamableMessageSource::createHeadToken);
     private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
     private static final PooledStreamingProcessorConfiguration DEFAULT_SAGA_PSEP_CONFIG =
             (config, builder) -> builder.initialToken(StreamableEventSource::headToken);
@@ -975,7 +975,7 @@ public class EventProcessingModule
                                      .eventHandlerInvoker(eventHandlerInvoker)
                                      .errorHandler(errorHandler(name))
                                      .messageMonitor(messageMonitor(TrackingEventProcessor.class, name))
-                                     .eventSource(new LegacyStreamableEventSource<>(source))
+                                     .messageSource(source)
                                      .tokenStore(tokenStore(name))
                                      .transactionManager(transactionManager(name))
                                      .trackingEventProcessorConfiguration(config)
@@ -1006,7 +1006,7 @@ public class EventProcessingModule
                                              .eventHandlerInvoker(eventHandlerInvoker)
                                              .errorHandler(errorHandler(name))
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
-                                             .eventSource(new LegacyStreamableEventSource<>(messageSource))
+                                             .eventSource(new LegacyStreamableEventSource(messageSource))
                                              .tokenStore(tokenStore(name))
                                              .transactionManager(transactionManager(name))
                                              .coordinatorExecutor(processorName -> {

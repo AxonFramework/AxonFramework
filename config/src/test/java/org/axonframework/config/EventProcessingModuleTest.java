@@ -64,8 +64,8 @@ import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
@@ -538,7 +538,7 @@ class EventProcessingModuleTest {
         Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
                                                            .eventProcessor("tracking", TrackingEventProcessor.class);
         assertTrue(processor.isPresent());
-        assertEquals(eventStoreOne, processor.get().getEventSource());
+        assertEquals(eventStoreOne, processor.get().getMessageSource());
     }
 
     @Test
@@ -552,7 +552,7 @@ class EventProcessingModuleTest {
         Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
                                                            .eventProcessor("tracking", TrackingEventProcessor.class);
         assertTrue(processor.isPresent());
-        assertEquals(eventStoreTwo, processor.get().getEventSource());
+        assertEquals(eventStoreTwo, processor.get().getMessageSource());
     }
 
     @Test

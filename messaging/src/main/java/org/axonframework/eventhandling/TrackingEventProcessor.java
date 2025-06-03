@@ -17,24 +17,22 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.apache.commons.lang3.NotImplementedException;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.ExceptionUtils;
 import org.axonframework.common.ProcessUtils;
+import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.Context;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -79,9 +77,10 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ProcessUtils.executeWithRetry;
+import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
- * EventProcessor implementation that tracks events from a {@link StreamableEventSource}.
+ * EventProcessor implementation that tracks events from a {@link StreamableMessageSource}.
  * <p>
  * A supplied {@link TokenStore} allows the EventProcessor to keep track of its position in the event log. After
  * processing an event batch the EventProcessor updates its tracking token in the TokenStore.
@@ -103,9 +102,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
 
-    private final StreamableEventSource<? extends EventMessage<?>> eventSource;
+    private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
-    private final Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenBuilder;
+    private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final int batchSize;
     private final int segmentsSize;
@@ -133,7 +132,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     /**
      * Instantiate a {@link TrackingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker}, {@link StreamableEventSource},
+     * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker}, {@link StreamableMessageSource},
      * {@link TokenStore} and {@link TransactionManager} are not {@code null}, and will throw an
      * {@link AxonConfigurationException} if any of them is {@code null}.
      *
@@ -148,7 +147,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.batchSize = config.getBatchSize();
         this.autoStart = config.isAutoStart();
 
-        this.eventSource = builder.eventSource;
+        this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
 
         this.segmentsSize = config.getInitialSegmentsCount();
@@ -170,7 +169,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call, and the
      * {@link EventProcessorSpanFactory} to a {@link DefaultEventProcessorSpanFactory} backed by a
      * {@link org.axonframework.tracing.NoOpSpanFactory}. The Event Processor {@code name}, {@link EventHandlerInvoker},
-     * {@link StreamableEventSource}, {@link TokenStore} and {@link TransactionManager} are
+     * {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager} are
      * <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link TrackingEventProcessor}
@@ -192,8 +191,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     /**
-     * Start this processor. The processor will open an event stream on its event source in a new thread using
-     * {@link StreamableEventSource#open(StreamingCondition)}. The {@link TrackingToken} used to open the stream will
+     * Start this processor. The processor will open an event stream on its message source in a new thread using
+     * {@link StreamableMessageSource#openStream(TrackingToken)}. The {@link TrackingToken} used to open the stream will
      * be fetched from the {@link TokenStore}.
      * <p>
      * Upon start up of an application, this method will be invoked in the {@link Phase#INBOUND_EVENT_CONNECTORS}
@@ -286,7 +285,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * @param segment The {@link Segment} of the Stream that should be processed.
      */
     protected void processingLoop(Segment segment) {
-        MessageStream<? extends EventMessage<?>> eventStream = null;
+        BlockingStream<TrackedEventMessage<?>> eventStream = null;
         long errorWaitTime = 1;
         try {
             // only execute the loop when in running state, no processing instructions have been executed, and the
@@ -324,25 +323,15 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                         );
                     }
                     releaseToken(segment);
-                    closeStream(eventStream);
+                    closeQuietly(eventStream);
                     eventStream = null;
                     doSleepFor(SECONDS.toMillis(errorWaitTime));
                     errorWaitTime = Math.min(errorWaitTime * 2, 60);
                 }
             }
         } finally {
-            closeStream(eventStream);
+            closeQuietly(eventStream);
             releaseToken(segment);
-        }
-    }
-
-    private void closeStream(MessageStream<? extends EventMessage<?>> eventStream) {
-        if (eventStream != null) {
-            try {
-                eventStream.close();
-            } catch (Exception e) {
-                logger.debug("Exception occurred while closing event stream.", e);
-            }
         }
     }
 
@@ -405,25 +394,20 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         return singleton(segment);
     }
 
-    private void processBatch(Segment segment, MessageStream<? extends EventMessage<?>> eventStream) throws Exception {
-        List<EventMessage<?>> batch = new ArrayList<>();
+    private void processBatch(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) throws Exception {
+        List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
             TrackingToken lastToken = null;
             Collection<Segment> processingSegments = Collections.emptySet();
 
             long processingDeadline = now().toEpochMilli() + eventAvailabilityTimeout;
             long processingTime = eventAvailabilityTimeout;
-
-            while (batch.isEmpty() && processingTime > 0 && hasEventsAvailable(eventStream, processingTime)) {
+            while (batch.isEmpty() && processingTime > 0 && eventStream.hasNextAvailable((int) processingTime,
+                                                                                         MILLISECONDS)) {
                 processingTime = processingDeadline - now().toEpochMilli();
 
-                final MessageStream.Entry<? extends EventMessage<?>> firstEntry = getNextEvent(eventStream);
-                if (firstEntry == null) {
-                    break;
-                }
-
-                final EventMessage<?> firstMessage = firstEntry.message();
-                lastToken = TrackingToken.fromContext(firstEntry).orElse(null);
+                final TrackedEventMessage<?> firstMessage = eventStream.nextAvailable();
+                lastToken = firstMessage.trackingToken();
                 processingSegments = processingSegments(lastToken, segment);
                 ProcessingContext firstMessageContext = new LegacyMessageSupportingContext(firstMessage);
                 if (canHandle(firstMessage, firstMessageContext, processingSegments)) {
@@ -431,24 +415,18 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 } else {
                     ignoreEvent(eventStream, firstMessage);
                 }
-
                 // Next to checking batch sizes, we must also ensure that both the current message in the batch
                 // and the next (if present) allow for processing with a batch.
                 for (int i = 0; isRegularProcessing(segment, processingSegments)
                         && i < batchSize * 10 && batch.size() < batchSize
-                        && hasEventsAvailable(eventStream, 0); i++) {
-                    final MessageStream.Entry<? extends EventMessage<?>> eventEntry = getNextEvent(eventStream);
-                    if (eventEntry == null) {
-                        break;
-                    }
-
-                    final EventMessage<?> eventMessage = eventEntry.message();
-                    ProcessingContext messageContext = new LegacyMessageSupportingContext(eventMessage);
-                    lastToken = TrackingToken.fromContext(eventEntry).orElse(null);
-                    if (canHandle(eventMessage, messageContext, processingSegments)) {
-                        batch.add(eventMessage);
+                        && eventStream.peek().map(m -> isRegularProcessing(segment, m)).orElse(false); i++) {
+                    final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
+                    ProcessingContext messageContext = new LegacyMessageSupportingContext(trackedEventMessage);
+                    lastToken = trackedEventMessage.trackingToken();
+                    if (canHandle(trackedEventMessage, messageContext, processingSegments)) {
+                        batch.add(trackedEventMessage);
                     } else {
-                        ignoreEvent(eventStream, eventMessage);
+                        ignoreEvent(eventStream, trackedEventMessage);
                     }
                 }
 
@@ -494,24 +472,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             TrackingToken finalLastToken = lastToken;
             // Make sure all subsequent events with the same token (if non-null) as the last are added as well.
             // These are the result of upcasting and should always be processed in the same batch.
-            while (hasEventsAvailable(eventStream, 0)) {
-                MessageStream.Entry<? extends EventMessage<?>> nextEntry = peekNextEvent(eventStream);
-                if (nextEntry == null) {
-                    break;
-                }
-
-                TrackingToken nextToken = TrackingToken.fromContext(nextEntry).orElse(null);
-                if (finalLastToken != null && finalLastToken.equals(nextToken)) {
-                    MessageStream.Entry<? extends EventMessage<?>> eventEntry = getNextEvent(eventStream);
-                    final EventMessage<?> eventMessage = eventEntry.message();
-                    ProcessingContext messageContext = new LegacyMessageSupportingContext(eventMessage);
-                    if (canHandle(eventMessage, messageContext, processingSegments)) {
-                        batch.add(eventMessage);
-                    } else {
-                        ignoreEvent(eventStream, eventMessage);
-                    }
+            while (eventStream.peek().filter(event -> finalLastToken.equals(event.trackingToken())).isPresent()) {
+                final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
+                ProcessingContext messageContext = new LegacyMessageSupportingContext(trackedEventMessage);
+                if (canHandle(trackedEventMessage, messageContext, processingSegments)) {
+                    batch.add(trackedEventMessage);
                 } else {
-                    break;
+                    ignoreEvent(eventStream, trackedEventMessage);
                 }
             }
 
@@ -535,46 +502,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             Thread.currentThread().interrupt();
         }
-    }
-
-    private boolean hasEventsAvailable(MessageStream<? extends EventMessage<?>> eventStream, long timeoutMillis) {
-        if (timeoutMillis <= 0) {
-            return eventStream.hasNextAvailable();
-        }
-
-        // For timeout-based availability, we need to poll with timeout
-        // Since MessageStream doesn't have timeout-based availability check,
-        // we simulate it by checking availability in small intervals
-        long deadline = System.currentTimeMillis() + timeoutMillis;
-        while (System.currentTimeMillis() < deadline) {
-            if (eventStream.hasNextAvailable()) {
-                return true;
-            }
-            try {
-                Thread.sleep(Math.min(10, deadline - System.currentTimeMillis()));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return false;
-            }
-        }
-        return false;
-    }
-
-    private MessageStream.Entry<? extends EventMessage<?>> getNextEvent(
-            MessageStream<? extends EventMessage<?>> eventStream) {
-        if (eventStream == null) {
-            return null;
-        }
-        var next = eventStream.next();
-        return next.orElse(null);
-    }
-
-    private MessageStream.Entry<? extends EventMessage<?>> peekNextEvent(
-            MessageStream<? extends EventMessage<?>> eventStream) {
-        // MessageStream doesn't have peek functionality like BlockingStream
-        // We'll use next() but this means we consume the event - this is a limitation of the new API
-        // In practice, this should only be called when we know there are events available
-        return getNextEvent(eventStream);
     }
 
     private void instructTokenClaim(Segment segment, UnitOfWork unitOfWork, TrackingToken finalLastToken) {
@@ -601,12 +528,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         });
     }
 
-    private void ignoreEvent(MessageStream<? extends EventMessage<?>> eventStream, EventMessage<?> eventMessage) {
-        if (!canHandleType(eventMessage.getPayloadType())) {
-            // Note: MessageStream doesn't have skipMessagesWithPayloadTypeOf equivalent
-            // This optimization is not available in the new API
+    private void ignoreEvent(BlockingStream<TrackedEventMessage<?>> eventStream,
+                             TrackedEventMessage<?> trackedEventMessage) {
+        if (!canHandleType(trackedEventMessage.getPayloadType())) {
+            eventStream.skipMessagesWithPayloadTypeOf(trackedEventMessage);
         }
-        reportIgnored(eventMessage);
+        reportIgnored(trackedEventMessage);
     }
 
     /**
@@ -643,11 +570,25 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         return false;
     }
 
+    private boolean isRegularProcessing(Segment segment, TrackedEventMessage<?> nextMessage) {
+        return nextMessage != null
+                && isRegularProcessing(segment, processingSegments(nextMessage.trackingToken(), segment));
+    }
+
+    /**
+     * Indicates if the given {@code processingSegments} should be considered normal processing for the given
+     * {@code segment}. This is the case if only given {@code segment} is included in the {@code processingSegments}.
+     *
+     * @param segment            The segment assigned to this thread for processing
+     * @param processingSegments The segments for which a received event should be processed
+     * @return {@code true} if this is considered regular processor, {@code false} if this event should be treated
+     * specially (in its own batch)
+     */
     private boolean isRegularProcessing(Segment segment, Collection<Segment> processingSegments) {
         return processingSegments.size() == 1 && Objects.equals(processingSegments.iterator().next(), segment);
     }
 
-    private void checkSegmentCaughtUp(Segment segment, MessageStream<? extends EventMessage<?>> eventStream) {
+    private void checkSegmentCaughtUp(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) {
         if (!eventStream.hasNextAvailable()) {
             TrackerStatus previousStatus = activeSegments.get(segment.getSegmentId());
             if (!previousStatus.isCaughtUp()) {
@@ -659,38 +600,30 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         }
     }
 
-    private MessageStream<? extends EventMessage<?>> ensureEventStreamOpened(
-            MessageStream<? extends EventMessage<?>> eventStreamIn, Segment segment) {
-        MessageStream<? extends EventMessage<?>> eventStream = eventStreamIn;
+    private BlockingStream<TrackedEventMessage<?>> ensureEventStreamOpened(
+            BlockingStream<TrackedEventMessage<?>> eventStreamIn, Segment segment) {
+        BlockingStream<TrackedEventMessage<?>> eventStream = eventStreamIn;
         if (eventStream == null && state.get().isRunning()) {
-            final TrackingToken trackingToken = joinAndUnwrap(
-                    unitOfWorkFactory
-                            .create()
-                            .executeWithResult(context ->
-                                                       CompletableFuture.completedFuture(
-                                                               tokenStore.fetchToken(getName(), segment.getSegmentId())
-                                                       )
-                            )
-            );
-            logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
             eventStream = joinAndUnwrap(
                     unitOfWorkFactory
                             .create()
-                            .executeWithResult(context -> CompletableFuture.completedFuture(doOpenStream(trackingToken)))
-            );
+                            .executeWithResult(context -> {
+                                var trackingToken = tokenStore.fetchToken(getName(), segment.getSegmentId());
+                                logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
+                                return CompletableFuture.completedFuture(doOpenStream(trackingToken));
+                            }));
         }
         return eventStream;
     }
 
-    private MessageStream<? extends EventMessage<?>> doOpenStream(TrackingToken trackingToken) {
+    private BlockingStream<TrackedEventMessage<?>> doOpenStream(TrackingToken trackingToken) {
         if (trackingToken instanceof WrappedToken) {
             return new WrappedMessageStream(
                     (WrappedToken) trackingToken,
-                    (MessageStream<EventMessage<?>>) eventSource.open(StreamingCondition.startingFrom(WrappedToken.unwrapLowerBound(
-                            trackingToken)))
+                    messageSource.openStream(WrappedToken.unwrapLowerBound(trackingToken))
             );
         }
-        return eventSource.open(StreamingCondition.startingFrom(WrappedToken.unwrapLowerBound(trackingToken)));
+        return messageSource.openStream(WrappedToken.unwrapLowerBound(trackingToken));
     }
 
     /**
@@ -747,22 +680,31 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     @Override
     public <R> void resetTokens(R resetContext) {
-        resetTokens(initialTrackingTokenBuilder, resetContext);
+//        resetTokens(initialTrackingTokenBuilder, resetContext);
     }
 
-    @Override
     public void resetTokens(
             @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier) {
-        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(eventSource)));
+
     }
 
-    @Override
     public <R> void resetTokens(
             @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
-            R resetContext
-    ) {
-        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(eventSource)), resetContext);
+            @Nullable R resetContext) {
+
     }
+
+//    public void resetTokens(
+//            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier) {
+//        resetTokens(initialTrackingTokenSupplier.apply(messageSource));
+//    }
+//
+//    public <R> void resetTokens(
+//            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
+//            R resetContext
+//    ) {
+//        resetTokens(initialTrackingTokenSupplier.apply(messageSource), resetContext);
+//    }
 
     @Override
     public void resetTokens(@Nonnull TrackingToken startPosition) {
@@ -810,12 +752,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     /**
-     * Returns the {@link StreamableEventSource} this processor is using
+     * Returns the {@link StreamableMessageSource} this processor is using
      *
-     * @return {@link StreamableEventSource}
+     * @return {@link StreamableMessageSource}
      */
-    public StreamableEventSource<? extends EventMessage<?>> getEventSource() {
-        return eventSource;
+    public StreamableMessageSource<? extends TrackedEventMessage<?>> getMessageSource() {
+        return messageSource;
     }
 
     /**
@@ -1027,13 +969,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * {@link DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory} and the
      * {@link TrackingEventProcessorConfiguration} to a
      * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name},
-     * {@link EventHandlerInvoker}, {@link StreamableEventSource}, {@link TokenStore} and {@link TransactionManager}
+     * {@link EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager}
      * are
      * <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder extends AbstractEventProcessor.Builder {
 
-        private StreamableEventSource<? extends EventMessage<?>> eventSource;
+        private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
         private UnitOfWorkFactory unitOfWorkFactory;
         private TrackingEventProcessorConfiguration trackingEventProcessorConfiguration =
@@ -1075,16 +1017,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         }
 
         /**
-         * Sets the {@link StreamableEventSource} (e.g. the {@link EventBus}) which this {@link EventProcessor} will
+         * Sets the {@link StreamableMessageSource} (e.g. the {@link EventBus}) which this {@link EventProcessor} will
          * track.
          *
-         * @param eventSource the {@link StreamableEventSource} (e.g. the {@link EventBus}) which this
-         *                    {@link EventProcessor} will track
+         * @param messageSource the {@link StreamableMessageSource} (e.g. the {@link EventBus}) which this
+         *                      {@link EventProcessor} will track
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder eventSource(StreamableEventSource<? extends EventMessage<?>> eventSource) {
-            assertNonNull(eventSource, "StreamableEventSource may not be null");
-            this.eventSource = eventSource;
+        public Builder messageSource(StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
+            assertNonNull(messageSource, "StreamableMessageSource may not be null");
+            this.messageSource = messageSource;
             return this;
         }
 
@@ -1193,57 +1135,44 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             if (storeTokenBeforeProcessing == null) {
                 storeTokenBeforeProcessing = false;
             }
-            assertNonNull(eventSource, "The StreamableEventSource is a hard requirement and should be provided");
+            assertNonNull(messageSource, "The StreamableMessageSource is a hard requirement and should be provided");
             assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
             assertNonNull(unitOfWorkFactory, "The UnitOfWorkFactory is a hard requirement and should be provided");
         }
     }
 
-    /**
-     * Custom MessageStream wrapper that handles WrappedToken logic for the new streaming API. This replaces the old
-     * WrappedMessageStream that worked with BlockingStream.
-     */
-    private static class WrappedMessageStream implements MessageStream<EventMessage<?>> {
+    private static class WrappedMessageStream implements BlockingStream<TrackedEventMessage<?>> {
 
-        private final MessageStream<EventMessage<?>> delegate;
+        private final BlockingStream<TrackedEventMessage<?>> delegate;
         private WrappedToken lastToken;
 
-        public WrappedMessageStream(WrappedToken token, MessageStream<EventMessage<?>> delegate) {
+        public WrappedMessageStream(WrappedToken token, BlockingStream<TrackedEventMessage<?>> delegate) {
             this.delegate = delegate;
             this.lastToken = token;
         }
 
         @Override
-        public Optional<Entry<EventMessage<?>>> next() {
-            Optional<Entry<EventMessage<?>>> entry = delegate.next();
-            if (entry.isPresent()) {
-                Entry<EventMessage<?>> originalEntry = entry.get();
-                TrackingToken originalToken = TrackingToken.fromContext(originalEntry).orElse(null);
-
-                if (originalToken != null && lastToken != null) {
-                    TrackingToken wrappedToken = lastToken.advancedTo(originalToken);
-                    this.lastToken = wrappedToken instanceof WrappedToken ? (WrappedToken) wrappedToken : null;
-
-                    // Create a new entry with the wrapped token in context
-                    return Optional.of(new WrappedEntry<>(originalEntry, wrappedToken));
-                }
-            }
-            return entry;
+        public Optional<TrackedEventMessage<?>> peek() {
+            return delegate.peek();
         }
 
         @Override
-        public void onAvailable(@Nonnull Runnable callback) {
-            delegate.onAvailable(callback);
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+            return delegate.hasNextAvailable(timeout, unit);
         }
 
         @Override
-        public Optional<Throwable> error() {
-            return delegate.error();
+        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+            TrackedEventMessage<?> trackedEventMessage = alterToken(delegate.nextAvailable());
+            this.lastToken = trackedEventMessage.trackingToken() instanceof WrappedToken
+                    ? (WrappedToken) trackedEventMessage.trackingToken()
+                    : null;
+            return trackedEventMessage;
         }
 
         @Override
-        public boolean isCompleted() {
-            return delegate.isCompleted();
+        public void close() {
+            delegate.close();
         }
 
         @Override
@@ -1251,52 +1180,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             return delegate.hasNextAvailable();
         }
 
-        @Override
-        public void close() {
-            delegate.close();
-        }
-    }
-
-    /**
-     * Wrapper for MessageStream.Entry that includes a wrapped tracking token in the context.
-     */
-    private static class WrappedEntry<M extends EventMessage<?>> implements MessageStream.Entry<M> {
-
-        private final MessageStream.Entry<M> delegate;
-        private final TrackingToken wrappedToken;
-
-        public WrappedEntry(MessageStream.Entry<M> delegate, TrackingToken wrappedToken) {
-            this.delegate = delegate;
-            this.wrappedToken = wrappedToken;
-        }
-
-        @Override
-        public M message() {
-            return delegate.message();
-        }
-
-        @Override
-        public <RM extends Message<?>> MessageStream.Entry<RM> map(@Nonnull Function<M, RM> mapper) {
-            throw new NotImplementedException("Not supported");
-        }
-
-        @Override
-        public <T> MessageStream.Entry<M> withResource(@Nonnull Context.ResourceKey<T> key, @Nonnull T resource) {
-            return new WrappedEntry<>(delegate.withResource(key, resource), wrappedToken);
-        }
-
-        @Override
-        public boolean containsResource(@Nonnull ResourceKey<?> key) {
-            return key.equals(TrackingToken.RESOURCE_KEY) || delegate.containsResource(key);
-        }
-
-        @Override
-        public <T> T getResource(@Nonnull ResourceKey<T> key) {
-            if (key.equals(TrackingToken.RESOURCE_KEY)) {
-                //noinspection unchecked
-                return (T) wrappedToken;
+        public <T> TrackedEventMessage<T> alterToken(TrackedEventMessage<T> message) {
+            if (lastToken == null) {
+                return message;
             }
-            return delegate.getResource(key);
+            return message.withTrackingToken(lastToken.advancedTo(message.trackingToken()));
         }
     }
 
@@ -1423,9 +1311,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                     unitOfWorkFactory.create()
                                                      .executeWithResult(
                                                              context -> {
-                                                                 TrackingToken initialToken = joinAndUnwrap(
-                                                                         initialTrackingTokenBuilder.apply(
-                                                                                 eventSource));
+                                                                 TrackingToken initialToken = initialTrackingTokenBuilder.apply(
+                                                                         messageSource);
                                                                  tokenStore.initializeTokenSegments(
                                                                          processorName,
                                                                          segmentsSize,
