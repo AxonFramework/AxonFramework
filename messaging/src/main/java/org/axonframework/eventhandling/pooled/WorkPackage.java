@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -180,7 +181,9 @@ class WorkPackage {
         BatchProcessingEntry batchProcessingEntry = new BatchProcessingEntry();
         boolean canHandleAny = eventEntries.stream()
                                            .map(eventEntry -> {
-                                               boolean canHandle = canHandle(eventEntry.message(), null);
+                                               LegacyMessageSupportingContext context = new LegacyMessageSupportingContext(
+                                                       eventEntry.message());
+                                               boolean canHandle = canHandle(eventEntry.message(), context);
                                                batchProcessingEntry.add(new DefaultProcessingEntry(eventEntry,
                                                                                                    canHandle));
                                                return canHandle;
@@ -235,7 +238,8 @@ class WorkPackage {
                      eventToken != null ? eventToken.position().orElse(-1) : -1,
                      segment.getSegmentId());
 
-        boolean canHandle = canHandle(eventEntry.message(), null);
+        ProcessingContext context = new LegacyMessageSupportingContext(eventEntry.message());
+        boolean canHandle = canHandle(eventEntry.message(), context);
         processingQueue.add(new DefaultProcessingEntry(eventEntry, canHandle));
         lastDeliveredToken = eventToken;
         // the worker must always be scheduled to ensure claims are extended
@@ -261,7 +265,7 @@ class WorkPackage {
 
     private boolean canHandle(EventMessage<?> eventMessage, ProcessingContext processingContext) {
         try {
-            return eventFilter.canHandle(eventMessage, segment);
+            return eventFilter.canHandle(eventMessage, processingContext, segment);
         } catch (Exception e) {
             logger.warn("Error while detecting whether event can be handled in Work Package [{}]-[{}]. "
                                 + "Aborting Work Package...",
@@ -521,7 +525,7 @@ class WorkPackage {
          * @return {@code true} if the event message can be handled, otherwise {@code false}
          * @throws Exception when validating of the given {@code eventMessage} fails
          */
-        boolean canHandle(EventMessage<?> eventMessage, Segment segment) throws Exception;
+        boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Segment segment) throws Exception;
     }
 
     /**
@@ -730,6 +734,13 @@ class WorkPackage {
         TrackingToken trackingToken();
 
         /**
+         * The {@link ProcessingContext} in which this event will be handled.
+         *
+         * @return The {@link ProcessingContext} in which this event will be handled.
+         */
+        ProcessingContext context();
+
+        /**
          * Add this entry's events to the {@code eventBatch}. The events should reference the {@code wrappedToken} for
          * correctly handling token progression.
          *
@@ -747,6 +758,7 @@ class WorkPackage {
     private static class DefaultProcessingEntry implements ProcessingEntry {
 
         private final MessageStream.Entry<? extends EventMessage<?>> eventEntry;
+        private final ProcessingContext context;
         private final boolean canHandle;
 
         public DefaultProcessingEntry(MessageStream.Entry<? extends EventMessage<?>> eventEntry, boolean canHandle) {
@@ -754,9 +766,16 @@ class WorkPackage {
             this.canHandle = canHandle;
         }
 
+        public DefaultProcessingEntry(EventMessage<?> message, boolean canHandle) {}
+
         @Override
         public TrackingToken trackingToken() {
             return TrackingToken.fromContext(eventEntry).orElse(null);
+        }
+
+        @Override
+        public ProcessingContext context() {
+            return null;
         }
 
         @Override
