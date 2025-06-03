@@ -190,7 +190,7 @@ class TrackingEventProcessorTest {
     void setUp() {
         spanFactory = new TestSpanFactory();
         tokenStore = spy(new InMemoryTokenStore());
-        mockHandler = mock(EventMessageHandler.class, withSettings().verboseLogging());
+        mockHandler = mock(EventMessageHandler.class);
         when(mockHandler.canHandle(any(), any())).thenReturn(true);
         when(mockHandler.supportsReset()).thenReturn(true);
         eventHandlerInvoker = spy(
@@ -363,6 +363,9 @@ class TrackingEventProcessorTest {
         Set<Class<?>> skipped = new HashSet<>();
 
         LegacyEmbeddedEventStore mockEventBus = mock(LegacyEmbeddedEventStore.class);
+        when(mockEventBus.tailToken()).thenCallRealMethod();
+        when(mockEventBus.headToken()).thenCallRealMethod();
+        // todo: it might be default method returning null etc!!!!
         TrackingToken trackingToken = new GlobalSequenceTrackingToken(0);
         List<TrackedEventMessage<?>> events =
                 createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
@@ -1247,6 +1250,8 @@ class TrackingEventProcessorTest {
     @Test
     void replayFlagAvailableWhenReplayInDifferentOrder() throws Exception {
         StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
+        when(stubSource.headToken()).thenCallRealMethod();
+        when(stubSource.tailToken()).thenCallRealMethod();
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
@@ -1367,6 +1372,8 @@ class TrackingEventProcessorTest {
         int segmentId = 0;
         //noinspection unchecked
         StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
+        when(stubSource.headToken()).thenCallRealMethod();
+        when(stubSource.tailToken()).thenCallRealMethod();
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
