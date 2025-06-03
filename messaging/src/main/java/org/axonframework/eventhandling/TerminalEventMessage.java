@@ -19,23 +19,24 @@ package org.axonframework.eventhandling;
 import org.axonframework.messaging.MessageType;
 
 /**
- * Empty {@link EventMessage} implementation without any {@link EventMessage#getPayload() payload}.
+ * Empty {@link EventMessage} implementation without any {@link EventMessage#getPayload() payload}, used as the
+ * <b>terminal</b> message of a {@link org.axonframework.messaging.MessageStream}.
  * <p>
  * Only useful to be paired with {@link org.axonframework.messaging.Context} information in an event-specific
- * {@link org.axonframework.messaging.MessageStream} when there is no event to combine it with.
+ * {@code MessageStream} when there is no event payload to combine it with.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class NoEventMessage extends GenericEventMessage<Void> implements EventMessage<Void> {
+public class TerminalEventMessage extends GenericEventMessage<Void> implements EventMessage<Void> {
 
     /**
-     * The sole instance of the {@link NoEventMessage}.
+     * The sole instance of the {@link TerminalEventMessage}.
      */
-    public static final NoEventMessage INSTANCE = new NoEventMessage();
+    public static final TerminalEventMessage INSTANCE = new TerminalEventMessage();
 
-    private NoEventMessage() {
+    private TerminalEventMessage() {
         //noinspection DataFlowIssue
-        super(new MessageType(NoEventMessage.class), null);
+        super(new MessageType(TerminalEventMessage.class), null);
     }
 }

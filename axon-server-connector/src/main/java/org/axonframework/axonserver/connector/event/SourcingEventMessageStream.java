@@ -23,7 +23,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.NoEventMessage;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
@@ -96,7 +96,7 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage<?>
         Context context = ConsistencyMarker.addToContext(
                 Context.empty(), new GlobalIndexConsistencyMarker(marker)
         );
-        return Optional.of(new SimpleEntry<>(NoEventMessage.INSTANCE, context));
+        return Optional.of(new SimpleEntry<>(TerminalEventMessage.INSTANCE, context));
     }
 
     @Override

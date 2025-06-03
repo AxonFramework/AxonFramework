@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.NoEventMessage;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
@@ -53,7 +53,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 
 import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
@@ -339,7 +338,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         Optional<Entry<EventMessage<?>>> lastEntry() {
             if (sharedLastEntry.compareAndSet(false, true)) {
                 Context context = Context.with(ConsistencyMarker.RESOURCE_KEY, new GlobalIndexConsistencyMarker(end));
-                return Optional.of(new SimpleEntry<>(NoEventMessage.INSTANCE, context));
+                return Optional.of(new SimpleEntry<>(TerminalEventMessage.INSTANCE, context));
             } else {
                 return Optional.empty();
             }
