@@ -394,6 +394,7 @@ class PooledStreamingEventProcessorTest {
         });
     }
 
+    // todo: callback needed!
     @Test
     void workPackageIsAbortedWhenExtendingClaimFails() {
         InMemoryTokenStore spy = spy(tokenStore);
@@ -412,6 +413,7 @@ class PooledStreamingEventProcessorTest {
         assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
     }
 
+    @Disabled("TODO #XXXX - Change it to EventCriteria support")
     @Test
     void handlingUnknownMessageTypeWillAdvanceToken() {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));

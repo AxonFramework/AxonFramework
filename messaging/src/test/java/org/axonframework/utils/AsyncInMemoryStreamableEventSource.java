@@ -30,7 +30,13 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SimpleEntry;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -47,8 +53,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * event publishing, ignored event tracking, and optional callback mechanisms for testing
  * asynchronous event processing scenarios.
  *
- * @author Steven van Beelen
- * @since 4.5
+ * @author Mateusz Nowak
+ * @since 5.0.0
  */
 public class AsyncInMemoryStreamableEventSource implements StreamableEventSource<EventMessage<?>> {
 
@@ -167,6 +173,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         });
         private final StreamingCondition condition;
         private volatile boolean closed = false;
+        private volatile Throwable streamError = null;
 
         public AsyncMessageStream(StreamingCondition condition) {
             this.condition = condition;
@@ -195,6 +202,11 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 return Optional.empty();
             }
 
+            // If we already have an error, don't process more events
+            if (streamError != null) {
+                return Optional.empty();
+            }
+
             // Find the next matching event
             while (true) {
                 long position = currentPosition.get();
@@ -207,9 +219,11 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 // Advance position for next call
                 currentPosition.incrementAndGet();
 
-                // Check for failure event
+                // Check for failure event and set error state
                 if (FAIL_PAYLOAD.equals(event.getPayload())) {
-                    throw new IllegalStateException("Cannot retrieve event at position [" + position + "].");
+                    streamError = new IllegalStateException("Cannot retrieve event at position [" + position + "].");
+                    // Throw the exception to propagate it immediately
+                    throw (RuntimeException) streamError;
                 }
 
                 // Check if event matches the condition
@@ -238,7 +252,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
         @Override
         public Optional<Throwable> error() {
-            return Optional.empty();
+            return Optional.ofNullable(streamError);
         }
 
         @Override
@@ -248,7 +262,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
         @Override
         public boolean hasNextAvailable() {
-            if (closed) {
+            if (closed || streamError != null) {
                 return false;
             }
 
