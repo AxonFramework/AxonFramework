@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,20 +56,20 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
-        return delegate.canHandle(message, processingContext);
+    public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+        return delegate.canHandle(message, context);
     }
 
     @Override
-    public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
-        return delegate.handleSync(message, target);
+    public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context,  T target) throws Exception {
+        return delegate.handleSync(message, context, target);
     }
 
     @Override
     public MessageStream<?> handle(@Nonnull Message<?> message,
-                                   @Nonnull ProcessingContext processingContext,
+                                   @Nonnull ProcessingContext context,
                                    @Nullable T target) {
-        return delegate.handle(message, processingContext, target);
+        return delegate.handle(message, context, target);
     }
 
     @Override

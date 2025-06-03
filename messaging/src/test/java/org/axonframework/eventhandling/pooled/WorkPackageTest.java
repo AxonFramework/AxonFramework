@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -517,7 +518,7 @@ class WorkPackageTest {
         private final List<EventMessage<?>> validatedEvents = new ArrayList<>();
 
         @Override
-        public boolean canHandle(TrackedEventMessage<?> eventMessage, Segment segment) {
+        public boolean canHandle(TrackedEventMessage<?> eventMessage, ProcessingContext context, Segment segment) {
             validatedEvents.add(eventMessage);
             return eventFilterPredicate.test(eventMessage);
         }

@@ -209,7 +209,7 @@ public class TrackingEventProcessorIntegrationTest {
 
     private void publishEvent(Object... events) {
         LegacyDefaultUnitOfWork.startAndGet(null).execute(
-                () -> {
+                (ctx) -> {
                     Transaction tx = transactionManager.startTransaction();
                     CurrentUnitOfWork.get().onRollback(u -> tx.rollback());
                     CurrentUnitOfWork.get().onCommit(u -> tx.commit());

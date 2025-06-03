@@ -20,6 +20,8 @@ import org.axonframework.common.lock.Lock;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -84,10 +86,11 @@ class LockAwareAggregateTest {
     @Test
     void handleMethodInvokesWrappedAggregateAndInspectsLock() throws Exception {
         Message<?> testMessage = new GenericMessage<>(new MessageType("message"), "some-message");
+        ProcessingContext context = StubProcessingContext.forMessage(testMessage);
 
-        testSubject.handle(testMessage);
+        testSubject.handle(testMessage, context);
 
-        verify(mockAggregate).handle(testMessage);
+        verify(mockAggregate).handle(testMessage, context);
         assertTrue(lockSupplierInvoked.get());
     }
 

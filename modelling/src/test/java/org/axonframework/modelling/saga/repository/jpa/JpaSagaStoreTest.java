@@ -96,7 +96,7 @@ class JpaSagaStoreTest {
 
     @Test
     void addingAnInactiveSagaDoesntStoreIt() {
-        unitOfWork.executeWithResult(() -> {
+        unitOfWork.executeWithResult((ctx) -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                     StubSaga::new);
             saga.execute(testSaga -> {
@@ -115,12 +115,12 @@ class JpaSagaStoreTest {
 
     @Test
     void addAndLoadSaga_ByIdentifier() {
-        String identifier = unitOfWork.executeWithResult(() -> repository.createInstance(
+        String identifier = unitOfWork.executeWithResult((ctx) -> repository.createInstance(
                         IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier())
                 .getPayload();
         entityManager.clear();
         startUnitOfWork();
-        unitOfWork.execute(() -> {
+        unitOfWork.execute((ctx) -> {
             Saga<StubSaga> loaded = repository.load(identifier);
             assertEquals(identifier, loaded.getSagaIdentifier());
             assertNotNull(entityManager.find(SagaEntry.class, identifier));
@@ -129,7 +129,7 @@ class JpaSagaStoreTest {
 
     @Test
     void addAndLoadSaga_ByAssociationValue() {
-        String identifier = unitOfWork.executeWithResult(() -> {
+        String identifier = unitOfWork.executeWithResult((ctx) -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                     StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
@@ -137,7 +137,7 @@ class JpaSagaStoreTest {
         }).getPayload();
         entityManager.clear();
         startUnitOfWork();
-        unitOfWork.execute(() -> {
+        unitOfWork.execute((ctx) -> {
             Set<String> loaded = repository.find(new AssociationValue("key", "value"));
             assertEquals(1, loaded.size());
             Saga<StubSaga> loadedSaga = repository.load(loaded.iterator().next());
@@ -148,13 +148,13 @@ class JpaSagaStoreTest {
 
     @Test
     void loadSaga_NotFound() {
-        unitOfWork.execute(() -> assertNull(repository.load("123456")));
+        unitOfWork.execute((ctx) -> assertNull(repository.load("123456")));
     }
 
 
     @Test
     void loadSaga_AssociationValueRemoved() {
-        String identifier = unitOfWork.executeWithResult(() -> {
+        String identifier = unitOfWork.executeWithResult((ctx) -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                     StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
@@ -162,20 +162,20 @@ class JpaSagaStoreTest {
         }).getPayload();
         entityManager.clear();
         startUnitOfWork();
-        unitOfWork.execute(() -> {
+        unitOfWork.execute((ctx) -> {
             Saga<StubSaga> loaded = repository.load(identifier);
             loaded.execute(s -> s.removeAssociationValue("key", "value"));
         });
         entityManager.clear();
         startUnitOfWork();
-        Set<String> found = unitOfWork.executeWithResult(() -> repository.find(new AssociationValue("key", "value")))
+        Set<String> found = unitOfWork.executeWithResult((ctx) -> repository.find(new AssociationValue("key", "value")))
                 .getPayload();
         assertEquals(0, found.size());
     }
 
     @Test
     void endSaga() {
-        String identifier = unitOfWork.executeWithResult(() -> {
+        String identifier = unitOfWork.executeWithResult((ctx) -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                     StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
@@ -185,7 +185,7 @@ class JpaSagaStoreTest {
         assertFalse(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
                 .setParameter("id", identifier).getResultList().isEmpty());
         startUnitOfWork();
-        unitOfWork.execute(() -> {
+        unitOfWork.execute((ctx) -> {
             Saga<StubSaga> loaded = repository.load(identifier);
             loaded.execute(StubSaga::end);
         });

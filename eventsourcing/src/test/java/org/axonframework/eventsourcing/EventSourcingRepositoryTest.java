@@ -28,7 +28,7 @@ import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
@@ -69,7 +69,7 @@ class EventSourcingRepositoryTest {
                 String.class,
                 eventStore,
                 (entityType, id) -> id,
-                identifier -> TEST_CRITERIA,
+                (identifier, ctx) -> TEST_CRITERIA,
                 (entity, event, context) -> entity + "-" + event.getPayload()
         );
     }
@@ -202,7 +202,7 @@ class EventSourcingRepositoryTest {
 
     @Test
     void loadOrCreateShouldCreateWhenNoEventsAreReturned() {
-        StubProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.empty())
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));

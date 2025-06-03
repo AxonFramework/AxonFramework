@@ -92,11 +92,11 @@ class EventProcessingModuleWithInterceptorsTest {
 
             @Override
             public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @Nonnull InterceptorChain interceptorChain)
+                                 @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain)
                     throws Exception {
                 unitOfWork.transformMessage(event -> event
                         .andMetaData(Collections.singletonMap("myMetaDataKey", "myMetaDataValue")));
-                return interceptorChain.proceedSync();
+                return interceptorChain.proceedSync(context);
             }
 
             @Override

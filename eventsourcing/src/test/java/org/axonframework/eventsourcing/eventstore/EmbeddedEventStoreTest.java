@@ -341,7 +341,7 @@ public abstract class EmbeddedEventStoreTest {
         List<DomainEventMessage<?>> events = createEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
         LegacyDefaultUnitOfWork.startAndGet(null)
-                               .execute(() -> {
+                               .execute((ctx) -> {
                                    assertEquals(2, testSubject.readEvents(aggregateId).asStream().count());
 
                                    testSubject.publish(events.subList(2, events.size()));
@@ -355,7 +355,7 @@ public abstract class EmbeddedEventStoreTest {
         List<DomainEventMessage<?>> events = createEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
         LegacyDefaultUnitOfWork.startAndGet(null)
-                               .execute(() -> {
+                               .execute((ctx) -> {
                                    assertEquals(2, testSubject.readEvents(aggregateId).asStream().count());
 
                                    testSubject.publish(events.subList(2, events.size()));

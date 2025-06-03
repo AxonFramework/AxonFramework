@@ -89,8 +89,8 @@ class DeadLetteredEventProcessingTaskTest {
 
         assertEquals(DoNotEnqueue.class, result.getClass());
         verify(transactionManager).startTransaction();
-        verify(eventHandlerOne).handleSync(TEST_EVENT);
-        verify(eventHandlerTwo).handleSync(TEST_EVENT);
+        verify(eventHandlerOne).handleSync(eq(TEST_EVENT), any());
+        verify(eventHandlerTwo).handleSync(eq(TEST_EVENT), any());
         verifyNoInteractions(enqueuePolicy);
     }
 
@@ -102,14 +102,14 @@ class DeadLetteredEventProcessingTaskTest {
         when(testLetter.message()).thenReturn(TEST_EVENT);
         Exception testException = new RuntimeException();
 
-        when(eventHandlerTwo.handleSync(TEST_EVENT)).thenThrow(testException);
+        when(eventHandlerTwo.handleSync(eq(TEST_EVENT), any())).thenThrow(testException);
 
         EnqueueDecision<EventMessage<?>> result = testSubject.process(testLetter);
 
         assertEquals(TEST_DECISION, result);
         verify(transactionManager).startTransaction();
-        verify(eventHandlerOne).handleSync(TEST_EVENT);
-        verify(eventHandlerTwo).handleSync(TEST_EVENT);
+        verify(eventHandlerOne).handleSync(eq(TEST_EVENT), any());
+        verify(eventHandlerTwo).handleSync(eq(TEST_EVENT), any());
         verify(enqueuePolicy).decide(testLetter, testException);
     }
 
@@ -126,15 +126,15 @@ class DeadLetteredEventProcessingTaskTest {
         when(testLetter.message()).thenReturn(TEST_EVENT);
         Exception testException = new RuntimeException();
 
-        when(eventHandlerTwo.handleSync(TEST_EVENT)).thenThrow(testException);
+        when(eventHandlerTwo.handleSync(eq(TEST_EVENT), any())).thenThrow(testException);
 
         EnqueueDecision<EventMessage<?>> result = testSubject.process(testLetter);
 
         assertFalse(result.shouldEnqueue());
         assertTrue(invoked.get());
         verify(transactionManager).startTransaction();
-        verify(eventHandlerOne).handleSync(TEST_EVENT);
-        verify(eventHandlerTwo).handleSync(TEST_EVENT);
+        verify(eventHandlerOne).handleSync(eq(TEST_EVENT), any());
+        verify(eventHandlerTwo).handleSync(eq(TEST_EVENT), any());
         verify(enqueuePolicy, never()).decide(testLetter, testException);
     }
 
@@ -148,10 +148,10 @@ class DeadLetteredEventProcessingTaskTest {
     }
 
     private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
-        return (unitOfWork, chain) -> {
+        return (unitOfWork, context, chain) -> {
             invoked.set(true);
             try {
-                chain.proceedSync();
+                chain.proceedSync(context);
             } catch (RuntimeException e) {
                 return unitOfWork;
             }

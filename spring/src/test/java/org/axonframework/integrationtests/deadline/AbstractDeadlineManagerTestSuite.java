@@ -289,9 +289,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     void handlerInterceptorOnAggregate() {
         //noinspection resource
-        configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
+        configuration.deadlineManager().registerHandlerInterceptor((uow, context, chain) -> {
             uow.transformMessage(AbstractDeadlineManagerTestSuite::asDeadlineMessage);
-            return chain.proceedSync();
+            return chain.proceedSync(context);
         });
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
 
@@ -342,8 +342,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     void failedExecution() {
         //noinspection resource
-        configuration.deadlineManager().registerHandlerInterceptor((uow, interceptorChain) -> {
-            interceptorChain.proceedSync();
+        configuration.deadlineManager().registerHandlerInterceptor((uow, context, interceptorChain) -> {
+            interceptorChain.proceedSync(context);
             throw new AxonNonTransientException("Simulating handling error") {
             };
         });
@@ -457,11 +457,11 @@ public abstract class AbstractDeadlineManagerTestSuite {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         //noinspection resource
-        configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
+        configuration.deadlineManager().registerHandlerInterceptor((uow, context, chain) -> {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(deadlineMessage.getDeadlineName(),
                                                                       new DeadlinePayload(FAKE_IDENTIFIER),
                                                                       deadlineMessage.getTimestamp()));
-            return chain.proceedSync();
+            return chain.proceedSync(context);
         });
         configuration.eventStore().publish(testEventMessage);
 

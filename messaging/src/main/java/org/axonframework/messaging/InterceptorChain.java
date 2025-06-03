@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
  * The interceptor chain manages the flow of a message through a chain of interceptors and ultimately to the message
- * handler. Interceptors may continue processing via this chain by calling the {@link #proceedSync()} method.
+ * handler. Interceptors may continue processing via this chain by calling the {@link #proceedSync(ProcessingContext)} method.
  * Alternatively, they can block processing by returning without calling either of these methods.
  *
  * @author Allard Buijze
@@ -34,17 +35,21 @@ public interface InterceptorChain<M extends Message<?>, R extends Message<?>> {
     /**
      * Signals the Interceptor Chain to continue processing the message.
      *
-     * @return The return value of the message processing
-     * @throws Exception any exceptions thrown by interceptors or the message handler
+     * @param context The {@link ProcessingContext} in which the reset is being prepared.
+     * @return The return value of the message processing.
+     * @throws Exception Any exceptions thrown by interceptors or the message handler.
      */
-    Object proceedSync() throws Exception;
+    Object proceedSync(@Nonnull ProcessingContext context) throws Exception;
 
     /**
-     * TODO Add documentation
+     * Signals the Interceptor Chain to continue processing the message.
+     *
+     * @param context The {@link ProcessingContext} in which the reset is being prepared.
+     * @return A {@link MessageStream} containing the result of the message processing.
      */
-    default MessageStream<R> proceed(M message, ProcessingContext processingContext) {
+    default MessageStream<R> proceed(@Nonnull M message, @Nonnull ProcessingContext context) {
         try {
-            return MessageStream.fromFuture(CompletableFuture.completedFuture((R) proceedSync()));
+            return MessageStream.fromFuture(CompletableFuture.completedFuture((R) proceedSync(context)));
         } catch (Exception e) {
             return MessageStream.fromFuture(CompletableFuture.failedFuture(e));
         }

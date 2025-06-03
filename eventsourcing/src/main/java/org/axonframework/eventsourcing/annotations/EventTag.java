@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 
 /**
  * Field or method level annotation that marks a field or method providing the Tag for the Event. The member name will
- * be used as the {@link Tag#key} by default, except for Map values without
+ * be used as the {@link Tag#key()} by default, except for Map values without
  * an explicit key (see below).
  * <p>
  * For both fields and methods, the value is obtained by calling {@code toString()} on the field value or method return
