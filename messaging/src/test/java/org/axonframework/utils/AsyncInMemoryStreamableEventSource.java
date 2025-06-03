@@ -116,19 +116,19 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
         return eventStorage.entrySet()
-                .stream()
-                .filter(positionToEventEntry -> {
-                    EventMessage<?> event = positionToEventEntry.getValue();
-                    Instant eventTimestamp = event.getTimestamp();
-                    return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
-                })
-                .map(Map.Entry::getKey)
-                .min(Comparator.comparingLong(Long::longValue))
-                .map(position -> position - 1)
-                .map(GlobalSequenceTrackingToken::new)
-                .map(tt -> (TrackingToken) tt)
-                .map(CompletableFuture::completedFuture)
-                .orElseGet(this::headToken);
+                           .stream()
+                           .filter(positionToEventEntry -> {
+                               EventMessage<?> event = positionToEventEntry.getValue();
+                               Instant eventTimestamp = event.getTimestamp();
+                               return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
+                           })
+                           .map(Map.Entry::getKey)
+                           .min(Comparator.comparingLong(Long::longValue))
+                           .map(position -> position - 1)
+                           .map(GlobalSequenceTrackingToken::new)
+                           .map(tt -> (TrackingToken) tt)
+                           .map(CompletableFuture::completedFuture)
+                           .orElseGet(this::headToken);
     }
 
     /**
@@ -173,7 +173,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         });
         private final StreamingCondition condition;
         private volatile boolean closed = false;
-        private volatile Throwable streamError = null;
+        private volatile Throwable error = null;
 
         public AsyncMessageStream(StreamingCondition condition) {
             this.condition = condition;
@@ -198,12 +198,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
         @Override
         public Optional<Entry<EventMessage<?>>> next() {
-            if (closed) {
-                return Optional.empty();
-            }
-
-            // If we already have an error, don't process more events
-            if (streamError != null) {
+            if (closed || error != null) {
                 return Optional.empty();
             }
 
@@ -219,11 +214,12 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 // Advance position for next call
                 currentPosition.incrementAndGet();
 
-                // Check for failure event and set error state
+                // Check for failure event - both set error state AND throw exception
                 if (FAIL_PAYLOAD.equals(event.getPayload())) {
-                    streamError = new IllegalStateException("Cannot retrieve event at position [" + position + "].");
-                    // Throw the exception to propagate it immediately
-                    throw (RuntimeException) streamError;
+                    IllegalStateException exception = new IllegalStateException(
+                            "Cannot retrieve event at position [" + position + "].");
+                    error = exception;  // Set error state for error() method
+                    throw exception;    // Throw for Coordinator's try-catch handling
                 }
 
                 // Check if event matches the condition
@@ -252,7 +248,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
         @Override
         public Optional<Throwable> error() {
-            return Optional.ofNullable(streamError);
+            return Optional.ofNullable(error);
         }
 
         @Override
@@ -262,14 +258,13 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
         @Override
         public boolean hasNextAvailable() {
-            if (closed || streamError != null) {
+            if (closed || error != null) {
                 return false;
             }
 
-            // Check if there's any matching event from current position onwards
+            // Check if there's any event from current position onwards
             long position = currentPosition.get();
-            return eventStorage.tailMap(position).values().stream()
-                    .anyMatch(event -> !FAIL_PAYLOAD.equals(event.getPayload()) && matches(event, condition));
+            return eventStorage.containsKey(position);
         }
 
         @Override
@@ -279,7 +274,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         public void notifyEventAvailable() {
-            if (!closed && streamCallbackSupported) {
+            if (!closed) {
                 Runnable currentCallback = callback.get();
                 if (currentCallback != null) {
                     currentCallback.run();
@@ -305,6 +300,11 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         // Handle null condition (can happen with mocking)
         if (condition == null) {
             return true; // Accept all events if no condition
+        }
+
+        // Always let FAIL_EVENT through to trigger the exception
+        if (FAIL_PAYLOAD.equals(event.getPayload())) {
+            return true;
         }
 
         QualifiedName qualifiedName = event.type().qualifiedName();

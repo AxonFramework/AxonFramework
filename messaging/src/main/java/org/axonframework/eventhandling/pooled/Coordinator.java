@@ -1026,6 +1026,15 @@ class Coordinator {
          */
         private void coordinateWorkPackages() {
             logger.debug("Processor [{}] is coordinating work to all its work packages.", name);
+
+            // Check if the stream has an error before trying to read from it
+            if (eventStream != null) {
+                var streamError = eventStream.error();
+                if (streamError.isPresent()) {
+                    throw new RuntimeException("Event stream has an error", streamError.get());
+                }
+            }
+
             for (int fetched = 0;
                  fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && hasNextEvent();
                  fetched++) {
