@@ -17,20 +17,18 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventstreaming.LegacyStreamableEventSource;
+import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -75,15 +73,17 @@ class CoordinatorTest {
     private final TokenStore tokenStore = mock(TokenStore.class);
     private final ScheduledThreadPoolExecutor executorService = mock(ScheduledThreadPoolExecutor.class);
     @SuppressWarnings("unchecked")
-    private final StreamableMessageSource<TrackedEventMessage<?>> messageSource = mock(StreamableMessageSource.class);
+    private final StreamableEventSource<EventMessage<?>> messageSource = mock(StreamableEventSource.class);
 
     private final WorkPackage workPackage = mock(WorkPackage.class);
 
     @BeforeEach
     void setUp() {
+        when(messageSource.tailToken()).thenReturn(CompletableFuture.completedFuture(null));
+        when(messageSource.headToken()).thenReturn(CompletableFuture.completedFuture(null));
         testSubject = Coordinator.builder()
                                  .name(PROCESSOR_NAME)
-                                 .eventSource(new LegacyStreamableEventSource<>(messageSource))
+                                 .eventSource(messageSource)
                                  .tokenStore(tokenStore)
                                  .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                                  .executorService(executorService)
@@ -105,7 +105,7 @@ class CoordinatorTest {
         doReturn(token).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
         doThrow(releaseClaimException).when(tokenStore).releaseClaim(eq(PROCESSOR_NAME), anyInt());
         //noinspection resource
-        doThrow(streamOpenException).when(messageSource).openStream(any());
+        doThrow(streamOpenException).when(messageSource).open(any());
         doReturn(completedFuture(streamOpenException)).when(workPackage).abort(any());
         doReturn(SEGMENT_ZERO).when(workPackage).segment();
         doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
@@ -141,49 +141,47 @@ class CoordinatorTest {
     @Test
     void ifCoordinationTaskSchedulesEventsWithTheSameTokenTogether() throws InterruptedException {
         TrackingToken testToken = new GlobalSequenceTrackingToken(0);
-        TrackedEventMessage testEventOne =
-                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("this-event"));
-        TrackedEventMessage testEventTwo =
-                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("that-event"));
-        List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
+        MessageStream.Entry<? extends EventMessage<?>> testEventOne =
+                new SimpleEntry<>(EventTestUtils.asEventMessage("this-event"), trackingTokenContext(testToken));
+        MessageStream.Entry<? extends EventMessage<?>> testEventTwo =
+                new SimpleEntry<>(EventTestUtils.asEventMessage("this-event"), trackingTokenContext(testToken));
+        List<MessageStream.Entry<? extends EventMessage<?>>> testEvents = new ArrayList<>();
         testEvents.add(testEventOne);
         testEvents.add(testEventTwo);
 
         when(workPackage.hasRemainingCapacity()).thenReturn(true)
                                                 .thenReturn(false);
         when(workPackage.isAbortTriggered()).thenReturn(false);
-        var context = TrackingToken.addToContext(Context.empty(), testToken);
-//        var testEntries = testEvents.stream()
-//                                    .map(e -> new SimpleEntry(e, context))
-//                                    .toList();
-//        when(workPackage.scheduleEvents(testEntries)).thenReturn(true);
+
+        when(workPackage.scheduleEvents(testEvents)).thenReturn(true);
         when(workPackage.scheduleEvents(any())).thenReturn(true);
 
         //noinspection unchecked
-        BlockingStream<TrackedEventMessage<?>> testStream = mock(BlockingStream.class);
-        when(testStream.setOnAvailableCallback(any())).thenReturn(false);
+        MessageStream<EventMessage<?>> testStream = mock(MessageStream.class);
         when(testStream.hasNextAvailable()).thenReturn(true)
                                            .thenReturn(true)
                                            .thenReturn(false);
         //noinspection unchecked
-        when(testStream.nextAvailable()).thenReturn(testEventOne)
-                                        .thenReturn(testEventTwo);
+        when(testStream.next()).thenAnswer(i -> Optional.of(testEventOne))
+                               .thenAnswer(i -> Optional.of(testEventTwo));
         //noinspection unchecked
-        when(testStream.peek()).thenReturn(Optional.of(testEventTwo))
-                               .thenReturn(Optional.of(testEventTwo))
-                               .thenReturn(Optional.empty());
+//        when(testStream.peek()).thenReturn(Optional.of(testEventTwo))
+//                               .thenReturn(Optional.of(testEventTwo))
+//                               .thenReturn(Optional.empty()); // todo: what to do instead?
 
         when(executorService.submit(any(Runnable.class))).thenAnswer(runTaskAsync());
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(SEGMENT_IDS);
         when(tokenStore.fetchAvailableSegments(PROCESSOR_NAME)).thenReturn(Collections.singletonList(SEGMENT_ONE));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ONE)).thenReturn(testToken);
-        when(messageSource.openStream(testToken)).thenReturn(testStream);
+        when(messageSource.open(StreamingCondition.startingFrom(testToken))).thenReturn(testStream);
 
         testSubject.start();
 
         assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(tokenStore).fetchToken(PROCESSOR_NAME, SEGMENT_ONE));
         //noinspection resource
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(messageSource).openStream(testToken));
+        assertWithin(500,
+                     TimeUnit.MILLISECONDS,
+                     () -> verify(messageSource).open(StreamingCondition.startingFrom(testToken)));
 
         //noinspection unchecked
         ArgumentCaptor<List<MessageStream.Entry<? extends EventMessage<?>>>> eventsCaptor = ArgumentCaptor.forClass(List.class);
@@ -217,7 +215,7 @@ class CoordinatorTest {
         testSubject.start();
 
         //asserts
-        verify(messageSource, never()).openStream(any(TrackingToken.class));
+        verify(messageSource, never()).open(any(StreamingCondition.class));
     }
 
     private Answer<Future<Void>> runTaskSync() {
@@ -230,5 +228,10 @@ class CoordinatorTest {
 
     private Answer<Future<Void>> runTaskAsync() {
         return invocationOnMock -> CompletableFuture.runAsync(invocationOnMock.getArgument(0));
+    }
+
+    private static Context trackingTokenContext(TrackingToken token) {
+        return TrackingToken.addToContext(
+                Context.empty(), token);
     }
 }

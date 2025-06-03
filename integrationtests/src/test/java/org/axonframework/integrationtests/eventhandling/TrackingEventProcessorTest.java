@@ -365,7 +365,6 @@ class TrackingEventProcessorTest {
         LegacyEmbeddedEventStore mockEventBus = mock(LegacyEmbeddedEventStore.class);
         when(mockEventBus.tailToken()).thenCallRealMethod();
         when(mockEventBus.headToken()).thenCallRealMethod();
-        // todo: it might be default method returning null etc!!!!
         TrackingToken trackingToken = new GlobalSequenceTrackingToken(0);
         List<TrackedEventMessage<?>> events =
                 createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
