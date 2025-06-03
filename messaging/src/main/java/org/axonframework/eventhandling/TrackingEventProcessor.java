@@ -685,7 +685,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     @Override
     public void resetTokens(
             @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier) {
-        resetTokens(initialTrackingTokenSupplier.apply(messageSource));
+        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(messageSource)));
     }
 
     @Override

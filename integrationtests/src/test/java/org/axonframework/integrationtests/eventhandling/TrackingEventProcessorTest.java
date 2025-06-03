@@ -190,7 +190,7 @@ class TrackingEventProcessorTest {
     void setUp() {
         spanFactory = new TestSpanFactory();
         tokenStore = spy(new InMemoryTokenStore());
-        mockHandler = mock(EventMessageHandler.class);
+        mockHandler = mock(EventMessageHandler.class, withSettings().verboseLogging());
         when(mockHandler.canHandle(any(), any())).thenReturn(true);
         when(mockHandler.supportsReset()).thenReturn(true);
         eventHandlerInvoker = spy(
