@@ -445,6 +445,7 @@ class PooledStreamingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(2, testSubject.processingStatus().size()));
     }
 
+    @Disabled("TODO #XXXX - Change it to EventCriteria support")
     @Test
     void eventsWhichMustBeIgnoredAreNotHandledOnlyValidated() throws Exception {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));

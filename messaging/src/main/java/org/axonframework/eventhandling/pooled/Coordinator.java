@@ -980,6 +980,7 @@ class Coordinator {
             }
 
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
+//                EventCriteria criteria = EventCriteria.havingAnyTag().andBeingOfAnyType();
                 eventStream = eventSource.open(StreamingCondition.startingFrom(trackingToken));
                 logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
                 // Note: MessageStream doesn't have setOnAvailableCallback, so we set this to false

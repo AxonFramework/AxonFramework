@@ -21,29 +21,34 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SimpleEntry;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * An in-memory implementation of {@link StreamableEventSource} for testing purposes. Provides functionality to publish
- * events and stream them with filtering capabilities.
+ * An in-memory implementation of {@link StreamableEventSource} designed for testing purposes,
+ * particularly with the {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+ * <p>
+ * This implementation provides similar functionality to {@link InMemoryStreamableEventSource} but is
+ * adapted to work with the {@link MessageStream} API used by the pooled processor. It supports
+ * event publishing, ignored event tracking, and optional callback mechanisms for testing
+ * asynchronous event processing scenarios.
  *
- * @author Allard Buijze
  * @author Steven van Beelen
+ * @since 4.5
  */
 public class AsyncInMemoryStreamableEventSource implements StreamableEventSource<EventMessage<?>> {
 
@@ -57,15 +62,15 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      */
     public static final EventMessage<String> FAIL_EVENT = EventTestUtils.asEventMessage(FAIL_PAYLOAD);
 
-    private final List<StoredEvent> events = new CopyOnWriteArrayList<>();
-    private final AtomicLong sequenceNumber = new AtomicLong(0);
+    private final NavigableMap<Long, EventMessage<?>> eventStorage = new ConcurrentSkipListMap<>();
+    private final AtomicLong nextIndex = new AtomicLong(0);
     private final boolean streamCallbackSupported;
     private final List<EventMessage<?>> ignoredEvents = new CopyOnWriteArrayList<>();
-    private volatile Runnable onAvailableCallback = null;
+    private final Set<AsyncMessageStream> openStreams = new CopyOnWriteArraySet<>();
 
     /**
-     * Construct a default {@link AsyncInMemoryStreamableEventSource}. If stream callbacks should be supported for
-     * testing, use {@link AsyncInMemoryStreamableEventSource#AsyncInMemoryStreamableEventSource(boolean)}.
+     * Construct a default {@link AsyncInMemoryStreamableEventSource}. If stream callbacks should be supported for testing,
+     * use {@link AsyncInMemoryStreamableEventSource#AsyncInMemoryStreamableEventSource(boolean)}.
      */
     public AsyncInMemoryStreamableEventSource() {
         this(false);
@@ -83,30 +88,45 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
     @Override
     public MessageStream<EventMessage<?>> open(@Nonnull StreamingCondition condition) {
-        return new InMemoryMessageStream(condition);
-    }
-
-    @Override
-    public CompletableFuture<TrackingToken> headToken() {
-        if (events.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
-        }
-        return CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(0));
+        AsyncMessageStream stream = new AsyncMessageStream(condition);
+        openStreams.add(stream);
+        return stream;
     }
 
     @Override
     public CompletableFuture<TrackingToken> tailToken() {
-        if (events.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
-        }
-        return CompletableFuture.completedFuture(events.get(events.size() - 1).trackingToken);
+        return CompletableFuture.completedFuture(
+                eventStorage.isEmpty()
+                        ? null
+                        : new GlobalSequenceTrackingToken(eventStorage.firstKey() - 1)
+        );
+    }
+
+    @Override
+    public CompletableFuture<TrackingToken> headToken() {
+        return CompletableFuture.completedFuture(
+                eventStorage.isEmpty()
+                        ? null
+                        : new GlobalSequenceTrackingToken(eventStorage.lastKey())
+        );
     }
 
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
-        // For testing purposes, we'll return the tail token
-        // In a real implementation, this would find the token closest to the given instant
-        return tailToken();
+        return eventStorage.entrySet()
+                .stream()
+                .filter(positionToEventEntry -> {
+                    EventMessage<?> event = positionToEventEntry.getValue();
+                    Instant eventTimestamp = event.getTimestamp();
+                    return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
+                })
+                .map(Map.Entry::getKey)
+                .min(Comparator.comparingLong(Long::longValue))
+                .map(position -> position - 1)
+                .map(GlobalSequenceTrackingToken::new)
+                .map(tt -> (TrackingToken) tt)
+                .map(CompletableFuture::completedFuture)
+                .orElseGet(this::headToken);
     }
 
     /**
@@ -116,21 +136,19 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      * @param event The event to publish on this {@link StreamableEventSource}.
      */
     public synchronized void publishMessage(EventMessage<?> event) {
-        long nextSequence = sequenceNumber.incrementAndGet();
-        TrackingToken token = new GlobalSequenceTrackingToken(nextSequence);
-        StoredEvent storedEvent = new StoredEvent(event, token);
-        events.add(storedEvent);
+        long position = nextIndex.getAndIncrement();
+        eventStorage.put(position, event);
 
-        // Notify any listeners if callbacks are supported
-        if (streamCallbackSupported && onAvailableCallback != null) {
-            onAvailableCallback.run();
-        }
+        // Notify all open streams
+        openStreams.forEach(AsyncMessageStream::notifyEventAvailable);
     }
 
     /**
-     * Return a {@link List} of {@link EventMessage EventMessages} that have been ignored by the stream consumer.
+     * Return a {@link List} of {@link EventMessage EventMessages} that have been ignored by the stream
+     * consumer.
      *
-     * @return A {@link List} of {@link EventMessage EventMessages} that have been ignored by the stream consumer.
+     * @return A {@link List} of {@link EventMessage EventMessages} that have been ignored by the stream
+     * consumer.
      */
     public List<EventMessage<?>> getIgnoredEvents() {
         return Collections.unmodifiableList(ignoredEvents);
@@ -140,171 +158,135 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      * Manually toggles the callback that's triggered when new events are present.
      */
     public void runOnAvailableCallback() {
-        if (onAvailableCallback != null) {
-            onAvailableCallback.run();
-        }
+        openStreams.forEach(AsyncMessageStream::runCallback);
     }
 
     /**
-     * Clear all events from memory.
+     * Internal implementation of {@link MessageStream} that provides event streaming functionality.
      */
-    public synchronized void clearAllMessages() {
-        events.clear();
-        sequenceNumber.set(0);
-        ignoredEvents.clear();
-    }
+    private class AsyncMessageStream implements MessageStream<EventMessage<?>> {
 
-    /**
-     * Internal storage for events with their tracking tokens.
-     */
-    private static class StoredEvent {
-
-        final EventMessage<?> event;
-        final TrackingToken trackingToken;
-
-        StoredEvent(EventMessage<?> event, TrackingToken trackingToken) {
-            this.event = event;
-            this.trackingToken = trackingToken;
-        }
-    }
-
-    /**
-     * Simple Context implementation that can store resources.
-     */
-    private static class SimpleContext implements Context {
-
-        private final Map<Context.ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
-
-        @Override
-        public boolean containsResource(@Nonnull Context.ResourceKey<?> key) {
-            return resources.containsKey(key);
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> T getResource(@Nonnull Context.ResourceKey<T> key) {
-            return (T) resources.get(key);
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> SimpleContext withResource(@Nonnull Context.ResourceKey<T> key, @Nonnull T resource) {
-            SimpleContext newContext = new SimpleContext();
-            newContext.resources.putAll(this.resources);
-            newContext.resources.put(key, resource);
-            return newContext;
-        }
-    }
-
-    /**
-     * MessageStream implementation for in-memory event streaming.
-     */
-    private class InMemoryMessageStream implements MessageStream<EventMessage<?>> {
-
+        private final AtomicLong currentPosition;
+        private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
+        });
         private final StreamingCondition condition;
-        private volatile int currentIndex = 0;
         private volatile boolean closed = false;
-        private volatile Throwable error = null;
-        private volatile Runnable availabilityCallback;
 
-        InMemoryMessageStream(StreamingCondition condition) {
+        public AsyncMessageStream(StreamingCondition condition) {
             this.condition = condition;
 
-            // Find starting position based on tracking token
-            TrackingToken startPosition = condition.position();
-            if (startPosition != null) {
-                currentIndex = findStartingIndex(startPosition);
+            // Handle null tracking token properly
+            TrackingToken startToken = condition.position();
+            if (startToken == null) {
+                // Start from the beginning
+                this.currentPosition = new AtomicLong(0);
             } else {
-                currentIndex = 0;
+                // Start from the position after the given token
+                long tokenPosition = startToken.position().orElse(-1);
+                this.currentPosition = new AtomicLong(tokenPosition + 1);
             }
-        }
-
-        private int findStartingIndex(TrackingToken startPosition) {
-            if (startPosition instanceof GlobalSequenceTrackingToken globalToken) {
-                long position = globalToken.getGlobalIndex();
-                for (int i = 0; i < events.size(); i++) {
-                    if (events.get(i).trackingToken instanceof GlobalSequenceTrackingToken eventToken) {
-                        if (eventToken.getGlobalIndex() > position) {
-                            return i;
-                        }
-                    }
-                }
-                return events.size(); // Start at end if position is beyond all events
-            }
-            return 0;
         }
 
         @Override
-        public Optional<MessageStream.Entry<EventMessage<?>>> next() {
-            if (closed || error != null) {
+        public Optional<Entry<EventMessage<?>>> next() {
+            if (closed) {
                 return Optional.empty();
             }
 
-            while (currentIndex < events.size()) {
-                StoredEvent storedEvent = events.get(currentIndex);
-                currentIndex++;
+            // Find the next matching event
+            while (true) {
+                long position = currentPosition.get();
+                EventMessage<?> event = eventStorage.get(position);
 
-                // Check for failure simulation
-                if (FAIL_PAYLOAD.equals(storedEvent.event.getPayload())) {
-                    error = new IllegalStateException(
-                            "Cannot retrieve event at position [" + storedEvent.trackingToken + "].");
+                if (event == null) {
                     return Optional.empty();
                 }
 
-                // Apply filtering based on criteria - for now, assume havingAnyTag() means accept all
-                if (matchesCriteria(storedEvent.event)) {
-                    Context context = TrackingToken.addToContext(Context.empty(), storedEvent.trackingToken);
-                    return Optional.of(new SimpleEntry<>(storedEvent.event, context));
+                // Advance position for next call
+                currentPosition.incrementAndGet();
+
+                // Check for failure event
+                if (FAIL_PAYLOAD.equals(event.getPayload())) {
+                    throw new IllegalStateException("Cannot retrieve event at position [" + position + "].");
+                }
+
+                // Check if event matches the condition
+                if (matches(event, condition)) {
+                    // Create context with tracking token and tags
+                    Context context = Context.empty();
+                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position));
+                    context = Tag.addToContext(context, Collections.emptySet()); // No tags for simple events
+
+                    return Optional.of(new SimpleEntry<>(event, context));
                 } else {
-                    // Track ignored events
-                    ignoredEvents.add(storedEvent.event);
+                    // Event doesn't match, record as ignored and continue searching
+                    ignoredEvents.add(event);
                 }
             }
-
-            return Optional.empty();
-        }
-
-        private boolean matchesCriteria(EventMessage<?> event) {
-            // Since we're focusing on making tests work first and assuming havingAnyTag(),
-            // we'll accept all events for now. Real filtering implementation can be added later.
-            EventCriteria criteria = condition.criteria();
-
-            // If criteria has no actual criteria defined (like havingAnyTag()), accept all events
-            if (!criteria.hasCriteria()) {
-                return true;
-            }
-
-            // For more complex criteria, we would need to extract tags and type from the event
-            // For now, we'll accept all events to make tests pass
-            return true;
         }
 
         @Override
         public void onAvailable(@Nonnull Runnable callback) {
-            this.availabilityCallback = callback;
-            if (streamCallbackSupported) {
-                AsyncInMemoryStreamableEventSource.this.onAvailableCallback = callback;
+            this.callback.set(callback);
+            if (streamCallbackSupported && hasNextAvailable()) {
+                callback.run();
             }
         }
 
         @Override
         public Optional<Throwable> error() {
-            return Optional.ofNullable(error);
+            return Optional.empty();
         }
 
         @Override
         public boolean isCompleted() {
-            return closed || (currentIndex >= events.size() && error == null);
+            return closed;
         }
 
         @Override
         public boolean hasNextAvailable() {
-            return !closed && error == null && currentIndex < events.size();
+            if (closed) {
+                return false;
+            }
+
+            // Check if there's any matching event from current position onwards
+            long position = currentPosition.get();
+            return eventStorage.tailMap(position).values().stream()
+                    .anyMatch(event -> !FAIL_PAYLOAD.equals(event.getPayload()) && matches(event, condition));
         }
 
         @Override
         public void close() {
             closed = true;
+            openStreams.remove(this);
         }
+
+        public void notifyEventAvailable() {
+            if (!closed && streamCallbackSupported) {
+                Runnable currentCallback = callback.get();
+                if (currentCallback != null) {
+                    currentCallback.run();
+                }
+            }
+        }
+
+        public void runCallback() {
+            if (!closed) {
+                Runnable currentCallback = callback.get();
+                if (currentCallback != null) {
+                    currentCallback.run();
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks whether the given event matches the streaming condition.
+     * Similar to the match method in InMemoryEventStorageEngine.
+     */
+    private static boolean matches(EventMessage<?> event, StreamingCondition condition) {
+        QualifiedName qualifiedName = event.type().qualifiedName();
+        Set<Tag> tags = Collections.emptySet(); // Simple events have no tags
+        return condition.matches(qualifiedName, tags);
     }
 }
