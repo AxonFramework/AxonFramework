@@ -22,11 +22,15 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.StreamableMessageSource;
 
 import java.time.Instant;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -35,8 +39,6 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * This adapter allows legacy implementations to work with the new streaming API by:
  * <ul>
- *     <li>Converting synchronous token operations to asynchronous ones</li>
- *     <li>Mapping head/tail terminology (head=start, tail=end)</li>
  *     <li>Converting {@link BlockingStream} to {@link MessageStream}</li>
  *     <li>Handling {@link StreamingCondition} criteria filtering</li>
  * </ul>
@@ -45,6 +47,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Deprecated(since = "5.0.0")
 public class LegacyStreamableEventSource<E extends EventMessage<?>> implements StreamableEventSource<E> {
 
     private final StreamableMessageSource<E> delegate;
@@ -61,18 +64,7 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
     @Override
     public MessageStream<E> open(@Nonnull StreamingCondition condition) {
         TrackingToken position = condition.position();
-        try (var blockingStream = delegate.openStream(position)) {
-            return MessageStream.fromStream(blockingStream.asStream(), this::createEntryForMessage);
-        }
-        //         return MessageStream.fromStream(delegate.openStream(position).asStream(), this::createEntryForMessage);
-    }
-
-    private MessageStream.Entry<E> createEntryForMessage(E message) {
-        Context context = Context.empty();
-        if (message instanceof TrackedEventMessage<?> trackedMessage) {
-            context = TrackingToken.addToContext(context, trackedMessage.trackingToken());
-        }
-        return new SimpleEntry<>(message, context);
+        return new BlockingMessageStream<>(delegate.openStream(position), condition.criteria());
     }
 
     @Override
@@ -88,5 +80,84 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
         return delegate.tokenAt(at);
+    }
+
+    /**
+     * A {@code MessageStream} implementation backed by a {@link BlockingStream}. This implementation directly wraps the
+     * BlockingStream and handles filtering based on criteria.
+     *
+     * @param <E> The type of {@link EventMessage} in the stream.
+     */
+    private record BlockingMessageStream<E extends EventMessage<?>>(
+            BlockingStream<E> stream,
+            EventCriteria criteria
+    ) implements MessageStream<E> {
+
+        @Override
+        public Optional<Entry<E>> next() {
+            if (!stream.hasNextAvailable()) {
+                return Optional.empty();
+            }
+
+            try {
+                E message = stream.nextAvailable();
+                if (message == null) {
+                    return Optional.empty();
+                }
+
+                if (!matchesCriteria(message)) {
+                    return next();
+                }
+
+                Entry<E> entry = createEntryForMessage(message);
+                return Optional.of(entry);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return Optional.empty();
+            }
+        }
+
+        private boolean matchesCriteria(EventMessage<?> message) {
+            QualifiedName qualifiedName = message.type().qualifiedName();
+            return criteria.matches(qualifiedName, Set.of());
+        }
+
+        @Override
+        public void onAvailable(@Nonnull Runnable callback) {
+            stream.setOnAvailableCallback(callback);
+        }
+
+        @Override
+        public Optional<Throwable> error() {
+            // BlockingStream doesn't have an error reporting, so we return empty
+            return Optional.empty();
+        }
+
+        @Override
+        public boolean isCompleted() {
+            // A BlockingStream doesn't have a completion concept in the same way
+            // We can consider it completed if it has no more available messages
+            // This is a best-effort implementation
+            return !stream.hasNextAvailable() && stream.peek().isEmpty();
+        }
+
+        @Override
+        public boolean hasNextAvailable() {
+            return stream.hasNextAvailable();
+        }
+
+        @Override
+        public void close() {
+            stream.close();
+        }
+
+        private Entry<E> createEntryForMessage(E message) {
+            Context context = Context.empty();
+            if (message instanceof TrackedEventMessage<?> trackedMessage) {
+                context = TrackingToken.addToContext(context, trackedMessage.trackingToken());
+            }
+            context = context.withResource(Message.RESOURCE_KEY, message);
+            return new SimpleEntry<>(message, context);
+        }
     }
 }
