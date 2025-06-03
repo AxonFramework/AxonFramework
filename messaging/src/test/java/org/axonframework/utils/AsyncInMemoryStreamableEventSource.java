@@ -95,11 +95,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
     @Override
     public CompletableFuture<TrackingToken> tailToken() {
-        return CompletableFuture.completedFuture(
-                eventStorage.isEmpty()
-                        ? null
-                        : new GlobalSequenceTrackingToken(eventStorage.firstKey() - 1)
-        );
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -107,7 +103,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? null
-                        : new GlobalSequenceTrackingToken(eventStorage.lastKey())
+                        : new GlobalSequenceTrackingToken(eventStorage.lastKey() + 1)
         );
     }
 
@@ -175,6 +171,12 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         public AsyncMessageStream(StreamingCondition condition) {
             this.condition = condition;
 
+            // Handle null condition defensively (can happen with mocking)
+            if (condition == null) {
+                this.currentPosition = new AtomicLong(0);
+                return;
+            }
+
             // Handle null tracking token properly
             TrackingToken startToken = condition.position();
             if (startToken == null) {
@@ -213,8 +215,9 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 // Check if event matches the condition
                 if (matches(event, condition)) {
                     // Create context with tracking token and tags
+                    // Use position + 1 as tracking token (matching InMemoryStreamableEventSource behavior)
                     Context context = Context.empty();
-                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position));
+                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position + 1));
                     context = Tag.addToContext(context, Collections.emptySet()); // No tags for simple events
 
                     return Optional.of(new SimpleEntry<>(event, context));
@@ -285,6 +288,11 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      * Similar to the match method in InMemoryEventStorageEngine.
      */
     private static boolean matches(EventMessage<?> event, StreamingCondition condition) {
+        // Handle null condition (can happen with mocking)
+        if (condition == null) {
+            return true; // Accept all events if no condition
+        }
+
         QualifiedName qualifiedName = event.type().qualifiedName();
         Set<Tag> tags = Collections.emptySet(); // Simple events have no tags
         return condition.matches(qualifiedName, tags);
