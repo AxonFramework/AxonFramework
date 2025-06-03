@@ -19,9 +19,6 @@ package org.axonframework.axonserver.connector.event;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.event.DcbEventChannel;
-import io.axoniq.axonserver.grpc.event.dcb.GetHeadRequest;
-import io.axoniq.axonserver.grpc.event.dcb.GetSequenceAtRequest;
-import io.axoniq.axonserver.grpc.event.dcb.GetTailRequest;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
@@ -85,8 +82,8 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
             return CompletableFuture.completedFuture(EmptyAppendTransaction.INSTANCE);
         }
 
-        DcbEventChannel.AppendEventsTransaction appendTransaction = eventChannel().startTransaction();
-        appendTransaction.condition(ConditionConverter.convertAppendCondition(condition));
+        DcbEventChannel.AppendEventsTransaction appendTransaction =
+                eventChannel().startTransaction(ConditionConverter.convertAppendCondition(condition));
         events.stream()
               .map(converter::convertTaggedEventMessage)
               .forEach(taggedEvent -> {
@@ -129,7 +126,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
             logger.debug("Operation tailToken() is invoked.");
         }
 
-        return eventChannel().tail(GetTailRequest.newBuilder().build())
+        return eventChannel().tail()
                              .thenApply(response -> new GlobalSequenceTrackingToken(response.getSequence()));
     }
 
@@ -139,7 +136,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
             logger.debug("Operation headToken() is invoked.");
         }
 
-        return eventChannel().head(GetHeadRequest.newBuilder().build())
+        return eventChannel().head()
                              .thenApply(response -> new GlobalSequenceTrackingToken(response.getSequence()));
     }
 
@@ -149,10 +146,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
             logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
         }
 
-        GetSequenceAtRequest request = GetSequenceAtRequest.newBuilder()
-                                                           .setTimestamp(at.toEpochMilli())
-                                                           .build();
-        return eventChannel().getSequenceAt(request)
+        return eventChannel().getSequenceAt(at)
                              .thenApply(response -> new GlobalSequenceTrackingToken(response.getSequence()));
     }
 
