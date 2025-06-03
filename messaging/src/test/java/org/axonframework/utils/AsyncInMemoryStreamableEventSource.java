@@ -38,6 +38,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -73,6 +74,9 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     private final boolean streamCallbackSupported;
     private final List<EventMessage<?>> ignoredEvents = new CopyOnWriteArrayList<>();
     private final Set<AsyncMessageStream> openStreams = new CopyOnWriteArraySet<>();
+
+    // Track positions that have caused exceptions to enable recovery
+    private final Set<Long> failedPositions = ConcurrentHashMap.newKeySet();
 
     /**
      * Construct a default {@link AsyncInMemoryStreamableEventSource}. If stream callbacks should be supported for testing,
@@ -204,29 +208,38 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
             // Find the next matching event
             while (true) {
                 long position = currentPosition.get();
+
+                // Skip positions that have previously failed (enables recovery)
+                while (failedPositions.contains(position)) {
+                    position = currentPosition.incrementAndGet();
+                }
+
                 EventMessage<?> event = eventStorage.get(position);
 
                 if (event == null) {
                     return Optional.empty();
                 }
 
-                // Advance position for next call
+                // Advance position for next call - this MUST happen before any exception
                 currentPosition.incrementAndGet();
 
+                // Create context with tracking token and tags BEFORE checking for FAIL_EVENT
+                // This ensures proper token advancement even when exceptions occur
+                Context context = Context.empty();
+                context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position + 1));
+                context = Tag.addToContext(context, Collections.emptySet());
+
                 if (FAIL_PAYLOAD.equals(event.getPayload())) {
+                    // Mark this position as failed so future streams can skip it
+                    failedPositions.add(position);
+
                     IllegalStateException exception = new IllegalStateException(
                             "Cannot retrieve event at position [" + position + "].");
-                    throw exception;    // Throw for Coordinator's try-catch handling
+                    throw exception;
                 }
 
                 // Check if event matches the condition
                 if (matches(event, condition)) {
-                    // Create context with tracking token and tags
-                    // Use position + 1 as tracking token (matching InMemoryStreamableEventSource behavior)
-                    Context context = Context.empty();
-                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position + 1));
-                    context = Tag.addToContext(context, Collections.emptySet()); // No tags for simple events
-
                     return Optional.of(new SimpleEntry<>(event, context));
                 } else {
                     // Event doesn't match, record as ignored and continue searching
@@ -259,8 +272,11 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 return false;
             }
 
-            // Check if there's any event from current position onwards
+            // Check if there's any event from current position onwards, skipping failed positions
             long position = currentPosition.get();
+            while (failedPositions.contains(position)) {
+                position++;
+            }
             return eventStorage.containsKey(position);
         }
 
