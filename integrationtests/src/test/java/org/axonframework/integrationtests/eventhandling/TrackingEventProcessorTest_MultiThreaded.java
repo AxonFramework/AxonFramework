@@ -33,6 +33,7 @@ import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
+import org.axonframework.eventstreaming.LegacyStreamableEventSource;
 import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -100,7 +101,7 @@ class TrackingEventProcessorTest_MultiThreaded {
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                            .messageSource(eventBus)
+                                            .eventSource(new LegacyStreamableEventSource<>(eventBus))
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .trackingEventProcessorConfiguration(processorConfiguration)
@@ -453,7 +454,7 @@ class TrackingEventProcessorTest_MultiThreaded {
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                            .messageSource(eventBus)
+                                            .eventSource(new LegacyStreamableEventSource<>(eventBus))
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();

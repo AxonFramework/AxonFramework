@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
+import org.axonframework.eventstreaming.LegacyStreamableEventSource;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.Serializer;
@@ -99,7 +100,7 @@ public abstract class AbstractEventStoreBenchmark {
         this.eventProcessor = TrackingEventProcessor.builder()
                                                     .name("benchmark")
                                                     .eventHandlerInvoker(eventHandlerInvoker)
-                                                    .messageSource(eventStore)
+                                                    .eventSource(new LegacyStreamableEventSource<>(eventStore))
                                                     .tokenStore(new InMemoryTokenStore())
                                                     .transactionManager(NoTransactionManager.INSTANCE)
                                                     .build();
