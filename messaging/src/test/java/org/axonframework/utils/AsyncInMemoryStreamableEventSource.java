@@ -173,7 +173,6 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         });
         private final StreamingCondition condition;
         private volatile boolean closed = false;
-        private volatile Throwable error = null;
 
         public AsyncMessageStream(StreamingCondition condition) {
             this.condition = condition;
@@ -198,7 +197,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
         @Override
         public Optional<Entry<EventMessage<?>>> next() {
-            if (closed || error != null) {
+            if (closed) {
                 return Optional.empty();
             }
 
@@ -214,11 +213,9 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 // Advance position for next call
                 currentPosition.incrementAndGet();
 
-                // Check for failure event - both set error state AND throw exception
                 if (FAIL_PAYLOAD.equals(event.getPayload())) {
                     IllegalStateException exception = new IllegalStateException(
                             "Cannot retrieve event at position [" + position + "].");
-                    error = exception;  // Set error state for error() method
                     throw exception;    // Throw for Coordinator's try-catch handling
                 }
 
@@ -248,7 +245,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
         @Override
         public Optional<Throwable> error() {
-            return Optional.ofNullable(error);
+            return Optional.empty();
         }
 
         @Override
@@ -258,7 +255,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
         @Override
         public boolean hasNextAvailable() {
-            if (closed || error != null) {
+            if (closed) {
                 return false;
             }
 

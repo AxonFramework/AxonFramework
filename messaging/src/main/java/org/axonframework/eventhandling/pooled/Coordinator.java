@@ -1010,8 +1010,13 @@ class Coordinator {
             if (eventStream == null) {
                 return null;
             }
-            var next = eventStream.next();
-            return next.orElse(null);
+            try {
+                var next = eventStream.next();
+                return next.orElse(null);
+            } catch (Exception e) {
+                // Re-throw as RuntimeException to be caught by coordinateWorkPackages try-catch
+                throw new RuntimeException("Failed to read next event from stream", e);
+            }
         }
 
         /**
