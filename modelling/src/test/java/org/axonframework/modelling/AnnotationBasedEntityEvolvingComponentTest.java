@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.modelling;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SequenceNumber;
 import org.axonframework.eventhandling.Timestamp;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
-import org.axonframework.modelling.EntityEvolver;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -36,14 +36,15 @@ import java.time.ZoneId;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link AnnotationBasedEventSourcedComponent}.
+ * Test class validating the {@link AnnotationBasedEntityEvolvingComponent}.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class AnnotationBasedEventSourcedComponentTest {
+class AnnotationBasedEntityEvolvingComponentTest {
 
-    private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEventSourcedComponent<>(TestState.class);
+    private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolvingComponent<>(
+            TestState.class);
 
     @Nested
     class BasicEventHandling {
@@ -163,7 +164,7 @@ class AnnotationBasedEventSourcedComponentTest {
         @Test
         void doNotHandleNotDeclaredEventType() {
             // given
-            var eventSourcedComponent = new AnnotationBasedEventSourcedComponent<>(HandlingJustStringState.class);
+            var eventSourcedComponent = new AnnotationBasedEntityEvolvingComponent<>(HandlingJustStringState.class);
             var state = new HandlingJustStringState();
             var event = domainEvent(0);
 
@@ -201,7 +202,7 @@ class AnnotationBasedEventSourcedComponentTest {
                 return new RecordState("null");
             }
 
-            @EventSourcingHandler
+            @EventHandler
             RecordState evolve(
                     Integer payload
             ) {
@@ -209,7 +210,7 @@ class AnnotationBasedEventSourcedComponentTest {
             }
         }
 
-        private static final EntityEvolver<RecordState> ENTITY_EVOLVER = new AnnotationBasedEventSourcedComponent<>(
+        private static final EntityEvolver<RecordState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolvingComponent<>(
                 RecordState.class);
 
         @Test
@@ -245,7 +246,7 @@ class AnnotationBasedEventSourcedComponentTest {
         @Test
         void throwsStateEvolvingExceptionOnExceptionInsideEventHandler() {
             // given
-            var testSubject = new AnnotationBasedEventSourcedComponent<>(ErrorThrowingState.class);
+            var testSubject = new AnnotationBasedEntityEvolvingComponent<>(ErrorThrowingState.class);
             var state = new ErrorThrowingState();
             var event = domainEvent(0);
 
@@ -253,7 +254,7 @@ class AnnotationBasedEventSourcedComponentTest {
             var exception = assertThrows(StateEvolvingException.class,
                                          () -> testSubject.evolve(state, event, StubProcessingContext.forMessage(event)));
             assertEquals(
-                    "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponentTest$ErrorThrowingState] state",
+                    "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.modelling.AnnotationBasedEntityEvolvingComponentTest$ErrorThrowingState] state",
                     exception.getMessage()
             );
             assertInstanceOf(RuntimeException.class, exception.getCause());
@@ -297,7 +298,7 @@ class AnnotationBasedEventSourcedComponentTest {
         private int handledCount = 0;
         private boolean objectHandlerInvoked = false;
 
-        @EventSourcingHandler
+        @EventHandler
         void handle(
                 Object payload
         ) {
@@ -305,7 +306,7 @@ class AnnotationBasedEventSourcedComponentTest {
             this.handledCount++;
         }
 
-        @EventSourcingHandler
+        @EventHandler
         void handle(
                 Integer payload,
                 @MetaDataValue("sampleKey") String metadata,
@@ -325,7 +326,7 @@ class AnnotationBasedEventSourcedComponentTest {
     @SuppressWarnings("unused")
     private static class ErrorThrowingState {
 
-        @EventSourcingHandler
+        @EventHandler
         public void handle(Integer event) {
             throw new RuntimeException("Simulated error for event: " + event);
         }
@@ -336,7 +337,7 @@ class AnnotationBasedEventSourcedComponentTest {
 
         private int handledCount = 0;
 
-        @EventSourcingHandler
+        @EventHandler
         void handle(String event) {
             this.handledCount++;
         }

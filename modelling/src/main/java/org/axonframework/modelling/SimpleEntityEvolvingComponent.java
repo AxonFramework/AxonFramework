@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -22,7 +22,6 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.EntityEvolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +34,7 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Implementation of {@link EventSourcedComponent} that evolves a given event sourced {@code entity} of type {@code E}
+ * Implementation of {@link EntityEvolvingComponent} that evolves a given {@code entity} of type {@code E}
  * by searching a specific {@link EntityEvolver} based on the {@link QualifiedName} in the
  * {@link EventMessage#type() event's type}.
  *
@@ -44,20 +43,20 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class SimpleEventSourcedComponent<E> implements EventSourcedComponent<E>, DescribableComponent {
+public class SimpleEntityEvolvingComponent<E> implements EntityEvolvingComponent<E>, DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Map<QualifiedName, EntityEvolver<E>> entityEvolvers;
 
     /**
-     * Constructs a {@code SimpleEntityEvolvingComponent} that evolves an event sourced entity of type {@code e} through
+     * Constructs a {@code SimpleEntityEvolvingComponent} that evolves an entity of type {@code e} through
      * the given {@code entityEvolvers}.
      *
      * @param entityEvolvers The map of {@link EntityEvolver} instance to {@link QualifiedName} to evolve an entity
      *                       through.
      */
-    public SimpleEventSourcedComponent(@Nonnull Map<QualifiedName, EntityEvolver<E>> entityEvolvers) {
+    public SimpleEntityEvolvingComponent(@Nonnull Map<QualifiedName, EntityEvolver<E>> entityEvolvers) {
         this.entityEvolvers = new HashMap<>(requireNonNull(entityEvolvers, "The entity evolvers cannot be null."));
     }
 
@@ -65,23 +64,20 @@ public class SimpleEventSourcedComponent<E> implements EventSourcedComponent<E>,
     public E evolve(@Nonnull E entity,
                     @Nonnull EventMessage<?> event,
                     @Nonnull ProcessingContext context) {
-        QualifiedName eventName = requireNonNull(event, "The event must not be null.").type().qualifiedName();
+        QualifiedName eventName = event.type().qualifiedName();
         EntityEvolver<E> entityEvolver = entityEvolvers.get(eventName);
 
         if (entityEvolver == null) {
             logger.debug(
-                    "Returning event sourced entity as is since we could not find an entity evolver for named event [{}].",
+                    "Returning the entity as-is since we could not find an entity evolver for named event [{}].",
                     eventName
             );
             return entity;
         }
-        return entityEvolver.evolve(
-                requireNonNull(entity, "The entity must not be null."),
-                event,
-                requireNonNull(context, "The processing context must not be null.")
-        );
+        return entityEvolver.evolve(entity, event, context);
     }
 
+    @Nonnull
     @Override
     public Set<QualifiedName> supportedEvents() {
         return Set.copyOf(entityEvolvers.keySet());
@@ -89,7 +85,6 @@ public class SimpleEventSourcedComponent<E> implements EventSourcedComponent<E>,
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        requireNonNull(descriptor, "The component descriptor must not be null.")
-                .describeProperty("delegates", Collections.unmodifiableMap(entityEvolvers));
+        descriptor.describeProperty("delegates", Collections.unmodifiableMap(entityEvolvers));
     }
 }
