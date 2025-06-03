@@ -222,9 +222,9 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 // Check if event matches the condition
                 if (matches(event, condition)) {
                     // Create context with tracking token and tags
-                    // Use position + 1 as tracking token (matching InMemoryStreamableEventSource behavior)
+                    // Use current position as tracking token (the position of this event)
                     Context context = Context.empty();
-                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position + 1));
+                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position));
                     context = Tag.addToContext(context, Collections.emptySet()); // No tags for simple events
 
                     return Optional.of(new SimpleEntry<>(event, context));
