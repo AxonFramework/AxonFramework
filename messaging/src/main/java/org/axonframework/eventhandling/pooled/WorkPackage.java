@@ -181,8 +181,7 @@ class WorkPackage {
         BatchProcessingEntry batchProcessingEntry = new BatchProcessingEntry();
         boolean canHandleAny = eventEntries.stream()
                                            .map(eventEntry -> {
-                                               LegacyMessageSupportingContext context = new LegacyMessageSupportingContext(
-                                                       eventEntry.message());
+                                               var context = new LegacyMessageSupportingContext(eventEntry.message());
                                                boolean canHandle = canHandle(eventEntry.message(), context);
                                                batchProcessingEntry.add(new DefaultProcessingEntry(eventEntry,
                                                                                                    canHandle));
@@ -238,7 +237,7 @@ class WorkPackage {
                      eventToken != null ? eventToken.position().orElse(-1) : -1,
                      segment.getSegmentId());
 
-        ProcessingContext context = new LegacyMessageSupportingContext(eventEntry.message());
+        var context = new LegacyMessageSupportingContext(eventEntry.message());
         boolean canHandle = canHandle(eventEntry.message(), context);
         processingQueue.add(new DefaultProcessingEntry(eventEntry, canHandle));
         lastDeliveredToken = eventToken;
@@ -766,11 +765,9 @@ class WorkPackage {
         @Override
         public void addToBatch(List<EventMessage<?>> eventBatch, TrackingToken wrappedToken) {
             if (canHandle) {
-                // Create a new event message with the wrapped token context
-                EventMessage<?> eventMessage = eventEntry.message().withMetaData(eventEntry.message().getMetaData());
-                // Note: We need to maintain the wrapped token in the context for proper tracking
-                // The actual implementation may vary depending on how tracking tokens are propagated
-                eventBatch.add(eventMessage);
+                // Simply add the original message to the batch
+                // The wrappedToken is handled at the UnitOfWork level, not per message
+                eventBatch.add(eventEntry.message());
             }
         }
     }
