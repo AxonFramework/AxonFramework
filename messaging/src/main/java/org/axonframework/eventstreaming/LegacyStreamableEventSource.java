@@ -17,7 +17,6 @@
 package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -29,8 +28,6 @@ import org.axonframework.messaging.StreamableMessageSource;
 
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 /**
  * Adapter implementation that translates from the deprecated {@link StreamableMessageSource} interface to the new
@@ -51,35 +48,14 @@ import java.util.concurrent.Executors;
 public class LegacyStreamableEventSource<E extends EventMessage<?>> implements StreamableEventSource<E> {
 
     private final StreamableMessageSource<E> delegate;
-    private final Executor executor;
 
     /**
      * Creates a new {@code LegacyStreamableEventSource} that adapts the given {@code delegate}.
-     * <p>
-     * Uses a default executor optimized for I/O operations with virtual threads (Java 21+) or a cached thread pool for
-     * earlier Java versions.
      *
      * @param delegate The {@link StreamableMessageSource} to adapt.
      */
     public LegacyStreamableEventSource(@Nonnull StreamableMessageSource<E> delegate) {
-        this(delegate, null);
-    }
-
-    /**
-     * Creates a new {@code LegacyStreamableEventSource} that adapts the given {@code delegate} using the specified
-     * {@code executor} for asynchronous token operations.
-     * <p>
-     * It's recommended to use an executor suitable for potentially blocking I/O operations, such as a cached thread
-     * pool or virtual thread executor.
-     *
-     * @param delegate The {@link StreamableMessageSource} to adapt.
-     * @param executor The {@link Executor} to use for async operations. If {@code null}, a default I/O-optimized
-     *                 executor will be created.
-     */
-    public LegacyStreamableEventSource(@Nonnull StreamableMessageSource<E> delegate,
-                                       @Nullable Executor executor) {
         this.delegate = delegate;
-        this.executor = executor != null ? executor : Executors.newVirtualThreadPerTaskExecutor();
     }
 
     @Override
@@ -88,9 +64,9 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
         try (var blockingStream = delegate.openStream(position)) {
             return MessageStream.fromStream(blockingStream.asStream(), this::createEntryForMessage);
         }
+        //         return MessageStream.fromStream(delegate.openStream(position).asStream(), this::createEntryForMessage);
     }
 
-    // todo: is it needed?
     private MessageStream.Entry<E> createEntryForMessage(E message) {
         Context context = Context.empty();
         if (message instanceof TrackedEventMessage<?> trackedMessage) {
@@ -101,37 +77,16 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
 
     @Override
     public CompletableFuture<TrackingToken> headToken() {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return delegate.createHeadToken();
-            } catch (UnsupportedOperationException e) {
-                // Re-throw as the new interface expects this to be supported
-                throw new UnsupportedOperationException("Delegate does not support head token creation", e);
-            }
-        }, executor);
+        return delegate.headToken();
     }
 
     @Override
     public CompletableFuture<TrackingToken> tailToken() {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return delegate.createTailToken();
-            } catch (UnsupportedOperationException e) {
-                // If the delegate doesn't support tail token creation, return null (default behavior)
-                return null;
-            }
-        }, executor);
+        return delegate.tailToken();
     }
-
 
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return delegate.createTokenAt(at);
-            } catch (UnsupportedOperationException e) {
-                throw new UnsupportedOperationException("Delegate does not support time-based token creation", e);
-            }
-        }, executor);
+        return delegate.tokenAt(at);
     }
 }

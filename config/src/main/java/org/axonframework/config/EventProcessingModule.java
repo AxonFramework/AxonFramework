@@ -1006,7 +1006,7 @@ public class EventProcessingModule
                                              .eventHandlerInvoker(eventHandlerInvoker)
                                              .errorHandler(errorHandler(name))
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
-                                             .eventSource(new LegacyStreamableEventSource(messageSource))
+                                             .eventSource(new LegacyStreamableEventSource<>(messageSource))
                                              .tokenStore(tokenStore(name))
                                              .transactionManager(transactionManager(name))
                                              .coordinatorExecutor(processorName -> {
