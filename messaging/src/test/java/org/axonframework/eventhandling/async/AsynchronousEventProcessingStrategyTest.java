@@ -88,7 +88,7 @@ class AsynchronousEventProcessingStrategyTest {
             return null;
         }).when(processor).accept(anyList());
 
-        new LegacyDefaultUnitOfWork<>(null).execute(() -> {
+        new LegacyDefaultUnitOfWork<>(null).execute((ctx) -> {
             testSubject.handle(Collections.singletonList(event1), processor);
             testSubject.handle(Collections.singletonList(event2), processor);
         });

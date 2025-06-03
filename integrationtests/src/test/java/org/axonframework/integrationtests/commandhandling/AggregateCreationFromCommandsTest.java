@@ -76,7 +76,7 @@ class AggregateCreationFromCommandsTest {
                 new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
         CompletableFuture<? extends Message<?>> dispatchingResult =
-                commandBus.dispatch(testCommand, ProcessingContext.NONE);
+                commandBus.dispatch(testCommand, null);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -95,8 +95,7 @@ class AggregateCreationFromCommandsTest {
         CommandMessage<StubAggregateForCreation.CreateIfMissingCommand> testCommand =
                 new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
-        CompletableFuture<? extends Message<?>> dispatchingResult =
-                commandBus.dispatch(testCommand, ProcessingContext.NONE);
+        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(testCommand, null);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -115,8 +114,7 @@ class AggregateCreationFromCommandsTest {
         CommandMessage<StubAggregateForCreation.CreateAlwaysCommand> testCommand =
                 new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
-        CompletableFuture<? extends Message<?>> dispatchingResult =
-                commandBus.dispatch(testCommand, ProcessingContext.NONE);
+        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(testCommand, null);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -136,8 +134,7 @@ class AggregateCreationFromCommandsTest {
         GenericCommandMessage<StubAggregateForCreation.CreateIfMissingCommand> testCommand =
                 new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
-        CompletableFuture<? extends Message<?>> dispatchingResult =
-                commandBus.dispatch(testCommand, ProcessingContext.NONE);
+        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(testCommand, null);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()

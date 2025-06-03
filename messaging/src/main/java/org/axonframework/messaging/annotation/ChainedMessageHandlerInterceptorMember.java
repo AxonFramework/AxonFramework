@@ -56,39 +56,42 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
 
     @Override
     public MessageStream<?> handle(@Nonnull Message<?> message,
-                                   @Nonnull ProcessingContext processingContext,
+                                   @Nonnull ProcessingContext context,
                                    @Nonnull T target,
                                    @Nonnull MessageHandlingMember<? super T> handler) {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
-                processingContext,
-                () -> next.handle(message, processingContext, target, handler),
-                (pc) -> doHandle(message, pc, target, handler)
+                context,
+                (ctx) -> next.handle(message, ctx, target, handler),
+                (ctx) -> doHandle(message, ctx, target, handler)
         );
     }
 
     private MessageStream<?> doHandle(Message<?> message,
-                                      ProcessingContext processingContext,
+                                      ProcessingContext context,
                                       T target,
                                       MessageHandlingMember<? super T> handler) {
-        return delegate.canHandle(message, processingContext)
-                ? delegate.handle(message, processingContext, target)
-                : next.handle(message, processingContext, target, handler);
+        return delegate.canHandle(message, context)
+                ? delegate.handle(message, context, target)
+                : next.handle(message, context, target, handler);
     }
 
     @Override
     public Object handleSync(@Nonnull Message<?> message,
+                             @Nonnull ProcessingContext context,
                              @Nonnull T target,
                              @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChainSync(
-                () -> next.handleSync(message, target, handler),
-                () -> doHandleSync(message, target, handler)
+                (ctx) -> next.handleSync(message, ctx, target, handler),
+                () -> doHandleSync(message, context, target, handler)
         );
     }
 
-    private Object doHandleSync(Message<?> message, T target, MessageHandlingMember<? super T> handler)
+    private Object doHandleSync(Message<?> message,
+                                ProcessingContext context,
+                                T target, MessageHandlingMember<? super T> handler)
             throws Exception {
-        return delegate.canHandle(message, null)
-                ? delegate.handleSync(message, target)
-                : next.handleSync(message, target, handler);
+        return delegate.canHandle(message, context)
+                ? delegate.handleSync(message, context, target)
+                : next.handleSync(message, context, target, handler);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,9 +80,9 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     }
 
     @Override
-    public void handle(@Nonnull EventMessage<?> event, ProcessingContext processingContext, @Nonnull Segment segment)
+    public void handle(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context, @Nonnull Segment segment)
             throws Exception {
-        Set<AssociationValue> associationValues = extractAssociationValues(event);
+        Set<AssociationValue> associationValues = extractAssociationValues(event, context);
         List<String> sagaIds =
                 associationValues.stream()
                                  .flatMap(associationValue -> sagaRepository.find(associationValue).stream())
@@ -97,13 +97,13 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         boolean sagaMatchesOtherSegment = sagaIds.stream().anyMatch(sagaId -> !matchesSegment(segment, sagaId));
         boolean sagaOfTypeInvoked = false;
         for (Saga<T> saga : sagas) {
-            if (doInvokeSaga(event, saga)) {
+            if (doInvokeSaga(event, context, saga)) {
                 sagaOfTypeInvoked = true;
             }
         }
-        SagaInitializationPolicy initializationPolicy = getSagaCreationPolicy(event);
+        SagaInitializationPolicy initializationPolicy = getSagaCreationPolicy(event, context);
         if (shouldCreateSaga(segment, sagaOfTypeInvoked || sagaMatchesOtherSegment, initializationPolicy)) {
-            startNewSaga(event, initializationPolicy.getInitialAssociationValue(), segment);
+            startNewSaga(event, context, initializationPolicy.getInitialAssociationValue(), segment);
         }
     }
 
@@ -114,13 +114,16 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
                 && segment.matches(initializationPolicy.getInitialAssociationValue());
     }
 
-    private void startNewSaga(EventMessage<?> event, AssociationValue associationValue, Segment segment)
-            throws Exception {
+    private void startNewSaga(EventMessage<?> event,
+                              ProcessingContext context,
+                              AssociationValue associationValue,
+                              Segment segment
+    ) throws Exception {
         String sagaIdentifier = createSagaIdentifier(segment);
         spanFactory.createCreateSagaInstanceSpan(event, sagaType, sagaIdentifier).runCallable(() -> {
             Saga<T> newSaga = sagaRepository.createInstance(sagaIdentifier, sagaFactory);
             newSaga.getAssociationValues().add(associationValue);
-            doInvokeSaga(event, newSaga);
+            doInvokeSaga(event, context, newSaga);
             return null;
         });
     }
@@ -161,25 +164,27 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
      * Returns the Saga Initialization Policy for a Saga of the given {@code sagaType} and {@code event}. This policy
      * provides the conditions to create new Saga instance, as well as the initial association of that saga.
      *
-     * @param event The Event that is being dispatched to Saga instances
-     * @return the initialization policy for the Saga
+     * @param event   The Event that is being dispatched to Saga instances.
+     * @param context The {@link ProcessingContext} in which the event is being processed.
+     * @return The initialization policy for the Saga.
      */
-    protected abstract SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event);
+    protected abstract SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event, ProcessingContext context);
 
     /**
      * Extracts the AssociationValues from the given {@code event} as relevant for a Saga of given {@code sagaType}. A
      * single event may be associated with multiple values.
      *
-     * @param event The event containing the association information
-     * @return the AssociationValues indicating which Sagas should handle given event
+     * @param event   The event containing the association information.
+     * @param context The {@link ProcessingContext} in which the event is being processed.
+     * @return The AssociationValues indicating which Sagas should handle given event.
      */
-    protected abstract Set<AssociationValue> extractAssociationValues(EventMessage<?> event);
+    protected abstract Set<AssociationValue> extractAssociationValues(EventMessage<?> event, ProcessingContext context);
 
-    private boolean doInvokeSaga(EventMessage<?> event, Saga<T> saga) throws Exception {
-        if (saga.canHandle(event)) {
+    private boolean doInvokeSaga(EventMessage<?> event, ProcessingContext context, Saga<T> saga) throws Exception {
+        if (saga.canHandle(event, context)) {
             Span span = spanFactory.createInvokeSagaSpan(event, sagaType, saga).start();
             try (SpanScope unused = span.makeCurrent()) {
-                saga.handleSync(event);
+                saga.handleSync(event, context);
             } catch (Exception e) {
                 span.recordException(e);
                 listenerInvocationErrorHandler.onError(e, event, saga);
@@ -206,17 +211,17 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     }
 
     @Override
-    public void performReset(ProcessingContext processingContext) {
-        performReset(null, processingContext);
+    public void performReset(ProcessingContext context) {
+        performReset(null, context);
     }
 
     @Override
-    public void performReset(Object resetContext, ProcessingContext processingContext) {
+    public void performReset(Object resetContext, ProcessingContext context) {
         throw new ResetNotSupportedException("Sagas do no support resetting tokens");
     }
 
     @Override
-    public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+    public void send(Message<?> message, ProcessingContext context, ScopeDescriptor scopeDescription) throws Exception {
         if (!(message instanceof EventMessage)) {
             String exceptionMessage = String.format(
                     "Something else than an EventMessage was scheduled for Saga of type [%s], "
@@ -230,7 +235,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
             String sagaIdentifier = ((SagaScopeDescriptor) scopeDescription).getIdentifier().toString();
             Saga<T> saga = sagaRepository.load(sagaIdentifier);
             if (saga != null) {
-                saga.handleSync((EventMessage<?>) message);
+                saga.handleSync((EventMessage<?>) message, context);
             } else {
                 logger.debug("Saga (with id: [{}]) cannot be loaded, as it most likely already ended."
                                      + " Hence, message [{}] cannot be handled.", sagaIdentifier, message);

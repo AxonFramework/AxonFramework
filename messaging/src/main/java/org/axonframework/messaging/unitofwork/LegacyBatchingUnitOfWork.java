@@ -28,7 +28,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -80,7 +79,7 @@ public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLega
      * the last executed task.
      */
     @Override
-    public <R> ResultMessage<R> executeWithResult(Callable<R> task,
+    public <R> ResultMessage<R> executeWithResult(ProcessingContextCallable<R> task,
                                                   @Nonnull RollbackConfiguration rollbackConfiguration) {
         if (phase() == Phase.NOT_STARTED) {
             start();
@@ -94,7 +93,7 @@ public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLega
             this.processingContext = processingContext;
             try {
                 //noinspection DuplicatedCode
-                result = task.call();
+                result = task.call(new LegacyMessageSupportingContext(processingContext.getMessage()));
                 if (result instanceof ResultMessage) {
                     //noinspection unchecked
                     resultMessage = (ResultMessage<R>) result;

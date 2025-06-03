@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 
 import java.lang.reflect.Executable;
@@ -52,5 +54,7 @@ public interface ParameterResolverFactory {
      * @param parameterIndex The index of the parameter to return a ParameterResolver for
      * @return a suitable ParameterResolver, or {@code null} if none is found
      */
-    ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex);
+    @Nullable
+    ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
+                                     int parameterIndex);
 }

@@ -30,8 +30,8 @@ import org.mockito.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 import static org.junit.jupiter.api.Assertions.*;
@@ -100,27 +100,27 @@ class AbstractUnitOfWorkTest {
 
     @Test
     void executeTask() {
-        Runnable task = mock(Runnable.class);
-        doNothing().when(task).run();
+        Consumer task = mock(Consumer.class);
+        doNothing().when(task).accept(any());
         subject.execute(task);
         InOrder inOrder = inOrder(task, subject);
         inOrder.verify(subject).start();
-        inOrder.verify(task).run();
+        inOrder.verify(task).accept(any());
         inOrder.verify(subject).commit();
         assertFalse(subject.isActive());
     }
 
     @Test
     void executeFailingTask() {
-        Runnable task = mock(Runnable.class);
+        Consumer task = mock(Consumer.class);
         MockException mockException = new MockException();
-        doThrow(mockException).when(task).run();
+        doThrow(mockException).when(task).accept(any());
         try {
             subject.execute(task);
         } catch (MockException e) {
             InOrder inOrder = inOrder(task, subject);
             inOrder.verify(subject).start();
-            inOrder.verify(task).run();
+            inOrder.verify(task).accept(any());
             inOrder.verify(subject).rollback(e);
             assertNotNull(subject.getExecutionResult());
             assertSame(mockException, subject.getExecutionResult().getExceptionResult());
@@ -132,12 +132,12 @@ class AbstractUnitOfWorkTest {
     @Test
     void executeTaskWithResult() throws Exception {
         Object taskResult = new Object();
-        Callable<Object> task = mock(Callable.class);
-        when(task.call()).thenReturn(taskResult);
+        LegacyUnitOfWork.ProcessingContextCallable<Object> task = mock(LegacyUnitOfWork.ProcessingContextCallable.class);
+        when(task.call(any())).thenReturn(taskResult);
         ResultMessage result = subject.executeWithResult(task);
         InOrder inOrder = inOrder(task, subject);
         inOrder.verify(subject).start();
-        inOrder.verify(task).call();
+        inOrder.verify(task).call(any());
         inOrder.verify(subject).commit();
         assertFalse(subject.isActive());
         assertSame(taskResult, result.getPayload());
@@ -148,8 +148,8 @@ class AbstractUnitOfWorkTest {
     @Test
     void executeTaskReturnsResultMessage() throws Exception {
         ResultMessage<Object> resultMessage = asResultMessage(new Object());
-        Callable<ResultMessage<Object>> task = mock(Callable.class);
-        when(task.call()).thenReturn(resultMessage);
+        LegacyUnitOfWork.ProcessingContextCallable<ResultMessage<Object>> task = mock(LegacyUnitOfWork.ProcessingContextCallable.class);
+        when(task.call(any())).thenReturn(resultMessage);
         ResultMessage actualResultMessage = subject.executeWithResult(task);
         assertSame(resultMessage, actualResultMessage);
     }
