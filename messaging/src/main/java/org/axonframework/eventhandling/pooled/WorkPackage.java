@@ -734,13 +734,6 @@ class WorkPackage {
         TrackingToken trackingToken();
 
         /**
-         * The {@link ProcessingContext} in which this event will be handled.
-         *
-         * @return The {@link ProcessingContext} in which this event will be handled.
-         */
-        ProcessingContext context();
-
-        /**
          * Add this entry's events to the {@code eventBatch}. The events should reference the {@code wrappedToken} for
          * correctly handling token progression.
          *
@@ -758,7 +751,6 @@ class WorkPackage {
     private static class DefaultProcessingEntry implements ProcessingEntry {
 
         private final MessageStream.Entry<? extends EventMessage<?>> eventEntry;
-        private final ProcessingContext context;
         private final boolean canHandle;
 
         public DefaultProcessingEntry(MessageStream.Entry<? extends EventMessage<?>> eventEntry, boolean canHandle) {
@@ -766,16 +758,9 @@ class WorkPackage {
             this.canHandle = canHandle;
         }
 
-        public DefaultProcessingEntry(EventMessage<?> message, boolean canHandle) {}
-
         @Override
         public TrackingToken trackingToken() {
             return TrackingToken.fromContext(eventEntry).orElse(null);
-        }
-
-        @Override
-        public ProcessingContext context() {
-            return null;
         }
 
         @Override
