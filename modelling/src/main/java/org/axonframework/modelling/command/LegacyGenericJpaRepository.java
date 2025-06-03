@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -32,7 +33,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -75,7 +75,7 @@ public class LegacyGenericJpaRepository<T> extends LegacyLockingRepository<T, An
     private boolean forceFlushOnSave = true;
 
     /**
-     * Instantiate a Builder to be able to create a {@link LegacyGenericJpaRepository} for aggregate type {@code T}.
+     * Instantiate a Builder to be able to create a {@code LegacyGenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, the
      * {@code identifierConverter} to {@link Function#identity()}, the {@link RepositorySpanFactory} is defaulted to a
@@ -93,27 +93,27 @@ public class LegacyGenericJpaRepository<T> extends LegacyLockingRepository<T, An
      *
      * @param <T>           The type of aggregate to build the repository for
      * @param aggregateType The type of aggregate to build the repository for
-     * @return a Builder to be able to create a {@link LegacyGenericJpaRepository}
+     * @return a Builder to be able to create a {@code LegacyGenericJpaRepository}
      */
     public static <T> Builder<T> builder(Class<T> aggregateType) {
         return new Builder<>(aggregateType);
     }
 
     /**
-     * Instantiate a {@link LegacyGenericJpaRepository} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code LegacyGenericJpaRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
-     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type.
-     * To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
+     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
+     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
      * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
      * <p>
      * Additionally will assert that the {@link LockFactory}, {@link EntityManagerProvider}, {@link EventBus} and
      * {@code identifierConverter} are not {@code null}, resulting in an AxonConfigurationException if for any of these
      * this is the case.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link LegacyGenericJpaRepository} instance
+     * @param builder the {@link Builder} used to instantiate a {@code LegacyGenericJpaRepository} instance
      */
     protected LegacyGenericJpaRepository(Builder<T> builder) {
         super(builder);
@@ -125,7 +125,7 @@ public class LegacyGenericJpaRepository<T> extends LegacyLockingRepository<T, An
     }
 
     @Override
-    protected AnnotatedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
+    protected AnnotatedAggregate<T> doLoadWithLock(String aggregateIdentifier) {
         T aggregateRoot = entityManagerProvider.getEntityManager().find(getAggregateType(),
                                                                         identifierConverter.apply(aggregateIdentifier),
                                                                         LockModeType.PESSIMISTIC_WRITE);

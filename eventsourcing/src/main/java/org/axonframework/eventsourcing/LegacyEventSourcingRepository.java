@@ -116,13 +116,12 @@ public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T,
      * Perform the actual loading of an aggregate. The necessary locks have been obtained.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
-     * @param expectedVersion     The expected version of the loaded aggregate
      * @return the fully initialized aggregate
      * @throws AggregateDeletedException  in case an aggregate existed in the past, but has been deleted
      * @throws AggregateNotFoundException when an aggregate with the given identifier does not exist
      */
     @Override
-    protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
+    protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier) {
         SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
         DomainEventStream eventStream = readEvents(aggregateIdentifier);
         if (!eventStream.hasNext()) {

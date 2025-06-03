@@ -17,7 +17,6 @@
 package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.repository.Repository;
@@ -28,8 +27,7 @@ import java.util.function.Consumer;
 /**
  * The {@link LegacyRepository} provides an abstraction of the storage of aggregates.
  * <p>
- * When interacting with the {@code Repository} the framework expects an active
- * {@link LegacyUnitOfWork} containing a
+ * When interacting with the {@code Repository} the framework expects an active {@link LegacyUnitOfWork} containing a
  * {@link org.axonframework.commandhandling.CommandMessage} implementation on the invoking thread to be present. If
  * there is no active {@code UnitOfWork} an {@link IllegalStateException} is thrown.
  *
@@ -52,33 +50,18 @@ public interface LegacyRepository<T> extends ScopeAware {
     Aggregate<T> load(@Nonnull String aggregateIdentifier);
 
     /**
-     * Load the aggregate with the given unique identifier.
-     *
-     * @param aggregateIdentifier The identifier of the aggregate to load
-     * @param expectedVersion     The expected version of the loaded aggregate
-     * @return The aggregate root with the given identifier.
-     * @throws AggregateNotFoundException if aggregate with given id cannot be found
-     * @deprecated Aggregate versioning will completely be removed from 5.0.0, as it does not align with the adjusted
-     * sequencing approach of a DCB-supporting event store at the moment.
-     */
-    Aggregate<T> load(@Nonnull String aggregateIdentifier,
-                      @Deprecated(since = "5.0.0") @Nullable Long expectedVersion);
-
-    /**
-     * Creates a new managed instance for the aggregate, using the given {@code factoryMethod}
-     * to instantiate the aggregate's root.
+     * Creates a new managed instance for the aggregate, using the given {@code factoryMethod} to instantiate the
+     * aggregate's root.
      *
      * @param factoryMethod The method to create the aggregate's root instance
      * @return an Aggregate instance describing the aggregate's state
-     *
      * @throws Exception when the factoryMethod throws an exception
      */
     Aggregate<T> newInstance(@Nonnull Callable<T> factoryMethod) throws Exception;
 
     /**
      * Creates a new managed instance for the aggregate, using the given {@code factoryMethod} to instantiate the
-     * aggregate's root, and then applying the {@code initMethod} consumer to it to perform additional
-     * initialization.
+     * aggregate's root, and then applying the {@code initMethod} consumer to it to perform additional initialization.
      *
      * @param factoryMethod The method to create the aggregate's root instance
      * @param initMethod    The consumer to initialize the aggregate instance further
@@ -93,8 +76,7 @@ public interface LegacyRepository<T> extends ScopeAware {
 
     /**
      * Loads an aggregate from the repository. If the aggregate is not found it creates the aggregate using the
-     * specified
-     * {@code factoryMethod}.
+     * specified {@code factoryMethod}.
      *
      * @param aggregateIdentifier The identifier of the aggregate to load
      * @param factoryMethod       The method to create the aggregate's root instance

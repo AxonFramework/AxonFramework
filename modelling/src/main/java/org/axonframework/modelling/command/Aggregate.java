@@ -32,16 +32,16 @@ import java.util.function.Function;
  * <p>
  * When a command is dispatched to an aggregate Axon will load the aggregate instance and invoke the related command
  * handler method. It is rarely necessary to interact with {@link Aggregate aggregates} directly. Though it is not
- * recommended it is possible to invoke methods on the wrapped instance using {@link #invoke(Function)} and {@link
- * #execute(Consumer)}.
+ * recommended it is possible to invoke methods on the wrapped instance using {@link #invoke(Function)} and
+ * {@link #execute(Consumer)}.
  *
  * @param <T> The aggregate root type
  */
 public interface Aggregate<T> {
 
     /**
-     * Get the String representation of the aggregate's type. This defaults to the simple name of the {@link
-     * #rootType()} unless configured otherwise.
+     * Get the String representation of the aggregate's type. This defaults to the simple name of the
+     * {@link #rootType()} unless configured otherwise.
      *
      * @return The aggregate's type
      */
@@ -86,8 +86,8 @@ public interface Aggregate<T> {
     Object handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) throws Exception;
 
     /**
-     * Invoke a method on the underlying aggregate root or one of its instances. Use this over {@link
-     * #execute(Consumer)} to obtain an invocation result, for instance in order to query the aggregate.
+     * Invoke a method on the underlying aggregate root or one of its instances. Use this over
+     * {@link #execute(Consumer)} to obtain an invocation result, for instance in order to query the aggregate.
      * <p>
      * Note that the use of this method is not recommended as aggregates are not meant to be queried. Relying on this
      * method is commonly a sign of design smell.
@@ -101,8 +101,8 @@ public interface Aggregate<T> {
     /**
      * Execute a method on the underlying aggregate or one of its instances.
      * <p>
-     * Note that the use of this method is not recommended as the wrapped aggregate instance is not meant to be
-     * exposed. Relying on this method is commonly a sign of design smell.
+     * Note that the use of this method is not recommended as the wrapped aggregate instance is not meant to be exposed.
+     * Relying on this method is commonly a sign of design smell.
      *
      * @param invocation The function that performs the invocation
      */
@@ -110,8 +110,8 @@ public interface Aggregate<T> {
 
     /**
      * Check if this aggregate has been deleted. This is checked by aggregate repositories when an aggregate is loaded.
-     * In case the repository is asked to load a deleted aggregate the repository will refuse by throwing an {@link
-     * org.axonframework.eventsourcing.AggregateDeletedException}.
+     * In case the repository is asked to load a deleted aggregate the repository will refuse by throwing an
+     * {@link org.axonframework.eventsourcing.AggregateDeletedException}.
      *
      * @return {@code true} in case the aggregate was deleted, {@code false} otherwise
      */
