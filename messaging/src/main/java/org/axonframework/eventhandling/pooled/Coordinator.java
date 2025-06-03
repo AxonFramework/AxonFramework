@@ -713,6 +713,7 @@ class Coordinator {
         private TrackingToken lastScheduledToken = NoToken.INSTANCE;
         private boolean availabilityCallbackSupported;
         private long unclaimedSegmentValidationThreshold;
+        private MessageStream.Entry<? extends EventMessage<?>> bufferedNextEntry = null;
 
         @Override
         public void run() {
@@ -866,6 +867,7 @@ class Coordinator {
                     logger.debug("Exception occurred while closing event stream for Processor [{}].", name, e);
                 }
             }
+            bufferedNextEntry = null;
         }
 
         private WorkPackage createWorkPackage(Segment segment, TrackingToken token) {
@@ -1003,11 +1005,26 @@ class Coordinator {
                                .allMatch(WorkPackage::isDone);
         }
 
-        private boolean hasNextEvent() {
-            return eventStream != null && eventStream.hasNextAvailable();
+        private MessageStream.Entry<? extends EventMessage<?>> peekNextEvent() {
+            if (bufferedNextEntry == null && eventStream != null && eventStream.hasNextAvailable()) {
+                try {
+                    var next = eventStream.next();
+                    bufferedNextEntry = next.orElse(null);
+                } catch (Exception e) {
+                    // Handle the exception similar to nextEvent()
+                    throw new RuntimeException("Failed to peek next event from stream", e);
+                }
+            }
+            return bufferedNextEntry;
         }
 
         private MessageStream.Entry<? extends EventMessage<?>> nextEvent() {
+            if (bufferedNextEntry != null) {
+                MessageStream.Entry<? extends EventMessage<?>> result = bufferedNextEntry;
+                bufferedNextEntry = null;
+                return result;
+            }
+
             if (eventStream == null) {
                 return null;
             }
@@ -1015,9 +1032,23 @@ class Coordinator {
                 var next = eventStream.next();
                 return next.orElse(null);
             } catch (Exception e) {
-                // Re-throw as RuntimeException to be caught by coordinateWorkPackages try-catch
                 throw new RuntimeException("Failed to read next event from stream", e);
             }
+        }
+
+        private boolean hasNextEvent() {
+            return bufferedNextEntry != null ||
+                    (eventStream != null && eventStream.hasNextAvailable());
+        }
+
+        private boolean eventsEqualingLastScheduledToken(TrackingToken lastScheduledToken) {
+            MessageStream.Entry<? extends EventMessage<?>> nextEntry = peekNextEvent();
+            if (nextEntry == null || lastScheduledToken == null) {
+                return false;
+            }
+
+            TrackingToken nextToken = TrackingToken.fromContext(nextEntry).orElse(null);
+            return Objects.equals(lastScheduledToken, nextToken);
         }
 
         /**
@@ -1048,6 +1079,10 @@ class Coordinator {
                  fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && hasNextEvent();
                  fetched++) {
                 MessageStream.Entry<? extends EventMessage<?>> eventEntry = nextEvent();
+                if (eventEntry == null) {
+                    break; // No more events available - todo: check that!
+                }
+
                 TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
                 lastScheduledToken = eventToken;
 
@@ -1057,7 +1092,12 @@ class Coordinator {
                     List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries = new ArrayList<>();
                     eventEntries.add(eventEntry);
                     while (eventsEqualingLastScheduledToken(eventToken)) {
-                        eventEntries.add(nextEvent());
+                        MessageStream.Entry<? extends EventMessage<?>> nextEntry = nextEvent();
+                        if (nextEntry != null) {
+                            eventEntries.add(nextEntry);
+                        } else {
+                            break; // No more events
+                        }
                     }
                     offerEventsToWorkPackages(eventEntries);
                 } else {
@@ -1076,14 +1116,6 @@ class Coordinator {
             // Chances are no events were scheduled at all. Scheduling regardless will ensure the token claim is held.
             workPackages.values()
                         .forEach(WorkPackage::scheduleWorker);
-        }
-
-        private boolean eventsEqualingLastScheduledToken(TrackingToken lastScheduledToken) {
-            // Note: MessageStream iterator doesn't support peeking like BlockingStream did.
-            // This optimization for grouping events with the same token (from upcasting)
-            // is simplified for now. A more sophisticated implementation could buffer events
-            // to achieve the same grouping behavior.
-            return false;
         }
 
         private void offerEventToWorkPackages(MessageStream.Entry<? extends EventMessage<?>> eventEntry) {
