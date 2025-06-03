@@ -983,8 +983,11 @@ class Coordinator {
 //                EventCriteria criteria = EventCriteria.havingAnyTag().andBeingOfAnyType();
                 eventStream = eventSource.open(StreamingCondition.startingFrom(trackingToken));
                 logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
-                // Note: MessageStream doesn't have setOnAvailableCallback, so we set this to false
-                availabilityCallbackSupported = false;
+                // FIXME: is it the same as before?
+                availabilityCallbackSupported = true;
+                eventStream.onAvailable(this::scheduleImmediateCoordinationTask);
+                //           availabilityCallbackSupported =
+                //                        eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
                 lastScheduledToken = trackingToken;
             }
         }
