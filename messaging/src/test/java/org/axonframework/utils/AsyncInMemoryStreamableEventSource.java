@@ -38,7 +38,6 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -46,13 +45,29 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * An in-memory implementation of {@link StreamableEventSource} designed for testing purposes,
- * particularly with the {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+ * An in-memory implementation of {@link StreamableEventSource} designed for testing purposes, particularly with the
+ * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
  * <p>
- * This implementation provides similar functionality to {@link InMemoryStreamableEventSource} but is
- * adapted to work with the {@link MessageStream} API used by the pooled processor. It supports
- * event publishing, ignored event tracking, and optional callback mechanisms for testing
- * asynchronous event processing scenarios.
+ * This implementation provides similar functionality to {@link InMemoryStreamableEventSource} but is adapted to work
+ * with the {@link MessageStream} API used by the pooled processor. It supports event publishing, ignored event
+ * tracking, and optional callback mechanisms for testing asynchronous event processing scenarios.
+ * <p>
+ * <strong>WARNING - Destructive Testing Behavior:</strong>
+ * <p>
+ * This implementation intentionally matches the destructive behavior of the original
+ * {@code InMemoryStreamableEventSource} for testing purposes:
+ * <ul>
+ *   <li><strong>All events are deleted when any stream is closed</strong> - This provides test isolation
+ *       and simulates recovery scenarios where processing continues with fresh events published after errors.</li>
+ * </ul>
+ * <p>
+ * Unlike the original implementation, this version properly respects the trackingToken parameter
+ * to start streams at the correct position.
+ * <p>
+ * This behavior is <strong>NOT suitable for production use</strong> but is essential for testing
+ * error recovery scenarios where the processor should handle new events published after an error condition.
+ * <p>
+ * This implementation doesn't support Tags filtering. If you need it, change the implementation to use TagResolver based on EventMessage payload.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -69,18 +84,15 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      */
     public static final EventMessage<String> FAIL_EVENT = EventTestUtils.asEventMessage(FAIL_PAYLOAD);
 
-    private final NavigableMap<Long, EventMessage<?>> eventStorage = new ConcurrentSkipListMap<>();
+    private volatile NavigableMap<Long, EventMessage<?>> eventStorage = new ConcurrentSkipListMap<>();
     private final AtomicLong nextIndex = new AtomicLong(0);
     private final boolean streamCallbackSupported;
     private final List<EventMessage<?>> ignoredEvents = new CopyOnWriteArrayList<>();
     private final Set<AsyncMessageStream> openStreams = new CopyOnWriteArraySet<>();
 
-    // Track positions that have caused exceptions to enable recovery
-    private final Set<Long> failedPositions = ConcurrentHashMap.newKeySet();
-
     /**
-     * Construct a default {@link AsyncInMemoryStreamableEventSource}. If stream callbacks should be supported for testing,
-     * use {@link AsyncInMemoryStreamableEventSource#AsyncInMemoryStreamableEventSource(boolean)}.
+     * Construct a default {@link AsyncInMemoryStreamableEventSource}. If stream callbacks should be supported for
+     * testing, use {@link AsyncInMemoryStreamableEventSource#AsyncInMemoryStreamableEventSource(boolean)}.
      */
     public AsyncInMemoryStreamableEventSource() {
         this(false);
@@ -150,11 +162,9 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     /**
-     * Return a {@link List} of {@link EventMessage EventMessages} that have been ignored by the stream
-     * consumer.
+     * Return a {@link List} of {@link EventMessage EventMessages} that have been ignored by the stream consumer.
      *
-     * @return A {@link List} of {@link EventMessage EventMessages} that have been ignored by the stream
-     * consumer.
+     * @return A {@link List} of {@link EventMessage EventMessages} that have been ignored by the stream consumer.
      */
     public List<EventMessage<?>> getIgnoredEvents() {
         return Collections.unmodifiableList(ignoredEvents);
@@ -165,6 +175,18 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      */
     public void runOnAvailableCallback() {
         openStreams.forEach(AsyncMessageStream::runCallback);
+    }
+
+    /**
+     * Destructively clears all events from this event source. This method is called when any stream is closed to match
+     * the original {@code InMemoryStreamableEventSource} behavior.
+     * <p>
+     * <strong>Warning:</strong> This will delete ALL events from the source, providing test isolation
+     * but making this implementation unsuitable for production use.
+     */
+    private synchronized void clearAllMessages() {
+        eventStorage = new ConcurrentSkipListMap<>();
+        nextIndex.set(0);
     }
 
     /**
@@ -187,7 +209,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 return;
             }
 
-            // Handle null tracking token properly
+            // Properly handle tracking token position (unlike the original implementation)
             TrackingToken startToken = condition.position();
             if (startToken == null) {
                 // Start from the beginning
@@ -205,44 +227,27 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 return Optional.empty();
             }
 
-            // Find the next matching event
             while (true) {
                 long position = currentPosition.get();
-
-                // Skip positions that have previously failed (enables recovery)
-                while (failedPositions.contains(position)) {
-                    position = currentPosition.incrementAndGet();
-                }
-
                 EventMessage<?> event = eventStorage.get(position);
 
                 if (event == null) {
                     return Optional.empty();
                 }
 
-                // Advance position for next call - this MUST happen before any exception
                 currentPosition.incrementAndGet();
 
-                // Create context with tracking token and tags BEFORE checking for FAIL_EVENT
-                // This ensures proper token advancement even when exceptions occur
                 Context context = Context.empty();
                 context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position + 1));
                 context = Tag.addToContext(context, Collections.emptySet());
 
                 if (FAIL_PAYLOAD.equals(event.getPayload())) {
-                    // Mark this position as failed so future streams can skip it
-                    failedPositions.add(position);
-
-                    IllegalStateException exception = new IllegalStateException(
-                            "Cannot retrieve event at position [" + position + "].");
-                    throw exception;
+                    throw new IllegalStateException("Cannot retrieve event at position [" + position + "].");
                 }
 
-                // Check if event matches the condition
                 if (matches(event, condition)) {
                     return Optional.of(new SimpleEntry<>(event, context));
                 } else {
-                    // Event doesn't match, record as ignored and continue searching
                     ignoredEvents.add(event);
                 }
             }
@@ -272,11 +277,8 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 return false;
             }
 
-            // Check if there's any event from current position onwards, skipping failed positions
+            // Check if there's any event from current position onwards
             long position = currentPosition.get();
-            while (failedPositions.contains(position)) {
-                position++;
-            }
             return eventStorage.containsKey(position);
         }
 
@@ -284,6 +286,11 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         public void close() {
             closed = true;
             openStreams.remove(this);
+
+            // DESTRUCTIVE BEHAVIOR: Clear all messages when ANY stream is closed
+            // This matches the original InMemoryStreamableEventSource behavior and provides
+            // test isolation, allowing recovery scenarios where new events are published after errors
+            clearAllMessages();
         }
 
         public void notifyEventAvailable() {
@@ -306,8 +313,8 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     /**
-     * Checks whether the given event matches the streaming condition.
-     * Similar to the match method in InMemoryEventStorageEngine.
+     * Checks whether the given event matches the streaming condition. Similar to the match method in
+     * InMemoryEventStorageEngine.
      */
     private static boolean matches(EventMessage<?> event, StreamingCondition condition) {
         // Handle null condition (can happen with mocking)
