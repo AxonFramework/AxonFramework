@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
@@ -93,7 +94,7 @@ class Coordinator {
     private final Clock clock;
     private final MaxSegmentProvider maxSegmentProvider;
     private final int initialSegmentCount;
-    private final Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken;
+    private final Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken;
     private final boolean coordinatorExtendsClaims;
     private final Consumer<Segment> segmentReleasedAction;
 
@@ -421,7 +422,7 @@ class Coordinator {
         private Clock clock = GenericEventMessage.clock;
         private MaxSegmentProvider maxSegmentProvider;
         private int initialSegmentCount = 16;
-        private Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken;
+        private Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken;
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
@@ -610,7 +611,7 @@ class Coordinator {
          * @return the current Builder instance, for fluent interfacing
          */
         Builder initialToken(
-                Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialToken
+                Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken
         ) {
             this.initialToken = initialToken;
             return this;

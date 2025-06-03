@@ -19,7 +19,7 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.eventstreaming.TrackingTokenSource;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -182,7 +182,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param initialTrackingTokenSupplier a function returning the token representing the position to reset to
      */
     void resetTokens(
-            @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
+            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
     );
 
     /**
@@ -201,7 +201,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param <R>                          the type of the provided {@code resetContext}
      */
     <R> void resetTokens(
-            @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
+            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             @Nullable R resetContext
     );
 

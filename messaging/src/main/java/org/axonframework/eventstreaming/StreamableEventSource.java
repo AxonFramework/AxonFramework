@@ -22,9 +22,6 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 
-import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Interface towards a streamable event source.
  * <p>
@@ -38,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Steven van Beelen
  * @since 3.0
  */
-public interface StreamableEventSource<E extends EventMessage<?>> {
+public interface StreamableEventSource<E extends EventMessage<?>> extends TrackingTokenSource {
 
     /**
      * Open an {@link MessageStream event stream} containing all {@link EventMessage events} matching the given
@@ -60,37 +57,4 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      * @return An {@link MessageStream event stream} matching the given {@code condition}.
      */
     MessageStream<E> open(@Nonnull StreamingCondition condition);
-
-    /**
-     * Creates a {@link TrackingToken} pointing at the end of the {@link MessageStream event stream}.
-     * <p>
-     * The end of an event stream represents the token of the very last event in the stream.
-     *
-     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the end of the
-     * {@link MessageStream event stream}.
-     */
-    CompletableFuture<TrackingToken> headToken();
-
-    /**
-     * Creates a {@link TrackingToken} pointing at the start of the {@link MessageStream event stream}.
-     * <p>
-     * The start of an event stream represents the token of the very first event in the stream.
-     *
-     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the start of the
-     * {@link MessageStream event stream}.
-     */
-    CompletableFuture<TrackingToken> tailToken();
-
-    /**
-     * Creates a {@link TrackingToken} tracking all {@link EventMessage events} after the given {@code at} from an
-     * {@link MessageStream event stream}.
-     * <p>
-     * When there is an {@link EventMessage} exactly at the given {@code dateTime}, it will be tracked too.
-     *
-     * @param at The {@link Instant} determining how the {@link TrackingToken} should be created. The returned token
-     *           points at very first event before this {@code Instant}.
-     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the very first event before the given
-     * {@code at} of the {@link MessageStream event stream}.
-     */
-    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at);
 }

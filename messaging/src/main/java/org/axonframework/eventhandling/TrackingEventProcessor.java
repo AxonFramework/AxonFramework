@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
@@ -29,7 +28,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
-import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -104,7 +103,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
-    private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder;
+    private final Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenBuilder;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final int batchSize;
     private final int segmentsSize;
@@ -680,31 +679,22 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     @Override
     public <R> void resetTokens(R resetContext) {
-//        resetTokens(initialTrackingTokenBuilder, resetContext);
+        resetTokens(initialTrackingTokenBuilder, resetContext);
     }
 
+    @Override
     public void resetTokens(
-            @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier) {
-
+            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier) {
+        resetTokens(initialTrackingTokenSupplier.apply(messageSource));
     }
 
+    @Override
     public <R> void resetTokens(
-            @Nonnull Function<StreamableEventSource<? extends EventMessage<?>>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
-            @Nullable R resetContext) {
-
+            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
+            R resetContext
+    ) {
+        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(messageSource)), resetContext);
     }
-
-//    public void resetTokens(
-//            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier) {
-//        resetTokens(initialTrackingTokenSupplier.apply(messageSource));
-//    }
-//
-//    public <R> void resetTokens(
-//            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
-//            R resetContext
-//    ) {
-//        resetTokens(initialTrackingTokenSupplier.apply(messageSource), resetContext);
-//    }
 
     @Override
     public void resetTokens(@Nonnull TrackingToken startPosition) {
@@ -1312,7 +1302,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                                      .executeWithResult(
                                                              context -> {
                                                                  TrackingToken initialToken = initialTrackingTokenBuilder.apply(
-                                                                         messageSource);
+                                                                         messageSource).join();
                                                                  tokenStore.initializeTokenSegments(
                                                                          processorName,
                                                                          segmentsSize,

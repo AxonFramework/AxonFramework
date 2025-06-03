@@ -1128,7 +1128,8 @@ class TrackingEventProcessorTest {
     void resetOnInitializeWithTokenResetToThatToken() throws Exception {
         TrackingEventProcessorConfiguration config =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
-                                                   .andInitialTrackingToken(ms -> new GlobalSequenceTrackingToken(1L));
+                                                   .andInitialTrackingToken(ms -> CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(
+                                                           1L)));
         TrackingEventProcessor.Builder eventProcessorBuilder =
                 TrackingEventProcessor.builder()
                                       .name("test")

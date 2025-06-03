@@ -43,7 +43,7 @@ import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.LegacyStreamableEventSource;
-import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
@@ -96,10 +96,10 @@ public class EventProcessingModule
     private static final TrackingEventProcessorConfiguration DEFAULT_TEP_CONFIG =
             TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
     private static final TrackingEventProcessorConfiguration DEFAULT_SAGA_TEP_CONFIG =
-            DEFAULT_TEP_CONFIG.andInitialTrackingToken(StreamableMessageSource::createHeadToken);
+            DEFAULT_TEP_CONFIG.andInitialTrackingToken(TrackingTokenSource::headToken);
     private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
     private static final PooledStreamingProcessorConfiguration DEFAULT_SAGA_PSEP_CONFIG =
-            (config, builder) -> builder.initialToken(StreamableEventSource::headToken);
+            (config, builder) -> builder.initialToken(TrackingTokenSource::headToken);
     private static final Function<Class<?>, String> DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION =
             c -> c.getSimpleName() + "Processor";
 
