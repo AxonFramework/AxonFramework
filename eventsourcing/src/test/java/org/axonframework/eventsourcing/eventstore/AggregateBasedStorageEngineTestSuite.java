@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.NoEventMessage;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -563,7 +563,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
     private static boolean assertMarkerEntry(Entry<EventMessage<?>> entry) {
         return entry.getResource(ConsistencyMarker.RESOURCE_KEY) instanceof AggregateBasedConsistencyMarker
-                && entry.message().equals(NoEventMessage.INSTANCE);
+                && entry.message().equals(TerminalEventMessage.INSTANCE);
     }
 
     protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags) {

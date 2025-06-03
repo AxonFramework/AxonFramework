@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.function.Function;
+import jakarta.annotation.Nonnull;
 
 /**
  * Functional interface describing a resolver of an {@link EventCriteria} based on an identifier of type {@code I}.
@@ -28,15 +29,15 @@ import java.util.function.Function;
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface CriteriaResolver<I> extends Function<I, EventCriteria> {
+public interface CriteriaResolver<I> {
 
     /**
      * Resolves the given {@code identifier} to an {@link EventCriteria}.
      *
      * @param identifier The instance to resolve to an {@link EventCriteria}.
+     * @param context    The {@link ProcessingContext} in which the criteria is being resolved.
      * @return The given {@code identifier} resolved to an {@link EventCriteria}.
      */
-    default EventCriteria resolve(I identifier) {
-        return apply(identifier);
-    }
+    @Nonnull
+    EventCriteria resolve(@Nonnull I identifier, @Nonnull ProcessingContext context);
 }

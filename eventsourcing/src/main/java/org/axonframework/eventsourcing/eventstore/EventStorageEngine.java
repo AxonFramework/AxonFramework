@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
@@ -88,7 +89,7 @@ public interface EventStorageEngine extends DescribableComponent {
      * {@code condition}.
      * <p>
      * The final entry of the stream <b>always</b> contains a {@link ConsistencyMarker} in the
-     * {@link MessageStream.Entry}'s resources, paired with a {@link org.axonframework.eventhandling.NoEventMessage}.
+     * {@link MessageStream.Entry}'s resources, paired with a {@link TerminalEventMessage}.
      * This {@code ConsistencyMarker} should be used to construct the {@link AppendCondition} when
      * {@link #appendEvents(AppendCondition, List) appending events}.
      * <p>

@@ -115,10 +115,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @throws Exception if the {@code errorHandler} throws an Exception back on the
      *                   {@link ErrorHandler#handleError(ErrorContext)} call
      */
-    protected boolean canHandle(EventMessage<?> eventMessage, Segment segment)
+    protected boolean canHandle(EventMessage<?> eventMessage, @Nonnull ProcessingContext context, Segment segment)
             throws Exception {
         try {
-            return eventHandlerInvoker.canHandle(eventMessage, segment);
+            return eventHandlerInvoker.canHandle(eventMessage, context, segment);
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
             return false;
@@ -215,9 +215,9 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                     new DefaultInterceptorChain<>(
                             null,
                             interceptors,
-                            (msg) -> processMessageInUnitOfWork(processingSegments,
+                            (msg, ctx) -> processMessageInUnitOfWork(processingSegments,
                                                                 msg,
-                                                                processingContext,
+                                                                ctx,
                                                                 monitorCallback));
             return chain.proceed(message, processingContext)
                         .ignoreEntries()

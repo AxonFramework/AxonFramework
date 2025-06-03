@@ -30,7 +30,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.NoEventMessage;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
@@ -192,7 +192,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
                                .reduce(MessageStream.empty().cast(), MessageStream::concatWith)
                                .whenComplete(() -> endOfStreams.complete(null))
                                .concatWith(MessageStream.fromFuture(
-                                       endOfStreams.thenApply(event -> NoEventMessage.INSTANCE),
+                                       endOfStreams.thenApply(event -> TerminalEventMessage.INSTANCE),
                                        unused -> Context.with(
                                                ConsistencyMarker.RESOURCE_KEY,
                                                combineAggregateMarkers(aggregateSources.stream())

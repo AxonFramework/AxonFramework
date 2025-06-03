@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.SagaMethodMessageHandlingMember;
 
@@ -120,9 +121,9 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
 
         @Override
         @SuppressWarnings("unchecked")
-        public Optional<AssociationValue> resolveAssociation(EventMessage<?> eventMessage) {
+        public Optional<AssociationValue> resolveAssociation(EventMessage<?> eventMessage, ProcessingContext context) {
             for (MessageHandlingMember<? super T> handler : handlers) {
-                if (handler.canHandle(eventMessage, null)) {
+                if (handler.canHandle(eventMessage, context)) {
                     return handler.unwrap(SagaMethodMessageHandlingMember.class)
                                   .map(mh -> mh.getAssociationValue(eventMessage));
                 }
@@ -131,15 +132,16 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
         }
 
         @Override
-        public List<MessageHandlingMember<? super T>> findHandlerMethods(EventMessage<?> eventMessage) {
-            return handlers.stream().filter(h -> h.canHandle(eventMessage, null))
+        public List<MessageHandlingMember<? super T>> findHandlerMethods(EventMessage<?> eventMessage,
+                                                                         ProcessingContext context) {
+            return handlers.stream().filter(h -> h.canHandle(eventMessage, context))
                            .collect(Collectors.toList());
         }
 
         @Override
-        public boolean hasHandlerMethod(EventMessage<?> eventMessage) {
+        public boolean hasHandlerMethod(EventMessage<?> eventMessage, ProcessingContext context) {
             for (MessageHandlingMember<? super T> handler : handlers) {
-                if (handler.canHandle(eventMessage, null)) {
+                if (handler.canHandle(eventMessage, context)) {
                     return true;
                 }
             }

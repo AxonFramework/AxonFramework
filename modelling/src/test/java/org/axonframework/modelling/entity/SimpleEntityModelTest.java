@@ -27,7 +27,8 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStreamTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.ChildAmbiguityException;
 import org.axonframework.modelling.entity.child.EntityChildModel;
@@ -55,7 +56,7 @@ class SimpleEntityModelTest {
     private final EntityEvolver<TestEntity> parentEntityEvolver = mock(EntityEvolver.class);
 
     private final TestEntity entity = new TestEntity();
-    private final StubProcessingContext context = new StubProcessingContext();
+    private final ProcessingContext context = new StubProcessingContext();
 
     private EntityModel<TestEntity> entityModel;
 

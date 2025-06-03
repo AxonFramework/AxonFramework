@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.NoEventMessage;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -292,7 +292,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                .reduce(MessageStream.empty().cast(), MessageStream::concatWith)
                                .whenComplete(() -> endOfStreams.complete(null))
                                .concatWith(MessageStream.fromFuture(
-                                       endOfStreams.thenApply(event -> NoEventMessage.INSTANCE),
+                                       endOfStreams.thenApply(event -> TerminalEventMessage.INSTANCE),
                                        unused -> Context.with(
                                                ConsistencyMarker.RESOURCE_KEY,
                                                combineAggregateMarkers(aggregateSources.stream())

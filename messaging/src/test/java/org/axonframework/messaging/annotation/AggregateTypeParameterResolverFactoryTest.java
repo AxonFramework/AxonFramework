@@ -21,6 +21,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -63,19 +65,22 @@ class AggregateTypeParameterResolverFactoryTest {
     void resolvesToAggregateTypeWhenAnnotatedForDomainEventMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(aggregateTypeMethod, aggregateTypeMethod.getParameters(), 0);
+        assertNotNull(resolver);
         final DomainEventMessage<Object> eventMessage = new GenericDomainEventMessage<>(
                 "aggregateType", "id", 0L, new MessageType("event"), "payload"
         );
-        assertTrue(resolver.matches(eventMessage, null));
-        assertEquals(eventMessage.getType(), resolver.resolveParameterValue(eventMessage, null));
+        ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
+        assertTrue(resolver.matches(context));
+        assertEquals(eventMessage.getType(), resolver.resolveParameterValue(context));
     }
 
     @Test
     void ignoredForNonDomainEventMessage() {
-        ParameterResolver<String> resolver =
-                testSubject.createInstance(aggregateTypeMethod, aggregateTypeMethod.getParameters(), 0);
+        ParameterResolver<String> resolver = testSubject.createInstance(aggregateTypeMethod, aggregateTypeMethod.getParameters(), 0);
+        assertNotNull(resolver);
         EventMessage<Object> eventMessage = EventTestUtils.asEventMessage("test");
-        assertFalse(resolver.matches(eventMessage, null));
+        ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
+        assertFalse(resolver.matches(context));
     }
 
     @Test

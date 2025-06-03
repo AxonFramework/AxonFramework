@@ -38,7 +38,6 @@ import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -111,15 +110,15 @@ public class AggregateConfigurerTest {
         configuration.start();
 
         CommandGateway commandGateway = configuration.commandGateway();
-        String aggregateAId = commandGateway.send(new CreateACommand("123"), ProcessingContext.NONE, String.class)
+        String aggregateAId = commandGateway.send(new CreateACommand("123"), null, String.class)
                                             .join();
-        String aggregateBId = commandGateway.send(new CreateBCommand("456"), ProcessingContext.NONE, String.class)
+        String aggregateBId = commandGateway.send(new CreateBCommand("456"), null, String.class)
                                             .join();
-        String result1 = commandGateway.send(new DoSomethingCommand(aggregateAId), ProcessingContext.NONE, String.class)
+        String result1 = commandGateway.send(new DoSomethingCommand(aggregateAId), null, String.class)
                                        .join();
-        String result2 = commandGateway.send(new DoSomethingCommand(aggregateBId), ProcessingContext.NONE, String.class)
+        String result2 = commandGateway.send(new DoSomethingCommand(aggregateBId), null, String.class)
                                        .join();
-        String result3 = commandGateway.send(new BSpecificCommand(aggregateBId), ProcessingContext.NONE, String.class)
+        String result3 = commandGateway.send(new BSpecificCommand(aggregateBId), null, String.class)
                                        .join();
         assertEquals("A123", result1);
         assertEquals("B456", result2);
@@ -197,7 +196,7 @@ public class AggregateConfigurerTest {
 
         CommandGateway commandGateway = config.commandGateway();
         String testAggregateIdentifier = "123";
-        commandGateway.send(new CreateACommand(testAggregateIdentifier), ProcessingContext.NONE)
+        commandGateway.send(new CreateACommand(testAggregateIdentifier), null)
                       .getResultMessage()
                       .join();
         verify(lockFactory).obtainLock(testAggregateIdentifier);

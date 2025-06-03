@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -37,6 +37,8 @@ class SimpleResourceParameterResolverFactoryTest {
     private Method messageHandlingMethodWithResource2Parameter;
     private Method messageHandlingMethodWithoutResourceParameter;
     private Method messageHandlingMethodWithResourceParameterOfDifferentType;
+
+    private ProcessingContext context = new StubProcessingContext();
 
     @BeforeEach
     void setUp() throws Exception {
@@ -70,9 +72,8 @@ class SimpleResourceParameterResolverFactoryTest {
     void resolvesToResourceWhenMessageHandlingMethodHasResourceParameter() {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResourceParameter, messageHandlingMethodWithResourceParameter.getParameters(), 1);
-        final EventMessage<Object> eventMessage = EventTestUtils.asEventMessage("test");
-        assertTrue(resolver.matches(eventMessage, null));
-        assertEquals(TEST_RESOURCE, resolver.resolveParameterValue(eventMessage, null));
+        assertTrue(resolver.matches(context));
+        assertEquals(TEST_RESOURCE, resolver.resolveParameterValue(context));
     }
 
     @SuppressWarnings("unchecked")
@@ -80,9 +81,8 @@ class SimpleResourceParameterResolverFactoryTest {
     void resolvesToResourceWhenMessageHandlingMethodHasAnotherResourceParameter() {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResource2Parameter, messageHandlingMethodWithResource2Parameter.getParameters(), 1);
-        final EventMessage<Object> eventMessage = EventTestUtils.asEventMessage("test");
-        assertTrue(resolver.matches(eventMessage, null));
-        assertEquals(TEST_RESOURCE2, resolver.resolveParameterValue(eventMessage, null));
+        assertTrue(resolver.matches(context));
+        assertEquals(TEST_RESOURCE2, resolver.resolveParameterValue(context));
     }
 
     @Test

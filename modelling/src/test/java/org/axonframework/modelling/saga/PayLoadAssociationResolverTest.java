@@ -86,7 +86,7 @@ class PayloadAssociationResolverTest {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nullable Object target) {
+        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable Object target) {
             return null;
         }
 
@@ -96,7 +96,7 @@ class PayloadAssociationResolverTest {
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
             return true;
         }
     }

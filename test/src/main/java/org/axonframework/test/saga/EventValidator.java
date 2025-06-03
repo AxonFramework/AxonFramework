@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package org.axonframework.test.saga;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.FieldFilter;
 import org.hamcrest.Matcher;
@@ -88,7 +91,7 @@ public class EventValidator implements EventMessageHandler {
     }
 
     @Override
-    public Object handleSync(EventMessage<?> event) {
+    public Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         publishedEvents.add(event);
         return null;
     }
@@ -98,7 +101,7 @@ public class EventValidator implements EventMessageHandler {
      */
     public void startRecording() {
         if (!recording) {
-            eventBus.subscribe(eventMessages -> eventMessages.forEach(this::handleSync));
+            eventBus.subscribe(eventMessages -> eventMessages.forEach(m -> handleSync(m, new LegacyMessageSupportingContext(m))));
             recording = true;
         }
         publishedEvents.clear();

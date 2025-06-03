@@ -24,7 +24,7 @@ import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
@@ -53,7 +53,7 @@ class DefaultEventSourcedEntityBuilderTest {
     @BeforeEach
     void setUp() {
         testEntityFactory = (type, id) -> new Course(id);
-        testCriteriaResolver = event -> EventCriteria.havingAnyTag();
+        testCriteriaResolver = (event, context) -> EventCriteria.havingAnyTag();
         testEntityEvolver = (entity, event, context) -> entity;
         constructedEntityFactory = new AtomicBoolean(false);
         constructedCriteriaResolver = new AtomicBoolean(false);
@@ -164,27 +164,31 @@ class DefaultEventSourcedEntityBuilderTest {
         EntityEvolver<Course> resultEvolver = descriptor.getProperty("entityEvolver");
 
         // Ignores String event
+        GenericEventMessage<String> stringEvent = new GenericEventMessage<>(new MessageType(String.class), "payload");
         resultEvolver.evolve(new Course(new CourseId()),
-                             new GenericEventMessage<>(new MessageType(String.class), "payload"),
-                             ProcessingContext.NONE);
+                             stringEvent,
+                             StubProcessingContext.forMessage(stringEvent));
         assertFalse(invoked.get());
 
         // Ignores Integer event
+        GenericEventMessage<Integer> intEvent = new GenericEventMessage<>(new MessageType(Integer.class), 42);
         resultEvolver.evolve(new Course(new CourseId()),
-                             new GenericEventMessage<>(new MessageType(Integer.class), 42),
-                             ProcessingContext.NONE);
+                             intEvent,
+                             StubProcessingContext.forMessage(intEvent));
         assertFalse(invoked.get());
 
         // Ignores Boolean event
+        GenericEventMessage<Boolean> booleanEvent = new GenericEventMessage<>(new MessageType(Boolean.class), true);
         resultEvolver.evolve(new Course(new CourseId()),
-                             new GenericEventMessage<>(new MessageType(Boolean.class), true),
-                             ProcessingContext.NONE);
+                             booleanEvent,
+                             StubProcessingContext.forMessage(booleanEvent));
         assertFalse(invoked.get());
 
         // Ignores Long event
+        GenericEventMessage<Long> longEvent = new GenericEventMessage<>(new MessageType(Long.class), 1337L);
         resultEvolver.evolve(new Course(new CourseId()),
-                             new GenericEventMessage<>(new MessageType(Long.class), 1337L),
-                             ProcessingContext.NONE);
+                             longEvent,
+                             StubProcessingContext.forMessage(longEvent));
         assertFalse(invoked.get());
 
         // The already present Entity Evolver should definitely be constructed instead!

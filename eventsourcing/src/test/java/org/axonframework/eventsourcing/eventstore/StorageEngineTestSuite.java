@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.NoEventMessage;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -207,7 +207,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     private static void assertMarkerEntry(Entry<EventMessage<?>> entry) {
         assertNotNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY));
-        assertEquals(NoEventMessage.INSTANCE, entry.message());
+        assertEquals(TerminalEventMessage.INSTANCE, entry.message());
     }
 
     @Test
