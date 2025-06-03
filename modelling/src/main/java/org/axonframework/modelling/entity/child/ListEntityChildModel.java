@@ -17,8 +17,6 @@
 package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.modelling.entity.EntityModel;
 
 import java.util.List;
@@ -29,9 +27,7 @@ import static java.util.Objects.requireNonNull;
  * An {@link EntityChildModel} that handles commands and events for a list of child entities. It will use the provided
  * {@link ChildEntityFieldDefinition} to resolve the child entities from the parent entity. Once the entities are
  * resolved, it will delegate the command- and event-handling to the child entity model(s), based on the
- * {@code commandTargetMatcher} and {@code eventTargetMatcher} respectively.
- * <p>
- * If the result of {@link ChildEntityFieldDefinition#getChildValue(Object)} is null, an empty list will be assumed.
+ * {@code commandTargetResolver} and {@code eventTargetMatcher} respectively.
  *
  * @param <C> The type of the child entity.
  * @param <P> The type of the parent entity.
@@ -45,10 +41,10 @@ public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
     private ListEntityChildModel(
             @Nonnull EntityModel<C> childEntityModel,
             @Nonnull ChildEntityFieldDefinition<P, List<C>> childEntityFieldDefinition,
-            @Nonnull ChildEntityMatcher<C, CommandMessage<?>> commandTargetMatcher,
-            @Nonnull ChildEntityMatcher<C, EventMessage<?>> eventTargetMatcher
+            @Nonnull CommandTargetResolver<C> commandTargetResolver,
+            @Nonnull EventTargetMatcher<C> eventTargetMatcher
     ) {
-        super(childEntityModel, commandTargetMatcher, eventTargetMatcher);
+        super(childEntityModel, commandTargetResolver, eventTargetMatcher);
         this.childEntityFieldDefinition =
                 requireNonNull(childEntityFieldDefinition, "The childEntityFieldDefinition may not be null.");
     }
@@ -76,10 +72,9 @@ public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
     /**
      * Creates a new {@link Builder} for the given parent class and child entity model. The
      * {@link ChildEntityFieldDefinition} is required to resolve the child entities from the parent entity and evolve
-     * the parent entity based on the child entities. The {@link ChildEntityMatcher commandTargetMatcher} and
-     * {@link ChildEntityMatcher eventTargetMatcher} are used to match the child entities to the command and event
-     * respectively. Without specifying these matchers, all child entities will be considered for all commands and
-     * events.
+     * the parent entity based on the child entities. The {@link EventTargetMatcher commandTargetResolver} and
+     * {@link EventTargetMatcher eventTargetMatcher} are both required, as they are used to match the child entities to
+     * the command and event respectively.
      *
      * @param parentClass The class of the parent entity.
      * @param entityModel The {@link EntityModel} of the child entity.
@@ -99,14 +94,14 @@ public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
      * builder can be used to configure the child entity model and create a new instance of
      * {@link ListEntityChildModel}. The {@link ChildEntityFieldDefinition} is required to resolve the child entities
      * from the parent entity and evolve the parent entity based on the child entities. The
-     * {@link ChildEntityMatcher commandTargetMatcher} and {@link ChildEntityMatcher eventTargetMatcher} are used to
-     * match the child entities to the command and event respectively. Without specifying these matchers, all child
-     * entities will be considered for all commands and events.
+     * {@link EventTargetMatcher commandTargetResolver} and {@link EventTargetMatcher eventTargetMatcher} are both
+     * required, as they are used to match the child entities to the command and event respectively.
      *
      * @param <C> The type of the child entity.
      * @param <P> The type of the parent entity.
      */
     public static class Builder<C, P> extends AbstractEntityChildModel.Builder<C, P, Builder<C, P>> {
+
         private ChildEntityFieldDefinition<P, List<C>> childEntityFieldDefinition;
 
         @SuppressWarnings("unused") // Is used for generics
@@ -132,15 +127,17 @@ public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
 
         /**
          * Builds a new {@link ListEntityChildModel} instance with the configured properties. The
-         * {@link ChildEntityFieldDefinition} is required to be set before calling this method.
+         * {@link ChildEntityFieldDefinition}, {@link EventTargetMatcher}, and {@link CommandTargetResolver} are
+         * required to be set before calling this method.
          *
          * @return A new {@link ListEntityChildModel} instance with the configured properties.
          */
         public ListEntityChildModel<C, P> build() {
+            this.validate();
             return new ListEntityChildModel<>(
                     childEntityModel,
                     childEntityFieldDefinition,
-                    commandTargetMatcher,
+                    commandTargetResolver,
                     eventTargetMatcher
             );
         }

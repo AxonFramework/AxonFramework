@@ -153,7 +153,10 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
             return matchingChildren.getFirst().handle(message, entity, context);
         }
         if (matchingChildren.size() > 1) {
-            return MessageStream.failed(new ChildAmbiguityException(message, entity));
+            return MessageStream.failed(new ChildAmbiguityException(
+                    "Multiple matching child entity members found for command of type [%s]. Matching candidates are: [%s]".formatted(
+                            message, matchingChildren
+                    )));
         }
         return MessageStream.failed(new ChildEntityNotFoundException(message, entity));
     }

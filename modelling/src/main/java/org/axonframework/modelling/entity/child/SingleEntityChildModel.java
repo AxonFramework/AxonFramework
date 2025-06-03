@@ -17,9 +17,6 @@
 package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import org.axonframework.modelling.entity.EntityModel;
 
 import java.util.List;
@@ -30,7 +27,10 @@ import java.util.Objects;
  * {@link ChildEntityFieldDefinition} to resolve the child entity from the parent entity. Once the entity is resolved,
  * it will delegate the command- and event-handling to the child entity model.
  * <p>
- * If the child entity is not present in the parent entity, an {@link ChildEntityNotFoundException} will be thrown.
+ * The commands and events will, by default, be forwarded unconditionally to the child entity. If you have multiple
+ * member fields, and want to match commands and events to a specific child entity, you can configure the
+ * {@link CommandTargetResolver} and {@link EventTargetMatcher} to match the child entity based on the command or
+ * event.
  *
  * @param <C> The type of the child entity.
  * @param <P> The type of the parent entity.
@@ -43,8 +43,8 @@ public class SingleEntityChildModel<C, P> extends AbstractEntityChildModel<C, P>
 
     private SingleEntityChildModel(@Nonnull EntityModel<C> childEntityModel,
                                    @Nonnull ChildEntityFieldDefinition<P, C> childEntityFieldDefinition,
-                                   @Nonnull ChildEntityMatcher<C, CommandMessage<?>> commandTargetMatcher,
-                                   @Nonnull ChildEntityMatcher<C, EventMessage<?>> eventTargetMatcher
+                                   @Nonnull CommandTargetResolver<C> commandTargetMatcher,
+                                   @Nonnull EventTargetMatcher<C> eventTargetMatcher
     ) {
         super(
                 childEntityModel,
@@ -104,6 +104,12 @@ public class SingleEntityChildModel<C, P> extends AbstractEntityChildModel<C, P>
      * Builder for creating a {@link SingleEntityChildModel} for the given parent class and child entity model. The
      * {@link ChildEntityFieldDefinition} is required to resolve the child entities from the parent entity and evolve
      * the parent entity based on the child entities.
+     * <p>
+     * The {@link CommandTargetResolver} and {@link EventTargetMatcher} are defaulted to
+     * {@link CommandTargetResolver#MATCH_ANY()} and {@link EventTargetMatcher#MATCH_ANY()} respectively, meaning that
+     * the child entity will always match all commands and all events. If you have multiple member fields, and want to
+     * match commands and events to a specific child entity, you can configure the {@link CommandTargetResolver} and
+     * {@link EventTargetMatcher} to match the child entity based on the command or event.
      *
      * @param <C> The type of the child entity.
      * @param <P> The type of the parent entity.
@@ -117,6 +123,8 @@ public class SingleEntityChildModel<C, P> extends AbstractEntityChildModel<C, P>
                         @Nonnull EntityModel<C> childEntityModel
         ) {
             super(parentClass, childEntityModel);
+            this.commandTargetResolver = CommandTargetResolver.MATCH_ANY();
+            this.eventTargetMatcher = EventTargetMatcher.MATCH_ANY();
         }
 
         /**
@@ -140,9 +148,10 @@ public class SingleEntityChildModel<C, P> extends AbstractEntityChildModel<C, P>
          * @return A new {@link SingleEntityChildModel} instance with the configured properties.
          */
         public SingleEntityChildModel<C, P> build() {
+            this.validate();
             return new SingleEntityChildModel<>(childEntityModel,
                                                 childEntityFieldDefinition,
-                                                commandTargetMatcher,
+                                                commandTargetResolver,
                                                 eventTargetMatcher
             );
         }
