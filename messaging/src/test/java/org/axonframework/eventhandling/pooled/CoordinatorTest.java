@@ -34,11 +34,9 @@ import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.mockito.stubbing.*;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -137,37 +135,26 @@ class CoordinatorTest {
         verify(tokenStore, times(1)).initializeTokenSegments(anyString(), anyInt(), isNull());
     }
 
-    @SuppressWarnings("rawtypes") // Mockito cannot deal with the wildcard generics of the TrackedEventMessage
     @Test
-    void ifCoordinationTaskSchedulesEventsWithTheSameTokenTogether() throws InterruptedException {
+    void ifCoordinationTaskSchedulesEventsWithTheSameTokenTogether() {
         TrackingToken testToken = new GlobalSequenceTrackingToken(0);
-        MessageStream.Entry<? extends EventMessage<?>> testEventOne =
-                new SimpleEntry<>(EventTestUtils.asEventMessage("this-event"), trackingTokenContext(testToken));
-        MessageStream.Entry<? extends EventMessage<?>> testEventTwo =
-                new SimpleEntry<>(EventTestUtils.asEventMessage("this-event"), trackingTokenContext(testToken));
-        List<MessageStream.Entry<? extends EventMessage<?>>> testEvents = new ArrayList<>();
-        testEvents.add(testEventOne);
-        testEvents.add(testEventTwo);
+        var testEventOne = EventTestUtils.asEventMessage("this-event");
+        var testEventTwo = EventTestUtils.asEventMessage("this-event");
+        var testEntryOne = new SimpleEntry<>(testEventOne, trackingTokenContext(testToken));
+        var testEntryTwo = new SimpleEntry<>(testEventTwo, trackingTokenContext(testToken));
+        List<MessageStream.Entry<? extends EventMessage<?>>> testEntries = List.of(testEntryOne, testEntryTwo);
 
         when(workPackage.hasRemainingCapacity()).thenReturn(true)
                                                 .thenReturn(false);
         when(workPackage.isAbortTriggered()).thenReturn(false);
 
-        when(workPackage.scheduleEvents(testEvents)).thenReturn(true);
+        when(workPackage.scheduleEvents(testEntries)).thenReturn(true);
         when(workPackage.scheduleEvents(any())).thenReturn(true);
 
-        //noinspection unchecked
-        MessageStream<EventMessage<?>> testStream = mock(MessageStream.class);
-        when(testStream.hasNextAvailable()).thenReturn(true)
-                                           .thenReturn(true)
-                                           .thenReturn(false);
-        //noinspection unchecked
-        when(testStream.next()).thenAnswer(i -> Optional.of(testEventOne))
-                               .thenAnswer(i -> Optional.of(testEventTwo));
-        //noinspection unchecked
-//        when(testStream.peek()).thenReturn(Optional.of(testEventTwo))
-//                               .thenReturn(Optional.of(testEventTwo))
-//                               .thenReturn(Optional.empty()); // todo: what to do instead?
+        MessageStream<EventMessage<?>> testStream = MessageStream.fromIterable(
+                List.of(testEventOne, testEventTwo),
+                (e) -> trackingTokenContext(testToken)
+        );
 
         when(executorService.submit(any(Runnable.class))).thenAnswer(runTaskAsync());
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(SEGMENT_IDS);
@@ -178,7 +165,7 @@ class CoordinatorTest {
         testSubject.start();
 
         assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(tokenStore).fetchToken(PROCESSOR_NAME, SEGMENT_ONE));
-        //noinspection resource
+
         assertWithin(500,
                      TimeUnit.MILLISECONDS,
                      () -> verify(messageSource).open(StreamingCondition.startingFrom(testToken)));
@@ -189,8 +176,8 @@ class CoordinatorTest {
 
         var resultEvents = eventsCaptor.getValue();
         assertEquals(2, resultEvents.size());
-        assertTrue(resultEvents.contains(testEventOne));
-        assertTrue(resultEvents.contains(testEventTwo));
+        assertTrue(resultEvents.contains(testEntryOne));
+        assertTrue(resultEvents.contains(testEntryTwo));
 
         verify(workPackage, times(0)).scheduleEvent(any());
     }
