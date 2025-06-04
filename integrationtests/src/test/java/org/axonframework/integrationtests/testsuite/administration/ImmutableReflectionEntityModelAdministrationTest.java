@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.testsuite.administration;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.reflection.AnnotationBasedEventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -40,6 +39,7 @@ import org.axonframework.integrationtests.testsuite.administration.state.immutab
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityModel;
@@ -63,7 +63,7 @@ public class ImmutableReflectionEntityModelAdministrationTest extends AbstractAd
         // Task is the list-based child-model of Employee
         EntityModel<ImmutableTask> taskModel = SimpleEntityModel
                 .forEntityClass(ImmutableTask.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableTask.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableTask.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -76,7 +76,7 @@ public class ImmutableReflectionEntityModelAdministrationTest extends AbstractAd
         // SalaryInformation is the singular child-model of Employee
         EntityModel<ImmutableSalaryInformation> salaryInformationModel = SimpleEntityModel
                 .forEntityClass(ImmutableSalaryInformation.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableSalaryInformation.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableSalaryInformation.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -89,7 +89,7 @@ public class ImmutableReflectionEntityModelAdministrationTest extends AbstractAd
         // Employee is a concrete entity type
         EntityModel<ImmutableEmployee> employeeModel = SimpleEntityModel
                 .forEntityClass(ImmutableEmployee.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableEmployee.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableEmployee.class))
                 .creationalCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
                                           ((command, context) -> {
                                               EventAppender eventAppender = EventAppender.forContext(context,
@@ -142,7 +142,7 @@ public class ImmutableReflectionEntityModelAdministrationTest extends AbstractAd
         // Customer is a concrete entity type
         EntityModel<ImmutableCustomer> customerModel = SimpleEntityModel
                 .forEntityClass(ImmutableCustomer.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableCustomer.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableCustomer.class))
                 .creationalCommandHandler(typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
                                           ((command, context) -> {
                                               EventAppender eventAppender = EventAppender.forContext(context,
@@ -158,7 +158,7 @@ public class ImmutableReflectionEntityModelAdministrationTest extends AbstractAd
                 .forSuperType(ImmutablePerson.class)
                 .addConcreteType(employeeModel)
                 .addConcreteType(customerModel)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutablePerson.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutablePerson.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,

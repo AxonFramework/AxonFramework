@@ -23,7 +23,7 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.PayloadBasedEntityEvolver;
-import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
+import org.axonframework.modelling.SimpleEntityEvolvingComponent;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.QualifiedName;
@@ -128,7 +128,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
             }
             return entityEvolver.build(config);
         }
-        return new SimpleEventSourcedComponent<>(buildAndCollectEntityEvolvers(config));
+        return new SimpleEntityEvolvingComponent<>(buildAndCollectEntityEvolvers(config));
     }
 
     private Map<QualifiedName, EntityEvolver<E>> buildAndCollectEntityEvolvers(Configuration config) {
