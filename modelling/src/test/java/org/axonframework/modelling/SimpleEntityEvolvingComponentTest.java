@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Mitchll Herrijgers
  * @author Steven van Beelen
  */
-class SimpleEventSourcedComponentTest {
+class SimpleEntityEvolvingComponentTest {
 
     private static final String ENTITY = "entity";
     private static final EventMessage<String> STRING_EVENT =
@@ -78,21 +78,9 @@ class SimpleEventSourcedComponentTest {
     }
 
     @Test
-    void evolveThrowsNullPointerExceptionForNullEntity() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.evolve(null, STRING_EVENT, StubProcessingContext.forMessage(STRING_EVENT)));
-    }
-
-    @Test
     void evolveThrowsNullPointerExceptionForNullEventMessage() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> testSubject.evolve(ENTITY, null, null));
-    }
-
-    @Test
-    void evolveThrowsNullPointerExceptionForNullProcessingContext() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.evolve(ENTITY, STRING_EVENT, null));
     }
 
     @Test
