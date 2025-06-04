@@ -815,7 +815,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             assertEquals(expectedComponent, config.getComponent(TestComponent.class));
             assertEquals(expectedNamedComponent, config.getComponent(TestComponent.class, "name"));
-            verifyNoInteractions(testFactory);
+            verify(testFactory).registerShutdownHandlers(any());
+            verifyNoMoreInteractions(testFactory);
         }
 
         @Test
