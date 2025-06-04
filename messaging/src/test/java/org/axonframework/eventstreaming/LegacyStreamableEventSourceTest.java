@@ -154,7 +154,7 @@ class LegacyStreamableEventSourceTest {
             // When - calling tokenAt
             CompletableFuture<TrackingToken> result = testSubject.tokenAt(instant);
 
-            // Then - should delegate with correct instant and return the same future
+            // Then - should delegate with the correct instant and return the same future
             assertThat(result).succeedsWithin(java.time.Duration.ofSeconds(1))
                               .isEqualTo(expectedToken);
             verify(mockDelegate).tokenAt(eq(instant));
@@ -195,7 +195,7 @@ class LegacyStreamableEventSourceTest {
             // When - opening stream
             MessageStream<EventMessage<?>> result = testSubject.open(testCondition);
 
-            // Then - should create MessageStream and delegate to underlying source
+            // Then - should create MessageStream and delegate to the underlying source
             assertThat(result).isNotNull();
             verify(mockDelegate).openStream(eq(testToken));
         }
@@ -255,7 +255,7 @@ class LegacyStreamableEventSourceTest {
                 // When - calling next
                 Optional<MessageStream.Entry<EventMessage<?>>> result = messageStream.next();
 
-                // Then - should return entry with message
+                // Then - should return entry with the message
                 assertThat(result).isPresent();
                 assertThat(result.get().message()).isEqualTo(testEvent);
                 verify(mockBlockingStream).nextAvailable();
@@ -292,7 +292,7 @@ class LegacyStreamableEventSourceTest {
                 // When - calling next
                 Optional<MessageStream.Entry<EventMessage<?>>> result = messageStream.next();
 
-                // Then - should return empty and set interrupt flag
+                // Then - should return an empty and set interrupt flag
                 assertThat(result).isEmpty();
                 assertThat(Thread.currentThread().isInterrupted()).isTrue();
 
@@ -330,7 +330,7 @@ class LegacyStreamableEventSourceTest {
                 // When - calling next
                 Optional<MessageStream.Entry<EventMessage<?>>> result = filteringStream.next();
 
-                // Then - should return empty because message doesn't match criteria
+                // Then - should return empty because the message doesn't match criteria
                 assertThat(result).isEmpty();
             }
         }
