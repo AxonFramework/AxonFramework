@@ -46,8 +46,7 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
         registerIfNotPresent(registry, AxonServerConfiguration.class, c -> new AxonServerConfiguration());
         registerIfNotPresent(registry, AxonServerConnectionManager.class, this::buildAxonServerConnectionManager);
         registerIfNotPresent(registry, ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity());
-        registerIfNotPresent(registry, AxonServerEventStorageEngine.class,
-                             ServerConnectorConfigurationEnhancer::buildEventStorageEngine);
+        registerIfNotPresent(registry, AxonServerEventStorageEngine.class, this::buildEventStorageEngine);
         registry.registerFactory(new AxonServerEventStorageEngineFactory());
     }
 
