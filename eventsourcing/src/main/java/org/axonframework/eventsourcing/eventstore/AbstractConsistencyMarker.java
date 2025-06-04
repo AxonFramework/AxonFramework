@@ -16,6 +16,10 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
+
+import java.util.Objects;
+
 /**
  * Abstract implementation of the {@link ConsistencyMarker} interface that implements the required comparisons with the
  * {@link org.axonframework.eventsourcing.eventstore.ConsistencyMarker#ORIGIN} and
@@ -33,7 +37,8 @@ public abstract class AbstractConsistencyMarker<T extends ConsistencyMarker> imp
      * @throws ClassCastException when the given marker is not of the expected type.
      */
     @Override
-    public ConsistencyMarker lowerBound(ConsistencyMarker other) {
+    public ConsistencyMarker lowerBound(@Nonnull ConsistencyMarker other) {
+        Objects.requireNonNull(other, "The other consistency marker cannot be null.");
         if (other == ConsistencyMarker.INFINITY || other == ConsistencyMarker.ORIGIN) {
             return other.lowerBound(this);
         }
@@ -45,7 +50,8 @@ public abstract class AbstractConsistencyMarker<T extends ConsistencyMarker> imp
      * @throws ClassCastException when the given marker is not of the expected type
      */
     @Override
-    public ConsistencyMarker upperBound(ConsistencyMarker other) {
+    public ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other) {
+        Objects.requireNonNull(other, "The other consistency marker cannot be null.");
         if (other == ConsistencyMarker.INFINITY || other == ConsistencyMarker.ORIGIN) {
             return other.upperBound(this);
         }

@@ -59,8 +59,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      * Constructs a {@code DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
      * {@link #appendEvent(EventMessage) append events} originating from the given {@code context}.
      *
-     * @param eventStorageEngine The {@link EventStorageEngine} used to
-     *                           {@link #appendEvent(EventMessage) append events} with.
+     * @param eventStorageEngine The {@link EventStorageEngine} used to {@link #appendEvent(EventMessage) append events}
+     *                           with.
      * @param processingContext  The {@link ProcessingContext} from which to
      *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
      * @param tagResolver        The {@link TagResolver} used to resolve tags while
@@ -89,7 +89,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         );
         MessageStream<EventMessage<?>> source = eventStorageEngine.source(condition);
         if (appendCondition.consistencyMarker() == ConsistencyMarker.ORIGIN) {
-            AtomicReference<ConsistencyMarker> markerReference = new AtomicReference<>(appendCondition.consistencyMarker());
+            AtomicReference<ConsistencyMarker> markerReference =
+                    new AtomicReference<>(appendCondition.consistencyMarker());
             AtomicBoolean receivedEvent = new AtomicBoolean(false);
             return source.onNext(e -> {
                 ConsistencyMarker marker;
