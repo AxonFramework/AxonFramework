@@ -16,8 +16,15 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
+
+import java.util.Objects;
+
 /**
  * Utility class to access "well known" consistency markers, such as "origin" and "infinity".
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 abstract class ConsistencyMarkers {
 
@@ -32,13 +39,13 @@ abstract class ConsistencyMarkers {
         }
 
         @Override
-        public ConsistencyMarker lowerBound(ConsistencyMarker other) {
+        public ConsistencyMarker lowerBound(@Nonnull ConsistencyMarker other) {
             return this;
         }
 
         @Override
-        public ConsistencyMarker upperBound(ConsistencyMarker other) {
-            return other;
+        public ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other) {
+            return Objects.requireNonNull(other, "The other consistency marker cannot be null.");
         }
 
         @Override
@@ -55,12 +62,12 @@ abstract class ConsistencyMarkers {
         }
 
         @Override
-        public ConsistencyMarker lowerBound(ConsistencyMarker other) {
-            return other;
+        public ConsistencyMarker lowerBound(@Nonnull ConsistencyMarker other) {
+            return Objects.requireNonNull(other, "The consistency marker cannot be null.");
         }
 
         @Override
-        public ConsistencyMarker upperBound(ConsistencyMarker other) {
+        public ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other) {
             return this;
         }
 

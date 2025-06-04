@@ -50,8 +50,7 @@ public class PropertyBasedEntityIdResolver implements EntityIdResolver<Object> {
      * @param property The name of the property to resolve the identifier from.
      */
     public PropertyBasedEntityIdResolver(@Nonnull String property) {
-        Assert.nonEmpty(property, "Property cannot be empty or null");
-        this.property = property;
+        this.property = Assert.nonEmpty(property, "Property cannot be empty or null");
     }
 
     @Nonnull
