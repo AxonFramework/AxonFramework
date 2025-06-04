@@ -317,7 +317,7 @@ class WorkPackage {
         while (!isAbortTriggered() && eventBatch.size() < batchSize && !processingQueue.isEmpty()) {
             ProcessingEntry entry = processingQueue.poll();
             lastConsumedToken = WrappedToken.advance(lastConsumedToken, entry.trackingToken());
-            entry.addToBatch(eventBatch, lastConsumedToken);
+            entry.addToBatch(eventBatch);
         }
 
         // Make sure all subsequent events with the same token (if non-null) as the last are added as well.
@@ -733,13 +733,12 @@ class WorkPackage {
         TrackingToken trackingToken();
 
         /**
-         * Add this entry's events to the {@code eventBatch}. The events should reference the {@code wrappedToken} for
-         * correctly handling token progression.
+         * Add this entry's events to the {@code eventBatch}. Since tracking is handled at the UnitOfWork level,
+         * we only need to add the actual event messages to the batch.
          *
-         * @param eventBatch   The list of events to add this entry's events to.
-         * @param wrappedToken The wrapped token to attach to all events of this entry.
+         * @param eventBatch The list of events to add this entry's events to.
          */
-        void addToBatch(List<EventMessage<?>> eventBatch, TrackingToken wrappedToken);
+        void addToBatch(List<EventMessage<?>> eventBatch);
     }
 
     /**
@@ -763,10 +762,8 @@ class WorkPackage {
         }
 
         @Override
-        public void addToBatch(List<EventMessage<?>> eventBatch, TrackingToken wrappedToken) {
+        public void addToBatch(List<EventMessage<?>> eventBatch) {
             if (canHandle) {
-                // Simply add the original message to the batch
-                // The wrappedToken is handled at the UnitOfWork level, not per message
                 eventBatch.add(eventEntry.message());
             }
         }
@@ -794,8 +791,8 @@ class WorkPackage {
         }
 
         @Override
-        public void addToBatch(List<EventMessage<?>> eventBatch, TrackingToken wrappedToken) {
-            processingEntries.forEach(entry -> entry.addToBatch(eventBatch, wrappedToken));
+        public void addToBatch(List<EventMessage<?>> eventBatch) {
+            processingEntries.forEach(entry -> entry.addToBatch(eventBatch));
         }
     }
 }
