@@ -117,9 +117,11 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerMessageTypeResolver(
-            @Nonnull ComponentFactory<MessageTypeResolver> messageTypeResolverFactory) {
-        applicationConfigurer.componentRegistry(cr -> cr
-                .registerComponent(MessageTypeResolver.class, messageTypeResolverFactory));
+            @Nonnull ComponentBuilder<MessageTypeResolver> messageTypeResolverFactory
+    ) {
+        applicationConfigurer.componentRegistry(cr -> cr.registerComponent(
+                MessageTypeResolver.class, messageTypeResolverFactory
+        ));
         return this;
     }
 
