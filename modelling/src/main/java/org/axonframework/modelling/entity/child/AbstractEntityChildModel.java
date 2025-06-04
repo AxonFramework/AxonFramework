@@ -19,6 +19,7 @@ package org.axonframework.modelling.entity.child;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -147,8 +148,8 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
          * child candidate exists. As such, provide another implementation if there are multiple candidates, such as
          * when the member is a {@link List} of child entities.
          *
-         * @param commandTargetResolver The {@link EventTargetMatcher} to use for matching the child entities to the
-         *                              command.
+         * @param commandTargetResolver The {@link CommandTargetResolver} to use for resolving the child entity
+         *                              to handle the command.
          * @return This builder instance.
          */
         @SuppressWarnings("unchecked")
@@ -160,10 +161,10 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
 
         protected void validate() {
             if (commandTargetResolver == null) {
-                throw new IllegalStateException("The commandTargetResolver must be set before building the model.");
+                throw new AxonConfigurationException("The commandTargetResolver must be set before building the model.");
             }
             if (eventTargetMatcher == null) {
-                throw new IllegalStateException("The eventTargetMatcher must be set before building the model.");
+                throw new AxonConfigurationException("The eventTargetMatcher must be set before building the model.");
             }
         }
 

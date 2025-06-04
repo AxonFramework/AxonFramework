@@ -19,6 +19,7 @@ package org.axonframework.modelling.entity.child;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageStream;
@@ -265,7 +266,7 @@ class ListEntityChildModelTest {
             var builder = ListEntityChildModel.forEntityModel(RecordingParentEntity.class, childEntityEntityModel)
                     .eventTargetMatcher((o, eventMessage, ctx) -> true)
                     .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
-            assertThrows(IllegalStateException.class, builder::build);
+            assertThrows(AxonConfigurationException.class, builder::build);
         }
 
         @Test
@@ -276,7 +277,7 @@ class ListEntityChildModelTest {
                                                                                           .findFirst()
                                                                                           .orElse(null))
                     .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
-            assertThrows(IllegalStateException.class, builder::build);
+            assertThrows(AxonConfigurationException.class, builder::build);
         }
     }
 }
