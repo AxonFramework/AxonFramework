@@ -727,7 +727,7 @@ class Coordinator {
                         "Stopped processing. Runnable flag is false.\nReleasing claims and closing the event stream for Processor [{}].",
                         name);
                 abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
-                closeStream();
+                closeStreamQuietly();
                 return;
             }
 
@@ -817,7 +817,7 @@ class Coordinator {
                 // We didn't start any work packages. Retry later.
                 logger.debug("No segments claimed. Will retry in {} milliseconds.", tokenClaimInterval);
                 lastScheduledToken = NoToken.INSTANCE;
-                closeStream();
+                closeStreamQuietly();
                 eventStream = null;
                 processingGate.set(false);
                 scheduleDelayedCoordinationTask(tokenClaimInterval);
@@ -859,7 +859,11 @@ class Coordinator {
             }
         }
 
-        private void closeStream() {
+        /**
+         * Closes currently opened {@code eventStream}, while suppressing any Exceptions it will generate. The given
+         * {@code eventStream} may be {@code null}, in which case nothing happens.
+         */
+        private void closeStreamQuietly() {
             if (eventStream != null) {
                 try {
                     eventStream.close();
@@ -977,7 +981,7 @@ class Coordinator {
             // Close old stream to start at the new position, if we have Work Packages left.
             if (eventStream != null && !Objects.equals(trackingToken, lastScheduledToken)) {
                 logger.debug("Processor [{}] will close the current stream.", name);
-                closeStream();
+                closeStreamQuietly();
                 eventStream = null;
                 lastScheduledToken = NoToken.INSTANCE;
             }
@@ -1008,7 +1012,6 @@ class Coordinator {
                     var next = eventStream.next();
                     bufferedNextEntry = next.orElse(null);
                 } catch (Exception e) {
-                    // Handle the exception similar to nextEvent()
                     throw new RuntimeException("Failed to peek next event from stream", e);
                 }
             }
@@ -1064,7 +1067,6 @@ class Coordinator {
         private void coordinateWorkPackages() {
             logger.debug("Processor [{}] is coordinating work to all its work packages.", name);
 
-            // Check if the stream has an error before trying to read from it
             if (eventStream != null) {
                 var streamError = eventStream.error();
                 if (streamError.isPresent()) {
@@ -1077,7 +1079,7 @@ class Coordinator {
                  fetched++) {
                 MessageStream.Entry<? extends EventMessage<?>> eventEntry = nextEvent();
                 if (eventEntry == null) {
-                    break; // No more events available - todo: check that!
+                    break; // No more events available
                 }
 
                 TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
@@ -1093,7 +1095,7 @@ class Coordinator {
                         if (nextEntry != null) {
                             eventEntries.add(nextEntry);
                         } else {
-                            break; // No more events
+                            break; // No more events available
                         }
                     }
                     offerEventsToWorkPackages(eventEntries);
@@ -1125,8 +1127,7 @@ class Coordinator {
                 EventMessage<?> event = eventEntry.message();
                 ignoredMessageHandler.accept(event);
                 if (!eventFilter.canHandleTypeOf(event)) {
-                    // Note: MessageStream doesn't have skipMessagesWithPayloadTypeOf equivalent
-                    // This optimization may need to be implemented differently
+                    // TODO #3098 - Support ignoring events by mean of the EventCriteria API
                 }
             }
         }
@@ -1142,8 +1143,7 @@ class Coordinator {
                     EventMessage<?> event = eventEntry.message();
                     ignoredMessageHandler.accept(event);
                     if (!eventFilter.canHandleTypeOf(event)) {
-                        // Note: MessageStream doesn't have skipMessagesWithPayloadTypeOf equivalent
-                        // This optimization may need to be implemented differently
+                        // TODO #3098 - Support ignoring events by mean of the EventCriteria API
                     }
                 });
             }
@@ -1194,7 +1194,7 @@ class Coordinator {
                         coordinationTask.set(task);
                     }
             );
-            closeStream();
+            closeStreamQuietly();
         }
 
         private CompletableFuture<Void> abortWorkPackage(WorkPackage work, Exception cause) {
