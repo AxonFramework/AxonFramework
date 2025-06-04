@@ -29,6 +29,7 @@ import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.StreamableMessageSource;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -58,6 +59,7 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
      * @param delegate The {@link StreamableMessageSource} to adapt.
      */
     public LegacyStreamableEventSource(@Nonnull StreamableMessageSource<E> delegate) {
+        Objects.requireNonNull(delegate, "Delegate is required");
         this.delegate = delegate;
     }
 
