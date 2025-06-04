@@ -25,9 +25,7 @@ import org.axonframework.messaging.MessageStream;
 /**
  * Interface towards a streamable event source.
  * <p>
- * Provides functionality to {@link #open(StreamingCondition) open} an {@link MessageStream event stream} and to
- * retrieve {@link TrackingToken TrackingTokens} for the head and tail of the stream, and at a given point in time in
- * the stream.
+ * Provides functionality to {@link #open(StreamingCondition) open} an {@link MessageStream event stream}.
  *
  * @param <E> The type of {@link EventMessage} streamed by this source.
  * @author Allard Buijze

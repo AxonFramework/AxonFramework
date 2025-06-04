@@ -25,7 +25,13 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Provides functionality to retrieve {@link TrackingToken TrackingTokens} for the head and tail of the stream, and at a
+ * given point in time in the stream.
+ *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Rene de Waele
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public interface TrackingTokenSource {

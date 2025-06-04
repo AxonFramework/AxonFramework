@@ -983,14 +983,11 @@ class Coordinator {
             }
 
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
-//                EventCriteria criteria = EventCriteria.havingAnyTag().andBeingOfAnyType();
+                // TODO #3098 - Support ignoring events by mean of the EventCriteria API
                 eventStream = eventSource.open(StreamingCondition.startingFrom(trackingToken));
                 logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
-                // FIXME: is it the same as before?
                 availabilityCallbackSupported = true;
                 eventStream.onAvailable(this::scheduleImmediateCoordinationTask);
-                //           availabilityCallbackSupported =
-                //                        eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
                 lastScheduledToken = trackingToken;
             }
         }

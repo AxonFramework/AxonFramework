@@ -413,7 +413,7 @@ class PooledStreamingEventProcessorTest {
         assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
     }
 
-    @Disabled("TODO #XXXX - Change it to EventCriteria support")
+    @Disabled("TODO #3098 - Support ignoring events by mean of the EventCriteria API")
     @Test
     void handlingUnknownMessageTypeWillAdvanceToken() {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
@@ -447,7 +447,7 @@ class PooledStreamingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(2, testSubject.processingStatus().size()));
     }
 
-    @Disabled("TODO #XXXX - Change it to EventCriteria support")
+    @Disabled("TODO #3098 - Support ignoring events by mean of the EventCriteria API")
     @Test
     void eventsWhichMustBeIgnoredAreNotHandledOnlyValidated() throws Exception {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
