@@ -35,7 +35,6 @@ import org.axonframework.messaging.QualifiedName;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -61,7 +60,6 @@ public abstract class ConditionConverter {
      * @return A {@code ConsistencyCondition} based on the given {@code condition}.
      */
     public static ConsistencyCondition convertAppendCondition(@Nonnull AppendCondition condition) {
-        Objects.requireNonNull(condition, "The append condition cannot be null.");
         return ConsistencyCondition.newBuilder()
                                    .setConsistencyMarker(GlobalIndexConsistencyMarker.position(
                                            condition.consistencyMarker()
@@ -81,7 +79,6 @@ public abstract class ConditionConverter {
      * @return A {@code SourceEventsRequest} based on the given {@code condition}.
      */
     public static SourceEventsRequest convertSourcingCondition(@Nonnull SourcingCondition condition) {
-        Objects.requireNonNull(condition, "The sourcing condition cannot be null.");
         return SourceEventsRequest.newBuilder()
                                   .setFromSequence(condition.start())
                                   .addAllCriterion(convertEventCriterion(condition.criteria().flatten()))
@@ -99,7 +96,6 @@ public abstract class ConditionConverter {
      * @return A {@code StreamEventsRequest} based on the given {@code condition}.
      */
     public static StreamEventsRequest convertStreamingCondition(@Nonnull StreamingCondition condition) {
-        Objects.requireNonNull(condition, "The streaming condition cannot be null.");
         return StreamEventsRequest.newBuilder()
                                   .setFromSequence(condition.position().position().orElse(-1))
                                   .addAllCriterion(convertEventCriterion(condition.criteria().flatten()))
