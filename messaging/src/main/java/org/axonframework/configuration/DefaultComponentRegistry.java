@@ -228,7 +228,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     /**
-     * Registers the shutdown jamd;ers for all
+     * Registers the shutdown handlers for all
      * {@link #registerFactory(ComponentFactory) registered ComponentFactories}.
      *
      * @param lifecycleRegistry The registry where {@link ComponentFactory ComponentFactories} may register their
