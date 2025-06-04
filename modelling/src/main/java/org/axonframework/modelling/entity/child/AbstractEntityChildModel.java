@@ -19,6 +19,7 @@ package org.axonframework.modelling.entity.child;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -48,17 +49,17 @@ import static java.util.Objects.requireNonNull;
 public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel<C, P> {
 
     protected final EntityModel<C> childEntityModel;
-    protected final ChildEntityMatcher<C, CommandMessage<?>> commandTargetMatcher;
-    protected final ChildEntityMatcher<C, EventMessage<?>> eventTargetMatcher;
+    protected final CommandTargetResolver<C> commandTargetResolver;
+    protected final EventTargetMatcher<C> eventTargetMatcher;
 
     protected AbstractEntityChildModel(
             @Nonnull EntityModel<C> childEntityModel,
-            @Nonnull ChildEntityMatcher<C, CommandMessage<?>> commandTargetMatcher,
-            @Nonnull ChildEntityMatcher<C, EventMessage<?>> eventTargetMatcher
+            @Nonnull CommandTargetResolver<C> commandTargetResolver,
+            @Nonnull EventTargetMatcher<C> eventTargetMatcher
     ) {
         this.childEntityModel = requireNonNull(childEntityModel, "The childEntityModel may not be null.");
-        this.commandTargetMatcher =
-                requireNonNull(commandTargetMatcher, "The commandTargetMatcher may not be null.");
+        this.commandTargetResolver =
+                requireNonNull(commandTargetResolver, "The commandTargetResolver may not be null.");
         this.eventTargetMatcher =
                 requireNonNull(eventTargetMatcher, "The eventTargetMatcher may not be null.");
     }
@@ -70,14 +71,17 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
     }
 
     @Override
-    public boolean canHandle(@Nonnull CommandMessage<?> message, @Nonnull P parentEntity,
+    public boolean canHandle(@Nonnull CommandMessage<?> message,
+                             @Nonnull P parentEntity,
                              @Nonnull ProcessingContext context) {
         if (!supportedCommands().contains(message.type().qualifiedName())) {
             return false;
         }
-        return getChildEntities(parentEntity)
-                .stream()
-                .anyMatch(child -> commandTargetMatcher.matches(child, message));
+        List<C> childEntities = getChildEntities(parentEntity);
+        if (childEntities.isEmpty()) {
+            return false;
+        }
+        return commandTargetResolver.getTargetChildEntity(childEntities, message, context) != null;
     }
 
     @Nonnull
@@ -85,17 +89,12 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
     public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
                                                                 @Nonnull P parentEntity,
                                                                 @Nonnull ProcessingContext context) {
-        List<C> matchingChildEntities = getChildEntities(parentEntity)
-                .stream()
-                .filter(child -> commandTargetMatcher.matches(child, message))
-                .toList();
-        if (matchingChildEntities.isEmpty()) {
+        List<C> childEntities = getChildEntities(parentEntity);
+        C targetChildEntity = commandTargetResolver.getTargetChildEntity(childEntities, message, context);
+        if (targetChildEntity == null) {
             return MessageStream.failed(new ChildEntityNotFoundException(message, parentEntity));
         }
-        if (matchingChildEntities.size() > 1) {
-            return MessageStream.failed(new ChildAmbiguityException(message, parentEntity));
-        }
-        return childEntityModel.handleInstance(message, matchingChildEntities.getFirst(), context);
+        return childEntityModel.handleInstance(message, targetChildEntity, context);
     }
 
     protected abstract List<C> getChildEntities(P entity);
@@ -106,7 +105,7 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
         var evolvedEntities = getChildEntities(entity)
                 .stream()
                 .map(child -> {
-                    if (eventTargetMatcher.matches(child, event)) {
+                    if (eventTargetMatcher.matches(child, event, context)) {
                         evolvedChildEntity.set(true);
                         return childEntityModel.evolve(child, event, context);
                     }
@@ -131,8 +130,8 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
     protected abstract static class Builder<C, P, R extends Builder<C, P, R>> {
 
         protected final EntityModel<C> childEntityModel;
-        protected ChildEntityMatcher<C, CommandMessage<?>> commandTargetMatcher = (child, command) -> true;
-        protected ChildEntityMatcher<C, EventMessage<?>> eventTargetMatcher = (child, event) -> true;
+        protected CommandTargetResolver<C> commandTargetResolver;
+        protected EventTargetMatcher<C> eventTargetMatcher;
 
         @SuppressWarnings("unused") // Is used for generics
         protected Builder(@Nonnull Class<P> parentClass,
@@ -142,35 +141,47 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
         }
 
         /**
-         * Sets the {@link ChildEntityMatcher} to use for matching the child entities to the command. This is used to
-         * filter the child entities based on the command. One entity must match an incoming command. If no match is
-         * found, an {@link ChildEntityNotFoundException} is thrown. If multiple matches are found, an
-         * {@link ChildAmbiguityException} is thrown.
+         * Sets the {@link CommandTargetResolver} to use for resolving the child entity to handle the command. This
+         * should return one child entity, or {@code null} if no child entity should handle the command.
+         * <p>
+         * Defaults to matching a singular child entity, or throwing a {@link ChildAmbiguityException} if more than one
+         * child candidate exists. As such, provide another implementation if there are multiple candidates, such as
+         * when the member is a {@link List} of child entities.
          *
-         * @param commandTargetMatcher The {@link ChildEntityMatcher} to use for matching the child entities to the
-         *                             command.
+         * @param commandTargetResolver The {@link CommandTargetResolver} to use for resolving the child entity
+         *                              to handle the command.
          * @return This builder instance.
          */
         @SuppressWarnings("unchecked")
-        public R commandTargetMatcher(
-                @Nonnull ChildEntityMatcher<C, CommandMessage<?>> commandTargetMatcher) {
-            this.commandTargetMatcher = requireNonNull(commandTargetMatcher,
-                                                       "The commandTargetMatcher may not be null.");
+        public R commandTargetResolver(@Nonnull CommandTargetResolver<C> commandTargetResolver) {
+            this.commandTargetResolver = requireNonNull(commandTargetResolver,
+                                                        "The commandTargetResolver may not be null.");
             return (R) this;
         }
 
+        protected void validate() {
+            if (commandTargetResolver == null) {
+                throw new AxonConfigurationException("The commandTargetResolver must be set before building the model.");
+            }
+            if (eventTargetMatcher == null) {
+                throw new AxonConfigurationException("The eventTargetMatcher must be set before building the model.");
+            }
+        }
+
         /**
-         * Sets the {@link ChildEntityMatcher} to use for matching the child entities to the event. This is used to
-         * filter the child entities based on the event. The amount of entities that match an incoming event is not
-         * restricted. Entities that match are evolved, while entities that do not match are ignored and remain in the
-         * same state.
+         * Sets the {@link EventTargetMatcher} to determine whether a child entity should handle the given
+         * {@link EventMessage}. This should return {@code true} if the child entity should handle the event, or
+         * {@code false} if it should not.
+         * <p>
+         * Defaults to matching any child entity, meaning all child entities represented by this model will be evolved
+         * for the message.
          *
-         * @param eventTargetMatcher The {@link ChildEntityMatcher} to use for matching the child entities to the
+         * @param eventTargetMatcher The {@link EventTargetMatcher} to use for matching the child entities to the
          *                           event.
          * @return This builder instance.
          */
         @SuppressWarnings("unchecked")
-        public R eventTargetMatcher(@Nonnull ChildEntityMatcher<C, EventMessage<?>> eventTargetMatcher) {
+        public R eventTargetMatcher(@Nonnull EventTargetMatcher<C> eventTargetMatcher) {
             this.eventTargetMatcher = requireNonNull(eventTargetMatcher, "The eventTargetMatcher may not be null.");
             return (R) this;
         }

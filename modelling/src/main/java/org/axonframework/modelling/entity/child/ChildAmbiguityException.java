@@ -26,6 +26,9 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * {@link org.axonframework.messaging.QualifiedName}, as well as both child entities returning true for
  * {@link EntityChildModel#canHandle(CommandMessage, Object, ProcessingContext)}, indicating that they have an active
  * child entity that can handle the command.
+ * <p>
+ * When this happens, make sure the {@link CommandTargetResolver} is configured correctly to resolve the child entity
+ * that should handle the command.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -33,15 +36,11 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 public class ChildAmbiguityException extends RuntimeException {
 
     /**
-     * Creates a new exception with the given {@code commandMessage} and {@code parentEntity}.
+     * Initializes the {@link ChildAmbiguityException} with the given {@code message}.
      *
-     * @param commandMessage The {@link CommandMessage} that was handled.
-     * @param parentEntity   The parent entity instance that was expected to handle the command.
+     * @param message the message describing the cause of this exception
      */
-    public ChildAmbiguityException(@Nonnull CommandMessage<?> commandMessage, @Nonnull Object parentEntity) {
-        super("Multiple child entities found for command of type [%s]. State of parent entity [%s]: [%s]".formatted(
-                commandMessage.type(),
-                parentEntity.getClass().getName(), parentEntity)
-        );
+    public ChildAmbiguityException(@Nonnull String message) {
+        super(message);
     }
 }
