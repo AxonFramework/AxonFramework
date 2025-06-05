@@ -974,32 +974,36 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         verify(mock).close();
     }
 
-    @Test
-    void filterKeepsEntriesForWhichTrueIsReturned() {
-        M firstMessage = createRandomMessage();
-        MessageStream<M> testSubject = completedTestSubject(List.of(firstMessage, createRandomMessage()));
+    @Nested
+    class Filter {
 
-        MessageStream<M> result = testSubject.filter(entry -> entry.message().equals(firstMessage));
+        @Test
+        void filterKeepsEntriesForWhichTrueIsReturned() {
+            M firstMessage = createRandomMessage();
+            MessageStream<M> testSubject = completedTestSubject(List.of(firstMessage, createRandomMessage()));
 
-        Optional<Entry<M>> next = result.next();
-        assertTrue(next.isPresent());
-        assertEquals(firstMessage, next.get().message());
-        assertFalse(result.next().isPresent());
-        assertTrue(result.isCompleted());
-    }
+            MessageStream<M> result = testSubject.filter(entry -> entry.message().equals(firstMessage));
 
-    @Test
-    void filterRemovesEntriesForWhichFalseIsReturned() {
-        M firstMessage = createRandomMessage();
-        M secondMessage = createRandomMessage();
-        MessageStream<M> testSubject = completedTestSubject(List.of(firstMessage, secondMessage));
+            Optional<Entry<M>> next = result.next();
+            assertTrue(next.isPresent());
+            assertEquals(firstMessage, next.get().message());
+            assertFalse(result.next().isPresent());
+            assertTrue(result.isCompleted());
+        }
 
-        MessageStream<M> result = testSubject.filter(entry -> !entry.message().equals(secondMessage));
+        @Test
+        void filterRemovesEntriesForWhichFalseIsReturned() {
+            M firstMessage = createRandomMessage();
+            M secondMessage = createRandomMessage();
+            MessageStream<M> testSubject = completedTestSubject(List.of(firstMessage, secondMessage));
 
-        Optional<Entry<M>> next = result.next();
-        assertTrue(next.isPresent());
-        assertEquals(firstMessage, next.get().message());
-        assertFalse(result.next().isPresent());
-        assertTrue(result.isCompleted());
+            MessageStream<M> result = testSubject.filter(entry -> !entry.message().equals(secondMessage));
+
+            Optional<Entry<M>> next = result.next();
+            assertTrue(next.isPresent());
+            assertEquals(firstMessage, next.get().message());
+            assertFalse(result.next().isPresent());
+            assertTrue(result.isCompleted());
+        }
     }
 }
