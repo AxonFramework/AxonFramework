@@ -16,11 +16,13 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.MessageType;
 
 /**
  * Empty {@link EventMessage} implementation without any {@link EventMessage#getPayload() payload}, used as the
- * <b>terminal</b> message of a {@link org.axonframework.messaging.MessageStream}.
+ * <b>terminal</b> message of a {@link org.axonframework.messaging.MessageStream}. This thus signals the end of the
+ * {@code MessageStream}.
  * <p>
  * Only useful to be paired with {@link org.axonframework.messaging.Context} information in an event-specific
  * {@code MessageStream} when there is no event payload to combine it with.
@@ -28,6 +30,7 @@ import org.axonframework.messaging.MessageType;
  * @author Steven van Beelen
  * @since 5.0.0
  */
+@Internal
 public class TerminalEventMessage extends GenericEventMessage<Void> implements EventMessage<Void> {
 
     /**
