@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.MessageType;
 
 /**
@@ -29,6 +30,7 @@ import org.axonframework.messaging.MessageType;
  * @author Steven van Beelen
  * @since 5.0.0
  */
+@Internal
 public class TerminalEventMessage extends GenericEventMessage<Void> implements EventMessage<Void> {
 
     /**
