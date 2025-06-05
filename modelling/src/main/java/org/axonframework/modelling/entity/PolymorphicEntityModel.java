@@ -32,7 +32,6 @@ import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -162,7 +161,14 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
             return superTypeModel.handleInstance(message, entity, context);
         }
 
-        return MessageStream.failed(new NoHandlerForCommandException(message, entityType()));
+        //noinspection unchecked
+        List<Class<E>> supportingEntityTypes = concreteModels
+                .values()
+                .stream()
+                .filter(model -> model.supportedInstanceCommands().contains(message.type().qualifiedName()))
+                .map(model -> (Class<E>) model.entityType())
+                .toList();
+        return MessageStream.failed(new WrongPolymorphicEntityTypeException(message, entityType(), supportingEntityTypes, concreteModel.entityType()));
     }
 
     @Nonnull

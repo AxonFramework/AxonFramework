@@ -123,6 +123,7 @@
         <junit.jupiter.version>5.12.2</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.19.3</testcontainers.version>
+        <assertj-core.version>3.27.3</assertj-core.version>
         <!-- Validation -->
         <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
