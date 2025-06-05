@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -37,6 +38,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -86,6 +88,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void sourcingEventsReturnsMatchingAggregateEvents() throws Exception {
+        int expectedNumberOfEvents = 3;
+        int expectedCount = expectedNumberOfEvents + 1; // events and 1 consistency marker message
+
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
                                  taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
@@ -99,13 +104,12 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
         StepVerifier.create(testSubject.source(testCondition).asFlux())
-                    .expectNextCount(3)
+                    .expectNextCount(expectedCount)
                     .verifyComplete();
     }
 
     @Test
-    void usingMidStreamConsistencyMarkerFromSourcingEventsToAppendIsNotAllowed() throws Exception {
-        // given ...
+    void sourcingEventsReturnsConsistencyMarkerWithNoEventMessageAsFinalEntryInTheMessageStream() throws Exception {
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
                                  taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
@@ -116,24 +120,19 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        ConsistencyMarker midStreamMarker = testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA))
-                                                       .asFlux()
-                                                       .collectList()
-                                                       .map(entries -> entries.get(1))
-                                                       .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
-                                                       .block();
-        // when ...
-        AppendCondition testAppendCondition = AppendCondition.withCriteria(OTHER_CRITERIA)
-                                                             .withMarker(midStreamMarker);
-        CompletableFuture<ConsistencyMarker> result =
-                testSubject.appendEvents(testAppendCondition, taggedEventMessage("event-6", OTHER_CRITERIA_TAGS))
-                           .thenCompose(AppendTransaction::commit);
-        // then ...
-        await("Await commit").pollDelay(Duration.ofMillis(50))
-                             .atMost(Duration.ofSeconds(5))
-                             .untilAsserted(result::isDone);
-        assertTrue(result.isCompletedExceptionally());
-        assertInstanceOf(AppendEventsTransactionRejectedException.class, result.exceptionNow());
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(StorageEngineTestSuite::assertMarkerEntry)
+                    .verifyComplete();
+
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA)).asFlux())
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .assertNext(StorageEngineTestSuite::assertMarkerEntry)
+                    .verifyComplete();
     }
 
     @Test
@@ -173,25 +172,42 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void sourcingEventsReturnsEmptyStreamIfNoEventsInTheStoreForFlux() {
+    void sourcingEventsReturnsConsistencyMarkerAsSoleMessageWhenNoEventsInTheStoreForFlux() {
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
         StepVerifier.create(testSubject.source(testCondition).asFlux())
-                    .expectNextCount(0)
+                    .assertNext(StorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
     }
 
     @Test
-    void sourcingEventsReturnsEmptyStreamThatCompletesIfNoEventsInTheStore() {
+    void sourcingEventsReturnsConsistencyMarkerAsSoleMessageAndCompletesWhenNoEventsInTheStore() {
         AtomicBoolean completed = new AtomicBoolean(false);
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
-        testSubject.source(testCondition)
-                   .whenComplete(() -> completed.set(true))
-                   .first()
-                   .asCompletableFuture();
+        MessageStream<EventMessage<?>> sourcingStream = testSubject.source(testCondition)
+                                                                   .whenComplete(() -> completed.set(true));
+        await("Await first entry availability")
+                .pollDelay(Duration.ofMillis(50))
+                .atMost(Duration.ofMillis(500))
+                .until(sourcingStream::hasNextAvailable);
+        Optional<Entry<EventMessage<?>>> entry = sourcingStream.next();
+        assertTrue(entry.isPresent());
+        assertMarkerEntry(entry.get());
+        await("Await end of stream")
+                .pollDelay(Duration.ofMillis(50))
+                .atMost(Duration.ofMillis(500))
+                .until(() -> !sourcingStream.hasNextAvailable());
 
-        await("Awaiting until sourcing completes").untilTrue(completed);
+        await("Awaiting until sourcing completes")
+                .pollDelay(Duration.ofMillis(50))
+                .atMost(Duration.ofMillis(500))
+                .untilTrue(completed);
+    }
+
+    private static void assertMarkerEntry(Entry<EventMessage<?>> entry) {
+        assertNotNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY));
+        assertEquals(TerminalEventMessage.INSTANCE, entry.message());
     }
 
     @Test

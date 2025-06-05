@@ -23,6 +23,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
@@ -35,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A {@link MessageStream} implementation backed by a {@link ResultStream} of
@@ -57,7 +57,6 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage<?>
 
     private final ResultStream<SourceEventsResponse> stream;
     private final EventConverter converter;
-    private final AtomicReference<SourceEventsResponse> previousReference = new AtomicReference<>();
 
     /**
      * Constructs a {@code SourcingMessageStream} with the given {@code stream} and {@code converter}.
@@ -75,36 +74,29 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage<?>
 
     @Override
     public Optional<Entry<EventMessage<?>>> next() {
-        SourceEventsResponse current = stream.nextIfAvailable();
-        SourceEventsResponse previous = previousReference.getAndSet(current);
-        long consistencyMarker;
-
-        if (previous == null && current != null && current.hasConsistencyMarker()) {
-            logger.warn("First and only entry of the source result stream is a consistency marker.");
-            return Optional.empty();
-        } else if (previous == null) {
-            logger.debug("The source result stream never contained any entries. Try a different sourcing condition.");
-            return Optional.empty();
-        } else if (previous.hasConsistencyMarker()) {
+        SourceEventsResponse next = stream.nextIfAvailable();
+        if (next == null) {
             logger.debug("Reached the end of the source result stream.");
             return Optional.empty();
-        } else if (current.hasConsistencyMarker()) {
-            logger.debug("Peeked consistency marker (final response) from the source result stream.");
-            consistencyMarker = current.getConsistencyMarker();
-        } else {
-            logger.debug("Set consistency marker to sequence of current response.");
-            consistencyMarker = previous.getEvent().getSequence();
+        } else if (next.hasConsistencyMarker()) {
+            logger.debug("Reached the consistency marker message of the source result stream.");
+            return convertToMarkerEntry(next.getConsistencyMarker());
         }
-        return Optional.of(convertToEntry(previous.getEvent(), consistencyMarker));
+        return getConvertToEventEntry(next.getEvent());
     }
 
-    private SimpleEntry<EventMessage<?>> convertToEntry(SequencedEvent event,
-                                                        long consistencyMarker) {
+    private Optional<Entry<EventMessage<?>>> getConvertToEventEntry(SequencedEvent event) {
         EventMessage<byte[]> eventMessage = converter.convertEvent(event.getEvent());
         TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence() + 1);
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
-        context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(consistencyMarker));
-        return new SimpleEntry<>(eventMessage, context);
+        return Optional.of(new SimpleEntry<>(eventMessage, context));
+    }
+
+    private static Optional<Entry<EventMessage<?>>> convertToMarkerEntry(long marker) {
+        Context context = ConsistencyMarker.addToContext(
+                Context.empty(), new GlobalIndexConsistencyMarker(marker)
+        );
+        return Optional.of(new SimpleEntry<>(TerminalEventMessage.INSTANCE, context));
     }
 
     @Override
