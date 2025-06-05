@@ -38,8 +38,8 @@ class LazyInitializedComponentDefinitionTest
 
     @Override
     LazyInitializedComponentDefinition<String, String> createComponent(Component.Identifier<String> id,
-                                                                       ComponentFactory<String> factory) {
-        return new LazyInitializedComponentDefinition<>(id, factory);
+                                                                       ComponentBuilder<String> builder) {
+        return new LazyInitializedComponentDefinition<>(id, builder);
     }
 
     @Override

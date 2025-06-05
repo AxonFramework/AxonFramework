@@ -374,8 +374,8 @@ command messaging and use the configuration API; the module just pulled in every
 
 As an act to clean this up, we have broken down the `Configurer` and `Configuration` into manageable chunks.
 As such, the (new) `ApplicationConfigurer` interface now only provides basic operations
-to [register components](#registering-components-with-the-componentfactory-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface), [register enhancers](#registering-enhancers-with-the-configurationenhancer-interface),
-and [register modules](#registering-modules-through-the-modulebuilder-interface), besides the basic start-and-shutdown
+to [register components](#registering-components-with-the-componentbuilder-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface), [register enhancers](#registering-enhancers-with-the-configurationenhancer-interface), [register modules](#registering-modules-through-the-modulebuilder-interface),
+and [register factories](#registering-component-factories), besides the basic start-and-shutdown
 handler registration. It does this by having two different registries, being the `ComponentRegistry` and
 `LifecycleRegistry`. The former takes care of the component, decorator, enhancer, and module registration. The latter
 provides the aforementioned methods to register start and shutdown handlers as part of registering components. The
@@ -409,12 +409,12 @@ In this fashion, we intend to ensure the following points:
 
 For more details on how to use the new configuration API, be sure to read the following subsections.
 
-### Registering components with the ComponentFactory interface
+### Registering components with the ComponentBuilder interface
 
-The configuration API boosts a new interface, called the `ComponentFactory`. The `ComponentFactory` can generate any
+The configuration API boosts a new interface, called the `ComponentBuilder`. The `ComponentBuilder` can generate any
 type of component you would need to register with Axon, based on a given `Configuration` instance. By providing the
 `Configuration` instance, you are able to pull other (Axon) components out of it that you might require to construct
-your component. The `ComponentRegistry#registerComponent` method is adjusted to expect such a `ComponentFactory` upon
+your component. The `ComponentRegistry#registerComponent` method is adjusted to expect such a `ComponentBuilder` upon
 registration.
 
 Here's an example of how to register a `DefaultCommandGateway` through the `registerComponent` method:
@@ -434,12 +434,12 @@ public static void main(String[] args) {
 ```
 
 Although the sample above uses the `MessagingConfigurer#componentRegistry(Consumer<ComponentRegistry>)` operation, the
-same `ComponentFactory` behavior resides on higher-level operations like `MessagingConfigurer#registerCommandBus`.
+same `ComponentBuilder` behavior resides on higher-level operations like `MessagingConfigurer#registerCommandBus`.
 
 ### Decorating components with the ComponentDecorator interface
 
 New functionality to the configuration API, is the ability to provide decorators
-for [registered components](#registering-components-with-the-componentfactory-interface). The decorator pattern is what
+for [registered components](#registering-components-with-the-componentbuilder-interface). The decorator pattern is what
 Axon Framework uses to construct its infrastructure components, like the `CommandBus`, as of version 5.
 
 In the command bus' example, concepts like intercepting, tracing, being distributed, and retrying, are now decorators
@@ -544,6 +544,68 @@ public static void main(String[] args) {
                                // Further MODULE configuration...
                        );
     // Further configuration...
+}
+```
+
+### Registering Component Factories
+
+The new `ComponentFactory` interface allows us, and users, to provide a component factory for components. This provides
+a mechanism to, for example, construct a factory that can construct context-specific `CommandGateway` instances or
+`EventStorageEngines`. Whenever a `ComponentFactory` constructs an instance, it will register it with the
+`Configuration` for future reference. This ensures that when you request a component several times from the
+`Configuration` that the same instance will be returned. Note that a `ComponentFactory` may decide against constructing
+a component if (1) the `name` is not of the desired format or (2) if the `Configuration` does not contain the required
+components to construct an instance.
+
+Axon Framework uses the `ComponentFactory` to, for example, register an `AxonServerEventStorageEngineFactory`. This
+`ComponentFactory` for the `AxonServerEventStorageEngine` can construct context-specific `AxonServerEventStorageEngine`
+instances. To that end, it expects the `name` to comply to the following format: `"storageEngine@{context-name}"`.
+
+A registered factory is consulted **only** when the `ComponentRegistry` does not contain a component for the
+type-and-name combination. Hence, if the `ComponentRegistry` has a `CommandGateway` component registered with it **and**
+there is a `ComponentFactory<CommandGateway>` present on the registry, the factory will not be invoked.
+
+Down below is an example when a factory is **not** invoked:
+
+```java
+public static void main(String[] args) {
+    AxonConfiguration configuration =
+            MessagingConfigurer.create()
+                               .componentRegistry(registry -> registry.registerComponent(
+                                       CommandGateway.class,
+                                       config -> new DefaultCommandGateway(
+                                               config.getComponent(CommandBus.class),
+                                               config.getComponent(MessageTypeResolver.class)
+                                       )
+                               ))
+                               .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
+                               // Further configuration...
+                               .build();
+
+    // This will invoke the CommandGatewayFactory!
+    CommandGateway commandGateway = configuration.getComponent(CommandGateway.class, "some-context");
+}
+```
+
+However, if we take the above example and invoke `getComponent` with a different `name`, the factory will be invoked:
+
+```java
+public static void main(String[] args) {
+    AxonConfiguration configuration =
+            MessagingConfigurer.create()
+                               .componentRegistry(registry -> registry.registerComponent(
+                                       CommandGateway.class,
+                                       config -> new DefaultCommandGateway(
+                                               config.getComponent(CommandBus.class),
+                                               config.getComponent(MessageTypeResolver.class)
+                                       )
+                               ))
+                               .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
+                               // Further configuration...
+                               .build();
+
+    // This will return the registered DefaultCommandGateway!
+    CommandGateway commandGateway = configuration.getComponent(CommandGateway.class);
 }
 ```
 
@@ -706,24 +768,25 @@ This section contains two tables:
 
 ### Moved or Renamed Classes
 
-| Axon 4                                                       | Axon 5                                                        | Module change?                 |
-|--------------------------------------------------------------|---------------------------------------------------------------|--------------------------------|
-| org.axonframework.common.caching.EhCache3Adapter             | org.axonframework.common.caching.EhCacheAdapter               | No                             |
-| org.axonframework.eventsourcing.MultiStreamableMessageSource | org.axonframework.eventhandling.MultiStreamableMessageSource  | No                             |
-| org.axonframework.eventhandling.EventBus                     | org.axonframework.eventhandling.EventSink                     | No                             |
-| org.axonframework.commandhandling.CommandHandler             | org.axonframework.commandhandling.annotation.CommandHandler   | No                             |
-| org.axonframework.eventhandling.EventHandler                 | org.axonframework.eventhandling.annotation.EventHandler       | No                             |
-| org.axonframework.queryhandling.QueryHandler                 | org.axonframework.queryhandling.annotation.QueryHandler       | No                             |
-| org.axonframework.config.Configuration                       | org.axonframework.configuration.Configuration                 | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.Component                           | org.axonframework.configuration.Component                     | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurationEnhancer         | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ModuleConfiguration                 | org.axonframework.configuration.Module                        | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleHandler                    | org.axonframework.configuration.LifecycleHandler              | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleHandlerInspector           | org.axonframework.configuration.LifecycleHandlerInspector     | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleOperations                 | org.axonframework.configuration.LifecycleRegistry             | Yes. Moved to `axon-messaging` |
-| org.axonframework.commandhandling.CommandCallback            | org.axonframework.commandhandling.gateway.CommandResult       | No                             |
-| org.axonframework.commandhandling.callbacks.FutureCallback   | org.axonframework.commandhandling.gateway.FutureCommandResult | No                             |
-| org.axonframework.modelling.command.Repository               | org.axonframework.modelling.repository.Repository             | No                             |
+| Axon 4                                                                 | Axon 5                                                                      | Module change?           |
+|------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------------|
+| org.axonframework.common.caching.EhCache3Adapter                       | org.axonframework.common.caching.EhCacheAdapter                             | No                       |
+| org.axonframework.eventsourcing.MultiStreamableMessageSource           | org.axonframework.eventhandling.MultiStreamableMessageSource                | No                       |
+| org.axonframework.eventhandling.EventBus                               | org.axonframework.eventhandling.EventSink                                   | No                       |
+| org.axonframework.commandhandling.CommandHandler                       | org.axonframework.commandhandling.annotation.CommandHandler                 | No                       |
+| org.axonframework.eventhandling.EventHandler                           | org.axonframework.eventhandling.annotation.EventHandler                     | No                       |
+| org.axonframework.queryhandling.QueryHandler                           | org.axonframework.queryhandling.annotation.QueryHandler                     | No                       |
+| org.axonframework.config.Configuration                                 | org.axonframework.configuration.Configuration                               | Yes, to `axon-messaging` |
+| org.axonframework.config.Component                                     | org.axonframework.configuration.Component                                   | Yes, to `axon-messaging` |
+| org.axonframework.config.ConfigurerModule                              | org.axonframework.configuration.ConfigurationEnhancer                       | Yes, to `axon-messaging` |
+| org.axonframework.config.ModuleConfiguration                           | org.axonframework.configuration.Module                                      | Yes, to `axon-messaging` |
+| org.axonframework.config.LifecycleHandler                              | org.axonframework.configuration.LifecycleHandler                            | Yes, to `axon-messaging` |
+| org.axonframework.config.LifecycleHandlerInspector                     | org.axonframework.configuration.LifecycleHandlerInspector                   | Yes, to `axon-messaging` |
+| org.axonframework.config.LifecycleOperations                           | org.axonframework.configuration.LifecycleRegistry                           | Yes, to `axon-messaging` |
+| org.axonframework.commandhandling.CommandCallback                      | org.axonframework.commandhandling.gateway.CommandResult                     | No                       |
+| org.axonframework.commandhandling.callbacks.FutureCallback             | org.axonframework.commandhandling.gateway.FutureCommandResult               | No                       |
+| org.axonframework.modelling.command.Repository                         | org.axonframework.modelling.repository.Repository                           | No                       |
+| org.axonframework.axonserver.connector.ServerConnectorConfigurerModule | org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer | No                       |
 
 ### Removed Classes
 
@@ -778,7 +841,7 @@ This section contains three subsections, called:
 | `Configurer#configureQueryUpdateEmitter`                             | `MessagingConfigurer#registerQueryUpdateEmitter`                                | 
 | `ConfigurerModule#configureModule`                                   | `ConfigurationEnhancer#enhance`                                                 | 
 | `ConfigurerModule#configureLifecyclePhaseTimeout`                    | `LifecycleRegistry#registerLifecyclePhaseTimeout`                               | 
-| `Configurer#registerComponent(Function<Configuration, ? extends C>)` | `ComponentRegistry#registerComponent(ComponentFactory<C>)`                      | 
+| `Configurer#registerComponent(Function<Configuration, ? extends C>)` | `ComponentRegistry#registerComponent(ComponentBuilder<C>)`                      | 
 | `Configurer#registerModule(ModuleConfiguration)`                     | `ComponentRegistry#registerComponent(Module)`                                   | 
 | `StreamableMessageSource#openStream(TrackingToken)`                  | `StreamableEventSource#open(SourcingCondition)`                                 | 
 | `StreamableMessageSource#createTailToken()`                          | `StreamableEventSource#headToken()`                                             | 

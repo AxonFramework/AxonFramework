@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
  * it would look as follows:
  * <pre><code>
  * ComponentDefinition.ofType(MyComponentInterface.class)
- *                    .withFactory(config -> new MyComponentImplementation(config.getComponent(MyDependency.class)))
+ *                    .withBuilder(config -> new MyComponentImplementation(config.getComponent(MyDependency.class)))
  *                    .onStart(0, MyComponentImplementation::start)
  *                    .onShutdown(0, MyComponentImplementation::shutdown)
  * </code></pre>
@@ -47,7 +47,7 @@ import static java.util.Objects.requireNonNull;
  * Alternatively, you can specify a name to make multiple instances of the same component in the same configuration:
  * <pre><code>
  *     ComponentDefinition.ofTypeAndName(MyComponentInterface.class, "MyName")
- *                        .withFactory(config -> ...)
+ *                        .withBuilder(config -> ...)
  * </code></pre>
  * <p>
  * If an instance of the component is already constructed, it is more efficient to register it directly
@@ -67,7 +67,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * that {@code type}. To distinguish between different instances of the same type, consider using
      * {@link #ofTypeAndName(Class, String)} instead.
      * <p>
-     * Either {@link IncompleteComponentDefinition#withFactory(ComponentFactory) withFactory(...)} or
+     * Either {@link IncompleteComponentDefinition#withBuilder(ComponentBuilder) withBuilder(...)} or
      * {@link IncompleteComponentDefinition#withInstance(Object) withInstance(...)} must be called on the result of this
      * invocation to create a valid {@code ComponentDefinition} instance.
      *
@@ -98,8 +98,8 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
             }
 
             @Override
-            public ComponentDefinition<C> withFactory(@Nonnull ComponentFactory<? extends C> factory) {
-                return new LazyInitializedComponentDefinition<>(new Component.Identifier<>(type, name), factory);
+            public ComponentDefinition<C> withBuilder(@Nonnull ComponentBuilder<? extends C> builder) {
+                return new LazyInitializedComponentDefinition<>(new Component.Identifier<>(type, name), builder);
             }
         };
     }
@@ -212,7 +212,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Represents an intermediate step in the creation of a {@link ComponentDefinition}.
      * <p>
      * This step requires the call of either {@link #withInstance(Object) withInstance(...)} or
-     * {@link #withFactory(ComponentFactory) withFactory(...)} to create a usable {@code ComponentDefinition}.
+     * {@link #withBuilder(ComponentBuilder) withBuilder(...)} to create a usable {@code ComponentDefinition}.
      *
      * @param <C> The declared type of the component.
      */
@@ -221,7 +221,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
         /**
          * Creates a {@code ComponentDefinition} with the given pre-instantiated {@code instance} of a component.
          * <p>
-         * If you require lazy instantiation of components, consider using {@link #withFactory(ComponentFactory)}
+         * If you require lazy instantiation of components, consider using {@link #withBuilder(ComponentBuilder)}
          * instead.
          *
          * @param instance The instance to declare as the implementation of this component.
@@ -230,14 +230,14 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
         ComponentDefinition<C> withInstance(@Nonnull C instance);
 
         /**
-         * Creates a {@code ComponentDefinition} that creates an instance on-demand using the given {@code factory}
+         * Creates a {@code ComponentDefinition} that creates an instance on-demand using the given {@code builder}
          * method.
          * <p>
          * If you have already instantiated a component, consider using {@link #withInstance(Object)} instead.
          *
-         * @param factory The factory used to create an instance, when required.
+         * @param builder The builder used to create an instance, when required.
          * @return A {@code ComponentDefinition} for further configuration.
          */
-        ComponentDefinition<C> withFactory(@Nonnull ComponentFactory<? extends C> factory);
+        ComponentDefinition<C> withBuilder(@Nonnull ComponentBuilder<? extends C> builder);
     }
 }
