@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
+import org.axonframework.messaging.Message;
 
 import java.util.Comparator;
 import java.util.List;
@@ -153,5 +152,30 @@ public class StubProcessingContext implements ProcessingContext {
     public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
                                       @Nonnull T expectedResource) {
         return resources.remove(key, expectedResource);
+    }
+
+    /**
+     * Creates a new stub {@link ProcessingContext} for the given {@link Message}. You can use this to create a context
+     * compatible with most of the framework. Do note that this context does not commit or advance phases on its own,
+     * but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     *
+     * @param message The message to create a context for.
+     * @return A new {@link ProcessingContext} instance containing the given {@code message} as a resource.
+     */
+    public static ProcessingContext forMessage(Message<?> message) {
+        return Message.addToContext(new StubProcessingContext(), message);
+    }
+
+    /**
+     * Creates a new stub {@link ProcessingContext} for the given {@link LegacyUnitOfWork}.
+     * You can use this to create a context compatible with most of the framework.
+     * Do note that this context does not commit or advance phases on its own,
+     * but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     *
+     * @param uow The unit of work to create a context for.
+     * @return A new {@link ProcessingContext} instance containing the given {@code message} as a resource.
+     */
+    public static ProcessingContext forUnitOfWork(LegacyUnitOfWork<?> uow) {
+        return forMessage(uow.getMessage());
     }
 }

@@ -32,7 +32,6 @@ import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.AggregateRoot;
-import org.axonframework.modelling.command.ConflictingAggregateVersionException;
 import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
@@ -100,7 +99,7 @@ class LegacyEventSourcingRepositoryTest {
         );
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
 
-        Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
+        Aggregate<TestAggregate> aggregate = testSubject.load(identifier);
 
         assertEquals(2, aggregate.invoke(TestAggregate::getHandledEvents).size());
         assertSame(event1, aggregate.invoke(TestAggregate::getHandledEvents).get(0));
@@ -136,7 +135,7 @@ class LegacyEventSourcingRepositoryTest {
             return DomainEventStream.of(event1, event2);
         });
 
-        Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
+        Aggregate<TestAggregate> aggregate = testSubject.load(identifier);
         testSpanFactory.verifySpanCompleted("Repository.load");
         testSpanFactory.verifySpanHasAttributeValue("Repository.load", "axon.aggregateId", identifier);
         testSpanFactory.verifySpanCompleted("Repository.obtainLock");
@@ -165,7 +164,7 @@ class LegacyEventSourcingRepositoryTest {
         );
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
 
-        Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
+        Aggregate<TestAggregate> aggregate = testSubject.load(identifier);
 
         assertEquals(1, aggregate.invoke(TestAggregate::getHandledEvents).size());
         assertSame(event1, aggregate.invoke(TestAggregate::getHandledEvents).get(0));
@@ -182,57 +181,6 @@ class LegacyEventSourcingRepositoryTest {
         );
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(testSnapshot));
         assertSame(aggregate, testSubject.load(identifier).getWrappedAggregate().getAggregateRoot());
-    }
-
-    @Test
-    void loadWithConflictingChanges() {
-        String identifier = UUID.randomUUID().toString();
-        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
-                new GenericDomainEventMessage<>(
-                        "type", identifier, 1L, new MessageType("event"), "Mock contents"
-                ),
-                new GenericDomainEventMessage<>(
-                        "type", identifier, 2L, new MessageType("event"), "Mock contents"
-                ),
-                new GenericDomainEventMessage<>(
-                        "type", identifier, 3L, new MessageType("event"), "Mock contents"
-                )
-        ));
-
-        testSubject.load(identifier, 1L);
-        try {
-            CurrentUnitOfWork.commit();
-            fail("Expected ConflictingAggregateVersionException");
-        } catch (ConflictingAggregateVersionException e) {
-            assertEquals(identifier, e.getAggregateIdentifier());
-            assertEquals(1L, e.getExpectedVersion());
-            assertEquals(3L, e.getActualVersion());
-        }
-    }
-
-    @Test
-    void loadWithConflictingChanges_NoConflictResolverSet_UsingTooHighExpectedVersion() {
-        String identifier = UUID.randomUUID().toString();
-        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
-                new GenericDomainEventMessage<>(
-                        "type", identifier, 1L, new MessageType("event"), "Mock contents"
-                ),
-                new GenericDomainEventMessage<>(
-                        "type", identifier, 2L, new MessageType("event"), "Mock contents"
-                ),
-                new GenericDomainEventMessage<>(
-                        "type", identifier, 3L, new MessageType("event"), "Mock contents"
-                )
-        ));
-
-        try {
-            testSubject.load(identifier, 100L);
-            fail("Expected ConflictingAggregateVersionException");
-        } catch (ConflictingAggregateVersionException e) {
-            assertEquals(identifier, e.getAggregateIdentifier());
-            assertEquals(100L, e.getExpectedVersion());
-            assertEquals(3L, e.getActualVersion());
-        }
     }
 
     @Test

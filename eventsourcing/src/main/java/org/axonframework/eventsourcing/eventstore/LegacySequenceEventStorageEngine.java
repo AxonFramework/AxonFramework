@@ -51,7 +51,7 @@ import jakarta.annotation.Nonnull;
  * @since 3.0
  * @deprecated This will be removed entirely for now.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngine {
 
     private final LegacyEventStorageEngine historicStorage, activeStorage;

@@ -24,7 +24,6 @@ import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.modelling.command.CommandTargetResolver;
-import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
 import org.hamcrest.Description;
@@ -127,7 +126,7 @@ class FixtureTest_Annotated {
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void aggregateCommandHandlersOverwrittenByCustomHandlers() {
         final AtomicBoolean invoked = new AtomicBoolean(false);
-        fixture.registerCommandHandler(CreateAggregateCommand.class, commandMessage -> {
+        fixture.registerCommandHandler(CreateAggregateCommand.class, (commandMessage, ctx) -> {
             invoked.set(true);
             return null;
         });
@@ -192,7 +191,7 @@ class FixtureTest_Annotated {
     void aggregateIdentifier_CustomTargetResolver() {
         CommandTargetResolver mockCommandTargetResolver = mock(CommandTargetResolver.class);
         when(mockCommandTargetResolver.resolveTarget(any()))
-                .thenReturn(new VersionedAggregateIdentifier(AGGREGATE_ID, 0L));
+                .thenReturn(AGGREGATE_ID);
 
         fixture.registerCommandTargetResolver(mockCommandTargetResolver);
         fixture.registerInjectableResource(new HardToCreateResource());

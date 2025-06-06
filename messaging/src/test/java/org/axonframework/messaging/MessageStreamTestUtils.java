@@ -18,12 +18,30 @@ package org.axonframework.messaging;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MessageStreamTestUtils {
     private MessageStreamTestUtils() {
         // Prevent instantiation
+    }
+
+    /**
+     * Asserts that the given {@code stream} completed exceptionally with the given {@code expectedExceptionType}
+     * @param stream The {@link MessageStream} to assert.
+     * @param expectedExceptionType The expected type of the exception.
+     */
+    public static void assertCompletedExceptionally(
+            MessageStream<?> stream,
+            Class<? extends Throwable> expectedExceptionType
+    ) {
+        CompletableFuture<? extends MessageStream.Entry<?>> cf = stream.first().asCompletableFuture();
+        await().atMost(10, TimeUnit.SECONDS)
+               .until(cf::isDone);
+        var exception = cf.exceptionNow();
+        assertInstanceOf(expectedExceptionType, exception);
     }
 
     /**
@@ -42,7 +60,7 @@ public class MessageStreamTestUtils {
         var exception = assertThrows(CompletionException.class, cf::join);
         assertInstanceOf(expectedExceptionType, exception.getCause());
         assertTrue(exception.getCause().getMessage().contains(expectedMessagePart),
-                   "Expected message to contain [%s], but was [%s]".formatted(expectedMessagePart,
+                   "Expected message to contain [%s],\n but was [%s]".formatted(expectedMessagePart,
                                                                                 exception.getCause().getMessage()));
     }
 }

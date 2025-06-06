@@ -62,7 +62,8 @@ class CachingEventSourcingRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        mockEventStore = spy(LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build());
+        mockEventStore = spy(LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine())
+                                                     .build());
         Map<String, CacheConfiguration<?, ?>> caches = new HashMap<>();
         DefaultConfiguration config = new DefaultConfiguration(caches, null);
         cacheManager = new EhcacheManager(config);
@@ -105,7 +106,7 @@ class CachingEventSourcingRepositoryTest {
 
         startAndGetUnitOfWork();
         LockAwareAggregate<StubAggregate, EventSourcedAggregate<StubAggregate>> reloadedAggregate1 =
-                testSubject.load("aggregateId", null);
+                testSubject.load("aggregateId");
         assertEquals(0, reloadedAggregate1.getWrappedAggregate().lastSequence());
         aggregate1.execute(StubAggregate::doSomething);
         aggregate1.execute(StubAggregate::doSomething);
@@ -121,10 +122,9 @@ class CachingEventSourcingRepositoryTest {
         assertEquals(3, eventList.size());
         ehCache.clear();
 
-        reloadedAggregate1 = testSubject.load(aggregate1.identifierAsString(), null);
+        reloadedAggregate1 = testSubject.load(aggregate1.identifierAsString());
 
         assertNotSame(aggregate1.getWrappedAggregate(), reloadedAggregate1.getWrappedAggregate());
-        assertEquals(aggregate1.version(), reloadedAggregate1.version());
         assertEquals(2, reloadedAggregate1.getWrappedAggregate().lastSequence());
     }
 
@@ -167,7 +167,9 @@ class CachingEventSourcingRepositoryTest {
     @Test
     void cacheClearedAfterRollbackOfAddedAggregate() throws Exception {
         LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
-        uow.onCommit(c -> { throw new MockException();});
+        uow.onCommit(c -> {
+            throw new MockException();
+        });
         try {
             testSubject.newInstance(() -> new StubAggregate("id1")).execute(StubAggregate::doSomething);
             uow.commit();
@@ -180,7 +182,7 @@ class CachingEventSourcingRepositoryTest {
     @Test
     void cacheClearedAfterRollbackOfLoadedAggregate() {
 
-        startAndGetUnitOfWork().executeWithResult(() -> testSubject.newInstance(() -> new StubAggregate("id1")));
+        startAndGetUnitOfWork().executeWithResult((ctx) -> testSubject.newInstance(() -> new StubAggregate("id1")));
 
         LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         uow.onCommit(c -> {
@@ -198,10 +200,12 @@ class CachingEventSourcingRepositoryTest {
     @Test
     void cacheClearedAfterRollbackOfLoadedAggregateUsingLoadOrCreate() throws Exception {
 
-        startAndGetUnitOfWork().executeWithResult(() -> testSubject.newInstance(() -> new StubAggregate("id1")));
+        startAndGetUnitOfWork().executeWithResult((ctx) -> testSubject.newInstance(() -> new StubAggregate("id1")));
 
         LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
-        uow.onCommit(c -> { throw new MockException();});
+        uow.onCommit(c -> {
+            throw new MockException();
+        });
         try {
             testSubject.loadOrCreate("id1", () -> new StubAggregate("id1")).execute(StubAggregate::doSomething);
             uow.commit();
@@ -215,7 +219,9 @@ class CachingEventSourcingRepositoryTest {
     void cacheClearedAfterRollbackOfCreatedAggregateUsingLoadOrCreate() throws Exception {
 
         LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
-        uow.onCommit(c -> { throw new MockException();});
+        uow.onCommit(c -> {
+            throw new MockException();
+        });
         try {
             testSubject.loadOrCreate("id1", () -> new StubAggregate("id1")).execute(StubAggregate::doSomething);
             uow.commit();

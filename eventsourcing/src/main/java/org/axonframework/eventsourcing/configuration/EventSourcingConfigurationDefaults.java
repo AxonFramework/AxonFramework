@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -73,9 +73,9 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
 
     private <C> void registerIfNotPresent(ComponentRegistry registry,
                                           Class<C> type,
-                                          ComponentFactory<C> factory) {
+                                          ComponentBuilder<C> builder) {
         if (!registry.hasComponent(type)) {
-            registry.registerComponent(type, factory);
+            registry.registerComponent(type, builder);
         }
     }
 

@@ -52,6 +52,7 @@ import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.AnnotatedSagaManager;
 import org.axonframework.modelling.saga.ResourceInjector;
@@ -162,13 +163,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         TrackedEventMessage<?> trackedEventMessage = asTrackedEventMessage(event);
         LegacyDefaultUnitOfWork<? extends EventMessage<?>> unitOfWork =
                 LegacyDefaultUnitOfWork.startAndGet(trackedEventMessage);
-        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> new DefaultInterceptorChain<>(
+        ResultMessage<?> resultMessage = unitOfWork.executeWithResult((context) -> new DefaultInterceptorChain<>(
                 unitOfWork,
                 eventHandlerInterceptors,
-                (MessageHandler<EventMessage<?>, Message<Void>>) message -> {
-                    sagaManager.handle(message, null, Segment.ROOT_SEGMENT);
+                (MessageHandler<EventMessage<?>, Message<Void>>) (message, ctx) -> {
+                    sagaManager.handle(message, ctx, Segment.ROOT_SEGMENT);
                     return GenericMessage.emptyMessage();
-                }).proceedSync()
+                }).proceedSync(context)
         );
 
         if (resultMessage.isExceptional()) {
@@ -195,7 +196,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     protected void handleDeadline(ScopeDescriptor sagaDescriptor, DeadlineMessage<?> deadlineMessage) throws Exception {
         ensureSagaResourcesInitialized();
-        sagaManager.send(deadlineMessage, sagaDescriptor);
+        sagaManager.send(deadlineMessage, new LegacyMessageSupportingContext(deadlineMessage), sagaDescriptor);
     }
 
     /**

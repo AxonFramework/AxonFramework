@@ -17,6 +17,8 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
@@ -44,6 +46,42 @@ import java.util.function.Function;
  * @since 2.0.0
  */
 public interface Message<P> {
+
+    /**
+     * The {@link Context.ResourceKey} used to store and retrieve the {@link Message} from the
+     * {@link ProcessingContext}. Should always be the message for which a handler is being called.
+     * For example, if an event handler is called within the context of a command, the message should be the event
+     * message.
+     */
+    Context.ResourceKey<Message<?>> RESOURCE_KEY = Context.ResourceKey.withLabel("Message");
+
+    /**
+     * Adds the given {@code message} to the given {@code context} under the {@link #RESOURCE_KEY}. This allows
+     * retrieving the message from the context later on, for example in a message handler.
+     * <p>
+     * Note that as the {@link ProcessingContext} might not be mutable in all implementations, this method returns a new
+     * {@link ProcessingContext} instance which should be used in place of the original.
+     *
+     * @param context The {@link ProcessingContext} to which the {@code message} should be added.
+     * @param message The {@link Message} to add to the {@code context}.
+     * @return The updated {@link ProcessingContext} with the {@code message} added under the {@link #RESOURCE_KEY}.
+     */
+    @Nonnull
+    static ProcessingContext addToContext(@Nonnull ProcessingContext context, @Nonnull Message<?> message) {
+        return context.withResource(RESOURCE_KEY, message);
+    }
+
+    /**
+     * Retrieves the {@link Message} from the given {@code context} using the {@link #RESOURCE_KEY}.
+     *
+     * @param context The {@link ProcessingContext} from which to retrieve the {@link Message}.
+     * @return The {@link Message} stored in the {@code context} under the {@link #RESOURCE_KEY}, or {@code null} if not
+     * found.
+     */
+    @Nullable
+    static Message<?> fromContext(@Nonnull ProcessingContext context) {
+        return context.getResource(RESOURCE_KEY);
+    }
 
     /**
      * Returns the identifier of this {@code Message}.

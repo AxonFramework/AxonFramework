@@ -22,6 +22,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.annotation.Secured;
@@ -48,10 +49,12 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
 
     @Override
     public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
-                         @Nonnull InterceptorChain interceptorChain) throws Exception {
+                         @Nonnull ProcessingContext context,
+                         @Nonnull InterceptorChain interceptorChain
+    ) throws Exception {
         T message = unitOfWork.getMessage();
         if (!AnnotationUtils.isAnnotationPresent(message.getPayloadType(), Secured.class)) {
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         }
         Secured annotation = message.getPayloadType()
                                     .getAnnotation(Secured.class);
@@ -74,7 +77,7 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
 
         authorities.retainAll(Arrays.stream(annotation.value()).collect(Collectors.toSet()));
         if (!authorities.isEmpty()) {
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         }
         throw new UnauthorizedMessageException(
                 "Unauthorized message with identifier [" + message.getIdentifier() + "]"

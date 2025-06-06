@@ -18,6 +18,7 @@ package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
@@ -33,13 +34,14 @@ import org.axonframework.modelling.entity.child.ChildAmbiguityException;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Implementation of the {@link EntityModel} interface that enables the definition of command handlers and child
@@ -58,23 +60,35 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
 
     private final Class<E> entityType;
     private final Map<Class<?>, EntityChildModel<?, E>> children = new HashMap<>();
-    private final Map<QualifiedName, EntityCommandHandler<E>> commandHandlers = new HashMap<>();
+    private final Map<QualifiedName, EntityCommandHandler<E>> instanceCommandHandlers = new HashMap<>();
+    private final Map<QualifiedName, CommandHandler> creationalCommandHandlers = new HashMap<>();
     private final EntityEvolver<E> entityEvolver;
     private final Set<QualifiedName> supportedCommandNames = new HashSet<>();
+    private final Set<QualifiedName> supportedInstanceCommandNames = new HashSet<>();
+    private final Set<QualifiedName> supportedCreationalCommandNames = new HashSet<>();
 
     private SimpleEntityModel(@Nonnull Class<E> entityType,
-                              @Nonnull Map<QualifiedName, EntityCommandHandler<E>> commandHandlers,
+                              @Nonnull Map<QualifiedName, EntityCommandHandler<E>> instanceCommandHandlers,
+                              @Nonnull Map<QualifiedName, CommandHandler> creationalCommandHandlers,
                               @Nonnull List<EntityChildModel<?, E>> children,
                               @Nullable EntityEvolver<E> entityEvolver) {
-        this.entityType = Objects.requireNonNull(entityType, "The entityType may not be null.");
+        this.entityType = requireNonNull(entityType, "The entityType may not be null.");
         this.entityEvolver = entityEvolver;
-        this.commandHandlers.putAll(Objects.requireNonNull(commandHandlers, "The commandHandlers may not be null."));
-        Objects.requireNonNull(children, "The children may not be null.")
-               .forEach(child -> this.children.put(child.entityType(), child));
+        this.instanceCommandHandlers.putAll(requireNonNull(instanceCommandHandlers,
+                                                           "The instanceCommandHandlers may not be null."));
+        this.creationalCommandHandlers.putAll(requireNonNull(creationalCommandHandlers,
+                                                             "The creationalCommandHandlers may not be null."));
 
-        // To prevent constantly creating new sets, we create a single set and add all command handlers and children to it.
-        supportedCommandNames.addAll(commandHandlers.keySet());
-        children.forEach(child -> supportedCommandNames.addAll(child.supportedCommands()));
+        requireNonNull(children, "The children may not be null.")
+                .forEach(child -> this.children.put(child.entityType(), child));
+
+        // To prevent constantly creating new sets, we create specific sets for the command names
+        supportedCreationalCommandNames.addAll(creationalCommandHandlers.keySet());
+        supportedInstanceCommandNames.addAll(instanceCommandHandlers.keySet());
+        children.forEach(child -> supportedInstanceCommandNames.addAll(child.supportedCommands()));
+
+        supportedCommandNames.addAll(supportedCreationalCommandNames);
+        supportedCommandNames.addAll(supportedInstanceCommandNames);
     }
 
     /**
@@ -88,16 +102,79 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
      */
     @Nonnull
     public static <E> EntityModelBuilder<E> forEntityClass(@Nonnull Class<E> entityType) {
-        Objects.requireNonNull(entityType, "entityType may not be null");
+        requireNonNull(entityType, "The entityType may not be null.");
         return new Builder<>(entityType);
     }
 
     @Nonnull
     @Override
     public Set<QualifiedName> supportedCommands() {
-        return supportedCommandNames;
+        return Collections.unmodifiableSet(supportedCommandNames);
     }
 
+    @Override
+    @Nonnull
+    public Set<QualifiedName> supportedCreationalCommands() {
+        return Collections.unmodifiableSet(supportedCreationalCommandNames);
+    }
+
+    @Override
+    @Nonnull
+    public Set<QualifiedName> supportedInstanceCommands() {
+        return Collections.unmodifiableSet(supportedInstanceCommandNames);
+    }
+
+    @Override
+    @Nonnull
+    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage<?> message,
+                                                                      @Nonnull ProcessingContext context) {
+        if (isInstanceCommand(message) && !isCreationalCommand(message)) {
+            return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
+        }
+        try {
+            CommandHandler commandHandler = creationalCommandHandlers.get(message.type().qualifiedName());
+            if (commandHandler != null) {
+                return commandHandler.handle(message, context);
+            }
+        } catch (Exception e) {
+            return MessageStream.failed(e);
+        }
+
+        return MessageStream.failed(new NoHandlerForCommandException(message, entityType));
+    }
+
+    @Override
+    @Nonnull
+    public MessageStream.Single<CommandResultMessage<?>> handleInstance(
+            @Nonnull CommandMessage<?> message,
+            @Nonnull E entity,
+            @Nonnull ProcessingContext context
+    ) {
+        if (isCreationalCommand(message) && !isInstanceCommand(message)) {
+            return MessageStream.failed(new EntityExistsForCreationalCommandHandler(message, entity));
+        }
+        try {
+            var childrenWithCommandHandlers = children.values().stream()
+                                                      .filter(childEntity -> childEntity
+                                                              .supportedCommands()
+                                                              .contains(message.type().qualifiedName()))
+                                                      .toList();
+            if (!childrenWithCommandHandlers.isEmpty()) {
+                return handleForChildren(childrenWithCommandHandlers, message, entity, context);
+            }
+
+            EntityCommandHandler<E> commandHandler = instanceCommandHandlers.get(message.type().qualifiedName());
+            if (commandHandler != null) {
+                return commandHandler.handle(message, entity, context);
+            }
+        } catch (Exception e) {
+            return MessageStream.failed(e);
+        }
+
+        return MessageStream.failed(new NoHandlerForCommandException(message, entityType));
+    }
+
+    @Nullable
     @Override
     public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         var currentEntity = entity;
@@ -110,36 +187,18 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         return entityEvolver.evolve(currentEntity, event, context);
     }
 
-    @Nonnull
-    @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message, @Nonnull E entity,
-                                                                @Nonnull ProcessingContext context) {
-        try {
-            var childrenWithCommandHandlers = children.values().stream()
-                                                      .filter(childEntity -> childEntity
-                                                              .supportedCommands()
-                                                              .contains(message.type().qualifiedName()))
-                                                      .toList();
-            if (!childrenWithCommandHandlers.isEmpty()) {
-                return handleForChildren(childrenWithCommandHandlers, message, entity, context);
-            }
-
-            EntityCommandHandler<E> commandHandler = commandHandlers.get(message.type().qualifiedName());
-            if (commandHandler != null) {
-                return commandHandler.handle(message, entity, context);
-            }
-        } catch (Exception e) {
-            return MessageStream.failed(e);
-        }
-
-        return MessageStream.failed(new NoHandlerForCommandException(message, entityType));
-    }
-
+    /**
+     * Helper method that determines on which child to handle a certain instance command. If only one child can handle
+     * the command, it will be used. If multiple children declare the command, we try to find the one that can handle it
+     * based on runtime instances (via {@link EntityChildModel#canHandle(CommandMessage, Object, ProcessingContext)}. If
+     * multiple children can handle the command, an exception is thrown.
+     */
     private MessageStream.Single<CommandResultMessage<?>> handleForChildren(
             List<EntityChildModel<?, E>> childrenWithCommandHandler,
             CommandMessage<?> message,
             E entity,
-            ProcessingContext context) {
+            ProcessingContext context
+    ) {
         if (childrenWithCommandHandler.size() == 1) {
             return childrenWithCommandHandler.getFirst().handle(message, entity, context);
         }
@@ -164,11 +223,21 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         return entityType;
     }
 
+    private boolean isCreationalCommand(CommandMessage<?> message) {
+        return creationalCommandHandlers.containsKey(message.type().qualifiedName());
+    }
+
+    private boolean isInstanceCommand(CommandMessage<?> message) {
+        return instanceCommandHandlers.containsKey(message.type().qualifiedName());
+    }
+
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("entityType", entityType);
-        descriptor.describeProperty("commandHandlers", commandHandlers);
+        descriptor.describeProperty("commandHandlers", instanceCommandHandlers);
         descriptor.describeProperty("supportedCommandNames", supportedCommandNames);
+        descriptor.describeProperty("supportedInstanceCommandNames", supportedInstanceCommandNames);
+        descriptor.describeProperty("supportedCreationalCommandNames", supportedCreationalCommandNames);
         descriptor.describeProperty("entityEvolver", entityEvolver);
         descriptor.describeProperty("children", children);
     }
@@ -188,6 +257,7 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
 
         private final Class<E> entityType;
         private final Map<QualifiedName, EntityCommandHandler<E>> commandHandlers = new HashMap<>();
+        private final Map<QualifiedName, CommandHandler> creationalCommandHandlers = new HashMap<>();
         private final List<EntityChildModel<?, E>> children = new ArrayList<>();
         private EntityEvolver<E> entityEvolver;
 
@@ -197,10 +267,10 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
 
         @Nonnull
         @Override
-        public Builder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
-                                         @Nonnull EntityCommandHandler<E> messageHandler) {
-            Objects.requireNonNull(qualifiedName, "qualifiedName may not be null");
-            Objects.requireNonNull(messageHandler, "messageHandler may not be null");
+        public Builder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                 @Nonnull EntityCommandHandler<E> messageHandler) {
+            requireNonNull(qualifiedName, "The qualifiedName may not be null.");
+            requireNonNull(messageHandler, "The messageHandler may not be null.");
             if (commandHandlers.containsKey(qualifiedName)) {
                 throw new DuplicateCommandHandlerSubscriptionException(
                         "Duplicate subscription for command [%s] detected. Registration of handler [%s] conflicts with previously registered handler [%s].".formatted(
@@ -215,8 +285,31 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
 
         @Nonnull
         @Override
+        public EntityModelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                              @Nonnull CommandHandler messageHandler) {
+            requireNonNull(qualifiedName, "The qualifiedName may not be null.");
+            requireNonNull(messageHandler, "The messageHandler may not be null.");
+            if (creationalCommandHandlers.containsKey(qualifiedName)) {
+                throw new DuplicateCommandHandlerSubscriptionException(
+                        "Duplicate subscription for command [%s] detected. Registration of handler [%s] conflicts with previously registered handler [%s].".formatted(
+                                qualifiedName,
+                                creationalCommandHandlers.get(qualifiedName),
+                                messageHandler)
+                );
+            }
+            creationalCommandHandlers.put(qualifiedName, messageHandler);
+            return this;
+        }
+
+        @Nonnull
+        @Override
         public Builder<E> addChild(@Nonnull EntityChildModel<?, E> child) {
-            Objects.requireNonNull(child, "child may not be null");
+            requireNonNull(child, "The child may not be null.");
+            if (!child.entityModel().supportedCreationalCommands().isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Child entities should not have any creational command handlers."
+                );
+            }
             children.add(child);
             return this;
         }
@@ -230,7 +323,11 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
 
         @Nonnull
         public EntityModel<E> build() {
-            return new SimpleEntityModel<>(entityType, commandHandlers, children, entityEvolver);
+            return new SimpleEntityModel<>(entityType,
+                                           commandHandlers,
+                                           creationalCommandHandlers,
+                                           children,
+                                           entityEvolver);
         }
     }
 }

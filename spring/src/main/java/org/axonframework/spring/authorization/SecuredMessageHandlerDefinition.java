@@ -22,6 +22,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.springframework.security.access.annotation.Secured;
 
 import java.lang.reflect.Executable;
@@ -64,13 +65,14 @@ public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinitio
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
+        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, T target)
+                throws Exception {
             if (!hasRequiredRoles(message)) {
                 throw new UnauthorizedMessageException(
                         "Unauthorized message with identifier [" + message.getIdentifier() + "]"
                 );
             }
-            return super.handleSync(message, target);
+            return super.handleSync(message, context, target);
         }
 
         private boolean hasRequiredRoles(@Nonnull Message<?> message) {

@@ -16,8 +16,10 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.messaging.Context.ResourceKey;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
@@ -107,11 +109,12 @@ public class InterceptorChainParameterResolverFactory
         return (InterceptorChain<M, R>) processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
     }
 
+    @Nullable
     @Override
-    public InterceptorChain resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
-        InterceptorChain interceptorChain = processingContext == null
+    public InterceptorChain resolveParameterValue(@Nonnull ProcessingContext context) {
+        InterceptorChain interceptorChain = context == null
                 ? null
-                : processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
+                : context.getResource(INTERCEPTOR_CHAIN_KEY);
         if (interceptorChain == null) {
             interceptorChain = CURRENT.get();
         }
@@ -122,14 +125,15 @@ public class InterceptorChainParameterResolverFactory
     }
 
     @Override
-    public boolean matches(Message<?> message, ProcessingContext processingContext) {
+    public boolean matches(@Nonnull ProcessingContext context) {
         return CURRENT.get() != null
-                || (processingContext != null && processingContext.containsResource(INTERCEPTOR_CHAIN_KEY));
+                || (context != null && context.containsResource(INTERCEPTOR_CHAIN_KEY));
     }
 
+    @Nullable
     @Override
-    public ParameterResolver<InterceptorChain> createInstance(Executable executable,
-                                                              Parameter[] parameters,
+    public ParameterResolver<InterceptorChain> createInstance(@Nonnull Executable executable,
+                                                              @Nonnull Parameter[] parameters,
                                                               int parameterIndex) {
         if (InterceptorChain.class.equals(parameters[parameterIndex].getType())) {
             return this;

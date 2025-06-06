@@ -164,7 +164,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void subscribe() {
-        Registration result = testSubject.subscribe(TEST_QUERY, String.class, q -> "test");
+        Registration result = testSubject.subscribe(TEST_QUERY, String.class, (q, ctx) -> "test");
 
         assertNotNull(result);
         verify(axonServerConnectionManager).getConnection(CONTEXT);
@@ -178,11 +178,11 @@ class AxonServerQueryBusTest {
 
         ArgumentCaptor<QueryHandler> queryHandlerCaptor = ArgumentCaptor.forClass(QueryHandler.class);
 
-        Registration resultOne = testSubject.subscribe(TEST_QUERY, String.class, q -> "test");
+        Registration resultOne = testSubject.subscribe(TEST_QUERY, String.class, (q, ctx) -> "test");
         assertNotNull(resultOne);
         verify(mockQueryChannel).registerQueryHandler(queryHandlerCaptor.capture(), eq(firstExpectedQueryDefinition));
 
-        Registration resultTwo = testSubject.subscribe("testIntegerQuery", Integer.class, q -> 1337);
+        Registration resultTwo = testSubject.subscribe("testIntegerQuery", Integer.class, (q, ctx) -> 1337);
         assertNotNull(resultTwo);
         verify(mockQueryChannel).registerQueryHandler(queryHandlerCaptor.capture(), eq(secondExpectedQueryDefinition));
 
@@ -236,7 +236,7 @@ class AxonServerQueryBusTest {
                                             )
                                             .build();
 
-            registration = testSubject.subscribe(TEST_QUERY, String.class, q -> "test");
+            registration = testSubject.subscribe(TEST_QUERY, String.class, (q, ctx) -> "test");
         }
 
         @Test
@@ -382,7 +382,7 @@ class AxonServerQueryBusTest {
         when(mockQueryChannel.registerQueryHandler(any(), any()))
                 .thenReturn(FutureUtils::emptyCompletedFuture);
 
-        Registration result = testSubject.subscribe(TEST_QUERY, String.class, q -> "test: " + q.getPayloadType());
+        Registration result = testSubject.subscribe(TEST_QUERY, String.class, (q, ctx) -> "test: " + q.getPayloadType());
 
         assertNotNull(result);
         verify(mockQueryChannel).registerQueryHandler(any(), eq(new QueryDefinition(TEST_QUERY, String.class)));
@@ -393,7 +393,7 @@ class AxonServerQueryBusTest {
         io.axoniq.axonserver.connector.Registration registration = mock(io.axoniq.axonserver.connector.Registration.class);
         when(mockQueryChannel.registerQueryHandler(any(), any())).thenReturn(registration);
 
-        Registration result = testSubject.subscribe(TEST_QUERY, String.class, q -> "test: " + q.getPayloadType());
+        Registration result = testSubject.subscribe(TEST_QUERY, String.class, (q, ctx) -> "test: " + q.getPayloadType());
         assertNotNull(result);
         verify(mockQueryChannel).registerQueryHandler(any(), eq(new QueryDefinition(TEST_QUERY, String.class)));
 
@@ -551,7 +551,7 @@ class AxonServerQueryBusTest {
     @Test
     void handlerInterceptorRegisteredWithLocalSegment() {
         MessageHandlerInterceptor<QueryMessage<?, ?>> interceptor =
-                (unitOfWork, interceptorChain) -> interceptorChain.proceedSync();
+                (unitOfWork, ctx, interceptorChain) -> interceptorChain.proceedSync(ctx);
 
         testSubject.registerHandlerInterceptor(interceptor);
 
@@ -719,7 +719,7 @@ class AxonServerQueryBusTest {
         // It doesn't get invoked because the localSegment is mocked
         testSubject.subscribe("testQuery",
                               String.class,
-                              (MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>>) message -> "ok");
+                              (MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>>) (message, ctx) -> "ok");
         assertWithin(1, TimeUnit.SECONDS, () -> assertNotNull(queryHandlerRef.get()));
 
         QueryHandler queryHandler = queryHandlerRef.get();
@@ -866,7 +866,7 @@ class AxonServerQueryBusTest {
         queryInProgressTestSubject.subscribe(
                 "testQuery",
                 String.class,
-                (MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>>) message -> "ok"
+                (MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>>) (message, ctx) -> "ok"
         );
         await().atMost(Duration.ofSeconds(1))
                .pollDelay(Duration.ofMillis(250))

@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -60,43 +61,46 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         EntityModel<MutableTask> taskModel = SimpleEntityModel
                 .forEntityClass(MutableTask.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(MutableTask.class))
-                .commandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
-                                (command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                                    entity.handle((CompleteTaskCommand) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                })
+                .instanceCommandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
+                                        (command, entity, context) -> {
+                                            EventAppender eventAppender = EventAppender.forContext(context,
+                                                                                                   configuration);
+                                            entity.handle((CompleteTaskCommand) command.getPayload(), eventAppender);
+                                            return MessageStream.empty().cast();
+                                        })
                 .build();
 
         // SalaryInformation is the singular child-model of Employee
         EntityModel<MutableSalaryInformation> salaryInformationModel = SimpleEntityModel
                 .forEntityClass(MutableSalaryInformation.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(MutableSalaryInformation.class))
-                .commandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
-                                (command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                           configuration);
-                                    entity.handle((GiveRaise) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                })
+                .instanceCommandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
+                                        (command, entity, context) -> {
+                                            EventAppender eventAppender = EventAppender.forContext(context,
+                                                                                                   configuration);
+                                            entity.handle((GiveRaise) command.getPayload(), eventAppender);
+                                            return MessageStream.empty().cast();
+                                        })
                 .build();
 
         // Employee is a concrete entity type
         EntityModel<MutableEmployee> employeeModel = SimpleEntityModel
                 .forEntityClass(MutableEmployee.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(MutableEmployee.class))
-                .commandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
-                                ((command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                                    entity.handle((CreateEmployee) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                }))
-                .commandHandler(typeResolver.resolveOrThrow(AssignTaskCommand.class).qualifiedName(),
-                                ((command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                                    entity.handle((AssignTaskCommand) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                }))
+                .instanceCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
+                                        ((command, entity, context) -> {
+                                            EventAppender eventAppender = EventAppender.forContext(context,
+                                                                                                   configuration);
+                                            entity.handle((CreateEmployee) command.getPayload(), eventAppender);
+                                            return MessageStream.empty().cast();
+                                        }))
+                .instanceCommandHandler(typeResolver.resolveOrThrow(AssignTaskCommand.class).qualifiedName(),
+                                        ((command, entity, context) -> {
+                                            EventAppender eventAppender = EventAppender.forContext(context,
+                                                                                                   configuration);
+                                            entity.handle((AssignTaskCommand) command.getPayload(), eventAppender);
+                                            return MessageStream.empty().cast();
+                                        }))
                 .addChild(EntityChildModel
                                   .list(MutableEmployee.class, taskModel)
                                   .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterSetter(
@@ -131,7 +135,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         EntityModel<MutableCustomer> customerModel = SimpleEntityModel
                 .forEntityClass(MutableCustomer.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(MutableCustomer.class))
-                .commandHandler(
+                .instanceCommandHandler(
                         typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
                         ((command, entity, context) -> {
                             EventAppender eventAppender = EventAppender.forContext(context, configuration);
@@ -146,27 +150,28 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .addConcreteType(employeeModel)
                 .addConcreteType(customerModel)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(MutablePerson.class))
-                .commandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
-                                (command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                                    entity.handle((ChangeEmailAddress) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                })
+                .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
+                                        (command, entity, context) -> {
+                                            EventAppender eventAppender = EventAppender.forContext(context,
+                                                                                                   configuration);
+                                            entity.handle((ChangeEmailAddress) command.getPayload(), eventAppender);
+                                            return MessageStream.empty().cast();
+                                        })
                 .build();
 
         EventSourcingRepository<PersonIdentifier, MutablePerson> repository = new EventSourcingRepository<>(
                 PersonIdentifier.class,
                 MutablePerson.class,
                 configuration.getComponent(EventStore.class),
-                (type, id) -> {
+                EventSourcedEntityFactory.fromIdentifier(id -> {
                     if (id.type() == PersonType.EMPLOYEE) {
                         return new MutableEmployee();
                     } else if (id.type() == PersonType.CUSTOMER) {
                         return new MutableCustomer();
                     }
                     throw new IllegalArgumentException("Unknown type: " + id.type());
-                },
-                s -> EventCriteria.havingTags("Person", s.key()),
+                }),
+                (s, ctx) -> EventCriteria.havingTags("Person", s.key()),
                 personModel
         );
 

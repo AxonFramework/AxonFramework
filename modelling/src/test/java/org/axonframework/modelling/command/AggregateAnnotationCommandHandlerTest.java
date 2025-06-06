@@ -16,6 +16,8 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -1129,16 +1131,12 @@ class AggregateAnnotationCommandHandlerTest {
         }
     }
 
-    private static class UpdateCommandWithAnnotatedMethod {
+    private record UpdateCommandWithAnnotatedMethod(String aggregateIdentifier) {
 
-        private final String aggregateIdentifier;
-
-        private UpdateCommandWithAnnotatedMethod(String aggregateIdentifier) {
-            this.aggregateIdentifier = aggregateIdentifier;
-        }
-
+        @SuppressWarnings("unused")
+        @Override
         @TargetAggregateIdentifier
-        public String getAggregateIdentifier() {
+        public String aggregateIdentifier() {
             return aggregateIdentifier;
         }
     }
@@ -1157,26 +1155,13 @@ class AggregateAnnotationCommandHandlerTest {
         }
     }
 
-    @SuppressWarnings("unused")
-    private static class UpdateCommandWithAnnotatedMethodAndVersion {
+    private record UpdateCommandWithAnnotatedMethodAndVersion(String aggregateIdentifier) {
 
-        private final String aggregateIdentifier;
-
-        private final Long expectedVersion;
-
-        private UpdateCommandWithAnnotatedMethodAndVersion(String aggregateIdentifier, Long expectedVersion) {
-            this.aggregateIdentifier = aggregateIdentifier;
-            this.expectedVersion = expectedVersion;
-        }
-
+        @SuppressWarnings("unused")
+        @Override
         @TargetAggregateIdentifier
-        public String getAggregateIdentifier() {
+        public String aggregateIdentifier() {
             return aggregateIdentifier;
-        }
-
-        @TargetAggregateVersion
-        public Long getExpectedVersion() {
-            return expectedVersion;
         }
     }
 
@@ -1194,44 +1179,18 @@ class AggregateAnnotationCommandHandlerTest {
         }
     }
 
-    @SuppressWarnings({"unused", "FieldCanBeLocal"})
-    private static class UpdateCommandWithAnnotatedFieldAndVersion {
+    private record UpdateCommandWithAnnotatedFieldAndVersion(@TargetAggregateIdentifier String aggregateIdentifier) {
 
-        @TargetAggregateIdentifier
-        private final String aggregateIdentifier;
-        @TargetAggregateVersion
-        private final Long expectedVersion;
-
-        private UpdateCommandWithAnnotatedFieldAndVersion(String aggregateIdentifier, Long expectedVersion) {
-            this.aggregateIdentifier = aggregateIdentifier;
-            this.expectedVersion = expectedVersion;
-        }
     }
 
-    @SuppressWarnings({"unused", "FieldCanBeLocal"})
-    private static class UpdateCommandWithAnnotatedFieldAndIntegerVersion {
+    private record UpdateCommandWithAnnotatedFieldAndIntegerVersion(
+            @TargetAggregateIdentifier String aggregateIdentifier
+    ) {
 
-        @TargetAggregateIdentifier
-        private final String aggregateIdentifier;
-
-        @TargetAggregateVersion
-        private final int expectedVersion;
-
-        private UpdateCommandWithAnnotatedFieldAndIntegerVersion(String aggregateIdentifier, int expectedVersion) {
-            this.aggregateIdentifier = aggregateIdentifier;
-            this.expectedVersion = expectedVersion;
-        }
     }
 
-    @SuppressWarnings({"unused", "FieldCanBeLocal"})
-    private static class UpdateEntityStateCommand {
+    private record UpdateEntityStateCommand(@TargetAggregateIdentifier String aggregateIdentifier) {
 
-        @TargetAggregateIdentifier
-        private final String aggregateIdentifier;
-
-        private UpdateEntityStateCommand(String aggregateIdentifier) {
-            this.aggregateIdentifier = aggregateIdentifier;
-        }
     }
 
     @SuppressWarnings({"unused", "FieldCanBeLocal"})
@@ -1255,9 +1214,10 @@ class AggregateAnnotationCommandHandlerTest {
     @Priority(Priority.LAST)
     private static class CustomParameterResolverFactory implements ParameterResolverFactory {
 
+        @Nullable
         @SuppressWarnings("rawtypes")
         @Override
-        public ParameterResolver createInstance(Executable member, Parameter[] params, int index) {
+        public ParameterResolver createInstance(@Nonnull Executable member, @Nonnull Parameter[] params, int index) {
             if (String.class.equals(params[index].getType())) {
                 return new FixedValueParameterResolver<>("It works");
             }

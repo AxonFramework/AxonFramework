@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import jakarta.annotation.Nonnull;
 
@@ -76,8 +77,9 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
     }
 
     @Override
-    public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
-        return delegate.handleSync(message, target);
+    public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, T target)
+            throws Exception {
+        return delegate.handleSync(message, context, target);
     }
 
     /**

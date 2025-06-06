@@ -17,6 +17,7 @@
 package org.axonframework.modelling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.modelling.saga.metamodel.SagaModel;
@@ -52,7 +53,8 @@ class SagaMethodMessageHandlerDefinitionTest {
     }
 
     public void testWrapHandler(EventMessage<?> eventMessage) {
-        MessageHandlingMember<?> result = testSubject.wrapHandler(sagaModel.findHandlerMethods(eventMessage).get(0));
+        MessageHandlingMember<?> result = testSubject.wrapHandler(sagaModel.findHandlerMethods(eventMessage,
+                                                                                               StubProcessingContext.forMessage(eventMessage)).get(0));
         assertNotNull(result);
         assertTrue(result instanceof SagaMethodMessageHandlingMember);
         assertEquals(SagaCreationPolicy.NONE, ((SagaMethodMessageHandlingMember<?>) result).getCreationPolicy());

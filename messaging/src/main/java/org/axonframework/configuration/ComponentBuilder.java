@@ -14,28 +14,26 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.annotation;
+package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 
 /**
- * Functional interface towards creating a new instance of an entity of the given {@code entityType} and the given
- * {@code id}.
+ * Functional interface describing how to build a component of type {@code C} using the {@link Configuration} during
+ * construction.
  *
- * @param <ID> The type of the identifier of the entity to create.
- * @param <E>  The type of the entity to create.
- * @author Mitchell Herrijgers
+ * @param <C> The component to be built.
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface EventSourcedEntityFactory<ID, E> {
+public interface ComponentBuilder<C> {
 
     /**
-     * Creates a new instance of an entity of the given {@code entityType} and {@code idType}.
+     * Builds a component of type {@code C} using the given {@code config} during construction.
      *
-     * @param entityType The type of the entity to create.
-     * @param id         The identifier of the entity to create.
-     * @return A new instance of the entity.
+     * @param config The configuration from which other components can be retrieved to build the result.
+     * @return A component of type {@code C} using the given {@code config} during construction.
      */
-    E createEntity(@Nonnull Class<E> entityType, @Nonnull ID id);
+    C build(@Nonnull Configuration config);
 }

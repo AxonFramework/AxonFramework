@@ -17,14 +17,16 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.common.Registration;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.common.Registration;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +52,14 @@ class PersistentStreamMessageSourceTest {
     private static final int THREAD_COUNT = 10;
     private static final LegacyConfiguration DEFAULT_CONFIGURATION = LegacyDefaultConfigurer
             .defaultConfiguration()
+            .registerComponent(AxonServerConfiguration.class, c -> new AxonServerConfiguration())
+            .registerComponent(AxonServerConnectionManager.class, c -> {
+                AxonServerConfiguration serverConfig = c.getComponent(AxonServerConfiguration.class);
+                return AxonServerConnectionManager.builder().
+                                                  routingServers(serverConfig.getServers())
+                                                  .axonServerConfiguration(serverConfig)
+                                                  .build();
+            })
             .buildConfiguration();
 
     @Mock

@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
@@ -34,7 +35,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.sameInstanceSupplier;
@@ -58,7 +58,7 @@ import static org.axonframework.common.ObjectUtils.sameInstanceSupplier;
  * @since 0.3
  * @deprecated In favor of the {@link org.axonframework.modelling.repository.AccessSerializingRepository}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public abstract class LegacyLockingRepository<T, A extends Aggregate<T>> extends
         AbstractLegacyRepository<T, LockAwareAggregate<T, A>> {
 
@@ -127,16 +127,15 @@ public abstract class LegacyLockingRepository<T, A extends Aggregate<T>> extends
      * Perform the actual loading of an aggregate. The necessary locks have been obtained.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
-     * @param expectedVersion     The expected version of the aggregate
      * @return the fully initialized aggregate
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
     @Override
-    protected LockAwareAggregate<T, A> doLoad(String aggregateIdentifier, Long expectedVersion) {
+    protected LockAwareAggregate<T, A> doLoad(String aggregateIdentifier) {
         Lock lock = spanFactory.createObtainLockSpan(aggregateIdentifier)
                                .runSupplier(() -> lockFactory.obtainLock(aggregateIdentifier));
         try {
-            final A aggregate = doLoadWithLock(aggregateIdentifier, expectedVersion);
+            final A aggregate = doLoadWithLock(aggregateIdentifier);
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
             return new LockAwareAggregate<>(aggregate, lock);
         } catch (Throwable ex) {
@@ -152,7 +151,7 @@ public abstract class LegacyLockingRepository<T, A extends Aggregate<T>> extends
         Lock lock = spanFactory.createObtainLockSpan(aggregateIdentifier)
                                .runSupplier(() -> lockFactory.obtainLock(aggregateIdentifier));
         try {
-            final A aggregate = doLoadWithLock(aggregateIdentifier, null);
+            final A aggregate = doLoadWithLock(aggregateIdentifier);
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
             return new LockAwareAggregate<>(aggregate, lock);
         } catch (AggregateNotFoundException ex) {
@@ -246,11 +245,10 @@ public abstract class LegacyLockingRepository<T, A extends Aggregate<T>> extends
      * Loads the aggregate with the given aggregateIdentifier. All necessary locks have been obtained.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
-     * @param expectedVersion     The expected version of the aggregate to load
      * @return a fully initialized aggregate
      * @throws AggregateNotFoundException if the aggregate with given identifier does not exist
      */
-    protected abstract A doLoadWithLock(String aggregateIdentifier, Long expectedVersion);
+    protected abstract A doLoadWithLock(String aggregateIdentifier);
 
     /**
      * Abstract Builder class to instantiate {@link LegacyLockingRepository} implementations.

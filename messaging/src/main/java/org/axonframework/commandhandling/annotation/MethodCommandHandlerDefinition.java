@@ -72,17 +72,12 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
             routingKey = "".equals(routingKeyAttribute) ? null : routingKeyAttribute;
             commandName = "".equals(commandNameAttribute) ? delegate.payloadType().getName() : commandNameAttribute;
             final boolean factoryMethod = executable instanceof Method && Modifier.isStatic(executable.getModifiers());
-            if (factoryMethod && !executable.getDeclaringClass()
-                                            .isAssignableFrom(((Method) executable).getReturnType())) {
-                throw new AxonConfigurationException("static @CommandHandler methods must declare a return value " +
-                                                             "which is equal to or a subclass of the declaring type");
-            }
             isFactoryHandler = executable instanceof Constructor || factoryMethod;
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
-            return super.canHandle(message, processingContext) && commandName.equals(message.type().name());
+        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+            return super.canHandle(message, context) && commandName.equals(message.type().name());
         }
 
         @Override

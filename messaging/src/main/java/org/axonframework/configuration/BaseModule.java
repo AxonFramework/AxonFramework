@@ -41,8 +41,7 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
      * @param name The name of this module. Must not be {@code null}.
      */
     protected BaseModule(@Nonnull String name) {
-        Assert.nonEmpty(name, "The Module name cannot be null or empty.");
-        this.name = name;
+        this.name = Assert.nonEmpty(name, "The Module name cannot be null or empty.");
         this.componentRegistry = new DefaultComponentRegistry();
     }
 

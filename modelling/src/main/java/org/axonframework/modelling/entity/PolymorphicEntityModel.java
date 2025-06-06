@@ -18,6 +18,7 @@ package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
@@ -31,6 +32,8 @@ import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -57,7 +60,9 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
     private final EntityModel<E> superTypeModel;
     private final Map<Class<? extends E>, EntityModel<? extends E>> concreteModels;
-    private final Set<QualifiedName> supportedCommands;
+    private final Set<QualifiedName> supportedCommandNames = new HashSet<>();
+    private final Set<QualifiedName> supportedInstanceCommandNames = new HashSet<>();
+    private final Set<QualifiedName> supportedCreationalCommandNames = new HashSet<>();
 
     private PolymorphicEntityModel(
             EntityModel<E> superTypeModel,
@@ -66,10 +71,14 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         this.superTypeModel = Objects.requireNonNull(superTypeModel, "The superTypeModel may not be null.");
         Objects.requireNonNull(concreteModels, "The concreteModels may not be null.");
         this.concreteModels = new HashMap<>();
-        this.supportedCommands = new HashSet<>(this.superTypeModel.supportedCommands());
+        this.supportedCommandNames.addAll(superTypeModel.supportedCommands());
+        this.supportedInstanceCommandNames.addAll(this.superTypeModel.supportedInstanceCommands());
+        this.supportedCreationalCommandNames.addAll(superTypeModel.supportedCreationalCommands());
         for (EntityModel<? extends E> polymorphicModel : concreteModels) {
             this.concreteModels.put(polymorphicModel.entityType(), polymorphicModel);
-            this.supportedCommands.addAll(polymorphicModel.supportedCommands());
+            this.supportedCommandNames.addAll(polymorphicModel.supportedCommands());
+            this.supportedInstanceCommandNames.addAll(polymorphicModel.supportedInstanceCommands());
+            this.supportedCreationalCommandNames.addAll(polymorphicModel.supportedCreationalCommands());
         }
     }
 
@@ -104,21 +113,55 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     @Nonnull
     @Override
     public Set<QualifiedName> supportedCommands() {
-        return supportedCommands;
+        return Collections.unmodifiableSet(supportedCommandNames);
+    }
+
+    @Override
+    @Nonnull
+    public Set<QualifiedName> supportedCreationalCommands() {
+        return Collections.unmodifiableSet(supportedCreationalCommandNames);
+    }
+
+    @Override
+    @Nonnull
+    public Set<QualifiedName> supportedInstanceCommands() {
+        return Collections.unmodifiableSet(supportedInstanceCommandNames);
     }
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                                @Nonnull E entity,
-                                                                @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage<?> message,
+                                                                      @Nonnull ProcessingContext context) {
+        if (isInstanceCommand(message) && !isCreationalCommand(message)) {
+            return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
+        }
+        for(EntityModel<? extends E> concreteModel : concreteModels.values()) {
+            if (concreteModel.supportedCreationalCommands().contains(message.type().qualifiedName())) {
+                return concreteModel.handleCreate(message, context);
+            }
+        }
+        if(superTypeModel.supportedCreationalCommands().contains(message.type().qualifiedName())) {
+            return superTypeModel.handleCreate(message, context);
+        }
+        return MessageStream.failed(new NoHandlerForCommandException(message, entityType()));
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream.Single<CommandResultMessage<?>> handleInstance(@Nonnull CommandMessage<?> message,
+                                                                        @Nonnull E entity,
+                                                                        @Nonnull ProcessingContext context) {
+        if (isCreationalCommand(message) && !isInstanceCommand(message)) {
+            return MessageStream.failed(new EntityExistsForCreationalCommandHandler(message, entity));
+        }
         EntityModel<E> concreteModel = modelFor(entity);
-        if (concreteModel.supportedCommands().contains(message.type().qualifiedName())) {
-            return concreteModel.handle(message, entity, context);
+        if (concreteModel.supportedInstanceCommands().contains(message.type().qualifiedName())) {
+            return concreteModel.handleInstance(message, entity, context);
         }
-        if(superTypeModel.supportedCommands().contains(message.type().qualifiedName())) {
-            return superTypeModel.handle(message, entity, context);
+        if(superTypeModel.supportedInstanceCommands().contains(message.type().qualifiedName())) {
+            return superTypeModel.handleInstance(message, entity, context);
         }
+
         return MessageStream.failed(new NoHandlerForCommandException(message, entityType()));
     }
 
@@ -126,6 +169,14 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     @Override
     public Class<E> entityType() {
         return superTypeModel.entityType();
+    }
+
+    private boolean isCreationalCommand(CommandMessage<?> message) {
+        return supportedCreationalCommandNames.contains(message.type().qualifiedName());
+    }
+
+    private boolean isInstanceCommand(CommandMessage<?> message) {
+        return supportedInstanceCommandNames.contains(message.type().qualifiedName());
     }
 
     @Override
@@ -157,9 +208,17 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
         @Nonnull
         @Override
-        public Builder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
-                                         @Nonnull EntityCommandHandler<E> messageHandler) {
-            superTypeBuilder.commandHandler(qualifiedName, messageHandler);
+        public Builder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                 @Nonnull EntityCommandHandler<E> messageHandler) {
+            superTypeBuilder.instanceCommandHandler(qualifiedName, messageHandler);
+            return this;
+        }
+
+        @Nonnull
+        @Override
+        public Builder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                   @Nonnull CommandHandler messageHandler) {
+            superTypeBuilder.creationalCommandHandler(qualifiedName, messageHandler);
             return this;
         }
 
@@ -185,6 +244,15 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
             if (polymorphicModels.stream().anyMatch(p -> p.entityType().equals(entityModel.entityType()))) {
                 throw new IllegalArgumentException("Concrete type [%s] already registered for this model.".formatted(
                         entityModel.entityType().getName()));
+            }
+            // Check if any existing polymorphic model clashes with the creational commands of the new model.
+            for (EntityModel<? extends E> existingModel : polymorphicModels) {
+                if (existingModel.supportedCreationalCommands().stream()
+                        .anyMatch(entityModel.supportedCreationalCommands()::contains)) {
+                    throw new IllegalArgumentException(
+                            "Concrete type [%s] has creational commands that clash with existing concrete type [%s]."
+                                    .formatted(entityModel.entityType().getName(), existingModel.entityType().getName()));
+                }
             }
             polymorphicModels.add(entityModel);
             return this;

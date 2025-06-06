@@ -18,19 +18,20 @@ package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.Repository;
 import org.axonframework.modelling.repository.ManagedEntity;
+import org.axonframework.modelling.repository.Repository;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * The {@code StateManager} enables applications to load entities based on the type of the entity and an id, and to
- * persist them.
+ * persist them. Implementations may specify whether they load entities through
+ * {@link Repository#load(Object, ProcessingContext)} or {@link Repository#loadOrCreate(Object, ProcessingContext)}.
  * <p>
- * Entities are registered by their type in combination with their id. In case an id is given that matches
- * two repositories, the repository that is registered for the most specific type is used. If no repository is found
- * for the given type and id, a {@link MissingRepositoryException} is thrown.
+ * Entities are registered by their type in combination with their id. In case an id is given that matches two
+ * repositories, the repository that is registered for the most specific type is used. If no repository is found for the
+ * given type and id, a {@link MissingRepositoryException} is thrown.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -38,8 +39,8 @@ import java.util.concurrent.CompletableFuture;
 public interface StateManager {
 
     /**
-     * Retrieves an entity of the given {@code type} and {@code id}. The {@link CompletableFuture} will resolve to
-     * the entity, or complete exceptionally if it could not be resolved.
+     * Retrieves an entity of the given {@code type} and {@code id}. The {@link CompletableFuture} will resolve to the
+     * entity, or complete exceptionally if it could not be resolved.
      * <p>
      * If multiple repositories are registered for the given {@code entityType} that can handle the given {@code id}
      * (through superclass registration), the most specific repository is used.
@@ -77,6 +78,7 @@ public interface StateManager {
 
     /**
      * The types of entities that are registered with this {@code StateManager}.
+     *
      * @return the types of entities that are registered with this {@code StateManager}.
      */
     Set<Class<?>> registeredEntities();
@@ -91,8 +93,8 @@ public interface StateManager {
     Set<Class<?>> registeredIdsFor(@Nonnull Class<?> entityType);
 
     /**
-     * Returns the {@link Repository} for the given {@code type}. Returns {@code null} if no repository is
-     * registered for the given type and id.
+     * Returns the {@link Repository} for the given {@code type}. Returns {@code null} if no repository is registered
+     * for the given type and id.
      *
      * @param <I>        The type of the identifier of the entity.
      * @param <T>        The type of the entity.

@@ -30,6 +30,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
@@ -56,6 +57,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.*;
 
@@ -162,41 +164,81 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
 
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
-        var resultingStream = condition
-                .criteria()
-                .flatten()
-                .stream()
-                .map(criterion -> this.eventsForCriterion(condition, criterion))
-                .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
+        CompletableFuture<Void> endOfStreams = new CompletableFuture<>();
+        List<AggregateSource> aggregateSources = condition.criteria()
+                                                          .flatten()
+                                                          .stream()
+                                                          .map(criterion -> this.aggregateSourceForCriterion(
+                                                                  condition, criterion
+                                                          ))
+                                                          .toList();
 
-        AtomicReference<ConsistencyMarker> consistencyMarker = new AtomicReference<>();
-        return resultingStream.map(e -> {
-            ConsistencyMarker newMarker = consistencyMarker
-                    .accumulateAndGet(
-                            e.getResource(ConsistencyMarker.RESOURCE_KEY),
-                            (m1, m2) -> m1 == null ? m2 : m1.upperBound(m2)
-                    );
-            return e.withResource(ConsistencyMarker.RESOURCE_KEY, newMarker);
-        });
+        return aggregateSources.stream()
+                               .map(AggregateSource::source)
+                               .reduce(MessageStream.empty().cast(), MessageStream::concatWith)
+                               .whenComplete(() -> endOfStreams.complete(null))
+                               .concatWith(MessageStream.fromFuture(
+                                       endOfStreams.thenApply(event -> TerminalEventMessage.INSTANCE),
+                                       unused -> Context.with(
+                                               ConsistencyMarker.RESOURCE_KEY,
+                                               combineAggregateMarkers(aggregateSources.stream())
+                                       )
+                               ));
     }
 
-    private MessageStream<EventMessage<?>> eventsForCriterion(SourcingCondition condition, EventCriterion criterion) {
+    private AggregateSource aggregateSourceForCriterion(SourcingCondition condition, EventCriterion criterion) {
+        AtomicReference<AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
         String aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         // axonserver uses 0 to denote the end of a stream, so if 0 is provided, we use 1. For infinity, we use 0.
         long end = condition.end() == Long.MAX_VALUE ? 0 : condition.end() + 1;
-        AggregateEventStream aggregateStream = connection.eventChannel().openAggregateStream(aggregateIdentifier,
-                                                                                             condition.start(),
-                                                                                             end);
-        return MessageStream.fromStream(
-                aggregateStream.asStream(),
-                this::convertToMessage,
-                event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
-                                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
-                                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                              event.getAggregateSequenceNumber())
-                                .withResource(ConsistencyMarker.RESOURCE_KEY,
-                                              new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
-                                                                                  event.getAggregateSequenceNumber())));
+        AggregateEventStream aggregateStream =
+                connection.eventChannel()
+                          .openAggregateStream(aggregateIdentifier, condition.start(), end);
+
+        MessageStream<EventMessage<?>> source =
+                MessageStream.fromStream(aggregateStream.asStream(),
+                                         this::convertToMessage,
+                                         event -> setMarkerAndBuildContext(event.getAggregateIdentifier(),
+                                                                           event.getAggregateSequenceNumber(),
+                                                                           event.getAggregateType(),
+                                                                           markerReference))
+                             // Defaults the marker when the aggregate stream was empty
+                             .whenComplete(() -> markerReference.compareAndSet(
+                                     null, new AggregateBasedConsistencyMarker(aggregateIdentifier, 0)
+                             ))
+                             .cast();
+        return new AggregateSource(markerReference, source);
+    }
+
+    private static Context setMarkerAndBuildContext(String aggregateIdentifier,
+                                                    long sequenceNumber,
+                                                    String aggregateType,
+                                                    AtomicReference<AggregateBasedConsistencyMarker> markerReference) {
+        markerReference.set(new AggregateBasedConsistencyMarker(aggregateIdentifier, sequenceNumber));
+        return Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, aggregateIdentifier)
+                      .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, sequenceNumber)
+                      .withResource(LegacyResources.AGGREGATE_TYPE_KEY, aggregateType);
+    }
+
+    private static ConsistencyMarker combineAggregateMarkers(Stream<AggregateSource> resultStream) {
+        return resultStream.map(AggregateSource::markerReference)
+                           .map(AtomicReference::get)
+                           .map(marker -> (ConsistencyMarker) marker)
+                           .reduce(ConsistencyMarker::upperBound)
+                           .orElseThrow();
+    }
+
+    @Override
+    public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
+        TrackingToken trackingToken = condition.position();
+        if (trackingToken instanceof GlobalSequenceTrackingToken gtt) {
+            return new AxonServerMessageStream(connection.eventChannel().openStream(gtt.getGlobalIndex(), 32),
+                                               this::convertToMessage);
+        } else {
+            throw new IllegalArgumentException(
+                    "Tracking Token is not of expected type. Must be GlobalTrackingToken. Is: "
+                            + trackingToken.getClass().getName());
+        }
     }
 
     private EventMessage<byte[]> convertToMessage(Event event) {
@@ -232,19 +274,6 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
-        TrackingToken trackingToken = condition.position();
-        if (trackingToken instanceof GlobalSequenceTrackingToken gtt) {
-            return new AxonServerMessageStream(connection.eventChannel().openStream(gtt.getGlobalIndex(), 32),
-                                               this::convertToMessage);
-        } else {
-            throw new IllegalArgumentException(
-                    "Tracking Token is not of expected type. Must be GlobalTrackingToken. Is: "
-                            + trackingToken.getClass().getName());
-        }
-    }
-
-    @Override
     public CompletableFuture<TrackingToken> tailToken() {
         return connection.eventChannel().getFirstToken().thenApply(GlobalSequenceTrackingToken::new);
     }
@@ -263,5 +292,17 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
         descriptor.describeProperty("payloadConverter", payloadConverter);
+    }
+
+    /**
+     * A tuple of an {@link AtomicReference} to an {@link AggregateBasedConsistencyMarker} and a {@link MessageStream},
+     * used when sourcing events from an aggregate-specific {@link EventCriterion}. This tuple object can then be used
+     * to {@link MessageStream#concatWith(MessageStream) construct a single stream}, completing with a final marker.
+     */
+    private record AggregateSource(
+            AtomicReference<AggregateBasedConsistencyMarker> markerReference,
+            MessageStream<EventMessage<?>> source
+    ) {
+
     }
 }

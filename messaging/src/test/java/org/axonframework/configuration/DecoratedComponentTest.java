@@ -47,8 +47,8 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
 
     @Override
     DecoratedComponent<String, String> createComponent(Component.Identifier<String> id,
-                                                       ComponentFactory<String> factory) {
-        return new DecoratedComponent<>(new LazyInitializedComponentDefinition<>(id, factory),
+                                                       ComponentBuilder<String> builder) {
+        return new DecoratedComponent<>(new LazyInitializedComponentDefinition<>(id, builder),
                                         (config, name, delegate) -> delegate + "test",
                                         Collections.emptyList(),
                                         Collections.emptyList());
@@ -71,7 +71,7 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
     @Test
     void delegateReusesPreviouslyCreatedInstance() {
         //noinspection unchecked
-        ComponentFactory<String> mock = mock();
+        ComponentBuilder<String> mock = mock();
         when(mock.build(any())).thenReturn(TEST_COMPONENT);
         Component<String> target = new LazyInitializedComponentDefinition<>(identifier, mock);
 
@@ -90,7 +90,7 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
     @Test
     void initializationRegistersLifecycleHandlersOfDecoratedComponents() {
         LazyInitializedComponentDefinition<String, String> target =
-                new LazyInitializedComponentDefinition<>(identifier, factory);
+                new LazyInitializedComponentDefinition<>(identifier, builder);
         target.onStart(10, (configuration1, component) -> {
 
         });
@@ -117,7 +117,7 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
     void describeToDescribesBuilderWhenInstantiated() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
-        Component<String> testSubject = createComponent(identifier, factory);
+        Component<String> testSubject = createComponent(identifier, builder);
         testSubject.resolve(configuration);
 
         testSubject.describeTo(testDescriptor);
@@ -132,7 +132,7 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
     void describeToDescribesBuilderWhenUninstantiatedButInitialized() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
-        Component<String> testSubject = createComponent(identifier, factory);
+        Component<String> testSubject = createComponent(identifier, builder);
 
         testSubject.initLifecycle(configuration, lifecycleRegistry);
         testSubject.describeTo(testDescriptor);
@@ -147,7 +147,7 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
     void describeToDescribesBuilderWhenUnresolved() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
-        Component<String> testSubject = createComponent(identifier, factory);
+        Component<String> testSubject = createComponent(identifier, builder);
 
         testSubject.describeTo(testDescriptor);
 

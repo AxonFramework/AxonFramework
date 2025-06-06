@@ -16,8 +16,9 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -35,19 +36,21 @@ import java.lang.reflect.Parameter;
  * @deprecated In favor of the {@link org.axonframework.messaging.unitofwork.ProcessingContextParameterResolverFactory}.
  */
 @Priority(Priority.FIRST)
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResolverFactory, ParameterResolver {
 
+    @Nullable
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (LegacyUnitOfWork.class.equals(parameters[parameterIndex].getType())) {
             return this;
         }
         return null;
     }
 
+    @Nullable
     @Override
-    public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
+    public Object resolveParameterValue(@Nonnull ProcessingContext context) {
         if (!CurrentUnitOfWork.isStarted()) {
             return null;
         }
@@ -55,7 +58,7 @@ public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResol
     }
 
     @Override
-    public boolean matches(Message message, ProcessingContext processingContext) {
+    public boolean matches(@Nonnull ProcessingContext context) {
         return true;
     }
 }

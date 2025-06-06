@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -60,8 +62,9 @@ public abstract class AbstractAnnotatedParameterResolverFactory<A extends Annota
      */
     protected abstract ParameterResolver<P> getResolver();
 
+    @Nullable
     @Override
-    public ParameterResolver<P> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<P> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         if (AnnotationUtils.isAnnotationPresent(parameters[parameterIndex], annotationType)) {
             Class<?> parameterType = parameters[parameterIndex].getType();
             if (parameterType.isAssignableFrom(declaredParameterType)) {

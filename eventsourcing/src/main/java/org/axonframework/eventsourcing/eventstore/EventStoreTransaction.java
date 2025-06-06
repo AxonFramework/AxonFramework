@@ -22,6 +22,7 @@ import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageStream;
 
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Interface describing the actions that can be taken on a transaction to source a model from the {@link EventStore}
@@ -42,6 +43,10 @@ public interface EventStoreTransaction {
      * <p>
      * Note that the usage of {@link EventCriteria#havingAnyTag criteria} does not make sense for sourcing, as it is
      * <b>not</b> recommended to source the entire event store.
+     * <p>
+     * <b>Any</b> {@code EventStoreTransaction} using the {@link EventStorageEngine#source(SourcingCondition)} is
+     * expected to {@link MessageStream#filter(Predicate) filter} the
+     * {@link org.axonframework.eventhandling.TerminalEventMessage} with the {@link ConsistencyMarker}.
      *
      * @param condition The {@link SourcingCondition} used to retrieve the {@link MessageStream} containing the sequence
      *                  of events that can rehydrate a model.

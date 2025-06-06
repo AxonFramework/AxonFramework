@@ -20,6 +20,7 @@ import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -82,8 +83,8 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     void registerStatefulCommandHandlingModuleAddsAModuleConfiguration() {
         EventSourcedEntityBuilder<String, Object> testEntityBuilder =
                 EventSourcedEntityBuilder.entity(String.class, Object.class)
-                                         .entityFactory(c -> (entityType, id) -> null)
-                                         .criteriaResolver(c -> event -> EventCriteria.havingAnyTag())
+                                         .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(id -> null))
+                                         .criteriaResolver(c -> (event, ctx) -> EventCriteria.havingAnyTag())
                                          .entityEvolver(c -> (entity, event, context) -> entity);
         ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
                 StatefulCommandHandlingModule.named("test")

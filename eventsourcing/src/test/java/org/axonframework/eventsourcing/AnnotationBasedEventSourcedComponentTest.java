@@ -23,9 +23,9 @@ import org.axonframework.eventhandling.SequenceNumber;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.junit.jupiter.api.*;
 
@@ -45,8 +45,6 @@ class AnnotationBasedEventSourcedComponentTest {
 
     private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEventSourcedComponent<>(TestState.class);
 
-    private final ProcessingContext processingContext = ProcessingContext.NONE;
-
     @Nested
     class BasicEventHandling {
 
@@ -57,7 +55,7 @@ class AnnotationBasedEventSourcedComponentTest {
             var event = domainEvent(0);
 
             // when
-            ENTITY_EVOLVER.evolve(state, event, processingContext);
+            ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -70,7 +68,7 @@ class AnnotationBasedEventSourcedComponentTest {
             var event = domainEvent(0);
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -80,11 +78,14 @@ class AnnotationBasedEventSourcedComponentTest {
         void handlesSequenceOfEvents() {
             // given
             var state = new TestState();
+            DomainEventMessage<?> event0 = domainEvent(0);
+            DomainEventMessage<?> event1 = domainEvent(1);
+            DomainEventMessage<?> event2 = domainEvent(2);
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, domainEvent(0), processingContext);
-            state = ENTITY_EVOLVER.evolve(state, domainEvent(1), processingContext);
-            state = ENTITY_EVOLVER.evolve(state, domainEvent(2), processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event0, StubProcessingContext.forMessage(event0));
+            state = ENTITY_EVOLVER.evolve(state, event1, StubProcessingContext.forMessage(event1));
+            state = ENTITY_EVOLVER.evolve(state, event2, StubProcessingContext.forMessage(event2));
 
             // then
             assertEquals("null-0-1-2", state.handledPayloads);
@@ -102,7 +103,7 @@ class AnnotationBasedEventSourcedComponentTest {
             var event = domainEvent(0, "sampleValue");
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
 
             // then
             assertEquals("null-sampleValue", state.handledMetadata);
@@ -115,7 +116,7 @@ class AnnotationBasedEventSourcedComponentTest {
             var event = domainEvent(0);
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
 
             // then
             assertEquals("null-0", state.handledSequences);
@@ -128,7 +129,7 @@ class AnnotationBasedEventSourcedComponentTest {
             var event = domainEvent(0);
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
 
             // then
             assertEquals("null-id", state.handledSources);
@@ -144,7 +145,7 @@ class AnnotationBasedEventSourcedComponentTest {
             var event = domainEvent(0);
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
 
             // then
             assertEquals("null-" + timestamp, state.handledTimestamps);
@@ -167,7 +168,7 @@ class AnnotationBasedEventSourcedComponentTest {
             var event = domainEvent(0);
 
             // when
-            state = eventSourcedComponent.evolve(state, event, processingContext);
+            state = eventSourcedComponent.evolve(state, event, StubProcessingContext.forMessage(event));
 
             // then
             assertEquals(0, state.handledCount);
@@ -180,7 +181,7 @@ class AnnotationBasedEventSourcedComponentTest {
             var event = domainEvent(0);
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -218,7 +219,7 @@ class AnnotationBasedEventSourcedComponentTest {
             var event = domainEvent(0);
 
             // when
-            ENTITY_EVOLVER.evolve(state, event, processingContext);
+            ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
 
             // then
             assertEquals("null", state.handledPayloads);
@@ -231,7 +232,7 @@ class AnnotationBasedEventSourcedComponentTest {
             var event = domainEvent(0);
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -250,7 +251,7 @@ class AnnotationBasedEventSourcedComponentTest {
 
             // when-then
             var exception = assertThrows(StateEvolvingException.class,
-                                         () -> testSubject.evolve(state, event, processingContext));
+                                         () -> testSubject.evolve(state, event, StubProcessingContext.forMessage(event)));
             assertEquals(
                     "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponentTest$ErrorThrowingState] state",
                     exception.getMessage()
@@ -267,7 +268,7 @@ class AnnotationBasedEventSourcedComponentTest {
             // when-then
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> ENTITY_EVOLVER.evolve(null, event, processingContext),
+                         () -> ENTITY_EVOLVER.evolve(null, event, StubProcessingContext.forMessage(event)),
                          "Model may not be null");
         }
     }

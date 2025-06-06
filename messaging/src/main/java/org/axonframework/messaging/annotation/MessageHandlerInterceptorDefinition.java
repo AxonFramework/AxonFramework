@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,23 +88,24 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
-            return ResultParameterResolverFactory.ignoringResultParameters(processingContext,
+        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+            return ResultParameterResolverFactory.ignoringResultParameters(context,
                                                                            pc -> super.canHandle(message, pc));
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception {
+        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable T target)
+                throws Exception {
             InterceptorChain chain = InterceptorChainParameterResolverFactory.currentInterceptorChain();
             try {
-                return chain.proceedSync();
+                return chain.proceedSync(context);
             } catch (Exception e) {
                 if (!expectedResultType.isInstance(e)) {
                     throw e;
                 }
                 return ResultParameterResolverFactory.callWithResult(e, () -> {
-                    if (super.canHandle(message, null)) {
-                        return super.handleSync(message, target);
+                    if (super.canHandle(message, context)) {
+                        return super.handleSync(message, context, target);
                     }
                     throw e;
                 });
@@ -113,13 +114,13 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
 
         @Override
         public MessageStream<?> handle(@Nonnull Message<?> message,
-                                       @Nonnull ProcessingContext processingContext,
+                                       @Nonnull ProcessingContext context,
                                        @Nullable T target) {
             InterceptorChain<Message<?>, Message<?>> chain =
-                    InterceptorChainParameterResolverFactory.currentInterceptorChain(processingContext);
+                    InterceptorChainParameterResolverFactory.currentInterceptorChain(context);
             // TODO - Provide implementation that handles exceptions in streams with more than one item
             //noinspection unchecked
-            return chain.proceed(message, processingContext)
+            return chain.proceed(message, context)
                         .map(r -> (Entry<Message<?>>) r)
                         .onErrorContinue(error -> {
                             if (expectedResultType.isInstance(error)) {
@@ -127,7 +128,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                             }
                             return ResultParameterResolverFactory.callWithResult(
                                     error,
-                                    processingContext,
+                                    context,
                                     pc -> {
                                         if (super.canHandle(message, pc)) {
                                             //noinspection unchecked
@@ -164,10 +165,11 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception {
-            Object result = super.handleSync(message, target);
+        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable T target)
+                throws Exception {
+            Object result = super.handleSync(message, context, target);
             if (shouldInvokeInterceptorChain) {
-                return InterceptorChainParameterResolverFactory.currentInterceptorChain().proceedSync();
+                return InterceptorChainParameterResolverFactory.currentInterceptorChain().proceedSync(context);
             }
             return result;
         }

@@ -25,7 +25,8 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStreamTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.child.mock.RecordingChildEntity;
@@ -52,7 +53,6 @@ class SingleEntityChildModelTest {
             .childEntityFieldDefinition(childEntityFieldDefinition)
             .build();
 
-    private final StubProcessingContext context = new StubProcessingContext();
     private final RecordingParentEntity parentEntity = new RecordingParentEntity();
 
     @Nested
@@ -62,10 +62,11 @@ class SingleEntityChildModelTest {
         private final CommandMessage<String> commandMessage = new GenericCommandMessage<>(
                 new MessageType(COMMAND), "myPayload"
         );
+        private final ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
 
         @BeforeEach
         void setUp() {
-            when(childEntityEntityModel.handle(any(), any(), any())).thenReturn(
+            when(childEntityEntityModel.handleInstance(any(), any(), any())).thenReturn(
                     MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class), "result")));
         }
 
@@ -80,7 +81,7 @@ class SingleEntityChildModelTest {
             assertEquals("result", result.asCompletableFuture().join().message().getPayload());
 
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityEntityModel).handle(command, entityToBeFound, context);
+            verify(childEntityEntityModel).handleInstance(command, entityToBeFound, context);
         }
 
         @Test
@@ -109,11 +110,17 @@ class SingleEntityChildModelTest {
         assertEquals(RecordingChildEntity.class, testSubject.entityType());
     }
 
+    @Test
+    void returnsEntityModel() {
+        assertEquals(childEntityEntityModel, testSubject.entityModel());
+    }
+
     @Nested
     @DisplayName("Event handling")
     public class EventHandling {
 
         private final EventMessage<String> event = new GenericEventMessage<>(new MessageType(EVENT), "myPayload");
+        private final ProcessingContext context = StubProcessingContext.forMessage(event);
 
 
         @Test

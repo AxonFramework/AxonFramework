@@ -62,12 +62,11 @@ public interface MessageHandlingMember<T> {
     /**
      * Checks if this handler is capable of handling the given {@code message}.
      *
-     * @param message           The message that is to be handled
-     * @param processingContext
-     * @return {@code true} if the handler is capable of handling the message, {@code false} otherwise
+     * @param message           The message that is to be handled.
+     * @param context           The context in which the message is being handled.
+     * @return {@code true} if the handler is capable of handling the message, {@code false} otherwise.
      */
-    // TODO - ProcessingContext should eventually become non-null when canHandle for event handlers is based on fully-qualified message qualifiedName only
-    boolean canHandle(@Nonnull Message<?> message, @Nullable ProcessingContext processingContext);
+    boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context);
 
     /**
      * Checks if this handler is capable of handling messages with the given {@code payloadType}.
@@ -97,24 +96,26 @@ public interface MessageHandlingMember<T> {
      * an exception if the given target is not capable of handling the message or if an exception is thrown during
      * invocation of the method.
      *
-     * @param message The message to handle
-     * @param target  The target to handle the message
-     * @return The message handling result in case the invocation was successful
+     * @param message The message to handle.
+     * @param context The context in which the message is being handled.
+     * @param target  The target to handle the message.
+     * @return The message handling result in case the invocation was successful.
      * @throws Exception when there was a problem that prevented invocation of the method or if an exception was thrown
-     *                   from the invoked method
+     *                   from the invoked method.
      */
     @Deprecated
-    Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception;
+    Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable T target)
+            throws Exception;
 
     /**
      * TODO add documentation
      */
     default MessageStream<?> handle(@Nonnull Message<?> message,
-                                    @Nonnull ProcessingContext processingContext,
+                                    @Nonnull ProcessingContext context,
                                     @Nullable T target) {
         try {
             // TODO: 24-11-2023 proper impl
-            Object result = handleSync(message, target);
+            Object result = handleSync(message, context, target);
             return MessageStream.just(new GenericMessage<>(new MessageType(result.getClass()), result));
         } catch (Exception e) {
             return MessageStream.failed(e);
