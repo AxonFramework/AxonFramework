@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,10 @@ public interface AggregateModel<T> extends EntityModel<T> {
      *
      * @param target The target aggregate root instance
      * @return The current version of the aggregate
+     * @deprecated Aggregate versioning will completely be removed from 5.0.0, as it does not align with the adjusted
+     * sequencing approach of a DCB-supporting event store at the moment.
      */
+    @Deprecated(since = "5.0.0", forRemoval = true)
     Long getVersion(T target);
 
     /**

@@ -178,6 +178,9 @@ public abstract class MessageStreamUtils {
                         source.error().ifPresentOrElse(result::completeExceptionally,
                                                        () -> result.complete(intermediateResult.get()));
                     }
+                } catch (Exception e) {
+                    result.completeExceptionally(e);
+                    source.close();
                 } finally {
                     processingGate.set(false);
                 }

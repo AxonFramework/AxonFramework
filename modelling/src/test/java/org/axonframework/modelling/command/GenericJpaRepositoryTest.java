@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Id;
 import jakarta.persistence.LockModeType;
@@ -42,7 +43,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -256,17 +256,6 @@ class GenericJpaRepositoryTest {
             fail("Expected AggregateNotFoundException");
         } catch (AggregateNotFoundException e) {
             assertEquals(aggregateIdentifier, e.getAggregateIdentifier());
-        }
-    }
-
-    @Test
-    void loadAggregate_WrongVersion() {
-        try {
-            testSubject.load(aggregateId, 2L);
-            fail("Expected ConflictingAggregateVersionException");
-        } catch (ConflictingAggregateVersionException e) {
-            assertEquals(2L, e.getExpectedVersion());
-            assertEquals(0L, e.getActualVersion());
         }
     }
 

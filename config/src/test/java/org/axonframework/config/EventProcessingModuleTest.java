@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -65,6 +66,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -84,7 +86,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.axonframework.utils.AssertUtils.assertWithin;
@@ -1006,7 +1007,7 @@ class EventProcessingModuleTest {
         assertEquals(testName, result.getName());
         assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
         assertEquals(testTokenStore, getField("tokenStore", result));
-        assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", result));
+        assertInstanceOf(SimpleUnitOfWorkFactory.class, getField("unitOfWorkFactory", result));
         assertEquals(config.getComponent(EventProcessorSpanFactory.class),
                      getField(AbstractEventProcessor.class, "spanFactory", result));
     }
@@ -1034,7 +1035,7 @@ class EventProcessingModuleTest {
         assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
         assertEquals(eventStoreOne, getField("messageSource", result));
         assertEquals(testTokenStore, getField("tokenStore", result));
-        assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", result));
+        assertInstanceOf(SimpleUnitOfWorkFactory.class, getField("unitOfWorkFactory", result));
     }
 
     @Test

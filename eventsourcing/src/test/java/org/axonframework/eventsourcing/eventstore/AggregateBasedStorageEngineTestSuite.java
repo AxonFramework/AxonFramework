@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -32,7 +33,6 @@ import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -46,7 +46,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -104,8 +103,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     protected abstract ESE buildStorageEngine() throws Exception;
 
     /**
-     * Will translate position to global sequence index. It differs among the EventStore implementations. For
-     * example: AxonServer starts the global stream from 0, whereas JPA implementations starts from 1.
+     * Will translate position to global sequence index. It differs among the EventStore implementations. For example:
+     * AxonServer starts the global stream from 0, whereas JPA implementations starts from 1.
      *
      * @param position the event order to translate, first is 1
      * @return the global sequence index for given event storage engine
@@ -119,7 +118,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_TAGS);
         TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_TAGS);
         TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_TAGS);
-        // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
+        // Ensure there are "gaps" in the global stream based on events not matching the condition.
         ConsistencyMarker newMarker = testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
                                                                expectedEventOne,
                                                                expectedEventTwo).thenCompose(AppendTransaction::commit)
@@ -153,8 +152,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_TAGS);
         TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_TAGS);
         TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_TAGS);
-
-        // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
+        // Ensure there are "gaps" in the global stream based on events not matching the condition.
         testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
                                  expectedEventOne,
                                  expectedEventTwo,
@@ -180,7 +178,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_TAGS);
         TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_TAGS);
         TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_TAGS);
-        // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
+        // Ensure there are "gaps" in the global stream based on events not matching the condition.
         ConsistencyMarker marker1 = testSubject.appendEvents(AppendCondition.withCriteria(expectedCriteria),
                                                              expectedEventOne,
                                                              expectedEventTwo).thenCompose(AppendTransaction::commit)
@@ -207,15 +205,15 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     }
 
     @Test
-    void sourcingEventsReturnsMatchingAggregateEvent() {
+    void sourcingEventsReturnsMatchingAggregateEventAndConsistencyMarkerEntry() {
         AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
-        testSubject.appendEvents(appendCondition,
-                                 taggedEventMessage("event-0", TEST_AGGREGATE_TAGS)
-                   )
-                   .thenCompose(AppendTransaction::commit).join();
+        testSubject.appendEvents(appendCondition, taggedEventMessage("event-0", TEST_AGGREGATE_TAGS))
+                   .thenCompose(AppendTransaction::commit)
+                   .join();
 
         StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
                     .expectNextMatches(entryWithAggregateEvent("event-0", 0))
+                    .expectNextMatches(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
     }
 
@@ -231,10 +229,12 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                                                  .and("key3", new ComplexObject("value1", false, 44))
                                  )
                    )
-                   .thenCompose(AppendTransaction::commit).join();
+                   .thenCompose(AppendTransaction::commit)
+                   .join();
 
         StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
                     .expectNextMatches(entryWithAggregateEvent("event-0", 0))
+                    .expectNextMatches(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
     }
 
@@ -246,17 +246,20 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                                  taggedEventMessage("event-0", TEST_AGGREGATE_TAGS),
                                  taggedEventMessage("event-1", TEST_AGGREGATE_TAGS),
                                  taggedEventMessage("event-2", TEST_AGGREGATE_TAGS))
-                   .thenCompose(AppendTransaction::commit).join();
+                   .thenCompose(AppendTransaction::commit)
+                   .join();
         testSubject.appendEvents(appendCondition2,
                                  taggedEventMessage("event-4", OTHER_AGGREGATE_TAGS),
                                  taggedEventMessage("event-5", OTHER_AGGREGATE_TAGS),
                                  taggedEventMessage("event-6", OTHER_AGGREGATE_TAGS))
-                   .thenCompose(AppendTransaction::commit).join();
+                   .thenCompose(AppendTransaction::commit)
+                   .join();
 
         StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
                     .expectNextMatches(entryWithAggregateEvent("event-0", 0))
                     .expectNextMatches(entryWithAggregateEvent("event-1", 1))
                     .expectNextMatches(entryWithAggregateEvent("event-2", 2))
+                    .expectNextMatches(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
     }
 
@@ -268,11 +271,13 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                                  taggedEventMessage("event-2", Set.of()),
                                  taggedEventMessage("event-3", TEST_AGGREGATE_TAGS),
                                  taggedEventMessage("event-4", Set.of()))
-                   .thenCompose(AppendTransaction::commit).join();
+                   .thenCompose(AppendTransaction::commit)
+                   .join();
 
         StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
                     .expectNextMatches(entryWithAggregateEvent("event-1", 0))
                     .expectNextMatches(entryWithAggregateEvent("event-3", 1))
+                    .expectNextMatches(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
     }
 
@@ -282,43 +287,43 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                                  taggedEventMessage("event-4", TEST_AGGREGATE_TAGS),
                                  taggedEventMessage("event-5", TEST_AGGREGATE_TAGS),
                                  taggedEventMessage("event-6", TEST_AGGREGATE_TAGS))
-                   .thenCompose(AppendTransaction::commit).join();
+                   .thenCompose(AppendTransaction::commit)
+                   .join();
 
         StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
                     .expectNextMatches(entryWithAggregateEvent("event-4", 0))
                     .expectNextMatches(entryWithAggregateEvent("event-5", 1))
                     .expectNextMatches(entryWithAggregateEvent("event-6", 2))
+                    .expectNextMatches(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
     }
 
     @Test
     void sourcingFromTwoAggregateStreamsReturnsACombinedStream() {
-        var marker = testSubject.appendEvents(AppendCondition.none(),
-                                              taggedEventMessage("event-0", TEST_AGGREGATE_TAGS),
-                                              taggedEventMessage("event-1", OTHER_AGGREGATE_TAGS),
-                                              taggedEventMessage("event-2", TEST_AGGREGATE_TAGS),
-                                              taggedEventMessage("event-3", OTHER_AGGREGATE_TAGS),
-                                              taggedEventMessage("event-4", TEST_AGGREGATE_TAGS),
-                                              taggedEventMessage("event-5", OTHER_AGGREGATE_TAGS))
-                                .thenCompose(AppendTransaction::commit).join();
+        var appendMarker = testSubject.appendEvents(AppendCondition.none(),
+                                                    taggedEventMessage("event-0", TEST_AGGREGATE_TAGS),
+                                                    taggedEventMessage("event-1", OTHER_AGGREGATE_TAGS),
+                                                    taggedEventMessage("event-2", TEST_AGGREGATE_TAGS),
+                                                    taggedEventMessage("event-3", OTHER_AGGREGATE_TAGS),
+                                                    taggedEventMessage("event-4", TEST_AGGREGATE_TAGS),
+                                                    taggedEventMessage("event-5", OTHER_AGGREGATE_TAGS))
+                                      .thenCompose(AppendTransaction::commit)
+                                      .join();
 
-        Set<String> actual = new HashSet<>();
-        AtomicReference<ConsistencyMarker> lastMarker = new AtomicReference<>();
+        SourcingCondition testCondition =
+                SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
 
-        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA))).asFlux())
-                    //there is no predefined order between aggregates. We just expect 6 entries.
-                    .thenConsumeWhile(e -> {
-                        lastMarker.set(e.getResource(ConsistencyMarker.RESOURCE_KEY));
-                        return actual.add(e.map(this::convertPayload).message().getPayload());
-                    })
+        StepVerifier.create(testSubject.source(testCondition).asFlux())
+                    .expectNextCount(6)
+                    .assertNext(entry -> assertEquals(appendMarker, entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
                     .verifyComplete();
-
-        assertEquals(Set.of("event-0", "event-1", "event-2", "event-3", "event-4", "event-5"), actual);
-        assertEquals(marker, lastMarker.get());
     }
 
     @Test
     void sourcingWithStartAndEndReturnsEventsWithinBounds() {
+        // given...
+        Set<String> expected = Set.of("event-2");
+        Set<String> actual = new HashSet<>();
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_AGGREGATE_TAGS),
                                  taggedEventMessage("event-1", OTHER_AGGREGATE_TAGS),
@@ -326,19 +331,25 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                                  taggedEventMessage("event-3", OTHER_AGGREGATE_TAGS),
                                  taggedEventMessage("event-4", TEST_AGGREGATE_TAGS),
                                  taggedEventMessage("event-5", OTHER_AGGREGATE_TAGS))
-                   .thenCompose(AppendTransaction::commit).join();
+                   .thenCompose(AppendTransaction::commit)
+                   .join();
 
-        List<String> actual = new ArrayList<>();
-
-        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(1, 1, TEST_AGGREGATE_CRITERIA)).asFlux())
-                    .thenConsumeWhile(e -> actual.add(e.map(this::convertPayload).message().getPayload()))
+        // when...
+        SourcingCondition testCondition = SourcingCondition.conditionFor(1, 1, TEST_AGGREGATE_CRITERIA);
+        MessageStream<EventMessage<?>> result = testSubject.source(testCondition);
+        // then...
+        StepVerifier.create(result.asFlux())
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().getPayload()))
+                    .assertNext(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
-
-        assertEquals(List.of("event-2"), actual);
+        assertEquals(expected, actual);
     }
 
     @Test
     void sourcingFromTwoAggregatesWithStartAndEndRespectsBounds() {
+        // given...
+        Set<String> expected = Set.of("event-2", "event-3", "event-4", "event-5");
+        Set<String> actual = new HashSet<>();
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_AGGREGATE_TAGS),
                                  taggedEventMessage("event-1", OTHER_AGGREGATE_TAGS),
@@ -348,35 +359,63 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                                  taggedEventMessage("event-5", OTHER_AGGREGATE_TAGS))
                    .thenCompose(AppendTransaction::commit).join();
 
-        Set<String> actual = new HashSet<>();
+        // when...
         MessageStream<EventMessage<?>> source;
+        SourcingCondition testCondition =
+                SourcingCondition.conditionFor(1, 2, TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
         try {
-            source = testSubject.source(SourcingCondition.conditionFor(1, 2,
-                                                                       TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA)));
+            source = testSubject.source(testCondition);
         } catch (IllegalArgumentException e) {
             throw new TestAbortedException("Multi-aggregate streams not supported", e);
         }
+
+        // then...
         StepVerifier.create(source.asFlux())
-                    .thenConsumeWhile(e -> actual.add(e.map(this::convertPayload).message().getPayload()))
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().getPayload()))
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().getPayload()))
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().getPayload()))
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().getPayload()))
+                    .assertNext(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
-        assertEquals(Set.of("event-2", "event-3", "event-4", "event-5"), actual);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void sourcingAnEmptyEventStoreReturnsAnExpectedConsistencyMarker() {
+        // given...
+        ConsistencyMarker testAggregateMarker = new AggregateBasedConsistencyMarker(TEST_AGGREGATE_ID, 0);
+        ConsistencyMarker otherAggregateMarker = new AggregateBasedConsistencyMarker(OTHER_AGGREGATE_ID, 0);
+        ConsistencyMarker expectedMarker = testAggregateMarker.upperBound(otherAggregateMarker);
+        // when...
+        SourcingCondition testCondition =
+                SourcingCondition.conditionFor(0, TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
+        MessageStream<EventMessage<?>> result = testSubject.source(testCondition);
+        // then...
+        StepVerifier.create(result.asFlux())
+                    .assertNext(entry -> assertEquals(
+                            expectedMarker, entry.getResource(ConsistencyMarker.RESOURCE_KEY)
+                    ))
+                    .verifyComplete();
     }
 
     @Test
     void transactionRejectedWithConflictingEventsInStore() {
-        ConsistencyMarker consistencyMarker = testSubject.appendEvents(
-                                                                 AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                                                 taggedEventMessage("event-0", TEST_AGGREGATE_TAGS))
-                                                         .thenCompose(AppendTransaction::commit).join();
-        testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA).withMarker(consistencyMarker),
+        ConsistencyMarker consistencyMarker =
+                testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                         taggedEventMessage("event-0", TEST_AGGREGATE_TAGS))
+                           .thenCompose(AppendTransaction::commit)
+                           .join();
+        testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA)
+                                                .withMarker(consistencyMarker),
                                  taggedEventMessage("event-1", TEST_AGGREGATE_TAGS))
-                   .thenApply(AppendTransaction::commit).join();
+                   .thenApply(AppendTransaction::commit)
+                   .join();
 
-        CompletableFuture<ConsistencyMarker> actual = testSubject.appendEvents(
-                AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA).withMarker(consistencyMarker),
-                taggedEventMessage("event-2", TEST_AGGREGATE_TAGS)/*,
-                taggedEventMessage("event-3", TEST_AGGREGATE_TAGS)*/
-        ).thenCompose(AppendTransaction::commit);
+        CompletableFuture<ConsistencyMarker> actual =
+                testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA)
+                                                        .withMarker(consistencyMarker),
+                                         taggedEventMessage("event-2", TEST_AGGREGATE_TAGS))
+                           .thenCompose(AppendTransaction::commit);
 
         ExecutionException actualException = assertThrows(ExecutionException.class,
                                                           () -> actual.get(1, TimeUnit.SECONDS));
@@ -522,6 +561,11 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
     protected abstract EventMessage<String> convertPayload(EventMessage<?> original);
 
+    private static boolean assertMarkerEntry(Entry<EventMessage<?>> entry) {
+        return entry.getResource(ConsistencyMarker.RESOURCE_KEY) instanceof AggregateBasedConsistencyMarker
+                && entry.message().equals(TerminalEventMessage.INSTANCE);
+    }
+
     protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags) {
         return taggedEventMessage(payload, tags, MetaData.emptyInstance());
     }
@@ -538,13 +582,11 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         return e -> expectedPayload.equals(convertPayload(e.message()).getPayload())
                 && TEST_AGGREGATE_ID.equals(e.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY))
                 && e.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY) == expectedSequence
-                && validConsistencyMarker(e.getResource(ConsistencyMarker.RESOURCE_KEY),
-                                          TEST_AGGREGATE_ID,
-                                          expectedSequence)
                 && TEST_AGGREGATE_TYPE.equals(e.getResource(LegacyResources.AGGREGATE_TYPE_KEY));
     }
 
-    protected boolean validConsistencyMarker(ConsistencyMarker consistencyMarker, String aggregateIdentifier,
+    protected boolean validConsistencyMarker(ConsistencyMarker consistencyMarker,
+                                             String aggregateIdentifier,
                                              int aggregateSequence) {
         return consistencyMarker instanceof AggregateBasedConsistencyMarker cm
                 && cm.positionOf(aggregateIdentifier) == aggregateSequence;

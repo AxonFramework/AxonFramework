@@ -36,7 +36,7 @@ import java.lang.reflect.Parameter;
  * @deprecated In favor of the {@link org.axonframework.messaging.unitofwork.ProcessingContextParameterResolverFactory}.
  */
 @Priority(Priority.FIRST)
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResolverFactory, ParameterResolver {
 
     @Nullable
