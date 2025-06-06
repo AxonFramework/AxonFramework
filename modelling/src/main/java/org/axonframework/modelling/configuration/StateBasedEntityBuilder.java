@@ -17,7 +17,7 @@
 package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.modelling.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.SimpleRepositoryEntityPersister;
 import org.axonframework.modelling.repository.Repository;
@@ -28,9 +28,9 @@ import org.axonframework.modelling.repository.Repository;
  * Invoke the {@code static} {@link #entity(Class, Class)} operation to start the builder flow for a state-based
  * entity.
  * <p>
- * Provides operations to either (1) register a {@link RepositoryPhase#loader(ComponentFactory) entity loader} and
- * {@link PersisterPhase#persister(ComponentFactory) entity persister}, or (2) a
- * {@link RepositoryPhase#repository(ComponentFactory) repository} performing both the loading and persisting task.
+ * Provides operations to either (1) register a {@link RepositoryPhase#loader(ComponentBuilder) entity loader} and
+ * {@link PersisterPhase#persister(ComponentBuilder) entity persister}, or (2) a
+ * {@link RepositoryPhase#repository(ComponentBuilder) repository} performing both the loading and persisting task.
  * <p>
  * The separate methods of this builder ensure that the bare minimum required to provide the {@link #entityName()} and
  * {@link #repository()} are present at the end.
@@ -63,9 +63,9 @@ public interface StateBasedEntityBuilder<I, E> extends EntityBuilder<I, E> {
      * The repository phase of the state-based entity builder.
      * <p>
      * Allows for two paths when building a state-based entity. Firstly, a
-     * {@link #loader(ComponentFactory) entity loader} can be defined, after which the builder will enforce registration
-     * of an {@link PersisterPhase#persister(ComponentFactory) entity persister}. The second option allows for providing
-     * a {@link #repository(ComponentFactory) repository} right away.
+     * {@link #loader(ComponentBuilder) entity loader} can be defined, after which the builder will enforce registration
+     * of an {@link PersisterPhase#persister(ComponentBuilder) entity persister}. The second option allows for providing
+     * a {@link #repository(ComponentBuilder) repository} right away.
      *
      * @param <I> The type of identifier used to identify the state-based entity that's being built.
      * @param <E> The type of the state-based entity being built.
@@ -78,7 +78,7 @@ public interface StateBasedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * @param loader A factory method constructing a {@link SimpleRepositoryEntityLoader}.
          * @return The "persister" phase of this builder, for a fluent API.
          */
-        PersisterPhase<I, E> loader(@Nonnull ComponentFactory<SimpleRepositoryEntityLoader<I, E>> loader);
+        PersisterPhase<I, E> loader(@Nonnull ComponentBuilder<SimpleRepositoryEntityLoader<I, E>> loader);
 
         /**
          * Registers the given {@code repository} as a factory method for the state-based entity being built.
@@ -86,13 +86,13 @@ public interface StateBasedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * @param repository A factory method constructing a {@link Repository}.
          * @return The parent {@link StateBasedEntityBuilder}, signaling the end of configuring a state-based entity.
          */
-        StateBasedEntityBuilder<I, E> repository(@Nonnull ComponentFactory<Repository<I, E>> repository);
+        StateBasedEntityBuilder<I, E> repository(@Nonnull ComponentBuilder<Repository<I, E>> repository);
     }
 
     /**
      * The "persister" phase of the state-based entity builder.
      * <p>
-     * Enforce providing the {@link #persister(ComponentFactory)} for the state-based entity that's being built.
+     * Enforce providing the {@link #persister(ComponentBuilder)} for the state-based entity that's being built.
      *
      * @param <I> The type of identifier used to identify the state-based entity that's being built.
      * @param <E> The type of the state-based entity being built.
@@ -106,7 +106,7 @@ public interface StateBasedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * @return The parent {@link StateBasedEntityBuilder}, signaling the end of configuring a state-based entity.
          */
         StateBasedEntityBuilder<I, E> persister(
-                @Nonnull ComponentFactory<SimpleRepositoryEntityPersister<I, E>> persister
+                @Nonnull ComponentBuilder<SimpleRepositoryEntityPersister<I, E>> persister
         );
     }
 }

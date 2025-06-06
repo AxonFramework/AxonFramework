@@ -228,15 +228,6 @@ public interface LegacyConfiguration extends LifecycleOperations {
     }
 
     /**
-     * Returns the Tags Configuration defined in this Configuration.
-     *
-     * @return the Tags Configuration defined in this Configuration
-     */
-    default TagsConfiguration tags() {
-        return getComponent(TagsConfiguration.class);
-    }
-
-    /**
      * Returns the {@link SpanFactory} defined in this configuration.
      *
      * @return the {@link SpanFactory} defined in this configuration.

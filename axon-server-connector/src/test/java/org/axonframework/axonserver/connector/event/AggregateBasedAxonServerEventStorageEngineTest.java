@@ -25,8 +25,8 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.serialization.Converter;
 import org.axonframework.test.server.AxonServerContainer;
+import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -65,27 +65,19 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
     void sourcingFromNonGlobalSequenceTrackingTokenShouldThrowException() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(5,
-                                                                                                   Collections.emptySet())))
+                () -> testSubject.stream(StreamingCondition.startingFrom(
+                        new GapAwareTrackingToken(5, Collections.emptySet())
+                ))
         );
     }
 
     @Override
     protected AggregateBasedAxonServerEventStorageEngine buildStorageEngine() throws IOException {
-        AxonServerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(),
-                                                  axonServerContainer.getHttpPort(),
-                                                  "default");
-        return new AggregateBasedAxonServerEventStorageEngine(connection, new Converter() {
-            @Override
-            public boolean canConvert(Class<?> sourceType, Class<?> targetType) {
-                return byte[].class.isAssignableFrom(targetType);
-            }
-
-            @Override
-            public <T> T convert(Object original, Class<?> sourceType, Class<T> targetType) {
-                return (T) original.toString().getBytes(StandardCharsets.UTF_8);
-            }
-        });
+        AxonServerContainerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(),
+                                                           axonServerContainer.getHttpPort(),
+                                                           "default",
+                                                           AxonServerContainerUtils.NO_DCB_CONTEXT);
+        return new AggregateBasedAxonServerEventStorageEngine(connection, new TestConverter());
     }
 
     @Override

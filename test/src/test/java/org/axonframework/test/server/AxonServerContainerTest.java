@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ class AxonServerContainerTest {
 
     @Test
     void constructionThroughStringImageNameStartsAsExpected() {
-        String testName = "axoniq/axonserver:latest-dev";
+        String testName = "axoniq/axonserver";
         try (
                 AxonServerContainer testSubject = new AxonServerContainer(testName)
         ) {
@@ -44,7 +44,7 @@ class AxonServerContainerTest {
 
     @Test
     void constructionThroughDockerImageNameStartsAsExpected() {
-        DockerImageName testName = DockerImageName.parse("axoniq/axonserver:latest-dev");
+        DockerImageName testName = DockerImageName.parse("axoniq/axonserver");
         try (
                 AxonServerContainer testSubject = new AxonServerContainer(testName)
         ) {
@@ -67,7 +67,7 @@ class AxonServerContainerTest {
         boolean testDevMode = true;
         try (
                 AxonServerContainer testSubject =
-                        new AxonServerContainer("axoniq/axonserver:latest-dev")
+                        new AxonServerContainer("axoniq/axonserver")
                                 .withAxonServerName(testName)
                                 .withAxonServerHostname(testHostName)
                                 .withAxonServerInternalHostname(testInternalHostName)
