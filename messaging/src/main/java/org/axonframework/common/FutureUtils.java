@@ -124,7 +124,7 @@ public abstract class FutureUtils {
      * calling code.
      *
      * @param exception The exception to throw.
-     * @param <E>       The type of exception (inferred)
+     * @param <E>       The type of exception (inferred).
      * @throws E The exception with its original type.
      */
     @SuppressWarnings("unchecked")

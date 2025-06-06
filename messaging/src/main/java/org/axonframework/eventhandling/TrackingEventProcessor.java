@@ -706,14 +706,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         Assert.state(!isRunning() && activeProcessorThreads() == 0 && !workLauncherRunning.get(),
                      () -> "TrackingProcessor must be shut down before triggering a reset");
         var unitOfWork = unitOfWorkFactory.create();
-        var future = unitOfWork.executeWithResult(context -> {
+        var future = unitOfWork.executeWithResult(processingContext -> {
             int[] segments = tokenStore.fetchSegments(getName());
             TrackingToken[] tokens = new TrackingToken[segments.length];
             for (int i = 0; i < segments.length; i++) {
                 tokens[i] = tokenStore.fetchToken(getName(), segments[i]);
             }
             // we now have all tokens, hurray
-            eventHandlerInvoker().performReset(resetContext, null);
+            eventHandlerInvoker().performReset(resetContext, processingContext);
 
             for (int i = 0; i < tokens.length; i++) {
                 tokenStore.storeToken(ReplayToken.createReplayToken(tokens[i], startPosition, resetContext),

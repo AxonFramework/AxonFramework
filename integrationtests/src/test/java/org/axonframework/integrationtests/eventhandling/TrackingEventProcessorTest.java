@@ -1035,8 +1035,8 @@ class TrackingEventProcessorTest {
                 testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
         ));
 
-        verify(eventHandlerInvoker, times(1)).performReset(one, null);
-        verify(eventHandlerInvoker, times(1)).performReset(two, null);
+        verify(eventHandlerInvoker, times(1)).performReset(eq(one), any(ProcessingContext.class));
+        verify(eventHandlerInvoker, times(1)).performReset(eq(two), any(ProcessingContext.class));
     }
 
     @Test
@@ -1061,7 +1061,7 @@ class TrackingEventProcessorTest {
         testSubject.resetTokens(resetContext);
         testSubject.start();
 
-        verify(eventHandlerInvoker).performReset(resetContext, null);
+        verify(eventHandlerInvoker).performReset(eq(resetContext), any(ProcessingContext.class));
     }
 
     @Test
@@ -1121,7 +1121,7 @@ class TrackingEventProcessorTest {
                 testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
         ));
 
-        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD, null);
+        verify(eventHandlerInvoker).performReset(eq(NO_RESET_PAYLOAD), any(ProcessingContext.class));
     }
 
     @Test
@@ -1196,7 +1196,7 @@ class TrackingEventProcessorTest {
                 testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
         ));
 
-        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD, null);
+        verify(eventHandlerInvoker).performReset(eq(NO_RESET_PAYLOAD), any(ProcessingContext.class));
     }
 
     @Test
@@ -1235,7 +1235,7 @@ class TrackingEventProcessorTest {
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent());
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > 0);
 
-        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD, null);
+        verify(eventHandlerInvoker).performReset(eq(NO_RESET_PAYLOAD), any(ProcessingContext.class));
     }
 
     private void awaitProcessorStarted() {
@@ -1285,7 +1285,7 @@ class TrackingEventProcessorTest {
         assertTrue(replayRun.get(5) instanceof ReplayToken);
         assertEquals(GapAwareTrackingToken.newInstance(6, emptySortedSet()), replayRun.get(6));
 
-        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD, null);
+        verify(eventHandlerInvoker).performReset(eq(NO_RESET_PAYLOAD), any(ProcessingContext.class));
     }
 
     @Test
