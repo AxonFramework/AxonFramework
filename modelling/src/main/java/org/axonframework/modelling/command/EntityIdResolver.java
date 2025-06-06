@@ -21,12 +21,18 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
- * Resolver for the id of an entity. The id is then used to load an entity from the {@link org.axonframework.modelling.StateManager}.
+ * Resolver for the id of an entity. The id is then used to load an entity from the
+ * {@link org.axonframework.modelling.StateManager}.
+ * <p>
+ * Before version 5.0.0, this interface was known as {@code org.axonframework.modelling.command.CommandTargetResolver}.
+ * This interface was changed to be able to resolve any type of entity id, not just Strings, and to have the
+ * {@link ProcessingContext} available for resolving the id.
  *
  * @param <I> The type of the identifier.
+ * @author Allard Buijze
  * @author Mitchell Herrijgers
  * @see org.axonframework.modelling.StateManager
- * @since 5.0.0
+ * @since 1.2.0
  */
 @FunctionalInterface
 public interface EntityIdResolver<I> {

@@ -19,6 +19,7 @@ package org.axonframework.modelling.entity.child;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageStream;
@@ -58,8 +59,11 @@ class ListEntityChildModelTest {
     private final ListEntityChildModel<RecordingChildEntity, RecordingParentEntity> testSubject = ListEntityChildModel
             .forEntityModel(RecordingParentEntity.class, childEntityEntityModel)
             .childEntityFieldDefinition(childEntityFieldDefinition)
-            .commandTargetMatcher((child, msg) -> child.getId().contains(COMMAND_MATCHING_ID))
-            .eventTargetMatcher((child, msg) -> child.getId().contains(EVENT_MATCHING_ID))
+            .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
+                                                                                  .filter(c -> c.getId().contains(COMMAND_MATCHING_ID))
+                                                                                  .findFirst()
+                                                                                  .orElse(null))
+            .eventTargetMatcher((o, eventMessage, ctx) -> o.getId().contains(EVENT_MATCHING_ID))
             .build();
 
     private final RecordingParentEntity parentEntity = new RecordingParentEntity();
@@ -121,22 +125,6 @@ class ListEntityChildModelTest {
                     testSubject.handle(commandMessage, parentEntity, context),
                     ChildEntityNotFoundException.class,
                     "No available child entity found for command of type [Command#0.0.1]. State of parent entity ["
-            );
-        }
-
-        @Test
-        void commandResultsInFailedMessageStreamWhenMultipleMatchingEntitiesAreFound() {
-            RecordingParentEntity parentEntity = new RecordingParentEntity();
-            RecordingChildEntity entityToBeFound1 = new RecordingChildEntity("1337-1");
-            RecordingChildEntity entityToBeFound2 = new RecordingChildEntity("1337-2");
-            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(List.of(entityToBeFound1,
-                                                                                     entityToBeFound2));
-
-
-            MessageStreamTestUtils.assertCompletedExceptionally(
-                    testSubject.handle(commandMessage, parentEntity, context),
-                    ChildAmbiguityException.class,
-                    "Multiple child entities found for command of type [Command#0.0.1]. State of parent entity ["
             );
         }
     }
@@ -257,20 +245,44 @@ class ListEntityChildModelTest {
 
         @Test
         void canNotCompleteBuilderWithoutFieldDefinition() {
-            var builder = SingleEntityChildModel.forEntityModel(RecordingParentEntity.class, childEntityEntityModel);
+            var builder = ListEntityChildModel.forEntityModel(RecordingParentEntity.class, childEntityEntityModel)
+                    .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
+                                                                                          .filter(c -> c.getId().contains(COMMAND_MATCHING_ID))
+                                                                                          .findFirst()
+                                                                                          .orElse(null))
+                    .eventTargetMatcher((o, eventMessage, ctx) -> o.getId().contains(EVENT_MATCHING_ID));
             assertThrows(NullPointerException.class, builder::build);
         }
 
         @Test
         void canNotStartBuilderWithNullParentEntityClass() {
             assertThrows(NullPointerException.class,
-                         () -> SingleEntityChildModel.forEntityModel(null, childEntityEntityModel));
+                         () -> ListEntityChildModel.forEntityModel(null, childEntityEntityModel));
         }
 
         @Test
         void canNotStartBuilderWithNullEntityModel() {
             assertThrows(NullPointerException.class,
-                         () -> SingleEntityChildModel.forEntityModel(RecordingParentEntity.class, null));
+                         () -> ListEntityChildModel.forEntityModel(RecordingParentEntity.class, null));
+        }
+
+        @Test
+        void canNotCompleteBuilderWithoutCommandTargetResolver() {
+            var builder = ListEntityChildModel.forEntityModel(RecordingParentEntity.class, childEntityEntityModel)
+                    .eventTargetMatcher((o, eventMessage, ctx) -> true)
+                    .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
+            assertThrows(AxonConfigurationException.class, builder::build);
+        }
+
+        @Test
+        void canNotCompleteBuilderWithoutEventTargetMatcher() {
+            var builder = ListEntityChildModel.forEntityModel(RecordingParentEntity.class, childEntityEntityModel)
+                    .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
+                                                                                          .filter(c -> c.getId().contains(COMMAND_MATCHING_ID))
+                                                                                          .findFirst()
+                                                                                          .orElse(null))
+                    .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
+            assertThrows(AxonConfigurationException.class, builder::build);
         }
     }
 }
