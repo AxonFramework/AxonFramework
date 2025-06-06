@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 
-import jakarta.annotation.Nonnull;
-
 /**
- * Interface towards a mechanism that is capable of extracting an Aggregate Identifier and Version form a command that
- * identifies the aggregate instance the command should be invoked on.
+ * Interface towards a mechanism that is capable of extracting an Aggregate Identifier form a command that identifies
+ * the aggregate instance the command should be invoked on.
  *
  * @author Allard Buijze
  * @since 1.2
@@ -30,20 +29,18 @@ import jakarta.annotation.Nonnull;
 public interface CommandTargetResolver {
 
     /**
-     * Returns the Aggregate Identifier and optionally the expected version of the aggregate on which the given
-     * {@code command} should be executed.
+     * Returns the Aggregate Identifier of the aggregate on which the given {@code command} should be executed.
      * <p>
-     * The version may be {@code null} if no specific version is required. Furthermore, the returned
-     * {@link VersionedAggregateIdentifier} may be null entirely when the given {@code command} is targeted towards a
+     * The returned {@code String} may be null entirely when the given {@code command} is targeted towards a
      * {@link CreationPolicy} annotated command handler that (optionally) constructs a new aggregate instance.
      *
      * @param command The command from which to extract the identifier and version.
-     * @return A {@link VersionedAggregateIdentifier} instance reflecting the aggregate to execute the command on, or
-     * {@code null} when the {@code command} is targeted towards a {@link CreationPolicy} annotated command handler that
-     * constructs a new aggregate instance.
+     * @return A {@code String} instance identifying the aggregate to execute the command on, or {@code null} when the
+     * {@code command} is targeted towards a {@link CreationPolicy} annotated command handler that constructs a new
+     * aggregate instance.
      * @throws IllegalArgumentException If the command is not formatted correctly to extract this information.
      * @see AggregateCreationPolicy#ALWAYS
      * @see AggregateCreationPolicy#CREATE_IF_MISSING
      */
-    VersionedAggregateIdentifier resolveTarget(@Nonnull CommandMessage<?> command);
+    String resolveTarget(@Nonnull CommandMessage<?> command);
 }

@@ -128,7 +128,7 @@ class LockingRepositoryTest {
                     return lock = spy((Lock) invocation.callRealMethod());
                 });
         startAndGetUnitOfWork();
-        Aggregate<StubAggregate> loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
+        Aggregate<StubAggregate> loadedAggregate = testSubject.load(aggregate.getIdentifier());
         spanFactory.verifySpanCompleted("Repository.obtainLock");
         spanFactory.verifySpanCompleted("Repository.load");
         spanFactory.verifySpanHasAttributeValue("Repository.load", "axon.aggregateId", aggregate.getIdentifier());
@@ -187,7 +187,7 @@ class LockingRepositoryTest {
         reset(lockFactory);
 
         startAndGetUnitOfWork();
-        Aggregate<StubAggregate> loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
+        Aggregate<StubAggregate> loadedAggregate = testSubject.load(aggregate.getIdentifier());
         //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
 
@@ -211,7 +211,7 @@ class LockingRepositoryTest {
         reset(lockFactory);
 
         startAndGetUnitOfWork();
-        testSubject.load(aggregate.getIdentifier(), 0L);
+        testSubject.load(aggregate.getIdentifier());
         //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
 
@@ -248,7 +248,7 @@ class LockingRepositoryTest {
         reset(lockFactory);
 
         startAndGetUnitOfWork();
-        testSubject.load(aggregate.getIdentifier(), 0L);
+        testSubject.load(aggregate.getIdentifier());
         //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
 
@@ -306,7 +306,7 @@ class LockingRepositoryTest {
         }
 
         @Override
-        protected Aggregate<StubAggregate> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
+        protected Aggregate<StubAggregate> doLoadWithLock(String aggregateIdentifier) {
             if (!store.containsKey(aggregateIdentifier)) {
                 throw new AggregateNotFoundException(aggregateIdentifier,
                                                      "Aggregate not found");
