@@ -57,15 +57,15 @@ public class InMemoryStreamableEventSource implements StreamableMessageSource<Tr
     private Runnable onAvailableCallback = null;
 
     /**
-     * Construct a default {@link InMemoryStreamableEventSource}. If stream callbacks should be supported for testing,
-     * use {@link InMemoryStreamableEventSource#InMemoryStreamableEventSource(boolean)}.
+     * Construct a default {@link AsyncInMemoryStreamableEventSource}. If stream callbacks should be supported for testing,
+     * use {@link AsyncInMemoryStreamableEventSource#AsyncInMemoryStreamableEventSource(boolean)}.
      */
     public InMemoryStreamableEventSource() {
         this(false);
     }
 
     /**
-     * Construct a {@link InMemoryStreamableEventSource} toggling {@code streamCallbackSupported}.
+     * Construct a {@link AsyncInMemoryStreamableEventSource} toggling {@code streamCallbackSupported}.
      *
      * @param streamCallbackSupported A {@code boolean} dictating whether the {@link StreamableMessageSource} should
      *                                support callbacks.
