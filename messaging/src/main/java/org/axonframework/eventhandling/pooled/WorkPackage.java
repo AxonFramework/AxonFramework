@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
@@ -30,6 +29,7 @@ import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +49,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+
+import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
  * Defines the process of handling {@link EventMessage}s for a specific {@link Segment}. This entails validating if the
@@ -78,8 +81,7 @@ class WorkPackage {
 
     private final String name;
     private final TokenStore tokenStore;
-    private final TransactionManager transactionManager;
-    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
+    private final UnitOfWorkFactory unitOfWorkFactory;
     private final ExecutorService executorService;
     private final EventFilter eventFilter;
     private final BatchProcessor batchProcessor;
@@ -114,8 +116,7 @@ class WorkPackage {
     private WorkPackage(Builder builder) {
         this.name = builder.name;
         this.tokenStore = builder.tokenStore;
-        this.transactionManager = builder.transactionManager;
-        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(transactionManager);
+        this.unitOfWorkFactory = builder.unitOfWorkFactory;
         this.executorService = builder.executorService;
         this.eventFilter = builder.eventFilter;
         this.batchProcessor = builder.batchProcessor;
@@ -311,7 +312,7 @@ class WorkPackage {
                          segment.getSegmentId(), name, eventBatch.size());
             try {
                 processingEvents.set(true);
-                var unitOfWork = transactionalUnitOfWorkFactory.create();
+                var unitOfWork = unitOfWorkFactory.create();
                 unitOfWork.runOnPreInvocation(ctx -> {
                     ctx.putResource(Segment.RESOURCE_KEY, segment);
                     ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
@@ -331,7 +332,14 @@ class WorkPackage {
         } else {
             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
             if (lastStoredToken != lastConsumedToken && now() > nextClaimExtension.get()) {
-                transactionManager.executeInTransaction(() -> storeToken(lastConsumedToken));
+                joinAndUnwrap(
+                        unitOfWorkFactory
+                                .create()
+                                .executeWithResult(context -> {
+                                    storeToken(lastConsumedToken);
+                                    return emptyCompletedFuture();
+                                })
+                );
             } else {
                 extendClaimIfThresholdIsMet();
             }
@@ -345,7 +353,14 @@ class WorkPackage {
     public void extendClaimIfThresholdIsMet() {
         if (now() > nextClaimExtension.get()) {
             logger.debug("Work Package [{}]-[{}] will extend its token claim.", name, segment.getSegmentId());
-            transactionManager.executeInTransaction(() -> tokenStore.extendClaim(name, segment.getSegmentId()));
+            joinAndUnwrap(
+                    unitOfWorkFactory
+                            .create()
+                            .executeWithResult(context -> {
+                                tokenStore.extendClaim(name, segment.getSegmentId());
+                                return emptyCompletedFuture();
+                            })
+            );
             nextClaimExtension.set(now() + claimExtensionThreshold);
         }
     }
@@ -508,8 +523,7 @@ class WorkPackage {
          * {@code eventMessages} should be processed.
          *
          * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
-         * @param unitOfWork         the {@link UnitOfWork} that has been prepared to process the
-         *                           {@code eventMessages}
+         * @param unitOfWork         the {@link UnitOfWork} that has been prepared to process the {@code eventMessages}
          * @param processingSegments the {@link Segment}s for which the {@code eventMessages} should be processed in the
          *                           given {@code unitOfWork}
          * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
@@ -527,7 +541,7 @@ class WorkPackage {
 
         private String name;
         private TokenStore tokenStore;
-        private TransactionManager transactionManager;
+        private UnitOfWorkFactory unitOfWorkFactory;
         private ExecutorService executorService;
         private EventFilter eventFilter;
         private BatchProcessor batchProcessor;
@@ -562,15 +576,16 @@ class WorkPackage {
         }
 
         /**
-         * A {@link TransactionManager} used to invoke {@link TokenStore} operations and event processing inside a
-         * transaction.
+         * A {@link UnitOfWorkFactory} used to invoke {@link TokenStore} operations and event processing inside a
+         * {@link UnitOfWork} (you may use
+         * {@link TransactionalUnitOfWorkFactory to execute those operations transactionally}.
          *
-         * @param transactionManager a {@link TransactionManager} used to invoke {@link TokenStore} operations and event
-         *                           processing inside a transaction
+         * @param unitOfWorkFactory a factory for {@link UnitOfWork} used to invoke {@link TokenStore} operations and
+         *                          event processing
          * @return the current Builder instance, for fluent interfacing
          */
-        Builder transactionManager(TransactionManager transactionManager) {
-            this.transactionManager = transactionManager;
+        Builder unitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
+            this.unitOfWorkFactory = unitOfWorkFactory;
             return this;
         }
 
