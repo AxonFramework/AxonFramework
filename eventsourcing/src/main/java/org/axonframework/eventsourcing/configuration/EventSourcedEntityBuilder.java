@@ -22,7 +22,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.QualifiedName;
@@ -74,7 +74,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
      * <p>
      * The given {@code entityType} is expected to be annotated with
      * {@link org.axonframework.eventsourcing.annotation.EventSourcedEntity}. This annotation will allow for retrieval
-     * of the {@link org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory} and {@link CriteriaResolver}
+     * of the {@link EventSourcedEntityFactory} and {@link CriteriaResolver}
      * to construct the {@link EventSourcingRepository} for the event sourced
      * entity being built.
      *

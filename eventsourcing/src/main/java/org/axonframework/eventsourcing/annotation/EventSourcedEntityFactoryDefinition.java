@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 
 /**
  * Defines how an {@link EventSourcedEntityFactory} should be constructed for an {@link EventSourcedEntity} annotated

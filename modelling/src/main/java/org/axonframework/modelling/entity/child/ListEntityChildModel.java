@@ -69,6 +69,12 @@ public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
     }
 
     @Override
+    @Nonnull
+    public EntityModel<C> entityModel() {
+        return childEntityModel;
+    }
+
+    @Override
     public String toString() {
         return "ListEntityChildModel{entityType=" + entityType().getName() + '}';
     }

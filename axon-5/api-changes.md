@@ -65,8 +65,11 @@ Major API Changes
   section of this document.
 * The annotation logic of all modules is moved to a separate `annotation` package.
 * All reflection logic is moved to a dedicated "reflection" package per module.
-* We no longer support message handler annotated constructors. For example, the constructor of an aggregate can no
-  longer contain the `@CommandHandler` annotation. Instead, the `@CreationPolicy` should be used.
+* Aggregates are now referred to as Entities, as the Dynamic Consistency Boundary allows for more fluid boundaries
+  around entities.
+  In addition, entities have been redesigned to make them more flexible, allowing for immutable
+  entities, declarative modeling, and a more fluent API. For more on this, check the
+  [Aggregates to Entities](#aggregates-to-entities) section.
 
 ## Unit of Work
 
@@ -649,21 +652,244 @@ public static void main(String[] args) {
 ## Aggregates to Entities
 
 Axon Framework 5 elevates the concept of Entities to the top level, as aggregate no longer accurately
-describes the concept. With the introduction of DCB, more fluid boundaries of entities are possible.
+describes the concept. With the introduction of [DCB](#event-store), more fluid boundaries of entities are possible.
 
-### Declarative modelling first
+This section has been written in a way that is easy to follow if you read the sections in order. However, if you
+are already familiar with the changes, you can jump to the relevant section using the links below:
 
-While aggregates only worked through reflection, entities are now declaratively defined. You can start one simply
+- [Aggregates are now referred to as Entities](#aggregates-are-now-entities).
+- [Entities can now be defined declaratively, instead of only through reflection.](#declarative-modeling-first).
+- [Entities can be immutable, allowing for Java records and Kotlin data classes.](#immutable-entities).
+- [Entity constructors can take in the first event as a payload or `EventMessage`, allowing for non-nullable
+  fields.](#entity-constructor-changes)
+- [Constructor command handlers are gone, and a creational command is a static method on the entity class.](#creational-command-handlers)
+
+### Aggregates are now Entities
+
+In Axon Framework 5, the concept of aggregates has been replaced with entities. This change reflects the shift from
+a strict aggregate boundary to a more flexible entity boundary, allowing for a more fluid definition of entities
+that can span multiple event streams. The term "aggregate" is no longer used in the API, and all references to
+aggregates have been replaced with "entities."
+
+### Declarative modeling first
+
+While aggregates only worked through reflection before, entities can be declaratively defined. You can start one
 by calling `EntityModel.forEntityType(entityType)` and declare command handlers, event handlers, and
-child entities. 
+child entities.
 
+The use of reflection is still possible. It will read the entity information in a way that is similar to Axon Framework
+4,
+but then constructs a declarative model. This means that the entity structure is defined and debuggable,
+and it means that less reflection is needed at runtime, which improves performance.
+
+### Immutable entities
+
+Event-sourced entities can now be created in an immutable fashion, which was not possible before Axon Framework 5.
+This allows you to create entities out of Java records or Kotlin data classes:
+
+```java
+record MyEntity(
+        String id,
+        String name
+) {
+
+    @EventSourcingHandler
+    public MyEntity on(MyEntityNameChangedEvent event) {
+        return new MyEntity(id, event.getNewName());
+    }
+}
+```
+
+Or, in Kotlin:
+
+```kotlin
+data class MyEntity(
+    val id: String,
+    val name: String
+) {
+    @EventSourcingHandler
+    fun on(event: MyEntityNameChangedEvent): MyEntity {
+        return copy(name = event.newName)
+    }
+}
+```
+
+By returning a new instance of the entity in the event sourcing handler, you can evolve the state of the entity
+without mutating the original instance. This is particularly useful in functional programming paradigms and allows for
+better immutability guarantees in your code. This works with both Java records and Kotlin data classes, as well as
+traditional classes.
+
+The first command is handled by a static method, responsible for verifying the command and creating the entity. Using the first event, the entity is created using the constructor defining the payload or `EventMessage`. Commands after this will be handled by methods on the instance of the entity. 
+
+To evolve, or change the state, of an entity, `@EventSourcingHandlers` or `EntityEvolvers` can return a new instance of the entity based on an event. This entity will then be used for the next command or next event.
+
+### Entity Constructor changes
+
+The world is moving to non-nullability guarantees, and for good reason. However, aggregates required a no-arg
+constructor to be able to instantiate the aggregate. This meant that fields could not be non-nullable, as the
+constructor would not be able to set them. In Axon Framework 5, this has changed.
+
+This is how a kotlin class would traditionally look:
+
+```kotlin
+class MyPreFiveClass {
+    // Kotlin classes have inherently a no-arg constructor
+
+    @AggregateIdentifier
+    private lateinit var id: String
+
+    @CommandHandler
+    fun handle(command: CreateMyEntityCommand) {
+        apply(MyEntityCreatedEvent(command.id, command.name))
+        // Other initialization logic...
+    }
+
+    @EventSourcingHandler
+    fun on(event: MyEntityCreatedEvent) {
+        this.id = event.id
+        // Other initialization logic...
+    }
+}
+```
+
+As you can see, the `lateinit var` makes the `id` field non-nullable, but it can throw if not set when accessed.
+In addition, you can never make it a `val`, so it remains mutable.
+Java had similar limitations, but it was simply not visible as it is in Kotlin:
+
+```java
+public class MyPreFiveClass {
+
+    private MyPreFiveClass() {
+        // No-arg constructor required for Axon Framework 4
+    }
+
+    @AggregateIdentifier
+    private String id;
+
+    @CommandHandler
+    public void handle(CreateMyEntityCommand command) {
+        apply(new MyEntityCreatedEvent(command.getId(), command.getName()));
+        // Other initialization logic...
+    }
+
+    @EventSourcingHandler
+    public void on(MyEntityCreatedEvent event) {
+        // this.id is null here
+        this.id = event.getId();
+        // Other initialization logic...
+    }
+}
+```
+
+From Axon Framework 5 onwards, the constructor of an entity can take in the first event as a payload or `EventMessage`.
+This allows you to set the fields of the entity in a non-nullable way,
+and it allows you to make them `val` in Kotlin or `final` in Java.
+This is what the code would look like in Kotlin:
+
+```kotlin
+data class MyEntity(
+    val id: String,
+    val name: String
+) {
+    @EntityFactory
+    constructor(event: MyEntityCreatedEvent) : this(
+        id = event.id,
+        name = event.name
+    )
+
+    companion object {
+        @CommandHandler
+        fun create(command: CreateMyEntityCommand) {
+            apply(MyEntityCreatedEvent(command.id, command.name))
+        }
+    }
+}
+```
+
+And this is what it would look like in Java:
+
+```java
+public class MyEntity {
+
+    @AggregateIdentifier
+    private final String id;
+    private final String name;
+
+    @EntityFactory
+    public MyEntity(MyEntityCreatedEvent event) {
+        this.id = event.getId();
+        this.name = event.getName();
+    }
+
+    @CommandHandler
+    public static void create(CreateMyEntityCommand command) {
+        apply(new MyEntityCreatedEvent(command.getId(), command.getName()));
+    }
+}
+```
+
+The way Event-Sourced entities are constructed is defined by the `EventSourcedEntityFactory` that is passed into the
+`EventSourcingRepository`. There are four possible ways to construct an entity:
+
+1. **No-arg constructor**: This is the default behavior, where the entity is constructed using a no-arg constructor. Use
+   `EventSourcedEntityFactory.fromNoArgument(...)` to use this.
+2. **Identifier constructor**: The entity is constructed using a constructor that takes the identifier as a payload. Use
+   `EventSourcedEntityFactory.fromIdentifier(...)` to use this.
+3. **Event Message**: The entity is constructed using a constructor that takes the first event message as a payload. Use
+   `EventSourcedEntityFactory.fromEventMessage(...)` to use this.
+4. **Reflection**: Use the `AnnotationBasedEventSourcedEntityFactory` to construct the entity using reflection, marking
+   constructors (or static methods) with the `@EntityFactory` annotation. This is the default behavior in Axon Framework
+   5.
+
+### Creational Command Handlers
+
+Axon Framework 5 distinguishes two types of command handlers:
+
+1. **Creational Command Handlers**: These are static methods on the entity class that are responsible for creating the
+   entity and creating the entity, for example, by publishing the first event.
+2. **Instance Command Handlers**: These are instance methods on the entity class that handle commands after the entity
+   has been created.
+
+The `EntityModel` has the `handleCreate` and `handleInstance` methods to handle these two different kind of commands,
+with the `EntityModelBuilder` providing the means to define these handlers. The same command can be registered as both
+creational and instance command handler, allowing you to handle the command in a static method and an instance method
+depending on whether the entity is already created or not.
+
+Here is an example of both a creational and an instance command handler in Java:
+
+```java
+public class MyEntity {
+
+    @AggregateIdentifier
+    private String id;
+
+    @EntityFactory
+    public MyEntity(MyEntityCreatedEvent event) {
+        this.id = event.getId();
+        // Other initialization logic...
+    }
+
+    // Creational command handler
+    @CommandHandler
+    public static void create(CreateMyEntityCommand command) {
+        apply(new MyEntityCreatedEvent(command.getId(), command.getName()));
+    }
+
+    // Instance command handler
+    @CommandHandler
+    public void handle(UpdateMyEntityCommand command) {
+        apply(new MyEntityUpdatedEvent(id, command.getNewName()));
+        // Other update logic...
+    }
+}
+```
 
 ### Exception mapping
 With the change from Aggregate to Entity, we have also changed some of the exceptions. If you depends on these
 exceptions, you will need to change your code. The following table shows the changes:
 
-| Old Exception                                                          | New Exception                                                    |
-|------------------------------------------------------------------------|------------------------------------------------------------------|
+| Old Exception                                                          | New Exception                                                     |
+|------------------------------------------------------------------------|-------------------------------------------------------------------|
 | `org.axonframework.modelling.command.AggregateEntityNotFoundException` | `org.axonframework.modelling.entity.ChildEntityNotFoundException` |
 
 

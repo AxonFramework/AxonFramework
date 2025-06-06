@@ -95,7 +95,7 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
         if (matchingChildEntities.size() > 1) {
             return MessageStream.failed(new ChildAmbiguityException(message, parentEntity));
         }
-        return childEntityModel.handle(message, matchingChildEntities.getFirst(), context);
+        return childEntityModel.handleInstance(message, matchingChildEntities.getFirst(), context);
     }
 
     protected abstract List<C> getChildEntities(P entity);
