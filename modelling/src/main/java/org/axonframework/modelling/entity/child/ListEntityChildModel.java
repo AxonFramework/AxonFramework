@@ -72,7 +72,7 @@ public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
     /**
      * Creates a new {@link Builder} for the given parent class and child entity model. The
      * {@link ChildEntityFieldDefinition} is required to resolve the child entities from the parent entity and evolve
-     * the parent entity based on the child entities. The {@link EventTargetMatcher commandTargetResolver} and
+     * the parent entity based on the child entities. The {@link CommandTargetResolver commandTargetResolver} and
      * {@link EventTargetMatcher eventTargetMatcher} are both required, as they are used to match the child entities to
      * the command and event respectively.
      *

@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -38,7 +39,7 @@ public interface CommandTargetResolver<E> {
      * are present and the command needs to be routed to the correct one.
      * <p>
      * Can return {@code null} if no child entity is found that can handle the command. In that case, the
-     * {@link CommandTargetResolver} should not throw an exception, but rather allow the command to be handled by
+     * {@code CommandTargetResolver} should not throw an exception, but rather allow the command to be handled by
      * another child entity.
      *
      * @param candidates The list of candidate child entities that can handle the command.
@@ -46,18 +47,19 @@ public interface CommandTargetResolver<E> {
      * @param context    The processing context in which the command is being processed.
      * @return The target child entity that should handle the command, or {@code null} if no suitable entity is found.
      */
+    @Nullable
     E getTargetChildEntity(@Nonnull List<E> candidates,
                            @Nonnull CommandMessage<?> message,
                            @Nonnull ProcessingContext context);
 
 
     /**
-     * Returns a {@link CommandTargetResolver} that matches any child entity. This means it will return the first
+     * Returns a {@code CommandTargetResolver} that matches any child entity. This means it will return the first
      * candidate child entity if there is one, or throw a {@link ChildAmbiguityException} if there are multiple
      * candidates. If there are no candidates, it will return {@code null}.
      *
      * @param <C> The type of child entity to resolve.
-     * @return A {@link CommandTargetResolver} that matches any child entity.
+     * @return A {@code CommandTargetResolver} that matches any child entity.
      */
     static <C> CommandTargetResolver<C> MATCH_ANY() {
         return (candidates, message, context) -> {
