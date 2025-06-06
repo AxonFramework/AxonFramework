@@ -91,13 +91,13 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             private final String id;
             private final EventMessage<?> eventMessage;
 
-            @EntityFactoryMethod
+            @EntityCreator
             public EventMessageTestEntity(String id) {
                 this.id = id;
                 this.eventMessage = null;
             }
 
-            @EntityFactoryMethod
+            @EntityCreator
             public EventMessageTestEntity(String id, EventMessage<?> eventMessage) {
                 this.id = id;
                 this.eventMessage = eventMessage;
@@ -142,14 +142,14 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
                 factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
-            assertTrue(exception.getMessage().contains("No suitable @EntityFactoryMethods found"));
+            assertTrue(exception.getMessage().contains("No suitable @EntityCreator found"));
         }
 
         public static class PayloadTypeSpecificTestEntity {
 
             private final EventMessage<?> eventMessage;
 
-            @EntityFactoryMethod(payloadQualifiedNames = "matching-test-type")
+            @EntityCreator(payloadQualifiedNames = "matching-test-type")
             public PayloadTypeSpecificTestEntity(EventMessage<String> eventMessage) {
                 this.eventMessage = eventMessage;
             }
@@ -190,14 +190,14 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
                 factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
-            assertTrue(exception.getMessage().contains("No suitable @EntityFactoryMethods found"));
+            assertTrue(exception.getMessage().contains("No suitable @EntityCreator found"));
         }
 
         public static class PayloadSpecificTestEntity {
 
             private final String payload;
 
-            @EntityFactoryMethod()
+            @EntityCreator()
             public PayloadSpecificTestEntity(PayloadSpecificPayload payload) {
                 this.payload = payload.payload;
             }
@@ -253,12 +253,12 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                 this.eventMessage = eventMessage;
             }
 
-            @EntityFactoryMethod
+            @EntityCreator
             public static FactoryMethodsTestEntity create(String id) {
                 return new FactoryMethodsTestEntity(id, null);
             }
 
-            @EntityFactoryMethod
+            @EntityCreator
             public static FactoryMethodsTestEntity create(String id, EventMessage<?> eventMessage) {
                 return new FactoryMethodsTestEntity(id, eventMessage);
             }
@@ -321,12 +321,12 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
             private final String invoked;
 
-            @EntityFactoryMethod
+            @EntityCreator
             public MostSpecificHandlerEntity(String id) {
                 this.invoked = "simply-id";
             }
 
-            @EntityFactoryMethod
+            @EntityCreator
             public MostSpecificHandlerEntity(String id,
                                              @MetaDataValue(required = true, value = "blabla") String blabla) {
                 this.invoked = "id-and-metadata";
@@ -348,7 +348,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                         messageTypeResolver
                 );
             });
-            assertTrue(exception.getMessage().contains("@EntityFactoryMethod must be static"));
+            assertTrue(exception.getMessage().contains("@EntityCreator must be static"));
         }
 
         @Test
@@ -363,7 +363,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                 );
             });
             assertTrue(exception.getMessage()
-                                .contains("@EntityFactoryMethod must return the entity type or a subtype"));
+                                .contains("@EntityCreator must return the entity type or a subtype"));
         }
 
         @Test
@@ -378,12 +378,12 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                 );
             });
             assertTrue(exception.getMessage().contains(
-                    "No @EntityFactoryMethod present on entity. Can not initialize AnnotationBasedEventSourcedEntityFactory"));
+                    "No @EntityCreator present on entity. Can not initialize AnnotationBasedEventSourcedEntityFactory"));
         }
 
         public static class InvalidEntityNonStaticMethod {
 
-            @EntityFactoryMethod
+            @EntityCreator
             public InvalidEntityNonStaticMethod create(String id) {
                 return new InvalidEntityNonStaticMethod();
             }
@@ -391,7 +391,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
         public static class InvalidEntityReturnType {
 
-            @EntityFactoryMethod
+            @EntityCreator
             public static String create(String id) {
                 return id;
             }

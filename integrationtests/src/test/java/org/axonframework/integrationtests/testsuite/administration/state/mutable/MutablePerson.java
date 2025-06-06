@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.testsuite.administration.state.mutabl
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.annotation.reflection.EntityFactoryMethod;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
@@ -49,7 +49,7 @@ public abstract class MutablePerson {
         this.emailAddress = event.emailAddress();
     }
 
-    @EntityFactoryMethod
+    @EntityCreator
     public static MutablePerson create(PersonIdentifier id) {
         if (id.type() == PersonType.EMPLOYEE) {
             return new MutableEmployee();

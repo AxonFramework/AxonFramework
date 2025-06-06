@@ -48,10 +48,10 @@ import java.util.stream.StreamSupport;
 
 /**
  * Reflection-based implementation of the {@link EventSourcedEntityFactory} interface. This factory will look for
- * {@link EntityFactoryMethod}-annotated constructors and static methods on the entity type and its supertypes to find a
+ * {@link EntityCreator}-annotated constructors and static methods on the entity type and its supertypes to find a
  * suitable constructor or static method to create an entity instance.
  * <p>
- * This class implements the requirements as per the {@link EntityFactoryMethod} annotation. This class is thread-safe.
+ * This class implements the requirements as per the {@link EntityCreator} annotation. This class is thread-safe.
  *
  * @param <E>  The type of entity to create.
  * @param <ID> The type of identifier used by the entity.
@@ -130,7 +130,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     private void scanConstructors() {
         types.stream()
              .flatMap(t -> Arrays.stream(t.getDeclaredConstructors()))
-             .filter(m -> m.isAnnotationPresent(EntityFactoryMethod.class))
+             .filter(m -> m.isAnnotationPresent(EntityCreator.class))
              .distinct()
              .forEach(this::createAndAddInitializerExecutable);
     }
@@ -138,7 +138,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     private void scanMethods() {
         types.stream()
              .flatMap(t -> StreamSupport.stream(ReflectionUtils.methodsOf(t).spliterator(), false))
-             .filter(m -> m.isAnnotationPresent(EntityFactoryMethod.class))
+             .filter(m -> m.isAnnotationPresent(EntityCreator.class))
              .distinct()
              .forEach(this::createAndAddInitializerMethod);
     }
@@ -146,23 +146,23 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     private void validate() {
         if (factoryMethods.isEmpty()) {
             throw new AxonConfigurationException(
-                    "No @EntityFactoryMethod present on entity. Can not initialize AnnotationBasedEventSourcedEntityFactory.");
+                    "No @EntityCreator present on entity. Can not initialize AnnotationBasedEventSourcedEntityFactory.");
         }
     }
 
     private void createAndAddInitializerMethod(Method m) {
         if (!Modifier.isStatic(m.getModifiers())) {
-            throw new AxonConfigurationException("@EntityFactoryMethod must be static. Found: %s".formatted(m));
+            throw new AxonConfigurationException("@EntityCreator must be static. Found: %s".formatted(m));
         }
         if (!m.getReturnType().isAssignableFrom(entityType)) {
             throw new AxonConfigurationException(
-                    "@EntityFactoryMethod must return the entity type or a subtype. Found: [%s]".formatted(m));
+                    "@EntityCreator must return the entity type or a subtype. Found: [%s]".formatted(m));
         }
         createAndAddInitializerExecutable(m);
     }
 
     private void createAndAddInitializerExecutable(Executable c) {
-        EntityFactoryMethod annotation = c.getAnnotation(EntityFactoryMethod.class);
+        EntityCreator annotation = c.getAnnotation(EntityCreator.class);
         if (annotation == null) {
             return;
         }
@@ -242,7 +242,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         }
         if (compatibleMethods.isEmpty()) {
             throw new AxonConfigurationException(
-                    "No suitable @EntityFactoryMethods found for id: [%s] and event message [%s]: [%s]"
+                    "No suitable @EntityCreator found for id: [%s] and event message [%s]: [%s]"
                             .formatted(id, eventMessage, factoryMethods));
         }
         Set<ScannedFactoryMethod> matchingMethods = compatibleMethods.stream()
@@ -250,7 +250,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                                                                      .collect(Collectors.toSet());
         if (matchingMethods.isEmpty()) {
             throw new AxonConfigurationException(
-                    "None of the @EntityFactoryMethods match the event message [%s] and context [%s]. Candidates were: [%s]"
+                    "None of the @EntityCreator match the event message [%s] and context [%s]. Candidates were: [%s]"
                             .formatted(eventMessage, context, compatibleMethods));
         }
         return matchingMethods.stream()
@@ -346,7 +346,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     }
 
     /**
-     * Internal parameter resolver for the ID parameter on a {@link EntityFactoryMethod}. Will get the {@code ID_KEY}
+     * Internal parameter resolver for the ID parameter on a {@link EntityCreator}. Will get the {@code ID_KEY}
      * resource from the context and return it as the parameter value.
      */
     private class IdTypeParameterResolver implements ParameterResolver<ID> {
