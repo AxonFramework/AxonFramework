@@ -165,9 +165,6 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
          * Sets the {@link EventTargetMatcher} to determine whether a child entity should handle the given
          * {@link EventMessage}. This should return {@code true} if the child entity should handle the event, or
          * {@code false} if it should not.
-         * <p>
-         * Defaults to matching any child entity, meaning all child entities represented by this model will be evolved
-         * for the message.
          *
          * @param eventTargetMatcher The {@link EventTargetMatcher} to use for matching the child entities to the
          *                           event.
