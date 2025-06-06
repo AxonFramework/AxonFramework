@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.modelling;
 
 /**
- * Exception thrown when an error occurs while applying an event to a model.
+ * Exception thrown when an error occurs while evolving an entity with an event.
  *
  * @author Mateusz Nowak
  * @since 5.0.0

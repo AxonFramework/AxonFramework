@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.modelling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.EntityEvolver;
 
 import java.util.Set;
 
 /**
  * Interface describing a group of {@link EntityEvolver EntityEvolvers} belonging to a single entity of type {@code E},
- * forming an event sourced component.
+ * forming an entity that can evolve its state based on the events it receives.
  * <p>
  * The {@link #supportedEvents()} describes the events supported by this entity evolver.
  *
@@ -32,12 +32,13 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface EventSourcedComponent<E> extends EntityEvolver<E> {
+public interface EntityEvolvingComponent<E> extends EntityEvolver<E> {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
      *
      * @return All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
      */
+    @Nonnull
     Set<QualifiedName> supportedEvents();
 }

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
@@ -26,7 +25,6 @@ import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.EntityEvolver;
 
 import java.util.Objects;
 import java.util.Set;
@@ -35,16 +33,16 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Implementation of the {@link EventSourcedComponent} that applies state changes through {@link EventSourcingHandler}
- * annotated methods using an {@link AnnotatedHandlerInspector}.
+ * Implementation of the {@link EntityEvolvingComponent} that applies state changes through
+ * {@link org.axonframework.eventhandling.annotation.EventHandler}(-meta)-annotated methods using the
+ * {@link AnnotatedHandlerInspector}.
  *
  * @param <E> The entity type to evolve.
  * @author Mateusz Nowak
- * @see EventSourcingHandler
  * @see AnnotatedHandlerInspector
  * @since 5.0.0
  */
-public class AnnotationBasedEventSourcedComponent<E> implements EventSourcedComponent<E> {
+public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolvingComponent<E> {
 
     private final Class<E> entityType;
     private final AnnotatedHandlerInspector<E> inspector;
@@ -54,7 +52,7 @@ public class AnnotationBasedEventSourcedComponent<E> implements EventSourcedComp
      *
      * @param entityType The type of entity this instance will handle state changes for.
      */
-    public AnnotationBasedEventSourcedComponent(@Nonnull Class<E> entityType) {
+    public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType) {
         this(entityType,
              AnnotatedHandlerInspector.inspectType(entityType,
                                                    ClasspathParameterResolverFactory.forClass(entityType),
@@ -67,8 +65,8 @@ public class AnnotationBasedEventSourcedComponent<E> implements EventSourcedComp
      * @param entityType The type of entity this instance will handle state changes for.
      * @param inspector  The inspector to use to find the annotated handlers on the entity.
      */
-    public AnnotationBasedEventSourcedComponent(@Nonnull Class<E> entityType,
-                                                @Nonnull AnnotatedHandlerInspector<E> inspector
+    public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType,
+                                                  @Nonnull AnnotatedHandlerInspector<E> inspector
     ) {
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.inspector = requireNonNull(inspector, "The Annotated Handler Inspector must not be null.");
@@ -81,8 +79,8 @@ public class AnnotationBasedEventSourcedComponent<E> implements EventSourcedComp
         try {
             var listenerType = entity.getClass();
             var handler = inspector.getHandlers(listenerType)
-                               .filter(h -> h.canHandle(event, context))
-                               .findFirst();
+                                   .filter(h -> h.canHandle(event, context))
+                                   .findFirst();
             if (handler.isPresent()) {
                 var interceptor = inspector.chainedInterceptor(listenerType);
                 var result = interceptor.handle(event, context, entity, handler.get());
@@ -108,6 +106,7 @@ public class AnnotationBasedEventSourcedComponent<E> implements EventSourcedComp
         return existing;
     }
 
+    @Nonnull
     @Override
     public Set<QualifiedName> supportedEvents() {
         return inspector.getHandlers(entityType)
