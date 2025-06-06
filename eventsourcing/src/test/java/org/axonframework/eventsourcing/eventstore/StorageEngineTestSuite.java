@@ -323,7 +323,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .get(5, TimeUnit.SECONDS);
 
         MessageStream<EventMessage<?>> result =
-                testSubject.tailToken()
+                testSubject.firstToken()
                            .thenApply(position -> StreamingCondition.conditionFor(position, TEST_CRITERIA))
                            .thenApply(testSubject::stream)
                            .get(5, TimeUnit.SECONDS);
@@ -352,7 +352,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        TrackingToken tokenOfFirstMessage = testSubject.tailToken()
+        TrackingToken tokenOfFirstMessage = testSubject.firstToken()
                                                        .thenApply(StreamingCondition::startingFrom)
                                                        .thenApply(testSubject::stream)
                                                        .thenApply(MessageStream::first)
@@ -403,7 +403,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        MessageStream<EventMessage<?>> stream = testSubject.tailToken()
+        MessageStream<EventMessage<?>> stream = testSubject.firstToken()
                                                            .thenApply(StreamingCondition::startingFrom)
                                                            .thenApply(testSubject::stream)
                                                            .get(5, TimeUnit.SECONDS);
@@ -441,8 +441,8 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void tailTokenReturnsHeadTokenForEmptyStore() throws Exception {
-        TrackingToken actualTailToken = testSubject.tailToken().get(5, TimeUnit.SECONDS);
-        TrackingToken actualHeadToken = testSubject.headToken().get(5, TimeUnit.SECONDS);
+        TrackingToken actualTailToken = testSubject.firstToken().get(5, TimeUnit.SECONDS);
+        TrackingToken actualHeadToken = testSubject.latestToken().get(5, TimeUnit.SECONDS);
 
         assertTrue(actualHeadToken.covers(actualTailToken));
         assertTrue(actualTailToken.covers(actualHeadToken));
@@ -457,7 +457,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        MessageStream<EventMessage<?>> stream = testSubject.tailToken()
+        MessageStream<EventMessage<?>> stream = testSubject.firstToken()
                                                            .thenApply(StreamingCondition::startingFrom)
                                                            .thenApply(testSubject::stream)
                                                            .get(5, TimeUnit.SECONDS);
@@ -476,7 +476,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        MessageStream<EventMessage<?>> stream = testSubject.headToken()
+        MessageStream<EventMessage<?>> stream = testSubject.latestToken()
                                                            .thenApply(StreamingCondition::startingFrom)
                                                            .thenApply(testSubject::stream)
                                                            .get(5, TimeUnit.SECONDS);
@@ -519,7 +519,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         TrackingToken tokenAt = testSubject.tokenAt(Instant.now().plus(1, ChronoUnit.DAYS))
                                            .get(5, TimeUnit.SECONDS);
-        TrackingToken headToken = testSubject.headToken()
+        TrackingToken headToken = testSubject.latestToken()
                                              .get(5, TimeUnit.SECONDS);
 
         assertNotNull(tokenAt);

@@ -62,24 +62,25 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
     MessageStream<E> open(@Nonnull StreamingCondition condition);
 
     /**
-     * Creates a {@link TrackingToken} pointing at the start of the {@link MessageStream event stream}.
-     * <p>
-     * The start of an event stream represents the token of the very first event in the stream.
+     * Creates a {@link TrackingToken} pointing at the <b>first</b> event of the {@link MessageStream event stream}.
      *
-     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the start of the
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} pointing at the <b>first</b> event of the
      * {@link MessageStream event stream}.
      */
-    CompletableFuture<TrackingToken> headToken();
+    CompletableFuture<TrackingToken> firstToken();
 
     /**
-     * Creates a {@link TrackingToken} pointing at the end of the {@link MessageStream event stream}.
+     * Creates a {@link TrackingToken} pointing at the <b>latest</b> event of the {@link MessageStream event stream}.
      * <p>
-     * The end of an event stream represents the token of the very last event in the stream.
+     * The end of an event stream represents the latest token in the stream. Since the
+     * {@link MessageStream event stream} of this source is theoretically <em>infinite</em>, subsequent invocation of
+     * this operation typically return a different token. Only if this {@code StreamableEventSource} is idle, will
+     * several {@code latestToken()} invocations result in the same {@code TrackingToken}.
      *
-     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the end of the
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} pointing at the <b>latest</b> event of the
      * {@link MessageStream event stream}.
      */
-    CompletableFuture<TrackingToken> tailToken();
+    CompletableFuture<TrackingToken> latestToken();
 
     /**
      * Creates a {@link TrackingToken} tracking all {@link EventMessage events} after the given {@code at} from an

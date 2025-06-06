@@ -288,13 +288,17 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tailToken() {
-        return connection.eventChannel().getFirstToken().thenApply(GlobalSequenceTrackingToken::new);
+    public CompletableFuture<TrackingToken> firstToken() {
+        return connection.eventChannel()
+                         .getFirstToken()
+                         .thenApply(GlobalSequenceTrackingToken::new);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> headToken() {
-        return connection.eventChannel().getLastToken().thenApply(GlobalSequenceTrackingToken::new);
+    public CompletableFuture<TrackingToken> latestToken() {
+        return connection.eventChannel()
+                         .getLastToken()
+                         .thenApply(GlobalSequenceTrackingToken::new);
     }
 
     @Override

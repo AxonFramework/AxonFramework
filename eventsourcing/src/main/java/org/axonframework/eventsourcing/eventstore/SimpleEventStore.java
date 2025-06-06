@@ -49,9 +49,9 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
     private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey;
 
     /**
-     * Constructs a {@link SimpleEventStore} using the given {@code eventStorageEngine} to start
-     * {@link #transaction(ProcessingContext) transactions} and
-     * {@link #open(StreamingCondition) open event streams} with.
+     * Constructs a {@code SimpleEventStore} using the given {@code eventStorageEngine} to start
+     * {@link #transaction(ProcessingContext) transactions} and {@link #open(StreamingCondition) open event streams}
+     * with.
      *
      * @param eventStorageEngine The {@link EventStorageEngine} used to start
      *                           {@link #transaction(ProcessingContext) transactions} and
@@ -99,13 +99,13 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
     }
 
     @Override
-    public CompletableFuture<TrackingToken> headToken() {
-        return eventStorageEngine.headToken();
+    public CompletableFuture<TrackingToken> firstToken() {
+        return eventStorageEngine.firstToken();
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tailToken() {
-        return eventStorageEngine.tailToken();
+    public CompletableFuture<TrackingToken> latestToken() {
+        return eventStorageEngine.latestToken();
     }
 
     @Override
