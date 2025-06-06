@@ -100,7 +100,7 @@ public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
      * builder can be used to configure the child entity model and create a new instance of
      * {@link ListEntityChildModel}. The {@link ChildEntityFieldDefinition} is required to resolve the child entities
      * from the parent entity and evolve the parent entity based on the child entities. The
-     * {@link EventTargetMatcher commandTargetResolver} and {@link EventTargetMatcher eventTargetMatcher} are both
+     * {@link CommandTargetResolver commandTargetResolver} and {@link EventTargetMatcher eventTargetMatcher} are both
      * required, as they are used to match the child entities to the command and event respectively.
      *
      * @param <C> The type of the child entity.
