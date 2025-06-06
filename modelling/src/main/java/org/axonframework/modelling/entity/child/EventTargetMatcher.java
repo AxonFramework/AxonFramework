@@ -23,10 +23,15 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 /**
  * Functional interface that determines if a given entity should be targeted for a specific {@link EventMessage}.
  * Typically used to test whether an entity qualifies to process an event and evolve its state accordingly.
+ * <p>
+ * Before version 5.0.0, this interface was known as {@code org.axonframework.modelling.command.ForwardingMode}.
+ * The interface is an advanced predicate to be used in a filter operation, instead of a filter itself. This allows for
+ * more flexible and efficient matching of entities against events in a processing context.
  *
  * @param <E> The type of entity this matcher is applied to.
+ * @author Steven van Beelen
  * @author Mitchell Herrijgers
- * @since 5.0.0
+ * @since 3.1
  */
 @FunctionalInterface
 public interface EventTargetMatcher<E> {
