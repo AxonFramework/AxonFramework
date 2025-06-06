@@ -40,7 +40,6 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-
 /**
  * Test class validating the {@link EventConverter}.
  *
@@ -134,17 +133,15 @@ class EventConverterTest {
     @Test
     void convertTaggedEventMessageConvertsAnyTypeOfMetaData() {
         // given...
-        TestMetaDataValue metaDataValue = new TestMetaDataValue(1337, "string");
         MetaData metaData = MetaData.from(Map.of(
                 "String", "Lorem Ipsum",
-                "Double", 3.53d,
-                "Float", 3.53f,
-                "Long", 42L,
-                "Integer", 42,
-                "Short", (short) 42,
-                "Byte", (byte) 4,
-                "Boolean", false,
-                "Object", metaDataValue
+                "Double", "3.53d",
+                "Float", "3.53f",
+                "Long", "42L",
+                "Integer", "42",
+                "Short", "42",
+                "Byte", "4",
+                "Boolean", "false"
         ));
         EventMessage<TestEvent> eventMessage = new GenericEventMessage<>(EVENT_TYPE, eventPayload, metaData);
         TaggedEventMessage<EventMessage<TestEvent>> taggedEventMessage =
@@ -154,17 +151,15 @@ class EventConverterTest {
                                                 .getEvent()
                                                 .getMetadataMap();
         // then...
-        assertEquals(9, result.size());
+        assertEquals(8, result.size());
         assertEquals("Lorem Ipsum", result.get("String"));
-        assertEquals(3.53d, Double.parseDouble(result.get("Double")));
-        assertEquals(3.53f, Float.parseFloat(result.get("Float")));
-        assertEquals(42L, Long.parseLong(result.get("Long")));
-        assertEquals(42, Integer.parseInt(result.get("Integer")));
-        assertEquals((short) 42, Short.parseShort(result.get("Short")));
-        assertEquals((byte) 4, Byte.parseByte(result.get("Byte")));
-        assertFalse(Boolean.parseBoolean(result.get("Boolean")));
-        verify(converter).convert(metaDataValue, String.class);
-        assertEquals(converter.convert(metaDataValue, String.class), result.get("Object"));
+        assertEquals("3.53d", result.get("Double"));
+        assertEquals("3.53f", result.get("Float"));
+        assertEquals("42L", result.get("Long"));
+        assertEquals("42", result.get("Integer"));
+        assertEquals("42", result.get("Short"));
+        assertEquals("4", result.get("Byte"));
+        assertEquals("false", result.get("Boolean"));
     }
 
     @Test
