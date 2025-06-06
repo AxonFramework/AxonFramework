@@ -119,7 +119,7 @@ import static org.axonframework.common.ReflectionUtils.*;
  * @since 0.6
  * @deprecated In favor of the {@link org.axonframework.test.fixture.AxonTestFixture}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExecutor<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AggregateTestFixture.class);

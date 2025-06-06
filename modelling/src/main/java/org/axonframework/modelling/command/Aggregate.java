@@ -71,7 +71,7 @@ public interface Aggregate<T> {
      * @deprecated Aggregate versioning will completely be removed from 5.0.0, as it does not align with the adjusted
      * sequencing approach of a DCB-supporting event store at the moment.
      */
-    @Deprecated(since = "5.0.0")
+    @Deprecated(since = "5.0.0", forRemoval = true)
     Long version();
 
     /**

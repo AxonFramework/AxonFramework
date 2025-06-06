@@ -36,7 +36,7 @@ import java.util.function.Consumer;
  * @since 0.1
  * @deprecated In favor of the {@link Repository}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface LegacyRepository<T> extends ScopeAware {
 
     /**

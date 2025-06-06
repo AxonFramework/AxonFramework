@@ -60,7 +60,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 0.1
  * @deprecated This instance will be removed.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implements LegacyRepository<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractLegacyRepository.class);

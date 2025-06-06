@@ -61,7 +61,7 @@ import jakarta.annotation.Nonnull;
  * @since 3.0
  * @deprecated In favor of the {@link ComponentRegistry}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface LegacyConfigurer extends LifecycleOperations {
 
     /**

@@ -63,7 +63,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 0.7
  * @deprecated In favor of the {@link org.axonframework.modelling.SimpleRepository}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyGenericJpaRepository<T> extends LegacyLockingRepository<T, AnnotatedAggregate<T>> {
 
     private final EntityManagerProvider entityManagerProvider;

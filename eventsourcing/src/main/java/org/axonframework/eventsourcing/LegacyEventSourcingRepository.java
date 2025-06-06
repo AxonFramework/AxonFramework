@@ -49,7 +49,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 0.1
  * @deprecated In favor of the {@link EventSourcingRepository}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T, EventSourcedAggregate<T>> {
 
     private final LegacyEventStore eventStore;

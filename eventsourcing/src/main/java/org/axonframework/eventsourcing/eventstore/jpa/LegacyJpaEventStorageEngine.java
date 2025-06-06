@@ -61,7 +61,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @since 3.0
  * @deprecated In favor of the {@link AggregateBasedJpaEventStorageEngine}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyJpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(LegacyJpaEventStorageEngine.class);

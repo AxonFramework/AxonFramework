@@ -38,7 +38,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 0.3
  * @deprecated In favor of an instance to be constructed still.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyCachingEventSourcingRepository<T> extends LegacyEventSourcingRepository<T> {
 
     private final LegacyEventStore eventStore;

@@ -58,7 +58,7 @@ import static org.axonframework.common.ObjectUtils.sameInstanceSupplier;
  * @since 0.3
  * @deprecated In favor of the {@link org.axonframework.modelling.repository.AccessSerializingRepository}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public abstract class LegacyLockingRepository<T, A extends Aggregate<T>> extends
         AbstractLegacyRepository<T, LockAwareAggregate<T, A>> {
 

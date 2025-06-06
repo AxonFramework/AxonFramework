@@ -151,7 +151,7 @@ import static org.axonframework.util.HandlerTypeResolver.*;
  * @deprecated In favor of using the {@link org.axonframework.configuration.ApplicationConfigurer} with additional
  * modules.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
