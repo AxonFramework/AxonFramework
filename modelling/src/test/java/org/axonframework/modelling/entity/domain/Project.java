@@ -34,9 +34,32 @@ import org.axonframework.modelling.entity.domain.events.ProjectRenamedEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fictional domain model representing a project in a software development context. Uses for validating the Axon
+ * Framework's modelling capabilities, such as the
+ * {@link org.axonframework.modelling.entity.annotation.AnnotatedEntityModel}.
+ * <p>
+ * The model handles various commands that are validated based on state, and events that are published to reflect
+ * changes in the project state.This model does use events to evolve its state, but does not use an event store to
+ * source the model from earlier events. As such, it is a state-stored model rather than an event-sourced model.
+ * <p>
+ * It uses various features, as many as possible in fact, of the entity model, such as:
+ * - Polymorphic entities
+ * - Entity members in abstract entity
+ * - Entity member in concrete entity
+ * - Commands in abstract entity
+ * - Commands in concrete entity
+ * - Multiple EntityMember-annotated fields that use the same routing key
+ * - Variations of routing key usage
+ * - Evolving mutable child entities
+ * - Evolving immutable child entities
+ *
+ * @since 5.0.0
+ * @author Mitchell Herrijgers
+ */
 public abstract class Project {
 
-    private String projectId;
+    private final String projectId;
     private String name;
 
     protected Project(String projectId, String name) {

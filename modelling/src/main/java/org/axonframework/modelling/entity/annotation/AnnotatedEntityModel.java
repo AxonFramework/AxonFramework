@@ -41,6 +41,7 @@ import org.axonframework.modelling.entity.PolymorphicEntityModelBuilder;
 import org.axonframework.modelling.entity.SimpleEntityModel;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -51,6 +52,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.StreamSupport.stream;
@@ -86,7 +88,7 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
     private final Map<QualifiedName, Class<?>> payloadTypes = new HashMap<>();
     private final List<AnnotatedEntityModel<?>> concreteTypeModels = new LinkedList<>();
     private final List<AnnotatedEntityModel<?>> childModels = new LinkedList<>();
-    private final boolean ignoreCreationalHandlers;
+    private final List<QualifiedName> commandsToSkip;
 
 
     /**
@@ -104,7 +106,11 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
             @Nonnull ParameterResolverFactory parameterResolverFactory,
             @Nonnull MessageTypeResolver messageTypeResolver
     ) {
-        return new AnnotatedEntityModel<>(entityType, Set.of(), parameterResolverFactory, messageTypeResolver, false);
+        return new AnnotatedEntityModel<>(entityType,
+                                          Set.of(),
+                                          parameterResolverFactory,
+                                          messageTypeResolver,
+                                          List.of());
     }
 
     /**
@@ -131,7 +137,7 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
                                           concreteTypes,
                                           parameterResolverFactory,
                                           messageTypeResolver,
-                                          false);
+                                          List.of());
     }
 
     /**
@@ -144,21 +150,22 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
      * @param messageTypeResolver      The {@link MessageTypeResolver} to use for resolving message types from payload
      *                                 classes.
      * @param concreteTypes            The concrete types of the polymorphic entity type.
-     * @param ignoreCreationalHandlers Whether to ignore creational handlers in the model. If {@code true}, no
-     *                                 creational command handlers will be registered in the model.
+     * @param commandsToSkip           The commands to skip when initializing the model. This is useful to prevent
+     *                                 concrete implementations from registering commands that are already registered by
+     *                                 the abstract entity type, as this will lead to problems.
      */
     private AnnotatedEntityModel(
             @Nonnull Class<E> entityType,
             @Nonnull Set<Class<? extends E>> concreteTypes,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
             @Nonnull MessageTypeResolver messageTypeResolver,
-            boolean ignoreCreationalHandlers
+            @Nonnull List<QualifiedName> commandsToSkip
     ) {
+        this.commandsToSkip = requireNonNull(commandsToSkip, "The commandsToSkip may not be null.");
         this.entityType = requireNonNull(entityType, "The entityType may not be null.");
         this.parameterResolverFactory = requireNonNull(parameterResolverFactory,
                                                        "The parameterResolverFactory may not be null.");
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The messageTypeResolver may not be null.");
-        this.ignoreCreationalHandlers = ignoreCreationalHandlers;
         requireNonNull(concreteTypes, "The concreteTypes may not be null.");
         if (!concreteTypes.isEmpty()) {
             this.entityModel = initializePolymorphicModel(entityType, concreteTypes);
@@ -173,15 +180,20 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
     }
 
     private EntityModel<E> initializePolymorphicModel(Class<E> entityType, Set<Class<? extends E>> concreteTypes) {
+        AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory);
         PolymorphicEntityModelBuilder<E> builder = PolymorphicEntityModel.forSuperType(entityType);
+        builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType, inspected));
+        initializeChildren(builder);
+        LinkedList<QualifiedName> registeredCommands = initializeCommandHandlers(builder, inspected);
         concreteTypes.forEach(concreteType -> {
             AnnotatedEntityModel<? extends E> createdConcreteEntityModel = new AnnotatedEntityModel<>(
-                    concreteType, Set.of(), parameterResolverFactory, messageTypeResolver, true
+                    concreteType, Set.of(), parameterResolverFactory, messageTypeResolver,
+                    Stream.concat(commandsToSkip.stream(), registeredCommands.stream()).toList()
             );
             concreteTypeModels.add(createdConcreteEntityModel);
             builder.addConcreteType(createdConcreteEntityModel);
         });
-        return initializeEntityModel(builder, entityType);
+        return builder.build();
     }
 
     private EntityModel<E> initializeEntityModel(EntityModelBuilder<E> builder, Class<E> entityType) {
@@ -192,7 +204,9 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
         return builder.build();
     }
 
-    private void initializeCommandHandlers(EntityModelBuilder<E> builder, AnnotatedHandlerInspector<E> inspected) {
+    private LinkedList<QualifiedName> initializeCommandHandlers(EntityModelBuilder<E> builder,
+                                                                AnnotatedHandlerInspector<E> inspected) {
+        LinkedList<QualifiedName> registeredCommands = new LinkedList<>();
         inspected.getHandlers(entityType)
                  .filter(h -> h.canHandleMessageType(CommandMessage.class)
                          || h.canHandleMessageType(EventMessage.class))
@@ -200,13 +214,14 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
                  .forEach(handler -> {
                      QualifiedName qualifiedName = messageTypeResolver.resolveOrThrow(handler.payloadType())
                                                                       .qualifiedName();
+                     if (commandsToSkip.contains(qualifiedName)) {
+                         // This command is already registered by the abstract entity type, so we skip it.
+                         return;
+                     }
                      addPayloadTypeFromHandler(qualifiedName, handler);
                      if (handler instanceof CommandMessageHandlingMember<? super E> cmhm) {
+                         registeredCommands.add(qualifiedName);
                          if (cmhm.isFactoryHandler()) {
-                             if (ignoreCreationalHandlers) {
-                                 return;
-                             }
-
                              builder.creationalCommandHandler(qualifiedName, ((command, context) -> handler
                                      .handle(command, context, null)
                                      .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
@@ -219,6 +234,7 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
                          }
                      }
                  });
+        return registeredCommands;
     }
 
     private void addPayloadTypeFromHandler(QualifiedName qualifiedName, MessageHandlingMember<?> handler) {
@@ -260,14 +276,22 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
     private void initializeChildren(EntityModelBuilder<E> builder) {
         ServiceLoader<EntityChildModelDefinition> childEntityDefinitions = ServiceLoader
                 .load(EntityChildModelDefinition.class, entityType.getClassLoader());
-        stream(ReflectionUtils.fieldsOf(entityType).spliterator(), false)
-                .forEach(field -> createOptionalChildForMember(builder,
-                                                               field,
-                                                               childEntityDefinitions));
-        stream(ReflectionUtils.methodsOf(entityType).spliterator(), false)
-                .forEach(method -> createOptionalChildForMember(builder,
-                                                                method,
-                                                                childEntityDefinitions));
+        List<Method> methods = stream(ReflectionUtils.methodsOf(entityType).spliterator(), false).toList();
+        List<Field> fields = stream(ReflectionUtils.fieldsOf(entityType).spliterator(), false).toList();
+
+        methods.forEach(method -> createOptionalChildForMember(builder, method, childEntityDefinitions));
+
+        if (entityType.isRecord()) {
+            // Annotated record fields have both a backing `Field` and `Method`, so we can filter out any field
+            // that has a corresponding method, or we get duplicates.
+            fields = fields.stream().filter(field -> methods
+                                   .stream()
+                                   .noneMatch(method -> method.getName().equals(field.getName())
+                                           && method.getParameterCount() == 0
+                                           && method.getReturnType().equals(field.getType())))
+                           .toList();
+        }
+        fields.forEach(field -> createOptionalChildForMember(builder, field, childEntityDefinitions));
     }
 
     private void createOptionalChildForMember(EntityModelBuilder<E> builder,
@@ -296,7 +320,7 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
     }
 
     private <C> AnnotatedEntityModel<C> createChildEntityModel(Class<C> clazz) {
-        return new AnnotatedEntityModel<>(clazz, Set.of(), parameterResolverFactory, messageTypeResolver, false);
+        return new AnnotatedEntityModel<>(clazz, Set.of(), parameterResolverFactory, messageTypeResolver, List.of());
     }
 
     @Override
