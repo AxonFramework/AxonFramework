@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.BuilderUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -143,10 +144,6 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
         /**
          * Sets the {@link CommandTargetResolver} to use for resolving the child entity to handle the command. This
          * should return one child entity, or {@code null} if no child entity should handle the command.
-         * <p>
-         * Defaults to matching a singular child entity, or throwing a {@link ChildAmbiguityException} if more than one
-         * child candidate exists. As such, provide another implementation if there are multiple candidates, such as
-         * when the member is a {@link List} of child entities.
          *
          * @param commandTargetResolver The {@link CommandTargetResolver} to use for resolving the child entity
          *                              to handle the command.
@@ -160,12 +157,8 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
         }
 
         protected void validate() {
-            if (commandTargetResolver == null) {
-                throw new AxonConfigurationException("The commandTargetResolver must be set before building the model.");
-            }
-            if (eventTargetMatcher == null) {
-                throw new AxonConfigurationException("The eventTargetMatcher must be set before building the model.");
-            }
+            BuilderUtils.assertNonNull(commandTargetResolver, "The commandTargetResolver must be set before building the model.");
+            BuilderUtils.assertNonNull(eventTargetMatcher, "The eventTargetMatcher must be set before building the model.");
         }
 
         /**
