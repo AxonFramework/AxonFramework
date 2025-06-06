@@ -160,7 +160,6 @@ public abstract class MessageStreamUtils {
             this.intermediateResult = new AtomicReference<>(identity);
             this.accumulator = accumulator;
             this.result = new CompletableFuture<>();
-
         }
 
         public CompletableFuture<R> result() {
