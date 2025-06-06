@@ -40,7 +40,7 @@ import jakarta.annotation.Nonnull;
  * @since 3.1
  * @deprecated This class will be removed for now.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyFilteringEventStorageEngine implements LegacyEventStorageEngine {
 
     private final LegacyEventStorageEngine delegate;

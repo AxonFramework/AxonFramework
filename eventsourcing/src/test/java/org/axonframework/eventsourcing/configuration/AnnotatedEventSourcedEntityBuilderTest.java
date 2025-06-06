@@ -17,13 +17,15 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.CriteriaResolver;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -186,8 +188,9 @@ class AnnotatedEventSourcedEntityBuilderTest {
             implements EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> {
 
         @Override
-        public CustomEntityFactoryCourse createEntity(@Nonnull Class<CustomEntityFactoryCourse> entityType,
-                                                      @Nonnull CourseId courseId) {
+        public @Nullable CustomEntityFactoryCourse create(
+                @Nonnull AnnotatedEventSourcedEntityBuilderTest.CourseId courseId,
+                @Nullable EventMessage<?> firstEventMessage) {
             return new CustomEntityFactoryCourse(courseId);
         }
     }

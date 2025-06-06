@@ -95,7 +95,7 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
         if (targetChildEntity == null) {
             return MessageStream.failed(new ChildEntityNotFoundException(message, parentEntity));
         }
-        return childEntityModel.handle(message, targetChildEntity, context);
+        return childEntityModel.handleInstance(message, targetChildEntity, context);
     }
 
     protected abstract List<C> getChildEntities(P entity);

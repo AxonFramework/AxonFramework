@@ -17,12 +17,12 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.QualifiedName;
@@ -41,8 +41,8 @@ import java.util.function.BiFunction;
  * entity.
  * <p>
  * Provides operations to guide users to provide the necessary
- * {@link EntityFactoryPhase#entityFactory(ComponentFactory) entity factory} and
- * {@link CriteriaResolverPhase#criteriaResolver(ComponentFactory) criteria resolver} (used to source the entity from an
+ * {@link EntityFactoryPhase#entityFactory(ComponentBuilder) entity factory} and
+ * {@link CriteriaResolverPhase#criteriaResolver(ComponentBuilder) criteria resolver} (used to source the entity from an
  * {@link org.axonframework.eventsourcing.eventstore.EventStore}) before expecting event sourcing handler registration.
  * <p>
  * The separate methods of this builder ensure that the bare minimum required to provide the {@link #entityName()} and
@@ -74,7 +74,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
      * <p>
      * The given {@code entityType} is expected to be annotated with
      * {@link org.axonframework.eventsourcing.annotation.EventSourcedEntity}. This annotation will allow for retrieval
-     * of the {@link org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory} and {@link CriteriaResolver}
+     * of the {@link EventSourcedEntityFactory} and {@link CriteriaResolver}
      * to construct the {@link EventSourcingRepository} for the event sourced
      * entity being built.
      *
@@ -94,7 +94,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
     /**
      * The entity factory phase of the event sourced entity builder.
      * <p>
-     * Enforce providing the {@link #entityFactory(ComponentFactory)} for the event sourced entity that's being built.
+     * Enforce providing the {@link #entityFactory(ComponentBuilder)} for the event sourced entity that's being built.
      *
      * @param <I> The type of identifier used to identify the event sourced entity that's being built.
      * @param <E> The type of the event sourced entity being built.
@@ -114,14 +114,14 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * @return The {@link CriteriaResolver} phase of this builder, for a fluent API.
          */
         CriteriaResolverPhase<I, E> entityFactory(
-                @Nonnull ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory
+                @Nonnull ComponentBuilder<EventSourcedEntityFactory<I, E>> entityFactory
         );
     }
 
     /**
      * The {@link CriteriaResolver} phase of the event sourced entity builder.
      * <p>
-     * Enforces providing the {@link #criteriaResolver(ComponentFactory) criteria resolver} for the event sourced entity
+     * Enforces providing the {@link #criteriaResolver(ComponentBuilder) criteria resolver} for the event sourced entity
      * that's being built. A {@code CriteriaResolver} receives the entity's identifier of type {@code I} and expects the
      * {@link EventCriteria} as as result. The resulting
      * {@code EventCriteria} is used to
@@ -148,7 +148,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * @return The event sourcing handler phase of the builder, for a fluent API.
          */
         EventSourcingHandlerPhase<I, E> criteriaResolver(
-                @Nonnull ComponentFactory<CriteriaResolver<I>> criteriaResolver
+                @Nonnull ComponentBuilder<CriteriaResolver<I>> criteriaResolver
         );
     }
 
@@ -156,7 +156,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
      * The event sourcing handler phase of the event sourced entity builder.
      * <p>
      * Allows for two paths when building an event sourced entity. Firstly, a
-     * {@link #entityEvolver(ComponentFactory) entity evolver} can be defined, after which the builder is resolved. The
+     * {@link #entityEvolver(ComponentBuilder) entity evolver} can be defined, after which the builder is resolved. The
      * second option allows for providing several separate
      * {@link #eventSourcingHandler(QualifiedName, Class, BiConsumer) event sourcing handlers} that will be combined by
      * the builder into an {@link EntityEvolver}.
@@ -189,7 +189,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * @return The parent {@link EventSourcedEntityBuilder}, signaling the end of configuring an event sourced
          * entity.
          */
-        EventSourcedEntityBuilder<I, E> entityEvolver(@Nonnull ComponentFactory<EntityEvolver<E>> entityEvolver);
+        EventSourcedEntityBuilder<I, E> entityEvolver(@Nonnull ComponentBuilder<EntityEvolver<E>> entityEvolver);
 
         /**
          * Registers the given {@code eventSourcingHandler} for the given {@code payloadType}.

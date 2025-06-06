@@ -41,7 +41,7 @@ import jakarta.annotation.Nonnull;
  * @since 0.6
  * @deprecated In favor of the {@link ProcessingLifecycle}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface LegacyUnitOfWork<T extends Message<?>> {
 
     /**

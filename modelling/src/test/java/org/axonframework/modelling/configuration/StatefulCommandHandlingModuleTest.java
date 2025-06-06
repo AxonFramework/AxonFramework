@@ -17,7 +17,7 @@
 package org.axonframework.modelling.configuration;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -160,7 +160,7 @@ class StatefulCommandHandlingModuleTest {
     void commandHandlerThrowsNullPointerExceptionForNullCommandHandlerBuilder() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandler(
-                COMMAND_NAME, (ComponentFactory<StatefulCommandHandler>) null
+                COMMAND_NAME, (ComponentBuilder<StatefulCommandHandler>) null
         ));
     }
 

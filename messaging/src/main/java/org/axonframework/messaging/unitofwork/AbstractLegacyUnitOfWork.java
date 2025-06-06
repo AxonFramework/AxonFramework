@@ -38,7 +38,7 @@ import java.util.function.Consumer;
  * @since 3.0
  * @deprecated This class will be removed.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public abstract class AbstractLegacyUnitOfWork<T extends Message<?>> implements LegacyUnitOfWork<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractLegacyUnitOfWork.class);

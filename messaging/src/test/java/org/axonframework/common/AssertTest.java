@@ -16,12 +16,12 @@
 
 package org.axonframework.common;
 
+import org.junit.jupiter.api.*;
+
 import java.util.Random;
 
 import static org.axonframework.common.Assert.assertStrictPositive;
 import static org.junit.jupiter.api.Assertions.*;
-
-import org.junit.jupiter.api.*;
 
 /**
  * Test class validating the {@code static} methods of the {@link Assert} utility.
@@ -54,7 +54,7 @@ class AssertTest {
 
     @Test
     void nonEmpty() {
-        assertDoesNotThrow(() -> Assert.nonEmpty("some-text", "Reacts fine on some text"));
+        assertEquals("some-text", Assert.nonEmpty("some-text", "Reacts fine on some text"));
         assertThrows(IllegalArgumentException.class, () -> Assert.nonEmpty(null, "Should fail on null"));
         assertThrows(IllegalArgumentException.class, () -> Assert.nonEmpty("", "Should fail on an empty string"));
     }

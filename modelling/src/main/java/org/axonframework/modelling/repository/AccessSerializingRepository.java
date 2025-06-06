@@ -37,40 +37,40 @@ import jakarta.annotation.Nonnull;
  * immediately, to avoid avoidable load operations on the underlying repository.
  *
  * @param <ID> The type of identifier used to identify entities stored by this repository.
- * @param <T>  The type of entity stored in this repository.
+ * @param <E>  The type of entity stored in this repository.
  * @author Allard Buijze
  * @since 5.0.0
  */
-public class AccessSerializingRepository<ID, T>
-        implements Repository.LifecycleManagement<ID, T>, DescribableComponent {
+public class AccessSerializingRepository<ID, E>
+        implements Repository.LifecycleManagement<ID, E>, DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(AccessSerializingRepository.class);
 
-    private final ResourceKey<ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>>> workingEntitiesKey =
+    private final ResourceKey<ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, E>>>> workingEntitiesKey =
             ResourceKey.withLabel("workingEntities");
 
-    private final Repository.LifecycleManagement<ID, T> delegate;
-    private final ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> inProgress;
+    private final Repository.LifecycleManagement<ID, E> delegate;
+    private final ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, E>>> inProgress;
 
     /**
      * Initialize the repository to serialize access to given {@code delegate}.
      *
      * @param delegate The repository implementation to delegate loading of the entities to
      */
-    public AccessSerializingRepository(Repository.LifecycleManagement<ID, T> delegate) {
+    public AccessSerializingRepository(Repository.LifecycleManagement<ID, E> delegate) {
         this.delegate = delegate;
         this.inProgress = new ConcurrentHashMap<>();
     }
 
     @Override
-    public ManagedEntity<ID, T> attach(@Nonnull ManagedEntity<ID, T> entity,
+    public ManagedEntity<ID, E> attach(@Nonnull ManagedEntity<ID, E> entity,
                                        @Nonnull ProcessingContext processingContext) {
         return delegate.attach(entity, processingContext);
     }
 
     @Nonnull
     @Override
-    public Class<T> entityType() {
+    public Class<E> entityType() {
         return delegate.entityType();
     }
 
@@ -81,7 +81,7 @@ public class AccessSerializingRepository<ID, T>
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier,
+    public CompletableFuture<ManagedEntity<ID, E>> load(@Nonnull ID identifier,
                                                         @Nonnull ProcessingContext processingContext) {
         return awaitTurn(identifier,
                          processingContext,
@@ -89,20 +89,20 @@ public class AccessSerializingRepository<ID, T>
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, T>> loadOrCreate(@Nonnull ID identifier,
+    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
                                                                 @Nonnull ProcessingContext processingContext) {
         return awaitTurn(identifier,
                          processingContext,
                          () -> delegate.loadOrCreate(identifier, processingContext));
     }
 
-    private CompletableFuture<ManagedEntity<ID, T>> awaitTurn(
+    private CompletableFuture<ManagedEntity<ID, E>> awaitTurn(
             ID identifier,
             ProcessingContext processingContext,
-            Supplier<CompletableFuture<ManagedEntity<ID, T>>> entitySupplier
+            Supplier<CompletableFuture<ManagedEntity<ID, E>>> entitySupplier
     ) {
         logger.info("Attempting to load [{}] in {}", identifier, processingContext);
-        ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> workingEntities =
+        ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, E>>> workingEntities =
                 processingContext.computeResourceIfAbsent(workingEntitiesKey, ConcurrentHashMap::new);
 
         if (workingEntities.containsKey(identifier)) {
@@ -111,9 +111,9 @@ public class AccessSerializingRepository<ID, T>
             return workingEntities.get(identifier);
         }
 
-        CompletableFuture<ManagedEntity<ID, T>> doneMarker = new CompletableFuture<>();
-        CompletableFuture<ManagedEntity<ID, T>> previousMarker = inProgress.put(identifier, doneMarker);
-        CompletableFuture<ManagedEntity<ID, T>> previousTask;
+        CompletableFuture<ManagedEntity<ID, E>> doneMarker = new CompletableFuture<>();
+        CompletableFuture<ManagedEntity<ID, E>> previousMarker = inProgress.put(identifier, doneMarker);
+        CompletableFuture<ManagedEntity<ID, E>> previousTask;
 
         doneMarker.whenComplete((r, e) -> inProgress.remove(identifier, doneMarker));
         if (previousMarker == null) {
@@ -141,7 +141,7 @@ public class AccessSerializingRepository<ID, T>
                             identifier, processingContext);
             }
 
-            CompletableFuture<ManagedEntity<ID, T>> workingEntity;
+            CompletableFuture<ManagedEntity<ID, E>> workingEntity;
             if (previousEntity == null) {
                 logger.info("Calling entity supplier in {} to load or create [{}].", processingContext, identifier);
                 workingEntity = entitySupplier.get();
@@ -170,15 +170,15 @@ public class AccessSerializingRepository<ID, T>
     }
 
     @Override
-    public ManagedEntity<ID, T> persist(@Nonnull ID identifier,
-                                        @Nonnull T entity,
+    public ManagedEntity<ID, E> persist(@Nonnull ID identifier,
+                                        @Nonnull E entity,
                                         @Nonnull ProcessingContext processingContext) {
-        ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> workingEntities =
+        ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, E>>> workingEntities =
                 processingContext.computeResourceIfAbsent(workingEntitiesKey, ConcurrentHashMap::new);
-        ManagedEntity<ID, T> persisted = delegate.persist(identifier, entity, processingContext);
+        ManagedEntity<ID, E> persisted = delegate.persist(identifier, entity, processingContext);
 
         if (workingEntities.put(identifier, CompletableFuture.completedFuture(persisted)) == null) {
-            CompletableFuture<ManagedEntity<ID, T>> doneMarker = new CompletableFuture<>();
+            CompletableFuture<ManagedEntity<ID, E>> doneMarker = new CompletableFuture<>();
             inProgress.put(identifier, doneMarker);
             processingContext.whenComplete(pc -> workingEntities.get(identifier).getNow(null));
             processingContext.onError((pc, phase, error) -> doneMarker.complete(null));
