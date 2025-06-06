@@ -112,7 +112,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     }
 
     @Override
-    public GrpcBackedQueryMessage<P, R> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GrpcBackedQueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GrpcBackedQueryMessage<>(query,
                                             serializedPayload,
                                             serializedResponseType,
@@ -121,7 +121,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     }
 
     @Override
-    public GrpcBackedQueryMessage<P, R> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public GrpcBackedQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
         return withMetaData(getMetaData().mergedWith(metaData));
     }
 }
