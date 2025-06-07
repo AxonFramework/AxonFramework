@@ -121,9 +121,9 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tailToken() {
+    public CompletableFuture<TrackingToken> firstToken() {
         if (logger.isDebugEnabled()) {
-            logger.debug("Operation tailToken() is invoked.");
+            logger.debug("Operation firstToken() is invoked.");
         }
 
         return eventChannel().tail()
@@ -131,9 +131,9 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> headToken() {
+    public CompletableFuture<TrackingToken> latestToken() {
         if (logger.isDebugEnabled()) {
-            logger.debug("Operation headToken() is invoked.");
+            logger.debug("Operation latestToken() is invoked.");
         }
 
         return eventChannel().head()
