@@ -55,6 +55,11 @@ class MappedMessageStream<DM extends Message<?>, RM extends Message<?>> extends 
         return delegate.next().map(mapper);
     }
 
+    @Override
+    public Optional<Entry<RM>> peek() {
+        return delegate.peek().map(mapper);
+    }
+
     /**
      * Extension of the {@code MappedMessageStream} that maps the entry in a single-value stream. This allows the
      * wrapped stream to also implement {@link MessageStream.Single}.
