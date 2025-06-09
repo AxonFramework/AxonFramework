@@ -41,6 +41,8 @@ import org.axonframework.modelling.entity.PolymorphicEntityModel;
 import org.axonframework.modelling.entity.PolymorphicEntityModelBuilder;
 import org.axonframework.modelling.entity.SimpleEntityModel;
 import org.axonframework.modelling.entity.child.EntityChildModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -82,6 +84,7 @@ import static org.axonframework.messaging.annotation.AnnotatedHandlerInspector.i
  * @since 3.1.0
  */
 public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableComponent {
+    private static final Logger logger = LoggerFactory.getLogger(AnnotatedEntityModel.class);
 
     private final Class<E> entityType;
     private final EntityModel<E> entityModel;
@@ -223,10 +226,10 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
                      QualifiedName qualifiedName = messageTypeResolver.resolveOrThrow(handler.payloadType())
                                                                       .qualifiedName();
                      if (commandsToSkip.contains(qualifiedName)) {
-                         // This command is already registered by the abstract entity type, so we skip it.
+                         logger.debug("Skipping registration of command handler for [{}] on [{}] (already registered by parent)", qualifiedName, entityType);
                          return;
                      }
-
+                     logger.debug("Registering handler for message type [{}] (payload: {}) on entity [{}]", qualifiedName, handler.payloadType().getName(), entityType);
                      addPayloadTypeFromHandler(qualifiedName, handler);
                      addCommandHandlerToModel(builder, handler, qualifiedName, registeredCommands);
                  });
@@ -240,11 +243,13 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
         }
         registeredCommands.add(qualifiedName);
         if (commandMember.isFactoryHandler()) {
+            logger.debug("Registered creational command handler for [{}] on [{}]", qualifiedName, entityType);
             builder.creationalCommandHandler(qualifiedName, ((command, context) -> handler
                     .handle(command, context, null)
                     .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
                     .first()));
         } else {
+            logger.debug("Registered instance command handler for [{}] on [{}]", qualifiedName, entityType);
             builder.instanceCommandHandler(qualifiedName, ((command, entity, context) -> handler
                     .handle(command, context, entity)
                     .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
@@ -259,6 +264,7 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
                             + qualifiedName + "] declares both [" + payloadTypes.get(qualifiedName) + "] and ["
                             + handler.payloadType() + "] as wanted representations");
         }
+        logger.debug("Discovered payload type [{}] for message type [{}] on entity [{}]", handler.payloadType().getName(), qualifiedName, entityType);
         payloadTypes.put(qualifiedName, handler.payloadType());
     }
 
@@ -330,6 +336,7 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
             if (child.entityModel() instanceof AnnotatedEntityModel<?> annotatedChild) {
                 this.childModels.add(annotatedChild);
             }
+            logger.debug("Discovered child entity [{}] for member [{}] on entity [{}]", child.entityModel().entityType().getName(), field.getName(), entityType);
             builder.addChild(child);
         }
     }
@@ -344,6 +351,7 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
      * {@link ParameterResolverFactory} and {@link MessageTypeResolver} as this instance.
      */
     private <C> AnnotatedEntityModel<C> createChildEntityModel(Class<C> clazz) {
+        logger.debug("Creating child entity model for class: {}", clazz);
         return new AnnotatedEntityModel<>(clazz, Set.of(), parameterResolverFactory, messageTypeResolver, List.of());
     }
 
@@ -379,17 +387,20 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
             @Nonnull E entity,
             @Nonnull ProcessingContext context
     ) {
+        logger.debug("Handling instance command: {} for entity: {} of type: {}", message.type(), entity, entityType());
         return entityModel.handleInstance(message, entity, context);
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        logger.debug("Describing entity model to descriptor for entity type: {}", entityType());
         descriptor.describeWrapperOf(entityModel);
         descriptor.describeProperty("entityType", entityType());
     }
 
     @Override
     public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+        logger.debug("Evolving entity: {} with event: {} for entity type: {}", entity, event.type(), entityType());
         return entityModel.evolve(entity, event, context);
     }
 
