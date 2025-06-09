@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.property.Property;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -29,14 +30,15 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
 
 /**
  * Utility class that matches an entity instance to a message based on the routing key of a message and the routing key
- * of the entity. To get the expected representation of the message, it uses the {@link AnnotatedEntityModel} to resolve
- * the expected payload type of the message. It then retrieves the routing key property from the message payload and
- * compares it to the routing key property of the entity instance.
+ * of the entity. The expected payload type of the message is requested from the {@link AnnotatedEntityModel} to be able
+ * to resolve the payload and extract the requested properties. Once extracted, both routing keys are then compared for
+ * a match.
  *
  * @param <E> The type of the entity this matcher is used for.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public class AnnotatedEntityModelRoutingKeyMatcher<E> {
 
     private final Map<MessageType, Property<Object>> messageRoutingKeyProperties = new ConcurrentHashMap<>();
@@ -47,10 +49,11 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
     private final AnnotatedEntityModel<?> entity;
 
     /**
-     *
-     * @param entity
-     * @param entityRoutingProperty
-     * @param messageRoutingProperty
+     * @param entity                 The {@link AnnotatedEntityModel} of the entity to match against.
+     * @param entityRoutingProperty  The routing key property of the entity, which is used to match against the message
+     *                               routing key.
+     * @param messageRoutingProperty The routing key property of the message, which is used to match against the entity
+     *                               routing key.
      */
     public AnnotatedEntityModelRoutingKeyMatcher(AnnotatedEntityModel<E> entity,
                                                  String entityRoutingProperty,
@@ -60,8 +63,15 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
         this.entityRoutingProperty = entityRoutingProperty;
     }
 
-    protected boolean matches(@Nonnull E entity,
-                              @Nonnull Message<?> message
+    /**
+     * Matches the given entity against the provided message based on the routing keys of both. The routing key of the
+     * message is extracted from the expected payload type of the message, and compared to the routing key of the entity.
+     *
+     * @param entity   The entity to match against.
+     * @param message  The message to match against.
+     * @return {@code true} if the routing keys match, {@code false} otherwise.
+     */
+    public boolean matches(@Nonnull E entity, @Nonnull Message<?> message
     ) {
         var payloadType = this.entity.getExpectedRepresentation(message.type().qualifiedName());
         if (payloadType == null) {

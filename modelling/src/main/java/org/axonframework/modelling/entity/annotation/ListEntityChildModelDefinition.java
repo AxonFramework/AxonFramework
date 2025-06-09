@@ -36,14 +36,20 @@ import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
  * {@link EntityChildModelDefinition} for creating {@link EntityChildModel} instances for child entities that are
  * represented as a {@link List}. It resolves the child type from the member's generic type and creates a
  * {@link ListEntityChildModel} accordingly.
+ * <p>
+ * Before version 5.0.0, this class was known as the
+ * {@code org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityCollectionDefinition}. The
+ * class has been renamed to better fit the new entity modeling, and has been adjusted to only work with {@link List}
+ * types.
  *
+ * @author Allard Buijze
  * @author Mitchell Herrijgers
- * @since 5.0.0
+ * @since 3.0
  */
 public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefinition {
 
     protected boolean isMemberTypeSupported(Class<?> memberType) {
-        return Iterable.class.isAssignableFrom(memberType);
+        return List.class.isAssignableFrom(memberType);
     }
 
     @Override
@@ -55,8 +61,7 @@ public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefi
     private static <C> Class<C> getChildTypeFromList(Member member) {
         return (Class<C>) resolveMemberGenericType(member, 0).orElseThrow(
                 () -> new AxonConfigurationException(format(
-                        "Unable to resolve entity type of member [%s]. Please provide type explicitly in @AggregateMember annotation.",
-                        ReflectionUtils.getMemberGenericString(member)
+                        "Unable to resolve entity type of member [%s].", ReflectionUtils.getMemberGenericString(member)
                 )));
     }
 

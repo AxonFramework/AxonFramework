@@ -36,8 +36,8 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
 
 /**
  * Abstract implementation of the {@link EntityChildModelDefinition} interface that makes concrete implementations
- * easier to maintain. It constructs the necessary definitions from the {@link EntityMember} annotation, determine the
- * field name based on the member and call the
+ * easier to maintain. It constructs the necessary definitions from the {@link EntityMember} annotation, determines the
+ * field name based on the member and calls the
  * {@link #doCreate(Class, EntityModel, String, EventTargetMatcher, CommandTargetResolver)} method to create the actual
  * child model.
  * <p>

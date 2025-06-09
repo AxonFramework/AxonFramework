@@ -61,7 +61,7 @@ public class RoutingKeyEventTargetMatcherDefinition implements EventTargetMatche
         if (Iterable.class.isAssignableFrom(memberValueType)) {
             throw new AxonConfigurationException(
                     format("Member [%s] of type [%s] is a collection type, but the child does not define a @RoutingKey. "
-                                   + "Please implement a custom child entity matcher for this collection type or add a @RoutingKey.",
+                                   + "Please implement a custom EventTargetMatcher for this collection type or add @RoutingKey to a field or method to identify the child entity correctly.",
                            member,
                            memberValueType));
         }

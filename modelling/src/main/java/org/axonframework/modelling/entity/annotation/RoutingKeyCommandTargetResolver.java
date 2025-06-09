@@ -60,7 +60,7 @@ class RoutingKeyCommandTargetResolver<E> implements CommandTargetResolver<E> {
                                                   .toList();
         if (matchingCandidates.size() > 1) {
             throw new ChildAmbiguityException(
-                    "Multiple child entities found for command of type [%s]. Matching candidates are: [%s]".formatted(
+                    "Multiple child entities found for command of type [%s], while only one was expected. Matching candidates are: [%s]".formatted(
                             message.type(),
                             matchingCandidates
                     ));

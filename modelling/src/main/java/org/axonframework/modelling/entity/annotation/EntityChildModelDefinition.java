@@ -24,8 +24,8 @@ import java.lang.reflect.Member;
 import java.util.Optional;
 
 /**
- * Interface describing the definition of a {@link EntityChildModel}. These definitions are automatically detected by
- * the {@link AnnotatedEntityModel} if the definition's implementations is registered in the
+ * Interface describing the definition of an {@link EntityChildModel}. These definitions are automatically detected by
+ * the {@link AnnotatedEntityModel} if the definition's implementation is registered in the
  * {@code META-INF/services/org.axonframework.modelling.entity.annotation.EntityChildModelDefinition} file.
  * <p>
  * Note: This class was known as {code org.axonframework.modelling.command.inspection.ChildEntityDefinition} before
@@ -48,8 +48,8 @@ public interface EntityChildModelDefinition {
      * @param member             The member to inspect for a child entity.
      * @param <C>                The type of the child entity.
      * @param <P>                The type of the parent entity.
-     * @return An optional that resolves to a child entity model if the field represents a child entity, or an empty
-     * optional if no child entity is found.
+     * @return An {@link Optional} that resolves to an {@link EntityChildModel} if the field represents a child entity,
+     * or an empty optional if no child entity is found.
      */
     @Nonnull
     <C, P> Optional<EntityChildModel<C, P>> createChildDefinition(

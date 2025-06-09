@@ -35,8 +35,9 @@ import static org.axonframework.common.ReflectionUtils.getMemberValueType;
  * The routing key of the message is determined by the {@link EntityMember#routingKey} annotation on the declaring
  * member in the parent entity, or the {@link RoutingKey} annotation on the child entity's member if absent. The routing
  * key of the child entity is determined by the {@link RoutingKey} on a member of the child entity class.
- * <p>The routing key of the message and of the entity are then matched to determine if a
- * child entity should handle a given message.
+ * <p>
+ * The routing key of the message and of the entity are then matched to determine if a child entity should handle a
+ * given message.
  *
  * @author Mitchell Herrijgers
  * @see RoutingKeyEventTargetMatcher
@@ -63,7 +64,7 @@ public class RoutingKeyCommandTargetResolverDefinition implements CommandTargetR
         if (Iterable.class.isAssignableFrom(memberValueType)) {
             throw new AxonConfigurationException(
                     format("Member [%s] of type [%s] is a collection type, but the child does not define a @RoutingKey. "
-                                   + "Please implement a custom child entity matcher for this collection type or add a @RoutingKey.",
+                                   + "Please implement a custom CommandTargetResolver for this collection type or add @RoutingKey to a field or method to identify the child entity correctly.",
                            member,
                            memberValueType));
         }

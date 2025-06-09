@@ -31,7 +31,6 @@ import java.lang.annotation.Target;
  * Annotation placed on fields or methods of an entity that should be treated as a child entity. Messages are filtered
  * based on the {@link #eventTargetMatcher()} and {@link #commandTargetResolver()}, which both default to a matcher
  * based on the {@link #routingKey()}.
- *
  * <p>
  * The default routing key matcher and resolver will match a property on the child entity annotated with
  * {@link RoutingKey} to a property of the message. The message property defaults to the name of the property in the
@@ -42,7 +41,8 @@ import java.lang.annotation.Target;
  * singular child entities (not backed by an {@link Iterable}), this can be omitted.
  * <p>
  * Note that this annotation existed as {@code org.axonframework.modelling.command.AggregateMember} before version
- * 5.0.0.
+ * 5.0.0. Besides the change in name to align better with the entities instead of aggregates, the version introduced the
+ * {@link #commandTargetResolver()}, which before was not configurable.
  *
  * @author Allard Buijze
  * @author Mitchell Herrijgers

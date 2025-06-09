@@ -25,13 +25,18 @@ import org.axonframework.modelling.entity.child.EventTargetMatcher;
 import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
 import java.lang.reflect.Member;
+import java.util.List;
 
 import static org.axonframework.common.ReflectionUtils.getMemberValueType;
 
 /**
- * {@link EntityChildModelDefinition}  for creating {@link EntityChildModel} instances for child entities that are
- * represented as a single entity (not a list). It resolves the child type from the member's type and creates a
+ * {@link EntityChildModelDefinition} that creates {@link EntityChildModel} instances for child entities that are
+ * represented as a single entity (not iterable). It resolves the child type from the member's type and creates a
  * {@link SingleEntityChildModel} accordingly.
+ * <p>
+ * Before version 5.0.0, this class was known as the
+ * {@code org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityDefinition}. The class has
+ * been renamed to better fit the new entity modeling.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

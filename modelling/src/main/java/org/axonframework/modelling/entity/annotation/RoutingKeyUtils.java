@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity.annotation;
 
 import org.axonframework.commandhandling.annotation.RoutingKey;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.annotation.Internal;
 
 import java.lang.reflect.AnnotatedElement;
@@ -68,7 +69,7 @@ public class RoutingKeyUtils {
      */
     public static Optional<String> getEntityRoutingKey(Class<?> childEntityClass) {
         return Arrays.stream(childEntityClass.getDeclaredFields())
-                     .filter(field -> field.isAnnotationPresent(RoutingKey.class))
+                     .filter(field -> AnnotationUtils.isAnnotationPresent(field, RoutingKey.class))
                      .findFirst()
                      .map(Field::getName);
     }

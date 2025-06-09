@@ -20,7 +20,7 @@ import org.axonframework.common.annotation.Internal;
 
 /**
  * Factory for creating {@link AnnotatedEntityModel} instances for a given entity type. Used by the
- * {@link AnnotatedEntityModel} to create child models using the same configuration that was is being used to create the
+ * {@link AnnotatedEntityModel} to create child models using the same configuration that were used to create the
  * parent model.
  *
  * @author Mitchell Herrijgers

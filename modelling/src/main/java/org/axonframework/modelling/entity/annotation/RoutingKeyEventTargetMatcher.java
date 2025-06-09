@@ -24,7 +24,6 @@ import org.axonframework.modelling.entity.child.EventTargetMatcher;
 /**
  * {@link EventTargetMatcher} implementation that matches based on the routing key. If the routing key of the message
  * matches the routing key of the child entity, the child entity is considered a match.
- *
  * <p>
  * Note: This class was known as {code org.axonframework.modelling.command.ForwardMatchingInstances} before version
  * 5.0.0.

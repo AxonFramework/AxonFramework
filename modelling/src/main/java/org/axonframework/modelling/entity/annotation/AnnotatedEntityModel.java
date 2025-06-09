@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -45,6 +46,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,7 +79,7 @@ import static org.axonframework.messaging.annotation.AnnotatedHandlerInspector.i
  * @param <E> The type of entity this model describes.
  * @author Mitchell Herrijgers
  * @author Allard Buijze
- * @since 5.0.0
+ * @since 3.1.0
  */
 public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableComponent {
 
@@ -92,7 +94,7 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
 
 
     /**
-     * Instantiate an annotated {@link EntityModel} of a concrete (i.e. non-polymorphic) entity type.
+     * Instantiate an annotated {@link EntityModel} of a concrete entity type.
      *
      * @param entityType               The concrete entity type this model describes.
      * @param parameterResolverFactory The {@link ParameterResolverFactory} to use for resolving parameters.
@@ -114,7 +116,9 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
     }
 
     /**
-     * Instantiate an annotated {@link EntityModel} of a polymorphic entity type.
+     * Instantiate an annotated {@link EntityModel} of a polymorphic entity type. At least one concrete type must be
+     * supplied, as this model is meant to describe a polymorphic entity type with multiple concrete
+     * implementations.
      *
      * @param entityType               The polymorphic entity type this model describes.
      * @param concreteTypes            The concrete types of the polymorphic entity type.
@@ -184,11 +188,14 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
         PolymorphicEntityModelBuilder<E> builder = PolymorphicEntityModel.forSuperType(entityType);
         builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType, inspected));
         initializeChildren(builder);
-        LinkedList<QualifiedName> registeredCommands = initializeCommandHandlers(builder, inspected);
+        // Commands that are present on the parent entity should not be registered again on the concrete
+        // types. So we tell concrete types to skip these commands.
+        LinkedList<QualifiedName> registeredCommands = initializeDetectedHandlers(builder, inspected);
         concreteTypes.forEach(concreteType -> {
+            List<QualifiedName> mergedQualifiedNames = Stream.concat(commandsToSkip.stream(),
+                                                                     registeredCommands.stream()).toList();
             AnnotatedEntityModel<? extends E> createdConcreteEntityModel = new AnnotatedEntityModel<>(
-                    concreteType, Set.of(), parameterResolverFactory, messageTypeResolver,
-                    Stream.concat(commandsToSkip.stream(), registeredCommands.stream()).toList()
+                    concreteType, Set.of(), parameterResolverFactory, messageTypeResolver, mergedQualifiedNames
             );
             concreteTypeModels.add(createdConcreteEntityModel);
             builder.addConcreteType(createdConcreteEntityModel);
@@ -199,13 +206,14 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
     private EntityModel<E> initializeEntityModel(EntityModelBuilder<E> builder, Class<E> entityType) {
         AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory);
         builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType, inspected));
-        initializeCommandHandlers(builder, inspected);
+        initializeDetectedHandlers(builder, inspected);
         initializeChildren(builder);
         return builder.build();
     }
 
-    private LinkedList<QualifiedName> initializeCommandHandlers(EntityModelBuilder<E> builder,
-                                                                AnnotatedHandlerInspector<E> inspected) {
+    private LinkedList<QualifiedName> initializeDetectedHandlers(
+            EntityModelBuilder<E> builder, AnnotatedHandlerInspector<E> inspected
+    ) {
         LinkedList<QualifiedName> registeredCommands = new LinkedList<>();
         inspected.getHandlers(entityType)
                  .filter(h -> h.canHandleMessageType(CommandMessage.class)
@@ -218,28 +226,35 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
                          // This command is already registered by the abstract entity type, so we skip it.
                          return;
                      }
+
                      addPayloadTypeFromHandler(qualifiedName, handler);
-                     if (handler instanceof CommandMessageHandlingMember<? super E> cmhm) {
-                         registeredCommands.add(qualifiedName);
-                         if (cmhm.isFactoryHandler()) {
-                             builder.creationalCommandHandler(qualifiedName, ((command, context) -> handler
-                                     .handle(command, context, null)
-                                     .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
-                                     .first()));
-                         } else {
-                             builder.instanceCommandHandler(qualifiedName, ((command, entity, context) -> handler
-                                     .handle(command, context, entity)
-                                     .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
-                                     .first()));
-                         }
-                     }
+                     addCommandHandlerToModel(builder, handler, qualifiedName, registeredCommands);
                  });
         return registeredCommands;
     }
 
+    private void addCommandHandlerToModel(EntityModelBuilder<E> builder, MessageHandlingMember<? super E> handler,
+                                          QualifiedName qualifiedName, LinkedList<QualifiedName> registeredCommands) {
+        if (!(handler instanceof CommandMessageHandlingMember<? super E> commandMember)) {
+            return;
+        }
+        registeredCommands.add(qualifiedName);
+        if (commandMember.isFactoryHandler()) {
+            builder.creationalCommandHandler(qualifiedName, ((command, context) -> handler
+                    .handle(command, context, null)
+                    .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
+                    .first()));
+        } else {
+            builder.instanceCommandHandler(qualifiedName, ((command, entity, context) -> handler
+                    .handle(command, context, entity)
+                    .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
+                    .first()));
+        }
+    }
+
     private void addPayloadTypeFromHandler(QualifiedName qualifiedName, MessageHandlingMember<?> handler) {
         if (payloadTypes.containsKey(qualifiedName) && !payloadTypes.get(qualifiedName).equals(handler.payloadType())) {
-            throw new IllegalStateException(
+            throw new AxonConfigurationException(
                     "The scanned message handler methods expect different payload types for the same message type. Message of qualified name ["
                             + qualifiedName + "] declares both [" + payloadTypes.get(qualifiedName) + "] and ["
                             + handler.payloadType() + "] as wanted representations");
@@ -319,6 +334,15 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
         }
     }
 
+    /**
+     * This is the {@link AnnotatedEntityModelFactory} method to create a child entity model for the given
+     * {@code clazz}, while using the same resources as its parent model (this instance).
+     *
+     * @param clazz The class of the child entity to create a model for.
+     * @param <C>   The type of the child entity to create a model for.
+     * @return An {@code AnnotatedEntityModel} for the given {@code clazz}, using the same
+     * {@link ParameterResolverFactory} and {@link MessageTypeResolver} as this instance.
+     */
     private <C> AnnotatedEntityModel<C> createChildEntityModel(Class<C> clazz) {
         return new AnnotatedEntityModel<>(clazz, Set.of(), parameterResolverFactory, messageTypeResolver, List.of());
     }
@@ -326,19 +350,26 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
     @Override
     @Nonnull
     public Set<QualifiedName> supportedCommands() {
-        return entityModel.supportedCommands();
+        return Collections.unmodifiableSet(entityModel.supportedCommands());
     }
 
     @Override
     @Nonnull
     public Set<QualifiedName> supportedCreationalCommands() {
-        return entityModel.supportedCreationalCommands();
+        return Collections.unmodifiableSet(entityModel.supportedCreationalCommands());
     }
 
     @Override
     @Nonnull
     public Set<QualifiedName> supportedInstanceCommands() {
-        return entityModel.supportedInstanceCommands();
+        return Collections.unmodifiableSet(entityModel.supportedInstanceCommands());
+    }
+
+    @Override
+    @Nonnull
+    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage<?> message,
+                                                                      @Nonnull ProcessingContext context) {
+        return entityModel.handleCreate(message, context);
     }
 
     @Override
@@ -366,12 +397,5 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
     @Nonnull
     public Class<E> entityType() {
         return entityType;
-    }
-
-    @Override
-    @Nonnull
-    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage<?> message,
-                                                                      @Nonnull ProcessingContext context) {
-        return entityModel.handleCreate(message, context);
     }
 }

@@ -23,7 +23,7 @@ import org.axonframework.modelling.entity.child.EventTargetMatcher;
 import java.lang.reflect.Member;
 
 /**
- * Defines how a {@link CommandTargetResolver} should be constructed for an {@link EntityMember}-annotated member * of
+ * Defines how a {@link CommandTargetResolver} should be constructed for an {@link EntityMember}-annotated member of
  * an {@link AnnotatedEntityModel}.
  *
  * @author Mitchell Herrijgers
