@@ -65,6 +65,11 @@ class OnErrorContinueMessageStream<M extends Message<?>> implements MessageStrea
         this.callback.set(callback);
     }
 
+    @Override
+    public Optional<Entry<M>> peek() {
+        return resolveCurrentDelegate().peek();
+    }
+
     private MessageStream<M> resolveCurrentDelegate() {
         if (!delegate.isCompleted() || delegate.error().isEmpty()) {
             return delegate;

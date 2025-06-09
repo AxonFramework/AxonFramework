@@ -319,10 +319,12 @@ public interface MessageStream<M extends Message<?>> {
     Optional<Entry<M>> next();
 
     /**
-     * Checks whether or not the next entry in the stream is immediately available. If so, an Optional with the next
-     * entry is returned (without moving the stream pointer), otherwise an empty Optional is returned.
+     * Returns an Optional carrying the next {@link Entry entry} from the stream (without moving the stream pointer), if such entry was available. If no
+     * entry is available for reading, this method returns an empty Optional.
+     * <p>
+     * This method will never block for elements becoming available.
      *
-     * @return the next entry if immediately available
+     * @return An optional carrying the next {@link Entry entry}, if available.
      */
     Optional<Entry<M>> peek();
 
