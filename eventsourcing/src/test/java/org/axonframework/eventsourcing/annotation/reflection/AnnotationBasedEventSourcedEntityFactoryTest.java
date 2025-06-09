@@ -145,12 +145,28 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             assertTrue(exception.getMessage().contains("No suitable @EntityCreator found"));
         }
 
+        @Test
+        void throwsErrorIfRuntimeParametersDontMatch() {
+            when(eventMessage.type()).thenReturn(new MessageType("metadata-required-test-type"));
+            when(eventMessage.getMetaData()).thenReturn(MetaData.emptyInstance());
+            AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
+                factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
+            });
+            assertTrue(exception.getMessage().contains("No @EntityCreator matched for entity id"));
+        }
+
         public static class PayloadTypeSpecificTestEntity {
 
             private final EventMessage<?> eventMessage;
 
             @EntityCreator(payloadQualifiedNames = "matching-test-type")
             public PayloadTypeSpecificTestEntity(EventMessage<String> eventMessage) {
+                this.eventMessage = eventMessage;
+            }
+
+
+            @EntityCreator(payloadQualifiedNames = "metadata-required-test-type")
+            public PayloadTypeSpecificTestEntity(EventMessage<String> eventMessage, @MetaDataValue(required = true, value = "blabla") Integer blabla) {
                 this.eventMessage = eventMessage;
             }
 
@@ -348,7 +364,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                         messageTypeResolver
                 );
             });
-            assertTrue(exception.getMessage().contains("@EntityCreator must be static"));
+            assertTrue(exception.getMessage().contains("Method-based @EntityCreator must be static"));
         }
 
         @Test
@@ -378,7 +394,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                 );
             });
             assertTrue(exception.getMessage().contains(
-                    "No @EntityCreator present on entity. Can not initialize AnnotationBasedEventSourcedEntityFactory"));
+                    "No @EntityCreator present on entity of type"));
         }
 
         public static class InvalidEntityNonStaticMethod {
