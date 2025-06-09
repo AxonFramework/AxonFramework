@@ -16,10 +16,14 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.messaging.MessageStream.Entry;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link FilteringMessageStream} through the {@link MessageStreamTest} suite.
@@ -53,5 +57,29 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
     Message<String> createRandomMessage() {
         return new GenericMessage<>(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
+    }
+
+    @Test
+    void peekAdvancesToFirstMatchingEntry() {
+        //given
+        Message<String> first = new GenericMessage<>(new MessageType("type"), "skip");
+        Message<String> second = new GenericMessage<>(new MessageType("type"), "keep");
+        MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second));
+        FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate,
+                                                                                      entry -> entry.message()
+                                                                                                    .getPayload()
+                                                                                                    .equals("keep"));
+
+        //when
+        Optional<Entry<Message<String>>> peeked = stream.peek();
+        Optional<Entry<Message<String>>> next = stream.next();
+        Optional<Entry<Message<String>>> after = stream.next();
+
+        //then
+        assertTrue(peeked.isPresent());
+        assertEquals("keep", peeked.get().message().getPayload());
+        assertTrue(next.isPresent());
+        assertEquals("keep", next.get().message().getPayload());
+        assertFalse(after.isPresent());
     }
 }

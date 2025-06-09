@@ -35,6 +35,7 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     private final MessageStream<M> delegate;
     private final Predicate<Entry<M>> filter;
+    private Entry<M> lookAhead = null;
 
     /**
      * Construct a {@link MessageStream stream} that invokes the given {@code filter} {@link Predicate} each time a new
@@ -53,11 +54,32 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public Optional<Entry<M>> next() {
+        if (lookAhead != null) {
+            Entry<M> result = lookAhead;
+            lookAhead = null;
+            return Optional.of(result);
+        }
         Optional<Entry<M>> result = delegate.next();
-        while (result.isPresent() && result.filter(filter).isEmpty()) {
+        while (result.isPresent() && !filter.test(result.get())) {
             result = delegate.next();
         }
         return result;
+    }
+
+    @Override
+    public Optional<Entry<M>> peek() {
+        if (lookAhead != null) {
+            return Optional.of(lookAhead);
+        }
+        Optional<Entry<M>> result = delegate.next();
+        while (result.isPresent() && !filter.test(result.get())) {
+            result = delegate.next();
+        }
+        if (result.isPresent()) {
+            lookAhead = result.get();
+            return Optional.of(lookAhead);
+        }
+        return Optional.empty();
     }
 
     @Override
