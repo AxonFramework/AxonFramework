@@ -94,12 +94,15 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public boolean isCompleted() {
-        return delegate.isCompleted();
+        return delegate.isCompleted() && lookAhead == null;
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return delegate.hasNextAvailable();
+        if (lookAhead != null) {
+            return true;
+        }
+        return peek().isPresent();
     }
 
     @Override

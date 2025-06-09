@@ -85,7 +85,7 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Test
     void nextSkipsFilteredOutEntriesAndReturnsOnlyMatching() {
-        // #given
+        //given
         Message<String> first = new GenericMessage<>(new MessageType("type"), "skip1");
         Message<String> second = new GenericMessage<>(new MessageType("type"), "keep1");
         Message<String> third = new GenericMessage<>(new MessageType("type"), "skip2");
@@ -96,7 +96,7 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
                                                                                                     .getPayload()
                                                                                                     .startsWith("keep"));
 
-        // #when & #then
+        //when & then
         Optional<Entry<Message<String>>> firstMatch = stream.next();
         assertTrue(firstMatch.isPresent());
         assertEquals("keep1", firstMatch.get().message().getPayload());
@@ -107,5 +107,22 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         Optional<Entry<Message<String>>> after = stream.next();
         assertFalse(after.isPresent());
+    }
+
+    @Test
+    void returnsEmptyForStreamWithOnlyNonMatchingElements() {
+        //given
+        Message<String> first = new GenericMessage<>(new MessageType("type"), "skip1");
+        Message<String> second = new GenericMessage<>(new MessageType("type"), "skip2");
+        MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second));
+        FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate,
+                                                                                      entry -> entry.message()
+                                                                                                    .getPayload()
+                                                                                                    .startsWith("keep"));
+
+        //when & then
+        assertFalse(stream.hasNextAvailable());
+        assertFalse(stream.peek().isPresent());
+        assertFalse(stream.next().isPresent());
     }
 }
