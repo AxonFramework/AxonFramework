@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
@@ -24,7 +25,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -32,15 +32,11 @@ import static org.axonframework.common.ReflectionUtils.*;
 
 /**
  * CommandTargetResolver that uses annotations on the command to identify the methods that provide the Aggregate
- * Identifier of the targeted Aggregate and optionally the expected version of the aggregate.
+ * Identifier of the targeted Aggregate.
  * <p/>
  * This implementation expects at least one method (without parameters) or field in the command to be annotated with
  * {@link TargetAggregateIdentifier}. If on a method, the result of the invocation of that method will use as Aggregate
  * Identifier. If on a field, the value held in that field is used.
- * <p/>
- * Similarly, the expected aggregate version may be provided by annotating a method (without parameters) or field with
- * {@link TargetAggregateVersion}. The return value of the method or value held in the field is used as the expected
- * version. Note that the method must return a Long value, or a value that may be parsed as a Long.
  *
  * @author Allard Buijze
  * @since 1.2
@@ -48,40 +44,32 @@ import static org.axonframework.common.ReflectionUtils.*;
 public class AnnotationCommandTargetResolver implements CommandTargetResolver {
 
     private final Class<? extends Annotation> identifierAnnotation;
-    private final Class<? extends Annotation> versionAnnotation;
 
     /**
-     * Instantiate a Builder to be able to create a {@link AnnotationCommandTargetResolver}.
+     * Instantiate a Builder to be able to create a {@code AnnotationCommandTargetResolver}.
      * <p>
-     * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier},
-     * TargetAggregateVersionAnnotation to {@link TargetAggregateVersion}.
+     * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier}.
      *
-     * @return a Builder to be able to create a{@link AnnotationCommandTargetResolver}
+     * @return a Builder to be able to create a {@code AnnotationCommandTargetResolver}
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Instantiate a {@link AnnotationCommandTargetResolver} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code AnnotationCommandTargetResolver} based on the fields contained in the {@link Builder}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link AnnotationCommandTargetResolver} instance
+     * @param builder the {@link Builder} used to instantiate a {@code AnnotationCommandTargetResolver} instance
      */
     protected AnnotationCommandTargetResolver(Builder builder) {
         this.identifierAnnotation = builder.identifierAnnotation;
-        this.versionAnnotation = builder.versionAnnotation;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public VersionedAggregateIdentifier resolveTarget(@Nonnull CommandMessage<?> command) {
-        Long aggregateVersion;
+    public String resolveTarget(@Nonnull CommandMessage<?> command) {
         Object aggregateIdentifier;
         try {
             aggregateIdentifier = findIdentifier(command);
-            aggregateVersion = findVersion(command);
         } catch (InvocationTargetException e) {
             throw new IllegalArgumentException("An exception occurred while extracting aggregate "
                                                        + "information form a command", e);
@@ -99,15 +87,11 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
                     command.getPayloadType().getSimpleName()
             ));
         }
-        return new VersionedAggregateIdentifier(aggregateIdentifier, aggregateVersion);
+        return aggregateIdentifier.toString();
     }
 
     private Object findIdentifier(Message<?> command) throws InvocationTargetException, IllegalAccessException {
         return invokeAnnotated(command, identifierAnnotation);
-    }
-
-    private Long findVersion(Message<?> command) throws InvocationTargetException, IllegalAccessException {
-        return asLong(invokeAnnotated(command, versionAnnotation));
     }
 
     @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
@@ -128,35 +112,21 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         return null;
     }
 
-    private Long asLong(Object fieldValue) {
-        if (fieldValue == null) {
-            return null;
-        } else if (fieldValue instanceof Number) {
-            return ((Number) fieldValue).longValue();
-        } else {
-            return Long.parseLong(fieldValue.toString());
-        }
-    }
-
     @Override
     public String toString() {
-        return "AnnotationCommandTargetResolver [identifierAnnotation="
-                + identifierAnnotation + ", versionAnnotation="
-                + versionAnnotation + "]";
+        return "AnnotationCommandTargetResolver [identifierAnnotation=" + identifierAnnotation + "]";
     }
 
     /**
      * Builder class to instantiate a {@link AnnotationCommandTargetResolver}.
      * <p>
-     * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier},
-     * TargetAggregateVersionAnnotation to {@link TargetAggregateVersion}.
+     * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier}.
      *
      * @author JohT
      */
     public static final class Builder {
 
         private Class<? extends Annotation> identifierAnnotation = TargetAggregateIdentifier.class;
-        private Class<? extends Annotation> versionAnnotation = TargetAggregateVersion.class;
 
         /**
          * Sets the annotation, that marks the target aggregate identifier.
@@ -168,29 +138,11 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
          * as meta-annotation).
          *
          * @param annotation {@link Class} of type {@link Annotation}.
-         * @return the current {@link Builder} instance, for fluent interfacing
+         * @return the current {@code Builder} instance, for fluent interfacing
          */
         public Builder targetAggregateIdentifierAnnotation(Class<? extends Annotation> annotation) {
             assertNonNull(annotation, "TargetAggregateIdentifierAnnotation may not be null");
             this.identifierAnnotation = annotation;
-            return this;
-        }
-
-        /**
-         * Sets the annotation, that marks the target aggregate version.
-         * <p>
-         * Defaults to {@link TargetAggregateVersion}.
-         * <p>
-         * Use this method if you use another annotation to mark the field or method that identifies the version of the
-         * aggregate, and it is not possible to put @{@link TargetAggregateVersion} into that annotation (to use it as
-         * meta-annotation).
-         *
-         * @param annotation {@link Class} of type {@link Annotation}.
-         * @return the current {@link Builder} instance, for fluent interfacing
-         */
-        public Builder targetAggregateVersionAnnotation(Class<? extends Annotation> annotation) {
-            assertNonNull(annotation, "TargetAggregateVersionAnnotation may not be null");
-            this.versionAnnotation = annotation;
             return this;
         }
 

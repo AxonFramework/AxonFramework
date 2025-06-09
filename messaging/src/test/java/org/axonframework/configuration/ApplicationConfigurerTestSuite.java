@@ -17,11 +17,13 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -31,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -67,6 +70,10 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
      */
     public abstract C createConfigurer();
 
+    protected record TestComponent(String state) {
+
+    }
+
     protected static class TestModule extends BaseModule<TestModule> {
 
         protected TestModule(String name) {
@@ -74,8 +81,55 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
     }
 
-    protected record TestComponent(String state) {
+    protected static class TestComponentFactory implements ComponentFactory<TestComponent> {
 
+        private final String state;
+        private final AtomicBoolean construct;
+        private final AtomicBoolean shutdownInvoked;
+
+        private TestComponentFactory(String state) {
+            this(state, new AtomicBoolean(true));
+        }
+
+        private TestComponentFactory(String state, AtomicBoolean construct) {
+            this(state, construct, new AtomicBoolean(false));
+        }
+
+        private TestComponentFactory(String state, AtomicBoolean construct, AtomicBoolean shutdownInvoked) {
+            this.state = state;
+            this.construct = construct;
+            this.shutdownInvoked = shutdownInvoked;
+        }
+
+        @Nonnull
+        @Override
+        public Class<TestComponent> forType() {
+            return TestComponent.class;
+        }
+
+        @Nonnull
+        @Override
+        public Optional<Component<TestComponent>> construct(@Nonnull String name,
+                                                            @Nonnull Configuration config) {
+            if (construct.get()) {
+                return Optional.of(new InstantiatedComponentDefinition<>(
+                        new Component.Identifier<>(forType(), name),
+                        new TestComponent(state)
+                ));
+            }
+
+            return Optional.empty();
+        }
+
+        @Override
+        public void registerShutdownHandlers(@Nonnull LifecycleRegistry registry) {
+            registry.onShutdown(() -> shutdownInvoked.set(true));
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            // Nothing to do here
+        }
     }
 
     @Nested
@@ -300,7 +354,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
     }
 
-    @Nested class ComponentDecorationFailures {
+    @Nested
+    class ComponentDecorationFailures {
 
         @Test
         void registerDecoratorThrowsNullPointerExceptionForNullType() {
@@ -338,7 +393,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
     }
 
-    @Nested class EnhancerRegistration {
+    @Nested
+    class EnhancerRegistration {
 
         @Test
         void registerEnhancerThrowsNullPointerExceptionForNullEnhancer() {
@@ -741,6 +797,95 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
     }
 
     @Nested
+    class FactoryRegistration {
+
+        @Test
+        void factoryIsNotConsultedWhenComponentForTypeAndNameIsAlreadyPresent() {
+            TestComponent expectedComponent = new TestComponent("state");
+            TestComponent expectedNamedComponent = new TestComponent("named");
+            TestComponentFactory testFactory = spy(new TestComponentFactory("constructed"));
+
+            testSubject.componentRegistry(
+                    registry -> registry.registerComponent(TestComponent.class, c -> expectedComponent)
+                                        .registerComponent(TestComponent.class, "name", c -> expectedNamedComponent)
+                                        .registerFactory(testFactory)
+            );
+
+            AxonConfiguration config = testSubject.build();
+
+            assertEquals(expectedComponent, config.getComponent(TestComponent.class));
+            assertEquals(expectedNamedComponent, config.getComponent(TestComponent.class, "name"));
+            verify(testFactory).registerShutdownHandlers(any());
+            verifyNoMoreInteractions(testFactory);
+        }
+
+        @Test
+        void factoryIsConsultedOnceWhenThereIsNoComponentForTypeAndName() {
+            String expectedState = "constructed";
+            TestComponentFactory testFactory = spy(new TestComponentFactory(expectedState));
+
+            testSubject.componentRegistry(registry -> registry.registerFactory(testFactory));
+
+            AxonConfiguration config = testSubject.build();
+
+            TestComponent resultComponent = config.getComponent(TestComponent.class);
+            assertEquals(expectedState, resultComponent.state());
+            // Second retrieval should return same object since first invocation should register the object.
+            assertSame(resultComponent, config.getComponent(TestComponent.class));
+            verify(testFactory, times(1)).construct(any(), any());
+            assertNotSame(resultComponent, config.getComponent(TestComponent.class, "another-instance"));
+            verify(testFactory, times(2)).construct(any(), any());
+        }
+
+        @Test
+        void factoryIsConsultedButMayReturnNothingWhenThereIsNoComponentForTypeAndName() {
+            String expectedState = "constructed";
+            TestComponentFactory testFactory = spy(new TestComponentFactory(expectedState, new AtomicBoolean(false)));
+
+            testSubject.componentRegistry(registry -> registry.registerFactory(testFactory));
+
+            AxonConfiguration config = testSubject.build();
+
+            assertFalse(config.getOptionalComponent(TestComponent.class).isPresent());
+            assertFalse(config.getOptionalComponent(TestComponent.class).isPresent());
+            assertFalse(config.getOptionalComponent(TestComponent.class, "name").isPresent());
+            assertFalse(config.getOptionalComponent(TestComponent.class, "name").isPresent());
+            verify(testFactory, times(4)).construct(any(), any());
+        }
+
+        @Test
+        void getOrDefaultConsultsFactoryBeforeInvokingDefaultSupplier() {
+            AtomicBoolean invoked = new AtomicBoolean(false);
+            TestComponent expectedDefaultComponent = new TestComponent("default");
+            String expectedFactoryState = "constructed";
+            AtomicBoolean constructSwitch = new AtomicBoolean(true);
+            TestComponentFactory testFactory = spy(new TestComponentFactory(expectedFactoryState, constructSwitch));
+
+            testSubject.componentRegistry(registry -> registry.registerFactory(testFactory));
+
+            AxonConfiguration config = testSubject.build();
+
+            TestComponent result = config.getComponent(TestComponent.class, "first", () -> {
+                invoked.set(true);
+                return expectedDefaultComponent;
+            });
+            assertFalse(invoked.get());
+            assertNotEquals(expectedDefaultComponent, result);
+            assertEquals(expectedFactoryState, result.state());
+            // Turn the factory off. This should trigger the default supplier.
+            constructSwitch.set(false);
+            result = config.getComponent(TestComponent.class, "second", () -> {
+                invoked.set(true);
+                return expectedDefaultComponent;
+            });
+            assertTrue(invoked.get());
+            assertEquals(expectedDefaultComponent, result);
+            assertNotEquals(expectedFactoryState, result.state());
+            verify(testFactory, times(2)).construct(any(), any());
+        }
+    }
+
+    @Nested
     class Lifecycle {
 
         @Test
@@ -1062,6 +1207,22 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(handler1Invoked.get()));
 
             t.join();
+        }
+
+        @Test
+        void factoryRegisteredShutdownHandlersAreInvoked() {
+            // given...
+            AtomicBoolean shutdownInvoked = new AtomicBoolean(false);
+            testSubject.componentRegistry(registry -> registry.registerFactory(new TestComponentFactory(
+                    "constructed", new AtomicBoolean(true), shutdownInvoked
+            )));
+            AxonConfiguration config = testSubject.start();
+            // when...
+            config.shutdown();
+            // then...
+            await("Await until factory shutdown handler was invoked").pollDelay(Duration.ofMillis(50))
+                                                                     .atMost(Duration.ofSeconds(5))
+                                                                     .until(shutdownInvoked::get);
         }
 
         @FunctionalInterface

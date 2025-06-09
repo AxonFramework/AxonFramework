@@ -44,7 +44,7 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
  * @since 3.0
  * @deprecated In favor of the {@link UnitOfWork}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitOfWork<T> {
 
     private final List<MessageProcessingContext<T>> processingContexts;

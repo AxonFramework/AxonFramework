@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 
 /**
  * Definition for a constructor-based {@link EventSourcedEntityFactory} for an {@link EventSourcedEntity} annotated
@@ -40,6 +41,6 @@ public class ConstructorBasedEventSourcedEntityFactoryDefinition
             @Nonnull Class<Object> idType,
             @Nonnull Configuration configuration
     ) {
-        return new ConstructorBasedEventSourcedEntityFactory();
+        return new ConstructorBasedEventSourcedEntityFactory(entityType);
     }
 }

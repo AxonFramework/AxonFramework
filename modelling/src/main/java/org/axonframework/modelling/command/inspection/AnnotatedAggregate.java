@@ -307,7 +307,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     /**
      * Returns the last sequence of any event published, or {@code null} if no events have been published yet. If
-     * sequences aren't enabled for this Aggregate, the this method will also return null;
+     * sequences aren't enabled for this Aggregate, this method will also return null.
      *
      * @return the last sequence of any event published, or {@code null} if no events have been published yet
      */
@@ -493,7 +493,6 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @return the resulting message
      */
     protected <P> EventMessage<P> createMessage(P payload, MetaData metaData) {
-        // TODO #3068 - This operation should expect the MessageType as well. Omitted from #3085 for brevity.
         MessageType type = new MessageType(payload.getClass());
         if (lastKnownSequence != null) {
             String aggregateType = inspector.declaredType(rootType())
@@ -566,7 +565,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
 
         @Override
-        public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, ?> newMetaData) {
+        public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, String> newMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(
@@ -582,7 +581,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
 
         @Override
-        public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, ?> additionalMetaData) {
+        public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(

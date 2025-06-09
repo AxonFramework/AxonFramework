@@ -30,8 +30,9 @@ import java.util.Set;
 /**
  * The model of an entity, containing the information needed to handle commands and events for a specific entity type
  * {@code E}. An {@link EntityModel} can be created through the builder by using the {@link #forEntityType(Class)}
- * method. The model can then be used to handle commands and events for an entity instance through the {@link #handle}
- * and {@link #evolve} methods.
+ * method. The model can then be used to handle commands and events for an entity. If the entity already exists,
+ * the {@link #handleInstance} method should be used to handle commands for the entity. If the entity is new,
+ * the {@link #handleCreate} method should be used to handle commands for creating the entity.
  *
  * @param <E> The type of the entity modeled by this interface.
  * @author Mitchell Herrijgers
@@ -48,9 +49,31 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
     Class<E> entityType();
 
     /**
+     * Handles the given {@link CommandMessage} as the creation of a new entity. It is up to the registered command
+     * handler to create the entity.
+     * <p>
+     * This method is used to handle commands for new entities. If you want to handle commands for existing entities,
+     * use the {@link #handleInstance} method instead. If the command handler is only known as an instance command
+     * handler and this method is called, it will result in a failed message stream.
+     *
+     * @param message The {@link CommandMessage} to handle.
+     * @param context The {@link ProcessingContext} for the command.
+     * @return A stream with a message containing the result of the command handling, which may be a
+     * {@link CommandResultMessage} or an error message.
+     */
+    @Nonnull
+    MessageStream.Single<CommandResultMessage<?>> handleCreate(
+            @Nonnull CommandMessage<?> message, @Nonnull ProcessingContext context
+    );
+
+    /**
      * Handles the given {@link CommandMessage} for the given {@code entity}. If any of its children can handle the
      * command, it will be delegated to them. Otherwise, the command will be handled by this model. If the command is
      * not handled by this model or any of its children, an {@link MessageStream#failed(Throwable)} will be returned.
+     * <p>
+     * This method is used to handle commands for existing entities. If you want to handle commands for new entities,
+     * use the {@link #handleCreate} method instead. If the command handler is only known as a creational command
+     * handler and this method is called, it will result in a failed message stream.
      *
      * @param message The {@link CommandMessage} to handle.
      * @param entity  The entity instance to handle the command for.
@@ -59,12 +82,34 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      * {@link CommandResultMessage} or an error message.
      */
     @Nonnull
-    MessageStream.Single<CommandResultMessage<?>> handle(
+    MessageStream.Single<CommandResultMessage<?>> handleInstance(
             @Nonnull CommandMessage<?> message, @Nonnull E entity, @Nonnull ProcessingContext context
     );
 
     /**
-     * Returns the set of all {@link QualifiedName QualifiedNames} that this model supports for command handlers.
+     * Returns the set of all {@link QualifiedName QualifiedNames} that this model supports for creating entities. These
+     * are the commands types that can be used to create an entity of this type through the {@link #handleCreate}
+     * method.
+     *
+     * @return A set of {@link QualifiedName} instances representing the supported command names.
+     */
+    @Nonnull
+    Set<QualifiedName> supportedCreationalCommands();
+
+    /**
+     * Returns the set of all {@link QualifiedName QualifiedNames} that this model supports for instance commands. These
+     * are the command types that can be used on entity instances of this type through the {@link #handleInstance}
+     * method.
+     *
+     * @return A set of {@link QualifiedName} instances representing the supported command names.
+     */
+    @Nonnull
+    Set<QualifiedName> supportedInstanceCommands();
+
+    /**
+     * Returns the set of all {@link QualifiedName QualifiedNames} that this model supports for command handlers, both
+     * creational and instance commands. This is the union of the {@link #supportedCreationalCommands()} and
+     * {@link #supportedInstanceCommands()} methods.
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */

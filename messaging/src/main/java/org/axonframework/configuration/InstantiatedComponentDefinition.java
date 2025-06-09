@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 
 import java.util.Collections;
@@ -31,7 +32,8 @@ import java.util.Objects;
  * @author Allard Buijze
  * @since 5.0.0
  */
-class InstantiatedComponentDefinition<C> extends AbstractComponent<C, C> {
+@Internal
+public class InstantiatedComponentDefinition<C> extends AbstractComponent<C, C> {
 
     private final C instance;
 
@@ -41,8 +43,8 @@ class InstantiatedComponentDefinition<C> extends AbstractComponent<C, C> {
      * @param identifier The identifier of the component.
      * @param instance   The instance the components resolves to.
      */
-    InstantiatedComponentDefinition(@Nonnull Component.Identifier<C> identifier,
-                                    @Nonnull C instance) {
+    public InstantiatedComponentDefinition(@Nonnull Component.Identifier<C> identifier,
+                                           @Nonnull C instance) {
         super(identifier, Collections.emptyList(), Collections.emptyList());
         this.instance = Objects.requireNonNull(instance, "The instance must not be null.");
     }

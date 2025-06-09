@@ -151,7 +151,7 @@ import static org.axonframework.util.HandlerTypeResolver.*;
  * @deprecated In favor of using the {@link org.axonframework.configuration.ApplicationConfigurer} with additional
  * modules.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -220,7 +220,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
         components.put(EventUpcaster.class, upcasterChain);
         components.put(EventGateway.class, new Component<>(config, "eventGateway", this::defaultEventGateway));
-        components.put(TagsConfiguration.class, new Component<>(config, "tags", c -> new TagsConfiguration()));
         components.put(Snapshotter.class, new Component<>(config, "snapshotter", this::defaultSnapshotter));
         components.put(SpanFactory.class, new Component<>(config, "spanFactory", this::defaultSpanFactory));
         components.put(SnapshotterSpanFactory.class,

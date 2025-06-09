@@ -93,7 +93,7 @@ class AnnotatedSagaTest {
     @Test
     void invokeSagaMetaDataAssociationResolver() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        Map<String, Object> metaData = new HashMap<>();
+        Map<String, String> metaData = new HashMap<>();
         metaData.put("propertyName", "id");
         EventMessage<EventWithoutProperties> eventWithMetadata = new GenericEventMessage<>(
                 new MessageType("event"), new EventWithoutProperties(), new MetaData(metaData)

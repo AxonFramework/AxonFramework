@@ -28,7 +28,7 @@ import java.util.concurrent.Callable;
  *
  * @deprecated In favor of a multitude of operation, differing per method.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public abstract class AggregateLifecycle extends Scope {
 
     /**
@@ -46,7 +46,7 @@ public abstract class AggregateLifecycle extends Scope {
      * @see ApplyMore
      * @deprecated In favor of {@link org.axonframework.eventhandling.gateway.EventAppender#append(List)}
      */
-    @Deprecated(since = "5.0.0")
+    @Deprecated(since = "5.0.0", forRemoval = true)
     public static ApplyMore apply(Object payload, MetaData metaData) {
         return AggregateLifecycle.getInstance().doApply(payload, metaData);
     }
@@ -65,7 +65,7 @@ public abstract class AggregateLifecycle extends Scope {
      * @see ApplyMore
      * @deprecated In favor of {@link org.axonframework.eventhandling.gateway.EventAppender#append(List)}
      */
-    @Deprecated(since = "5.0.0")
+    @Deprecated(since = "5.0.0", forRemoval = true)
     public static ApplyMore apply(Object payload) {
         return AggregateLifecycle.getInstance().doApply(payload, MetaData.emptyInstance());
     }

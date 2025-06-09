@@ -135,7 +135,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     @Override
-    public GrpcBackedQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GrpcBackedQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GrpcBackedQueryUpdateMessage<>(queryUpdate,
                                                   serializedPayload,
                                                   exception,
@@ -144,7 +144,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     @Override
-    public GrpcBackedQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public GrpcBackedQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData) {
         return withMetaData(getMetaData().mergedWith(metaData));
     }
 }

@@ -37,7 +37,7 @@ import java.util.Map;
 public class GenericResetContext<P> extends MessageDecorator<P> implements ResetContext<P> {
 
     /**
-     * Constructs a {@link GenericResetContext} for the given {@code type} and {@code payload}.
+     * Constructs a {@code GenericResetContext} for the given {@code type} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
@@ -50,7 +50,7 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
     }
 
     /**
-     * Constructs a {@link GenericResetContext} for the given {@code type}, {@code payload}, and {@code metaData}.
+     * Constructs a {@code GenericResetContext} for the given {@code type}, {@code payload}, and {@code metaData}.
      *
      * @param type     The {@link MessageType type} for this {@link ResetContext}.
      * @param payload  The payload of type {@code P} for this {@link ResetContext}.
@@ -58,12 +58,12 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
      */
     public GenericResetContext(@Nonnull MessageType type,
                                @Nullable P payload,
-                               @Nonnull Map<String, ?> metaData) {
+                               @Nonnull Map<String, String> metaData) {
         this(new GenericMessage<>(type, payload, metaData));
     }
 
     /**
-     * Constructs a {@link GenericResetContext} for the given {@code delegate}, intended to reconstruct another
+     * Constructs a {@code GenericResetContext} for the given {@code delegate}, intended to reconstruct another
      * {@link ResetContext}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -78,12 +78,12 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
     }
 
     @Override
-    public GenericResetContext<P> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericResetContext<P> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericResetContext<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public GenericResetContext<P> andMetaData(@Nonnull Map<String, ?> additionalMetaData) {
+    public GenericResetContext<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new GenericResetContext<>(getDelegate().andMetaData(additionalMetaData));
     }
 

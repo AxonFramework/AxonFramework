@@ -37,7 +37,7 @@ import java.util.Map;
 public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> implements QueryResponseMessage<R> {
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type} and {@code payload}.
+     * Constructs a {@code GenericQueryResponseMessage} for the given {@code type} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
@@ -51,13 +51,13 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type} and {@code payload}.
+     * Constructs a {@code GenericQueryResponseMessage} for the given {@code type} and {@code payload}.
      * <p>
      * This constructor allows the actual result to be {@code null}. The {@link MetaData} defaults to an empty
      * instance.
      *
      * @param type   The {@link MessageType type} for this {@link QueryResponseMessage}.
-     * @param result The result of type {@code R} for this {@link GenericQueryResponseMessage}. May be {@code null}.
+     * @param result The result of type {@code R} for this {@code GenericQueryResponseMessage}. May be {@code null}.
      * @deprecated In favor of {@link #GenericQueryResponseMessage(MessageType, Object)} once the
      * {@code declaredPayloadType} is removed completely.
      */
@@ -69,7 +69,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type} and {@code exception}.
+     * Constructs a {@code GenericQueryResponseMessage} for the given {@code type} and {@code exception}.
      *
      * @param type      The {@link MessageType type} for this {@link QueryResponseMessage}.
      * @param exception The {@link Throwable} describing the error representing the response of this
@@ -82,29 +82,29 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type}, {@code result}, and
+     * Constructs a {@code GenericQueryResponseMessage} for the given {@code type}, {@code result}, and
      * {@code metaData}.
      * <p>
      * This constructor allows the actual result to be {@code null}.
      *
      * @param type     The {@link MessageType type} for this {@link QueryResponseMessage}.
-     * @param result   The result of type {@code R} for this {@link GenericQueryResponseMessage}. May be {@code null}.
+     * @param result   The result of type {@code R} for this {@code GenericQueryResponseMessage}. May be {@code null}.
      * @param metaData The metadata for this {@link QueryResponseMessage}.
      */
     public GenericQueryResponseMessage(@Nonnull MessageType type,
                                        @Nullable R result,
-                                       @Nonnull Map<String, ?> metaData) {
+                                       @Nonnull Map<String, String> metaData) {
         super(new GenericMessage<>(type, result, metaData));
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type}, {@code result}, and
+     * Constructs a {@code GenericQueryResponseMessage} for the given {@code type}, {@code result}, and
      * {@code metaData}.
      * <p>
      * This constructor allows the actual result to be {@code null}.
      *
      * @param type     The {@link MessageType type} for this {@link QueryResponseMessage}.
-     * @param result   The result of type {@code R} for this {@link GenericQueryResponseMessage}. May be {@code null}.
+     * @param result   The result of type {@code R} for this {@code GenericQueryResponseMessage}. May be {@code null}.
      * @param metaData The metadata for this {@link QueryResponseMessage}.
      * @deprecated In favor of {@link #GenericQueryResponseMessage(MessageType, Object, Map)} once the
      * {@code declaredPayloadType} is removed completely.
@@ -118,7 +118,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type}, {@code exception}, and
+     * Constructs a {@code GenericQueryResponseMessage} for the given {@code type}, {@code exception}, and
      * {@code metaData}.
      *
      * @param type      The {@link MessageType type} for this {@link QueryResponseMessage}.
@@ -137,7 +137,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code delegate}, intended to reconstruct another
+     * Constructs a {@code GenericQueryResponseMessage} for the given {@code delegate}, intended to reconstruct another
      * {@link QueryResponseMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -152,7 +152,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code delegate} and {@code exception} as a cause
+     * Constructs a {@code GenericQueryResponseMessage} for the given {@code delegate} and {@code exception} as a cause
      * for the failure, intended to reconstruct another {@link QueryResponseMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -170,12 +170,12 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     @Override
-    public GenericQueryResponseMessage<R> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericQueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericQueryResponseMessage<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public GenericQueryResponseMessage<R> andMetaData(@Nonnull Map<String, ?> additionalMetaData) {
+    public GenericQueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new GenericQueryResponseMessage<>(getDelegate().andMetaData(additionalMetaData));
     }
 }

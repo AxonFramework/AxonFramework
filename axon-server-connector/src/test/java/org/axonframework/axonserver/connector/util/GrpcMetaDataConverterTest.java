@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,11 +148,10 @@ class GrpcMetaDataConverterTest {
         TestObject testObject = new TestObject("some-text");
         MetaDataValue testMetaData = testSubject.convertToMetaDataValue(testObject);
 
-        Object resultObject = testSubject.convertFromMetaDataValue(testMetaData);
+        String result = testSubject.convertFromMetaDataValue(testMetaData);
 
         verify(serializer).deserialize(isA(GrpcSerializedObject.class));
-        assertTrue(resultObject instanceof TestObject);
-        assertEquals(testObject, resultObject);
+        assertEquals(testObject.toString(), result);
     }
 
     @Test
@@ -164,30 +163,26 @@ class GrpcMetaDataConverterTest {
 
     @Test
     void convertFromDoubleMetaDataValue() {
-        Double expected = 10d;
+        double expected = 10d;
         MetaDataValue testMetaData = MetaDataValue.newBuilder()
                                                   .setDoubleValue(expected)
                                                   .build();
 
-        Object resultObject = testSubject.convertFromMetaDataValue(testMetaData);
+        String result = testSubject.convertFromMetaDataValue(testMetaData);
 
-        assertTrue(resultObject instanceof Double);
-        Double result = (Double) resultObject;
-        assertEquals(expected, result);
+        assertEquals(Double.toString(expected), result);
     }
 
     @Test
     void convertFromNumberMetaDataValue() {
-        Long expected = 10L;
+        long expected = 10L;
         MetaDataValue testMetaData = MetaDataValue.newBuilder()
                                                   .setNumberValue(expected)
                                                   .build();
 
-        Object resultObject = testSubject.convertFromMetaDataValue(testMetaData);
+        String result = testSubject.convertFromMetaDataValue(testMetaData);
 
-        assertTrue(resultObject instanceof Long);
-        Long result = (Long) resultObject;
-        assertEquals(expected, result);
+        assertEquals(Long.toString(expected), result);
     }
 
     @Test
@@ -196,11 +191,9 @@ class GrpcMetaDataConverterTest {
                                                   .setBooleanValue(true)
                                                   .build();
 
-        Object resultObject = testSubject.convertFromMetaDataValue(testMetaData);
+        String result = testSubject.convertFromMetaDataValue(testMetaData);
 
-        assertTrue(resultObject instanceof Boolean);
-        Boolean result = (Boolean) resultObject;
-        assertTrue(result);
+        assertEquals("true", result);
     }
 
     @Test

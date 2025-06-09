@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.eventsourcing.CriteriaResolver;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstreaming.EventCriteria;
 

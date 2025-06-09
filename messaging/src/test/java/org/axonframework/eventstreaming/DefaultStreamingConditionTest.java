@@ -49,6 +49,7 @@ class DefaultStreamingConditionTest {
 
     @Test
     void throwsExceptionWhenConstructingWithNullCriteria() {
+        //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> new DefaultStreamingCondition(TEST_POSITION, null));
     }
 
@@ -60,7 +61,8 @@ class DefaultStreamingConditionTest {
 
     @Test
     void withCriteriaCombinesGivenWithExistingCriteria() {
-        EventCriteria testCriteria = EventCriteria.havingTags(new Tag("other-key", "other-value")).andBeingOneOfTypes("test-type");
+        EventCriteria testCriteria = EventCriteria.havingTags(new Tag("other-key", "other-value"))
+                                                  .andBeingOneOfTypes("test-type");
 
         StreamingCondition result = testSubject.or(testCriteria);
 

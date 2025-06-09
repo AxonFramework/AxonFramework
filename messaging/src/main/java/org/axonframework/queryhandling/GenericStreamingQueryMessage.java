@@ -120,13 +120,13 @@ public class GenericStreamingQueryMessage<P, R>
     }
 
     @Override
-    public StreamingQueryMessage<P, R> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public StreamingQueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericStreamingQueryMessage<>(getDelegate().withMetaData(metaData),
                                                   getResponseType());
     }
 
     @Override
-    public StreamingQueryMessage<P, R> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public StreamingQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericStreamingQueryMessage<>(getDelegate().andMetaData(metaData),
                                                   getResponseType());
     }

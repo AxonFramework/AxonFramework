@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ public interface WhenState {
 
     /**
      * Use this method to indicate that an aggregate with given identifier should publish certain events, <em>while
-     * recording the outcome</em>. In contrast to the {@link FixtureConfiguration#givenAggregate(String)} given} and
-     * {@link org.axonframework.test.saga.ContinuedGivenState#andThenAggregate(String)} andThen} methods, this method
+     * recording the outcome</em>. In contrast to the {@link FixtureConfiguration#givenAggregate(String) given} and
+     * {@link org.axonframework.test.saga.ContinuedGivenState#andThenAggregate(String) andThen} methods, this method
      * will start recording activity on the EventBus and CommandBus.
      * <p/>
      * Can be chained to build natural sentences:<br/> {@code whenAggregate(someIdentifier).publishes(anEvent)}
@@ -65,10 +65,10 @@ public interface WhenState {
      * reset them yourself if they are manipulated by the Saga in the "given" stage of the test.
      *
      * @param event the event to publish
-     * @param metaData The meta data to attach to the event
+     * @param metaData The metadata to attach to the event
      * @return an object allowing you to verify the test results
      */
-    FixtureExecutionResult whenPublishingA(Object event, Map<String, ?> metaData);
+    FixtureExecutionResult whenPublishingA(Object event, Map<String, String> metaData);
 
     /**
      * Mimic an elapsed time with no relevant activity for the Saga. If any Events are scheduled to be published within

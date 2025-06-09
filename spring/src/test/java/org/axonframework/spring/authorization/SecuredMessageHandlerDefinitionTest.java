@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,8 @@ import org.axonframework.test.aggregate.FixtureConfiguration;
 import org.hamcrest.core.StringStartsWith;
 import org.junit.jupiter.api.*;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.testcontainers.shaded.com.google.common.collect.Sets;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
@@ -45,8 +43,8 @@ class SecuredMessageHandlerDefinitionTest {
     @Test
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void shouldAllowWhenAuthorityMatch() {
-        Map<String, java.util.HashSet<SimpleGrantedAuthority>> metaData = new java.util.HashMap<>();
-        metaData.put("authorities", Sets.newHashSet(new SimpleGrantedAuthority("ROLE_aggregate.create")));
+        Map<String, String> metaData = new java.util.HashMap<>();
+        metaData.put("authorities", new SimpleGrantedAuthority("ROLE_aggregate.create").getAuthority());
         testSubject.givenNoPriorActivity()
                    .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER), metaData)
                    .expectEventsMatching(exactSequenceOf(predicate(
@@ -57,8 +55,8 @@ class SecuredMessageHandlerDefinitionTest {
     @Test
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void shouldDenyWhenAuthorityDoesNotMatch() {
-        Map<String, java.util.HashSet<SimpleGrantedAuthority>> metaData = new java.util.HashMap<>();
-        metaData.put("authorities", Sets.newHashSet(new SimpleGrantedAuthority("ROLE_anonymous")));
+        Map<String, String> metaData = new java.util.HashMap<>();
+        metaData.put("authorities", new SimpleGrantedAuthority("ROLE_anonymous").getAuthority());
         testSubject.givenNoPriorActivity()
                    .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER),
                          metaData)
@@ -69,8 +67,8 @@ class SecuredMessageHandlerDefinitionTest {
     @Test
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void shouldAllowUnannotatedMethods() {
-        Map<String, Set<SimpleGrantedAuthority>> metaData = new java.util.HashMap<>();
-        metaData.put("authorities", Sets.newHashSet(new SimpleGrantedAuthority("ROLE_anonymous")));
+        Map<String, String> metaData = new java.util.HashMap<>();
+        metaData.put("authorities", new SimpleGrantedAuthority("ROLE_anonymous").getAuthority());
         testSubject.given(new AggregateCreatedEvent(TEST_AGGREGATE_IDENTIFIER))
                    .when(new UpdateAggregateCommand(TEST_AGGREGATE_IDENTIFIER), metaData)
                    .expectEventsMatching(exactSequenceOf(predicate(

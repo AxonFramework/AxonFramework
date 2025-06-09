@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public interface DomainEventMessage<P> extends EventMessage<P> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    DomainEventMessage<P> withMetaData(@Nonnull Map<String, ?> metaData);
+    DomainEventMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     /**
      * Returns a copy of this DomainEventMessage with its MetaData merged with the given {@code metaData}. The payload,
@@ -80,5 +80,5 @@ public interface DomainEventMessage<P> extends EventMessage<P> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    DomainEventMessage<P> andMetaData(@Nonnull Map<String, ?> metaData);
+    DomainEventMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
 }
