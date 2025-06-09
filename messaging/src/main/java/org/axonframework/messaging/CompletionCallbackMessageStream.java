@@ -70,6 +70,15 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
         return next;
     }
 
+    @Override
+    public Optional<Entry<M>> peek() {
+        Optional<Entry<M>> peek = delegate.peek();
+        if (peek.isEmpty()) {
+            invokeOnCompleted();
+        }
+        return peek;
+    }
+
     private void invokeOnCompleted() {
         if (delegate.isCompleted() && delegate.error().isEmpty() && !invoked.getAndSet(true)) {
             completeHandler.run();
