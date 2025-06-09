@@ -229,7 +229,6 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
                          logger.debug("Skipping registration of command handler for [{}] on [{}] (already registered by parent)", qualifiedName, entityType);
                          return;
                      }
-                     logger.debug("Registering handler for message type [{}] (payload: {}) on entity [{}]", qualifiedName, handler.payloadType().getName(), entityType);
                      addPayloadTypeFromHandler(qualifiedName, handler);
                      addCommandHandlerToModel(builder, handler, qualifiedName, registeredCommands);
                  });
