@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.commands;
+package org.axonframework.modelling.entity.domain.development.commands;
 
-public record RemoveDeveloperFromProject(
+
+import org.axonframework.modelling.annotation.TargetEntityId;
+
+public record RenameProjectCommand(
+        @TargetEntityId
         String projectId,
-        String email
+        String name
 ) {
 
 }

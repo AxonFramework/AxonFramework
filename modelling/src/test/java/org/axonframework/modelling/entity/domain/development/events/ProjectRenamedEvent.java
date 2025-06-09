@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.commands;
+package org.axonframework.modelling.entity.domain.development.events;
 
-
-import org.axonframework.modelling.annotation.TargetEntityId;
-import org.axonframework.modelling.entity.domain.common.ProjectType;
-
-public record RenameProjectCommand(
-        @TargetEntityId
+public record ProjectRenamedEvent(
         String projectId,
         String name
 ) {

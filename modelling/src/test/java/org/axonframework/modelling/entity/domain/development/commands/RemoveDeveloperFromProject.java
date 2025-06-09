@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.commands;
+package org.axonframework.modelling.entity.domain.development.commands;
 
-public record ChangeDeveloperGithubUsername(
+public record RemoveDeveloperFromProject(
         String projectId,
-        String email,
-        String githubUsername
+        String email
 ) {
 
 }

@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain;
+package org.axonframework.modelling.entity.domain.development.commands;
 
-import org.axonframework.commandhandling.annotation.RoutingKey;
-import org.axonframework.modelling.entity.annotation.EntityMember;
 
-import java.util.List;
+import org.axonframework.modelling.entity.domain.development.common.ProjectType;
 
-public class Milestone {
-    @RoutingKey
-    private String id;
+public record CreateProjectCommand(
+        String name,
+        ProjectType projectType
+) {
 
-    @EntityMember(routingKey = "issueId")
-    private final List<Feature> features;
-
-    public Milestone(List<Feature> features) {
-        this.features = features;
-    }
 }

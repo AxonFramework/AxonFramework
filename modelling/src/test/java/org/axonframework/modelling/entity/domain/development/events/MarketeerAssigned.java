@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.commands;
+package org.axonframework.modelling.entity.domain.development.events;
 
-public record ChangeMarketeerHubspotUsername(
+public record MarketeerAssigned(
         String projectId,
         String email,
         String hubspotUsername

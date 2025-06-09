@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain;
+package org.axonframework.modelling.entity.domain.development;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.entity.annotation.EntityMember;
-import org.axonframework.modelling.entity.domain.commands.AssignDeveloperAsLeadDeveloper;
-import org.axonframework.modelling.entity.domain.commands.AssignDeveloperToProject;
-import org.axonframework.modelling.entity.domain.commands.CreateProjectCommand;
-import org.axonframework.modelling.entity.domain.commands.RenameProjectCommand;
-import org.axonframework.modelling.entity.domain.common.ProjectType;
-import org.axonframework.modelling.entity.domain.events.DeveloperAssignedToProject;
-import org.axonframework.modelling.entity.domain.events.LeadDeveloperAssigned;
-import org.axonframework.modelling.entity.domain.events.ProjectCreatedEvent;
-import org.axonframework.modelling.entity.domain.events.ProjectRenamedEvent;
+import org.axonframework.modelling.entity.domain.development.commands.AssignDeveloperAsLeadDeveloper;
+import org.axonframework.modelling.entity.domain.development.commands.AssignDeveloperToProject;
+import org.axonframework.modelling.entity.domain.development.commands.CreateProjectCommand;
+import org.axonframework.modelling.entity.domain.development.commands.RenameProjectCommand;
+import org.axonframework.modelling.entity.domain.development.common.ProjectType;
+import org.axonframework.modelling.entity.domain.development.events.DeveloperAssignedToProject;
+import org.axonframework.modelling.entity.domain.development.events.LeadDeveloperAssigned;
+import org.axonframework.modelling.entity.domain.development.events.ProjectCreatedEvent;
+import org.axonframework.modelling.entity.domain.development.events.ProjectRenamedEvent;
 
 import java.util.ArrayList;
 import java.util.List;

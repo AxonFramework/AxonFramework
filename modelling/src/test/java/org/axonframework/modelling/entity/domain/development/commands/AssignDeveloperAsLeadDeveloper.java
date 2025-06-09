@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain;
+package org.axonframework.modelling.entity.domain.development.commands;
 
-public class InternalProject extends Project {
-    public InternalProject(String projectId, String name) {
-        super(projectId, name);
-    }
+public record AssignDeveloperAsLeadDeveloper(
+        String projectId,
+        String email
+) {
+
 }

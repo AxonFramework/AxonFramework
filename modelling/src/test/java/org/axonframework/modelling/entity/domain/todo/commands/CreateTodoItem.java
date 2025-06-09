@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.commands;
+package org.axonframework.modelling.entity.domain.todo.commands;
 
-public record AssignDeveloperToProject(
-        String projectId,
-        String email,
-        String githubUsername
+public record CreateTodoItem(
+        String id,
+        String description
 ) {
 
 }

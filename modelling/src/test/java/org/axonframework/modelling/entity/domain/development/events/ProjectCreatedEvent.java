@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.events;
+package org.axonframework.modelling.entity.domain.development.events;
 
-public record DeveloperAssignedToProject(
+import org.axonframework.modelling.entity.domain.development.common.ProjectType;
+
+public record ProjectCreatedEvent(
         String projectId,
-        String email,
-        String name
+        String name,
+        ProjectType projectType
 ) {
 
 }

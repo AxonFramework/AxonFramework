@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.commands;
+package org.axonframework.modelling.entity.domain.development.common;
 
-public record AssignMarketeer(
-        String projectId,
-        String email,
-        String hubspotUsername
-) {
-
+public enum ProjectType {
+    OPEN_SOURCE,
+    INTERNAL,
+    UNKNOWN
 }

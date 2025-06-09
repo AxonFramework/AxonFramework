@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.events;
+package org.axonframework.modelling.entity.domain.development.events;
 
-import org.axonframework.modelling.entity.domain.common.ProjectType;
-
-public record ProjectCreatedEvent(
+public record MarketeerHubspotUsernameChanged(
         String projectId,
-        String name,
-        ProjectType projectType
+        String email,
+        String hubspotUsername
 ) {
 
 }

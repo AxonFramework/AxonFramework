@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.events;
+package org.axonframework.modelling.entity.domain.development;
 
-public record ProjectRenamedEvent(
-        String projectId,
-        String name
-) {
-
+public class InternalProject extends Project {
+    public InternalProject(String projectId, String name) {
+        super(projectId, name);
+    }
 }

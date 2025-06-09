@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.events;
+package org.axonframework.modelling.entity.domain.development.commands;
 
-public record LeadDeveloperAssigned(
+public record ChangeMarketeerHubspotUsername(
         String projectId,
-        String email
+        String email,
+        String hubspotUsername
 ) {
 
 }

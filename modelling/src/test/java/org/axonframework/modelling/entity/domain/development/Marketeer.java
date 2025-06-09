@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain;
+package org.axonframework.modelling.entity.domain.development;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.modelling.entity.annotation.EntityMember;
-import org.axonframework.modelling.entity.domain.commands.AssignMarketeer;
-import org.axonframework.modelling.entity.domain.events.MarketeerAssigned;
+import org.axonframework.modelling.entity.domain.development.commands.ChangeMarketeerHubspotUsername;
+import org.axonframework.modelling.entity.domain.development.events.MarketeerHubspotUsernameChanged;
 
-public class OpenSourceProject extends Project {
+public class Marketeer {
+    private final String email;
+    private String hubspotUsername;
 
-    @EntityMember
-    private Marketeer marketeer;
 
-    public OpenSourceProject(String projectId, String name) {
-        super(projectId, name);
+    public Marketeer(String email, String hubspotUsername) {
+        this.email = email;
+        this.hubspotUsername = hubspotUsername;
     }
 
     @CommandHandler
-    public void handle(AssignMarketeer command, EventAppender appender) {
-        appender.append(new MarketeerAssigned(
+    public void handle(ChangeMarketeerHubspotUsername command, EventAppender appender) {
+        appender.append(new MarketeerHubspotUsernameChanged(
                 command.projectId(),
                 command.email(),
                 command.hubspotUsername()
@@ -42,11 +42,15 @@ public class OpenSourceProject extends Project {
     }
 
     @EventHandler
-    public void on(MarketeerAssigned event) {
-        this.marketeer = new Marketeer(event.email(), event.hubspotUsername());
+    public void on(MarketeerHubspotUsernameChanged event) {
+        this.hubspotUsername = event.hubspotUsername();
     }
 
-    public Marketeer getMarketeer() {
-        return marketeer;
+    public String getEmail() {
+        return email;
+    }
+
+    public String getHubspotUsername() {
+        return hubspotUsername;
     }
 }

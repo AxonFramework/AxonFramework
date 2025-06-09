@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.common;
+package org.axonframework.modelling.entity.domain.todo.commands;
 
-public enum ProjectType {
-    OPEN_SOURCE,
-    INTERNAL,
-    UNKNOWN
+public record FinishTodoItem(
+        String todoItemId
+) {
+
 }

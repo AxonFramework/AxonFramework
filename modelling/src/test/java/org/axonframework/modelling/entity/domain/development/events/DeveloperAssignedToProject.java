@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.commands;
+package org.axonframework.modelling.entity.domain.development.events;
 
-public record AssignDeveloperAsLeadDeveloper(
+public record DeveloperAssignedToProject(
         String projectId,
-        String email
+        String email,
+        String name
 ) {
 
 }

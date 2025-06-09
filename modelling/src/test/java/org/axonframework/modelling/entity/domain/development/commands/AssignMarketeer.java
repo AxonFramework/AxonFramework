@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.events;
+package org.axonframework.modelling.entity.domain.development.commands;
 
-public record MarketeerAssigned(
+public record AssignMarketeer(
         String projectId,
         String email,
         String hubspotUsername

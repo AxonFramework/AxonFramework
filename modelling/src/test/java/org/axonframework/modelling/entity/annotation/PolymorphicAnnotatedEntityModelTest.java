@@ -19,25 +19,25 @@ package org.axonframework.modelling.entity.annotation;
 import org.axonframework.modelling.entity.EntityExistsForCreationalCommandHandler;
 import org.axonframework.modelling.entity.WrongPolymorphicEntityTypeException;
 import org.axonframework.modelling.entity.child.ChildAmbiguityException;
-import org.axonframework.modelling.entity.domain.Developer;
-import org.axonframework.modelling.entity.domain.InternalProject;
-import org.axonframework.modelling.entity.domain.Marketeer;
-import org.axonframework.modelling.entity.domain.OpenSourceProject;
-import org.axonframework.modelling.entity.domain.Project;
-import org.axonframework.modelling.entity.domain.commands.AssignDeveloperAsLeadDeveloper;
-import org.axonframework.modelling.entity.domain.commands.AssignDeveloperToProject;
-import org.axonframework.modelling.entity.domain.commands.AssignMarketeer;
-import org.axonframework.modelling.entity.domain.commands.ChangeDeveloperGithubUsername;
-import org.axonframework.modelling.entity.domain.commands.ChangeMarketeerHubspotUsername;
-import org.axonframework.modelling.entity.domain.commands.CreateProjectCommand;
-import org.axonframework.modelling.entity.domain.commands.RenameProjectCommand;
-import org.axonframework.modelling.entity.domain.common.ProjectType;
-import org.axonframework.modelling.entity.domain.events.DeveloperGithubUsernameChanged;
-import org.axonframework.modelling.entity.domain.events.LeadDeveloperAssigned;
-import org.axonframework.modelling.entity.domain.events.MarketeerAssigned;
-import org.axonframework.modelling.entity.domain.events.MarketeerHubspotUsernameChanged;
-import org.axonframework.modelling.entity.domain.events.ProjectCreatedEvent;
-import org.axonframework.modelling.entity.domain.events.ProjectRenamedEvent;
+import org.axonframework.modelling.entity.domain.development.Developer;
+import org.axonframework.modelling.entity.domain.development.InternalProject;
+import org.axonframework.modelling.entity.domain.development.Marketeer;
+import org.axonframework.modelling.entity.domain.development.OpenSourceProject;
+import org.axonframework.modelling.entity.domain.development.Project;
+import org.axonframework.modelling.entity.domain.development.commands.AssignDeveloperAsLeadDeveloper;
+import org.axonframework.modelling.entity.domain.development.commands.AssignDeveloperToProject;
+import org.axonframework.modelling.entity.domain.development.commands.AssignMarketeer;
+import org.axonframework.modelling.entity.domain.development.commands.ChangeDeveloperGithubUsername;
+import org.axonframework.modelling.entity.domain.development.commands.ChangeMarketeerHubspotUsername;
+import org.axonframework.modelling.entity.domain.development.commands.CreateProjectCommand;
+import org.axonframework.modelling.entity.domain.development.commands.RenameProjectCommand;
+import org.axonframework.modelling.entity.domain.development.common.ProjectType;
+import org.axonframework.modelling.entity.domain.development.events.DeveloperGithubUsernameChanged;
+import org.axonframework.modelling.entity.domain.development.events.LeadDeveloperAssigned;
+import org.axonframework.modelling.entity.domain.development.events.MarketeerAssigned;
+import org.axonframework.modelling.entity.domain.development.events.MarketeerHubspotUsernameChanged;
+import org.axonframework.modelling.entity.domain.development.events.ProjectCreatedEvent;
+import org.axonframework.modelling.entity.domain.development.events.ProjectRenamedEvent;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -58,7 +58,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
  *
  * @author Mitchell Herrijgers
  */
-class AnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTest<Project> {
+class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTest<Project> {
 
     @Override
     protected AnnotatedEntityModel<Project> getModel() {

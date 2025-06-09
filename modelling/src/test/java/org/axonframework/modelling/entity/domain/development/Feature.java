@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.events;
+package org.axonframework.modelling.entity.domain.development;
 
-public record DeveloperGithubUsernameChanged(
-        String projectId,
-        String email,
-        String oldGithubUsername,
-        String githubUsername
-) {
+import org.axonframework.commandhandling.annotation.RoutingKey;
+
+public class Feature {
+    @RoutingKey
+    private String id;
 
 }
