@@ -172,4 +172,9 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
         this.closed.set(true);
         onConsumeCallback.get().run();
     }
+
+    @Override
+    public Optional<Entry<M>> peek() {
+        return Optional.ofNullable(queue.peek());
+    }
 }

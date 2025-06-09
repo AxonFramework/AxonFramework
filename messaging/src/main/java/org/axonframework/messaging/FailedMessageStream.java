@@ -106,4 +106,9 @@ class FailedMessageStream<M extends Message<?>> implements MessageStream.Empty<M
     public MessageStream<M> concatWith(@Nonnull MessageStream<M> other) {
         return this;
     }
+
+    @Override
+    public Optional<Entry<M>> peek() {
+        return Optional.empty();
+    }
 }

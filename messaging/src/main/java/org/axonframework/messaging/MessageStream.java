@@ -319,6 +319,14 @@ public interface MessageStream<M extends Message<?>> {
     Optional<Entry<M>> next();
 
     /**
+     * Checks whether or not the next entry in the stream is immediately available. If so, an Optional with the next
+     * entry is returned (without moving the stream pointer), otherwise an empty Optional is returned.
+     *
+     * @return the next entry if immediately available
+     */
+    Optional<Entry<M>> peek();
+
+    /**
      * Registers the callback to invoke when {@link Entry entries} are available for reading or when the stream
      * completes (either normally or with an error). An invocation of this method does not in any way guarantee that
      * entries are indeed available, or that the stream has indeed been completed. Implementations may choose to
