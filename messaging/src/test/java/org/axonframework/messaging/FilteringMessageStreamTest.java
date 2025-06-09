@@ -82,4 +82,30 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
         assertEquals("keep", next.get().message().getPayload());
         assertFalse(after.isPresent());
     }
+
+    @Test
+    void nextSkipsFilteredOutEntriesAndReturnsOnlyMatching() {
+        // #given
+        Message<String> first = new GenericMessage<>(new MessageType("type"), "skip1");
+        Message<String> second = new GenericMessage<>(new MessageType("type"), "keep1");
+        Message<String> third = new GenericMessage<>(new MessageType("type"), "skip2");
+        Message<String> fourth = new GenericMessage<>(new MessageType("type"), "keep2");
+        MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second, third, fourth));
+        FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate,
+                                                                                      entry -> entry.message()
+                                                                                                    .getPayload()
+                                                                                                    .startsWith("keep"));
+
+        // #when & #then
+        Optional<Entry<Message<String>>> firstMatch = stream.next();
+        assertTrue(firstMatch.isPresent());
+        assertEquals("keep1", firstMatch.get().message().getPayload());
+
+        Optional<Entry<Message<String>>> secondMatch = stream.next();
+        assertTrue(secondMatch.isPresent());
+        assertEquals("keep2", secondMatch.get().message().getPayload());
+
+        Optional<Entry<Message<String>>> after = stream.next();
+        assertFalse(after.isPresent());
+    }
 }
