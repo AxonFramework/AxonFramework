@@ -33,7 +33,7 @@ class MetadataContextGetterTest {
 
     private final EventMessage<String> message = asEventMessage("MyEvent")
             .andMetaData(Collections.singletonMap("myKeyOne", "myValueTwo"))
-            .andMetaData(Collections.singletonMap("MyKeyTwo", 2));
+            .andMetaData(Collections.singletonMap("MyKeyTwo", "2"));
 
     @Test
     void shouldReceiveMetadataKeysFromMessage() {

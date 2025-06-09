@@ -38,7 +38,7 @@ class GenericResetContextTest {
     @Test
     void constructor() {
         ResetContext<Object> messageOne = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD);
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         ResetContext<Object> messageTwo = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD, metaDataMap);
         MetaData metaData = MetaData.from(metaDataMap);
         ResetContext<Object> messageThree = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD, metaData);
@@ -63,12 +63,12 @@ class GenericResetContextTest {
 
     @Test
     void withMetaData() {
-        MetaData metaData = MetaData.from(Collections.<String, Object>singletonMap("key", "value"));
+        MetaData metaData = MetaData.from(Collections.singletonMap("key", "value"));
         ResetContext<Object> startMessage = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD, metaData);
 
         ResetContext<Object> messageOne = startMessage.withMetaData(MetaData.emptyInstance());
         ResetContext<Object> messageTwo =
-                startMessage.withMetaData(MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
+                startMessage.withMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(0, messageOne.getMetaData().size());
         assertEquals(1, messageTwo.getMetaData().size());
@@ -76,12 +76,12 @@ class GenericResetContextTest {
 
     @Test
     void andMetaData() {
-        MetaData metaData = MetaData.from(Collections.<String, Object>singletonMap("key", "value"));
+        MetaData metaData = MetaData.from(Collections.singletonMap("key", "value"));
         ResetContext<Object> startMessage = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD, metaData);
 
         ResetContext<Object> messageOne = startMessage.andMetaData(MetaData.emptyInstance());
         ResetContext<Object> messageTwo =
-                startMessage.andMetaData(MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
+                startMessage.andMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(1, messageOne.getMetaData().size());
         assertEquals("value", messageOne.getMetaData().get("key"));

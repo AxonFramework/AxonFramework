@@ -35,7 +35,7 @@ class MetadataSpanAttributesProviderTest {
     void addsAllMetadata() {
         Message<?> message = new GenericEventMessage<>(new MessageType("event"), "MyEvent")
                 .andMetaData(singletonMap("myKeyOne", "valueOne"))
-                .andMetaData(singletonMap("myNumberKey", 2))
+                .andMetaData(singletonMap("myNumberKey", "2"))
                 .andMetaData(singletonMap("someOtherKey_2", "someValue"));
         Map<String, String> map = provider.provideForMessage(message);
         assertEquals(3, map.size());

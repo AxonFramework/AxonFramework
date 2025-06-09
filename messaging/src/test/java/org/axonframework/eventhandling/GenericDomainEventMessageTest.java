@@ -41,7 +41,7 @@ class GenericDomainEventMessageTest {
         DomainEventMessage<Object> message1 = new GenericDomainEventMessage<>(
                 "type", id, seqNo, new MessageType("event"), payload
         );
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         DomainEventMessage<Object> message2 = new GenericDomainEventMessage<>(
                 "type", id, seqNo, new MessageType("event"), payload, metaData
@@ -79,14 +79,14 @@ class GenericDomainEventMessageTest {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<>(
                 "type", id, seqNo, new MessageType("event"), payload, metaData
         );
         GenericDomainEventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
         GenericDomainEventMessage<Object> message2 = message.withMetaData(
-                MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
+                MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(0, message1.getMetaData().size());
         assertEquals(1, message2.getMetaData().size());
@@ -97,14 +97,14 @@ class GenericDomainEventMessageTest {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<>(
                 "type", id, seqNo, new MessageType("event"), payload, metaData
         );
         GenericDomainEventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
         GenericDomainEventMessage<Object> message2 = message.andMetaData(
-                MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
+                MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(1, message1.getMetaData().size());
         assertEquals("value", message1.getMetaData().get("key"));
@@ -113,10 +113,10 @@ class GenericDomainEventMessageTest {
     }
 
     @Test
-    void testToString() {
+    void toStringIsAsExpected() {
         String actual = new GenericDomainEventMessage<>(
                 "AggregateType", "id1", 1, new MessageType("event"), "MyPayload"
-        ).andMetaData(MetaData.with("key", "value").and("key2", 13))
+        ).andMetaData(MetaData.with("key", "value").and("key2", "13"))
          .toString();
         assertTrue(actual.startsWith("GenericDomainEventMessage{type={event#0.0.1}, payload={MyPayload}, metadata={"),
                    "Wrong output: " + actual);
