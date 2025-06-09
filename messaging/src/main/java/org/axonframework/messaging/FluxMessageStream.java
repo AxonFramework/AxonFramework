@@ -125,6 +125,12 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
         }
     }
 
+    @Override
+    public Optional<Entry<M>> peek() {
+        subscribeToSource();
+        return Optional.ofNullable(readAhead.peek());
+    }
+
     private void subscribeToSource() {
         if (!sourceSubscribed.getAndSet(true)) {
             //noinspection ReactiveStreamsSubscriberImplementation
