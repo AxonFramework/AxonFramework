@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+import org.axonframework.eventsourcing.annotation.reflection.InjectEntityId;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
@@ -50,7 +51,7 @@ public abstract class MutablePerson {
     }
 
     @EntityCreator
-    public static MutablePerson create(PersonIdentifier id) {
+    public static MutablePerson create(@InjectEntityId PersonIdentifier id) {
         if (id.type() == PersonType.EMPLOYEE) {
             return new MutableEmployee();
         } else if (id.type() == PersonType.CUSTOMER) {
