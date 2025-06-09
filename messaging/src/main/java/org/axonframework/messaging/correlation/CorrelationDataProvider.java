@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,17 @@
 
 package org.axonframework.messaging.correlation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 
 import java.util.Map;
 
 /**
- * Object defining the data from a Message that should be attached as correlation data to messages generated as result
- * of the processing of that message.
+ * Object defining the data from a {@link Message} that should be attached as correlation data to messages generated as
+ * result of the processing of that message.
  *
  * @author Allard Buijze
- * @since 2.3
+ * @since 2.3.0
  */
 @FunctionalInterface
 public interface CorrelationDataProvider {
@@ -38,8 +39,9 @@ public interface CorrelationDataProvider {
      * back a transaction. Therefore, by default exceptions are caught, ignoring the correlation data that should have
      * been added.
      *
-     * @param message The message to define correlation data for
-     * @return the data to attach as correlation data to generated messages
+     * @param message The message to define correlation data for.
+     * @return The data to attach as correlation data to generated messages.
      */
-    Map<String, ?> correlationDataFor(Message<?> message);
+    @Nonnull
+    Map<String, String> correlationDataFor(@Nonnull Message<?> message);
 }

@@ -65,7 +65,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     /**
-     * Constructs a {@link GenericResultMessage} for the given {@code type}, {@code result}, and {@code metaData}.
+     * Constructs a {@code GenericResultMessage} for the given {@code type}, {@code result}, and {@code metaData}.
      *
      * @param type     The {@link MessageType type} for this {@link ResultMessage}.
      * @param result   The result of type {@code R} for this {@link ResultMessage}.
@@ -73,12 +73,12 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      */
     public GenericResultMessage(@Nonnull MessageType type,
                                 @Nullable R result,
-                                @Nonnull Map<String, ?> metaData) {
+                                @Nonnull Map<String, String> metaData) {
         this(new GenericMessage<>(type, result, metaData));
     }
 
     /**
-     * Constructs a {@link GenericResultMessage} for the given {@code type}, {@code exception}, and {@code metaData}.
+     * Constructs a {@code GenericResultMessage} for the given {@code type}, {@code exception}, and {@code metaData}.
      *
      * @param type      The {@link MessageType type} for this {@link ResultMessage}.
      * @param exception The {@link Throwable} describing the error representing the response of this
@@ -87,12 +87,12 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      */
     public GenericResultMessage(@Nonnull MessageType type,
                                 @Nonnull Throwable exception,
-                                @Nonnull Map<String, ?> metaData) {
+                                @Nonnull Map<String, String> metaData) {
         this(new GenericMessage<>(type, null, metaData), exception);
     }
 
     /**
-     * Constructs a {@link GenericResultMessage} for the given {@code delegate}, intended to reconstruct another
+     * Constructs a {@code GenericResultMessage} for the given {@code delegate}, intended to reconstruct another
      * {@link ResultMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -107,7 +107,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     /**
-     * Constructs a {@link GenericResultMessage} for the given {@code delegate} and {@code exception} as a cause for the
+     * Constructs a {@code GenericResultMessage} for the given {@code delegate} and {@code exception} as a cause for the
      * failure, intended to reconstruct another {@link ResultMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -128,8 +128,8 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     /**
      * Returns the given {@code result} as a {@link ResultMessage} instance. If {@code result} already implements
      * {@link ResultMessage}, it is returned as-is. If {@code result} implements {@link Message}, payload and meta data
-     * will be used to construct new {@link GenericResultMessage}. Otherwise, the given {@code result} is wrapped into a
-     * {@link GenericResultMessage} as its payload.
+     * will be used to construct new {@code GenericResultMessage}. Otherwise, the given {@code result} is wrapped into a
+     * {@code GenericResultMessage} as its payload.
      *
      * @param result the command result to be wrapped as {@link ResultMessage}
      * @param <R>    The type of payload contained in this {@link ResultMessage}.
@@ -192,12 +192,12 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     @Override
-    public GenericResultMessage<R> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericResultMessage<>(getDelegate().withMetaData(metaData), exception);
     }
 
     @Override
-    public GenericResultMessage<R> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericResultMessage<>(getDelegate().andMetaData(metaData), exception);
     }
 

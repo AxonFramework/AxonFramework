@@ -24,7 +24,6 @@ import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.Context.ResourceKey;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.repository.ManagedEntity;
@@ -36,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import static java.util.Objects.requireNonNull;
@@ -160,9 +160,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
                 .source(SourcingCondition.conditionFor(criteriaResolver.resolve(identifier, context)))
                 .reduce(new EventSourcedEntity<>(identifier),
                         (entity, entry) -> {
-                            if (entity.entity() == null) {
-                                createInitialEntityStateBasedOnEvent(identifier, entity, entry, context);
-                            }
+                            entity.ensureInitialState(() -> entityFactory.create(identifier, entry.message()));
                             entity.evolve(entry.message(), entityEvolver, context);
                             return entity;
                         });
@@ -179,16 +177,6 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
             updateActiveEntity(sourcedEntity, processingContext);
             return CompletableFuture.completedFuture(sourcedEntity);
         }).resultNow();
-    }
-
-    private void createInitialEntityStateBasedOnEvent(ID identifier, EventSourcedEntity<ID, E> entity,
-                                                      MessageStream.Entry<? extends EventMessage<?>> entry,
-                                                      ProcessingContext context) {
-        E createdEntity = entityFactory.create(identifier, entry.message(), context);
-        if (createdEntity == null) {
-            throw new EntityMissingAfterFirstEventException(identifier);
-        }
-        entity.applyStateChange(e -> createdEntity);
     }
 
     private void updateActiveEntity(EventSourcedEntity<ID, E> entity, ProcessingContext processingContext,
@@ -239,6 +227,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
 
         private final ID identifier;
         private final AtomicReference<M> currentState;
+        private boolean initialized;
 
         private EventSourcedEntity(ID identifier) {
             this(identifier, null);
@@ -247,6 +236,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         private EventSourcedEntity(ID identifier, M currentState) {
             this.identifier = identifier;
             this.currentState = new AtomicReference<>(currentState);
+            this.initialized = currentState != null;
         }
 
         private static <ID, T> EventSourcedEntity<ID, T> mapToEventSourcedEntity(ManagedEntity<ID, T> entity) {
@@ -270,9 +260,29 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
             return currentState.updateAndGet(change);
         }
 
+        /**
+         * Initialize this entity with an initial state if it has not been initialized yet. This method will set the
+         * current state to the value returned by the given {@code initialState} supplier, and mark the entity as
+         * initialized. After the first invocation, this entity will be considered initialized, and further invocations
+         * will have no effect.
+         *
+         * @param initialStateSupplier The supplier that provides the initial state of the entity.
+         */
+        public void ensureInitialState(Supplier<M> initialStateSupplier) {
+            if (!initialized) {
+                this.initialized = true;
+                M entityInitialState = initialStateSupplier.get();
+                if (entityInitialState == null) {
+                    throw new EntityMissingAfterFirstEventException(identifier);
+                }
+                this.currentState.set(entityInitialState);
+            }
+        }
+
         private M evolve(EventMessage<?> event,
                          EntityEvolver<M> evolver,
                          ProcessingContext processingContext) {
+            this.initialized = true;
             return currentState.updateAndGet(current -> evolver.evolve(current, event, processingContext));
         }
     }

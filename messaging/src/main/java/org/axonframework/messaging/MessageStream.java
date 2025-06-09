@@ -26,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -444,6 +445,18 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
+     * Returns a stream that will filter {@link MessageStream.Entry entries} based on the given {@code filter}.
+     *
+     * @param filter The {@link MessageStream.Entry} predicate, that will filter out entries. Returning {@code true}
+     *               from this lambda will keep the entry, while returning {@code false} will remove it.
+     * @return A stream for which the {@link MessageStream.Entry entries} have been filtered by the given
+     * {@code filter}.
+     */
+    default MessageStream<M> filter(@Nonnull Predicate<Entry<M>> filter) {
+        return new FilteringMessageStream<>(this, filter);
+    }
+
+    /**
      * Returns a stream that concatenates this stream with the given {@code other} stream, if this stream completes
      * successfully.
      * <p>
@@ -545,6 +558,11 @@ public interface MessageStream<M extends Message<?>> {
         @Override
         default <RM extends Message<?>> Single<RM> mapMessage(@Nonnull Function<M, RM> mapper) {
             return map(e -> e.map(mapper));
+        }
+
+        @Override
+        default Single<M> filter(@Nonnull Predicate<Entry<M>> filter) {
+            return new FilteringMessageStream.Single<>(this, filter);
         }
 
         @Override

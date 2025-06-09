@@ -66,7 +66,6 @@ import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.LegacyGenericJpaRepository;
-import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.annotation.QueryHandler;
@@ -268,9 +267,7 @@ class DefaultConfigurerTest {
                                        .configureAggregate(
                                                defaultConfiguration(StubAggregate.class)
                                                        .configureCommandTargetResolver(
-                                                               c -> command -> new VersionedAggregateIdentifier(
-                                                                       command.getPayload(), null
-                                                               )
+                                                               c -> command -> command.getPayload().toString()
                                                        )
                                        )
                                        .registerEventUpcaster(c -> events -> {

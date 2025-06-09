@@ -21,11 +21,11 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.junit.jupiter.api.*;
@@ -53,7 +53,8 @@ class AbstractRepositoryTest {
     @BeforeEach
     void setUp() {
         testSubject = new AbstractLegacyRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
-                new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
+                new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {
+                }) {
 
             @Override
             protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)
@@ -72,7 +73,7 @@ class AbstractRepositoryTest {
             }
 
             @Override
-            protected AnnotatedAggregate<JpaAggregate> doLoad(String aggregateIdentifier, Long expectedVersion) {
+            protected AnnotatedAggregate<JpaAggregate> doLoad(String aggregateIdentifier) {
                 spiedAggregate = spy(AnnotatedAggregate.initialize(new JpaAggregate(), aggregateModel(), null));
 
                 try {
@@ -117,7 +118,8 @@ class AbstractRepositoryTest {
         //noinspection rawtypes
         AbstractLegacyRepository anonymousTestSubject =
                 new AbstractLegacyRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
-                        new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
+                        new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {
+                        }) {
 
                     @Override
                     protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)
@@ -136,8 +138,7 @@ class AbstractRepositoryTest {
                     }
 
                     @Override
-                    protected AnnotatedAggregate<JpaAggregate> doLoad(String aggregateIdentifier,
-                                                                      Long expectedVersion) {
+                    protected AnnotatedAggregate<JpaAggregate> doLoad(String aggregateIdentifier) {
                         return null;
                     }
                 };

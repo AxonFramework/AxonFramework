@@ -16,17 +16,10 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 
@@ -43,7 +36,7 @@ class GenericEventMessageTest {
     void constructor() {
         Object payload = new Object();
         EventMessage<Object> message1 = new GenericEventMessage<>(new MessageType("event"), payload);
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         EventMessage<Object> message2 =
                 new GenericEventMessage<>(new MessageType("event"), payload, metaData);
@@ -71,7 +64,7 @@ class GenericEventMessageTest {
     @Test
     void withMetaData() {
         Object payload = new Object();
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericEventMessage<Object> message =
                 new GenericEventMessage<>(new MessageType("event"), payload, metaData);
@@ -86,7 +79,7 @@ class GenericEventMessageTest {
     @Test
     void andMetaData() {
         Object payload = new Object();
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericEventMessage<Object> message =
                 new GenericEventMessage<>(new MessageType("event"), payload, metaData);
@@ -101,11 +94,14 @@ class GenericEventMessageTest {
     }
 
     @Test
-    void testToString() {
-        String actual = EventTestUtils.asEventMessage("MyPayload").andMetaData(MetaData.with("key", "value")
-                                                                                       .and("key2", 13))
+    void toStringIsAsExpected() {
+        String actual = EventTestUtils.asEventMessage("MyPayload")
+                                      .andMetaData(MetaData.with("key", "value").and("key2", "13"))
                                       .toString();
-        assertTrue(actual.startsWith("GenericEventMessage{type={java.lang.String#0.0.1}, payload={MyPayload}, metadata={"), "Wrong output: " + actual);
+        assertTrue(actual.startsWith(
+                           "GenericEventMessage{type={java.lang.String#0.0.1}, payload={MyPayload}, metadata={"
+                   ),
+                   "Wrong output: " + actual);
         assertTrue(actual.contains("'key'->'value'"), "Wrong output: " + actual);
         assertTrue(actual.contains("'key2'->'13'"), "Wrong output: " + actual);
         assertTrue(actual.contains("', timestamp='"), "Wrong output: " + actual);

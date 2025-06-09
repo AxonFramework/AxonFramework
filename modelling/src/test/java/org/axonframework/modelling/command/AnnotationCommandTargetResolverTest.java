@@ -60,10 +60,9 @@ class AnnotationCommandTargetResolverTest {
                 TEST_COMMAND_TYPE, new MethodDefaultAnnotatedIdCommand(aggregateIdentifier)
         );
 
-        VersionedAggregateIdentifier actual = testSubject.resolveTarget(testCommand);
+        String actual = testSubject.resolveTarget(testCommand);
 
-        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
-        assertNull(actual.getVersion());
+        assertEquals(aggregateIdentifier.toString(), actual);
     }
 
     @SuppressWarnings({"ClassCanBeRecord", "unused"})
@@ -84,72 +83,20 @@ class AnnotationCommandTargetResolverTest {
     @Test
     void resolveTarget_WithAnnotatedMethodAndVersion() {
         final UUID aggregateIdentifier = UUID.randomUUID();
-        CommandMessage<MethodDefaultAnnotatedCommandWithLongVersion> testCommand = new GenericCommandMessage<>(
-                TEST_COMMAND_TYPE,
-                new MethodDefaultAnnotatedCommandWithLongVersion(aggregateIdentifier, 1L)
-        );
+        CommandMessage<MethodDefaultAnnotatedCommand> testCommand =
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new MethodDefaultAnnotatedCommand(aggregateIdentifier));
 
-        VersionedAggregateIdentifier actual = testSubject.resolveTarget(testCommand);
+        String actual = testSubject.resolveTarget(testCommand);
 
-        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
-        assertEquals((Long) 1L, actual.getVersion());
+        assertEquals(aggregateIdentifier.toString(), actual);
     }
 
-    @SuppressWarnings({"ClassCanBeRecord", "unused"})
-    private static class MethodDefaultAnnotatedCommandWithLongVersion {
+    private record MethodDefaultAnnotatedCommand(UUID aggregateIdentifier) {
 
-        private final UUID aggregateIdentifier;
-        private final Long version;
-
-        private MethodDefaultAnnotatedCommandWithLongVersion(UUID aggregateIdentifier, Long version) {
-            this.aggregateIdentifier = aggregateIdentifier;
-            this.version = version;
-        }
-
+        @SuppressWarnings("unused")
         @TargetAggregateIdentifier
         private UUID getIdentifier() {
             return aggregateIdentifier;
-        }
-
-        @TargetAggregateVersion
-        private Long version() {
-            return version;
-        }
-    }
-
-    @Test
-    void resolveTarget_WithAnnotatedMethodAndStringVersion() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
-        CommandMessage<MethodDefaultAnnotatedCommandWithStringVersion> testCommand = new GenericCommandMessage<>(
-                TEST_COMMAND_TYPE,
-                new MethodDefaultAnnotatedCommandWithStringVersion(aggregateIdentifier, "1000230")
-        );
-
-        VersionedAggregateIdentifier actual = testSubject.resolveTarget(testCommand);
-
-        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
-        assertEquals((Long) 1000230L, actual.getVersion());
-    }
-
-    @SuppressWarnings({"ClassCanBeRecord", "unused"})
-    private static class MethodDefaultAnnotatedCommandWithStringVersion {
-
-        private final UUID aggregateIdentifier;
-        private final String version;
-
-        private MethodDefaultAnnotatedCommandWithStringVersion(UUID aggregateIdentifier, String version) {
-            this.aggregateIdentifier = aggregateIdentifier;
-            this.version = version;
-        }
-
-        @TargetAggregateIdentifier
-        private UUID getIdentifier() {
-            return aggregateIdentifier;
-        }
-
-        @TargetAggregateVersion
-        private String version() {
-            return version;
         }
     }
 
@@ -161,138 +108,84 @@ class AnnotationCommandTargetResolverTest {
         assertThrows(IllegalArgumentException.class, () -> testSubject.resolveTarget(testCommand));
     }
 
-    @SuppressWarnings("unused")
     private static class MethodDefaultAnnotatedVoidIdCommand {
 
         private MethodDefaultAnnotatedVoidIdCommand() {
         }
 
+        @SuppressWarnings("unused")
         @TargetAggregateIdentifier
         public void getIdentifier() {
         }
     }
 
     @Test
-    void resolveTarget_WithAnnotatedFields() {
+    void resolveTarget_WithAnnotatedField() {
         final UUID aggregateIdentifier = UUID.randomUUID();
-        final Object version = 1L;
-        CommandMessage<FieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(
-                TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier, version)
-        );
+        CommandMessage<FieldAnnotatedCommand> testCommand =
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier));
 
-        VersionedAggregateIdentifier actual = testSubject.resolveTarget(testCommand);
+        String actual = testSubject.resolveTarget(testCommand);
 
-        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
-        assertEquals(version, actual.getVersion());
+        assertEquals(aggregateIdentifier.toString(), actual);
     }
 
     @Test
     void resolveTarget_WithAnnotatedFields_StringIdentifier() {
         final UUID aggregateIdentifier = UUID.randomUUID();
-        final Object version = 1L;
-        CommandMessage<FieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(
-                TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier, version)
-        );
+        CommandMessage<FieldAnnotatedCommand> testCommand =
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier));
 
-        VersionedAggregateIdentifier actual = testSubject.resolveTarget(testCommand);
+        String actual = testSubject.resolveTarget(testCommand);
 
-        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
-        assertEquals(version, actual.getVersion());
+        assertEquals(aggregateIdentifier.toString(), actual);
     }
 
     @Test
     void resolveTarget_WithAnnotatedFields_ObjectIdentifier() {
         final Object aggregateIdentifier = new Object();
-        final Object version = 1L;
-        CommandMessage<FieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(
-                TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier, version)
-        );
+        CommandMessage<FieldAnnotatedCommand> testCommand =
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier));
 
-        VersionedAggregateIdentifier actual = testSubject.resolveTarget(testCommand);
+        String actual = testSubject.resolveTarget(testCommand);
 
-        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
-        assertEquals(version, actual.getVersion());
+        assertEquals(aggregateIdentifier.toString(), actual);
     }
 
-    @Test
-    void resolveTarget_WithAnnotatedFields_ParsableVersion() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
-        final Object version = "1";
-        CommandMessage<FieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(
-                TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier, version)
-        );
-
-        VersionedAggregateIdentifier actual = testSubject.resolveTarget(testCommand);
-
-        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
-        assertEquals((Long) 1L, actual.getVersion());
-    }
-
-    @Test
-    void resolveTarget_WithAnnotatedFields_NonNumericVersion() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
-        final Object version = "abc";
-        CommandMessage<Object> testCommand = new GenericCommandMessage<>(
-                TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier, version)
-        );
-
-        assertThrows(IllegalArgumentException.class, () -> testSubject.resolveTarget(testCommand));
-    }
-
-    private record FieldAnnotatedCommand(@TargetAggregateIdentifier Object aggregateIdentifier,
-                                         @TargetAggregateVersion Object version) {
+    private record FieldAnnotatedCommand(@TargetAggregateIdentifier Object aggregateIdentifier) {
 
     }
 
     @Test
     void metaAnnotationsOnMethods() {
         final UUID aggregateIdentifier = UUID.randomUUID();
-        final Long version = 98765432109L;
 
-        CommandMessage<MethodMetaAnnotatedCommand> testCommand = new GenericCommandMessage<>(
-                TEST_COMMAND_TYPE, new MethodMetaAnnotatedCommand(aggregateIdentifier, version)
-        );
+        CommandMessage<MethodMetaAnnotatedCommand> testCommand =
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new MethodMetaAnnotatedCommand(aggregateIdentifier));
 
-        VersionedAggregateIdentifier actual = testSubject.resolveTarget(testCommand);
+        String actual = testSubject.resolveTarget(testCommand);
 
-        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
-        assertEquals(version, actual.getVersion());
+        assertEquals(aggregateIdentifier.toString(), actual);
     }
 
-    @SuppressWarnings({"ClassCanBeRecord", "unused"})
-    private static class MethodMetaAnnotatedCommand {
-
-        private final UUID aggregateIdentifier;
-        private final Long version;
-
-        private MethodMetaAnnotatedCommand(UUID aggregateIdentifier, Long version) {
-            this.aggregateIdentifier = aggregateIdentifier;
-            this.version = version;
-        }
+    private record MethodMetaAnnotatedCommand(UUID aggregateIdentifier) {
 
         @MetaTargetAggregateIdentifier
         public UUID getIdentifier() {
             return aggregateIdentifier;
         }
-
-        @MetaTargetAggregateVersion
-        public Long version() {
-            return version;
-        }
     }
 
     @Test
-    void metaAnnotationsOnFields() {
+    void metaAnnotationsOnField() {
         final UUID aggregateIdentifier = UUID.randomUUID();
-        final Long version = 98765432109L;
         CommandMessage<FieldMetaAnnotatedCommand> testCommand = new GenericCommandMessage<>(
-                TEST_COMMAND_TYPE, new FieldMetaAnnotatedCommand(aggregateIdentifier, version)
+                TEST_COMMAND_TYPE, new FieldMetaAnnotatedCommand(aggregateIdentifier)
         );
 
-        VersionedAggregateIdentifier actual = testSubject.resolveTarget(testCommand);
+        String actual = testSubject.resolveTarget(testCommand);
 
-        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
-        assertEquals(version, actual.getVersion());
+        assertEquals(aggregateIdentifier.toString(), actual);
     }
 
     @Test
@@ -301,69 +194,42 @@ class AnnotationCommandTargetResolverTest {
                                                      .targetAggregateIdentifierAnnotation(
                                                              CustomTargetAggregateIdentifier.class
                                                      )
-                                                     .targetAggregateVersionAnnotation(
-                                                             CustomTargetAggregateVersion.class
-                                                     )
                                                      .build();
 
         final UUID aggregateIdentifier = UUID.randomUUID();
-        final Long version = 98765432109L;
-        CommandMessage<MethodCustomAnnotatedCommand> testCommand = new GenericCommandMessage<>(
-                TEST_COMMAND_TYPE, new MethodCustomAnnotatedCommand(aggregateIdentifier, version)
-        );
+        CommandMessage<MethodCustomAnnotatedCommand> testCommand =
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new MethodCustomAnnotatedCommand(aggregateIdentifier));
 
-        VersionedAggregateIdentifier actual = testSubject.resolveTarget(testCommand);
-        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
-        assertEquals(version, actual.getVersion());
+        String actual = testSubject.resolveTarget(testCommand);
+        assertEquals(aggregateIdentifier.toString(), actual);
     }
 
-    @SuppressWarnings({"ClassCanBeRecord", "unused"})
-    private static class MethodCustomAnnotatedCommand {
-
-        private final UUID aggregateIdentifier;
-        private final Long version;
-
-        private MethodCustomAnnotatedCommand(UUID aggregateIdentifier, Long version) {
-            this.aggregateIdentifier = aggregateIdentifier;
-            this.version = version;
-        }
+    private record MethodCustomAnnotatedCommand(UUID aggregateIdentifier) {
 
         @CustomTargetAggregateIdentifier
         public UUID getIdentifier() {
             return aggregateIdentifier;
         }
-
-        @CustomTargetAggregateVersion
-        public Long version() {
-            return version;
-        }
     }
 
     @Test
-    void customAnnotationsOnFields() {
+    void customAnnotationsOnField() {
         testSubject = AnnotationCommandTargetResolver.builder()
                                                      .targetAggregateIdentifierAnnotation(
                                                              CustomTargetAggregateIdentifier.class
                                                      )
-                                                     .targetAggregateVersionAnnotation(
-                                                             CustomTargetAggregateVersion.class
-                                                     )
                                                      .build();
 
         final UUID aggregateIdentifier = UUID.randomUUID();
-        final Long version = 98765432109L;
-        CommandMessage<FieldCustomAnnotatedCommand> testCommand = new GenericCommandMessage<>(
-                TEST_COMMAND_TYPE, new FieldCustomAnnotatedCommand(aggregateIdentifier, version)
-        );
+        CommandMessage<FieldCustomAnnotatedCommand> testCommand =
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new FieldCustomAnnotatedCommand(aggregateIdentifier));
 
-        VersionedAggregateIdentifier actual = testSubject.resolveTarget(testCommand);
+        String actual = testSubject.resolveTarget(testCommand);
 
-        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
-        assertEquals(version, actual.getVersion());
+        assertEquals(aggregateIdentifier.toString(), actual);
     }
 
-    private record FieldMetaAnnotatedCommand(@MetaTargetAggregateIdentifier Object aggregateIdentifier,
-                                             @MetaTargetAggregateVersion Object version) {
+    private record FieldMetaAnnotatedCommand(@MetaTargetAggregateIdentifier Object aggregateIdentifier) {
 
     }
 
@@ -373,24 +239,12 @@ class AnnotationCommandTargetResolverTest {
 
     }
 
-    @Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
-    @Retention(RetentionPolicy.RUNTIME)
-    @TargetAggregateVersion @interface MetaTargetAggregateVersion {
-
-    }
-
-    private record FieldCustomAnnotatedCommand(@CustomTargetAggregateIdentifier Object aggregateIdentifier,
-                                               @CustomTargetAggregateVersion Object version) {
+    private record FieldCustomAnnotatedCommand(@CustomTargetAggregateIdentifier Object aggregateIdentifier) {
 
     }
 
     @Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
     @Retention(RetentionPolicy.RUNTIME) @interface CustomTargetAggregateIdentifier {
-
-    }
-
-    @Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
-    @Retention(RetentionPolicy.RUNTIME) @interface CustomTargetAggregateVersion {
 
     }
 }

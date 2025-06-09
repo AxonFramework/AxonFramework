@@ -48,7 +48,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Allard Buijze
  */
-class EventSourcingRepositoryTest {
+class   EventSourcingRepositoryTest {
 
     private static final Set<Tag> TEST_TAGS = Set.of(new Tag("aggregateId", "id"));
     private static final EventCriteria TEST_CRITERIA = EventCriteria.havingTags("aggregateId", "id");

@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
@@ -78,7 +78,7 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
     }
 
     @Override
-    public ComponentFactory<Repository<I, E>> repository() {
+    public ComponentBuilder<Repository<I, E>> repository() {
         return c -> {
             CriteriaResolver<I> criteriaResolver = criteriaResolverDefinition
                     .createEventCriteriaResolver(entityType, idType, c);

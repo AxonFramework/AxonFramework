@@ -98,7 +98,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * @since 3.0
  * @deprecated In favor of the {@code LegacyJdbcEventStorageEngine}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

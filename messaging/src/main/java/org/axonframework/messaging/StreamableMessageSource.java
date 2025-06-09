@@ -29,7 +29,7 @@ import jakarta.annotation.Nullable;
  * @author Rene de Waele
  *@deprecated In favor of the {@code org.axonframework.eventsourcing.eventstore.StreamableEventSource}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface StreamableMessageSource<M extends Message<?>> {
 
     /**
