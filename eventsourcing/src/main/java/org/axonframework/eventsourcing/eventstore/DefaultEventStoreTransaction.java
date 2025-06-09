@@ -59,8 +59,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      * Constructs a {@code DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
      * {@link #appendEvent(EventMessage) append events} originating from the given {@code context}.
      *
-     * @param eventStorageEngine The {@link EventStorageEngine} used to
-     *                           {@link #appendEvent(EventMessage) append events} with.
+     * @param eventStorageEngine The {@link EventStorageEngine} used to {@link #appendEvent(EventMessage) append events}
+     *                           with.
      * @param processingContext  The {@link ProcessingContext} from which to
      *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
      * @param tagResolver        The {@link TagResolver} used to resolve tags while
@@ -88,39 +88,37 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                         : ac.orCriteria(condition.criteria())
         );
         MessageStream<EventMessage<?>> source = eventStorageEngine.source(condition);
-        if (appendCondition.consistencyMarker() == ConsistencyMarker.ORIGIN) {
-            AtomicReference<ConsistencyMarker> markerReference = new AtomicReference<>(appendCondition.consistencyMarker());
-            AtomicBoolean receivedEvent = new AtomicBoolean(false);
-            return source.onNext(e -> {
-                ConsistencyMarker marker;
-                if ((marker = e.getResource(ConsistencyMarker.RESOURCE_KEY)) != null) {
-                    markerReference.set(marker);
-                }
-                receivedEvent.set(true);
-            }).whenComplete(() -> {
-                // when reading is complete, we choose the lowest, non-ORIGIN appendPosition as our next appendPosition
-                // when reading multiple times, the lowest consistency marker that we received from those streams
-                // (usually the first), is the safest one to use
-                processingContext.updateResource(
-                        appendPositionKey,
-                        current -> {
-                            if (!receivedEvent.get()) {
-                                // We sourced the entire stream without receiving an event.
-                                // This means that we read the entire event stream up until now, with a consistency marker up to the current head.
-                                // As such, any existing ConsistencyMarker will always be the lower bound, and can be maintained.
-                                return current;
-                            }
-                            if (current == null || current == ConsistencyMarker.ORIGIN) {
-                                // This is the first time we are sourcing events, as such will be the correct ConsistencyMarker.
-                                return markerReference.get();
-                            }
-                            // We received a stream of events, while we already sourced before. The lowest of the two is the safest to use.
-                            return current.lowerBound(markerReference.get());
-                        });
-            });
-        } else {
+        if (appendCondition.consistencyMarker() != ConsistencyMarker.ORIGIN) {
             return source;
         }
+
+        AtomicReference<ConsistencyMarker> markerReference = new AtomicReference<>(appendCondition.consistencyMarker());
+        return source.onNext(entry -> {
+                         ConsistencyMarker marker;
+                         if ((marker = entry.getResource(ConsistencyMarker.RESOURCE_KEY)) != null) {
+                             markerReference.set(marker);
+                         }
+                     })
+                     .filter(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
+                     .whenComplete(() -> updateAppendPosition(markerReference));
+    }
+
+    /**
+     * When reading is complete, we choose the lowest, non-ORIGIN appendPosition as our next appendPosition when reading
+     * multiple times, the lowest consistency marker that we received from those streams (usually the first), is the
+     * safest one to use.
+     */
+    private void updateAppendPosition(AtomicReference<ConsistencyMarker> markerReference) {
+        processingContext.updateResource(
+                appendPositionKey,
+                current -> {
+                    if (current == null || current == ConsistencyMarker.ORIGIN) {
+                        // This is the first time we are sourcing events, as such will be the correct ConsistencyMarker.
+                        return markerReference.get();
+                    }
+                    // We received a stream of events, while we already sourced before. The lowest of the two is the safest to use.
+                    return current.lowerBound(markerReference.get());
+                });
     }
 
     @Override

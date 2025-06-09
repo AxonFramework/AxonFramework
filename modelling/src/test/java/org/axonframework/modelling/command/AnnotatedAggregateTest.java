@@ -16,12 +16,12 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
@@ -251,7 +251,7 @@ public class AnnotatedAggregateTest {
         }
 
         @Override
-        protected Aggregate<AggregateRoot> doLoad(String aggregateIdentifier, Long expectedVersion) {
+        protected Aggregate<AggregateRoot> doLoad(String aggregateIdentifier) {
             return null;
         }
 

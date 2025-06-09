@@ -39,7 +39,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
@@ -54,7 +53,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 class DefaultEventStoreTransactionTest {
 
     private static final String TEST_AGGREGATE_ID = "someId";
-    public static final Tag AGGREGATE_ID_TAG = new Tag("aggregateIdentifier", TEST_AGGREGATE_ID);
+    private static final Tag AGGREGATE_ID_TAG = new Tag("aggregateIdentifier", TEST_AGGREGATE_ID);
     private static final EventCriteria TEST_AGGREGATE_CRITERIA =
             EventCriteria.havingTags(AGGREGATE_ID_TAG);
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey =
@@ -101,12 +100,12 @@ class DefaultEventStoreTransactionTest {
             // then
             assertNull(beforeCommitEvents.get().first().asCompletableFuture().join());
             StepVerifier.create(afterCommitEvents.get().asFlux())
-                        .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 0, event1))
-                        .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 1, event2))
-                        .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 2, event3))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 1, event1))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 2, event2))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 3, event3))
                         .verifyComplete();
             assertEquals(
-                    GlobalIndexConsistencyMarker.position(new GlobalIndexConsistencyMarker(2)),
+                    GlobalIndexConsistencyMarker.position(new GlobalIndexConsistencyMarker(3)),
                     GlobalIndexConsistencyMarker.position(consistencyMarker.get())
             );
         }
@@ -140,8 +139,8 @@ class DefaultEventStoreTransactionTest {
 
             // then: after commit - both events should be visible
             StepVerifier.create(afterCommitEvents.get().asFlux())
-                        .assertNext(entry -> assertTagsPositionAndEvent(entry, TEST_AGGREGATE_CRITERIA, 0, event1))
-                        .assertNext(entry -> assertTagsPositionAndEvent(entry, TEST_AGGREGATE_CRITERIA, 1, event2))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 1, event1))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 2, event2))
                         .verifyComplete();
         }
 
@@ -282,7 +281,7 @@ class DefaultEventStoreTransactionTest {
 
             // then
             assertEquals(
-                    GlobalIndexConsistencyMarker.position(new GlobalIndexConsistencyMarker(3)),
+                    GlobalIndexConsistencyMarker.position(new GlobalIndexConsistencyMarker(4)),
                     GlobalIndexConsistencyMarker.position(result.get())
             );
         }
@@ -392,22 +391,9 @@ class DefaultEventStoreTransactionTest {
         return new GenericEventMessage<>(new MessageType("test", "event", "0.0.1"), "event-" + seq);
     }
 
-    private static void assertTagsPositionAndEvent(MessageStream.Entry<? extends EventMessage<?>> actual,
-                                                   EventCriteria expectedCriteria, int expectedPosition,
-                                                   EventMessage<?> expectedEvent) {
-        Optional<Set<Tag>> optionalTags = Tag.fromContext(actual);
-        assertTrue(optionalTags.isPresent());
-        Set<Tag> actualTags = optionalTags.get();
-        Set<Tag> expectedTags = expectedCriteria.flatten().stream()
-                                                .map(c -> c.tags())
-                                                .flatMap(Set::stream)
-                                                .collect(Collectors.toSet());
-        assertTrue(actualTags.containsAll(expectedTags));
-        assertPositionAndEvent(actual, expectedPosition, expectedEvent);
-    }
-
     private static void assertPositionAndEvent(MessageStream.Entry<? extends EventMessage<?>> actual,
-                                               long expectedPosition, EventMessage<?> expectedEvent) {
+                                               long expectedPosition,
+                                               EventMessage<?> expectedEvent) {
         Optional<TrackingToken> actualToken = TrackingToken.fromContext(actual);
         assertTrue(actualToken.isPresent());
         OptionalLong actualPosition = actualToken.get().position();

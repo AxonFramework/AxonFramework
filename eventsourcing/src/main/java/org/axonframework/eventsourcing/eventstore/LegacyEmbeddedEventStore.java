@@ -75,7 +75,7 @@ import static org.axonframework.common.BuilderUtils.assertPositive;
  * @since 3.0
  * @deprecated This will be removed.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(LegacyEmbeddedEventStore.class);

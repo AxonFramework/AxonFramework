@@ -21,7 +21,6 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.ExceptionUtils;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -34,8 +33,10 @@ import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -71,6 +72,8 @@ import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ProcessUtils.executeWithRetry;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
@@ -100,8 +103,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder;
-    private final TransactionManager transactionManager;
-    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
+    private final UnitOfWorkFactory unitOfWorkFactory;
     private final int batchSize;
     private final int segmentsSize;
     private final boolean autoStart;
@@ -147,8 +149,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.tokenStore = builder.tokenStore;
 
         this.segmentsSize = config.getInitialSegmentsCount();
-        this.transactionManager = builder.transactionManager;
-        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(transactionManager);
+        this.unitOfWorkFactory = builder.unitOfWorkFactory;
 
         this.availableThreads = new AtomicInteger(config.getMaxThreadCount());
         this.maxThreadCount = config.getMaxThreadCount();
@@ -238,8 +239,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     private String calculateIdentifier() {
-        return transactionManager.fetchInTransaction(
-                () -> tokenStore.retrieveStorageIdentifier().orElse("--unknown--")
+        var unitOfWork = unitOfWorkFactory.create();
+        return joinAndUnwrap(
+                unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(
+                        tokenStore.retrieveStorageIdentifier().orElse("--unknown--"))
+                )
         );
     }
 
@@ -343,10 +347,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private void releaseToken(Segment segment) {
         try {
-            transactionManager.executeInTransaction(() -> {
-                tokenStore.releaseClaim(getName(), segment.getSegmentId());
-                eventHandlerInvoker().segmentReleased(segment);
-            });
+            var unitOfWork = unitOfWorkFactory.create();
+            joinAndUnwrap(
+                    unitOfWork.executeWithResult(context -> {
+                        tokenStore.releaseClaim(getName(), segment.getSegmentId());
+                        eventHandlerInvoker().segmentReleased(segment);
+                        return emptyCompletedFuture();
+                    })
+            );
             logger.info("Released claim");
         } catch (Exception e) {
             // Ignore exception
@@ -438,15 +446,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             if (lastToken == null) {
                 // The token is never updated, so we extend the token claim.
                 checkSegmentCaughtUp(segment, eventStream);
-                transactionManager.executeInTransaction(
-                        () -> tokenStore.extendClaim(getName(), segment.getSegmentId())
+                var unitOfWork = unitOfWorkFactory.create();
+                joinAndUnwrap(
+                        unitOfWork.executeWithResult(context -> {
+                            tokenStore.extendClaim(getName(), segment.getSegmentId());
+                            return emptyCompletedFuture();
+                        })
                 );
                 return;
             } else if (batch.isEmpty()) {
                 // The token is updated but didn't contain events for this segment. So, we update the token position.
                 TrackingToken finalLastToken = lastToken;
-                transactionManager.executeInTransaction(
-                        () -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId())
+                var unitOfWork = unitOfWorkFactory.create();
+                joinAndUnwrap(
+                        unitOfWork.executeWithResult(context -> {
+                            tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
+                            return emptyCompletedFuture();
+                        })
                 );
                 return;
             }
@@ -464,7 +480,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 }
             }
 
-            var unitOfWork = transactionalUnitOfWorkFactory.create();
+            var unitOfWork = unitOfWorkFactory.create();
             instructTokenClaim(segment, unitOfWork, finalLastToken);
             processInUnitOfWork(batch, unitOfWork, processingSegments).join();
 
@@ -542,7 +558,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * @return whether the given message should be handled as part of anyof the give segments
      * @throws Exception when an exception occurs evaluating the message
      */
-    protected boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Collection<Segment> segments) throws Exception {
+    protected boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Collection<Segment> segments)
+            throws Exception {
         for (Segment segment : segments) {
             if (canHandle(eventMessage, context, segment)) {
                 return true;
@@ -585,12 +602,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             BlockingStream<TrackedEventMessage<?>> eventStreamIn, Segment segment) {
         BlockingStream<TrackedEventMessage<?>> eventStream = eventStreamIn;
         if (eventStream == null && state.get().isRunning()) {
-            final TrackingToken trackingToken = transactionManager.fetchInTransaction(
-                    () -> tokenStore.fetchToken(getName(), segment.getSegmentId())
-            );
-            logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
-            eventStream = transactionManager.fetchInTransaction(
-                    () -> doOpenStream(trackingToken));
+            eventStream = joinAndUnwrap(
+                    unitOfWorkFactory
+                            .create()
+                            .executeWithResult(context -> {
+                                var trackingToken = tokenStore.fetchToken(getName(), segment.getSegmentId());
+                                logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
+                                return CompletableFuture.completedFuture(doOpenStream(trackingToken));
+                            }));
         }
         return eventStream;
     }
@@ -686,22 +705,24 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset");
         Assert.state(!isRunning() && activeProcessorThreads() == 0 && !workLauncherRunning.get(),
                      () -> "TrackingProcessor must be shut down before triggering a reset");
-        // TODO - Create a ProcessingContext instead of just a transactionManager
-        transactionManager.executeInTransaction(() -> {
+        var unitOfWork = unitOfWorkFactory.create();
+        var future = unitOfWork.executeWithResult(processingContext -> {
             int[] segments = tokenStore.fetchSegments(getName());
             TrackingToken[] tokens = new TrackingToken[segments.length];
             for (int i = 0; i < segments.length; i++) {
                 tokens[i] = tokenStore.fetchToken(getName(), segments[i]);
             }
             // we now have all tokens, hurray
-            eventHandlerInvoker().performReset(resetContext, null);
+            eventHandlerInvoker().performReset(resetContext, processingContext);
 
             for (int i = 0; i < tokens.length; i++) {
                 tokenStore.storeToken(ReplayToken.createReplayToken(tokens[i], startPosition, resetContext),
                                       getName(),
                                       segments[i]);
             }
+            return emptyCompletedFuture();
         });
+        joinAndUnwrap(future);
     }
 
     @Override
@@ -756,7 +777,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private CompletableFuture<Void> awaitTermination() {
         if (activeProcessorThreads() <= 0 && !workLauncherRunning.get()) {
-            return FutureUtils.emptyCompletedFuture();
+            return emptyCompletedFuture();
         }
 
         logger.info("Processor '{}' awaiting termination...", getName());
@@ -786,7 +807,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                 }
                             }))
                             .reduce(CompletableFuture::allOf)
-                            .orElse(FutureUtils.emptyCompletedFuture());
+                            .orElse(emptyCompletedFuture());
     }
 
     /**
@@ -945,7 +966,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
-        private TransactionManager transactionManager;
+        private UnitOfWorkFactory unitOfWorkFactory;
         private TrackingEventProcessorConfiguration trackingEventProcessorConfiguration =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
         private Boolean storeTokenBeforeProcessing;
@@ -1032,10 +1053,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
-            this.transactionManager = transactionManager;
             if (storeTokenBeforeProcessing == null) {
-                storeTokenBeforeProcessing = transactionManager != NoTransactionManager.instance();
+                storeTokenBeforeProcessing = transactionManager
+                        != NoTransactionManager.instance();
             }
+            this.unitOfWorkFactory = transactionManager == NoTransactionManager.instance()
+                    ? new SimpleUnitOfWorkFactory()
+                    : new TransactionalUnitOfWorkFactory(transactionManager);
             return this;
         }
 
@@ -1102,7 +1126,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             assertNonNull(messageSource, "The StreamableMessageSource is a hard requirement and should be provided");
             assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
-            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
+            assertNonNull(unitOfWorkFactory, "The UnitOfWorkFactory is a hard requirement and should be provided");
         }
     }
 
@@ -1163,7 +1187,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
         public void run() {
             try {
-                executeWithRetry(() -> transactionManager.executeInTransaction(() -> result.complete(runSafe())),
+                executeWithRetry(() -> {
+                                     var unitOfWork = unitOfWorkFactory.create();
+                                     var future = unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(result.complete(
+                                             runSafe())));
+                                     joinAndUnwrap(future);
+                                 },
                                  re -> ExceptionUtils.findException(re, UnableToClaimTokenException.class).isPresent(),
                                  tokenClaimInterval, MILLISECONDS, 10);
             } catch (Exception e) {
@@ -1257,22 +1286,41 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     }
 
                     try {
-                        int[] tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
-                                () -> tokenStore.fetchSegments(processorName)
+                        int[] tokenStoreCurrentSegments = joinAndUnwrap(
+                                unitOfWorkFactory.create()
+                                                 .executeWithResult(
+                                                         context -> CompletableFuture.completedFuture(
+                                                                 tokenStore.fetchSegments(processorName)
+                                                         ))
                         );
 
                         // When in an initial stage, split segments to the requested number.
                         if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
-                            transactionManager.executeInTransaction(
-                                    () -> {
-                                        TrackingToken initialToken = initialTrackingTokenBuilder.apply(messageSource);
-                                        tokenStore.initializeTokenSegments(processorName, segmentsSize, initialToken);
-                                    }
+                            joinAndUnwrap(
+                                    unitOfWorkFactory.create()
+                                                     .executeWithResult(
+                                                             context -> {
+                                                                 TrackingToken initialToken = initialTrackingTokenBuilder.apply(
+                                                                         messageSource);
+                                                                 tokenStore.initializeTokenSegments(
+                                                                         processorName,
+                                                                         segmentsSize,
+                                                                         initialToken);
+                                                                 return emptyCompletedFuture();
+                                                             })
                             );
                         }
-                        segmentsToClaim = transactionManager.fetchInTransaction(
-                                () -> tokenStore.fetchAvailableSegments(processorName)
+                        segmentsToClaim = joinAndUnwrap(
+                                unitOfWorkFactory.create()
+                                                 .executeWithResult(
+                                                         context ->
+                                                                 CompletableFuture.completedFuture(
+                                                                         tokenStore.fetchAvailableSegments(
+                                                                                 processorName)
+                                                                 )
+                                                 )
                         );
+
                         waitTime = 1;
                     } catch (Exception e) {
                         if (waitTime == 1) {
@@ -1298,7 +1346,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
                         if (!activeSegments.containsKey(segmentId) && canClaimSegment(segmentId)) {
                             try {
-                                transactionManager.executeInTransaction(() -> {
+                                var unitOfWork = unitOfWorkFactory.create();
+                                var future = unitOfWork.executeWithResult(context -> {
                                     TrackingToken token = tokenStore.fetchToken(processorName, segment);
                                     logger.info("Worker assigned to segment {} for processing", segment);
                                     TrackerStatus newStatus = new TrackerStatus(segment, token);
@@ -1309,7 +1358,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                                 singletonMap(segmentId, new AddedTrackerStatus(newStatus))
                                         );
                                     }
+                                    return emptyCompletedFuture();
                                 });
+                                joinAndUnwrap(future);
                             } catch (UnableToClaimTokenException ucte) {
                                 // When not able to claim a token for a given segment, we skip the
                                 logger.debug(

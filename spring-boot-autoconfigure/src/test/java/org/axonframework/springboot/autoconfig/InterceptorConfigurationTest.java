@@ -598,7 +598,6 @@ class InterceptorConfigurationTest {
 
             private void interceptMessage(T message) {
                 invocation.countDown();
-                axonConfiguration.tags();
                 handlingOutcome.add(name + ": " + message);
             }
         }
@@ -625,7 +624,6 @@ class InterceptorConfigurationTest {
             @Nonnull
             @Override
             public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
-                axonConfiguration.tags();
                 return (index, message) -> {
                     invocation.countDown();
                     handlingOutcome.add(name + ": " + message);

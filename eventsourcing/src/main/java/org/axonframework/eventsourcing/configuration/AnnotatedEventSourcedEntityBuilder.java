@@ -19,8 +19,8 @@ package org.axonframework.eventsourcing.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
+import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
@@ -53,7 +53,7 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
     private final Class<E> entityType;
     private final EventSourcedEntityFactoryDefinition<E, I> entityFactoryDefinition;
     private final CriteriaResolverDefinition criteriaResolverDefinition;
-    private final AnnotationBasedEventSourcedComponent<E> entityEvolver;
+    private final AnnotationBasedEntityEvolvingComponent<E> entityEvolver;
 
     AnnotatedEventSourcedEntityBuilder(@Nonnull Class<I> idType,
                                        @Nonnull Class<E> entityType) {
@@ -69,7 +69,7 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
         //noinspection unchecked
         var criteriaResolverType = (Class<CriteriaResolverDefinition>) annotationAttributes.get("criteriaResolverDefinition");
         this.criteriaResolverDefinition = ConstructorUtils.getConstructorFunctionWithZeroArguments(criteriaResolverType).get();
-        this.entityEvolver = new AnnotationBasedEventSourcedComponent<>(entityType);
+        this.entityEvolver = new AnnotationBasedEntityEvolvingComponent<>(entityType);
     }
 
     @Override
@@ -78,7 +78,7 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
     }
 
     @Override
-    public ComponentFactory<Repository<I, E>> repository() {
+    public ComponentBuilder<Repository<I, E>> repository() {
         return c -> {
             CriteriaResolver<I> criteriaResolver = criteriaResolverDefinition
                     .createEventCriteriaResolver(entityType, idType, c);

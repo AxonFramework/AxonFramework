@@ -17,13 +17,13 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.PayloadBasedEntityEvolver;
-import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
+import org.axonframework.modelling.SimpleEntityEvolvingComponent;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.QualifiedName;
@@ -57,10 +57,10 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
 
     private final Class<I> idType;
     private final Class<E> entityType;
-    private ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory;
-    private ComponentFactory<CriteriaResolver<I>> criteriaResolver;
-    private ComponentFactory<EntityEvolver<E>> entityEvolver;
-    private final Map<QualifiedName, ComponentFactory<EntityEvolver<E>>> entityEvolverPerName = new HashMap<>();
+    private ComponentBuilder<EventSourcedEntityFactory<I, E>> entityFactory;
+    private ComponentBuilder<CriteriaResolver<I>> criteriaResolver;
+    private ComponentBuilder<EntityEvolver<E>> entityEvolver;
+    private final Map<QualifiedName, ComponentBuilder<EntityEvolver<E>>> entityEvolverPerName = new HashMap<>();
 
     DefaultEventSourcedEntityBuilder(@Nonnull Class<I> idType,
                                      @Nonnull Class<E> entityType) {
@@ -70,7 +70,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
 
     @Override
     public CriteriaResolverPhase<I, E> entityFactory(
-            @Nonnull ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory
+            @Nonnull ComponentBuilder<EventSourcedEntityFactory<I, E>> entityFactory
     ) {
         this.entityFactory = requireNonNull(entityFactory, "The entity factory cannot be null.");
         return this;
@@ -78,14 +78,14 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
 
     @Override
     public EventSourcingHandlerPhase<I, E> criteriaResolver(
-            @Nonnull ComponentFactory<CriteriaResolver<I>> criteriaResolver
+            @Nonnull ComponentBuilder<CriteriaResolver<I>> criteriaResolver
     ) {
         this.criteriaResolver = requireNonNull(criteriaResolver, "The criteria resolver cannot be null.");
         return this;
     }
 
     @Override
-    public EventSourcedEntityBuilder<I, E> entityEvolver(@Nonnull ComponentFactory<EntityEvolver<E>> entityEvolver) {
+    public EventSourcedEntityBuilder<I, E> entityEvolver(@Nonnull ComponentBuilder<EntityEvolver<E>> entityEvolver) {
         this.entityEvolver = requireNonNull(entityEvolver, "The event state applier cannot be null.");
         return this;
     }
@@ -110,7 +110,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     }
 
     @Override
-    public ComponentFactory<Repository<I, E>> repository() {
+    public ComponentBuilder<Repository<I, E>> repository() {
         return config -> new EventSourcingRepository<>(
                 idType,
                 entityType,
@@ -128,7 +128,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
             }
             return entityEvolver.build(config);
         }
-        return new SimpleEventSourcedComponent<>(buildAndCollectEntityEvolvers(config));
+        return new SimpleEntityEvolvingComponent<>(buildAndCollectEntityEvolvers(config));
     }
 
     private Map<QualifiedName, EntityEvolver<E>> buildAndCollectEntityEvolvers(Configuration config) {

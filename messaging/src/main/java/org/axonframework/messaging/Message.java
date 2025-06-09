@@ -135,28 +135,28 @@ public interface Message<P> {
     Class<P> getPayloadType();
 
     /**
-     * Returns a copy of this {@code Message message (implementation)} with the given {@code metaData}.
+     * Returns a copy of this {@code Message} (implementation) with the given {@code metaData}.
      * <p>
      * All others fields, like for example the {@link #getPayload()}, remain unchanged.
      * <p/>
-     * While the implementation returned may be different than the implementation of {@code this}, implementations must
-     * take special care in returning the same type of {@code Message}to prevent errors further downstream.
+     * While the implementation returned may be different from the implementation of {@code this}, implementations must
+     * take special care in returning the same type of {@code Message} to prevent errors further downstream.
      *
      * @param metaData The new metadata for the {@code Message}.
-     * @return A copy of this {@code Message message (implementation)} with the given {@code metaData}.
+     * @return A copy of {@code this Message (implementation)} with the given {@code metaData}.
      */
-    Message<P> withMetaData(@Nonnull Map<String, ?> metaData);
+    Message<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     /**
-     * Returns a copy of this {@code Message message (implementation)} with its {@link Message#getMetaData() metadata}
-     * merged with the given {@code metaData}.
+     * Returns a copy of this {@code Message} (implementation) with its {@link Message#getMetaData() metadata} merged
+     * with the given {@code metaData}.
      * <p>
      * All others fields, like for example the {@link #getPayload()}, remain unchanged.
      *
      * @param metaData The metadata to merge with.
-     * @return A copy of this {@code Message message (implementation)} with the given {@code metaData}.
+     * @return A copy of {@code this Message (implementation)} with the given {@code metaData}.
      */
-    Message<P> andMetaData(@Nonnull Map<String, ?> metaData);
+    Message<P> andMetaData(@Nonnull Map<String, String> metaData);
 
     /**
      * Serialize the payload of this message to the {@code expectedRepresentation} using given {@code serializer}. This

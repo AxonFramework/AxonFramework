@@ -257,8 +257,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         TestAggregate verify = loadAggregate(id);
 
         assertEquals(id, verify.id);
-        assertTrue(verify.tokens.containsAll(asList(//
-                                                    "UOW3", "UOW4", "UOW5", "UOW6", "UOW7", "UOW8", "UOW9")));
+        assertTrue(verify.tokens.containsAll(asList("UOW3", "UOW4", "UOW5", "UOW6", "UOW7", "UOW8", "UOW9")));
         assertFalse(verify.tokens.contains("UOW10"));
         assertEquals(7, verify.tokens.size());
         for (int i = 0; i < verify.tokens.size(); i++) {

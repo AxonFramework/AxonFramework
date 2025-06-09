@@ -62,10 +62,9 @@ public interface EntityModelBuilder<E> {
      * Adds an {@link EntityCommandHandler} to this model for the given {@link QualifiedName}. The command handler will
      * be invoked when a command with the given {@link QualifiedName} is received by the model.
      * <p>
-     * The entity needs to exist for this command handler to be invoked. A non-null initial state is considered to be an
-     * existing entity. As such, only register this command if the
+     * The entity should <b>not</b> exist for this command handler to be invoked. A non-null initial state is considered
+     * to be an existing entity. As such, only register this command if the
      * {@link Repository#loadOrCreate(Object, ProcessingContext)} will always return a non-null entity for the given
-     * {@code qualifiedName}.
      * {@code qualifiedName} when the entity is not yet created.
      * <p>
      * You can register the same {@link QualifiedName} for both instance and creational command handlers. See the

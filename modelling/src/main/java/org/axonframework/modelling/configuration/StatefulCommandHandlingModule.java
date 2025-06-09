@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
-import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
@@ -146,9 +146,9 @@ public interface StatefulCommandHandlingModule extends
      * <p>
      * Provides roughly two options for configuring stateful command handlers. Firstly, a stateful command handler can
      * be registered as is, through the {@link #commandHandler(QualifiedName, StatefulCommandHandler)} method. Secondly,
-     * if the stateful command handler provides components from the
-     * {@link Configuration}, a {@link ComponentFactory factory} of the stateful
-     * command handler can be registered through the {@link #commandHandler(QualifiedName, ComponentFactory)} method.
+     * if the stateful command handler provides components from the {@link Configuration}, a
+     * {@link ComponentBuilder builder} of the stateful command handler can be registered through the
+     * {@link #commandHandler(QualifiedName, ComponentBuilder)} method.
      */
     interface CommandHandlerPhase extends SetupPhase, ModuleBuilder<StatefulCommandHandlingModule> {
 
@@ -201,14 +201,14 @@ public interface StatefulCommandHandlingModule extends
          *
          * @param commandName           The qualified name of the command the {@link StatefulCommandHandler} created by
          *                              the given {@code commandHandlerBuilder}.
-         * @param commandHandlerBuilder A factory of a {@link StatefulCommandHandler}. Provides the
-         *                              {@link Configuration} to retrieve components
-         *                              from to use during construction of the stateful command handler.
+         * @param commandHandlerBuilder A builder of a {@link StatefulCommandHandler}. Provides the
+         *                              {@link Configuration} to retrieve components from to use during construction of
+         *                              the stateful command handler.
          * @return The command handler phase of this builder, for a fluent API.
          */
         CommandHandlerPhase commandHandler(
                 @Nonnull QualifiedName commandName,
-                @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder
+                @Nonnull ComponentBuilder<StatefulCommandHandler> commandHandlerBuilder
         );
 
         /**
@@ -222,14 +222,13 @@ public interface StatefulCommandHandlingModule extends
          * {@link org.axonframework.commandhandling.CommandBus} of the
          * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
          *
-         * @param handlingComponentBuilder A factory method of a {@link CommandHandlingComponent}. Provides the
-         *                                 {@link Configuration} to retrieve
-         *                                 components from to use during construction of the command handling
-         *                                 component.
+         * @param handlingComponentBuilder A builder of a {@link CommandHandlingComponent}. Provides the
+         *                                 {@link Configuration} to retrieve components from to use during construction
+         *                                 of the command handling component.
          * @return The command handler phase of this builder, for a fluent API.
          */
         CommandHandlerPhase commandHandlingComponent(
-                @Nonnull ComponentFactory<CommandHandlingComponent> handlingComponentBuilder
+                @Nonnull ComponentBuilder<CommandHandlingComponent> handlingComponentBuilder
         );
 
         /**
@@ -240,14 +239,13 @@ public interface StatefulCommandHandlingModule extends
          * and register them as command handlers for the {@link org.axonframework.commandhandling.CommandBus} of the
          * {@link org.axonframework.configuration.ApplicationConfigurer}.
          *
-         * @param handlingComponentBuilder A factory method of a {@link CommandHandlingComponent}. Provides the
-         *                                 {@link Configuration} to retrieve
-         *                                 components from to use during construction of the command handling
-         *                                 component.
+         * @param handlingComponentBuilder A builder of a {@link CommandHandlingComponent}. Provides the
+         *                                 {@link Configuration} to retrieve components from to use during construction
+         *                                 of the command handling component.
          * @return The command handler phase of this builder, for a fluent API.
          */
         default CommandHandlerPhase annotatedCommandHandlingComponent(
-                @Nonnull ComponentFactory<Object> handlingComponentBuilder
+                @Nonnull ComponentBuilder<Object> handlingComponentBuilder
         ) {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return commandHandlingComponent(c -> new AnnotatedCommandHandlingComponent<>(
@@ -268,8 +266,7 @@ public interface StatefulCommandHandlingModule extends
          * <p>
          * The {@link EntityBuilder#repository()} from the {@code entityBuilder} will be registered with the
          * {@link org.axonframework.configuration.ApplicationConfigurer} this module is part of. To retrieve the
-         * resulting {@link Repository}, use the {@code AsyncRepository} and
-         * {@link EntityBuilder#entityName()} on the
+         * resulting {@link Repository}, use the {@code Repository} and {@link EntityBuilder#entityName()} on the
          * {@link Configuration#getComponent(Class, String)} method respectively.
          *
          * @param entityBuilder The entity builder, returning the {@link EntityBuilder#repository()} to register with

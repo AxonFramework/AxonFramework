@@ -32,8 +32,8 @@ import static org.axonframework.messaging.configuration.reflection.ParameterReso
 /**
  * The messaging {@link ApplicationConfigurer} of Axon Framework's configuration API.
  * <p>
- * Provides register operations for {@link #registerCommandBus(ComponentFactory) command},
- * {@link #registerEventSink(ComponentFactory) event}, and {@link #registerQueryBus(ComponentFactory) query}
+ * Provides register operations for {@link #registerCommandBus(ComponentBuilder) command},
+ * {@link #registerEventSink(ComponentBuilder) event}, and {@link #registerQueryBus(ComponentBuilder) query}
  * infrastructure components.
  * <p>
  * This configurer registers the following defaults:
@@ -49,7 +49,7 @@ import static org.axonframework.messaging.configuration.reflection.ParameterReso
  * </ul>
  * To replace or decorate any of these defaults, use their respective interfaces as the identifier. For example, to
  * adjust the {@code CommandBus}, invoke {@link #componentRegistry(Consumer)} and
- * {@link ComponentRegistry#registerComponent(Class, ComponentFactory)} with {@code CommandBus.class} to replace it.
+ * {@link ComponentRegistry#registerComponent(Class, ComponentBuilder)} with {@code CommandBus.class} to replace it.
  * <p>
  * <pre><code>
  *     MessagingConfigurer.create()
@@ -93,7 +93,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
 
     /**
      * Build a default {@code MessagingConfigurer} instance with several messaging defaults, as well as methods to
-     * register (e.g.) a {@link #registerCommandBus(ComponentFactory) command bus}.
+     * register (e.g.) a {@link #registerCommandBus(ComponentBuilder) command bus}.
      * <p>
      * Besides the specific operations, the {@code MessagingConfigurer} allows for configuring generic
      * {@link Component components}, {@link ComponentDecorator component decorators},
@@ -117,69 +117,71 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerMessageTypeResolver(
-            @Nonnull ComponentFactory<MessageTypeResolver> messageTypeResolverFactory) {
-        applicationConfigurer.componentRegistry(cr -> cr
-                .registerComponent(MessageTypeResolver.class, messageTypeResolverFactory));
+            @Nonnull ComponentBuilder<MessageTypeResolver> messageTypeResolverFactory
+    ) {
+        applicationConfigurer.componentRegistry(cr -> cr.registerComponent(
+                MessageTypeResolver.class, messageTypeResolverFactory
+        ));
         return this;
     }
 
     /**
      * Registers the given {@link CommandBus} factory in this {@code Configurer}.
      * <p>
-     * The {@code commandBusFactory} receives the {@link Configuration} as input and is expected to return a
+     * The {@code commandBusBuilder} receives the {@link Configuration} as input and is expected to return a
      * {@link CommandBus} instance.
      *
-     * @param commandBusFactory The factory building the {@link CommandBus}.
+     * @param commandBusBuilder The builder constructing the {@link CommandBus}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer registerCommandBus(@Nonnull ComponentFactory<CommandBus> commandBusFactory) {
-        applicationConfigurer.componentRegistry(cr -> cr.registerComponent(CommandBus.class, commandBusFactory));
+    public MessagingConfigurer registerCommandBus(@Nonnull ComponentBuilder<CommandBus> commandBusBuilder) {
+        applicationConfigurer.componentRegistry(cr -> cr.registerComponent(CommandBus.class, commandBusBuilder));
         return this;
     }
 
     /**
      * Registers the given {@link EventSink} factory in this {@code Configurer}.
      * <p>
-     * The {@code eventSinkFactory} receives the {@link Configuration} as input and is expected to return a
+     * The {@code eventSinkBuilder} receives the {@link Configuration} as input and is expected to return a
      * {@link EventSink} instance.
      *
-     * @param eventSinkFactory The factory building the {@link EventSink}.
+     * @param eventSinkBuilder The builder constructing the {@link EventSink}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer registerEventSink(@Nonnull ComponentFactory<EventSink> eventSinkFactory) {
-        applicationConfigurer.componentRegistry(cr -> cr.registerComponent(EventSink.class, eventSinkFactory));
+    public MessagingConfigurer registerEventSink(@Nonnull ComponentBuilder<EventSink> eventSinkBuilder) {
+        applicationConfigurer.componentRegistry(cr -> cr.registerComponent(EventSink.class, eventSinkBuilder));
         return this;
     }
 
     /**
      * Registers the given {@link QueryBus} factory in this {@code Configurer}.
      * <p>
-     * The {@code queryBusFactory} receives the {@link Configuration} as input and is expected to return a
+     * The {@code queryBusBuilder} receives the {@link Configuration} as input and is expected to return a
      * {@link QueryBus} instance.
      *
-     * @param queryBusFactory The factory building the {@link QueryBus}.
+     * @param queryBusBuilder The builder constructing the {@link QueryBus}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer registerQueryBus(@Nonnull ComponentFactory<QueryBus> queryBusFactory) {
-        applicationConfigurer.componentRegistry(cr -> cr.registerComponent(QueryBus.class, queryBusFactory));
+    public MessagingConfigurer registerQueryBus(@Nonnull ComponentBuilder<QueryBus> queryBusBuilder) {
+        applicationConfigurer.componentRegistry(cr -> cr.registerComponent(QueryBus.class, queryBusBuilder));
         return this;
     }
 
     /**
      * Registers the given {@link ParameterResolverFactory} factory in this {@code Configurer}.
      * <p>
-     * The {@code parameterResolverFactoryFactory} receives the {@link Configuration} as input and is expected to return
+     * The {@code parameterResolverFactoryBuilder} receives the {@link Configuration} as input and is expected to return
      * a {@link ParameterResolverFactory} instance.
      *
-     * @param parameterResolverFactoryFactory The factory building the {@link ParameterResolverFactory}.
+     * @param parameterResolverFactoryBuilder The builder constructing the {@link ParameterResolverFactory}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerParameterResolverFactory(
-            @Nonnull ComponentFactory<ParameterResolverFactory> parameterResolverFactoryFactory
+            @Nonnull ComponentBuilder<ParameterResolverFactory> parameterResolverFactoryBuilder
     ) {
         applicationConfigurer.componentRegistry(registry -> registerToComponentRegistry(
                 registry,
-                parameterResolverFactoryFactory::build
+                parameterResolverFactoryBuilder::build
         ));
         return this;
     }
@@ -187,17 +189,17 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     /**
      * Registers the given {@link QueryUpdateEmitter} factory in this {@code Configurer}.
      * <p>
-     * The {@code queryUpdateEmitterFactory} receives the {@link Configuration} as input and is expected to return a
+     * The {@code queryUpdateEmitterBuilder} receives the {@link Configuration} as input and is expected to return a
      * {@link QueryUpdateEmitter} instance.
      *
-     * @param queryUpdateEmitterFactory The factory building the {@link QueryUpdateEmitter}.
+     * @param queryUpdateEmitterBuilder The builder constructing the {@link QueryUpdateEmitter}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerQueryUpdateEmitter(
-            @Nonnull ComponentFactory<QueryUpdateEmitter> queryUpdateEmitterFactory
+            @Nonnull ComponentBuilder<QueryUpdateEmitter> queryUpdateEmitterBuilder
     ) {
         applicationConfigurer.componentRegistry(
-                cr -> cr.registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterFactory)
+                cr -> cr.registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder)
         );
         return this;
     }
