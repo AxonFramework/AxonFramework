@@ -92,13 +92,13 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             private final EventMessage<?> eventMessage;
 
             @EntityCreator
-            public EventMessageTestEntity(String id) {
+            public EventMessageTestEntity(@InjectEntityId String id) {
                 this.id = id;
                 this.eventMessage = null;
             }
 
             @EntityCreator
-            public EventMessageTestEntity(String id, EventMessage<?> eventMessage) {
+            public EventMessageTestEntity(@InjectEntityId String id, EventMessage<?> eventMessage) {
                 this.id = id;
                 this.eventMessage = eventMessage;
             }
@@ -270,12 +270,12 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             }
 
             @EntityCreator
-            public static FactoryMethodsTestEntity create(String id) {
+            public static FactoryMethodsTestEntity create(@InjectEntityId String id) {
                 return new FactoryMethodsTestEntity(id, null);
             }
 
             @EntityCreator
-            public static FactoryMethodsTestEntity create(String id, EventMessage<?> eventMessage) {
+            public static FactoryMethodsTestEntity create(@InjectEntityId String id, EventMessage<?> eventMessage) {
                 return new FactoryMethodsTestEntity(id, eventMessage);
             }
 
@@ -338,12 +338,12 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             private final String invoked;
 
             @EntityCreator
-            public MostSpecificHandlerEntity(String id) {
+            public MostSpecificHandlerEntity(@InjectEntityId String id) {
                 this.invoked = "simply-id";
             }
 
             @EntityCreator
-            public MostSpecificHandlerEntity(String id,
+            public MostSpecificHandlerEntity(@InjectEntityId String id,
                                              @MetaDataValue(required = true, value = "blabla") String blabla) {
                 this.invoked = "id-and-metadata";
             }

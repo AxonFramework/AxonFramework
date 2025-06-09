@@ -183,9 +183,14 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             Class<?> parameterType = executable.getParameterTypes()[i];
 
             // Check the parameter type for the ID type and assign our special IdTypeParameterResolver
-            if (concreteIdType == null && idType.isAssignableFrom(parameterType)) {
+            if(AnnotationUtils.isAnnotationPresent(executable.getParameters()[i], InjectEntityId.class)) {
+                if (concreteIdType != null && !concreteIdType.isAssignableFrom(parameterType)) {
+                    throw new AxonConfigurationException(
+                            "The @InjectEntityId annotation can only be used on a single parameter of type [%s] or a subtype. Found [%s] on parameter %d of method [%s]"
+                                    .formatted(concreteIdType, parameterType.getName(), i, executable));
+                }
                 parameterResolvers[i] = idTypeParameterResolver;
-                concreteIdType = parameterType;
+                concreteIdType = idType;
                 continue;
             }
             if (Message.class.isAssignableFrom(parameterType)) {

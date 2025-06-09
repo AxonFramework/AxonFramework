@@ -58,6 +58,10 @@ import java.lang.annotation.Target;
  * {@link #payloadQualifiedNames()} matches with the {@link org.axonframework.eventhandling.EventMessage}. If a payload
  * parameter is declared, and the {@link #payloadQualifiedNames()} is empty, it will be determined based on the
  * {@link org.axonframework.messaging.MessageTypeResolver}.
+ * <p>
+ * You can inject the entity identifier by declaring a parameter with the {@link InjectEntityId} annotation. This
+ * annotation is necessary to disambiguate the entity identifier from the payload, as the first parameter without an
+ * annotation is assumed to be the payload.
  *
  * <h3>Factory methods</h3>
  * It's not always possible to only use constructors. For example, when using polymorphic entities, the factory method
@@ -73,7 +77,7 @@ import java.lang.annotation.Target;
  *         private Boolean created;
  *
  *         @EntityCreator
- *         public MutableEntity(String identifier) {
+ *         public MutableEntity(@InjectEntityId String identifier) {
  *             this.identifier = identifier;
  *             this.created = false;
  *         }
@@ -102,7 +106,7 @@ import java.lang.annotation.Target;
  *         private final String identifier;
  *
  *         @EntityCreator
- *         public MutableEntity(ImmutableEntityCreatedEvent createdEvent, String identifier) {
+ *         public MutableEntity(ImmutableEntityCreatedEvent createdEvent, @InjectEntityId String identifier) {
  *             this.identifier = createdEvent.identifier();
  *             // Or: this.identifier = identifier
  *         }
@@ -121,7 +125,7 @@ import java.lang.annotation.Target;
  * <pre>{@code
  *     abstract class MutablePolymorphicEntity {
  *         @EntityCreator
- *         public static MutablePolymorphicEntity create(MyPolymorphicIdentifier identifier) {
+ *         public static MutablePolymorphicEntity create(@InjectEntityId MyPolymorphicIdentifier identifier) {
  *             if (identifier.type() == MyPolymorphicIdentifier.Type.TYPE1) {
  *                 return new MutablePolymorphicEntityType1(identifier);
  *             } else if (identifier.type() == MyPolymorphicIdentifier.Type.TYPE2) {
