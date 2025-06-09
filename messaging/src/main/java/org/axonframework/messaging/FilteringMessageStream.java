@@ -99,10 +99,7 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public boolean hasNextAvailable() {
-        if (lookAhead != null) {
-            return true;
-        }
-        return peek().isPresent();
+        return lookAhead != null || peek().isPresent();
     }
 
     @Override
