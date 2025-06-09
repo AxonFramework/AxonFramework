@@ -100,6 +100,19 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage<?>
     }
 
     @Override
+    public Optional<Entry<EventMessage<?>>> peek() {
+        SourceEventsResponse peeked = stream.peek();
+        if (peeked == null) {
+            logger.debug("Peeked the end of the source result stream.");
+            return Optional.empty();
+        } else if (peeked.hasConsistencyMarker()) {
+            logger.debug("Peeked the consistency marker message of the source result stream.");
+            return convertToMarkerEntry(peeked.getConsistencyMarker());
+        }
+        return getConvertToEventEntry(peeked.getEvent());
+    }
+
+    @Override
     public void onAvailable(@Nonnull Runnable callback) {
         stream.onAvailable(callback);
     }
