@@ -41,12 +41,12 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
 @Internal
 public class AnnotatedEntityModelRoutingKeyMatcher<E> {
 
-    private final Map<MessageType, Property<Object>> messageRoutingKeyProperties = new ConcurrentHashMap<>();
-    private final Map<Class<?>, Property<Object>> entityRoutingKeyProperties = new ConcurrentHashMap<>();
+    private final Map<MessageType, Property<Object>> messageRoutingPropertyCache;
+    private final Map<Class<?>, Property<Object>> entityRoutingPropertyCache;
 
     private final String entityRoutingProperty;
-    private final String messageRoutingKey;
-    private final AnnotatedEntityModel<?> entity;
+    private final String messageRoutingProperty;
+    private final AnnotatedEntityModel<E> entity;
 
     /**
      * @param entity                 The {@link AnnotatedEntityModel} of the entity to match against.
@@ -55,12 +55,14 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
      * @param messageRoutingProperty The routing key property of the message, which is used to match against the entity
      *                               routing key.
      */
-    public AnnotatedEntityModelRoutingKeyMatcher(AnnotatedEntityModel<E> entity,
-                                                 String entityRoutingProperty,
-                                                 String messageRoutingProperty) {
-        this.entity = entity;
-        this.messageRoutingKey = messageRoutingProperty;
-        this.entityRoutingProperty = entityRoutingProperty;
+    public AnnotatedEntityModelRoutingKeyMatcher(@Nonnull AnnotatedEntityModel<E> entity,
+                                                 @Nonnull String entityRoutingProperty,
+                                                 @Nonnull String messageRoutingProperty) {
+        this.entity = Objects.requireNonNull(entity, "entity may not be null");
+        this.entityRoutingProperty = Objects.requireNonNull(entityRoutingProperty, "entityRoutingProperty may not be null");
+        this.messageRoutingProperty = Objects.requireNonNull(messageRoutingProperty, "messageRoutingProperty may not be null");
+        this.messageRoutingPropertyCache = new ConcurrentHashMap<>();
+        this.entityRoutingPropertyCache = new ConcurrentHashMap<>();
     }
 
     /**
@@ -78,7 +80,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
             // This message is not handled in this entity model, so we cannot match it.
             return false;
         }
-        Property<Object> routingProperty = messageRoutingKeyProperties.computeIfAbsent(
+        Property<Object> routingProperty = messageRoutingPropertyCache.computeIfAbsent(
                 message.type(), unused -> resolveProperty(payloadType)
         );
         if (routingProperty == null) {
@@ -90,11 +92,11 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
     }
 
     private Property<Object> resolveProperty(Class<?> runtimeType) {
-        return getProperty(runtimeType, messageRoutingKey);
+        return getProperty(runtimeType, messageRoutingProperty);
     }
 
     private boolean matchesInstance(E candidate, Object routingValue) {
-        Property<Object> objectProperty = entityRoutingKeyProperties.computeIfAbsent(
+        Property<Object> objectProperty = entityRoutingPropertyCache.computeIfAbsent(
                 candidate.getClass(), c -> getProperty(entity.entityType(), entityRoutingProperty)
         );
         if (objectProperty == null) {
