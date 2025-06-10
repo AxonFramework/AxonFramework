@@ -103,17 +103,27 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
 
         @Override
         public Optional<Entry<E>> next() {
+            if (peeked != null) {
+                Entry<E> result = peeked;
+                peeked = null;
+                return Optional.of(result);
+            }
+            if (!stream.hasNextAvailable()) {
+                return Optional.empty();
+            }
             try {
-                if (peeked != null) {
-                    Entry<E> result = peeked;
-                    peeked = null;
-                    return Optional.of(result);
+                while (stream.hasNextAvailable()) {
+                    E message = stream.nextAvailable();
+                    if (message == null) {
+                        return Optional.empty();
+                    }
+                    if (!matchesCriteria(message)) {
+                        continue;
+                    }
+                    Entry<E> entry = createEntryForMessage(message);
+                    return Optional.of(entry);
                 }
-                var result = stream.nextAvailable();
-                while (result != null && !matchesCriteria(result)) {
-                    result = stream.nextAvailable();
-                }
-                return Optional.ofNullable(result).map(this::createEntryForMessage);
+                return Optional.empty();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return Optional.empty();
