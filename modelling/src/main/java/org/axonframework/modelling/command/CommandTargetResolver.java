@@ -18,6 +18,7 @@ package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.configuration.ComponentRegistry;
 
 /**
  * Interface towards a mechanism that is capable of extracting an Aggregate Identifier form a command that identifies
@@ -25,7 +26,9 @@ import org.axonframework.commandhandling.CommandMessage;
  *
  * @author Allard Buijze
  * @since 1.2
+ * @deprecated In favor of the {@link EntityIdResolver}.
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface CommandTargetResolver {
 
     /**
