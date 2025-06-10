@@ -527,6 +527,83 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         assertEquals(headToken, tokenAt);
     }
 
+    @Nested
+    class Peek {
+
+        @Test
+        void returnsMarkerWhenNoEventsMatchCriteria() {
+            SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
+            MessageStream<EventMessage<?>> stream = testSubject.source(condition);
+
+            Optional<Entry<EventMessage<?>>> peeked = stream.peek();
+
+            assertTrue(peeked.isPresent());
+            assertMarkerEntry(peeked.get());
+        }
+
+        @Test
+        void returnsFirstEventWithoutAdvancing() throws Exception {
+            testSubject.appendEvents(AppendCondition.none(),
+                                     taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
+                                     taggedEventMessage("event-2", TEST_CRITERIA_TAGS))
+                       .thenCompose(AppendTransaction::commit)
+                       .get(5, TimeUnit.SECONDS);
+
+            SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
+            MessageStream<EventMessage<?>> stream = testSubject.source(condition);
+
+            Optional<Entry<EventMessage<?>>> peeked = stream.peek();
+            Optional<Entry<EventMessage<?>>> peekedAgain = stream.peek();
+
+            assertTrue(peeked.isPresent());
+            assertTrue(peekedAgain.isPresent());
+            assertEquals(peeked.get().message().getPayload(), peekedAgain.get().message().getPayload());
+        }
+
+        @Test
+        void doesNotAdvanceStream() throws Exception {
+            testSubject.appendEvents(AppendCondition.none(),
+                                     taggedEventMessage("event-1", TEST_CRITERIA_TAGS))
+                       .thenCompose(AppendTransaction::commit)
+                       .get(5, TimeUnit.SECONDS);
+
+            SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
+            MessageStream<EventMessage<?>> stream = testSubject.source(condition);
+
+            Optional<Entry<EventMessage<?>>> peeked = stream.peek();
+            Optional<Entry<EventMessage<?>>> next = stream.next();
+
+            assertTrue(peeked.isPresent());
+            assertTrue(next.isPresent());
+            assertEquals(peeked.get().message().getPayload(), next.get().message().getPayload());
+        }
+
+        @Test
+        void returnsMarkerWhenNoEvents() {
+            SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
+            MessageStream<EventMessage<?>> stream = testSubject.source(condition);
+
+            Optional<Entry<EventMessage<?>>> peeked = stream.peek();
+            assertTrue(peeked.isPresent());
+            assertMarkerEntry(peeked.get());
+        }
+
+        @Test
+        void returnsEmptyAfterConsumingAll() throws Exception {
+            testSubject.appendEvents(AppendCondition.none(),
+                                     taggedEventMessage("event-1", TEST_CRITERIA_TAGS))
+                       .thenCompose(AppendTransaction::commit)
+                       .get(5, TimeUnit.SECONDS);
+
+            SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
+            MessageStream<EventMessage<?>> stream = testSubject.source(condition);
+
+            stream.next(); // consume event
+            stream.next(); // consume marker
+            assertTrue(stream.peek().isEmpty());
+        }
+    }
+
     private static TaggedEventMessage<EventMessage<String>> taggedEventMessage(String payload, Set<Tag> tags) {
         return taggedEventMessageAt(payload, tags, Instant.now());
     }
