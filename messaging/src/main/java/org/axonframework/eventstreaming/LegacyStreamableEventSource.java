@@ -103,27 +103,17 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
 
         @Override
         public Optional<Entry<E>> next() {
-            if (peeked != null) {
-                Entry<E> result = peeked;
-                peeked = null;
-                return Optional.of(result);
-            }
-            if (!stream.hasNextAvailable()) {
-                return Optional.empty();
-            }
             try {
-                while (stream.hasNextAvailable()) {
-                    E message = stream.nextAvailable();
-                    if (message == null) {
-                        return Optional.empty();
-                    }
-                    if (!matchesCriteria(message)) {
-                        continue;
-                    }
-                    Entry<E> entry = createEntryForMessage(message);
-                    return Optional.of(entry);
+                if (peeked != null) {
+                    Entry<E> result = peeked;
+                    peeked = null;
+                    return Optional.of(result);
                 }
-                return Optional.empty();
+                var result = stream.nextAvailable();
+                while (result != null && !matchesCriteria(result)) {
+                    result = stream.nextAvailable();
+                }
+                return Optional.ofNullable(result).map(this::createEntryForMessage);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return Optional.empty();
@@ -132,23 +122,16 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
 
         @Override
         public Optional<Entry<E>> peek() {
-            if (peeked != null) {
-                return Optional.of(peeked);
-            }
-            if (!stream.hasNextAvailable()) {
-                return Optional.empty();
-            }
             try {
-                Optional<E> result = stream.peek();
-                while (result.isPresent()) {
-                    E message = result.get();
-                    if (!matchesCriteria(message)) {
-                        // Advance the stream to skip this message
-                        stream.nextAvailable();
-                        result = stream.peek();
-                        continue;
-                    }
-                    peeked = createEntryForMessage(message);
+                if (peeked != null) {
+                    return Optional.of(peeked);
+                }
+                var result = stream.nextAvailable();
+                while (result != null && !matchesCriteria(result)) {
+                    result = stream.nextAvailable();
+                }
+                if (result != null) {
+                    peeked = createEntryForMessage(result);
                     return Optional.of(peeked);
                 }
                 return Optional.empty();
