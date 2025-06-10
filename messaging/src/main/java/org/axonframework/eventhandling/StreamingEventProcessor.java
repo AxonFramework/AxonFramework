@@ -205,7 +205,6 @@ public interface StreamingEventProcessor extends EventProcessor {
             @Nullable R resetContext
     );
 
-
     /**
      * Resets tokens to the given {@code startPosition}. This effectively causes a replay of events since that
      * position.

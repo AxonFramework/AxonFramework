@@ -501,9 +501,9 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
          * Sets the {@link StreamableEventSource} (e.g. the {@code EventStore}) which this {@link EventProcessor} will
          * track.
          *
-         * @param eventSource the {@link StreamableEventSource} (e.g. the {@code EventStore}) which this
-         *                    {@link EventProcessor} will track
-         * @return the current Builder instance, for fluent interfacing
+         * @param eventSource The {@link StreamableEventSource} (e.g. the {@code EventStore}) which this
+         *                    {@link EventProcessor} will track.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder eventSource(@Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource) {
             assertNonNull(eventSource, "StreamableEventSource may not be null");

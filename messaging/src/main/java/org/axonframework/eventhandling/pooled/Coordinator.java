@@ -304,10 +304,10 @@ class Coordinator {
                                              logger.info("Initializing segments for processor [{}] ({} segments)",
                                                          name,
                                                          initialSegmentCount);
-                                             tokenStore.initializeTokenSegments(name,
-                                                                                initialSegmentCount,
-                                                                                joinAndUnwrap(initialToken.apply(
-                                                                                        eventSource)));
+                                             tokenStore.initializeTokenSegments(
+                                                     name,
+                                                     initialSegmentCount,
+                                                     joinAndUnwrap(initialToken.apply(eventSource)));
                                          }
                                          tokenStoreInitialized.set(true);
                                          return emptyCompletedFuture();
@@ -443,8 +443,8 @@ class Coordinator {
         /**
          * The source of events this coordinator should schedule per work package.
          *
-         * @param eventSource the source of events this coordinator should schedule per work package
-         * @return the current Builder instance, for fluent interfacing
+         * @param eventSource The source of events this coordinator should schedule per work package.
+         * @return The current Builder instance, for fluent interfacing.
          */
         Builder eventSource(StreamableEventSource<? extends EventMessage<?>> eventSource) {
             this.eventSource = eventSource;
@@ -502,8 +502,8 @@ class Coordinator {
          * A {@link EventFilter} used to check whether {@link EventMessage} must be ignored by all
          * {@link WorkPackage}s.
          *
-         * @param eventFilter a {@link EventFilter} used to check whether {@link EventMessage} must be ignored by
-         *                    all {@link WorkPackage}s
+         * @param eventFilter a {@link EventFilter} used to check whether {@link EventMessage} must be ignored by all
+         *                    {@link WorkPackage}s
          * @return the current Builder instance, for fluent interfacing
          */
         Builder eventFilter(EventFilter eventFilter) {
