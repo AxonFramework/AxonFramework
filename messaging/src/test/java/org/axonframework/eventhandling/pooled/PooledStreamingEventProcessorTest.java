@@ -394,7 +394,6 @@ class PooledStreamingEventProcessorTest {
         });
     }
 
-    // todo: callback needed!
     @Test
     void workPackageIsAbortedWhenExtendingClaimFails() {
         InMemoryTokenStore spy = spy(tokenStore);

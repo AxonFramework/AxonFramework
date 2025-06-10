@@ -195,7 +195,6 @@ class WorkPackageTest {
         assertTrue(abortResult.get().getClass().isAssignableFrom(IllegalStateException.class));
     }
 
-
     /**
      * This means an event was scheduled, was validated to be handled by the EventValidator, processed by the
      * BatchProcessor and the updated token stored.

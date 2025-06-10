@@ -219,8 +219,8 @@ class WorkPackage {
      * @return {@code True} if this {@link WorkPackage} scheduled the event for execution, otherwise {@code false}.
      */
     public boolean scheduleEvent(MessageStream.Entry<? extends EventMessage<?>> eventEntry) {
+        TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
         if (shouldNotSchedule(eventEntry)) {
-            TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
             logger.trace("Ignoring event [{}] with position [{}] for work package [{}]. "
                                  + "The last token [{}] covers event's token [{}].",
                          eventEntry.message().getIdentifier(),
@@ -231,7 +231,6 @@ class WorkPackage {
             return false;
         }
 
-        TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
         logger.debug("Assigned event [{}] with position [{}] to work package [{}].",
                      eventEntry.message().getIdentifier(),
                      eventToken != null ? eventToken.position().orElse(-1) : -1,
