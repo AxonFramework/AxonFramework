@@ -246,8 +246,6 @@ The reason for this shift can be broken down in three main pillars:
 Although this may seem like a devolution of the `Message`, we believe this stricter guardrails will help all users in
 the long run.
 
-TODO - Add specifics on the get/put with a `Converter`
-
 ## Adjusted APIs
 
 The changes incurred by the new [Unit of Work](#unit-of-work) and [Message Stream](#message-stream) combined form the
