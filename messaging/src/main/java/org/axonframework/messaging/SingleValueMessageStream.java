@@ -130,4 +130,12 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream.Si
                                            @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return source.thenApply(message -> accumulator.apply(identity, message));
     }
+
+    @Override
+    public Optional<Entry<M>> peek() {
+        if (source.isDone() && !source.isCompletedExceptionally() && !read.get()) {
+            return Optional.ofNullable(source.getNow(null));
+        }
+        return Optional.empty();
+    }
 }

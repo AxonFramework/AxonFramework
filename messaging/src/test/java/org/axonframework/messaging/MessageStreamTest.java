@@ -1026,4 +1026,140 @@ public abstract class MessageStreamTest<M extends Message<?>> {
             assertTrue(result.isCompleted());
         }
     }
+
+    @Nested
+    public class Peek {
+
+        @Test
+        void shouldReturnNextEntryWithoutAdvancing() {
+            //given
+            M message = createRandomMessage();
+            MessageStream<M> stream = completedTestSubject(List.of(message));
+
+            //when
+            Optional<Entry<M>> peeked = stream.peek();
+            Optional<Entry<M>> peekedAgain = stream.peek();
+
+            //then
+            assertTrue(peeked.isPresent());
+            assertEquals(message.getPayload(), peeked.get().message().getPayload());
+            assertTrue(peekedAgain.isPresent());
+            assertEquals(message.getPayload(), peekedAgain.get().message().getPayload());
+        }
+
+        @Test
+        void shouldReturnEmptyOnEmptyStream() {
+            //given
+            MessageStream<M> stream = completedTestSubject(List.of());
+
+            //when
+            Optional<Entry<M>> peeked = stream.peek();
+
+            //then
+            assertTrue(peeked.isEmpty());
+        }
+
+        @Test
+        void shouldNotAdvanceStream() {
+            //given
+            List<M> messages = List.of(createRandomMessage(), createRandomMessage());
+            MessageStream<M> stream = completedTestSubject(messages);
+
+            //when
+            Optional<Entry<M>> peeked = stream.peek();
+            Optional<Entry<M>> next = stream.next();
+
+            //then
+            assertTrue(peeked.isPresent());
+            assertEquals(messages.getFirst().getPayload(), peeked.get().message().getPayload());
+            assertTrue(next.isPresent());
+            assertEquals(messages.getFirst().getPayload(), next.get().message().getPayload());
+        }
+
+        @Test
+        void followedByNextReturnsSameEntry() {
+            //given
+            M message = createRandomMessage();
+            MessageStream<M> stream = completedTestSubject(List.of(message));
+
+            //when
+            Optional<Entry<M>> peeked = stream.peek();
+            Optional<Entry<M>> next = stream.next();
+
+            //then
+            assertTrue(peeked.isPresent());
+            assertTrue(next.isPresent());
+            assertEquals(peeked.get().message().getPayload(), next.get().message().getPayload());
+        }
+
+        @Test
+        void returnsEmptyAfterConsumingAll() {
+            //given
+            List<M> messages = List.of(createRandomMessage(), createRandomMessage());
+            MessageStream<M> stream = completedTestSubject(messages);
+
+            //when
+            stream.next();
+            stream.next();
+            Optional<Entry<M>> peeked = stream.peek();
+
+            //then
+            assertTrue(peeked.isEmpty());
+        }
+
+        @Test
+        void returnsEmptyOnEmptyStreamType() {
+            //given
+            MessageStream.Empty<M> stream = completedEmptyStreamTestSubject();
+
+            //when
+            Optional<Entry<M>> peeked = stream.peek();
+
+            //then
+            assertTrue(peeked.isEmpty());
+        }
+
+        @Test
+        void returnsEmptyOnFailedStream() {
+            //given
+            MessageStream<M> stream = failingTestSubject(List.of(), new RuntimeException("fail"));
+
+            //when
+            Optional<Entry<M>> peeked = stream.peek();
+
+            //then
+            assertTrue(peeked.isEmpty());
+        }
+
+        @Test
+        void onSingleStreamReturnsEntryWithoutAdvancing() {
+            //given
+            M message = createRandomMessage();
+            MessageStream.Single<M> stream = completedSingleStreamTestSubject(message);
+
+            //when
+            Optional<Entry<M>> peeked = stream.peek();
+            Optional<Entry<M>> peekedAgain = stream.peek();
+
+            //then
+            assertTrue(peeked.isPresent());
+            assertEquals(message.getPayload(), peeked.get().message().getPayload());
+            assertTrue(peekedAgain.isPresent());
+            assertEquals(message.getPayload(), peekedAgain.get().message().getPayload());
+        }
+
+        @Test
+        void onSingleStreamReturnsEmptyAfterNext() {
+            //given
+            M message = createRandomMessage();
+            MessageStream.Single<M> stream = completedSingleStreamTestSubject(message);
+
+            //when
+            stream.next();
+            Optional<Entry<M>> peeked = stream.peek();
+
+            //then
+            assertTrue(peeked.isEmpty());
+        }
+    }
 }
