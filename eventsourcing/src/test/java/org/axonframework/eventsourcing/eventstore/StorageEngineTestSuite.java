@@ -535,7 +535,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
             MessageStream<EventMessage<?>> stream = testSubject.source(condition);
 
-            waitUnitlHasNextAvailable(stream);
+            waitUntilHasNextAvailable(stream);
             Optional<Entry<EventMessage<?>>> peeked = stream.peek();
 
             assertTrue(peeked.isPresent());
@@ -553,7 +553,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
             MessageStream<EventMessage<?>> stream = testSubject.source(condition);
 
-            waitUnitlHasNextAvailable(stream);
+            waitUntilHasNextAvailable(stream);
             Optional<Entry<EventMessage<?>>> peeked = stream.peek();
             Optional<Entry<EventMessage<?>>> peekedAgain = stream.peek();
 
@@ -572,7 +572,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
             MessageStream<EventMessage<?>> stream = testSubject.source(condition);
 
-            waitUnitlHasNextAvailable(stream);
+            waitUntilHasNextAvailable(stream);
             Optional<Entry<EventMessage<?>>> peeked = stream.peek();
             Optional<Entry<EventMessage<?>>> next = stream.next();
 
@@ -587,7 +587,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
             MessageStream<EventMessage<?>> stream = testSubject.source(condition);
 
-            waitUnitlHasNextAvailable(stream);
+            waitUntilHasNextAvailable(stream);
             Optional<Entry<EventMessage<?>>> peeked = stream.peek();
 
             assertTrue(peeked.isPresent());
@@ -603,7 +603,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
             MessageStream<EventMessage<?>> stream = testSubject.source(condition);
 
-            waitUnitlHasNextAvailable(stream);
+            waitUntilHasNextAvailable(stream);
             stream.next(); // consume event
             stream.next(); // consume marker
 
@@ -644,7 +644,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         assertEquals(expected.getMetaData(), actual.getMetaData());
     }
 
-    private static void waitUnitlHasNextAvailable(MessageStream<EventMessage<?>> stream) {
+    private static void waitUntilHasNextAvailable(MessageStream<EventMessage<?>> stream) {
         await("Await event availability in stream")
                 .atMost(Duration.ofSeconds(2))
                 .pollInterval(Duration.ofMillis(100))
