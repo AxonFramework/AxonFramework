@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.test.server;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.images.ImagePullPolicy;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
@@ -95,6 +96,12 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
         //noinspection resource | ignore from AutoClosable on GenericContainer
         withExposedPorts(AXON_SERVER_HTTP_PORT, AXON_SERVER_GRPC_PORT)
                 .withEnv(AXONIQ_LICENSE, LICENCE_DEFAULT_LOCATION)
+                .withImagePullPolicy(new ImagePullPolicy() {
+                    @Override
+                    public boolean shouldPull(DockerImageName imageName) {
+                        return true;
+                    }
+                })
                 .waitingFor(Wait.forLogMessage(WAIT_FOR_LOG_MESSAGE, 1))
                 .waitingFor(Wait.forHttp(HEALTH_ENDPOINT).forPort(AXON_SERVER_HTTP_PORT));
     }
