@@ -109,14 +109,17 @@ public class MutableReflectionEntityModelAdministrationTest extends AbstractAdmi
                                   .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterSetter(
                                           MutableEmployee::getTaskList, MutableEmployee::setTaskList
                                   ))
-                                  .commandTargetMatcher((task, commandMessage) -> {
+                                  .commandTargetResolver((candidates, commandMessage, ctx) -> {
                                       if (commandMessage.getPayload() instanceof CompleteTaskCommand completeTaskCommand) {
-                                          return task.getTaskId()
-                                                     .equals(completeTaskCommand.taskId());
+                                          return candidates.stream()
+                                                           .filter(task -> task.getTaskId()
+                                                                               .equals(completeTaskCommand.taskId()))
+                                                           .findFirst()
+                                                           .orElse(null);
                                       }
-                                      return false;
+                                      return null;
                                   })
-                                  .eventTargetMatcher((o, eventMessage) -> {
+                                  .eventTargetMatcher((o, eventMessage, ctx) -> {
                                       if (eventMessage.getPayload() instanceof TaskCompleted taskAssigned) {
                                           return o.getTaskId().equals(taskAssigned.taskId());
                                       }
