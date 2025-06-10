@@ -41,7 +41,7 @@ import java.util.function.Function;
 class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     private final Flux<Entry<M>> source;
-    private final BlockingQueue<Entry<M>> readAhead = new LinkedBlockingQueue<>(5);
+    private final BlockingQueue<Entry<M>> peeked = new LinkedBlockingQueue<>(5);
     private final AtomicBoolean sourceSubscribed = new AtomicBoolean();
     private final AtomicReference<Subscription> subscription = new AtomicReference<>();
     private final AtomicReference<Runnable> availabilityCallback = new AtomicReference<>(() -> {
@@ -78,8 +78,8 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
     @Override
     public Optional<Entry<M>> next() {
         subscribeToSource();
-        Entry<M> poll = readAhead.poll();
-        if (poll != null && readAhead.isEmpty()) {
+        Entry<M> poll = peeked.poll();
+        if (poll != null && peeked.isEmpty()) {
             if (!closed.get()) {
                 subscription.get().request(1);
             }
@@ -98,7 +98,7 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public Optional<Throwable> error() {
-        if (readAhead.isEmpty()) {
+        if (peeked.isEmpty()) {
             return Optional.ofNullable(error.get());
         }
         // there is still data to read, so we're not reporting an error
@@ -107,13 +107,13 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public boolean isCompleted() {
-        return readAhead.isEmpty() && completed.get();
+        return peeked.isEmpty() && completed.get();
     }
 
     @Override
     public boolean hasNextAvailable() {
         subscribeToSource();
-        return !readAhead.isEmpty();
+        return !peeked.isEmpty();
     }
 
     @Override
@@ -128,7 +128,7 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
     @Override
     public Optional<Entry<M>> peek() {
         subscribeToSource();
-        return Optional.ofNullable(readAhead.peek());
+        return Optional.ofNullable(peeked.peek());
     }
 
     private void subscribeToSource() {
@@ -144,7 +144,7 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
 
                 @Override
                 public void onNext(Entry<M> mEntry) {
-                    readAhead.add(mEntry);
+                    peeked.add(mEntry);
                     availabilityCallback.get().run();
                 }
 

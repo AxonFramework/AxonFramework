@@ -35,7 +35,7 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     private final MessageStream<M> delegate;
     private final Predicate<Entry<M>> filter;
-    private Entry<M> lookAhead = null;
+    private Entry<M> peeked = null;
 
     /**
      * Construct a {@link MessageStream stream} that invokes the given {@code filter} {@link Predicate} each time a new
@@ -54,9 +54,9 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public Optional<Entry<M>> next() {
-        if (lookAhead != null) {
-            Entry<M> result = lookAhead;
-            lookAhead = null;
+        if (peeked != null) {
+            Entry<M> result = peeked;
+            peeked = null;
             return Optional.of(result);
         }
         Optional<Entry<M>> result = delegate.next();
@@ -68,16 +68,16 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public Optional<Entry<M>> peek() {
-        if (lookAhead != null) {
-            return Optional.of(lookAhead);
+        if (peeked != null) {
+            return Optional.of(peeked);
         }
         Optional<Entry<M>> result = delegate.next();
         while (result.isPresent() && !filter.test(result.get())) {
             result = delegate.next();
         }
         if (result.isPresent()) {
-            lookAhead = result.get();
-            return Optional.of(lookAhead);
+            peeked = result.get();
+            return Optional.of(peeked);
         }
         return Optional.empty();
     }
@@ -94,12 +94,12 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public boolean isCompleted() {
-        return delegate.isCompleted() && lookAhead == null;
+        return delegate.isCompleted() && peeked == null;
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return lookAhead != null || peek().isPresent();
+        return peeked != null || peek().isPresent();
     }
 
     @Override

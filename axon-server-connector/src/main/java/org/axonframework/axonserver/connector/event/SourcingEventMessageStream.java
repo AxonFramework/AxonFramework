@@ -82,10 +82,10 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage<?>
             logger.debug("Reached the consistency marker message of the source result stream.");
             return convertToMarkerEntry(next.getConsistencyMarker());
         }
-        return getConvertToEventEntry(next.getEvent());
+        return convertToEventEntry(next.getEvent());
     }
 
-    private Optional<Entry<EventMessage<?>>> getConvertToEventEntry(SequencedEvent event) {
+    private Optional<Entry<EventMessage<?>>> convertToEventEntry(SequencedEvent event) {
         EventMessage<byte[]> eventMessage = converter.convertEvent(event.getEvent());
         TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence() + 1);
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
@@ -109,7 +109,7 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage<?>
             logger.debug("Peeked the consistency marker message of the source result stream.");
             return convertToMarkerEntry(peeked.getConsistencyMarker());
         }
-        return getConvertToEventEntry(peeked.getEvent());
+        return convertToEventEntry(peeked.getEvent());
     }
 
     @Override

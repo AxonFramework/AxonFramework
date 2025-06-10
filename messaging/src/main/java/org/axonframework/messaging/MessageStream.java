@@ -310,7 +310,7 @@ public interface MessageStream<M extends Message<?>> {
 
     /**
      * Returns an Optional carrying the next {@link Entry entry} from the stream, if such entry was available. If no
-     * entry is available for reading, this method returns an empty Optional.
+     * entry was available for reading, this method returns an empty Optional.
      * <p>
      * This method will never block for elements becoming available.
      *
@@ -320,7 +320,7 @@ public interface MessageStream<M extends Message<?>> {
 
     /**
      * Returns an Optional carrying the next {@link Entry entry} from the stream (without moving the stream pointer), if such entry was available. If no
-     * entry is available for reading, this method returns an empty Optional.
+     * entry was available for reading, this method returns an empty Optional.
      * <p>
      * This method will never block for elements becoming available.
      *

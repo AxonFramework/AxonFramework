@@ -32,7 +32,7 @@ import java.util.Optional;
 class IteratorMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     private final Iterator<? extends Entry<M>> source;
-    private Entry<M> lookahead = null;
+    private Entry<M> peeked = null;
 
     /**
      * Constructs a {@link MessageStream stream} using the given {@code source} to provide the {@link Entry entries}.
@@ -44,22 +44,10 @@ class IteratorMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public Optional<Entry<M>> peek() {
-        if (lookahead != null) {
-            return Optional.of(lookahead);
-        }
-        if (source.hasNext()) {
-            lookahead = source.next();
-            return Optional.of(lookahead);
-        }
-        return Optional.empty();
-    }
-
-    @Override
     public Optional<Entry<M>> next() {
-        if (lookahead != null) {
-            Entry<M> result = lookahead;
-            lookahead = null;
+        if (peeked != null) {
+            Entry<M> result = peeked;
+            peeked = null;
             return Optional.of(result);
         }
         if (source.hasNext()) {
@@ -67,6 +55,18 @@ class IteratorMessageStream<M extends Message<?>> implements MessageStream<M> {
         } else {
             return Optional.empty();
         }
+    }
+
+    @Override
+    public Optional<Entry<M>> peek() {
+        if (peeked != null) {
+            return Optional.of(peeked);
+        }
+        if (source.hasNext()) {
+            peeked = source.next();
+            return Optional.of(peeked);
+        }
+        return Optional.empty();
     }
 
     @Override
