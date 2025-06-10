@@ -155,7 +155,7 @@ class SimpleEntityModelTest {
             MessageStreamTestUtils.assertCompletedExceptionally(
                     entityModel.handleInstance(command, entity, context),
                     ChildAmbiguityException.class,
-                    "Multiple child entities found for command of type [SharedChildCommand#0.0.1]. State of parent entity ["
+                    "Multiple matching child entity members found for command of type"
             );
         }
 
