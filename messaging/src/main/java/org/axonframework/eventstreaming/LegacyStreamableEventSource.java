@@ -90,29 +90,68 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
      *
      * @param <E> The type of {@link EventMessage} in the stream.
      */
-    private record BlockingMessageStream<E extends EventMessage<?>>(
-            BlockingStream<E> stream,
-            EventCriteria criteria
-    ) implements MessageStream<E> {
+    private static class BlockingMessageStream<E extends EventMessage<?>> implements MessageStream<E> {
+
+        private final BlockingStream<E> stream;
+        private final EventCriteria criteria;
+        private Entry<E> peeked;
+
+        BlockingMessageStream(BlockingStream<E> stream, EventCriteria criteria) {
+            this.stream = stream;
+            this.criteria = criteria;
+        }
 
         @Override
         public Optional<Entry<E>> next() {
+            if (peeked != null) {
+                Entry<E> result = peeked;
+                peeked = null;
+                return Optional.of(result);
+            }
             if (!stream.hasNextAvailable()) {
                 return Optional.empty();
             }
-
             try {
-                E message = stream.nextAvailable();
-                if (message == null) {
-                    return Optional.empty();
+                while (stream.hasNextAvailable()) {
+                    E message = stream.nextAvailable();
+                    if (message == null) {
+                        return Optional.empty();
+                    }
+                    if (!matchesCriteria(message)) {
+                        continue;
+                    }
+                    Entry<E> entry = createEntryForMessage(message);
+                    return Optional.of(entry);
                 }
+                return Optional.empty();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return Optional.empty();
+            }
+        }
 
-                if (!matchesCriteria(message)) {
-                    return next();
+        @Override
+        public Optional<Entry<E>> peek() {
+            if (peeked != null) {
+                return Optional.of(peeked);
+            }
+            if (!stream.hasNextAvailable()) {
+                return Optional.empty();
+            }
+            try {
+                Optional<E> result = stream.peek();
+                while (result.isPresent()) {
+                    E message = result.get();
+                    if (!matchesCriteria(message)) {
+                        // Advance the stream to skip this message
+                        stream.nextAvailable();
+                        result = stream.peek();
+                        continue;
+                    }
+                    peeked = createEntryForMessage(message);
+                    return Optional.of(peeked);
                 }
-
-                Entry<E> entry = createEntryForMessage(message);
-                return Optional.of(entry);
+                return Optional.empty();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return Optional.empty();

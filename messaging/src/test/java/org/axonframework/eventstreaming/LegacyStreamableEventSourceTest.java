@@ -324,8 +324,6 @@ class LegacyStreamableEventSourceTest {
 
                 // Message available but won't match criteria (no tags)
                 when(mockBlockingStream.hasNextAvailable()).thenReturn(true, false);
-                when(mockBlockingStream.nextAvailable()).thenAnswer(invocation ->
-                                                                            createTestEventMessage("test-payload"));
 
                 // When - calling next
                 Optional<MessageStream.Entry<EventMessage<?>>> result = filteringStream.next();

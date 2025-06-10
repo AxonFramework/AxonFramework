@@ -254,6 +254,53 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
+        public Optional<Entry<EventMessage<?>>> peek() {
+            if (closed) {
+                return Optional.empty();
+            }
+
+            long position = currentPosition.get();
+            EventMessage<?> event = eventStorage.get(position);
+
+            if (event == null) {
+                return Optional.empty();
+            }
+
+            Context context = Context.empty();
+            context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position + 1));
+            context = Tag.addToContext(context, Collections.emptySet());
+
+            if (FAIL_PAYLOAD.equals(event.getPayload())) {
+                throw new IllegalStateException("Cannot retrieve event at position [" + position + "].");
+            }
+
+            if (matches(event, condition)) {
+                return Optional.of(new SimpleEntry<>(event, context));
+            } else {
+                // If the event does not match, we need to look ahead without advancing currentPosition.
+                // We must scan forward until we find a matching event or run out of events.
+                long nextPos = position + 1;
+                while (true) {
+                    EventMessage<?> nextEvent = eventStorage.get(nextPos);
+                    if (nextEvent == null) {
+                        return Optional.empty();
+                    }
+                    if (FAIL_PAYLOAD.equals(nextEvent.getPayload())) {
+                        throw new IllegalStateException("Cannot retrieve event at position [" + nextPos + "].");
+                    }
+                    if (matches(nextEvent, condition)) {
+                        Context nextContext = Context.empty();
+                        nextContext = TrackingToken.addToContext(nextContext,
+                                                                 new GlobalSequenceTrackingToken(nextPos + 1));
+                        nextContext = Tag.addToContext(nextContext, Collections.emptySet());
+                        return Optional.of(new SimpleEntry<>(nextEvent, nextContext));
+                    }
+                    nextPos++;
+                }
+            }
+        }
+
+        @Override
         public void onAvailable(@Nonnull Runnable callback) {
             this.callback.set(callback);
             if (streamCallbackSupported && hasNextAvailable()) {
