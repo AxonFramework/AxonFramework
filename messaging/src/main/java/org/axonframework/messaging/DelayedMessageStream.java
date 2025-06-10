@@ -173,6 +173,14 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
         return delegate.thenCompose(delegateStream -> delegateStream.reduce(identity, accumulator));
     }
 
+    @Override
+    public Optional<Entry<M>> peek() {
+        if (delegate.isDone() && !delegate.isCompletedExceptionally()) {
+            return delegate.getNow(null).peek();
+        }
+        return Optional.empty();
+    }
+
     /**
      * An implementation of the {@link DelayedMessageStream} that expects a message stream with only a
      * {@link org.axonframework.messaging.MessageStream.Single entry}.

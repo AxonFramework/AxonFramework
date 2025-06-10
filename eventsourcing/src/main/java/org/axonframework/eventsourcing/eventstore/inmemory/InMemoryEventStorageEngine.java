@@ -287,6 +287,21 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             return lastEntry();
         }
 
+        @Override
+        public Optional<Entry<EventMessage<?>>> peek() {
+            long currentPosition = this.position.get();
+            while (currentPosition <= this.end && eventStorage.containsKey(currentPosition)) {
+                TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
+                if (match(nextEvent, this.condition)) {
+                    Context context = Context.empty();
+                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition + 1));
+                    return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
+                }
+                currentPosition++;
+            }
+            return lastEntry();
+        }
+
         abstract Optional<Entry<EventMessage<?>>> lastEntry();
 
         @Override

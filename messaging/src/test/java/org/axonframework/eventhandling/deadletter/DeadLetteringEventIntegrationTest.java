@@ -152,7 +152,6 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         // A policy that ensure a letter is only retried once by adding diagnostics.
         EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> {
-            // TODO use a getWithConverter here
             int retries = Integer.parseInt(letter.diagnostics().getOrDefault("retries", "0"));
             if (retries < maxRetries.get()) {
                 Throwable decisionThrowable = cause;
@@ -161,7 +160,6 @@ public abstract class DeadLetteringEventIntegrationTest {
                 }
                 return Decisions.enqueue(
                         ThrowableCause.truncated(decisionThrowable),
-                        // TODO use a withWithConverter here
                         l -> MetaData.with(
                                 "retries",
                                 Integer.toString(Integer.parseInt(l.diagnostics().getOrDefault("retries", "0")) + 1)
