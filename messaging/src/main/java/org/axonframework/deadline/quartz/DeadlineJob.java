@@ -292,7 +292,7 @@ public class DeadlineJob implements Job {
             return serializer.deserialize(serializedDeadlinePayload);
         }
 
-        private static Map<String, ?> deserializeDeadlineMetaData(Serializer serializer, JobDataMap jobDataMap) {
+        private static Map<String, String> deserializeDeadlineMetaData(Serializer serializer, JobDataMap jobDataMap) {
             SimpleSerializedObject<byte[]> serializedDeadlineMetaData = new SimpleSerializedObject<>(
                     (byte[]) jobDataMap.get(MESSAGE_METADATA), byte[].class, MetaData.class.getName(), null
             );

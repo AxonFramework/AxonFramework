@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.modelling;
 
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.modelling.EntityEvolver;
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
@@ -33,12 +32,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link SimpleEventSourcedComponent}.
+ * Test class validating the {@link SimpleEntityEvolvingComponent}.
  *
  * @author Mitchll Herrijgers
  * @author Steven van Beelen
  */
-class SimpleEventSourcedComponentTest {
+class SimpleEntityEvolvingComponentTest {
 
     private static final String ENTITY = "entity";
     private static final EventMessage<String> STRING_EVENT =
@@ -49,7 +48,7 @@ class SimpleEventSourcedComponentTest {
     private AtomicBoolean stringEvolverInvoked;
     private AtomicBoolean integerEvolverInvoked;
 
-    private SimpleEventSourcedComponent<String> testSubject;
+    private SimpleEntityEvolvingComponent<String> testSubject;
 
     @BeforeEach
     void setUp() {
@@ -69,31 +68,19 @@ class SimpleEventSourcedComponentTest {
         evolvers.put(STRING_EVENT.type().qualifiedName(), stringBasedEntityEvolver);
         evolvers.put(INT_EVENT.type().qualifiedName(), integerBasedEntityEvolver);
 
-        testSubject = new SimpleEventSourcedComponent<>(evolvers);
+        testSubject = new SimpleEntityEvolvingComponent<>(evolvers);
     }
 
     @Test
     void constructorThrowsNullPointerExceptionForNullEntityEvolverCollection() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new SimpleEventSourcedComponent<>(null));
-    }
-
-    @Test
-    void evolveThrowsNullPointerExceptionForNullEntity() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.evolve(null, STRING_EVENT, StubProcessingContext.forMessage(STRING_EVENT)));
+        assertThrows(NullPointerException.class, () -> new SimpleEntityEvolvingComponent<>(null));
     }
 
     @Test
     void evolveThrowsNullPointerExceptionForNullEventMessage() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> testSubject.evolve(ENTITY, null, null));
-    }
-
-    @Test
-    void evolveThrowsNullPointerExceptionForNullProcessingContext() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.evolve(ENTITY, STRING_EVENT, null));
     }
 
     @Test

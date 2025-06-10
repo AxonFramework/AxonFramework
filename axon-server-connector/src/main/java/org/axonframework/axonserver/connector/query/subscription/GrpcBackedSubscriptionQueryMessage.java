@@ -114,14 +114,14 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
-    public GrpcBackedSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GrpcBackedSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GrpcBackedSubscriptionQueryMessage<>(subscriptionQuery,
                                                         grpcBackedQueryMessage.withMetaData(metaData),
                                                         serializedUpdateResponseType);
     }
 
     @Override
-    public GrpcBackedSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public GrpcBackedSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
         return withMetaData(getMetaData().mergedWith(metaData));
     }
 }

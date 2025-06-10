@@ -98,23 +98,8 @@ public class EventConverter implements DescribableComponent {
                        .stream()
                        .collect(Collectors.toUnmodifiableMap(
                                Map.Entry::getKey,
-                               entry -> convertMetaDataValue(entry.getValue())
+                               Map.Entry::getValue
                        ));
-    }
-
-    private String convertMetaDataValue(Object value) {
-        // TODO #3423 Replace this logic
-        return switch (value) {
-            case CharSequence ignored -> value.toString();
-            case Double d -> Double.toString(d);
-            case Float f -> Float.toString(f);
-            case Long l -> Long.toString(l);
-            case Integer i -> Integer.toString(i);
-            case Short s -> Short.toString(s);
-            case Byte b -> Byte.toString(b);
-            case Boolean b -> Boolean.toString(b);
-            default -> converter.convert(value, String.class);
-        };
     }
 
     private static List<io.axoniq.axonserver.grpc.event.dcb.Tag> convertTags(Set<Tag> tags) {

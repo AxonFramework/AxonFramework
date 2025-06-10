@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.testsuite.administration;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -40,6 +39,7 @@ import org.axonframework.integrationtests.testsuite.administration.state.mutable
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableTask;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityModel;
@@ -60,7 +60,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // Task is the list-based child-model of Employee
         EntityModel<MutableTask> taskModel = SimpleEntityModel
                 .forEntityClass(MutableTask.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(MutableTask.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableTask.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -73,7 +73,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // SalaryInformation is the singular child-model of Employee
         EntityModel<MutableSalaryInformation> salaryInformationModel = SimpleEntityModel
                 .forEntityClass(MutableSalaryInformation.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(MutableSalaryInformation.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableSalaryInformation.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -86,7 +86,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // Employee is a concrete entity type
         EntityModel<MutableEmployee> employeeModel = SimpleEntityModel
                 .forEntityClass(MutableEmployee.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(MutableEmployee.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableEmployee.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
                                         ((command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -134,7 +134,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // Customer is a concrete entity type
         EntityModel<MutableCustomer> customerModel = SimpleEntityModel
                 .forEntityClass(MutableCustomer.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(MutableCustomer.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableCustomer.class))
                 .instanceCommandHandler(
                         typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
                         ((command, entity, context) -> {
@@ -149,7 +149,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .forSuperType(MutablePerson.class)
                 .addConcreteType(employeeModel)
                 .addConcreteType(customerModel)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(MutablePerson.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutablePerson.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,

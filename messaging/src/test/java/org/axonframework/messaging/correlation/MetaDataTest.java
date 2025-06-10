@@ -17,9 +17,8 @@
 package org.axonframework.messaging.correlation;
 
 import org.axonframework.messaging.MetaData;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import java.io.*;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,13 +28,15 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link MetaData}.
+ *
  * @author Allard Buijze
  */
-class MetaDataValueTest {
+class MetaDataTest {
 
     @Test
     void createMetaData() {
-        Map<String, Object> metaDataValues = new HashMap<>();
+        Map<String, String> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         MetaData metaData = new MetaData(metaDataValues);
         metaDataValues.put("second", "value");
@@ -46,7 +47,7 @@ class MetaDataValueTest {
 
     @Test
     void mergedMetaData() {
-        Map<String, Object> metaDataValues = new HashMap<>();
+        Map<String, String> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         MetaData metaData = new MetaData(metaDataValues);
         metaDataValues.put("second", "value");
@@ -59,7 +60,7 @@ class MetaDataValueTest {
 
     @Test
     void removedMetaData() {
-        Map<String, Object> metaDataValues = new HashMap<>();
+        Map<String, String> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         metaDataValues.put("second", "value");
         MetaData metaData = new MetaData(metaDataValues);
@@ -70,7 +71,7 @@ class MetaDataValueTest {
 
     @Test
     void equals() {
-        Map<String, Object> metaDataValues = new HashMap<>();
+        Map<String, String> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         MetaData metaData1 = new MetaData(metaDataValues);
         metaDataValues.put("second", "value");
@@ -82,8 +83,8 @@ class MetaDataValueTest {
         assertNotEquals(metaData1, metaData2);
         assertNotEquals(metaData1, metaData3);
         assertNotEquals(metaData3, metaData1);
-        assertNotEquals(metaData1, new Object());
-        assertNotEquals(metaData1, null);
+        assertNotEquals(new Object(), metaData1);
+        assertNotEquals(null, metaData1);
 
         // Map requires that Maps are equal, even if their implementation is different
         assertEquals(metaData2, metaDataValues);
@@ -170,7 +171,7 @@ class MetaDataValueTest {
 
     @Test
     void metaDataModification_Values_Remove() {
-        Collection<Object> values = new MetaData(Collections.emptyMap()).values();
+        Collection<String> values = new MetaData(Collections.emptyMap()).values();
 
         assertThrows(UnsupportedOperationException.class, () -> values.remove("Hello"));
     }
@@ -178,7 +179,7 @@ class MetaDataValueTest {
     @SuppressWarnings({"SuspiciousMethodCalls"})
     @Test
     void metaDataModification_EntrySet_Remove() {
-        Set<Map.Entry<String,Object>> entrySet = new MetaData(Collections.emptyMap()).entrySet();
+        Set<Map.Entry<String, String>> entrySet = new MetaData(Collections.emptyMap()).entrySet();
 
         assertThrows(UnsupportedOperationException.class, () -> entrySet.remove("Hello"));
     }
@@ -186,14 +187,26 @@ class MetaDataValueTest {
     @Test
     void metaDataSubsetReturnsSubsetOfMetaDataInstance() {
         MetaData testMetaData = MetaData.with("firstKey", "firstValue")
-                .and("secondKey", "secondValue")
-                .and("thirdKey", "thirdValue")
-                .and("fourthKey", "fourthValue");
+                                        .and("secondKey", "secondValue")
+                                        .and("thirdKey", "thirdValue")
+                                        .and("fourthKey", "fourthValue");
 
         MetaData result = testMetaData.subset("secondKey", "fourthKey", "fifthKey");
 
         assertEquals("secondValue", result.get("secondKey"));
         assertEquals("fourthValue", result.get("fourthKey"));
         assertNull(result.get("fifthKey"));
+    }
+
+    @Test
+    void addNullValueToMetaData() {
+        MetaData metaData = MetaData.with("nullkey", null)
+                                    .and("otherkey", "value")
+                                    .and("lastkey", "lastvalue")
+                                    .subset("nullkey", "otherkey");
+
+        assertEquals(2, metaData.size());
+        assertNull(metaData.get("nullkey"));
+        assertEquals("value", metaData.get("otherkey"));
     }
 }

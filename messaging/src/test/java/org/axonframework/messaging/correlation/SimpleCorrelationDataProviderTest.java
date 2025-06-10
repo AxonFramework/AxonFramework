@@ -31,7 +31,7 @@ class SimpleCorrelationDataProviderTest {
 
     @Test
     void resolveCorrelationData() {
-        Map<String, Object> metaData = new HashMap<>();
+        Map<String, String> metaData = new HashMap<>();
         metaData.put("key1", "value1");
         metaData.put("key2", "value2");
         metaData.put("key3", "value3");

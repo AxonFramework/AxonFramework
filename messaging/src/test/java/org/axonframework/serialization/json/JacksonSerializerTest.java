@@ -28,8 +28,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.serialization.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.InputStream;
 import java.time.Instant;
@@ -269,18 +268,6 @@ class JacksonSerializerTest {
         assertNotNull(actual);
         assertEquals("test", actual.get("test"));
         assertEquals(1, actual.size());
-    }
-
-    @Test
-    void serializeMetaDataWithComplexObjects() {
-        // Typing must be enabled for this (which we expect end-users to do)
-        JacksonSerializer testSubject = JacksonSerializer.builder().defaultTyping().build();
-
-        MetaData metaData = MetaData.with("myKey", new ComplexObject("String1", "String2", 3));
-        SerializedObject<byte[]> serialized = testSubject.serialize(metaData, byte[].class);
-        MetaData actual = testSubject.deserialize(serialized);
-
-        assertEquals(metaData, actual);
     }
 
     /**

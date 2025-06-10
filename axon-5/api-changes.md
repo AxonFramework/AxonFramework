@@ -36,6 +36,11 @@ Major API Changes
   imperative and reactive style of programming, (2) eliminate the use of `ThreadLocal`, and (3) protect users from
   internals APIs. This does mean that any direct interaction with the `UnitOfWork` has become a breaking change. Please
   check the [Unit of Work](#unit-of-work) section for more details if you are facing this predicament.
+* Messages have undergone roughly two major changes. One, they now contain a `MessageType`, decoupling a messages (
+  business) type from Java's type system. You can find more details on this [here](#message-type-and-qualified-name).
+  Secondly, the `MetaData` of each `Message` now reflects a `Map<String, String>` instead of `Map<String, ?>`, thus
+  forcing metadata values to strings. Please read [this](#metadata-with-string-values) section for more details on this
+  shift.
 * All message-based infrastructure in Axon Framework will return the `MessageStream` interface. The `MessageStream` is
   intended to support empty results, results of one entry, and results of N entries, thus mirroring Event Handlers (no
   results), Command Handlers (one result), and Query Handlers (N results). Added, the `MessageStream` will function as a
@@ -223,6 +228,23 @@ As can be expected, the `MessageStream` streams implementation of `Message`. Hen
 `MessageStream`, by specifying a lambda that takes in the `Message` and returns a `Context` object. For example, Axon
 Framework uses this `Context` to add the aggregate identifier, aggregate type, and sequence number for events that
 originate from an aggregate-based event store (thus a pre-Dynamic Consistency Boundary event store).
+
+### MetaData with String values
+
+The `MetaData` class in Axon Framework changed its implementation. Originally, it was a `Map<String, ?>` implementation.
+As of Axon Framework 5, it is a `Map<String, String>`.
+
+The reason for this shift can be broken down in three main pillars:
+
+1. It greatly simplifies de-/serialization for storing `Messages` and putting `Messages` over the wire, since any value
+   is a `String` in all cases.
+2. It aligns better with how other services, libraries, and frameworks view metadata, which tends to be a `String` or
+   byte array.
+3. Depending on application requirements, the de-/serialization of specific values can be different. By enforcing a
+   `String`, we streamline the process.
+
+Although this may seem like a devolution of the `Message`, we believe this stricter guardrails will help all users in
+the long run.
 
 ## Adjusted APIs
 
@@ -1050,6 +1072,14 @@ However, they will eventually be removed entirely from Axon Framework 5, as we e
 |--------------------------------------------------------------------------|
 | org.axonframework.modelling.command.Repository                           |
 
+### Changed implements or extends
+
+Note that **any**  changes here may have far extending impact on the original class.
+
+| Class       | Before           | After            | Explanation                                                  | 
+|-------------|------------------|------------------|--------------------------------------------------------------|
+| `MetaData`  | `Map<String, ?>` | `Map<String, ?>` | See the [metadata description](#metadata-with-string-values) |
+
 ## Method Signature Changes
 
 This section contains three subsections, called:
@@ -1145,3 +1175,9 @@ This section contains three subsections, called:
 | `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Version-based loading is no longer supported due to limited use by the community.        |
 | `org.axonframework.modelling.command.Aggregate#version()`                                            | Version-based loading is no longer supported due to limited use by the community.        |
 | `org.axonframework.modelling.command.LockAwareAggregate#version()`                                   | Version-based loading is no longer supported due to limited use by the community.        |
+
+### Changed method return types
+
+| Method                                         | Before               | After           |
+|------------------------------------------------|----------------------|-----------------|
+| `CorrelationDataProvider#correlationDataFor()` | Map<String, String>  | Map<String, ?>  | 
