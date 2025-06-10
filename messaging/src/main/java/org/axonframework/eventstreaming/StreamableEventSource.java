@@ -77,7 +77,7 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      * this operation typically return a different token. Only if this {@code StreamableEventSource} is idle, will
      * several {@code latestToken()} invocations result in the same {@code TrackingToken}.
      *
-     * @return A {@link CompletableFuture} of a {@link TrackingToken} pointing at the <b>latest</b> event of the
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} of the latest event, pointing at the next event of the
      * {@link MessageStream event stream}.
      */
     CompletableFuture<TrackingToken> latestToken();
