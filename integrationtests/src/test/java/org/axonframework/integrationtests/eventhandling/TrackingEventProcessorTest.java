@@ -363,8 +363,8 @@ class TrackingEventProcessorTest {
         Set<Class<?>> skipped = new HashSet<>();
 
         LegacyEmbeddedEventStore mockEventBus = mock(LegacyEmbeddedEventStore.class);
-        when(mockEventBus.tailToken()).thenCallRealMethod();
-        when(mockEventBus.headToken()).thenCallRealMethod();
+        when(mockEventBus.latestToken()).thenCallRealMethod();
+        when(mockEventBus.firstToken()).thenCallRealMethod();
         TrackingToken trackingToken = new GlobalSequenceTrackingToken(0);
         List<TrackedEventMessage<?>> events =
                 createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
@@ -1249,8 +1249,8 @@ class TrackingEventProcessorTest {
     @Test
     void replayFlagAvailableWhenReplayInDifferentOrder() throws Exception {
         StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
-        when(stubSource.headToken()).thenCallRealMethod();
-        when(stubSource.tailToken()).thenCallRealMethod();
+        when(stubSource.firstToken()).thenCallRealMethod();
+        when(stubSource.latestToken()).thenCallRealMethod();
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)
@@ -1371,8 +1371,8 @@ class TrackingEventProcessorTest {
         int segmentId = 0;
         //noinspection unchecked
         StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
-        when(stubSource.headToken()).thenCallRealMethod();
-        when(stubSource.tailToken()).thenCallRealMethod();
+        when(stubSource.firstToken()).thenCallRealMethod();
+        when(stubSource.latestToken()).thenCallRealMethod();
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
                                             .eventHandlerInvoker(eventHandlerInvoker)

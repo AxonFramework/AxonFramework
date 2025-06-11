@@ -603,8 +603,8 @@ class Coordinator {
          * replay since the start of the stream.
          * <p>
          * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
-         * from the {@link StreamableEventSource#tailToken() tail} with the replay flag enabled until the
-         * {@link StreamableEventSource#headToken() head} at the moment of initialization is reached.
+         * from the {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the
+         * {@link StreamableEventSource#firstToken() head} at the moment of initialization is reached.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
          *                     {@link StreamableEventSource}

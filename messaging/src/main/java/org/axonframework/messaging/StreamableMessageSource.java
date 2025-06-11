@@ -72,12 +72,12 @@ public interface StreamableMessageSource<M extends Message<?>> extends TrackingT
     }
 
     @Override
-    default CompletableFuture<TrackingToken> headToken() {
+    default CompletableFuture<TrackingToken> firstToken() {
         return CompletableFuture.completedFuture(createHeadToken());
     }
 
     @Override
-    default CompletableFuture<TrackingToken> tailToken() {
+    default CompletableFuture<TrackingToken> latestToken() {
         return CompletableFuture.completedFuture(createTailToken());
     }
 

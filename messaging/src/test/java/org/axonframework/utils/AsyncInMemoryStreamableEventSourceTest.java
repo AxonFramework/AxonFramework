@@ -57,7 +57,7 @@ class AsyncInMemoryStreamableEventSourceTest {
         legacySource.publishMessage(event2);
 
         // Then - Both should report same head token
-        TrackingToken asyncHead = asyncSource.headToken().get();
+        TrackingToken asyncHead = asyncSource.firstToken().get();
         TrackingToken legacyHead = legacySource.createHeadToken();
 
         assertEquals(legacyHead.position(), asyncHead.position());
@@ -133,7 +133,7 @@ class AsyncInMemoryStreamableEventSourceTest {
         legacySource.publishMessage(event);
 
         // Verify events exist
-        assertNotNull(asyncSource.headToken().get());
+        assertNotNull(asyncSource.firstToken().get());
         assertNotNull(legacySource.createHeadToken());
 
         // When - Open and close streams (triggers destructive behavior)
@@ -145,7 +145,7 @@ class AsyncInMemoryStreamableEventSourceTest {
         }
 
         // Then - Both should have cleared their events
-        assertNull(asyncSource.headToken().get());
+        assertNull(asyncSource.firstToken().get());
         assertNull(legacySource.createHeadToken());
 
         // And new streams should see no events

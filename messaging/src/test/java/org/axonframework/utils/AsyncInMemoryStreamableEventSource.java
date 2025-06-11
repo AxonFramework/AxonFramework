@@ -116,12 +116,12 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tailToken() {
+    public CompletableFuture<TrackingToken> latestToken() {
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> headToken() {
+    public CompletableFuture<TrackingToken> firstToken() {
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? null
@@ -144,7 +144,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                            .map(GlobalSequenceTrackingToken::new)
                            .map(tt -> (TrackingToken) tt)
                            .map(CompletableFuture::completedFuture)
-                           .orElseGet(this::headToken);
+                           .orElseGet(this::firstToken);
     }
 
     /**

@@ -930,7 +930,7 @@ class PooledStreamingEventProcessorTest {
                      () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length));
         testSubject.shutDown();
 
-        testSubject.resetTokens(source -> source.tailToken());
+        testSubject.resetTokens(source -> source.latestToken());
 
         verify(stubEventHandler).performReset(isNull(), any());
 
@@ -959,7 +959,7 @@ class PooledStreamingEventProcessorTest {
                      () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length));
         testSubject.shutDown();
 
-        testSubject.resetTokens(source -> source.tailToken(), expectedContext);
+        testSubject.resetTokens(source -> source.latestToken(), expectedContext);
 
         verify(stubEventHandler).performReset(eq(expectedContext), any());
 
@@ -1207,7 +1207,7 @@ class PooledStreamingEventProcessorTest {
         );
 
         testSubject.shutDown();
-        testSubject.resetTokens(source -> source.tailToken());
+        testSubject.resetTokens(source -> source.latestToken());
         testSubject.start();
 
         assertWithin(

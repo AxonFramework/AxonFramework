@@ -172,7 +172,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
-     *     <li>The {@code initialToken} function defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming from the {@link StreamableEventSource#tailToken() tail} with the replay flag enabled until the {@link StreamableEventSource#headToken() head} at the moment of initialization is reached.</li>     *
+     *     <li>The {@code initialToken} function defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming from the {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the {@link StreamableEventSource#firstToken() head} at the moment of initialization is reached.</li>     *
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@link MaxSegmentProvider} (used by {@link #maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
@@ -427,8 +427,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
      *     <li>The {@code initialToken} function defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
-     *          from the {@link StreamableEventSource#tailToken() tail} with the replay flag enabled until the
-     *          {@link StreamableEventSource#headToken() head} at the moment of initialization is reached.</li>
+     *          from the {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the
+     *          {@link StreamableEventSource#firstToken() head} at the moment of initialization is reached.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@link MaxSegmentProvider} (used by {@link #maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
@@ -456,7 +456,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         private Function<String, ScheduledExecutorService> workerExecutorBuilder;
         private int initialSegmentCount = 16;
         private Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken =
-                es -> es.headToken().thenApply(ReplayToken::createReplayToken);
+                es -> es.firstToken().thenApply(ReplayToken::createReplayToken);
         private long tokenClaimInterval = 5000;
         private MaxSegmentProvider maxSegmentProvider = MaxSegmentProvider.maxShort();
         private long claimExtensionThreshold = 5000;
@@ -617,8 +617,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
          * Defaults to an automatic replay since the start of the stream.
          * <p>
          * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
-         * from the {@link StreamableEventSource#tailToken() tail} with the replay flag enabled until the
-         * {@link StreamableEventSource#headToken() head} at the moment of initialization is reached.
+         * from the {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the
+         * {@link StreamableEventSource#firstToken() head} at the moment of initialization is reached.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
          *                     {@link StreamableEventSource}

@@ -96,10 +96,10 @@ public class EventProcessingModule
     private static final TrackingEventProcessorConfiguration DEFAULT_TEP_CONFIG =
             TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
     private static final TrackingEventProcessorConfiguration DEFAULT_SAGA_TEP_CONFIG =
-            DEFAULT_TEP_CONFIG.andInitialTrackingToken(TrackingTokenSource::headToken);
+            DEFAULT_TEP_CONFIG.andInitialTrackingToken(TrackingTokenSource::firstToken);
     private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
     private static final PooledStreamingProcessorConfiguration DEFAULT_SAGA_PSEP_CONFIG =
-            (config, builder) -> builder.initialToken(TrackingTokenSource::headToken);
+            (config, builder) -> builder.initialToken(TrackingTokenSource::firstToken);
     private static final Function<Class<?>, String> DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION =
             c -> c.getSimpleName() + "Processor";
 

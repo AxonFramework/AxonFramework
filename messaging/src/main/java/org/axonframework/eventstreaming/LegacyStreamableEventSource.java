@@ -70,13 +70,13 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
     }
 
     @Override
-    public CompletableFuture<TrackingToken> headToken() {
-        return delegate.headToken();
+    public CompletableFuture<TrackingToken> firstToken() {
+        return delegate.firstToken();
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tailToken() {
-        return delegate.tailToken();
+    public CompletableFuture<TrackingToken> latestToken() {
+        return delegate.latestToken();
     }
 
     @Override

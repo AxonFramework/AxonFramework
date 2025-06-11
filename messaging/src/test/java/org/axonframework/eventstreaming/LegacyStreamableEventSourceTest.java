@@ -116,15 +116,15 @@ class LegacyStreamableEventSourceTest {
         void headTokenShouldDelegateToUnderlyingSource() {
             // Given - delegate returns a token future
             var expectedToken = new GlobalSequenceTrackingToken(0L);
-            when(mockDelegate.headToken()).thenReturn(CompletableFuture.completedFuture(expectedToken));
+            when(mockDelegate.firstToken()).thenReturn(CompletableFuture.completedFuture(expectedToken));
 
             // When - calling headToken
-            CompletableFuture<TrackingToken> result = testSubject.headToken();
+            CompletableFuture<TrackingToken> result = testSubject.firstToken();
 
             // Then - should delegate and return the same future
             assertThat(result).succeedsWithin(java.time.Duration.ofSeconds(1))
                               .isEqualTo(expectedToken);
-            verify(mockDelegate).headToken();
+            verify(mockDelegate).firstToken();
         }
 
         @Test
@@ -132,15 +132,15 @@ class LegacyStreamableEventSourceTest {
         void tailTokenShouldDelegateToUnderlyingSource() {
             // Given - delegate returns a token future
             var expectedToken = new GlobalSequenceTrackingToken(100L);
-            when(mockDelegate.tailToken()).thenReturn(CompletableFuture.completedFuture(expectedToken));
+            when(mockDelegate.latestToken()).thenReturn(CompletableFuture.completedFuture(expectedToken));
 
             // When - calling tailToken
-            CompletableFuture<TrackingToken> result = testSubject.tailToken();
+            CompletableFuture<TrackingToken> result = testSubject.latestToken();
 
             // Then - should delegate and return the same future
             assertThat(result).succeedsWithin(java.time.Duration.ofSeconds(1))
                               .isEqualTo(expectedToken);
-            verify(mockDelegate).tailToken();
+            verify(mockDelegate).latestToken();
         }
 
         @Test
@@ -165,10 +165,10 @@ class LegacyStreamableEventSourceTest {
         void shouldHandleExceptionsInTokenOperations() {
             // Given - delegate throws exception
             var expectedException = new RuntimeException("Token error");
-            when(mockDelegate.headToken()).thenReturn(CompletableFuture.failedFuture(expectedException));
+            when(mockDelegate.firstToken()).thenReturn(CompletableFuture.failedFuture(expectedException));
 
             // When - calling headToken
-            CompletableFuture<TrackingToken> result = testSubject.headToken();
+            CompletableFuture<TrackingToken> result = testSubject.firstToken();
 
             // Then - should propagate the exception
             assertThat(result).failsWithin(Duration.ofSeconds(1))

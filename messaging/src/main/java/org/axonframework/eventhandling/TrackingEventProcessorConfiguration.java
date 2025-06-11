@@ -86,7 +86,7 @@ public class TrackingEventProcessorConfiguration {
         this.tokenClaimInterval = DEFAULT_TOKEN_CLAIM_INTERVAL;
         this.autoStart = true;
         this.workerTerminationTimeout = DEFAULT_WORKER_TERMINATION_TIMEOUT_MS;
-        this.initialTrackingTokenBuilder = tokenSource -> tokenSource.headToken()
+        this.initialTrackingTokenBuilder = tokenSource -> tokenSource.firstToken()
                                                                      .thenApply(ReplayToken::createReplayToken);
     }
 

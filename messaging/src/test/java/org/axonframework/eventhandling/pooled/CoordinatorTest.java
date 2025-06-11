@@ -77,8 +77,8 @@ class CoordinatorTest {
 
     @BeforeEach
     void setUp() {
-        when(messageSource.tailToken()).thenReturn(CompletableFuture.completedFuture(null));
-        when(messageSource.headToken()).thenReturn(CompletableFuture.completedFuture(null));
+        when(messageSource.latestToken()).thenReturn(CompletableFuture.completedFuture(null));
+        when(messageSource.firstToken()).thenReturn(CompletableFuture.completedFuture(null));
         testSubject = Coordinator.builder()
                                  .name(PROCESSOR_NAME)
                                  .eventSource(messageSource)
@@ -86,7 +86,7 @@ class CoordinatorTest {
                                  .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                                  .executorService(executorService)
                                  .workPackageFactory((segment, trackingToken) -> workPackage)
-                                 .initialToken(es -> es.headToken().thenApply(ReplayToken::createReplayToken))
+                                 .initialToken(es -> es.firstToken().thenApply(ReplayToken::createReplayToken))
                                  .eventFilter(eventMessage -> true)
                                  .maxSegmentProvider(e -> SEGMENT_IDS.length)
                                  .build();
