@@ -330,6 +330,114 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
     }
 
     @Nested
+    class ComponentRegistrationIfPresent {
+
+        @Test
+        void registersComponentValidatesForType() {
+            // given...
+            AtomicBoolean firstConstruction = new AtomicBoolean(false);
+            AtomicBoolean secondConstruction = new AtomicBoolean(false);
+
+            testSubject.componentRegistry(cr -> assertFalse(cr.hasComponent(TestComponent.class)));
+
+            // when first registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class, c -> {
+                firstConstruction.set(true);
+                return TEST_COMPONENT;
+            }));
+
+            // then...
+            testSubject.componentRegistry(cr -> assertTrue(cr.hasComponent(TestComponent.class)));
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class);
+            assertTrue(firstConstruction.get());
+
+            // when second registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class, c -> {
+                firstConstruction.set(true);
+                return TEST_COMPONENT;
+            }));
+
+            // then...
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class);
+            assertFalse(secondConstruction.get());
+        }
+
+        @Test
+        void registersComponentValidatesForTypeAndName() {
+            // given...
+            AtomicBoolean firstConstruction = new AtomicBoolean(false);
+            AtomicBoolean secondConstruction = new AtomicBoolean(false);
+            String testName = "some-name";
+
+            testSubject.componentRegistry(cr -> assertFalse(cr.hasComponent(TestComponent.class, testName)));
+
+            // when first registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class, testName, c -> {
+                firstConstruction.set(true);
+                return TEST_COMPONENT;
+            }));
+
+            // then...
+            testSubject.componentRegistry(cr -> assertTrue(cr.hasComponent(TestComponent.class, testName)));
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class, testName);
+            assertTrue(firstConstruction.get());
+
+            // when second registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class, testName, c -> {
+                firstConstruction.set(true);
+                return TEST_COMPONENT;
+            }));
+
+            // then...
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class, testName);
+            assertFalse(secondConstruction.get());
+        }
+
+        @Test
+        void registersComponentValidatesForComponentDefinition() {
+            // given...
+            AtomicBoolean firstConstruction = new AtomicBoolean(false);
+            AtomicBoolean secondConstruction = new AtomicBoolean(false);
+            String testName = "some-name";
+
+            testSubject.componentRegistry(cr -> assertFalse(cr.hasComponent(TestComponent.class, testName)));
+
+            // when first registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(
+                    ComponentDefinition.ofTypeAndName(TestComponent.class, testName)
+                                       .withBuilder(c -> {
+                                           firstConstruction.set(true);
+                                           return TEST_COMPONENT;
+                                       })
+            ));
+
+            // then...
+            testSubject.componentRegistry(cr -> assertTrue(cr.hasComponent(TestComponent.class, testName)));
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class, testName);
+            assertTrue(firstConstruction.get());
+
+            // when second registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(
+                    ComponentDefinition.ofTypeAndName(TestComponent.class, testName)
+                                       .withBuilder(c -> {
+                                           secondConstruction.set(true);
+                                           return TEST_COMPONENT;
+                                       })
+            ));
+
+            // then...
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class, testName);
+            assertFalse(secondConstruction.get());
+        }
+    }
+
+    @Nested
     class ComponentDecoration {
 
         @Test

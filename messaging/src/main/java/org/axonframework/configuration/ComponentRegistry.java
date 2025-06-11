@@ -181,6 +181,65 @@ public interface ComponentRegistry extends DescribableComponent {
                          @Nonnull String name);
 
     /**
+     * Registers a {@link Component} only <b>if</b> there is none yet for the given {@code type}.
+     * <p>
+     * The given {@code builder} function gets the {@link Configuration configuration} as input, and is expected to
+     * provide the component as output. The component will be registered under an {@link Identifier} based on the given
+     * {@code type}.
+     *
+     * @param type    The declared type of the component to build, typically an interface.
+     * @param builder The builder building the component.
+     * @param <C>     The type of component the {@code builder} builds.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     * @throws ComponentOverrideException If the override policy is set to
+     *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
+     *                                    with the same type is already defined.
+     */
+    default <C> ComponentRegistry registerIfNotPresent(@Nonnull Class<C> type,
+                                                       @Nonnull ComponentBuilder<C> builder) {
+        return registerIfNotPresent(type, type.getSimpleName(), builder);
+    }
+
+    /**
+     * Registers a {@link Component} only <b>if</b> there is none yet for the given {@code type} and {@code name}
+     * combination.
+     * <p>
+     * The given {@code builder} function gets the {@link Configuration configuration} as input, and is expected to
+     * provide the component as output. The component will be registered under an {@link Identifier} based on the given
+     * {@code type}.
+     *
+     * @param type    The declared type of the component to build (typically an interface) <b>if</b> it has not been
+     *                registered yet.
+     * @param name    The name of the component to build <b>if</b> it has not been registered yet.
+     * @param builder The builder building the component.
+     * @param <C>     The type of component the {@code builder} builds.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     * @throws ComponentOverrideException If the override policy is set to
+     *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
+     *                                    with the same type is already defined.
+     */
+    default <C> ComponentRegistry registerIfNotPresent(@Nonnull Class<C> type,
+                                                       @Nonnull String name,
+                                                       @Nonnull ComponentBuilder<C> builder) {
+        return registerIfNotPresent(ComponentDefinition.ofTypeAndName(type, name).withBuilder(builder));
+    }
+
+    /**
+     * Registers a {@link Component} based on the given {@code definition} only <b>if</b> there is none yet for the
+     * definition's {@link ComponentDefinition#type() type} and {@link ComponentDefinition#name() name} combination.
+     *
+     * @param definition The definition of the component to register.
+     * @param <C>        The declared type of the component.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     * @throws ComponentOverrideException If the override policy is set to
+     *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
+     *                                    with the same type is already defined.
+     */
+    default <C> ComponentRegistry registerIfNotPresent(@Nonnull ComponentDefinition<C> definition) {
+        return hasComponent(definition.type(), definition.name()) ? this : registerComponent(definition);
+    }
+
+    /**
      * Registers an {@link ConfigurationEnhancer} with this {@code ComponentRegistry}.
      * <p>
      * An {@code enhancer} is able to invoke <em>any</em> of the methods on this {@code ComponentRegistry}, allowing it
