@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.pooled;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
@@ -27,6 +28,7 @@ import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorOperations;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -41,6 +43,7 @@ import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -53,6 +56,7 @@ import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -89,8 +93,7 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class PooledStreamingEventProcessor extends AbstractEventProcessor
-        implements StreamingEventProcessor, Lifecycle {
+public class PooledStreamingEventProcessor implements StreamingEventProcessor, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -109,6 +112,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
 
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
+    private final EventProcessorOperations operations;
 
     /**
      * Instantiate a {@link PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -128,7 +132,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      * @param builder the {@link Builder} used to instantiate a {@link PooledStreamingEventProcessor} instance
      */
     protected PooledStreamingEventProcessor(PooledStreamingEventProcessor.Builder builder) {
-        super(builder);
         this.name = builder.name();
         this.eventSource = builder.eventSource;
         this.tokenStore = builder.tokenStore;
@@ -142,6 +145,13 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.batchSize = builder.batchSize;
         this.clock = builder.clock;
+        this.operations = new EventProcessorOperations.Builder()
+                .name(name)
+                .eventHandlerInvoker(builder.eventHandlerInvoker())
+                .spanFactory(builder.spanFactory())
+                .messageMonitor(builder.messageMonitor())
+                .errorHandler(builder.errorHandler())
+                .build();
 
         this.coordinator = Coordinator.builder()
                                       .name(name)
@@ -150,8 +160,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
                                       .unitOfWorkFactory(unitOfWorkFactory)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
-                                      .eventFilter(event -> canHandleType(event.getPayloadType()))
-                                      .onMessageIgnored(this::reportIgnored)
+                                      .eventFilter(event -> operations.canHandleType(event.getPayloadType()))
+                                      .onMessageIgnored(operations::reportIgnored)
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
                                       .claimExtensionThreshold(claimExtensionThreshold)
@@ -160,7 +170,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
-                                      .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment))
+                                      .segmentReleasedAction(segment -> operations.eventHandlerInvoker()
+                                                                                  .segmentReleased(segment))
                                       .build();
     }
 
@@ -289,7 +300,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
 
     @Override
     public boolean supportsReset() {
-        return eventHandlerInvoker().supportsReset();
+        return operations.eventHandlerInvoker().supportsReset();
     }
 
     @Override
@@ -336,7 +347,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
                                            .mapToObj(segment -> tokenStore.fetchToken(getName(), segment))
                                            .toArray(TrackingToken[]::new);
             // Perform the reset on the EventHandlerInvoker
-            eventHandlerInvoker().performReset(resetContext, null);
+            operations.eventHandlerInvoker().performReset(resetContext, null);
             // Update all tokens towards ReplayTokens
             IntStream.range(0, tokens.length)
                      .forEach(i -> tokenStore.storeToken(
@@ -367,7 +378,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (eventMessages, unitOfWork, processingSegments) -> processInUnitOfWork(
+        WorkPackage.BatchProcessor batchProcessor = (eventMessages, unitOfWork, processingSegments) -> operations.processInUnitOfWork(
                 eventMessages,
                 unitOfWork,
                 processingSegments
@@ -377,7 +388,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
                           .tokenStore(tokenStore)
                           .unitOfWorkFactory(unitOfWorkFactory)
                           .executorService(workerExecutor)
-                          .eventFilter(this::canHandle)
+                          .eventFilter(operations::canHandle)
                           .batchProcessor(batchProcessor)
                           .segment(segment)
                           .initialToken(initialToken)
@@ -416,6 +427,22 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      */
     private void statusUpdater(int segmentId, UnaryOperator<TrackerStatus> segmentUpdater) {
         processingStatus.computeIfPresent(segmentId, (s, ts) -> segmentUpdater.apply(ts));
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        return operations.getHandlerInterceptors();
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
+        return null;
     }
 
     /**

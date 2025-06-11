@@ -108,6 +108,16 @@ public final class EventProcessorOperations implements MessageHandlerInterceptor
     }
 
     /**
+     * Return the list of already registered {@link MessageHandlerInterceptor}s for this event processor. To register a
+     * new interceptor use {@link EventProcessor#registerHandlerInterceptor(MessageHandlerInterceptor)}
+     *
+     * @return the list of registered interceptors of this event processor
+     */
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        return Collections.unmodifiableList(interceptors);
+    }
+
+    /**
      * Indicates whether the processor can/should handle the given {@code eventMessage} for the given {@code segment}.
      * <p>
      * This implementation will delegate the decision to the {@link EventHandlerInvoker}.
@@ -250,7 +260,7 @@ public final class EventProcessorOperations implements MessageHandlerInterceptor
      *
      * @param eventMessage the message that has been ignored.
      */
-    protected void reportIgnored(EventMessage<?> eventMessage) {
+    public void reportIgnored(EventMessage<?> eventMessage) {
         messageMonitor.onMessageIngested(eventMessage).reportIgnored();
     }
 
@@ -269,7 +279,9 @@ public final class EventProcessorOperations implements MessageHandlerInterceptor
         private EventHandlerInvoker eventHandlerInvoker;
         private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-        private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder().build();
+        private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
+                                                                                        .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                        .build();
         private boolean streaming = false;
 
         /**
