@@ -103,27 +103,13 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
 
         @Override
         public Optional<Entry<E>> next() {
-            if (peeked != null) {
-                Entry<E> result = peeked;
-                peeked = null;
-                return Optional.of(result);
-            }
-            if (!stream.hasNextAvailable()) {
-                return Optional.empty();
-            }
             try {
-                while (stream.hasNextAvailable()) {
-                    E message = stream.nextAvailable();
-                    if (message == null) {
-                        return Optional.empty();
-                    }
-                    if (!matchesCriteria(message)) {
-                        continue;
-                    }
-                    Entry<E> entry = createEntryForMessage(message);
-                    return Optional.of(entry);
+                var message = stream.nextAvailable();
+                if (message == null) {
+                    return Optional.empty();
                 }
-                return Optional.empty();
+                Entry<E> entry = createEntryForMessage(message);
+                return Optional.of(entry);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return Optional.empty();
@@ -132,23 +118,8 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
 
         @Override
         public Optional<Entry<E>> peek() {
-            try {
-                if (peeked != null) {
-                    return Optional.of(peeked);
-                }
-                var result = stream.nextAvailable();
-                while (result != null && !matchesCriteria(result)) {
-                    result = stream.nextAvailable();
-                }
-                if (result != null) {
-                    peeked = createEntryForMessage(result);
-                    return Optional.of(peeked);
-                }
-                return Optional.empty();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return Optional.empty();
-            }
+            var message = stream.peek();
+            return message.map(this::createEntryForMessage);
         }
 
         private boolean matchesCriteria(EventMessage<?> message) {
@@ -177,6 +148,7 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
 
         @Override
         public boolean hasNextAvailable() {
+//            return peeked != null || peek().isPresent();
             return stream.hasNextAvailable();
         }
 

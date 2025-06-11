@@ -713,7 +713,6 @@ class Coordinator {
         private TrackingToken lastScheduledToken = NoToken.INSTANCE;
         private boolean availabilityCallbackSupported;
         private long unclaimedSegmentValidationThreshold;
-        private MessageStream.Entry<? extends EventMessage<?>> bufferedNextEntry = null;
 
         @Override
         public void run() {
@@ -871,7 +870,6 @@ class Coordinator {
                     logger.debug("Exception occurred while closing event stream for Processor [{}].", name, e);
                 }
             }
-            bufferedNextEntry = null;
         }
 
         private WorkPackage createWorkPackage(Segment segment, TrackingToken token) {
@@ -1007,24 +1005,10 @@ class Coordinator {
         }
 
         private MessageStream.Entry<? extends EventMessage<?>> peekNextEvent() {
-            if (bufferedNextEntry == null && eventStream != null && eventStream.hasNextAvailable()) {
-                try {
-                    var next = eventStream.next();
-                    bufferedNextEntry = next.orElse(null);
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to peek next event from stream", e);
-                }
-            }
-            return bufferedNextEntry;
+            return eventStream.peek().orElse(null);
         }
 
         private MessageStream.Entry<? extends EventMessage<?>> nextEvent() {
-            if (bufferedNextEntry != null) {
-                MessageStream.Entry<? extends EventMessage<?>> result = bufferedNextEntry;
-                bufferedNextEntry = null;
-                return result;
-            }
-
             if (eventStream == null) {
                 return null;
             }
@@ -1037,8 +1021,7 @@ class Coordinator {
         }
 
         private boolean hasNextEvent() {
-            return bufferedNextEntry != null ||
-                    (eventStream != null && eventStream.hasNextAvailable());
+            return eventStream != null && eventStream.hasNextAvailable();
         }
 
         private boolean eventsEqualingLastScheduledToken(TrackingToken lastScheduledToken) {
