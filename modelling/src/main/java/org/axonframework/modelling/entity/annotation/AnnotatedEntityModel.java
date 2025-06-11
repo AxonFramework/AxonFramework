@@ -73,10 +73,10 @@ import static org.axonframework.messaging.annotation.AnnotatedHandlerInspector.i
  * on the {@link QualifiedName} of the message type. This is useful for determining the payload type of a command or
  * event handler when multiple handlers are present for the same message type.
  * <p>
- * NOTE: This class is a complete rewrite of the pre-5.0.0 {@code AnnotatedAggregateMetaModelFactory}. Both scan the
- * class for annotated methods and fields, but the AnnotatedEntityModel dropped aggregate versioning (conflict
- * resolution), no longer required an id in the entity, and creates a declarative model instead of relying on reflection
- * at runtime.
+ * NOTE: This class is a complete rewrite of the pre-5.0.0
+ * {@code org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory}. Both scan the class for
+ * annotated methods and fields, but the AnnotatedEntityModel dropped aggregate versioning (conflict resolution), no
+ * longer required an id in the entity, and creates a declarative model instead of relying on reflection at runtime.
  *
  * @param <E> The type of entity this model describes.
  * @author Mitchell Herrijgers
@@ -84,6 +84,7 @@ import static org.axonframework.messaging.annotation.AnnotatedHandlerInspector.i
  * @since 3.1.0
  */
 public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableComponent {
+
     private static final Logger logger = LoggerFactory.getLogger(AnnotatedEntityModel.class);
 
     private final Class<E> entityType;
@@ -120,8 +121,7 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
 
     /**
      * Instantiate an annotated {@link EntityModel} of a polymorphic entity type. At least one concrete type must be
-     * supplied, as this model is meant to describe a polymorphic entity type with multiple concrete
-     * implementations.
+     * supplied, as this model is meant to describe a polymorphic entity type with multiple concrete implementations.
      *
      * @param entityType               The polymorphic entity type this model describes.
      * @param concreteTypes            The concrete types of the polymorphic entity type.
@@ -226,7 +226,10 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
                      QualifiedName qualifiedName = messageTypeResolver.resolveOrThrow(handler.payloadType())
                                                                       .qualifiedName();
                      if (commandsToSkip.contains(qualifiedName)) {
-                         logger.debug("Skipping registration of command handler for [{}] on [{}] (already registered by parent)", qualifiedName, entityType);
+                         logger.debug(
+                                 "Skipping registration of command handler for [{}] on [{}] (already registered by parent)",
+                                 qualifiedName,
+                                 entityType);
                          return;
                      }
                      addPayloadTypeFromHandler(qualifiedName, handler);
@@ -263,7 +266,10 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
                             + qualifiedName + "] declares both [" + payloadTypes.get(qualifiedName) + "] and ["
                             + handler.payloadType() + "] as wanted representations");
         }
-        logger.debug("Discovered payload type [{}] for message type [{}] on entity [{}]", handler.payloadType().getName(), qualifiedName, entityType);
+        logger.debug("Discovered payload type [{}] for message type [{}] on entity [{}]",
+                     handler.payloadType().getName(),
+                     qualifiedName,
+                     entityType);
         payloadTypes.put(qualifiedName, handler.payloadType());
     }
 
@@ -335,7 +341,10 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
             if (child.entityModel() instanceof AnnotatedEntityModel<?> annotatedChild) {
                 this.childModels.add(annotatedChild);
             }
-            logger.debug("Discovered child entity [{}] for member [{}] on entity [{}]", child.entityModel().entityType().getName(), field.getName(), entityType);
+            logger.debug("Discovered child entity [{}] for member [{}] on entity [{}]",
+                         child.entityModel().entityType().getName(),
+                         field.getName(),
+                         entityType);
             builder.addChild(child);
         }
     }
