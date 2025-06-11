@@ -331,21 +331,21 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
     private void createOptionalChildForMember(EntityModelBuilder<E> builder,
                                               Member field,
                                               ServiceLoader<EntityChildModelDefinition> childEntityDefinitions) {
-        List<EntityChildModel<Object, E>> childModels = childEntityDefinitions
+        List<EntityChildModel<Object, E>> createdChildModels = childEntityDefinitions
                 .stream()
                 .map(ServiceLoader.Provider::get)
                 .map(d -> d.createChildDefinition(entityType, this::createChildEntityModel, field))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .toList();
-        if (childModels.size() > 1) {
+        if (createdChildModels.size() > 1) {
             throw new IllegalStateException("Multiple child entity definitions found for member [" + field
                                                     + "] of entity type [" + entityType + "]. Please ensure only one "
                                                     + "definition is present for this member. Found definitions: "
-                                                    + childModels);
+                                                    + createdChildModels);
         }
-        if (childModels.size() == 1) {
-            var child = childModels.getFirst();
+        if (createdChildModels.size() == 1) {
+            var child = createdChildModels.getFirst();
             if (child.entityModel() instanceof AnnotatedEntityModel<?> annotatedChild) {
                 this.childModels.add(annotatedChild);
             }
