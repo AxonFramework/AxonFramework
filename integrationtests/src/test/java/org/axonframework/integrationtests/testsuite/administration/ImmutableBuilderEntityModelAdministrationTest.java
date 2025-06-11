@@ -19,8 +19,8 @@ package org.axonframework.integrationtests.testsuite.administration;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
@@ -110,14 +110,17 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                   .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterEvolver(
                                           ImmutableEmployee::getTaskList, ImmutableEmployee::evolveTaskList
                                   ))
-                                  .commandTargetMatcher((task, commandMessage) -> {
+                                  .commandTargetResolver((candidates, commandMessage, ctx) -> {
                                       if (commandMessage.getPayload() instanceof CompleteTaskCommand completeTaskCommand) {
-                                          return task.getTaskId()
-                                                     .equals(completeTaskCommand.taskId());
+                                          return candidates.stream()
+                                                           .filter(task -> task.getTaskId()
+                                                                               .equals(completeTaskCommand.taskId()))
+                                                           .findFirst()
+                                                           .orElse(null);
                                       }
-                                      return false;
+                                      return null;
                                   })
-                                  .eventTargetMatcher((o, eventMessage) -> {
+                                  .eventTargetMatcher((o, eventMessage, ctx) -> {
                                       if (eventMessage.getPayload() instanceof TaskCompleted taskAssigned) {
                                           return o.getTaskId().equals(taskAssigned.taskId());
                                       }

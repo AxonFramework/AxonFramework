@@ -52,7 +52,7 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
         super(delegate);
         this.delegate = delegate;
         this.completeHandler = completeHandler;
-        delegate.onAvailable(this::invokeOnCompleted);
+        delegate.onAvailable(this::invokceCompletionHandlerIfCompleted);
     }
 
     @Override
@@ -65,12 +65,21 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
     public Optional<Entry<M>> next() {
         Optional<Entry<M>> next = delegate.next();
         if (next.isEmpty()) {
-            invokeOnCompleted();
+            invokceCompletionHandlerIfCompleted();
         }
         return next;
     }
 
-    private void invokeOnCompleted() {
+    @Override
+    public Optional<Entry<M>> peek() {
+        Optional<Entry<M>> peek = delegate.peek();
+        if (peek.isEmpty()) {
+            invokceCompletionHandlerIfCompleted();
+        }
+        return peek;
+    }
+
+    private void invokceCompletionHandlerIfCompleted() {
         if (delegate.isCompleted() && delegate.error().isEmpty() && !invoked.getAndSet(true)) {
             completeHandler.run();
         }
@@ -80,13 +89,13 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
     public void onAvailable(@Nonnull Runnable callback) {
         delegate.onAvailable(() -> {
             callback.run();
-            invokeOnCompleted();
+            invokceCompletionHandlerIfCompleted();
         });
     }
 
     @Override
     public Optional<Throwable> error() {
-        invokeOnCompleted();
+        invokceCompletionHandlerIfCompleted();
         return delegate.error();
     }
 
@@ -94,7 +103,7 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
     public boolean hasNextAvailable() {
         boolean b = delegate.hasNextAvailable();
         if (!b && delegate().isCompleted()) {
-            invokeOnCompleted();
+            invokceCompletionHandlerIfCompleted();
         }
         return b;
     }

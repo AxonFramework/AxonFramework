@@ -19,8 +19,8 @@ package org.axonframework.integrationtests.testsuite.administration;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.annotation.reflection.AnnotationBasedEventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
@@ -30,7 +30,6 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Crea
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateEmployee;
 import org.axonframework.integrationtests.testsuite.administration.commands.GiveRaise;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
-import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
 import org.axonframework.integrationtests.testsuite.administration.events.TaskCompleted;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableCustomer;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableEmployee;
@@ -39,6 +38,7 @@ import org.axonframework.integrationtests.testsuite.administration.state.mutable
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableTask;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
@@ -48,10 +48,13 @@ import org.axonframework.modelling.entity.SimpleEntityModel;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
+import java.util.Set;
+
 /**
- * Runs the administration test suite using the builders of {@link SimpleEntityModel} and related classes.
+ * Runs the administration test suite using as much reflection components of the {@link SimpleEntityModel} and related
+ * classes as possible. As reflection-based components are added, this test may change to use more of them.
  */
-public class MutableBuilderEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
+public class MutableReflectionEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
     @Override
     CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
@@ -138,11 +141,11 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         EntityModel<MutableCustomer> customerModel = SimpleEntityModel
                 .forEntityClass(MutableCustomer.class)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableCustomer.class))
-                .instanceCommandHandler(
+                .creationalCommandHandler(
                         typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
-                        ((command, entity, context) -> {
+                        ((command, context) -> {
                             EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                            entity.handle((CreateCustomer) command.getPayload(), eventAppender);
+                            MutableCustomer.create((CreateCustomer) command.getPayload(), eventAppender);
                             return MessageStream.empty().cast();
                         }))
                 .build();
@@ -166,14 +169,11 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 PersonIdentifier.class,
                 MutablePerson.class,
                 configuration.getComponent(EventStore.class),
-                EventSourcedEntityFactory.fromIdentifier(id -> {
-                    if (id.type() == PersonType.EMPLOYEE) {
-                        return new MutableEmployee();
-                    } else if (id.type() == PersonType.CUSTOMER) {
-                        return new MutableCustomer();
-                    }
-                    throw new IllegalArgumentException("Unknown type: " + id.type());
-                }),
+                new AnnotationBasedEventSourcedEntityFactory<>(MutablePerson.class,
+                                                               PersonIdentifier.class,
+                                                               Set.of(MutableEmployee.class, MutableCustomer.class),
+                                                               configuration.getComponent(ParameterResolverFactory.class),
+                                                               configuration.getComponent(MessageTypeResolver.class)),
                 (s, ctx) -> EventCriteria.havingTags("Person", s.key()),
                 personModel
         );

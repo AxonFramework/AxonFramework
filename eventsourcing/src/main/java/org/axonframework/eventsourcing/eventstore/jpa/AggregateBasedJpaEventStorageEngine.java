@@ -379,25 +379,19 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tailToken() {
-        var token = legacyJpaOperations.minGlobalIndex()
+    public CompletableFuture<TrackingToken> firstToken() {
+        var first = legacyJpaOperations.minGlobalIndex()
                                        .flatMap(this::gapAwareTrackingTokenOn)
                                        .orElse(null);
-        return CompletableFuture.completedFuture(token);
-    }
-
-    private Optional<TrackingToken> gapAwareTrackingTokenOn(Long globalIndex) {
-        return globalIndex == null
-                ? Optional.empty()
-                : Optional.of(GapAwareTrackingToken.newInstance(globalIndex, Collections.emptySet()));
+        return CompletableFuture.completedFuture(first);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> headToken() {
-        var headToken = legacyJpaOperations.maxGlobalIndex()
-                                           .flatMap(this::gapAwareTrackingTokenOn)
-                                           .orElse(null);
-        return CompletableFuture.completedFuture(headToken);
+    public CompletableFuture<TrackingToken> latestToken() {
+        var latest = legacyJpaOperations.maxGlobalIndex()
+                                        .flatMap(this::gapAwareTrackingTokenOn)
+                                        .orElse(null);
+        return CompletableFuture.completedFuture(latest);
     }
 
     @Override
@@ -408,6 +402,12 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                                                     .flatMap(this::gapAwareTrackingTokenOn))
                                        .orElse(null);
         return CompletableFuture.completedFuture(token);
+    }
+
+    private Optional<TrackingToken> gapAwareTrackingTokenOn(Long globalIndex) {
+        return globalIndex == null
+                ? Optional.empty()
+                : Optional.of(GapAwareTrackingToken.newInstance(globalIndex, Collections.emptySet()));
     }
 
     @Override
