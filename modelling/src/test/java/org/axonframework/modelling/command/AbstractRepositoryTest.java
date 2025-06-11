@@ -24,6 +24,8 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.junit.jupiter.api.*;
@@ -51,7 +53,8 @@ class AbstractRepositoryTest {
     @BeforeEach
     void setUp() {
         testSubject = new AbstractLegacyRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
-                new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
+                new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {
+                }) {
 
             @Override
             protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)
@@ -70,12 +73,12 @@ class AbstractRepositoryTest {
             }
 
             @Override
-            protected AnnotatedAggregate<JpaAggregate> doLoad(String aggregateIdentifier, Long expectedVersion) {
+            protected AnnotatedAggregate<JpaAggregate> doLoad(String aggregateIdentifier) {
                 spiedAggregate = spy(AnnotatedAggregate.initialize(new JpaAggregate(), aggregateModel(), null));
 
                 try {
                     //noinspection ConstantConditions
-                    doThrow(new IllegalArgumentException()).when(spiedAggregate).handle(failureMessage);
+                    doThrow(new IllegalArgumentException()).when(spiedAggregate).handle(eq(failureMessage), any());
                 } catch (Exception e) {
                     // Fail silently for testings sake
                 }
@@ -115,7 +118,8 @@ class AbstractRepositoryTest {
         //noinspection rawtypes
         AbstractLegacyRepository anonymousTestSubject =
                 new AbstractLegacyRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
-                        new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
+                        new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {
+                        }) {
 
                     @Override
                     protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)
@@ -134,8 +138,7 @@ class AbstractRepositoryTest {
                     }
 
                     @Override
-                    protected AnnotatedAggregate<JpaAggregate> doLoad(String aggregateIdentifier,
-                                                                      Long expectedVersion) {
+                    protected AnnotatedAggregate<JpaAggregate> doLoad(String aggregateIdentifier) {
                         return null;
                     }
                 };
@@ -172,33 +175,37 @@ class AbstractRepositoryTest {
     @Test
     void sendWorksAsExpected() throws Exception {
         DeadlineMessage<String> testMsg = aDeadlineMessage();
+        ProcessingContext context = StubProcessingContext.forMessage(testMsg);
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
 
-        testSubject.send(testMsg, testDescriptor);
+        testSubject.send(testMsg, context, testDescriptor);
 
-        verify(spiedAggregate).handle(testMsg);
+        verify(spiedAggregate).handle(testMsg, context);
     }
 
     @Test
     void sendThrowsIllegalArgumentExceptionIfHandleFails() throws Exception {
+        DeadlineMessage<String> testMsg = aDeadlineMessage();
+        ProcessingContext context = StubProcessingContext.forMessage(testMsg);
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
 
         //noinspection ConstantConditions
-        assertThrows(IllegalArgumentException.class, () -> testSubject.send(failureMessage, testDescriptor));
+        assertThrows(IllegalArgumentException.class, () -> testSubject.send(failureMessage, context, testDescriptor));
 
         //noinspection ConstantConditions
-        verify(spiedAggregate).handle(failureMessage);
+        verify(spiedAggregate).handle(failureMessage, context);
     }
 
     @Test
     void sendFailsSilentlyOnAggregateNotFoundException() throws Exception {
         DeadlineMessage<String> testMsg = aDeadlineMessage();
+        ProcessingContext context = StubProcessingContext.forMessage(testMsg);
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), "some-other-aggregate-id");
 
-        testSubject.send(testMsg, testDescriptor);
+        testSubject.send(testMsg, context, testDescriptor);
 
         verifyNoInteractions(spiedAggregate);
     }
@@ -207,7 +214,7 @@ class AbstractRepositoryTest {
     void checkedExceptionFromConstructorDoesNotAttemptToStoreAggregate() {
         // committing the unit of work does not throw an exception
         LegacyUnitOfWork<?> uow = CurrentUnitOfWork.get();
-        uow.executeWithResult(() -> testSubject.newInstance(() -> {
+        uow.executeWithResult((ctx) -> testSubject.newInstance(() -> {
             throw new Exception("Throwing checked exception");
         }), RuntimeException.class::isInstance);
 

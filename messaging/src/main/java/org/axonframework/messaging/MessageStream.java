@@ -26,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -309,13 +310,23 @@ public interface MessageStream<M extends Message<?>> {
 
     /**
      * Returns an Optional carrying the next {@link Entry entry} from the stream, if such entry was available. If no
-     * entry is available for reading, this method returns an empty Optional.
+     * entry was available for reading, this method returns an empty Optional.
      * <p>
      * This method will never block for elements becoming available.
      *
      * @return An optional carrying the next {@link Entry entry}, if available.
      */
     Optional<Entry<M>> next();
+
+    /**
+     * Returns an Optional carrying the next {@link Entry entry} from the stream (without moving the stream pointer), if such entry was available. If no
+     * entry was available for reading, this method returns an empty Optional.
+     * <p>
+     * This method will never block for elements becoming available.
+     *
+     * @return An optional carrying the next {@link Entry entry}, if available.
+     */
+    Optional<Entry<M>> peek();
 
     /**
      * Registers the callback to invoke when {@link Entry entries} are available for reading or when the stream
@@ -444,6 +455,18 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
+     * Returns a stream that will filter {@link MessageStream.Entry entries} based on the given {@code filter}.
+     *
+     * @param filter The {@link MessageStream.Entry} predicate, that will filter out entries. Returning {@code true}
+     *               from this lambda will keep the entry, while returning {@code false} will remove it.
+     * @return A stream for which the {@link MessageStream.Entry entries} have been filtered by the given
+     * {@code filter}.
+     */
+    default MessageStream<M> filter(@Nonnull Predicate<Entry<M>> filter) {
+        return new FilteringMessageStream<>(this, filter);
+    }
+
+    /**
      * Returns a stream that concatenates this stream with the given {@code other} stream, if this stream completes
      * successfully.
      * <p>
@@ -545,6 +568,11 @@ public interface MessageStream<M extends Message<?>> {
         @Override
         default <RM extends Message<?>> Single<RM> mapMessage(@Nonnull Function<M, RM> mapper) {
             return map(e -> e.map(mapper));
+        }
+
+        @Override
+        default Single<M> filter(@Nonnull Predicate<Entry<M>> filter) {
+            return new FilteringMessageStream.Single<>(this, filter);
         }
 
         @Override

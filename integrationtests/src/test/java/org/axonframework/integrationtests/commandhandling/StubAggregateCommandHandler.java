@@ -39,7 +39,7 @@ class StubAggregateCommandHandler {
 
     @CommandHandler
     public void handleStubAggregateUpdated(UpdateStubAggregateCommand command) {
-        repository.load(command.getAggregateId().toString(), command.getAggregateVersion())
+        repository.load(command.getAggregateId().toString())
                   .execute(StubAggregate::makeAChange);
     }
 
@@ -59,7 +59,7 @@ class StubAggregateCommandHandler {
 
     @CommandHandler
     public void handleProblematicCommand(ProblematicCommand command) {
-        repository.load(command.getAggregateId().toString(), command.getAggregateVersion())
+        repository.load(command.getAggregateId().toString())
                   .execute(StubAggregate::causeTrouble);
     }
 

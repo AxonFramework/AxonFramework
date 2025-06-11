@@ -27,14 +27,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.annotation.QueryHandler;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.ContentTypeConverter;
-import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.UnknownSerializedType;
+import org.axonframework.serialization.*;
 import org.junit.jupiter.api.*;
 
 import java.io.InputStream;
@@ -155,6 +148,41 @@ class JacksonSerializerTest {
     }
 
     @Test
+    void readUnknownSerializedTypeCachesLookupResults() {
+        ObjectMapper spiedMapper = spy(objectMapper);
+        testSubject = JacksonSerializer.builder()
+                                       .objectMapper(spiedMapper)
+                                       .build();
+        SerializedObject<String> testObject =
+                new SimpleSerializedObject<>("{\"data\" : \"value\"}", String.class, "my.nonexistent.Class", null);
+
+        for (int i = 0; i < 10; i++) {
+            Class<?> actual = testSubject.classForType(testObject.getType());
+            assertEquals(UnknownSerializedType.class, actual);
+        }
+
+        verify(spiedMapper, times(1)).getTypeFactory();
+    }
+
+    @Test
+    void readUnknownSerializedTypeWithCachingDisabled() {
+        ObjectMapper spiedMapper = spy(objectMapper);
+        testSubject = JacksonSerializer.builder()
+                                       .objectMapper(spiedMapper)
+                                       .disableCachingOfUnknownClasses()
+                                       .build();
+        SerializedObject<String> testObject =
+                new SimpleSerializedObject<>("{\"data\" : \"value\"}", String.class, "my.nonexistent.Class", null);
+
+        for (int i = 0; i < 10; i++) {
+            Class<?> actual = testSubject.classForType(testObject.getType());
+            assertEquals(UnknownSerializedType.class, actual);
+        }
+
+        verify(spiedMapper, times(10)).getTypeFactory();
+    }
+
+    @Test
     void serializeAndDeserializeObject_JsonNodeFormat() {
         SimpleSerializableType toSerialize =
                 new SimpleSerializableType("first", time, new SimpleSerializableType("nested"));
@@ -240,18 +268,6 @@ class JacksonSerializerTest {
         assertNotNull(actual);
         assertEquals("test", actual.get("test"));
         assertEquals(1, actual.size());
-    }
-
-    @Test
-    void serializeMetaDataWithComplexObjects() {
-        // Typing must be enabled for this (which we expect end-users to do)
-        JacksonSerializer testSubject = JacksonSerializer.builder().defaultTyping().build();
-
-        MetaData metaData = MetaData.with("myKey", new ComplexObject("String1", "String2", 3));
-        SerializedObject<byte[]> serialized = testSubject.serialize(metaData, byte[].class);
-        MetaData actual = testSubject.deserialize(serialized);
-
-        assertEquals(metaData, actual);
     }
 
     /**

@@ -54,7 +54,7 @@ import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.tracing.TestSpanFactory;
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -289,9 +289,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     void handlerInterceptorOnAggregate() {
         //noinspection resource
-        configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
+        configuration.deadlineManager().registerHandlerInterceptor((uow, context, chain) -> {
             uow.transformMessage(AbstractDeadlineManagerTestSuite::asDeadlineMessage);
-            return chain.proceedSync();
+            return chain.proceedSync(context);
         });
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
 
@@ -342,8 +342,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     void failedExecution() {
         //noinspection resource
-        configuration.deadlineManager().registerHandlerInterceptor((uow, interceptorChain) -> {
-            interceptorChain.proceedSync();
+        configuration.deadlineManager().registerHandlerInterceptor((uow, context, interceptorChain) -> {
+            interceptorChain.proceedSync(context);
             throw new AxonNonTransientException("Simulating handling error") {
             };
         });
@@ -457,11 +457,11 @@ public abstract class AbstractDeadlineManagerTestSuite {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         //noinspection resource
-        configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
+        configuration.deadlineManager().registerHandlerInterceptor((uow, context, chain) -> {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(deadlineMessage.getDeadlineName(),
                                                                       new DeadlinePayload(FAKE_IDENTIFIER),
                                                                       deadlineMessage.getTimestamp()));
-            return chain.proceedSync();
+            return chain.proceedSync(context);
         });
         configuration.eventStore().publish(testEventMessage);
 
@@ -1088,7 +1088,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
 
         @Override
-        public BiFunction<Integer, Message<?>, Message<?>> handle(@NotNull List<? extends Message<?>> messages) {
+        public BiFunction<Integer, Message<?>, Message<?>> handle(@Nonnull List<? extends Message<?>> messages) {
             return (i, m) -> m.andMetaData(MetaData.with(CUSTOM_CORRELATION_DATA_KEY, correlationData));
         }
     }

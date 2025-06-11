@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.stream.BlockingStream;
@@ -44,7 +45,6 @@ import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfigurati
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.axonframework.springboot.utils.TestSerializer;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -209,7 +209,7 @@ public class TrackingEventProcessorIntegrationTest {
 
     private void publishEvent(Object... events) {
         LegacyDefaultUnitOfWork.startAndGet(null).execute(
-                () -> {
+                (ctx) -> {
                     Transaction tx = transactionManager.startTransaction();
                     CurrentUnitOfWork.get().onRollback(u -> tx.rollback());
                     CurrentUnitOfWork.get().onCommit(u -> tx.commit());

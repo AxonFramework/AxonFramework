@@ -23,8 +23,8 @@ import org.axonframework.messaging.ScopeDescriptor;
 
 import java.time.Duration;
 import java.time.Instant;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Contract for deadline managers. Contains methods for scheduling a deadline and for cancelling a deadline.

@@ -51,7 +51,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -261,7 +261,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
             return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage<>(
-                messageTypeResolver.resolve(event),
+                messageTypeResolver.resolveOrThrow(event),
                 (E) event,
                 MetaData.emptyInstance()
         );
@@ -333,7 +333,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
     private void publishEventMessage(EventMessage eventMessage) {
         LegacyUnitOfWork<EventMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
         unitOfWork.attachTransaction(transactionManager);
-        unitOfWork.execute(() -> eventBus.publish(eventMessage));
+        unitOfWork.execute((ctx) -> eventBus.publish(eventMessage));
     }
 
     /**

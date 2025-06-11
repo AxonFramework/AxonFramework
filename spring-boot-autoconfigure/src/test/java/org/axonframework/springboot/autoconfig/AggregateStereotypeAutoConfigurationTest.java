@@ -39,7 +39,6 @@ import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -141,7 +140,7 @@ class AggregateStereotypeAutoConfigurationTest {
             // Publish the second command to trigger the SnapshotFilter and CommandTargetResolver
             commandGateway.sendAndWait(new UpdateCustomRepoTestAggregate(aggregateId));
 
-            verify(testRepository).load(aggregateId, null);
+            verify(testRepository).load(aggregateId);
             assertTrue(commandTargetResolverInvoked.get());
 
             verifyNoInteractions(snapshotTriggerDefinition);
@@ -301,7 +300,7 @@ class AggregateStereotypeAutoConfigurationTest {
         public CommandTargetResolver testCommandTargetResolver() {
             return command -> {
                 commandTargetResolverInvoked.set(true);
-                return new VersionedAggregateIdentifier(AGGREGATE_IDENTIFIER, null);
+                return AGGREGATE_IDENTIFIER.toString();
             };
         }
 

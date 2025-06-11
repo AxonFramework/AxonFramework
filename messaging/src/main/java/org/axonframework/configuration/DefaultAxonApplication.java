@@ -63,7 +63,6 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
     private final DefaultComponentRegistry componentRegistry;
     private long lifecyclePhaseTimeout = 5;
     private TimeUnit lifecyclePhaseTimeunit = TimeUnit.SECONDS;
-    private boolean enhancerScanning = true;
 
     private final AtomicReference<AxonConfiguration> configuration = new AtomicReference<>();
 

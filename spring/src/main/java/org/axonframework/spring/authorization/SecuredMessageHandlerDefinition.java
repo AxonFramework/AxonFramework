@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@
 
 package org.axonframework.spring.authorization;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.security.core.GrantedAuthority;
 
 import java.lang.reflect.Executable;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * MessageHandlerDefinition that verifies authorization based on
@@ -58,29 +58,27 @@ public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinitio
 
         private final Set<String> requiredRoles;
 
-        public SecuredMessageHandlingMember(MessageHandlingMember<T> delegate, String[] secureds) {
+        public SecuredMessageHandlingMember(MessageHandlingMember<T> delegate,
+                                            String[] securityConfiguration) {
             super(delegate);
-            requiredRoles = new HashSet<>(Arrays.asList(secureds));
+            this.requiredRoles = new HashSet<>(Arrays.asList(securityConfiguration));
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
+        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, T target)
+                throws Exception {
             if (!hasRequiredRoles(message)) {
                 throw new UnauthorizedMessageException(
                         "Unauthorized message with identifier [" + message.getIdentifier() + "]"
                 );
             }
-            return super.handleSync(message, target);
+            return super.handleSync(message, context, target);
         }
 
         private boolean hasRequiredRoles(@Nonnull Message<?> message) {
             Set<String> authorities = new HashSet<>();
             if (message.getMetaData().containsKey("authorities")) {
-                //noinspection unchecked
-                ((Collection<? extends GrantedAuthority>) message.getMetaData().get("authorities"))
-                        .stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .forEach(authorities::add);
+                authorities.addAll(Arrays.asList(message.getMetaData().get("authorities").split(",")));
             }
             authorities.retainAll(requiredRoles);
             return !authorities.isEmpty();

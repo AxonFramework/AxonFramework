@@ -46,13 +46,13 @@ class MyCommandHandler {
 
     @CommandHandler
     public void handleTestCommand(TestCommand testCommand) {
-        repository.load(testCommand.getAggregateIdentifier().toString(), null)
+        repository.load(testCommand.getAggregateIdentifier().toString())
                   .execute(StandardAggregate::doSomething);
     }
 
     @CommandHandler
     public void handleStrangeCommand(StrangeCommand testCommand) {
-        repository.load(testCommand.getAggregateIdentifier().toString(), null).execute(StandardAggregate::doSomething);
+        repository.load(testCommand.getAggregateIdentifier().toString()).execute(StandardAggregate::doSomething);
         eventBus.publish(new GenericEventMessage<>(
                 new MessageType("event"), new MyApplicationEvent()
         ));

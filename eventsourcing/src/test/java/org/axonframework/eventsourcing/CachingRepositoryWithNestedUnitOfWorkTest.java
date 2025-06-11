@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.common.caching.NoCache;
@@ -30,6 +31,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventSt
 import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.ehcache.CacheManager;
@@ -255,8 +257,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         TestAggregate verify = loadAggregate(id);
 
         assertEquals(id, verify.id);
-        assertTrue(verify.tokens.containsAll(asList(//
-                                                    "UOW3", "UOW4", "UOW5", "UOW6", "UOW7", "UOW8", "UOW9")));
+        assertTrue(verify.tokens.containsAll(asList("UOW3", "UOW4", "UOW5", "UOW6", "UOW7", "UOW8", "UOW9")));
         assertFalse(verify.tokens.contains("UOW10"));
         assertEquals(7, verify.tokens.size());
         for (int i = 0; i < verify.tokens.size(); i++) {
@@ -285,7 +286,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
 
         @SuppressWarnings("rawtypes")
         @Override
-        public Object handleSync(EventMessage event) {
+        public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
             GenericDomainEventMessage e = (GenericDomainEventMessage) event;
             String str = String.format("%d - %s(%s) ID %s %s", //
                                        e.getSequenceNumber(), //
@@ -380,14 +381,14 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         }
 
         @Override
-        public Object handleSync(EventMessage<?> event) {
+        public Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
             Object payload = event.getPayload();
 
             if (previousToken == null && payload instanceof AggregateCreatedEvent) {
                 AggregateCreatedEvent created = (AggregateCreatedEvent) payload;
 
                 LegacyUnitOfWork<EventMessage<?>> nested = LegacyDefaultUnitOfWork.startAndGet(event);
-                nested.execute(() -> {
+                nested.execute((ctx) -> {
                     Aggregate<TestAggregate> aggregate = repository.load(created.id);
                     aggregate.execute(r -> r.update(token));
                 });
@@ -398,7 +399,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                 if (updated.token.equals(previousToken)) {
                     LegacyUnitOfWork<EventMessage<?>> nested = LegacyDefaultUnitOfWork.startAndGet(event);
                     if (commit) {
-                        nested.execute(() -> {
+                        nested.execute((ctx) -> {
                             Aggregate<TestAggregate> aggregate = repository.load(updated.id);
                             aggregate.execute(r -> r.update(token));
                         });

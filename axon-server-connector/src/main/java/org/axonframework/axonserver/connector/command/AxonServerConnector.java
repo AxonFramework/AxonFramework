@@ -92,44 +92,6 @@ public class AxonServerConnector implements Connector {
         )));
     }
 
-    private <S, T> Map<String, T> convertMap(Map<String, S> source, Function<S, T> mapper) {
-        Map<String, T> result = new HashMap<>();
-        source.forEach((k, v) -> {
-            T convertedValue = mapper.apply(v);
-            if (convertedValue != null) {
-                result.put(k, convertedValue);
-            }
-        });
-        return result;
-    }
-
-    protected Object convertToMetaDataValue(MetaDataValue value) {
-        return switch (value.getDataCase()) {
-            case TEXT_VALUE -> value.getTextValue();
-            case DOUBLE_VALUE -> value.getDoubleValue();
-            case NUMBER_VALUE -> value.getNumberValue();
-            case BOOLEAN_VALUE -> value.getBooleanValue();
-            default -> null;
-        };
-    }
-
-    protected MetaDataValue convertToMetaDataValue(Object value) {
-        MetaDataValue.Builder builder = MetaDataValue.newBuilder();
-        if (value instanceof CharSequence) {
-            builder.setTextValue(value.toString());
-        } else if (value instanceof Double || value instanceof Float) {
-            builder.setDoubleValue(((Number) value).doubleValue());
-        } else if (value instanceof Number) {
-            builder.setNumberValue(((Number) value).longValue());
-        } else if (value instanceof Boolean) {
-            builder.setBooleanValue((Boolean) value);
-        } else {
-            logger.warn("Ignoring unsupported metadata entry: {}", value);
-        }
-
-        return builder.build();
-    }
-
     private Command buildCommand(CommandMessage<?> command, ProcessingContext processingContext) {
         Command.Builder builder = Command.newBuilder();
         if (processingContext != null) {
@@ -152,12 +114,23 @@ public class AxonServerConnector implements Connector {
         return builder
                 .setMessageIdentifier(command.getIdentifier())
                 .setName(command.type().name())
-                .putAllMetaData(convertMap(command.getMetaData(), this::convertToMetaDataValue))
+                .putAllMetaData(convertMap(command.getMetaData(), this::convertToTextMetaDataValue))
                 .setPayload(SerializedObject.newBuilder()
                                             .setData(ByteString.copyFrom((byte[]) payload))
                                             .setType(command.type().name())
                                             .build())
                 .build();
+    }
+
+    private <S, T> Map<String, T> convertMap(Map<String, S> source, Function<S, T> mapper) {
+        Map<String, T> result = new HashMap<>();
+        source.forEach((k, v) -> {
+            T convertedValue = mapper.apply(v);
+            if (convertedValue != null) {
+                result.put(k, convertedValue);
+            }
+        });
+        return result;
     }
 
     @Override
@@ -200,6 +173,16 @@ public class AxonServerConnector implements Connector {
         );
     }
 
+    protected String convertToMetaDataValue(MetaDataValue value) {
+        return switch (value.getDataCase()) {
+            case TEXT_VALUE -> value.getTextValue();
+            case DOUBLE_VALUE -> Double.toString(value.getDoubleValue());
+            case NUMBER_VALUE -> Long.toString(value.getNumberValue());
+            case BOOLEAN_VALUE -> Boolean.toString(value.getBooleanValue());
+            default -> null;
+        };
+    }
+
     private CommandResponse createResult(Command command, Message<?> result) {
         CommandResponse.Builder responseBuilder =
                 CommandResponse.newBuilder()
@@ -207,7 +190,7 @@ public class AxonServerConnector implements Connector {
                                        getOrDefault(result.getIdentifier(), UUID.randomUUID().toString())
                                )
                                .putAllMetaData(convertMap(result.getMetaData(),
-                                                          this::convertToMetaDataValue))
+                                                          this::convertToTextMetaDataValue))
                                .setRequestIdentifier(command.getMessageIdentifier());
 
         if (result instanceof ResultMessage commandResultMessage && commandResultMessage.isExceptional()) {
@@ -230,6 +213,10 @@ public class AxonServerConnector implements Connector {
         }
 
         return responseBuilder.build();
+    }
+
+    protected MetaDataValue convertToTextMetaDataValue(String value) {
+        return MetaDataValue.newBuilder().setTextValue(value).build();
     }
 
     @Override

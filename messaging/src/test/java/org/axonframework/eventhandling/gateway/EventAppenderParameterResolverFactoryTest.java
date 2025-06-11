@@ -17,10 +17,9 @@
 package org.axonframework.eventhandling.gateway;
 
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
@@ -52,13 +51,26 @@ class EventAppenderParameterResolverFactoryTest {
         Method method = getClass().getMethod("methodWithEventAppenderParameter", EventAppender.class);
         ParameterResolver<?> instance = testSubject.createInstance(method, method.getParameters(), 0);
         assertNotNull(instance);
-        Object injectedParameter = instance.resolveParameterValue(mock(EventMessage.class), processingContext);
+        Object injectedParameter = instance.resolveParameterValue(processingContext);
         assertInstanceOf(ProcessingContextEventAppender.class, injectedParameter);
+    }
+
+    @Test
+    void doesNotInjectIntoGenericParameter() throws Exception {
+        Method method = getClass().getMethod("methodWithOtherParameter", Object.class);
+        ParameterResolver<?> instance = testSubject.createInstance(method, method.getParameters(), 0);
+        assertNull(instance);
     }
 
 
     public void methodWithEventAppenderParameter(
             EventAppender eventAppender
+    ) {
+        // This method is used to test the EventAppenderParameterResolverFactory
+    }
+
+    public void methodWithOtherParameter(
+            Object otherParameter
     ) {
         // This method is used to test the EventAppenderParameterResolverFactory
     }

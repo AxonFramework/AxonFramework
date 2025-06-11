@@ -31,7 +31,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * EventStorageEngine implementation that combines the streams of two event storage engines. The first event storage
@@ -51,7 +51,7 @@ import javax.annotation.Nonnull;
  * @since 3.0
  * @deprecated This will be removed entirely for now.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngine {
 
     private final LegacyEventStorageEngine historicStorage, activeStorage;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.correlation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 
 import java.util.ArrayList;
@@ -24,33 +25,31 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * CorrelationDataProvider that combines the data of multiple other correlation providers. When multiple instance
- * provide the same keys, a delegate will override the entries provided by previously resolved delegates.
+ * {@code CorrelationDataProvider} that combines the data of multiple other correlation providers. When multiple
+ * instance provide the same keys, a delegate will override the entries provided by previously resolved delegates.
  *
  * @author Allard Buijze
- * @since 2.3
+ * @since 2.3.0
  */
-public class MultiCorrelationDataProvider<T extends Message> implements CorrelationDataProvider {
+public class MultiCorrelationDataProvider implements CorrelationDataProvider {
 
     private final List<? extends CorrelationDataProvider> delegates;
 
     /**
      * Initialize the correlation data provider, delegating to given {@code correlationDataProviders}.
      *
-     * @param correlationDataProviders the providers to delegate to.
+     * @param correlationDataProviders The providers to delegate to.
      */
-    public MultiCorrelationDataProvider(List<? extends CorrelationDataProvider> correlationDataProviders) {
+    public MultiCorrelationDataProvider(@Nonnull List<? extends CorrelationDataProvider> correlationDataProviders) {
         delegates = new ArrayList<>(correlationDataProviders);
     }
 
+    @Nonnull
     @Override
-    public Map<String, ?> correlationDataFor(Message<?> message) {
-        Map<String, Object> correlationData = new HashMap<>();
+    public Map<String, String> correlationDataFor(@Nonnull Message<?> message) {
+        Map<String, String> correlationData = new HashMap<>();
         for (CorrelationDataProvider delegate : delegates) {
-            final Map<String, ?> extraData = delegate.correlationDataFor(message);
-            if (extraData != null) {
-                correlationData.putAll(extraData);
-            }
+            correlationData.putAll(delegate.correlationDataFor(message));
         }
         return correlationData;
     }

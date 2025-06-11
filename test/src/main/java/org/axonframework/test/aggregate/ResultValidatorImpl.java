@@ -29,7 +29,7 @@ import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.deadline.DeadlineManagerValidator;
 import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.matchers.FieldFilter;
-import org.axonframework.test.matchers.MapEntryMatcher;
+import org.axonframework.test.matchers.MapStringEntryMatcher;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
@@ -46,7 +46,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -58,7 +58,7 @@ import static org.hamcrest.CoreMatchers.*;
  * @since 0.7
  * @deprecated In favor of the {@link org.axonframework.test.fixture.AxonTestFixture}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
     private final List<EventMessage<?>> publishedEvents;
@@ -357,8 +357,8 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
-        MapEntryMatcher expectedMatcher = new MapEntryMatcher(expectedResultMessage.getMetaData());
-        MapEntryMatcher actualMatcher = new MapEntryMatcher(actualReturnValue.getMetaData());
+        MapStringEntryMatcher expectedMatcher = new MapStringEntryMatcher(expectedResultMessage.getMetaData());
+        MapStringEntryMatcher actualMatcher = new MapStringEntryMatcher(actualReturnValue.getMetaData());
         expectedMatcher.describeTo(expectedDescription);
         actualMatcher.describeTo(actualDescription);
         if (!verifyMetaDataEquality(expectedResultMessage.getPayloadType(),
@@ -533,9 +533,10 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean verifyMetaDataEquality(Class<?> eventType, Map<String, Object> expectedMetaData,
-                                           Map<String, Object> actualMetaData) {
-        MapEntryMatcher matcher = new MapEntryMatcher(expectedMetaData);
+    private boolean verifyMetaDataEquality(Class<?> eventType,
+                                           Map<String, String> expectedMetaData,
+                                           Map<String, String> actualMetaData) {
+        MapStringEntryMatcher matcher = new MapStringEntryMatcher(expectedMetaData);
         if (!matcher.matches(actualMetaData)) {
             reporter.reportDifferentMetaData(eventType, matcher.getMissingEntries(), matcher.getAdditionalEntries());
         }

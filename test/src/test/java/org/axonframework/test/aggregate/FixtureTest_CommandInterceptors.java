@@ -28,13 +28,14 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
-import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -48,7 +49,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -150,12 +151,12 @@ class FixtureTest_CommandInterceptors {
     void registeredCommandHandlerInterceptorsAreInvoked() throws Exception {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
         //noinspection unchecked
-        when(mockCommandHandlerInterceptor.handle(any(LegacyUnitOfWork.class), any(InterceptorChain.class)))
+        when(mockCommandHandlerInterceptor.handle(any(LegacyUnitOfWork.class), any(), any(InterceptorChain.class)))
                 .thenAnswer(InvocationOnMock::getArguments);
         fixture.registerCommandHandlerInterceptor(mockCommandHandlerInterceptor);
 
         TestCommand expectedCommand = new TestCommand(AGGREGATE_IDENTIFIER);
-        Map<String, Object> expectedMetaDataMap = new HashMap<>();
+        Map<String, String> expectedMetaDataMap = new HashMap<>();
         expectedMetaDataMap.put(HANDLER_META_DATA_KEY, HANDLER_META_DATA_VALUE);
 
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
@@ -165,7 +166,7 @@ class FixtureTest_CommandInterceptors {
         ArgumentCaptor<LegacyUnitOfWork<? extends CommandMessage<?>>> unitOfWorkCaptor =
                 ArgumentCaptor.forClass(LegacyUnitOfWork.class);
         ArgumentCaptor<InterceptorChain> interceptorChainCaptor = ArgumentCaptor.forClass(InterceptorChain.class);
-        verify(mockCommandHandlerInterceptor).handle(unitOfWorkCaptor.capture(), interceptorChainCaptor.capture());
+        verify(mockCommandHandlerInterceptor).handle(unitOfWorkCaptor.capture(), any(), interceptorChainCaptor.capture());
         LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWorkResult = unitOfWorkCaptor.getValue();
         Message<?> messageResult = unitOfWorkResult.getMessage();
         assertEquals(expectedCommand, messageResult.getPayload());
@@ -181,7 +182,7 @@ class FixtureTest_CommandInterceptors {
 
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
-        Map<String, Object> expectedMetaDataMap = new HashMap<>();
+        Map<String, String> expectedMetaDataMap = new HashMap<>();
         expectedMetaDataMap.put(HANDLER_META_DATA_KEY, HANDLER_META_DATA_VALUE);
 
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
@@ -194,7 +195,7 @@ class FixtureTest_CommandInterceptors {
     void registeredCommandHandlerInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
-        Map<String, Object> expectedMetaDataMap = new HashMap<>();
+        Map<String, String> expectedMetaDataMap = new HashMap<>();
         expectedMetaDataMap.put(HANDLER_META_DATA_KEY, HANDLER_META_DATA_VALUE);
 
         fixture.givenCommands(new CreateStandardAggregateCommand(AGGREGATE_IDENTIFIER))
@@ -212,10 +213,10 @@ class FixtureTest_CommandInterceptors {
         fixture.registerCommandDispatchInterceptor(new TestCommandDispatchInterceptor());
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
-        Map<String, Object> testMetaDataMap = new HashMap<>();
+        Map<String, String> testMetaDataMap = new HashMap<>();
         testMetaDataMap.put(HANDLER_META_DATA_KEY, HANDLER_META_DATA_VALUE);
 
-        Map<String, Object> expectedMetaDataMap = new HashMap<>(testMetaDataMap);
+        Map<String, String> expectedMetaDataMap = new HashMap<>(testMetaDataMap);
         expectedMetaDataMap.put(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE);
 
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
@@ -227,9 +228,9 @@ class FixtureTest_CommandInterceptors {
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredHandlerInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
         AtomicInteger invocations = new AtomicInteger(0);
-        fixture.registerCommandHandlerInterceptor((unitOfWork, interceptorChain) -> {
+        fixture.registerCommandHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
             invocations.incrementAndGet();
-            interceptorChain.proceedSync();
+            interceptorChain.proceedSync(context);
             return null;
         });
 
@@ -274,7 +275,7 @@ class FixtureTest_CommandInterceptors {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new DoWithEntityWithoutInterceptorCommand(AGGREGATE_IDENTIFIER))
                .expectNoEvents()
-               .expectException(AggregateEntityNotFoundException.class);
+               .expectException(ChildEntityNotFoundException.class);
     }
 
     @Test
@@ -320,11 +321,11 @@ class FixtureTest_CommandInterceptors {
         }
 
         @CommandHandlerInterceptor
-        public String intercept(DoWithEntityCommand command, InterceptorChain interceptorChain) throws Exception {
+        public String intercept(DoWithEntityCommand command, InterceptorChain interceptorChain, ProcessingContext context) throws Exception {
             if (this.entity == null) {
                 return "invoked-without-entity";
             }
-            return (String) interceptorChain.proceedSync();
+            return (String) interceptorChain.proceedSync(context);
         }
 
         @CommandHandlerInterceptor
@@ -362,9 +363,11 @@ class FixtureTest_CommandInterceptors {
 
         @CommandHandlerInterceptor
         public void intercept(CommandMessage<?> command,
-                              InterceptorChain interceptorChain) throws Exception {
+                              InterceptorChain interceptorChain,
+                              ProcessingContext context
+        ) throws Exception {
             intercepted.set(true);
-            interceptorChain.proceedSync();
+            interceptorChain.proceedSync(context);
         }
 
         @CommandHandler
@@ -442,7 +445,7 @@ class FixtureTest_CommandInterceptors {
                 @Nonnull List<? extends CommandMessage<?>> messages
         ) {
             return (index, message) -> {
-                Map<String, Object> testMetaDataMap = new HashMap<>();
+                Map<String, String> testMetaDataMap = new HashMap<>();
                 testMetaDataMap.put(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE);
                 message = message.andMetaData(testMetaDataMap);
                 return message;
@@ -454,9 +457,9 @@ class FixtureTest_CommandInterceptors {
 
         @Override
         public Object handle(@Nonnull LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWork,
-                             @Nonnull InterceptorChain interceptorChain) throws Exception {
+                             @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.registerCorrelationDataProvider(new SimpleCorrelationDataProvider(HANDLER_META_DATA_KEY));
-            return interceptorChain.proceedSync();
+            return interceptorChain.proceedSync(context);
         }
     }
 

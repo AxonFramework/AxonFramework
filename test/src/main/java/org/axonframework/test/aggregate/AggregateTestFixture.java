@@ -16,6 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
@@ -63,6 +64,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.Aggregate;
@@ -70,7 +72,6 @@ import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.modelling.command.AggregateScopeDescriptor;
 import org.axonframework.modelling.command.CommandTargetResolver;
-import org.axonframework.modelling.command.ConflictingAggregateVersionException;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -105,7 +106,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.*;
@@ -119,7 +119,7 @@ import static org.axonframework.common.ReflectionUtils.*;
  * @since 0.6
  * @deprecated In favor of the {@link org.axonframework.test.fixture.AxonTestFixture}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExecutor<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AggregateTestFixture.class);
@@ -368,7 +368,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         ensureRepositoryConfiguration();
-        LegacyDefaultUnitOfWork.startAndGet(null).execute(() -> {
+        LegacyDefaultUnitOfWork.startAndGet(null).execute((ctx) -> {
             try {
                 repository.newInstance(aggregate::get);
             } catch (Exception e) {
@@ -444,7 +444,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             CompletableFuture<Message<?>> result = new CompletableFuture<>();
             CommandMessage<Object> commandMessage =
                     new GenericCommandMessage<>(new MessageType(command.getClass()), command);
-            executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, ProcessingContext.NONE)
+            executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, new LegacyMessageSupportingContext(commandMessage))
                                                    .whenComplete(FutureUtils.alsoComplete(result)));
             result.join();
             givenEvents.addAll(storedEvents);
@@ -501,11 +501,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public ResultValidator<T> when(Object command, Map<String, ?> metaData) {
+    public ResultValidator<T> when(Object command, Map<String, String> metaData) {
         return when(resultValidator -> {
             CommandMessage<Object> commandMessage =
                     new GenericCommandMessage<>(new MessageType(command.getClass()), command, metaData);
-            commandBus.dispatch(commandMessage, ProcessingContext.NONE)
+            commandBus.dispatch(commandMessage, new LegacyMessageSupportingContext(commandMessage))
                       .whenComplete((r, e) -> {
                           if (e == null) {
                               resultValidator.recordResult(commandMessage, r);
@@ -518,7 +518,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> whenConstructing(Callable<T> aggregateFactory) {
-        return when(validator -> LegacyDefaultUnitOfWork.startAndGet(null).execute(() -> {
+        return when(validator -> LegacyDefaultUnitOfWork.startAndGet(null).execute((ctx) -> {
             try {
                 repository.newInstance(aggregateFactory);
             } catch (Exception | AssertionError e) {
@@ -530,7 +530,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> whenInvoking(String aggregateId, Consumer<T> aggregateSupplier) {
-        return when(validator -> LegacyDefaultUnitOfWork.startAndGet(null).execute(() -> {
+        return when(validator -> LegacyDefaultUnitOfWork.startAndGet(null).execute((ctx) -> {
             try {
                 repository.load(aggregateId)
                           .execute(aggregateSupplier);
@@ -572,7 +572,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     protected void handleDeadline(ScopeDescriptor aggregateDescriptor, DeadlineMessage<?> deadlineMessage)
             throws Exception {
         ensureRepositoryConfiguration();
-        repository.send(deadlineMessage, aggregateDescriptor);
+        repository.send(deadlineMessage, new LegacyMessageSupportingContext(deadlineMessage), aggregateDescriptor);
     }
 
     private ResultValidator<T> buildResultValidator() {
@@ -848,17 +848,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
-            CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
-            aggregate = delegate.load(aggregateIdentifier, expectedVersion);
-            validateIdentifier(aggregateIdentifier, aggregate);
-            return aggregate;
-        }
-
-        @Override
         public Aggregate<T> load(@Nonnull String aggregateIdentifier) {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
-            aggregate = delegate.load(aggregateIdentifier, null);
+            aggregate = delegate.load(aggregateIdentifier);
             validateIdentifier(aggregateIdentifier, aggregate);
             return aggregate;
         }
@@ -881,9 +873,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+        public void send(Message<?> message,
+                         ProcessingContext context,
+                         ScopeDescriptor scopeDescription) throws Exception {
             if (canResolve(scopeDescription)) {
-                load(((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+                load(((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString()).handle(message, context);
             }
         }
 
@@ -927,11 +921,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public Aggregate<T> load(@Nonnull String aggregateIdentifier) {
-            return load(aggregateIdentifier, null);
-        }
-
-        @Override
-        public Aggregate<T> load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
             if (storedAggregate == null) {
                 throw new AggregateNotFoundException(aggregateIdentifier,
                                                      "Aggregate not found. No aggregate has been stored yet.");
@@ -945,18 +934,15 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             if (storedAggregate.isDeleted()) {
                 throw new AggregateNotFoundException(aggregateIdentifier, "Aggregate not found. It has been deleted.");
             }
-            if (expectedVersion != null && !Objects.equals(expectedVersion, storedAggregate.version())) {
-                throw new ConflictingAggregateVersionException(aggregateIdentifier,
-                                                               expectedVersion,
-                                                               storedAggregate.version());
-            }
             return storedAggregate;
         }
 
         @Override
-        public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+        public void send(Message<?> message,
+                         ProcessingContext context,
+                         ScopeDescriptor scopeDescription) throws Exception {
             if (canResolve(scopeDescription)) {
-                load(((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+                load(((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString()).handle(message, context);
             }
         }
 
@@ -1112,12 +1098,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<R> load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
-            throw new UnsupportedOperationException(
-                    "Default repository does not mock loading of an aggregate, only creation of it");
-        }
-
-        @Override
         public Aggregate<R> newInstance(@Nonnull Callable<R> factoryMethod) throws Exception {
             AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(
                     aggregateType, getParameterResolverFactory(), getHandlerDefinition()
@@ -1126,7 +1106,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public void send(Message<?> message, ScopeDescriptor scopeDescription) {
+        public void send(Message<?> message, ProcessingContext context, ScopeDescriptor scopeDescription) {
             throw new UnsupportedOperationException(
                     "Default repository does not mock loading of an aggregate, only creation of it");
         }

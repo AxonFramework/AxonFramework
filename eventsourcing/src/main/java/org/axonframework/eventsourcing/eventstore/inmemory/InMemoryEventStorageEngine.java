@@ -20,16 +20,16 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
-import org.axonframework.eventsourcing.eventstore.EventsCondition;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventsourcing.eventstore.StreamingCondition;
-import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
+import org.axonframework.eventstreaming.EventsCondition;
+import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -69,12 +69,14 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final NavigableMap<Long, TaggedEventMessage<? extends EventMessage<?>>> eventStorage = new ConcurrentSkipListMap<>();
-    private final ReentrantLock appendLock = new ReentrantLock();
+    private static final boolean WITH_MARKER = true;
+    private static final boolean WITHOUT_MARKER = false;
 
-    private final Set<MapBackedMessageStream> openStreams = new CopyOnWriteArraySet<>();
-
+    private final NavigableMap<Long, TaggedEventMessage<? extends EventMessage<?>>> eventStorage =
+            new ConcurrentSkipListMap<>();
     private final long offset;
+    private final ReentrantLock appendLock = new ReentrantLock();
+    private final Set<MapBackedMessageStream> openStreams = new CopyOnWriteArraySet<>();
 
     /**
      * Initializes an in-memory {@link EventStorageEngine}.
@@ -111,15 +113,17 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                 if (finished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
+
                 appendLock.lock();
                 try {
                     if (containsConflicts(condition)) {
                         return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));
                     }
-                    Optional<ConsistencyMarker> newHead =
+                    Optional<ConsistencyMarker> newLatest =
                             events.stream()
                                   .map(event -> {
                                       long next = nextIndex();
+                                      long marker = next + 1;
                                       eventStorage.put(next, event);
 
                                       if (logger.isDebugEnabled()) {
@@ -128,12 +132,12 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                                                        next,
                                                        event.event().getTimestamp());
                                       }
-                                      return (ConsistencyMarker) new GlobalIndexConsistencyMarker(next);
+                                      return (ConsistencyMarker) new GlobalIndexConsistencyMarker(marker);
                                   })
                                   .reduce(ConsistencyMarker::upperBound);
 
-                    openStreams.forEach(m -> m.callback.get().run());
-                    return CompletableFuture.completedFuture(newHead.orElse(ConsistencyMarker.ORIGIN));
+                    openStreams.forEach(m -> m.callback().run());
+                    return CompletableFuture.completedFuture(newLatest.orElse(ConsistencyMarker.ORIGIN));
                 } finally {
                     appendLock.unlock();
                 }
@@ -152,14 +156,16 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     private boolean containsConflicts(AppendCondition condition) {
         if (Objects.equals(condition.consistencyMarker(), ConsistencyMarker.INFINITY)) {
-            return false;
+            return WITHOUT_MARKER;
         }
 
         return this.eventStorage.tailMap(GlobalIndexConsistencyMarker.position(condition.consistencyMarker()) + 1)
                                 .values()
                                 .stream()
                                 .map(event -> (TaggedEventMessage<?>) event)
-                                .anyMatch(taggedEvent -> condition.matches(taggedEvent.event().type().qualifiedName(), taggedEvent.tags()));
+                                .anyMatch(taggedEvent -> condition.matches(
+                                        taggedEvent.event().type().qualifiedName(), taggedEvent.tags()
+                                ));
     }
 
     @Override
@@ -168,9 +174,12 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
 
-        return eventsToMessageStream(condition.start(),
-                                     eventStorage.isEmpty() ? -1 : Math.min(condition.end(), eventStorage.lastKey()),
-                                     condition);
+        // Set end to the CURRENT last position, to reflect it's a finite stream.
+        MapBackedMessageStream messageStream = new MapBackedSourcingEventMessageStream(
+                condition.start(), eventStorage.isEmpty() ? -1 : eventStorage.lastKey(), condition
+        );
+        openStreams.add(messageStream);
+        return messageStream;
     }
 
     @Override
@@ -179,13 +188,11 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
 
-        return eventsToMessageStream(condition.position().position().orElse(-1) + 1, Long.MAX_VALUE, condition);
-    }
-
-    private MessageStream<EventMessage<?>> eventsToMessageStream(long start, long end, EventsCondition condition) {
-        MapBackedMessageStream mapBackedMessageStream = new MapBackedMessageStream(start, end, condition);
-        openStreams.add(mapBackedMessageStream);
-        return mapBackedMessageStream;
+        // Set end to the Long.MAX-VALUE, to reflect it's an infinite stream.
+        MapBackedMessageStream messageStream =
+                new MapBackedStreamingEventMessageStream(condition.position().position().orElse(-1), condition);
+        openStreams.add(messageStream);
+        return messageStream;
     }
 
     private static boolean match(TaggedEventMessage<?> taggedEvent, EventsCondition condition) {
@@ -194,28 +201,28 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tailToken() {
+    public CompletableFuture<TrackingToken> firstToken() {
         if (logger.isDebugEnabled()) {
-            logger.debug("Operation tailToken() is invoked.");
+            logger.debug("Operation firstToken() is invoked.");
         }
 
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? new GlobalSequenceTrackingToken(offset - 1)
-                        : new GlobalSequenceTrackingToken(eventStorage.firstKey() - 1)
+                        : new GlobalSequenceTrackingToken(eventStorage.firstKey())
         );
     }
 
     @Override
-    public CompletableFuture<TrackingToken> headToken() {
+    public CompletableFuture<TrackingToken> latestToken() {
         if (logger.isDebugEnabled()) {
-            logger.debug("Operation headToken() is invoked.");
+            logger.debug("Operation latestToken() is invoked.");
         }
 
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? new GlobalSequenceTrackingToken(offset - 1)
-                        : new GlobalSequenceTrackingToken(eventStorage.lastKey())
+                        : new GlobalSequenceTrackingToken(eventStorage.lastKey() + 1)
         );
     }
 
@@ -230,7 +237,6 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                            .filter(positionToEventEntry -> {
                                EventMessage<?> event = positionToEventEntry.getValue().event();
                                Instant eventTimestamp = event.getTimestamp();
-                               logger.debug("instant [{}]", eventTimestamp);
                                return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
                            })
                            .map(Map.Entry::getKey)
@@ -239,7 +245,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                            .map(GlobalSequenceTrackingToken::new)
                            .map(tt -> (TrackingToken) tt)
                            .map(CompletableFuture::completedFuture)
-                           .orElseGet(this::headToken);
+                           .orElseGet(this::latestToken);
     }
 
     @Override
@@ -247,45 +253,61 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         descriptor.describeProperty("offset", offset);
     }
 
-    private class MapBackedMessageStream implements MessageStream<EventMessage<?>> {
+    private abstract class MapBackedMessageStream implements MessageStream<EventMessage<?>> {
 
         private final AtomicLong position;
-        private final AtomicReference<Runnable> callback;
-        private final long end;
+        protected final long end;
         private final EventsCondition condition;
+        private final AtomicReference<Runnable> callback;
 
-        public MapBackedMessageStream(long start, long end, EventsCondition condition) {
+        private MapBackedMessageStream(long start,
+                                       long end,
+                                       EventsCondition condition) {
+            this.position = new AtomicLong(start);
             this.end = end;
             this.condition = condition;
-            position = new AtomicLong(start);
-            callback = new AtomicReference<>(() -> {
+            this.callback = new AtomicReference<>(() -> {
             });
         }
 
         @Override
         public Optional<Entry<EventMessage<?>>> next() {
-            long currentPosition = position.get();
-            while (currentPosition <= end
+            long currentPosition = this.position.get();
+            while (currentPosition <= this.end
                     && eventStorage.containsKey(currentPosition)
-                    && position.compareAndSet(currentPosition,
-                                              currentPosition + 1)) {
+                    && this.position.compareAndSet(currentPosition, currentPosition + 1)) {
                 TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
-                if (match(nextEvent, condition)) {
+                if (match(nextEvent, this.condition)) {
                     Context context = Context.empty();
-                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition));
-                    context = Tag.addToContext(context, nextEvent.tags());
-                    context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(end));
+                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition + 1));
                     return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
                 }
-                currentPosition = position.get();
+                currentPosition = this.position.get();
             }
-            return Optional.empty();
+            return lastEntry();
         }
+
+        @Override
+        public Optional<Entry<EventMessage<?>>> peek() {
+            long currentPosition = this.position.get();
+            while (currentPosition <= this.end && eventStorage.containsKey(currentPosition)) {
+                TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
+                if (match(nextEvent, this.condition)) {
+                    Context context = Context.empty();
+                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition + 1));
+                    return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
+                }
+                currentPosition++;
+            }
+            return lastEntry();
+        }
+
+        abstract Optional<Entry<EventMessage<?>>> lastEntry();
 
         @Override
         public void onAvailable(@Nonnull Runnable callback) {
             this.callback.set(callback);
-            if (eventStorage.isEmpty() || eventStorage.containsKey(position.get())) {
+            if (eventStorage.isEmpty() || eventStorage.containsKey(this.position.get())) {
                 callback.run();
             }
         }
@@ -297,19 +319,67 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
         @Override
         public boolean isCompleted() {
-            long currentPosition = position.get();
-            return currentPosition > end;
+            long currentPosition = this.position.get();
+            return currentPosition > this.end;
         }
 
         @Override
         public boolean hasNextAvailable() {
-            long currentPosition = position.get();
-            return currentPosition <= end && eventStorage.containsKey(currentPosition);
+            long currentPosition = this.position.get();
+            return currentPosition <= this.end && eventStorage.containsKey(currentPosition);
         }
 
         @Override
         public void close() {
-            position.set(end + 1);
+            this.position.set(this.end + 1);
+        }
+
+        Runnable callback() {
+            return this.callback.get();
+        }
+    }
+
+    private class MapBackedSourcingEventMessageStream extends MapBackedMessageStream {
+
+        private final AtomicBoolean sharedLastEntry = new AtomicBoolean(false);
+
+        private MapBackedSourcingEventMessageStream(long start,
+                                                    long end,
+                                                    EventsCondition condition) {
+            super(start, end, condition);
+        }
+
+        @Override
+        Optional<Entry<EventMessage<?>>> lastEntry() {
+            if (sharedLastEntry.compareAndSet(false, true)) {
+                Context context = Context.with(ConsistencyMarker.RESOURCE_KEY, new GlobalIndexConsistencyMarker(end));
+                return Optional.of(new SimpleEntry<>(TerminalEventMessage.INSTANCE, context));
+            } else {
+                return Optional.empty();
+            }
+        }
+
+        @Override
+        public boolean isCompleted() {
+            return super.isCompleted() && sharedLastEntry.get();
+        }
+
+        @Override
+        public boolean hasNextAvailable() {
+            return super.hasNextAvailable() || !sharedLastEntry.get();
+        }
+    }
+
+    private class MapBackedStreamingEventMessageStream extends MapBackedMessageStream {
+
+        private MapBackedStreamingEventMessageStream(long start,
+                                                     EventsCondition condition) {
+            super(start, Long.MAX_VALUE, condition);
+        }
+
+        @Override
+        Optional<Entry<EventMessage<?>>> lastEntry() {
+            return Optional.empty();
         }
     }
 }

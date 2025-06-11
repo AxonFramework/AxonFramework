@@ -16,17 +16,14 @@
 
 package org.axonframework.eventsourcing;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventsourcing.conflictresolution.ConflictResolution;
-import org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.modelling.command.LegacyLockingRepository;
 import org.axonframework.modelling.command.LegacyRepository;
@@ -38,7 +35,6 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
-import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -53,7 +49,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 0.1
  * @deprecated In favor of the {@link EventSourcingRepository}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T, EventSourcedAggregate<T>> {
 
     private final LegacyEventStore eventStore;
@@ -120,14 +116,12 @@ public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T,
      * Perform the actual loading of an aggregate. The necessary locks have been obtained.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
-     * @param expectedVersion     The expected version of the loaded aggregate
      * @return the fully initialized aggregate
-     *
      * @throws AggregateDeletedException  in case an aggregate existed in the past, but has been deleted
      * @throws AggregateNotFoundException when an aggregate with the given identifier does not exist
      */
     @Override
-    protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
+    protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier) {
         SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
         DomainEventStream eventStream = readEvents(aggregateIdentifier);
         if (!eventStream.hasNext()) {
@@ -161,29 +155,16 @@ public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T,
     }
 
     /**
-     * Reads the events for the given aggregateIdentifier from the eventStore. this method may be overridden to
-     * add pre or postprocessing to the loading of an event stream
+     * Reads the events for the given aggregateIdentifier from the eventStore. this method may be overridden to add pre
+     * or postprocessing to the loading of an event stream
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
-     * @return the domain event stream for the given aggregateIdentifier, with {@link #eventStreamFilter} applied if
-     *         one was configured
+     * @return the domain event stream for the given aggregateIdentifier, with {@link #eventStreamFilter} applied if one
+     * was configured
      */
     protected DomainEventStream readEvents(String aggregateIdentifier) {
         DomainEventStream fullStream = eventStore.readEvents(aggregateIdentifier);
         return eventStreamFilter != null ? fullStream.filter(eventStreamFilter) : fullStream;
-    }
-
-    @Override
-    protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
-        if (expectedVersion != null && expectedVersion < aggregate.version()) {
-            DefaultConflictResolver conflictResolver =
-                    new DefaultConflictResolver(eventStore, aggregate.identifierAsString(), expectedVersion,
-                                                aggregate.version());
-            ConflictResolution.initialize(conflictResolver);
-            CurrentUnitOfWork.get().onPrepareCommit(uow -> conflictResolver.ensureConflictsResolved());
-        } else {
-            super.validateOnLoad(aggregate, expectedVersion);
-        }
     }
 
     @Override
@@ -303,10 +284,11 @@ public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T,
         }
 
         /**
-         * Sets the {@link LegacyEventStore} that holds the event stream this repository needs to event source an Aggregate.
+         * Sets the {@link LegacyEventStore} that holds the event stream this repository needs to event source an
+         * Aggregate.
          *
-         * @param eventStore an {@link LegacyEventStore} that holds the event stream this repository needs to event source
-         *                   an Aggregate
+         * @param eventStore an {@link LegacyEventStore} that holds the event stream this repository needs to event
+         *                   source an Aggregate
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> eventStore(LegacyEventStore eventStore) {

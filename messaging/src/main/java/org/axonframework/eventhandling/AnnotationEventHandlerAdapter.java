@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.replay.GenericResetContext;
 import org.axonframework.eventhandling.replay.ResetContext;
@@ -31,6 +32,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collection;
@@ -127,22 +129,22 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public Object handleSync(EventMessage<?> event) throws Exception {
+    public Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) throws Exception {
         Optional<MessageHandlingMember<? super Object>> handler =
                 inspector.getHandlers(listenerType)
-                         .filter(h -> h.canHandle(event, null))
+                         .filter(h -> h.canHandle(event, context))
                          .findFirst();
         if (handler.isPresent()) {
             MessageHandlerInterceptorMemberChain<Object> interceptor = inspector.chainedInterceptor(listenerType);
-            return interceptor.handleSync(event, annotatedEventListener, handler.get());
+            return interceptor.handleSync(event, context, annotatedEventListener, handler.get());
         }
         return null;
     }
 
     @Override
-    public boolean canHandle(EventMessage<?> event) {
+    public boolean canHandle(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         return inspector.getHandlers(listenerType)
-                        .anyMatch(h -> h.canHandle(event, null));
+                        .anyMatch(h -> h.canHandle(event, context));
     }
 
     @Override
@@ -158,19 +160,20 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public void prepareReset(ProcessingContext processingContext) {
+    public void prepareReset(ProcessingContext context) {
         prepareReset(null, null);
     }
 
     @Override
-    public <R> void prepareReset(R resetContext, ProcessingContext processingContext) {
+    public <R> void prepareReset(R resetContext, ProcessingContext context) {
         try {
             ResetContext<?> resetMessage = asResetContext(resetContext);
+            ProcessingContext messageProcessingContext = new LegacyMessageSupportingContext(resetMessage);
             inspector.getHandlers(listenerType)
-                     .filter(h -> h.canHandle(resetMessage, processingContext))
+                     .filter(h -> h.canHandle(resetMessage, messageProcessingContext))
                      .findFirst()
                      .ifPresent(messageHandlingMember -> messageHandlingMember.handle(resetMessage,
-                                                                                      processingContext,
+                                                                                      messageProcessingContext,
                                                                                       annotatedEventListener)
                                                                               .first()
                                                                               .asCompletableFuture()
@@ -200,7 +203,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
         }
         MessageType type = messageOrPayload == null
                 ? new MessageType("empty.reset.context")
-                : messageTypeResolver.resolve(messageOrPayload);
+                : messageTypeResolver.resolveOrThrow(messageOrPayload);
         return new GenericResetContext<>(type, (T) messageOrPayload);
     }
 

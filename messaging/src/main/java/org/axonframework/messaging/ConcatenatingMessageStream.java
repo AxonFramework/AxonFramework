@@ -105,4 +105,12 @@ class ConcatenatingMessageStream<M extends Message<?>> implements MessageStream<
         return first.reduce(identity, accumulator)
                     .thenCompose(intermediate -> second.reduce(intermediate, accumulator));
     }
+
+    @Override
+    public Optional<Entry<M>> peek() {
+        if (first.isCompleted() && first.error().isEmpty()) {
+            return second.peek();
+        }
+        return first.peek();
+    }
 }

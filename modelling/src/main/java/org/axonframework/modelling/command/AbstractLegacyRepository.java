@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -27,6 +28,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -42,7 +44,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -59,7 +60,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 0.1
  * @deprecated This instance will be removed.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implements LegacyRepository<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractLegacyRepository.class);
@@ -69,16 +70,16 @@ public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implem
     protected final RepositorySpanFactory spanFactory;
 
     /**
-     * Instantiate a {@link AbstractLegacyRepository} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code AbstractLegacyRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * The provided Builder's main goal is to build an {@link AggregateModel} specifying generic {@code T} as the
-     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type.
-     * To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
+     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
+     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
      * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link AbstractLegacyRepository} instance
+     * @param builder the {@link Builder} used to instantiate a {@code AbstractLegacyRepository} instance
      */
     protected AbstractLegacyRepository(Builder<T> builder) {
         builder.validate();
@@ -142,7 +143,7 @@ public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implem
      * @throws RuntimeException           any exception thrown by implementing classes
      */
     @Override
-    public A load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
+    public A load(@Nonnull String aggregateIdentifier) {
         return spanFactory.createLoadSpan(aggregateIdentifier)
                           .runSupplier(() -> {
                               LegacyUnitOfWork<?> uow = currentUnitOfWork();
@@ -150,7 +151,7 @@ public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implem
                               A aggregate = aggregates.computeIfAbsent(
                                       aggregateIdentifier, s -> {
                                           try {
-                                              return doLoad(aggregateIdentifier, expectedVersion);
+                                              return doLoad(aggregateIdentifier);
                                           } catch (Exception e) {
                                               logger.warn("Exception occurred while trying to load a aggregate "
                                                                   + "with identifier [{}].", aggregateIdentifier, e);
@@ -159,7 +160,7 @@ public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implem
                                       }
                               );
                               uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
-                              validateOnLoad(aggregate, expectedVersion);
+                              validateOnLoad(aggregate);
                               prepareForCommit(aggregate);
 
                               return aggregate;
@@ -198,8 +199,7 @@ public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implem
         LegacyUnitOfWork<?> uow = CurrentUnitOfWork.get();
         Class<?> messageType = uow.getMessage() != null ? uow.getMessage().getClass() : null;
         if (invalidMessageType(messageType)) {
-            logger.warn("The active Unit of Work is expected to contain a CommandMessage or a DeadlineMessage, but instead contains a [{}]",
-                        messageType);
+            logger.warn("The active Unit of Work is expected to contain a CommandMessage or a DeadlineMessage, but instead contains a [{}]", messageType);
         }
         return uow;
     }
@@ -228,37 +228,14 @@ public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implem
         return uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
     }
 
-    @Override
-    public A load(@Nonnull String aggregateIdentifier) {
-        return load(aggregateIdentifier, null);
+    // TODO potentially temp
+    protected void validateOnLoad(Aggregate<T> aggregate) {
+        //...
     }
 
     /**
-     * Checks the aggregate for concurrent changes. Throws a {@link ConflictingModificationException} when conflicting
-     * changes have been detected.
-     * <p>
-     * This implementation throws a {@link ConflictingAggregateVersionException} if the expected version is not null
-     * and the version number of the aggregate does not match the expected version
-     *
-     * @param aggregate       The loaded aggregate
-     * @param expectedVersion The expected version of the aggregate
-     * @throws ConflictingModificationException     when conflicting changes have been detected
-     * @throws ConflictingAggregateVersionException the expected version is not {@code null}
-     *                                              and the version number of the aggregate does not match the expected
-     *                                              version
-     */
-    protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
-        if (expectedVersion != null && aggregate.version() != null &&
-                !expectedVersion.equals(aggregate.version())) {
-            throw new ConflictingAggregateVersionException(aggregate.identifierAsString(),
-                                                           expectedVersion,
-                                                           aggregate.version());
-        }
-    }
-
-    /**
-     * Register handlers with the current Unit of Work that save or delete the given {@code aggregate} when
-     * the Unit of Work is committed.
+     * Register handlers with the current Unit of Work that save or delete the given {@code aggregate} when the Unit of
+     * Work is committed.
      *
      * @param aggregate The Aggregate to save or delete when the Unit of Work is committed
      */
@@ -338,32 +315,29 @@ public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implem
      * Loads and initialized the aggregate with the given aggregateIdentifier.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
-     * @param expectedVersion     The expected version of the aggregate to load
      * @return a fully initialized aggregate
-     *
      * @throws AggregateNotFoundException if the aggregate with given identifier does not exist
      */
-    protected abstract A doLoad(String aggregateIdentifier, Long expectedVersion);
+    protected abstract A doLoad(String aggregateIdentifier);
 
 
     /**
-     * Loads an aggregate from the reporsitory. If the aggregate does not exists, it is created using the {@code
-     * factoryMethod}.
+     * Loads an aggregate from the reporsitory. If the aggregate does not exists, it is created using the
+     * {@code factoryMethod}.
      *
      * @param aggregateIdentifier the identifier of the aggregate
      * @param factoryMethod       the method that creates a new instance
      * @return the aggregate
-     *
      * @throws Exception when loading or creating the aggregate failed
      */
     protected A doLoadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod)
             throws Exception {
         throw new UnsupportedOperationException("doLoadOrCreate not implemented for this repository type");
     }
+
     /**
-     * Removes the aggregate from the repository. Typically, the repository should ensure that any calls to {@link
-     * #doLoad(String, Long)} throw a {@link AggregateNotFoundException} when
-     * loading a deleted aggregate.
+     * Removes the aggregate from the repository. Typically, the repository should ensure that any calls to
+     * {@link #doLoad(String)} throw a {@link AggregateNotFoundException} when loading a deleted aggregate.
      *
      * @param aggregate the aggregate to delete
      */
@@ -392,14 +366,16 @@ public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implem
     }
 
     @Override
-    public void send(@Nonnull Message<?> message, @Nonnull ScopeDescriptor scopeDescription) throws Exception {
+    public void send(@Nonnull Message<?> message,
+                     ProcessingContext context,
+                     @Nonnull ScopeDescriptor scopeDescription) throws Exception {
         if (canResolve(scopeDescription)) {
             String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
             try {
-                load(aggregateIdentifier).handle(message);
+                load(aggregateIdentifier).handle(message, context);
             } catch (AggregateNotFoundException e) {
                 logger.debug("Aggregate (with id: [{}]) cannot be loaded. Hence, message '[{}]' cannot be handled.",
-                        aggregateIdentifier, message);
+                             aggregateIdentifier, message);
             }
         }
     }
@@ -412,17 +388,16 @@ public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implem
     }
 
     private boolean matchesSimpleType(AggregateScopeDescriptor scopeDescription) {
-        return aggregateModel.types().anyMatch(t ->
-                t.getSimpleName().contentEquals(scopeDescription.getType()));
+        return aggregateModel.types()
+                             .anyMatch(t -> t.getSimpleName().contentEquals(scopeDescription.getType()));
     }
 
     private boolean matchesDeclaredType(AggregateScopeDescriptor scopeDescription) {
         return aggregateModel.types()
-                .map(aggregateModel::declaredType)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .anyMatch(declaredType -> scopeDescription.getType()
-                        .equals(declaredType));
+                             .map(aggregateModel::declaredType)
+                             .filter(Optional::isPresent)
+                             .map(Optional::get)
+                             .anyMatch(declaredType -> scopeDescription.getType().equals(declaredType));
     }
 
     /**

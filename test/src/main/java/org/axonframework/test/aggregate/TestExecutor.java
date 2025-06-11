@@ -36,7 +36,7 @@ import java.util.function.Consumer;
  * @since 0.6
  * @deprecated In favor of the {@link org.axonframework.test.fixture.AxonTestFixture}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface TestExecutor<T> {
 
     /**
@@ -58,10 +58,10 @@ public interface TestExecutor<T> {
      * {@code CommandMessage} as its payload.
      *
      * @param command  The command to execute
-     * @param metaData The meta-data to attach to the
+     * @param metaData The metadata to attach to the
      * @return a ResultValidator that can be used to validate the resulting actions of the command execution
      */
-    ResultValidator<T> when(Object command, Map<String, ?> metaData);
+    ResultValidator<T> when(Object command, Map<String, String> metaData);
 
     /**
      * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event

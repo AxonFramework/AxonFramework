@@ -27,6 +27,7 @@ import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -39,7 +40,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -125,7 +126,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         return new GenericDomainEventMessage<>(aggregate.type(),
                                                aggregate.identifierAsString(),
                                                aggregate.version(),
-                                               messageTypeResolver.resolve(aggregateType),
+                                               messageTypeResolver.resolveOrThrow(aggregateType),
                                                aggregate.getAggregateRoot());
     }
 
@@ -354,7 +355,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         @Override
-        public Object handle(Message<?> message) {
+        public Object handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
             throw new UnsupportedOperationException("Aggregate instance is read-only");
         }
 

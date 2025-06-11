@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import java.util.Map;
 public interface SubscriptionQueryUpdateMessage<U> extends ResultMessage<U> {
 
     @Override
-    SubscriptionQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, ?> metaData);
+    SubscriptionQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
-    SubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, ?> metaData);
+    SubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData);
 }

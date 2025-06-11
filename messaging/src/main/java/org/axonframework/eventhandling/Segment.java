@@ -17,7 +17,9 @@
 package org.axonframework.eventhandling;
 
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
+import org.axonframework.messaging.Context;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +27,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -33,25 +36,52 @@ import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 
 /**
- * A representation of a segment and corresponding mask with various capabilities.
- * <br/><br/>
+ * A representation of a segment and corresponding mask with various capabilities. <br/><br/>
  * <i><u>Definition</u></i>
  * <br/><br/>
  * <p/>
- * A {@link Segment} is a fraction of the total population of events.
- * The 'mask' is a bitmask to be applied to an identifier, resulting in the segmentId of the {@link Segment}.
+ * A {@link Segment} is a fraction of the total population of events. The 'mask' is a bitmask to be applied to an
+ * identifier, resulting in the segmentId of the {@link Segment}.
  */
 public class Segment implements Comparable<Segment> {
+
+    /**
+     * The Context.ResourceKey used whenever a Context would contain a segment id.
+     */
+    public static final Context.ResourceKey<Segment> RESOURCE_KEY = Context.ResourceKey.withLabel("segment");
 
     private static final Segment[] EMPTY_SEGMENTS = new Segment[0];
     private static final int ZERO_MASK = 0x0;
 
     /**
-     * Represents the Segment that matches against all input, but can be split to start processing elements in parallel.
+     * Represents the Segment that matches against all input, but can be split to start processing elements in
+     * parallel.
      */
     public static final Segment ROOT_SEGMENT = new Segment(0, ZERO_MASK);
     private final int segmentId;
     private final int mask;
+
+    /**
+     * Adds the given {@code segment} to the given {@code context} using the {@link #RESOURCE_KEY}.
+     *
+     * @param context The {@link Context} to add the given {@code token} to.
+     * @param segment The {@link Segment} to add to the given {@code context} using the {@link #RESOURCE_KEY}.
+     */
+    public static Context addToContext(@Nonnull Context context, @Nonnull Segment segment) {
+        return context.withResource(RESOURCE_KEY, segment);
+    }
+
+    /**
+     * Returns an {@link Optional} of {@link Segment}, returning the resource keyed under the {@link #RESOURCE_KEY} in
+     * the given {@code context}.
+     *
+     * @param context The {@link Context} to retrieve the {@link Segment} from, if present.
+     * @return An {@link Optional} of {@link Segment}, returning the resource keyed under the {@link #RESOURCE_KEY} in
+     * the given {@code context}.
+     */
+    public static Optional<Segment> fromContext(@Nonnull Context context) {
+        return Optional.ofNullable(context.getResource(RESOURCE_KEY));
+    }
 
     private static boolean computeSegments(Segment segment, List<Integer> segments, Set<Segment> applicableSegments) {
 
@@ -111,8 +141,7 @@ public class Segment implements Comparable<Segment> {
     }
 
     /**
-     * Split a given {@link Segment} n-times in round robin fashion.
-     * <br/>
+     * Split a given {@link Segment} n-times in round robin fashion. <br/>
      *
      * @param segment       The {@link Segment} to split.
      * @param numberOfTimes The number of times to split it.
@@ -139,7 +168,8 @@ public class Segment implements Comparable<Segment> {
      * @param mask      The mask of the segment
      */
     protected Segment(int segmentId, int mask) {
-        Assert.isTrue(mask == 0 || mask + 1 == Integer.highestOneBit(mask + 1), () -> "Invalid mask. It must end on a consecutive series of 1s");
+        Assert.isTrue(mask == 0 || mask + 1 == Integer.highestOneBit(mask + 1),
+                      () -> "Invalid mask. It must end on a consecutive series of 1s");
         this.segmentId = segmentId;
         this.mask = mask;
     }
@@ -221,9 +251,9 @@ public class Segment implements Comparable<Segment> {
     }
 
     /**
-     * Returns an array with two {@link Segment segments with a corresponding mask}.<br/><br/>
-     * The first entry contains the original {@code segmentId}, with the newly calculated mask. (Simple left shift, adding a '1' as LSB).
-     * The 2nd entry is a new {@code segmentId} with the same derived mask.
+     * Returns an array with two {@link Segment segments with a corresponding mask}.<br/><br/> The first entry contains
+     * the original {@code segmentId}, with the newly calculated mask. (Simple left shift, adding a '1' as LSB). The 2nd
+     * entry is a new {@code segmentId} with the same derived mask.
      * <p>
      * Callers must ensure that either the two returned Segments are used, or the instance from which they are derived,
      * but not both.
@@ -233,7 +263,8 @@ public class Segment implements Comparable<Segment> {
     public Segment[] split() {
 
         if ((mask << 1) < 0) {
-            throw new IllegalStateException("Unable to split the given segmentId, as the mask exceeds the max mask size.");
+            throw new IllegalStateException(
+                    "Unable to split the given segmentId, as the mask exceeds the max mask size.");
         }
 
         Segment[] segments = new Segment[2];

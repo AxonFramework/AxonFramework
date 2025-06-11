@@ -17,15 +17,19 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.CriteriaResolver;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 
@@ -136,10 +140,18 @@ class AnnotatedEventSourcedEntityBuilderTest {
     @EventSourcedEntity
     record Course(CourseId id) {
 
+        @EntityCreator
+        public Course {
+        }
+
     }
 
     @EventSourcedEntity(criteriaResolverDefinition = CustomCriteriaResolverDefinition.class)
     record CustomCriteriaResolverCourse(CourseId id) {
+
+        @EntityCreator
+        public CustomCriteriaResolverCourse {
+        }
 
     }
 
@@ -156,8 +168,9 @@ class AnnotatedEventSourcedEntityBuilderTest {
 
     private static class CustomCriteriaResolver<ID> implements CriteriaResolver<ID> {
 
+        @Nonnull
         @Override
-        public EventCriteria apply(ID id) {
+        public EventCriteria resolve(@Nonnull ID id, @Nonnull ProcessingContext context) {
             return EventCriteria.havingAnyTag();
         }
     }
@@ -184,8 +197,9 @@ class AnnotatedEventSourcedEntityBuilderTest {
             implements EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> {
 
         @Override
-        public CustomEntityFactoryCourse createEntity(@Nonnull Class<CustomEntityFactoryCourse> entityType,
-                                                      @Nonnull CourseId courseId) {
+        public @Nullable CustomEntityFactoryCourse create(
+                @Nonnull CourseId courseId,
+                @Nullable EventMessage<?> firstEventMessage, @Nonnull ProcessingContext context) {
             return new CustomEntityFactoryCourse(courseId);
         }
     }
@@ -193,6 +207,9 @@ class AnnotatedEventSourcedEntityBuilderTest {
     @MetaAnnotatedEventSourcingEntity
     record MetaAnnotatedCourse(CourseId id) {
 
+        @EntityCreator
+        public MetaAnnotatedCourse {
+        }
     }
 
     @Target({ElementType.TYPE})

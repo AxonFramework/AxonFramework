@@ -36,6 +36,11 @@ Major API Changes
   imperative and reactive style of programming, (2) eliminate the use of `ThreadLocal`, and (3) protect users from
   internals APIs. This does mean that any direct interaction with the `UnitOfWork` has become a breaking change. Please
   check the [Unit of Work](#unit-of-work) section for more details if you are facing this predicament.
+* Messages have undergone roughly two major changes. One, they now contain a `MessageType`, decoupling a messages (
+  business) type from Java's type system. You can find more details on this [here](#message-type-and-qualified-name).
+  Secondly, the `MetaData` of each `Message` now reflects a `Map<String, String>` instead of `Map<String, ?>`, thus
+  forcing metadata values to strings. Please read [this](#metadata-with-string-values) section for more details on this
+  shift.
 * All message-based infrastructure in Axon Framework will return the `MessageStream` interface. The `MessageStream` is
   intended to support empty results, results of one entry, and results of N entries, thus mirroring Event Handlers (no
   results), Command Handlers (one result), and Query Handlers (N results). Added, the `MessageStream` will function as a
@@ -65,8 +70,11 @@ Major API Changes
   section of this document.
 * The annotation logic of all modules is moved to a separate `annotation` package.
 * All reflection logic is moved to a dedicated "reflection" package per module.
-* We no longer support message handler annotated constructors. For example, the constructor of an aggregate can no
-  longer contain the `@CommandHandler` annotation. Instead, the `@CreationPolicy` should be used.
+* Aggregates are now referred to as Entities, as the Dynamic Consistency Boundary allows for more fluid boundaries
+  around entities.
+  In addition, entities have been redesigned to make them more flexible, allowing for immutable
+  entities, declarative modeling, and a more fluent API. For more on this, check the
+  [Aggregates to Entities](#aggregates-to-entities) section.
 
 ## Unit of Work
 
@@ -124,6 +132,32 @@ To conclude, here is a list of changes to take into account concerning the `Unit
 
 Note that the rewrite of the `UnitOfWork` has caused _a lot_ of API changes and numerous removals. For an exhaustive
 list of the latter, please check [here](#removed-classes).
+
+## Legacy components
+
+During the development of Axon Framework 5, we have decided that some features move to the legacy package, such as
+Sagas. These are features that we think should be either removed, or that deserve a big overhaul in a future version.
+Meanwhile, users can thus use the legacy package to continue using these features, while we can focus on the new
+features and improvements in Axon Framework 5.
+
+However, even these legacy components have seen some changes. The most notable one is that most of these components
+require a `ProcessingContext` to be passed in. This is to ensure good cooperation between old and new parts of the
+framework. This means that some changes might be necessary in your code, such as passing in the
+`ProcessingContext` to the `InterceptorChain`:
+
+```java
+public class MyInterceptingEventHandler {
+
+    @MessageHandlerInterceptor
+    public void handle(MyEvent event, InterceptorChain chain, ProcessingContext context) {
+        chain.proceedSync(context);
+    }
+}
+```
+
+You are able inject the `ProcessingContext` in any message-handling method, so this is always available. Any code that uses the old `UnitOfWork` should be rewritten to put resources in this context. 
+
+We will provide a migration guide, as well as OpenWrite recipes for these scenarios. 
 
 ## Message
 
@@ -194,6 +228,23 @@ As can be expected, the `MessageStream` streams implementation of `Message`. Hen
 `MessageStream`, by specifying a lambda that takes in the `Message` and returns a `Context` object. For example, Axon
 Framework uses this `Context` to add the aggregate identifier, aggregate type, and sequence number for events that
 originate from an aggregate-based event store (thus a pre-Dynamic Consistency Boundary event store).
+
+### MetaData with String values
+
+The `MetaData` class in Axon Framework changed its implementation. Originally, it was a `Map<String, ?>` implementation.
+As of Axon Framework 5, it is a `Map<String, String>`.
+
+The reason for this shift can be broken down in three main pillars:
+
+1. It greatly simplifies de-/serialization for storing `Messages` and putting `Messages` over the wire, since any value
+   is a `String` in all cases.
+2. It aligns better with how other services, libraries, and frameworks view metadata, which tends to be a `String` or
+   byte array.
+3. Depending on application requirements, the de-/serialization of specific values can be different. By enforcing a
+   `String`, we streamline the process.
+
+Although this may seem like a devolution of the `Message`, we believe this stricter guardrails will help all users in
+the long run.
 
 ## Adjusted APIs
 
@@ -348,8 +399,8 @@ command messaging and use the configuration API; the module just pulled in every
 
 As an act to clean this up, we have broken down the `Configurer` and `Configuration` into manageable chunks.
 As such, the (new) `ApplicationConfigurer` interface now only provides basic operations
-to [register components](#registering-components-with-the-componentfactory-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface), [register enhancers](#registering-enhancers-with-the-configurationenhancer-interface),
-and [register modules](#registering-modules-through-the-modulebuilder-interface), besides the basic start-and-shutdown
+to [register components](#registering-components-with-the-componentbuilder-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface), [register enhancers](#registering-enhancers-with-the-configurationenhancer-interface), [register modules](#registering-modules-through-the-modulebuilder-interface),
+and [register factories](#registering-component-factories), besides the basic start-and-shutdown
 handler registration. It does this by having two different registries, being the `ComponentRegistry` and
 `LifecycleRegistry`. The former takes care of the component, decorator, enhancer, and module registration. The latter
 provides the aforementioned methods to register start and shutdown handlers as part of registering components. The
@@ -383,12 +434,12 @@ In this fashion, we intend to ensure the following points:
 
 For more details on how to use the new configuration API, be sure to read the following subsections.
 
-### Registering components with the ComponentFactory interface
+### Registering components with the ComponentBuilder interface
 
-The configuration API boosts a new interface, called the `ComponentFactory`. The `ComponentFactory` can generate any
+The configuration API boosts a new interface, called the `ComponentBuilder`. The `ComponentBuilder` can generate any
 type of component you would need to register with Axon, based on a given `Configuration` instance. By providing the
 `Configuration` instance, you are able to pull other (Axon) components out of it that you might require to construct
-your component. The `ComponentRegistry#registerComponent` method is adjusted to expect such a `ComponentFactory` upon
+your component. The `ComponentRegistry#registerComponent` method is adjusted to expect such a `ComponentBuilder` upon
 registration.
 
 Here's an example of how to register a `DefaultCommandGateway` through the `registerComponent` method:
@@ -408,12 +459,12 @@ public static void main(String[] args) {
 ```
 
 Although the sample above uses the `MessagingConfigurer#componentRegistry(Consumer<ComponentRegistry>)` operation, the
-same `ComponentFactory` behavior resides on higher-level operations like `MessagingConfigurer#registerCommandBus`.
+same `ComponentBuilder` behavior resides on higher-level operations like `MessagingConfigurer#registerCommandBus`.
 
 ### Decorating components with the ComponentDecorator interface
 
 New functionality to the configuration API, is the ability to provide decorators
-for [registered components](#registering-components-with-the-componentfactory-interface). The decorator pattern is what
+for [registered components](#registering-components-with-the-componentbuilder-interface). The decorator pattern is what
 Axon Framework uses to construct its infrastructure components, like the `CommandBus`, as of version 5.
 
 In the command bus' example, concepts like intercepting, tracing, being distributed, and retrying, are now decorators
@@ -521,6 +572,68 @@ public static void main(String[] args) {
 }
 ```
 
+### Registering Component Factories
+
+The new `ComponentFactory` interface allows us, and users, to provide a component factory for components. This provides
+a mechanism to, for example, construct a factory that can construct context-specific `CommandGateway` instances or
+`EventStorageEngines`. Whenever a `ComponentFactory` constructs an instance, it will register it with the
+`Configuration` for future reference. This ensures that when you request a component several times from the
+`Configuration` that the same instance will be returned. Note that a `ComponentFactory` may decide against constructing
+a component if (1) the `name` is not of the desired format or (2) if the `Configuration` does not contain the required
+components to construct an instance.
+
+Axon Framework uses the `ComponentFactory` to, for example, register an `AxonServerEventStorageEngineFactory`. This
+`ComponentFactory` for the `AxonServerEventStorageEngine` can construct context-specific `AxonServerEventStorageEngine`
+instances. To that end, it expects the `name` to comply to the following format: `"storageEngine@{context-name}"`.
+
+A registered factory is consulted **only** when the `ComponentRegistry` does not contain a component for the
+type-and-name combination. Hence, if the `ComponentRegistry` has a `CommandGateway` component registered with it **and**
+there is a `ComponentFactory<CommandGateway>` present on the registry, the factory will not be invoked.
+
+Down below is an example when a factory is **not** invoked:
+
+```java
+public static void main(String[] args) {
+    AxonConfiguration configuration =
+            MessagingConfigurer.create()
+                               .componentRegistry(registry -> registry.registerComponent(
+                                       CommandGateway.class,
+                                       config -> new DefaultCommandGateway(
+                                               config.getComponent(CommandBus.class),
+                                               config.getComponent(MessageTypeResolver.class)
+                                       )
+                               ))
+                               .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
+                               // Further configuration...
+                               .build();
+
+    // This will invoke the CommandGatewayFactory!
+    CommandGateway commandGateway = configuration.getComponent(CommandGateway.class, "some-context");
+}
+```
+
+However, if we take the above example and invoke `getComponent` with a different `name`, the factory will be invoked:
+
+```java
+public static void main(String[] args) {
+    AxonConfiguration configuration =
+            MessagingConfigurer.create()
+                               .componentRegistry(registry -> registry.registerComponent(
+                                       CommandGateway.class,
+                                       config -> new DefaultCommandGateway(
+                                               config.getComponent(CommandBus.class),
+                                               config.getComponent(MessageTypeResolver.class)
+                                       )
+                               ))
+                               .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
+                               // Further configuration...
+                               .build();
+
+    // This will return the registered DefaultCommandGateway!
+    CommandGateway commandGateway = configuration.getComponent(CommandGateway.class);
+}
+```
+
 ### Accessing lower-level ApplicationConfigurer methods
 
 Although the API of an `ApplicationConfigurer` is greatly simplified, we still believe it valuable to have specific
@@ -557,6 +670,252 @@ public static void main(String[] args) {
     // Further configuration...
 }
 ```
+
+## Aggregates to Entities
+
+Axon Framework 5 elevates the concept of Entities to the top level, as aggregate no longer accurately
+describes the concept. With the introduction of [DCB](#event-store), more fluid boundaries of entities are possible.
+
+This section has been written in a way that is easy to follow if you read the sections in order. However, if you
+are already familiar with the changes, you can jump to the relevant section using the links below:
+
+- [Aggregates are now referred to as Entities](#aggregates-are-now-entities).
+- [Entities can now be defined declaratively, instead of only through reflection.](#declarative-modeling-first).
+- [Entities can be immutable, allowing for Java records and Kotlin data classes.](#immutable-entities).
+- [Entity constructors can take in the first event as a payload or `EventMessage`, allowing for non-nullable
+  fields.](#entity-constructor-changes)
+- [Constructor command handlers are gone, and a creational command is a static method on the entity class.](#creational-command-handlers)
+
+### Aggregates are now Entities
+
+In Axon Framework 5, the concept of aggregates has been replaced with entities. This change reflects the shift from
+a strict aggregate boundary to a more flexible entity boundary, allowing for a more fluid definition of entities
+that can span multiple event streams. The term "aggregate" is no longer used in the API, and all references to
+aggregates have been replaced with "entities."
+
+### Declarative modeling first
+
+While aggregates only worked through reflection before, entities can be declaratively defined. You can start one
+by calling `EntityModel.forEntityType(entityType)` and declare command handlers, event handlers, and
+child entities.
+
+The use of reflection is still possible. It will read the entity information in a way that is similar to Axon Framework
+4,
+but then constructs a declarative model. This means that the entity structure is defined and debuggable,
+and it means that less reflection is needed at runtime, which improves performance.
+
+### Immutable entities
+
+Event-sourced entities can now be created in an immutable fashion, which was not possible before Axon Framework 5.
+This allows you to create entities out of Java records or Kotlin data classes:
+
+```java
+record MyEntity(
+        String id,
+        String name
+) {
+
+    @EventSourcingHandler
+    public MyEntity on(MyEntityNameChangedEvent event) {
+        return new MyEntity(id, event.getNewName());
+    }
+}
+```
+
+Or, in Kotlin:
+
+```kotlin
+data class MyEntity(
+    val id: String,
+    val name: String
+) {
+    @EventSourcingHandler
+    fun on(event: MyEntityNameChangedEvent): MyEntity {
+        return copy(name = event.newName)
+    }
+}
+```
+
+By returning a new instance of the entity in the event sourcing handler, you can evolve the state of the entity
+without mutating the original instance. This is particularly useful in functional programming paradigms and allows for
+better immutability guarantees in your code. This works with both Java records and Kotlin data classes, as well as
+traditional classes.
+
+The first command is handled by a static method, responsible for verifying the command and creating the entity. Using the first event, the entity is created using the constructor defining the payload or `EventMessage`. Commands after this will be handled by methods on the instance of the entity. 
+
+To evolve, or change the state, of an entity, `@EventSourcingHandlers` or `EntityEvolvers` can return a new instance of the entity based on an event. This entity will then be used for the next command or next event.
+
+### Entity Constructor changes
+
+The world is moving to non-nullability guarantees, and for good reason. However, aggregates required a no-arg
+constructor to be able to instantiate the aggregate. This meant that fields could not be non-nullable, as the
+constructor would not be able to set them. In Axon Framework 5, this has changed.
+
+This is how a kotlin class would traditionally look:
+
+```kotlin
+class MyPreFiveClass {
+    // Kotlin classes have inherently a no-arg constructor
+
+    @AggregateIdentifier
+    private lateinit var id: String
+
+    @CommandHandler
+    fun handle(command: CreateMyEntityCommand) {
+        apply(MyEntityCreatedEvent(command.id, command.name))
+        // Other initialization logic...
+    }
+
+    @EventSourcingHandler
+    fun on(event: MyEntityCreatedEvent) {
+        this.id = event.id
+        // Other initialization logic...
+    }
+}
+```
+
+As you can see, the `lateinit var` makes the `id` field non-nullable, but it can throw if not set when accessed.
+In addition, you can never make it a `val`, so it remains mutable.
+Java had similar limitations, but it was simply not visible as it is in Kotlin:
+
+```java
+public class MyPreFiveClass {
+
+    private MyPreFiveClass() {
+        // No-arg constructor required for Axon Framework 4
+    }
+
+    @AggregateIdentifier
+    private String id;
+
+    @CommandHandler
+    public void handle(CreateMyEntityCommand command) {
+        apply(new MyEntityCreatedEvent(command.getId(), command.getName()));
+        // Other initialization logic...
+    }
+
+    @EventSourcingHandler
+    public void on(MyEntityCreatedEvent event) {
+        // this.id is null here
+        this.id = event.getId();
+        // Other initialization logic...
+    }
+}
+```
+
+From Axon Framework 5 onwards, the constructor of an entity can take in the first event as a payload or `EventMessage`.
+This allows you to set the fields of the entity in a non-nullable way,
+and it allows you to make them `val` in Kotlin or `final` in Java.
+This is what the code would look like in Kotlin:
+
+```kotlin
+data class MyEntity(
+    val id: String,
+    val name: String
+) {
+    @EntityFactory
+    constructor(event: MyEntityCreatedEvent) : this(
+        id = event.id,
+        name = event.name
+    )
+
+    companion object {
+        @CommandHandler
+        fun create(command: CreateMyEntityCommand) {
+            apply(MyEntityCreatedEvent(command.id, command.name))
+        }
+    }
+}
+```
+
+And this is what it would look like in Java:
+
+```java
+public class MyEntity {
+
+    @AggregateIdentifier
+    private final String id;
+    private final String name;
+
+    @EntityFactory
+    public MyEntity(MyEntityCreatedEvent event) {
+        this.id = event.getId();
+        this.name = event.getName();
+    }
+
+    @CommandHandler
+    public static void create(CreateMyEntityCommand command) {
+        apply(new MyEntityCreatedEvent(command.getId(), command.getName()));
+    }
+}
+```
+
+The way Event-Sourced entities are constructed is defined by the `EventSourcedEntityFactory` that is passed into the
+`EventSourcingRepository`. There are four possible ways to construct an entity:
+
+1. **No-arg constructor**: This is the default behavior, where the entity is constructed using a no-arg constructor. Use
+   `EventSourcedEntityFactory.fromNoArgument(...)` to use this.
+2. **Identifier constructor**: The entity is constructed using a constructor that takes the identifier as a payload. Use
+   `EventSourcedEntityFactory.fromIdentifier(...)` to use this.
+3. **Event Message**: The entity is constructed using a constructor that takes the first event message as a payload. Use
+   `EventSourcedEntityFactory.fromEventMessage(...)` to use this.
+4. **Reflection**: Use the `AnnotationBasedEventSourcedEntityFactory` to construct the entity using reflection, marking
+   constructors (or static methods) with the `@EntityFactory` annotation. This is the default behavior in Axon Framework
+   5.
+
+### Creational Command Handlers
+
+Axon Framework 5 distinguishes two types of command handlers:
+
+1. **Creational Command Handlers**: These are static methods on the entity class that are responsible for creating the
+   entity and creating the entity, for example, by publishing the first event.
+2. **Instance Command Handlers**: These are instance methods on the entity class that handle commands after the entity
+   has been created.
+
+The `EntityModel` has the `handleCreate` and `handleInstance` methods to handle these two different kind of commands,
+with the `EntityModelBuilder` providing the means to define these handlers. The same command can be registered as both
+creational and instance command handler, allowing you to handle the command in a static method and an instance method
+depending on whether the entity is already created or not.
+
+Here is an example of both a creational and an instance command handler in Java:
+
+```java
+public class MyEntity {
+
+    @AggregateIdentifier
+    private String id;
+
+    @EntityFactory
+    public MyEntity(MyEntityCreatedEvent event) {
+        this.id = event.getId();
+        // Other initialization logic...
+    }
+
+    // Creational command handler
+    @CommandHandler
+    public static void create(CreateMyEntityCommand command) {
+        apply(new MyEntityCreatedEvent(command.getId(), command.getName()));
+    }
+
+    // Instance command handler
+    @CommandHandler
+    public void handle(UpdateMyEntityCommand command) {
+        apply(new MyEntityUpdatedEvent(id, command.getNewName()));
+        // Other update logic...
+    }
+}
+```
+
+### Exception mapping
+With the change from Aggregate to Entity, we have also changed some of the exceptions. If you depends on these
+exceptions, you will need to change your code. The following table shows the changes:
+
+| Old Exception                                                          | New Exception                                                     |
+|------------------------------------------------------------------------|-------------------------------------------------------------------|
+| `org.axonframework.modelling.command.AggregateEntityNotFoundException` | `org.axonframework.modelling.entity.ChildEntityNotFoundException` |
+
+
+
 
 ## Test Fixtures
 
@@ -613,6 +972,8 @@ Minor API Changes
   as described in the [Event Store](#event-store) section. Furthermore, operations have been made "async-native," as
   described [here](#adjusted-apis). This is marked as a minor API changes since the `EventStorageEngine` should not be
   used directly
+* The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all EventProcessor builders. 
+  Exceptions need to be handled by an interceptor, or otherwise they are always considered an error.
 
 Stored Format Changes
 =====================
@@ -655,38 +1016,71 @@ This section contains two tables:
 
 ### Moved or Renamed Classes
 
-| Axon 4                                                       | Axon 5                                                        | Module change?                 |
-|--------------------------------------------------------------|---------------------------------------------------------------|--------------------------------|
-| org.axonframework.common.caching.EhCache3Adapter             | org.axonframework.common.caching.EhCacheAdapter               | No                             |
-| org.axonframework.eventsourcing.MultiStreamableMessageSource | org.axonframework.eventhandling.MultiStreamableMessageSource  | No                             |
-| org.axonframework.eventhandling.EventBus                     | org.axonframework.eventhandling.EventSink                     | No                             |
-| org.axonframework.commandhandling.CommandHandler             | org.axonframework.commandhandling.annotation.CommandHandler   | No                             |
-| org.axonframework.eventhandling.EventHandler                 | org.axonframework.eventhandling.annotation.EventHandler       | No                             |
-| org.axonframework.queryhandling.QueryHandler                 | org.axonframework.queryhandling.annotation.QueryHandler       | No                             |
-| org.axonframework.config.Configuration                       | org.axonframework.configuration.Configuration                 | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.Component                           | org.axonframework.configuration.Component                     | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurationEnhancer         | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ModuleConfiguration                 | org.axonframework.configuration.Module                        | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleHandler                    | org.axonframework.configuration.LifecycleHandler              | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleHandlerInspector           | org.axonframework.configuration.LifecycleHandlerInspector     | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleOperations                 | org.axonframework.configuration.LifecycleRegistry             | Yes. Moved to `axon-messaging` |
-| org.axonframework.commandhandling.CommandCallback            | org.axonframework.commandhandling.gateway.CommandResult       | No                             |
-| org.axonframework.commandhandling.callbacks.FutureCallback   | org.axonframework.commandhandling.gateway.FutureCommandResult | No                             |
-| org.axonframework.modelling.command.Repository               | org.axonframework.modelling.repository.Repository             | No                             |
+| Axon 4                                                                 | Axon 5                                                                      | Module change?                 |
+|------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------------------|
+| org.axonframework.common.caching.EhCache3Adapter                       | org.axonframework.common.caching.EhCacheAdapter                             | No                             |
+| org.axonframework.eventsourcing.MultiStreamableMessageSource           | org.axonframework.eventhandling.MultiStreamableMessageSource                | No                             |
+| org.axonframework.eventhandling.EventBus                               | org.axonframework.eventhandling.EventSink                                   | No                             |
+| org.axonframework.commandhandling.CommandHandler                       | org.axonframework.commandhandling.annotation.CommandHandler                 | No                             |
+| org.axonframework.eventhandling.EventHandler                           | org.axonframework.eventhandling.annotation.EventHandler                     | No                             |
+| org.axonframework.queryhandling.QueryHandler                           | org.axonframework.queryhandling.annotation.QueryHandler                     | No                             |
+| org.axonframework.config.Configuration                                 | org.axonframework.configuration.Configuration                               | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.Component                                     | org.axonframework.configuration.Component                                   | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ConfigurerModule                              | org.axonframework.configuration.ConfigurationEnhancer                       | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ModuleConfiguration                           | org.axonframework.configuration.Module                                      | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleHandler                              | org.axonframework.configuration.LifecycleHandler                            | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleHandlerInspector                     | org.axonframework.configuration.LifecycleHandlerInspector                   | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleOperations                           | org.axonframework.configuration.LifecycleRegistry                           | Yes. Moved to `axon-messaging` |
+| org.axonframework.commandhandling.CommandCallback                      | org.axonframework.commandhandling.gateway.CommandResult                     | No                             |
+| org.axonframework.commandhandling.callbacks.FutureCallback             | org.axonframework.commandhandling.gateway.FutureCommandResult               | No                             |
+| org.axonframework.modelling.command.Repository                         | org.axonframework.modelling.repository.Repository                           | No                             |
+| org.axonframework.modelling.command.CommandTargetResolver              | org.axonframework.modelling.command.EntityIdResolver                        | No                             |
+| org.axonframework.modelling.command.ForwardingMode                     | org.axonframework.modelling.command.entity.child.EventTargetMatcher         | No                             |
+| org.axonframework.axonserver.connector.ServerConnectorConfigurerModule | org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer | No                             |
 
 ### Removed Classes
 
-| Class                                                           | Why                                                                                                                                            |
-|-----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| org.axonframework.config.Configurer                             | Made obsolete through introduction of several `ApplicationConfigurer` instances (see [Configuration](#applicationconfigurer-and-configuration) |
-| org.axonframework.messaging.unitofwork.AbstractUnitOfWork       | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.messaging.unitofwork.BatchingUnitOfWork       | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.messaging.unitofwork.CurrentUnitOfWork        | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.messaging.unitofwork.DefaultUnitOfWork        | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.messaging.unitofwork.ExecutionResult          | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.messaging.unitofwork.MessageProcessingContext | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
-| org.axonframework.modelling.command.AggregateLifecycle          | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
+| Class                                                                                    | Why                                                                                                                                            |
+|------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| org.axonframework.config.Configurer                                                      | Made obsolete through introduction of several `ApplicationConfigurer` instances (see [Configuration](#applicationconfigurer-and-configuration) |
+| org.axonframework.messaging.unitofwork.AbstractUnitOfWork                                | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.BatchingUnitOfWork                                | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.CurrentUnitOfWork                                 | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.DefaultUnitOfWork                                 | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.ExecutionResult                                   | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.MessageProcessingContext                          | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.eventsourcing.eventstore.AbstractEventStore                            | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
+| org.axonframework.modelling.command.AggregateLifecycle                                   | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
+| org.axonframework.eventsourcing.conflictresolution.ConflictDescription                   | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.ConflictExceptionSupplier             | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.ConflictResolution                    | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.ConflictResolver                      | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.Conflicts                             | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.ContextAwareConflictExceptionSupplier | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.DefaultConflictDescription            | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver               | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.eventsourcing.conflictresolution.NoConflictResolver                    | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.modelling.command.ConflictingAggregateVersionException                 | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.modelling.command.ConflictingModificationException                     | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.modelling.command.TargetAggregateVersion                               | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.modelling.command.VersionedAggregateIdentifier                         | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+
+### Marked for removal Classes
+
+All classes in this table have been moved to the legacy package for ease in migration.
+However, they will eventually be removed entirely from Axon Framework 5, as we expect users to migrate to the new (and per class described) approoach.
+
+| Class                                                                    |
+|--------------------------------------------------------------------------|
+| org.axonframework.modelling.command.Repository                           |
+
+### Changed implements or extends
+
+Note that **any**  changes here may have far extending impact on the original class.
+
+| Class       | Before           | After            | Explanation                                                  | 
+|-------------|------------------|------------------|--------------------------------------------------------------|
+| `MetaData`  | `Map<String, ?>` | `Map<String, ?>` | See the [metadata description](#metadata-with-string-values) |
 
 ## Method Signature Changes
 
@@ -717,35 +1111,41 @@ This section contains three subsections, called:
 | All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
 | All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
 
+#### Method return types
+
+| Method                                | Previous return type           | Current return type |
+|---------------------------------------|--------------------------------|---------------------|
+| `CommandTargetResolver#resolveTarget` | `VersionedAggregateIdentifier` | `String`            |
+
 ### Moved / Renamed Methods and Constructors
 
-| Constructor / Method                                                 | To where                                                                        |
-|----------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| `Configurer#configureCommandBus`                                     | `MessagingConfigurer#registerCommandBus`                                        | 
-| `Configurer#configureEventBus`                                       | `MessagingConfigurer#registerEventSink`                                         | 
-| `Configurer#configureQueryBus`                                       | `MessagingConfigurer#registerQueryBus`                                          | 
-| `Configurer#configureQueryUpdateEmitter`                             | `MessagingConfigurer#registerQueryUpdateEmitter`                                | 
-| `ConfigurerModule#configureModule`                                   | `ConfigurationEnhancer#enhance`                                                 | 
-| `ConfigurerModule#configureLifecyclePhaseTimeout`                    | `LifecycleRegistry#registerLifecyclePhaseTimeout`                               | 
-| `Configurer#registerComponent(Function<Configuration, ? extends C>)` | `ComponentRegistry#registerComponent(ComponentFactory<C>)`                      | 
-| `Configurer#registerModule(ModuleConfiguration)`                     | `ComponentRegistry#registerComponent(Module)`                                   | 
-| `StreamableMessageSource#openStream(TrackingToken)`                  | `StreamableEventSource#open(SourcingCondition)`                                 | 
-| `StreamableMessageSource#createTailToken()`                          | `StreamableEventSource#headToken()`                                             | 
-| `StreamableMessageSource#createHeadToken()`                          | `StreamableEventSource#tailToken()`                                             | 
-| `StreamableMessageSource#createTokenAt(Instant)`                     | `StreamableEventSource#tokenAt(Instant)`                                        | 
-| `Repository#newInstance(Callable<T>)`                                | `Repository#persist(ID, T, ProcessingContext)`                                  | 
-| `Repository#load(String)`                                            | `Repository#load(ID, ProcessingContext)`                                        | 
-| `Repository#loadOrCreate(String, Callable<T>)`                       | `Repository#loadOrCreate(ID, ProcessingContext)`                                | 
-| `EventStore#readEvents(String)`                                      | `EventStoreTransaction#source(SourcingCondition)`                               | 
-| `EventStorageEngine#readEvents(EventMessage<?>...)`                  | `EventStorageEngine#appendEvents(AppendCondition, TaggedEventMessage...)`       | 
-| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`   | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)` | 
-| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`   | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)` | 
-| `EventStorageEngine#readEvents(String)`                              | `EventStorageEngine#source(SourcingCondition)`                                  | 
-| `EventStorageEngine#readEvents(String, long)`                        | `EventStorageEngine#source(SourcingCondition)`                                  | 
-| `EventStorageEngine#readEvents(TrackingToken, boolean)`              | `EventStorageEngine#stream(StreamingCondition)`                                 | 
-| `EventStorageEngine#createTailToken()`                               | `EventStorageEngine#tailToken()`                                                | 
-| `EventStorageEngine#createHeadToken()`                               | `EventStorageEngine#headToken()`                                                | 
-| `EventStorageEngine#createTokenAt(Instant)`                          | `EventStorageEngine#tokenAt(Instant)`                                           | 
+| Constructor / Method                                                 | To where                                                                             |
+|----------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| `Configurer#configureCommandBus`                                     | `MessagingConfigurer#registerCommandBus`                                             | 
+| `Configurer#configureEventBus`                                       | `MessagingConfigurer#registerEventSink`                                              | 
+| `Configurer#configureQueryBus`                                       | `MessagingConfigurer#registerQueryBus`                                               | 
+| `Configurer#configureQueryUpdateEmitter`                             | `MessagingConfigurer#registerQueryUpdateEmitter`                                     | 
+| `ConfigurerModule#configureModule`                                   | `ConfigurationEnhancer#enhance`                                                      | 
+| `ConfigurerModule#configureLifecyclePhaseTimeout`                    | `LifecycleRegistry#registerLifecyclePhaseTimeout`                                    | 
+| `Configurer#registerComponent(Function<Configuration, ? extends C>)` | `ComponentRegistry#registerComponent(ComponentBuilder<C>)`                           | 
+| `Configurer#registerModule(ModuleConfiguration)`                     | `ComponentRegistry#registerComponent(Module)`                                        | 
+| `StreamableMessageSource#openStream(TrackingToken)`                  | `StreamableEventSource#open(SourcingCondition)`                                      | 
+| `StreamableMessageSource#createTailToken()`                          | `StreamableEventSource#firstToken()`                                                 | 
+| `StreamableMessageSource#createHeadToken()`                          | `StreamableEventSource#latestToken()`                                                | 
+| `StreamableMessageSource#createTokenAt(Instant)`                     | `StreamableEventSource#tokenAt(Instant)`                                             | 
+| `Repository#newInstance(Callable<T>)`                                | `Repository#persist(ID, T, ProcessingContext)`                                       | 
+| `Repository#load(String)`                                            | `Repository#load(ID, ProcessingContext)`                                             | 
+| `Repository#loadOrCreate(String, Callable<T>)`                       | `Repository#loadOrCreate(ID, ProcessingContext)`                                     | 
+| `EventStore#readEvents(String)`                                      | `EventStoreTransaction#source(SourcingCondition)`                                    | 
+| `EventStorageEngine#readEvents(EventMessage<?>...)`                  | `EventStorageEngine#appendEvents(AppendCondition, TaggedEventMessage...)`            | 
+| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`   | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`      | 
+| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`   | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`      | 
+| `EventStorageEngine#readEvents(String)`                              | `EventStorageEngine#source(SourcingCondition)`                                       | 
+| `EventStorageEngine#readEvents(String, long)`                        | `EventStorageEngine#source(SourcingCondition)`                                       | 
+| `EventStorageEngine#readEvents(TrackingToken, boolean)`              | `EventStorageEngine#stream(StreamingCondition)`                                      | 
+| `EventStorageEngine#createTailToken()`                               | `EventStorageEngine#firstToken()`                                                    | 
+| `EventStorageEngine#createHeadToken()`                               | `EventStorageEngine#latestToken()`                                                   | 
+| `EventStorageEngine#createTokenAt(Instant)`                          | `EventStorageEngine#tokenAt(Instant)`                                                | 
 
 ### Removed Methods and Constructors
 
@@ -767,3 +1167,19 @@ This section contains three subsections, called:
 | `org.axonframework.eventsourcing.eventstore.EventStorageEngine#storeSnapshot(DomainEventMessage<?>)` | Replaced for a dedicated `SnapshotStore`.                                                |
 | `org.axonframework.eventsourcing.eventstore.EventStorageEngine#readSnapshot(String)`                 | Replaced for a dedicated `SnapshotStore`.                                                |
 | `org.axonframework.eventsourcing.eventstore.EventStorageEngine#lastSequenceNumberFor(String)`        | No longer necessary to support through the introduction of DCB.                          |
+| `org.axonframework.eventsourcing.CachingEventSourcingRepository#validateOnLoad(Aggregate<T>, Long)`  | Version-based loading is no longer supported due to limited use by the community.        |
+| `org.axonframework.eventsourcing.CachingEventSourcingRepository#doLoadWithLock(String, Long)`        | Version-based loading is no longer supported due to limited use by the community.        |
+| `org.axonframework.eventsourcing.EventSourcingRepository#doLoadWithLock(String, Long)`               | Version-based loading is no longer supported due to limited use by the community.        |
+| `org.axonframework.modelling.command.AbstractRepository#load(String, Long)`                          | Version-based loading is no longer supported due to limited use by the community.        |
+| `org.axonframework.modelling.command.GenericJpaRepository#doLoadWithLock(String, Long)`              | Version-based loading is no longer supported due to limited use by the community.        |
+| `org.axonframework.modelling.command.LockingRepository#doLoad(String, Long)`                         | Version-based loading is no longer supported due to limited use by the community.        |
+| `org.axonframework.modelling.command.LockingRepository#doLoadWithLock(String, Long)`                 | Version-based loading is no longer supported due to limited use by the community.        |
+| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Version-based loading is no longer supported due to limited use by the community.        |
+| `org.axonframework.modelling.command.Aggregate#version()`                                            | Version-based loading is no longer supported due to limited use by the community.        |
+| `org.axonframework.modelling.command.LockAwareAggregate#version()`                                   | Version-based loading is no longer supported due to limited use by the community.        |
+
+### Changed method return types
+
+| Method                                         | Before               | After           |
+|------------------------------------------------|----------------------|-----------------|
+| `CorrelationDataProvider#correlationDataFor()` | Map<String, String>  | Map<String, ?>  | 

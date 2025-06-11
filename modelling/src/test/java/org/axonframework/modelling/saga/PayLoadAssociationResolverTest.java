@@ -23,8 +23,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
 import static org.axonframework.modelling.utils.ConcurrencyUtils.testConcurrent;
@@ -86,7 +86,7 @@ class PayloadAssociationResolverTest {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nullable Object target) {
+        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable Object target) {
             return null;
         }
 
@@ -96,7 +96,7 @@ class PayloadAssociationResolverTest {
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
             return true;
         }
     }

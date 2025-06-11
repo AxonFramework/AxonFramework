@@ -31,8 +31,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -111,12 +111,12 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void handle(@Nonnull EventMessage<?> message, ProcessingContext processingContext, @Nonnull Segment segment)
+    public void handle(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext context, @Nonnull Segment segment)
             throws Exception {
         if (!sequencingPolicyMatchesSegment(message, segment)) {
             return;
         }
-        invokeHandlers(message);
+        invokeHandlers(message, context);
     }
 
     protected boolean sequencingPolicyMatchesSegment(EventMessage<?> message, Segment segment) {
@@ -127,10 +127,10 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         return getOrDefault(sequencingPolicy.getSequenceIdentifierFor(event), event::getIdentifier);
     }
 
-    protected void invokeHandlers(EventMessage<?> message) throws Exception {
+    protected void invokeHandlers(EventMessage<?> message, ProcessingContext context) throws Exception {
         for (EventMessageHandler handler : eventHandlingComponents) {
             try {
-                handler.handleSync(message);
+                handler.handleSync(message, context);
             } catch (Exception e) {
                 listenerInvocationErrorHandler.onError(e, message, handler);
             }
@@ -139,8 +139,9 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public boolean canHandle(@Nonnull EventMessage<?> eventMessage,
+                             @Nonnull ProcessingContext context,
                              @Nonnull Segment segment) {
-        return hasHandler(eventMessage) && sequencingPolicyMatchesSegment(eventMessage, segment);
+        return hasHandler(eventMessage, context) && sequencingPolicyMatchesSegment(eventMessage, segment);
     }
 
     @Override
@@ -148,9 +149,9 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         return eventHandlingComponents.stream().anyMatch(eh -> eh.canHandleType(payloadType));
     }
 
-    private boolean hasHandler(@Nonnull EventMessage<?> eventMessage) {
+    private boolean hasHandler(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context) {
         for (EventMessageHandler eventHandler : eventHandlingComponents) {
-            if (eventHandler.canHandle(eventMessage)) {
+            if (eventHandler.canHandle(eventMessage, context)) {
                 return true;
             }
         }
@@ -163,14 +164,14 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void performReset(ProcessingContext processingContext) {
-        performReset(null, processingContext);
+    public void performReset(ProcessingContext context) {
+        performReset(null, context);
     }
 
     @Override
-    public <R> void performReset(@Nullable R resetContext, ProcessingContext processingContext) {
+    public <R> void performReset(@Nullable R resetContext, ProcessingContext context) {
         for (EventMessageHandler eventHandler : eventHandlingComponents) {
-            eventHandler.prepareReset(resetContext, null);
+            eventHandler.prepareReset(resetContext, context);
         }
     }
 

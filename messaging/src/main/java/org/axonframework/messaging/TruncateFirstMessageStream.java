@@ -80,4 +80,12 @@ class TruncateFirstMessageStream<M extends Message<?>>
     public boolean hasNextAvailable() {
         return !consumed.get() && super.hasNextAvailable();
     }
+
+    @Override
+    public Optional<Entry<M>> peek() {
+        if (!consumed.get()) {
+            return delegate().peek();
+        }
+        return Optional.empty();
+    }
 }

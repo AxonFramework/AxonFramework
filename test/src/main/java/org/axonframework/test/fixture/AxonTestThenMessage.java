@@ -22,7 +22,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.Reporter;
-import org.axonframework.test.matchers.MapEntryMatcher;
+import org.axonframework.test.matchers.MapStringEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.saga.CommandValidator;
@@ -222,9 +222,10 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    protected boolean verifyMetaDataEquality(Class<?> eventType, Map<String, Object> expectedMetaData,
-                                             Map<String, Object> actualMetaData) {
-        MapEntryMatcher matcher = new MapEntryMatcher(expectedMetaData);
+    protected boolean verifyMetaDataEquality(Class<?> eventType,
+                                             Map<String, String> expectedMetaData,
+                                             Map<String, String> actualMetaData) {
+        MapStringEntryMatcher matcher = new MapStringEntryMatcher(expectedMetaData);
         if (!matcher.matches(actualMetaData)) {
             reporter.reportDifferentMetaData(eventType,
                                              matcher.getMissingEntries(),

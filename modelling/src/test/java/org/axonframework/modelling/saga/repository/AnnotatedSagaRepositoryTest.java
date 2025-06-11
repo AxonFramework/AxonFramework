@@ -17,14 +17,17 @@
 package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.Saga;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -34,7 +37,7 @@ import org.mockito.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Collections.singleton;
 import static org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork.startAndGet;
@@ -85,7 +88,7 @@ class AnnotatedSagaRepositoryTest {
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
         Saga<Object> saga2 =
-                startAndGet(null).executeWithResult(() -> testSubject.load(saga.getSagaIdentifier()))
+                startAndGet(null).executeWithResult((ctx) -> testSubject.load(saga.getSagaIdentifier()))
                                  .getPayload();
 
         assertSame(saga, saga2);
@@ -100,7 +103,7 @@ class AnnotatedSagaRepositoryTest {
         Saga<Object> saga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
-        currentUnitOfWork.onPrepareCommit(u -> startAndGet(null).execute(() -> {
+        currentUnitOfWork.onPrepareCommit(u -> startAndGet(null).execute((ctx) -> {
             Saga<Object> saga1 = testSubject.load(saga.getSagaIdentifier());
             saga1.getAssociationValues().add(new AssociationValue("second", "value"));
         }));
@@ -164,7 +167,8 @@ class AnnotatedSagaRepositoryTest {
                                                                                   .build();
         Saga<TestSaga> saga =
                 sagaRepository.createInstance(IdentifierFactory.getInstance().generateIdentifier(), TestSaga::new);
-        saga.handleSync(EventTestUtils.asEventMessage(new Object()));
+        EventMessage<Object> message = EventTestUtils.asEventMessage(new Object());
+        saga.handleSync(message, StubProcessingContext.forMessage(message));
 
         assertEquals(1, CountingInterceptors.counter.get());
     }
@@ -178,10 +182,12 @@ class AnnotatedSagaRepositoryTest {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nonnull TestSaga target,
+        public Object handleSync(@Nonnull Message<?> message,
+                                 @Nonnull ProcessingContext context,
+                                 @Nonnull TestSaga target,
                                  @Nonnull MessageHandlingMember<? super TestSaga> handler) throws Exception {
             counter.incrementAndGet();
-            return handler.handleSync(message, target);
+            return handler.handleSync(message, context, target);
         }
     }
 

@@ -24,13 +24,13 @@ import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberCha
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.NoMoreInterceptors;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.AggregateEntityNotFoundException;
+import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Implementation of a {@link CommandMessageHandlingMember} that forwards commands to a child entity.
@@ -101,8 +101,8 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
-        return childHandler.canHandle(message, processingContext);
+    public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+        return childHandler.canHandle(message, context);
     }
 
     @Override
@@ -112,10 +112,10 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     }
 
     @Override
-    public Object handleSync(@Nonnull Message<?> message, @Nullable P target) throws Exception {
+    public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
         if (childEntity == null) {
-            throw new AggregateEntityNotFoundException(
+            throw new ChildEntityNotFoundException(
                     "Aggregate cannot handle command [" + message.type()
                             + "], as there is no entity instance within the aggregate to forward it to."
             );

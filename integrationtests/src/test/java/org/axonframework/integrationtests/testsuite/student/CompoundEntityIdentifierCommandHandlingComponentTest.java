@@ -20,9 +20,10 @@ package org.axonframework.integrationtests.testsuite.student;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
 import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
@@ -48,8 +49,8 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
     protected void registerAdditionalEntities(StatefulCommandHandlingModule.EntityPhase entityConfigurer) {
         EventSourcedEntityBuilder<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentSlice =
                 EventSourcedEntityBuilder.entity(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
-                                         .entityFactory(c -> (type, id) -> new StudentMentorAssignment(id))
-                                         .criteriaResolver(c -> id -> EventCriteria.either(
+                                         .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(StudentMentorAssignment::new))
+                                         .criteriaResolver(c -> (id, ctx) -> EventCriteria.either(
                                                  EventCriteria.havingTags(new Tag("Student", id.menteeId())),
                                                  EventCriteria.havingTags(new Tag("Student", id.mentorId()))
                                                               .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())

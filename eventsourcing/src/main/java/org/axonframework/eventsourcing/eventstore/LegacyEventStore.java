@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.StreamableMessageSource;
 
 import java.util.Optional;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Provides a mechanism to open streams from events in the the underlying event storage.
@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
  * @author Rene de Waele
  * @deprecated In favor of the {@link EventStore}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface LegacyEventStore
         extends EventBus, StreamableMessageSource<TrackedEventMessage<?>>, DomainEventSequenceAware {
 

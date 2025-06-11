@@ -89,7 +89,7 @@ public class FireEventJob implements Job {
             if (txManager != null) {
                 unitOfWork.attachTransaction(txManager);
             }
-            unitOfWork.execute(() -> eventBus.publish(eventMessage));
+            unitOfWork.execute((ctx) -> eventBus.publish(eventMessage));
 
             if (logger.isInfoEnabled()) {
                 logger.info("Job successfully executed. Scheduled Event [{}] has been published.",
@@ -114,6 +114,6 @@ public class FireEventJob implements Job {
                 ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
                                             ((EventMessage<?>) event).getPayload(),
                                             ((EventMessage<?>) event).getMetaData())
-                : new GenericEventMessage<>(messageTypeResolver.resolve(event), event);
+                : new GenericEventMessage<>(messageTypeResolver.resolveOrThrow(event), event);
     }
 }

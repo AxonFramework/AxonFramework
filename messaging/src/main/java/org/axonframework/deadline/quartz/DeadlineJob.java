@@ -32,6 +32,7 @@ import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -142,10 +143,11 @@ public class DeadlineJob implements Job {
             InterceptorChain chain =
                     new DefaultInterceptorChain<>(unitOfWork,
                                                   handlerInterceptors,
-                                                  interceptedDeadlineMessage -> {
+                                                  (interceptedDeadlineMessage, ctx) -> {
                                                       executeScheduledDeadline(
                                                               scopeAwareComponents,
                                                               interceptedDeadlineMessage,
+                                                              ctx,
                                                               deadlineScope);
                                                       return null;
                                                   });
@@ -179,12 +181,13 @@ public class DeadlineJob implements Job {
 
     private void executeScheduledDeadline(ScopeAwareProvider scopeAwareComponents,
                                           DeadlineMessage<?> deadlineMessage,
+                                          ProcessingContext context,
                                           ScopeDescriptor deadlineScope) {
         scopeAwareComponents.provideScopeAwareStream(deadlineScope)
                             .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
                             .forEach(scopeAwareComponent -> {
                                 try {
-                                    scopeAwareComponent.send(deadlineMessage, deadlineScope);
+                                    scopeAwareComponent.send(deadlineMessage, context, deadlineScope);
                                 } catch (Exception e) {
                                     String exceptionMessage = String.format(
                                             "Failed to send a DeadlineMessage for scope [%s]",
@@ -289,7 +292,7 @@ public class DeadlineJob implements Job {
             return serializer.deserialize(serializedDeadlinePayload);
         }
 
-        private static Map<String, ?> deserializeDeadlineMetaData(Serializer serializer, JobDataMap jobDataMap) {
+        private static Map<String, String> deserializeDeadlineMetaData(Serializer serializer, JobDataMap jobDataMap) {
             SimpleSerializedObject<byte[]> serializedDeadlineMetaData = new SimpleSerializedObject<>(
                     (byte[]) jobDataMap.get(MESSAGE_METADATA), byte[].class, MetaData.class.getName(), null
             );

@@ -49,7 +49,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
@@ -62,7 +62,7 @@ import javax.annotation.Nonnull;
  * @since 3.0
  * @deprecated In favor of {@link Configuration}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface LegacyConfiguration extends LifecycleOperations {
 
     /**
@@ -225,15 +225,6 @@ public interface LegacyConfiguration extends LifecycleOperations {
      */
     default EventGateway eventGateway() {
         return getComponent(EventGateway.class);
-    }
-
-    /**
-     * Returns the Tags Configuration defined in this Configuration.
-     *
-     * @return the Tags Configuration defined in this Configuration
-     */
-    default TagsConfiguration tags() {
-        return getComponent(TagsConfiguration.class);
     }
 
     /**

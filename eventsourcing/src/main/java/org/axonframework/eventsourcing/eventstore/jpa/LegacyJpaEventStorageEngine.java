@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import javax.sql.DataSource;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -61,7 +61,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @since 3.0
  * @deprecated In favor of the {@link AggregateBasedJpaEventStorageEngine}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyJpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(LegacyJpaEventStorageEngine.class);

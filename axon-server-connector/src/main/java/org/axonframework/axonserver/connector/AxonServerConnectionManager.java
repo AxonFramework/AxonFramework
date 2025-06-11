@@ -26,7 +26,6 @@ import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import org.axonframework.axonserver.connector.util.GrpcMessageSizeInterceptor;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.config.TagsConfiguration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
@@ -39,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import javax.net.ssl.SSLException;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;

@@ -25,10 +25,9 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * This class represents a Unit of Work that monitors the processing of a {@link Message}.
@@ -42,7 +41,7 @@ import javax.annotation.Nonnull;
  * @since 0.6
  * @deprecated In favor of the {@link ProcessingLifecycle}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface LegacyUnitOfWork<T extends Message<?>> {
 
     /**
@@ -290,7 +289,7 @@ public interface LegacyUnitOfWork<T extends Message<?>> {
      *
      * @param task the task to execute
      */
-    default void execute(Runnable task) {
+    default void execute(Consumer<ProcessingContext> task) {
         execute(task, RollbackConfigurationType.ANY_THROWABLE);
     }
 
@@ -306,13 +305,16 @@ public interface LegacyUnitOfWork<T extends Message<?>> {
      * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when task
      *                              execution fails
      */
-    default void execute(Runnable task, RollbackConfiguration rollbackConfiguration) {
-        ResultMessage<?> resultMessage = executeWithResult(() -> {
-            task.run();
+    default void execute(Consumer<ProcessingContext> task, RollbackConfiguration rollbackConfiguration) {
+        ResultMessage<?> resultMessage = executeWithResult((ctx) -> {
+            task.accept(ctx);
             return null;
         }, rollbackConfiguration);
         if (resultMessage.isExceptional()) {
-            throw (RuntimeException) resultMessage.exceptionResult();
+            if (resultMessage.exceptionResult() instanceof RuntimeException exception) {
+                throw exception;
+            }
+            throw new RuntimeException(resultMessage.exceptionResult());
         }
     }
 
@@ -327,7 +329,7 @@ public interface LegacyUnitOfWork<T extends Message<?>> {
      * @param task the task to execute
      * @return The result of the task wrapped in Result Message
      */
-    default <R> ResultMessage<R> executeWithResult(Callable<R> task) {
+    default <R> ResultMessage<R> executeWithResult(ProcessingContextCallable<R> task) {
         return executeWithResult(task, RollbackConfigurationType.ANY_THROWABLE);
     }
 
@@ -345,7 +347,8 @@ public interface LegacyUnitOfWork<T extends Message<?>> {
      *                              execution fails
      * @return The result of the task wrapped in Result Message
      */
-    <R> ResultMessage<R> executeWithResult(Callable<R> task, @Nonnull RollbackConfiguration rollbackConfiguration);
+    <R> ResultMessage<R> executeWithResult(ProcessingContextCallable<R> task,
+                                           @Nonnull RollbackConfiguration rollbackConfiguration);
 
     /**
      * Get the result of the task that was executed by this Unit of Work. If the Unit of Work has not been given a task
@@ -495,5 +498,24 @@ public interface LegacyUnitOfWork<T extends Message<?>> {
         public boolean isAfter(Phase phase) {
             return ordinal() > phase.ordinal();
         }
+    }
+
+    /**
+     * Functional interface for a callable that can be executed in the context of a {@link ProcessingContext}.
+     *
+     * @param <R> The type of result that is returned after successful execution.
+     */
+    @FunctionalInterface
+    interface ProcessingContextCallable<R> {
+
+        /**
+         * Execute the callable in the context of the given {@code context}.
+         *
+         * @param context The context in which to execute the callable.
+         * @return The result of the callable.
+         * @throws Exception when there was a problem that prevented invocation of the method or if an exception was
+         *                   thrown from the invoked method.
+         */
+        R call(ProcessingContext context) throws Exception;
     }
 }

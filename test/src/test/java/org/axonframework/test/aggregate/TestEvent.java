@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,38 +17,7 @@
 package org.axonframework.test.aggregate;
 
 import java.util.Map;
-import java.util.Objects;
 
-class TestEvent {
-
-    private final Object aggregateIdentifier;
-    private final Map<String, Object> values;
-
-    public TestEvent(Object aggregateIdentifier, Map<String, Object> values) {
-        this.aggregateIdentifier = aggregateIdentifier;
-        this.values = values;
-    }
-
-    public Object getAggregateIdentifier() {
-        return aggregateIdentifier;
-    }
-
-    public Map<String, Object> getValues() {
-        return values;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TestEvent testEvent = (TestEvent) o;
-        return Objects.equals(aggregateIdentifier, testEvent.aggregateIdentifier) &&
-                Objects.equals(values, testEvent.values);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(aggregateIdentifier, values);
-    }
+record TestEvent(Object aggregateIdentifier, Map<String, String> values) {
 
 }

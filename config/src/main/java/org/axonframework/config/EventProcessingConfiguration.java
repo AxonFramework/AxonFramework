@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Defines a contract for accessor methods regarding event processing configuration.
@@ -146,14 +146,6 @@ public interface EventProcessingConfiguration {
      * @return the {@link SequencingPolicy} belonging to the given {@code processingGroup}
      */
     SequencingPolicy<? super EventMessage<?>> sequencingPolicy(String processingGroup);
-
-    /**
-     * Returns the {@link RollbackConfiguration} tied to the given {@code processorName}.
-     *
-     * @param processorName a {@link String} specifying a processing group
-     * @return the {@link RollbackConfiguration} belonging to the given {@code processorName}
-     */
-    RollbackConfiguration rollbackConfiguration(String processorName);
 
     /**
      * Returns the {@link ErrorHandler} tied to the given {@code processorName}.

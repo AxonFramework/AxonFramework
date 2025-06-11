@@ -77,7 +77,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Spliterator.*;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -93,7 +93,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @since 4.0
  * @deprecated In favor of the {@link AggregateBasedAxonServerEventStorageEngine}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class AxonServerEventStore extends AbstractLegacyEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -494,7 +494,8 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
                              .appendSnapshot(map(snapshot, serializer))
                              .whenComplete((c, e) -> {
                                  if (e != null) {
-                                     logger.warn("Error occurred while creating a snapshot", e);
+                                     logger.warn("Error occurred while appending a snapshot for aggregate [{}] with [{}].",
+                                                 snapshot.getType(), snapshot.getAggregateIdentifier(), e);
                                  } else if (c != null) {
                                      if (c.getSuccess()) {
                                          logger.debug("Snapshot created for aggregate type {}, identifier {}",

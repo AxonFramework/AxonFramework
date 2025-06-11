@@ -54,6 +54,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions = new ArrayList<>();
     private final List<ConfigurationEnhancer> enhancers = new ArrayList<>();
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
+    private final List<ComponentFactory<?>> factories = new ArrayList<>();
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final Map<String, Configuration> moduleConfigurations = new ConcurrentHashMap<>();
@@ -102,7 +103,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     @Override
     public boolean hasComponent(@Nonnull Class<?> type,
                                 @Nonnull String name) {
-        return components.contains(new Component.Identifier<>(type, name));
+        return components.contains(new Identifier<>(type, name));
     }
 
     @Override
@@ -121,6 +122,15 @@ public class DefaultComponentRegistry implements ComponentRegistry {
             throw new DuplicateModuleRegistrationException(module);
         }
         this.modules.put(module.name(), module);
+        return this;
+    }
+
+    @Override
+    public <C> ComponentRegistry registerFactory(@Nonnull ComponentFactory<C> factory) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Registering component factory [{}].", factory.getClass().getSimpleName());
+        }
+        this.factories.add(factory);
         return this;
     }
 
@@ -165,6 +175,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         Configuration config = new LocalConfiguration(optionalParent);
         buildModules(config, lifecycleRegistry);
         initializeComponents(config, lifecycleRegistry);
+        registerFactoryShutdownHandlers(lifecycleRegistry);
 
         return config;
     }
@@ -216,6 +227,17 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         components.postProcessComponents(c -> c.initLifecycle(config, lifecycleRegistry));
     }
 
+    /**
+     * Registers the shutdown handlers for all
+     * {@link #registerFactory(ComponentFactory) registered ComponentFactories}.
+     *
+     * @param lifecycleRegistry The registry where {@link ComponentFactory ComponentFactories} may register their
+     *                          shutdown operations.
+     */
+    private void registerFactoryShutdownHandlers(LifecycleRegistry lifecycleRegistry) {
+        factories.forEach(factory -> factory.registerShutdownHandlers(lifecycleRegistry));
+    }
+
     @Override
     public DefaultComponentRegistry setOverridePolicy(@Nonnull OverridePolicy overridePolicy) {
         this.overridePolicy = requireNonNull(overridePolicy, "The override policy must not be null.");
@@ -251,6 +273,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         descriptor.describeProperty("decorators", decoratorDefinitions);
         descriptor.describeProperty("configurerEnhancers", enhancers);
         descriptor.describeProperty("modules", modules.values());
+        descriptor.describeProperty("factories", factories);
     }
 
     private class LocalConfiguration implements Configuration {
@@ -281,6 +304,14 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                                                     @Nonnull String name) {
             return components.get(new Identifier<>(type, name))
                              .map(c -> c.resolve(this))
+                             .or(() -> {
+                                 Optional<Component<C>> factoryComponent = fromFactory(type, name);
+                                 if (factoryComponent.isPresent()) {
+                                     components.put(factoryComponent.get());
+                                     return factoryComponent.map(creator -> creator.resolve(this));
+                                 }
+                                 return Optional.empty();
+                             })
                              .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)));
         }
 
@@ -292,12 +323,29 @@ public class DefaultComponentRegistry implements ComponentRegistry {
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                                                  identifier,
-                                                 () -> new LazyInitializedComponentDefinition<>(
-                                                         identifier, c -> fromParent(type, name, defaultImpl)
+                                                 () -> fromFactory(type, name).orElseGet(
+                                                         () -> new LazyInitializedComponentDefinition<>(
+                                                                 identifier,
+                                                                 c -> fromParent(type, name, defaultImpl)
+                                                         )
                                                  )
                                          )
                                          .resolve(this);
             return type.cast(component);
+        }
+
+        private <C> Optional<Component<C>> fromFactory(Class<C> type, String name) {
+            for (ComponentFactory<?> factory : factories) {
+                if (!type.isAssignableFrom(factory.forType())) {
+                    continue;
+                }
+                //noinspection unchecked - suppress ComponentFactory cast
+                Optional<Component<C>> factoryComponent = ((ComponentFactory<C>) factory).construct(name, this);
+                if (factoryComponent.isPresent()) {
+                    return factoryComponent;
+                }
+            }
+            return Optional.empty();
         }
 
         private <C> C fromParent(Class<C> type, String name, Supplier<C> defaultSupplier) {

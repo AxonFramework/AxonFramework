@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Provides a repository for given aggregate type.

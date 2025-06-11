@@ -18,7 +18,7 @@ package org.axonframework.eventhandling;
 
 import java.util.List;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing a strategy for the processing of a batch of events. This is used by the {@link

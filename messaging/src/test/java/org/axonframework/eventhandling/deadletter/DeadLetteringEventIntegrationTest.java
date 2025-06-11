@@ -153,7 +153,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         // A policy that ensure a letter is only retried once by adding diagnostics.
         EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> {
-            int retries = (int) letter.diagnostics().getOrDefault("retries", 0);
+            int retries = Integer.parseInt(letter.diagnostics().getOrDefault("retries", "0"));
             if (retries < maxRetries.get()) {
                 Throwable decisionThrowable = cause;
                 if (returnReferenceErrorFromPolicy.get()) {
@@ -161,7 +161,10 @@ public abstract class DeadLetteringEventIntegrationTest {
                 }
                 return Decisions.enqueue(
                         ThrowableCause.truncated(decisionThrowable),
-                        l -> MetaData.with("retries", (int) l.diagnostics().getOrDefault("retries", 0) + 1)
+                        l -> MetaData.with(
+                                "retries",
+                                Integer.toString(Integer.parseInt(l.diagnostics().getOrDefault("retries", "0")) + 1)
+                        )
                 );
             } else {
                 return Decisions.evict();
@@ -186,7 +189,6 @@ public abstract class DeadLetteringEventIntegrationTest {
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSING_GROUP)
                                              .eventHandlerInvoker(deadLetteringInvoker)
-                                             .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
                                              .messageSource(eventSource)
                                              .tokenStore(new InMemoryTokenStore())
                                              .transactionManager(transactionManager)
@@ -865,10 +867,10 @@ public abstract class DeadLetteringEventIntegrationTest {
     }
 
     private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
-        return (unitOfWork, chain) -> {
+        return (unitOfWork, context, chain) -> {
             invoked.set(true);
             try {
-                chain.proceedSync();
+                chain.proceedSync(context);
             } catch (RuntimeException e) {
                 return unitOfWork;
             }

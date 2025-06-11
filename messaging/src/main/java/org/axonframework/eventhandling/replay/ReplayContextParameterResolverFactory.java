@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.eventhandling.EventMessage;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.Message;
@@ -40,8 +41,9 @@ import java.lang.reflect.Parameter;
  */
 public class ReplayContextParameterResolverFactory implements ParameterResolverFactory {
 
+    @Nullable
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
         Parameter parameter = parameters[parameterIndex];
         if (parameter.isAnnotationPresent(ReplayContext.class)) {
             return new ReplayContextParameterResolver(parameter.getType());
@@ -57,14 +59,18 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
             this.type = type;
         }
 
+        @Nullable
         @Override
-        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
-            return ReplayToken.replayContext((EventMessage<?>) message, this.type).orElse(null);
+        public Object resolveParameterValue(@Nonnull ProcessingContext context) {
+            if(Message.fromContext(context) instanceof TrackedEventMessage<?> trackedEventMessage) {
+                return ReplayToken.replayContext(trackedEventMessage, this.type).orElse(null);
+            }
+            return false;
         }
 
         @Override
-        public boolean matches(Message message, ProcessingContext processingContext) {
-            return message instanceof TrackedEventMessage;
+        public boolean matches(@Nonnull ProcessingContext context) {
+            return Message.fromContext(context) instanceof TrackedEventMessage;
         }
     }
 }

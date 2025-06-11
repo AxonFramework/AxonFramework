@@ -75,6 +75,37 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
         return new DelayedMessageStream<>(safeDelegate);
     }
 
+    /**
+     * Creates a {@link MessageStream.Single single stream} that delays actions to its {@code delegate} when it becomes available.
+     * <p>
+     * If the given {@code delegate} has already {@link CompletableFuture#isDone() completed}, it returns the
+     * {@code MessageStream} immediately from it. Otherwise, it returns a DelayedMessageStream instance wrapping the
+     * given {@code delegate}.
+     *
+     * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream.Single stream} to delegate to
+     *                 when it becomes available.
+     * @param <M>      The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A {@link MessageStream.Single stream} that delegates all actions to the {@code delegate} when it becomes
+     * available.
+     */
+    public static <M extends Message<?>> MessageStream.Single<M> createSingle(
+            @Nonnull CompletableFuture<MessageStream.Single<M>> delegate) {
+        CompletableFuture<MessageStream.Single<M>> safeDelegate = delegate
+                .exceptionallyCompose(CompletableFuture::failedFuture)
+                .thenApply(ms -> Objects.requireNonNullElse(ms, MessageStream.empty().cast()));
+        if (safeDelegate.isDone()) {
+            try {
+                return delegate.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return new DelayedMessageStream.Single<>(safeDelegate);
+            } catch (ExecutionException e) {
+                return MessageStream.failed(e.getCause());
+            }
+        }
+        return new DelayedMessageStream.Single<>(safeDelegate);
+    }
+
     @Override
     public Flux<Entry<M>> asFlux() {
         return Mono.fromFuture(delegate).flatMapMany(MessageStream::asFlux);
@@ -142,13 +173,22 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
         return delegate.thenCompose(delegateStream -> delegateStream.reduce(identity, accumulator));
     }
 
+    @Override
+    public Optional<Entry<M>> peek() {
+        if (delegate.isDone() && !delegate.isCompletedExceptionally()) {
+            return delegate.getNow(null).peek();
+        }
+        return Optional.empty();
+    }
+
     /**
      * An implementation of the {@link DelayedMessageStream} that expects a message stream with only a
      * {@link org.axonframework.messaging.MessageStream.Single entry}.
      *
      * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
      */
-    static class Single<M extends Message<?>> extends DelayedMessageStream<M> implements MessageStream.Single<M> {
+    static class Single<M extends Message<?>> extends DelayedMessageStream<M>
+            implements MessageStream.Single<M> {
 
         /**
          * Construct a {@code DelayedMessageStream.Single} for the given {@code delegate}.

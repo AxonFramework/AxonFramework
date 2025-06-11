@@ -20,7 +20,7 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * The {@link Repository} provides an abstraction for the storage of entities.
@@ -91,11 +91,11 @@ public sealed interface Repository<ID, E>
 
     /**
      * Specialization of the {@link Repository} interface that <em>must</em> be implemented by all implementations of
-     * the {@code AsyncRepository}. It exposes some methods that are required to perform lifecycle management operations
-     * that are not typically required outside of repository implementation.
+     * the {@code Repository}. It exposes some methods that are required to perform lifecycle management operations that
+     * are not typically required outside of repository implementation.
      * <p>
-     * More specifically, these methods are meant for implementations of a Repository wrapping another to be able to
-     * properly have lifecycle operations registered with downstream {@code AsyncRepository} implementations.
+     * More specifically, these methods are meant for implementations of a {@code Repository} wrapping another to be
+     * able to properly have lifecycle operations registered with downstream {@code Repository} implementations.
      *
      * @param <E>  The type of entity this repository stores.
      * @param <ID> The type of identifier for entities in this repository.

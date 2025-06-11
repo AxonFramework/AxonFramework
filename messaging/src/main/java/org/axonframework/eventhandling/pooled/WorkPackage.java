@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
@@ -26,9 +25,11 @@ import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+
+import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
  * Defines the process of handling {@link EventMessage}s for a specific {@link Segment}. This entails validating if the
@@ -77,7 +81,7 @@ class WorkPackage {
 
     private final String name;
     private final TokenStore tokenStore;
-    private final TransactionManager transactionManager;
+    private final UnitOfWorkFactory unitOfWorkFactory;
     private final ExecutorService executorService;
     private final EventFilter eventFilter;
     private final BatchProcessor batchProcessor;
@@ -87,8 +91,6 @@ class WorkPackage {
     private final Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
     private Runnable batchProcessedCallback;
     private final Clock clock;
-    private final String segmentIdResourceKey;
-    private final String lastTokenResourceKey;
 
     private TrackingToken lastDeliveredToken; // For use only by event delivery threads, like Coordinator
     private TrackingToken lastConsumedToken;
@@ -114,7 +116,7 @@ class WorkPackage {
     private WorkPackage(Builder builder) {
         this.name = builder.name;
         this.tokenStore = builder.tokenStore;
-        this.transactionManager = builder.transactionManager;
+        this.unitOfWorkFactory = builder.unitOfWorkFactory;
         this.executorService = builder.executorService;
         this.eventFilter = builder.eventFilter;
         this.batchProcessor = builder.batchProcessor;
@@ -124,9 +126,6 @@ class WorkPackage {
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.segmentStatusUpdater = builder.segmentStatusUpdater;
         this.clock = builder.clock;
-        this.segmentIdResourceKey = "Processor[" + builder.name + "]/SegmentId";
-        this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
-
         this.lastConsumedToken = builder.initialToken;
         this.nextClaimExtension = new AtomicLong(now() + claimExtensionThreshold);
         this.processingEvents = new AtomicBoolean(false);
@@ -176,8 +175,9 @@ class WorkPackage {
         BatchProcessingEntry batchProcessingEntry = new BatchProcessingEntry();
         boolean canHandleAny = events.stream()
                                      .map(event -> {
-                                         boolean canHandle = canHandle(event, null);
-                                         batchProcessingEntry.add(new DefaultProcessingEntry(event, canHandle));
+                                         LegacyMessageSupportingContext context = new LegacyMessageSupportingContext(event);
+                                         boolean canHandle = canHandle(event, context);
+                                         batchProcessingEntry.add(new DefaultProcessingEntry(event, canHandle, context));
                                          return canHandle;
                                      })
                                      .reduce(Boolean::logicalOr)
@@ -222,8 +222,9 @@ class WorkPackage {
         logger.debug("Assigned event [{}] with position [{}] to work package [{}].",
                      event.getIdentifier(), event.trackingToken().position().orElse(-1), segment.getSegmentId());
 
-        boolean canHandle = canHandle(event, null);
-        processingQueue.add(new DefaultProcessingEntry(event, canHandle));
+        ProcessingContext context = new LegacyMessageSupportingContext(event);
+        boolean canHandle = canHandle(event, context);
+        processingQueue.add(new DefaultProcessingEntry(event, canHandle, context));
         lastDeliveredToken = event.trackingToken();
         // the worker must always be scheduled to ensure claims are extended
         scheduleWorker();
@@ -245,9 +246,9 @@ class WorkPackage {
         return lastDeliveredToken != null && lastDeliveredToken.covers(event.trackingToken());
     }
 
-    private boolean canHandle(TrackedEventMessage<?> event, ProcessingContext processingContext) {
+    private boolean canHandle(TrackedEventMessage<?> event, ProcessingContext context) {
         try {
-            return eventFilter.canHandle(event, segment);
+            return eventFilter.canHandle(event, context, segment);
         } catch (Exception e) {
             logger.warn("Error while detecting whether event can be handled in Work Package [{}]-[{}]. "
                                 + "Aborting Work Package...",
@@ -311,12 +312,14 @@ class WorkPackage {
                          segment.getSegmentId(), name, eventBatch.size());
             try {
                 processingEvents.set(true);
-                LegacyUnitOfWork<TrackedEventMessage<?>> unitOfWork = new LegacyBatchingUnitOfWork<>(eventBatch);
-                unitOfWork.attachTransaction(transactionManager);
-                unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
-                unitOfWork.resources().put(lastTokenResourceKey, lastConsumedToken);
-                unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
-                unitOfWork.afterCommit(
+                var unitOfWork = unitOfWorkFactory.create();
+                unitOfWork.runOnPreInvocation(ctx -> {
+                    ctx.putResource(Segment.RESOURCE_KEY, segment);
+                    ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
+                });
+
+                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
+                unitOfWork.runOnAfterCommit(
                         u -> {
                             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
                             batchProcessedCallback.run();
@@ -329,7 +332,14 @@ class WorkPackage {
         } else {
             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
             if (lastStoredToken != lastConsumedToken && now() > nextClaimExtension.get()) {
-                transactionManager.executeInTransaction(() -> storeToken(lastConsumedToken));
+                joinAndUnwrap(
+                        unitOfWorkFactory
+                                .create()
+                                .executeWithResult(context -> {
+                                    storeToken(lastConsumedToken);
+                                    return emptyCompletedFuture();
+                                })
+                );
             } else {
                 extendClaimIfThresholdIsMet();
             }
@@ -343,7 +353,14 @@ class WorkPackage {
     public void extendClaimIfThresholdIsMet() {
         if (now() > nextClaimExtension.get()) {
             logger.debug("Work Package [{}]-[{}] will extend its token claim.", name, segment.getSegmentId());
-            transactionManager.executeInTransaction(() -> tokenStore.extendClaim(name, segment.getSegmentId()));
+            joinAndUnwrap(
+                    unitOfWorkFactory
+                            .create()
+                            .executeWithResult(context -> {
+                                tokenStore.extendClaim(name, segment.getSegmentId());
+                                return emptyCompletedFuture();
+                            })
+            );
             nextClaimExtension.set(now() + claimExtensionThreshold);
         }
     }
@@ -386,8 +403,8 @@ class WorkPackage {
     }
 
     /**
-     * Returns the {@link TrackingToken} of the {@link TrackedEventMessage} that was delivered in the last {@link
-     * #scheduleEvent(TrackedEventMessage)} call.
+     * Returns the {@link TrackingToken} of the {@link TrackedEventMessage} that was delivered in the last
+     * {@link #scheduleEvent(TrackedEventMessage)} call.
      * <p>
      * <b>Threading note:</b> This method is only safe to call from {@link Coordinator} threads. The {@link
      * WorkPackage} threads must not rely on this method.
@@ -491,12 +508,11 @@ class WorkPackage {
          * @return {@code true} if the event message can be handled, otherwise {@code false}
          * @throws Exception when validating of the given {@code eventMessage} fails
          */
-        boolean canHandle(TrackedEventMessage<?> eventMessage, Segment segment) throws Exception;
+        boolean canHandle(TrackedEventMessage<?> eventMessage, ProcessingContext context, Segment segment) throws Exception;
     }
 
     /**
-     * Functional interface defining the processing of a batch of {@link EventMessage}s within a
-     * {@link LegacyUnitOfWork}.
+     * Functional interface defining the processing of a batch of {@link EventMessage}s within a {@link UnitOfWork}.
      */
     @FunctionalInterface
     interface BatchProcessor {
@@ -507,13 +523,13 @@ class WorkPackage {
          * {@code eventMessages} should be processed.
          *
          * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
-         * @param unitOfWork         the {@link LegacyUnitOfWork} that has been prepared to process the {@code eventMessages}
+         * @param unitOfWork         the {@link UnitOfWork} that has been prepared to process the {@code eventMessages}
          * @param processingSegments the {@link Segment}s for which the {@code eventMessages} should be processed in the
          *                           given {@code unitOfWork}
          * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
          */
         void processBatch(List<? extends EventMessage<?>> eventMessages,
-                          LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                          UnitOfWork unitOfWork,
                           Collection<Segment> processingSegments) throws Exception;
     }
 
@@ -525,7 +541,7 @@ class WorkPackage {
 
         private String name;
         private TokenStore tokenStore;
-        private TransactionManager transactionManager;
+        private UnitOfWorkFactory unitOfWorkFactory;
         private ExecutorService executorService;
         private EventFilter eventFilter;
         private BatchProcessor batchProcessor;
@@ -560,15 +576,16 @@ class WorkPackage {
         }
 
         /**
-         * A {@link TransactionManager} used to invoke {@link TokenStore} operations and event processing inside a
-         * transaction.
+         * A {@link UnitOfWorkFactory} used to invoke {@link TokenStore} operations and event processing inside a
+         * {@link UnitOfWork} (you may use
+         * {@link TransactionalUnitOfWorkFactory to execute those operations transactionally}.
          *
-         * @param transactionManager a {@link TransactionManager} used to invoke {@link TokenStore} operations and event
-         *                           processing inside a transaction
+         * @param unitOfWorkFactory a factory for {@link UnitOfWork} used to invoke {@link TokenStore} operations and
+         *                          event processing
          * @return the current Builder instance, for fluent interfacing
          */
-        Builder transactionManager(TransactionManager transactionManager) {
-            this.transactionManager = transactionManager;
+        Builder unitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
+            this.unitOfWorkFactory = unitOfWorkFactory;
             return this;
         }
 
@@ -700,6 +717,12 @@ class WorkPackage {
         TrackingToken trackingToken();
 
         /**
+         * The {@link ProcessingContext} in which this event will be handled.
+         * @return The {@link ProcessingContext} in which this event will be handled.
+         */
+        ProcessingContext context();
+
+        /**
          * Add this entry's events to the {@code eventBatch}. The events should reference the {@code wrappedToken} for
          * correctly handling token progression.
          *
@@ -718,15 +741,24 @@ class WorkPackage {
 
         private final TrackedEventMessage<?> eventMessage;
         private final boolean canHandle;
+        private final ProcessingContext context;
 
-        public DefaultProcessingEntry(TrackedEventMessage<?> eventMessage, boolean canHandle) {
+        public DefaultProcessingEntry(TrackedEventMessage<?> eventMessage,
+                                      boolean canHandle,
+                                      ProcessingContext context) {
             this.eventMessage = eventMessage;
             this.canHandle = canHandle;
+            this.context = context;
         }
 
         @Override
         public TrackingToken trackingToken() {
             return eventMessage.trackingToken();
+        }
+
+        @Override
+        public ProcessingContext context() {
+            return context;
         }
 
         @Override
@@ -756,6 +788,11 @@ class WorkPackage {
         @Override
         public TrackingToken trackingToken() {
             return processingEntries.get(0).trackingToken();
+        }
+
+        @Override
+        public ProcessingContext context() {
+            return processingEntries.get(0).context();
         }
 
         @Override

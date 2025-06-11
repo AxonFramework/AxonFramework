@@ -58,7 +58,7 @@ class BatchingUnitOfWorkTest {
     void executeTask() {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         subject = new LegacyBatchingUnitOfWork<>(messages);
-        subject.executeWithResult(() -> {
+        subject.executeWithResult((ctx) -> {
             registerListeners(subject);
             return resultFor(subject.getMessage());
         });
@@ -74,7 +74,7 @@ class BatchingUnitOfWorkTest {
         subject = new LegacyBatchingUnitOfWork<>(messages);
         MockException e = new MockException();
         try {
-            subject.executeWithResult(() -> {
+            subject.executeWithResult((ctx) -> {
                 registerListeners(subject);
                 if (subject.getMessage().getPayload().equals(1)) {
                     throw e;
@@ -104,7 +104,7 @@ class BatchingUnitOfWorkTest {
         subject.onCleanup(u -> cleanupCounter.incrementAndGet());
 
         try {
-            subject.executeWithResult(() -> {
+            subject.executeWithResult((ctx) -> {
                 registerListeners(subject);
                 if (subject.getMessage().getPayload().equals(2)) {
                     subject.addHandler(PREPARE_COMMIT, u -> {

@@ -16,16 +16,18 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import junit.framework.AssertionFailedError;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -89,31 +91,31 @@ class SimpleEventStoreTest {
         }
 
         @Test
-        void headTokenDelegatesToStorageEngine() {
+        void firstTokenDelegatesToStorageEngine() {
             // given
             CompletableFuture<TrackingToken> expectedFuture = completedFuture(aGlobalSequenceToken());
-            when(mockStorageEngine.headToken()).thenReturn(expectedFuture);
+            when(mockStorageEngine.firstToken()).thenReturn(expectedFuture);
 
             // when
-            CompletableFuture<TrackingToken> result = testSubject.headToken();
+            CompletableFuture<TrackingToken> result = testSubject.firstToken();
 
             // then
             assertSame(expectedFuture, result);
-            verify(mockStorageEngine).headToken();
+            verify(mockStorageEngine).firstToken();
         }
 
         @Test
-        void tailTokenDelegatesToStorageEngine() {
+        void latestTokenDelegatesToStorageEngine() {
             // given
             CompletableFuture<TrackingToken> expectedFuture = completedFuture(aGlobalSequenceToken());
-            when(mockStorageEngine.tailToken()).thenReturn(expectedFuture);
+            when(mockStorageEngine.latestToken()).thenReturn(expectedFuture);
 
             // when
-            CompletableFuture<TrackingToken> result = testSubject.tailToken();
+            CompletableFuture<TrackingToken> result = testSubject.latestToken();
 
             // then
             assertSame(expectedFuture, result);
-            verify(mockStorageEngine).tailToken();
+            verify(mockStorageEngine).latestToken();
         }
 
         @Test
@@ -233,11 +235,12 @@ class SimpleEventStoreTest {
         verify(descriptor).describeProperty("eventStorageEngine", mockStorageEngine);
     }
 
-    private static @NotNull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
-        return MessageStream.fromStream(IntStream.range(0, messageCount).boxed(),
-                                        SimpleEventStoreTest::eventMessage,
-                                        i -> Context.with(ConsistencyMarker.RESOURCE_KEY,
-                                                          new GlobalIndexConsistencyMarker(i)));
+    private static @Nonnull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
+        return MessageStream.fromStream(
+                IntStream.range(0, messageCount).boxed(),
+                SimpleEventStoreTest::eventMessage,
+                i -> ConsistencyMarker.addToContext(Context.empty(), new GlobalIndexConsistencyMarker(i))
+        );
     }
 
     @SafeVarargs
@@ -254,7 +257,6 @@ class SimpleEventStoreTest {
             throw assertionFailedError;
         }
     }
-
 
     // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?
     private static EventMessage<?> eventMessage(int seq) {

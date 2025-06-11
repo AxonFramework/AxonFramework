@@ -69,9 +69,7 @@ class EventProcessingModuleConfigTest {
             assertEquals("processor2", processorOne.getName());
             List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor =
                     eventProcessingConfiguration.interceptorsFor("processor2");
-            // Although we only add two Interceptors,
-            //  the count is three due to an Interceptor set by the constructor of the TrackingEventProcessor.
-            assertEquals(3, interceptorsFor.size());
+            assertEquals(2, interceptorsFor.size());
             assertTrue(interceptorsFor.stream().anyMatch(i -> i instanceof CorrelationDataInterceptor));
             assertTrue(interceptorsFor.stream().anyMatch(i -> i instanceof LoggingInterceptor));
 

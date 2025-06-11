@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
@@ -26,7 +25,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
 
 import java.util.regex.Pattern;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of {@link HandlerEnhancerDefinition} used for {@link CommandHandlerInterceptor} annotated methods.
@@ -61,8 +60,8 @@ public class MethodCommandHandlerInterceptorDefinition implements HandlerEnhance
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
-            return super.canHandle(message, processingContext)
+        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+            return super.canHandle(message, context)
                     && commandNamePattern.matcher(message.type().name())
                                          .matches();
         }

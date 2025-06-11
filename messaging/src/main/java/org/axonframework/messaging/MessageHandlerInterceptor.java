@@ -16,10 +16,10 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Workflow interface that allows for customized message handler invocation chains. A MessageHandlerInterceptor can add
@@ -35,7 +35,7 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
      * Invoked before a Message is handled by a designated {@link org.axonframework.messaging.MessageHandler}.
      * <p/>
      * The interceptor is responsible for the continuation of the handling process by invoking the
-     * {@link InterceptorChain#proceedSync()} method on the given {@code interceptorChain}.
+     * {@link InterceptorChain#proceedSync(ProcessingContext)} method on the given {@code interceptorChain}.
      * <p/>
      * The given {@code unitOfWork} contains contextual information. Any information gathered by interceptors may be
      * attached to the unitOfWork.
@@ -43,13 +43,15 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
      * Interceptors are highly recommended not to change the type of the message handling result, as the dispatching
      * component might expect a result of a specific type.
      *
-     * @param unitOfWork       The UnitOfWork that is processing the message
-     * @param interceptorChain The interceptor chain that allows this interceptor to proceed the dispatch process
+     * @param unitOfWork       The UnitOfWork that is processing the message.
+     * @param context          The context of the message being processed.
+     * @param interceptorChain The interceptor chain that allows this interceptor to proceed the dispatch process.
      * @return the result of the message handler. May have been modified by interceptors.
      * @throws Exception any exception that occurs while handling the message
      */
     @Deprecated
     Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
+                  @Nonnull ProcessingContext context,
                   @Nonnull InterceptorChain interceptorChain) throws Exception;
 
     default <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,

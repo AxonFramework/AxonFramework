@@ -25,7 +25,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interceptor that uses a {@link TransactionManager} to start a new transaction before a Message is handled. When the
@@ -48,11 +48,12 @@ public class TransactionManagingInterceptor<T extends Message<?>> implements Mes
 
     @Override
     public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
+                         @Nonnull ProcessingContext context,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         Transaction transaction = transactionManager.startTransaction();
         unitOfWork.onCommit(u -> transaction.commit());
         unitOfWork.onRollback(u -> transaction.rollback());
-        return interceptorChain.proceedSync();
+        return interceptorChain.proceedSync(context);
     }
 
     @Override

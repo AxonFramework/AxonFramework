@@ -16,11 +16,11 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.ExceptionUtils;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -31,10 +31,12 @@ import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -51,6 +53,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -61,7 +64,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -70,6 +72,8 @@ import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ProcessUtils.executeWithRetry;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
@@ -80,10 +84,10 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * processing an event batch the EventProcessor updates its tracking token in the TokenStore.
  * <p>
  * A TrackingEventProcessor is able to continue processing from the last stored token when it is restarted. It is also
- * capable of replaying events from any starting token. To replay the entire event log, simply invoke {@link
- * #resetTokens()} on this processor to adjust the positions of the {@link TrackingToken}(s) within the {@link
- * TokenStore}. To replay from a specific point, {@link #resetTokens(Function)} can be utilized to define the new point
- * to start at.
+ * capable of replaying events from any starting token. To replay the entire event log, simply invoke
+ * {@link #resetTokens()} on this processor to adjust the positions of the {@link TrackingToken}(s) within the
+ * {@link TokenStore}. To replay from a specific point, {@link #resetTokens(Function)} can be utilized to define the new
+ * point to start at.
  * <p>
  * Note, the {@link #getName()} of this {@link StreamingEventProcessor} is used to obtain the tracking token from the
  * {@code TokenStore}, so take care when renaming a {@link TrackingEventProcessor}.
@@ -99,7 +103,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder;
-    private final TransactionManager transactionManager;
+    private final UnitOfWorkFactory unitOfWorkFactory;
     private final int batchSize;
     private final int segmentsSize;
     private final boolean autoStart;
@@ -111,8 +115,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final AtomicBoolean workLauncherRunning = new AtomicBoolean(false);
     private final ConcurrentMap<Integer, TrackerStatus> activeSegments = new ConcurrentSkipListMap<>();
     private final ConcurrentMap<Integer, Long> segmentReleaseDeadlines = new ConcurrentSkipListMap<>();
-    private final String segmentIdResourceKey;
-    private final String lastTokenResourceKey;
     private final AtomicInteger availableThreads;
     private final long tokenClaimInterval;
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
@@ -129,8 +131,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * Instantiate a {@link TrackingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker}, {@link StreamableMessageSource},
-     * {@link TokenStore} and {@link TransactionManager} are not {@code null}, and will throw an {@link
-     * AxonConfigurationException} if any of them is {@code null}.
+     * {@link TokenStore} and {@link TransactionManager} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link TrackingEventProcessor} instance
      */
@@ -147,47 +149,19 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.tokenStore = builder.tokenStore;
 
         this.segmentsSize = config.getInitialSegmentsCount();
-        this.transactionManager = builder.transactionManager;
+        this.unitOfWorkFactory = builder.unitOfWorkFactory;
 
         this.availableThreads = new AtomicInteger(config.getMaxThreadCount());
         this.maxThreadCount = config.getMaxThreadCount();
         this.threadFactory = config.getThreadFactory(builder.name);
         this.workerTerminationTimeout = config.getWorkerTerminationTimeout();
-        this.segmentIdResourceKey = "Processor[" + builder.name + "]/SegmentId";
-        this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
-
-        registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
-            if (!(unitOfWork instanceof LegacyBatchingUnitOfWork)
-                    || ((LegacyBatchingUnitOfWork<?>) unitOfWork).isFirstMessage()) {
-                Instant startTime = now();
-                TrackingToken lastToken = unitOfWork.getResource(lastTokenResourceKey);
-                if (storeTokenBeforeProcessing) {
-                    tokenStore.storeToken(lastToken,
-                                          builder.name,
-                                          unitOfWork.getResource(segmentIdResourceKey));
-                } else {
-                    tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
-                }
-                unitOfWork.onPrepareCommit(uow -> {
-                    if (!storeTokenBeforeProcessing) {
-                        tokenStore.storeToken(lastToken,
-                                              builder.name,
-                                              unitOfWork.getResource(segmentIdResourceKey));
-                    } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
-                        tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
-                    }
-                });
-            }
-            return interceptorChain.proceedSync();
-        });
     }
 
     /**
      * Instantiate a Builder to be able to create a {@link TrackingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link NoOpMessageMonitor}, the {@link TrackingEventProcessorConfiguration} to a
      * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call, and the
@@ -215,9 +189,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     /**
-     * Start this processor. The processor will open an event stream on its message source in a new thread using {@link
-     * StreamableMessageSource#openStream(TrackingToken)}. The {@link TrackingToken} used to open the stream will be
-     * fetched from the {@link TokenStore}.
+     * Start this processor. The processor will open an event stream on its message source in a new thread using
+     * {@link StreamableMessageSource#openStream(TrackingToken)}. The {@link TrackingToken} used to open the stream will
+     * be fetched from the {@link TokenStore}.
      * <p>
      * Upon start up of an application, this method will be invoked in the {@link Phase#INBOUND_EVENT_CONNECTORS}
      * phase.
@@ -265,8 +239,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     private String calculateIdentifier() {
-        return transactionManager.fetchInTransaction(
-                () -> tokenStore.retrieveStorageIdentifier().orElse("--unknown--")
+        var unitOfWork = unitOfWorkFactory.create();
+        return joinAndUnwrap(
+                unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(
+                        tokenStore.retrieveStorageIdentifier().orElse("--unknown--"))
+                )
         );
     }
 
@@ -329,15 +306,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     logger.info("Segment is owned by another node. Releasing thread to process another segment...");
                     releaseSegment(segment.getSegmentId());
                 } catch (Exception e) {
+                    var cause = e instanceof CompletionException ? e.getCause() : e;
                     // Make sure to start with a clean event stream. The exception may have caused an illegal state
                     if (errorWaitTime == 1) {
-                        logger.warn("Error occurred. Starting retry mode.", e);
+                        logger.warn("Error occurred. Starting retry mode.", cause);
                     }
                     logger.warn("Releasing claim on token and preparing for retry in {}s", errorWaitTime);
                     TrackerStatus trackerStatus = activeSegments.get(segment.getSegmentId());
                     if (!trackerStatus.isErrorState()) {
                         TrackerStatus errorStatus =
-                                activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.markError(e));
+                                activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.markError(cause));
                         trackerStatusChangeListener.onEventTrackerStatusChange(
                                 singletonMap(segment.getSegmentId(), errorStatus)
                         );
@@ -369,10 +347,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private void releaseToken(Segment segment) {
         try {
-            transactionManager.executeInTransaction(() -> {
-                tokenStore.releaseClaim(getName(), segment.getSegmentId());
-                eventHandlerInvoker().segmentReleased(segment);
-            });
+            var unitOfWork = unitOfWorkFactory.create();
+            joinAndUnwrap(
+                    unitOfWork.executeWithResult(context -> {
+                        tokenStore.releaseClaim(getName(), segment.getSegmentId());
+                        eventHandlerInvoker().segmentReleased(segment);
+                        return emptyCompletedFuture();
+                    })
+            );
             logger.info("Released claim");
         } catch (Exception e) {
             // Ignore exception
@@ -418,13 +400,15 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
             long processingDeadline = now().toEpochMilli() + eventAvailabilityTimeout;
             long processingTime = eventAvailabilityTimeout;
-            while (batch.isEmpty() && processingTime > 0 && eventStream.hasNextAvailable((int) processingTime, MILLISECONDS)) {
+            while (batch.isEmpty() && processingTime > 0 && eventStream.hasNextAvailable((int) processingTime,
+                                                                                         MILLISECONDS)) {
                 processingTime = processingDeadline - now().toEpochMilli();
 
                 final TrackedEventMessage<?> firstMessage = eventStream.nextAvailable();
                 lastToken = firstMessage.trackingToken();
                 processingSegments = processingSegments(lastToken, segment);
-                if (canHandle(firstMessage, processingSegments)) {
+                ProcessingContext firstMessageContext = new LegacyMessageSupportingContext(firstMessage);
+                if (canHandle(firstMessage, firstMessageContext, processingSegments)) {
                     batch.add(firstMessage);
                 } else {
                     ignoreEvent(eventStream, firstMessage);
@@ -435,8 +419,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                         && i < batchSize * 10 && batch.size() < batchSize
                         && eventStream.peek().map(m -> isRegularProcessing(segment, m)).orElse(false); i++) {
                     final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
+                    ProcessingContext messageContext = new LegacyMessageSupportingContext(trackedEventMessage);
                     lastToken = trackedEventMessage.trackingToken();
-                    if (canHandle(trackedEventMessage, processingSegments)) {
+                    if (canHandle(trackedEventMessage, messageContext, processingSegments)) {
                         batch.add(trackedEventMessage);
                     } else {
                         ignoreEvent(eventStream, trackedEventMessage);
@@ -461,15 +446,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             if (lastToken == null) {
                 // The token is never updated, so we extend the token claim.
                 checkSegmentCaughtUp(segment, eventStream);
-                transactionManager.executeInTransaction(
-                        () -> tokenStore.extendClaim(getName(), segment.getSegmentId())
+                var unitOfWork = unitOfWorkFactory.create();
+                joinAndUnwrap(
+                        unitOfWork.executeWithResult(context -> {
+                            tokenStore.extendClaim(getName(), segment.getSegmentId());
+                            return emptyCompletedFuture();
+                        })
                 );
                 return;
             } else if (batch.isEmpty()) {
                 // The token is updated but didn't contain events for this segment. So, we update the token position.
                 TrackingToken finalLastToken = lastToken;
-                transactionManager.executeInTransaction(
-                        () -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId())
+                var unitOfWork = unitOfWorkFactory.create();
+                joinAndUnwrap(
+                        unitOfWork.executeWithResult(context -> {
+                            tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
+                            return emptyCompletedFuture();
+                        })
                 );
                 return;
             }
@@ -479,18 +472,17 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             // These are the result of upcasting and should always be processed in the same batch.
             while (eventStream.peek().filter(event -> finalLastToken.equals(event.trackingToken())).isPresent()) {
                 final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
-                if (canHandle(trackedEventMessage, processingSegments)) {
+                ProcessingContext messageContext = new LegacyMessageSupportingContext(trackedEventMessage);
+                if (canHandle(trackedEventMessage, messageContext, processingSegments)) {
                     batch.add(trackedEventMessage);
                 } else {
                     ignoreEvent(eventStream, trackedEventMessage);
                 }
             }
 
-            LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyBatchingUnitOfWork<>(batch);
-            unitOfWork.attachTransaction(transactionManager);
-            unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
-            unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);
-            processInUnitOfWork(batch, unitOfWork, processingSegments);
+            var unitOfWork = unitOfWorkFactory.create();
+            instructTokenClaim(segment, unitOfWork, finalLastToken);
+            processInUnitOfWork(batch, unitOfWork, processingSegments).join();
 
             TrackerStatus previousStatus = activeSegments.get(segment.getSegmentId());
             TrackerStatus updatedStatus =
@@ -508,6 +500,30 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             Thread.currentThread().interrupt();
         }
+    }
+
+    private void instructTokenClaim(Segment segment, UnitOfWork unitOfWork, TrackingToken finalLastToken) {
+        unitOfWork.runOnPreInvocation(ctx -> {
+            ctx.putResource(Segment.RESOURCE_KEY, segment);
+            ctx.putResource(TrackingToken.RESOURCE_KEY, finalLastToken);
+            if (storeTokenBeforeProcessing) {
+                tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
+            } else {
+                tokenStore.extendClaim(getName(), segment.getSegmentId());
+            }
+        });
+        var startTime = now();
+        unitOfWork.runOnPrepareCommit(ctx -> {
+            if (!storeTokenBeforeProcessing) {
+                tokenStore.storeToken(
+                        ctx.getResource(TrackingToken.RESOURCE_KEY),
+                        getName(),
+                        ctx.getResource(Segment.RESOURCE_KEY).getSegmentId()
+                );
+            } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
+                tokenStore.extendClaim(getName(), ctx.getResource(Segment.RESOURCE_KEY).getSegmentId());
+            }
+        });
     }
 
     private void ignoreEvent(BlockingStream<TrackedEventMessage<?>> eventStream,
@@ -534,17 +550,18 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     /**
-     * Indicates whether any of the components handling events for this Processor are able to handle the given {@code
-     * eventMessage} for any of the given {@code segments}.
+     * Indicates whether any of the components handling events for this Processor are able to handle the given
+     * {@code eventMessage} for any of the given {@code segments}.
      *
      * @param eventMessage The message to handle
      * @param segments     The segments to handle the message in
      * @return whether the given message should be handled as part of anyof the give segments
      * @throws Exception when an exception occurs evaluating the message
      */
-    protected boolean canHandle(EventMessage<?> eventMessage, Collection<Segment> segments) throws Exception {
+    protected boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Collection<Segment> segments)
+            throws Exception {
         for (Segment segment : segments) {
-            if (canHandle(eventMessage, segment)) {
+            if (canHandle(eventMessage, context, segment)) {
                 return true;
             }
         }
@@ -557,8 +574,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     /**
-     * Indicates if the given {@code processingSegments} should be considered normal processing for the given {@code
-     * segment}. This is the case if only given {@code segment} is included in the {@code processingSegments}.
+     * Indicates if the given {@code processingSegments} should be considered normal processing for the given
+     * {@code segment}. This is the case if only given {@code segment} is included in the {@code processingSegments}.
      *
      * @param segment            The segment assigned to this thread for processing
      * @param processingSegments The segments for which a received event should be processed
@@ -575,7 +592,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             if (!previousStatus.isCaughtUp()) {
                 TrackerStatus updatedStates =
                         activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.caughtUp());
-                trackerStatusChangeListener.onEventTrackerStatusChange(singletonMap(segment.getSegmentId(), updatedStates));
+                trackerStatusChangeListener.onEventTrackerStatusChange(singletonMap(segment.getSegmentId(),
+                                                                                    updatedStates));
             }
         }
     }
@@ -584,12 +602,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             BlockingStream<TrackedEventMessage<?>> eventStreamIn, Segment segment) {
         BlockingStream<TrackedEventMessage<?>> eventStream = eventStreamIn;
         if (eventStream == null && state.get().isRunning()) {
-            final TrackingToken trackingToken = transactionManager.fetchInTransaction(
-                    () -> tokenStore.fetchToken(getName(), segment.getSegmentId())
-            );
-            logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
-            eventStream = transactionManager.fetchInTransaction(
-                    () -> doOpenStream(trackingToken));
+            eventStream = joinAndUnwrap(
+                    unitOfWorkFactory
+                            .create()
+                            .executeWithResult(context -> {
+                                var trackingToken = tokenStore.fetchToken(getName(), segment.getSegmentId());
+                                logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
+                                return CompletableFuture.completedFuture(doOpenStream(trackingToken));
+                            }));
         }
         return eventStream;
     }
@@ -607,8 +627,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     /**
      * {@inheritDoc}
      * <p>
-     * This will also ignore the specified this segment for "re-claiming" for twice the {@link
-     * TrackingEventProcessorConfiguration#getTokenClaimInterval()} token claim interval.
+     * This will also ignore the specified this segment for "re-claiming" for twice the
+     * {@link TrackingEventProcessorConfiguration#getTokenClaimInterval()} token claim interval.
      */
     @Override
     public void releaseSegment(int segmentId) {
@@ -618,10 +638,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     /**
      * {@inheritDoc}
      * <p>
-     * This method will put the segment on a non-claim map. During the next iteration of the {@link #processingLoop(Segment)}
-     * the segments will be unclaimed and the worker stopped if it is found to be in this map. This means it can take
-     * up to the batch processing time, or up to the {@link #eventAvailabilityTimeout} if there are no events in the stream
-     * for the segment to be unclaimed.
+     * This method will put the segment on a non-claim map. During the next iteration of the
+     * {@link #processingLoop(Segment)} the segments will be unclaimed and the worker stopped if it is found to be in
+     * this map. This means it can take up to the batch processing time, or up to the {@link #eventAvailabilityTimeout}
+     * if there are no events in the stream for the segment to be unclaimed.
      */
     @Override
     public void releaseSegment(int segmentId, long releaseDuration, TimeUnit unit) {
@@ -631,9 +651,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     /**
      * {@inheritDoc}
      * <p>
-     * This method will add an instruction for the {@link WorkerLauncher} and set a flag that interrupts its sleep
-     * to reduce the time it takes for the processor to claim the segment. Note that a thread has to be available for
-     * a segment to start processing. The result will be {@code false} if there is none available.
+     * This method will add an instruction for the {@link WorkerLauncher} and set a flag that interrupts its sleep to
+     * reduce the time it takes for the processor to claim the segment. Note that a thread has to be available for a
+     * segment to start processing. The result will be {@code false} if there is none available.
      */
     @Override
     public CompletableFuture<Boolean> claimSegment(int segmentId) {
@@ -685,22 +705,24 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset");
         Assert.state(!isRunning() && activeProcessorThreads() == 0 && !workLauncherRunning.get(),
                      () -> "TrackingProcessor must be shut down before triggering a reset");
-        // TODO - Create a ProcessingContext instead of just a transactionManager
-        transactionManager.executeInTransaction(() -> {
+        var unitOfWork = unitOfWorkFactory.create();
+        var future = unitOfWork.executeWithResult(processingContext -> {
             int[] segments = tokenStore.fetchSegments(getName());
             TrackingToken[] tokens = new TrackingToken[segments.length];
             for (int i = 0; i < segments.length; i++) {
                 tokens[i] = tokenStore.fetchToken(getName(), segments[i]);
             }
             // we now have all tokens, hurray
-            eventHandlerInvoker().performReset(resetContext, null);
+            eventHandlerInvoker().performReset(resetContext, processingContext);
 
             for (int i = 0; i < tokens.length; i++) {
                 tokenStore.storeToken(ReplayToken.createReplayToken(tokens[i], startPosition, resetContext),
                                       getName(),
                                       segments[i]);
             }
+            return emptyCompletedFuture();
         });
+        joinAndUnwrap(future);
     }
 
     @Override
@@ -755,7 +777,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private CompletableFuture<Void> awaitTermination() {
         if (activeProcessorThreads() <= 0 && !workLauncherRunning.get()) {
-            return FutureUtils.emptyCompletedFuture();
+            return emptyCompletedFuture();
         }
 
         logger.info("Processor '{}' awaiting termination...", getName());
@@ -770,7 +792,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                         workerThread.interrupt();
                                         workerThread.join(workerTerminationTimeout);
                                         if (workerThread.isAlive()) {
-                                            logger.warn("Forced shutdown of Tracking Processor Worker '{}' was unsuccessful. Consider increasing workerTerminationTimeout.", worker.getKey()
+                                            logger.warn(
+                                                    "Forced shutdown of Tracking Processor Worker '{}' was unsuccessful. Consider increasing workerTerminationTimeout.",
+                                                    worker.getKey()
                                             );
                                         }
                                     }
@@ -783,7 +807,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                 }
                             }))
                             .reduce(CompletableFuture::allOf)
-                            .orElse(FutureUtils.emptyCompletedFuture());
+                            .orElse(emptyCompletedFuture());
     }
 
     /**
@@ -826,15 +850,15 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     /**
-     * Starts workers for a number of segments. When only the {@link Segment#ROOT_SEGMENT root } segment {@link
-     * TokenStore#fetchSegments(String) exists} in the  TokenStore, it will be split in multiple segments as configured
-     * by the {@link TrackingEventProcessorConfiguration#andInitialSegmentsCount(int)}, otherwise the existing segments
-     * in the TokenStore will be used.
+     * Starts workers for a number of segments. When only the {@link Segment#ROOT_SEGMENT root } segment
+     * {@link TokenStore#fetchSegments(String) exists} in the  TokenStore, it will be split in multiple segments as
+     * configured by the {@link TrackingEventProcessorConfiguration#andInitialSegmentsCount(int)}, otherwise the
+     * existing segments in the TokenStore will be used.
      * <p/>
      * An attempt will be made to instantiate a worker for each segment. This will succeed when the number of threads
-     * matches the requested segments. The number of active threads can be configured with {@link
-     * TrackingEventProcessorConfiguration#forParallelProcessing(int)}. When insufficient threads are available to serve
-     * the number of segments, it will result in some segments not being processed.
+     * matches the requested segments. The number of active threads can be configured with
+     * {@link TrackingEventProcessorConfiguration#forParallelProcessing(int)}. When insufficient threads are available
+     * to serve the number of segments, it will result in some segments not being processed.
      */
     protected void startSegmentWorkers() {
         spawnWorkerThread(new WorkerLauncher()).start();
@@ -929,7 +953,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     /**
      * Builder class to instantiate a {@link TrackingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link NoOpMessageMonitor}, the {@link EventProcessorSpanFactory} defaults to a
      * {@link DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory} and the
@@ -943,13 +966,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
-        private TransactionManager transactionManager;
+        private UnitOfWorkFactory unitOfWorkFactory;
         private TrackingEventProcessorConfiguration trackingEventProcessorConfiguration =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
         private Boolean storeTokenBeforeProcessing;
 
         public Builder() {
-            super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
+            super();
         }
 
         @Override
@@ -961,15 +984,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         @Override
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
             super.eventHandlerInvoker(eventHandlerInvoker);
-            return this;
-        }
-
-        /**
-         * {@inheritDoc}. Defaults to a {@link RollbackConfigurationType#ANY_THROWABLE})
-         */
-        @Override
-        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
-            super.rollbackConfiguration(rollbackConfiguration);
             return this;
         }
 
@@ -1009,8 +1023,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
          * Sets the {@link TokenStore} used to store and fetch event tokens that enable this {@link EventProcessor} to
          * track its progress.
          *
-         * @param tokenStore the {@link TokenStore} used to store and fetch event tokens that enable this {@link
-         *                   EventProcessor} to track its progress
+         * @param tokenStore the {@link TokenStore} used to store and fetch event tokens that enable this
+         *                   {@link EventProcessor} to track its progress
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder tokenStore(TokenStore tokenStore) {
@@ -1027,8 +1041,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
          * behavior is to store the last token of the Batch to the Token Store before processing of events begins. If
          * the {@link NoTransactionManager} is provided, the default is to extend the claim at the start of the unit of
          * work, and update the token after processing Events. When tokens are stored at the start of a batch, a claim
-         * extension will be sent at the end of the batch if processing that batch took longer than the {@link
-         * TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long, TimeUnit) tokenClaimUpdateInterval}.
+         * extension will be sent at the end of the batch if processing that batch took longer than the
+         * {@link TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long, TimeUnit)
+         * tokenClaimUpdateInterval}.
          * <p>
          * Use {@link #storingTokensAfterProcessing()} to force storage of tokens at the end of a batch.
          *
@@ -1038,21 +1053,24 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
-            this.transactionManager = transactionManager;
             if (storeTokenBeforeProcessing == null) {
-                storeTokenBeforeProcessing = transactionManager != NoTransactionManager.instance();
+                storeTokenBeforeProcessing = transactionManager
+                        != NoTransactionManager.instance();
             }
+            this.unitOfWorkFactory = transactionManager == NoTransactionManager.instance()
+                    ? new SimpleUnitOfWorkFactory()
+                    : new TransactionalUnitOfWorkFactory(transactionManager);
             return this;
         }
 
         /**
          * Sets the {@link TrackingEventProcessorConfiguration} containing the fine grained configuration options for a
-         * {@link TrackingEventProcessor}. Defaults to a {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()}
-         * call.
+         * {@link TrackingEventProcessor}. Defaults to a
+         * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call.
          *
          * @param trackingEventProcessorConfiguration the {@link TrackingEventProcessorConfiguration} containing the
-         *                                            fine grained configuration options for a {@link
-         *                                            TrackingEventProcessor}
+         *                                            fine grained configuration options for a
+         *                                            {@link TrackingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder trackingEventProcessorConfiguration(
@@ -1074,8 +1092,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
          * begins, if a TransactionManager is configured. If the {@link NoTransactionManager} is provided, the default
          * is to extend the claim at the start of the unit of work, and update the token after processing Events. When
          * tokens are stored at the start of a batch, a claim extension will be sent at the end of the batch if
-         * processing that batch took longer than the {@link TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long,
-         * TimeUnit) tokenClaimUpdateInterval}.
+         * processing that batch took longer than the
+         * {@link TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long, TimeUnit)
+         * tokenClaimUpdateInterval}.
          *
          * @return the current Builder instance, for fluent interfacing
          */
@@ -1107,7 +1126,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             assertNonNull(messageSource, "The StreamableMessageSource is a hard requirement and should be provided");
             assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
-            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
+            assertNonNull(unitOfWorkFactory, "The UnitOfWorkFactory is a hard requirement and should be provided");
         }
     }
 
@@ -1135,8 +1154,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
             TrackedEventMessage<?> trackedEventMessage = alterToken(delegate.nextAvailable());
             this.lastToken = trackedEventMessage.trackingToken() instanceof WrappedToken
-                             ? (WrappedToken) trackedEventMessage.trackingToken()
-                             : null;
+                    ? (WrappedToken) trackedEventMessage.trackingToken()
+                    : null;
             return trackedEventMessage;
         }
 
@@ -1168,7 +1187,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
         public void run() {
             try {
-                executeWithRetry(() -> transactionManager.executeInTransaction(() -> result.complete(runSafe())),
+                executeWithRetry(() -> {
+                                     var unitOfWork = unitOfWorkFactory.create();
+                                     var future = unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(result.complete(
+                                             runSafe())));
+                                     joinAndUnwrap(future);
+                                 },
                                  re -> ExceptionUtils.findException(re, UnableToClaimTokenException.class).isPresent(),
                                  tokenClaimInterval, MILLISECONDS, 10);
             } catch (Exception e) {
@@ -1262,22 +1286,41 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     }
 
                     try {
-                        int[] tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
-                                () -> tokenStore.fetchSegments(processorName)
+                        int[] tokenStoreCurrentSegments = joinAndUnwrap(
+                                unitOfWorkFactory.create()
+                                                 .executeWithResult(
+                                                         context -> CompletableFuture.completedFuture(
+                                                                 tokenStore.fetchSegments(processorName)
+                                                         ))
                         );
 
                         // When in an initial stage, split segments to the requested number.
                         if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
-                            transactionManager.executeInTransaction(
-                                    () -> {
-                                        TrackingToken initialToken = initialTrackingTokenBuilder.apply(messageSource);
-                                        tokenStore.initializeTokenSegments(processorName, segmentsSize, initialToken);
-                                    }
+                            joinAndUnwrap(
+                                    unitOfWorkFactory.create()
+                                                     .executeWithResult(
+                                                             context -> {
+                                                                 TrackingToken initialToken = initialTrackingTokenBuilder.apply(
+                                                                         messageSource);
+                                                                 tokenStore.initializeTokenSegments(
+                                                                         processorName,
+                                                                         segmentsSize,
+                                                                         initialToken);
+                                                                 return emptyCompletedFuture();
+                                                             })
                             );
                         }
-                        segmentsToClaim = transactionManager.fetchInTransaction(
-                                () -> tokenStore.fetchAvailableSegments(processorName)
+                        segmentsToClaim = joinAndUnwrap(
+                                unitOfWorkFactory.create()
+                                                 .executeWithResult(
+                                                         context ->
+                                                                 CompletableFuture.completedFuture(
+                                                                         tokenStore.fetchAvailableSegments(
+                                                                                 processorName)
+                                                                 )
+                                                 )
                         );
+
                         waitTime = 1;
                     } catch (Exception e) {
                         if (waitTime == 1) {
@@ -1303,7 +1346,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
                         if (!activeSegments.containsKey(segmentId) && canClaimSegment(segmentId)) {
                             try {
-                                transactionManager.executeInTransaction(() -> {
+                                var unitOfWork = unitOfWorkFactory.create();
+                                var future = unitOfWork.executeWithResult(context -> {
                                     TrackingToken token = tokenStore.fetchToken(processorName, segment);
                                     logger.info("Worker assigned to segment {} for processing", segment);
                                     TrackerStatus newStatus = new TrackerStatus(segment, token);
@@ -1314,10 +1358,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                                 singletonMap(segmentId, new AddedTrackerStatus(newStatus))
                                         );
                                     }
+                                    return emptyCompletedFuture();
                                 });
+                                joinAndUnwrap(future);
                             } catch (UnableToClaimTokenException ucte) {
                                 // When not able to claim a token for a given segment, we skip the
-                                logger.debug("Unable to claim the token for segment: {}. It is owned by another process or has been split/merged concurrently", segmentId
+                                logger.debug(
+                                        "Unable to claim the token for segment: {}. It is owned by another process or has been split/merged concurrently",
+                                        segmentId
                                 );
 
                                 TrackerStatus removedStatus = activeSegments.remove(segmentId);
@@ -1400,7 +1448,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 workLauncherRunning.set(false);
             }
         }
-
     }
 
 
@@ -1417,7 +1464,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         protected boolean runSafe() {
             logger.info("Processing claim instruction for segment [{}] in processor [{}]", segmentId, getName());
             if (availableThreads.get() == 0) {
-                logger.info("Cannot claim segment [{}] in processor [{}] due to not enough threads being available", segmentId, getName());
+                logger.info("Cannot claim segment [{}] in processor [{}] due to not enough threads being available",
+                            segmentId,
+                            getName());
                 return false;
             }
             segmentReleaseDeadlines.remove(segmentId);
@@ -1482,8 +1531,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             tokenStore.deleteToken(getName(), tokenToDelete);
 
             TrackingToken mergedToken = otherSegment < segmentId
-                                        ? new MergedTrackingToken(otherToken, status.getInternalTrackingToken())
-                                        : new MergedTrackingToken(status.getInternalTrackingToken(), otherToken);
+                    ? new MergedTrackingToken(otherToken, status.getInternalTrackingToken())
+                    : new MergedTrackingToken(status.getInternalTrackingToken(), otherToken);
 
             tokenStore.storeToken(mergedToken, getName(), newSegment.getSegmentId());
             shouldRunLauncherImmediately.set(true);

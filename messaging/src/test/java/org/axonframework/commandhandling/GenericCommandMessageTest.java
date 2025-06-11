@@ -37,7 +37,7 @@ class GenericCommandMessageTest {
     @Test
     void constructor() {
         Object testPayload = new Object();
-        Map<String, Object> testMetaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> testMetaDataMap = Collections.singletonMap("key", "value");
         MetaData testMetaData = MetaData.from(testMetaDataMap);
         CommandMessage<Object> message1 = new GenericCommandMessage<>(TEST_TYPE, testPayload);
         CommandMessage<Object> message2 = new GenericCommandMessage<>(TEST_TYPE, testPayload, testMetaDataMap);
@@ -64,12 +64,12 @@ class GenericCommandMessageTest {
     @Test
     void withMetaData() {
         Object payload = new Object();
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericCommandMessage<Object> message = new GenericCommandMessage<>(TEST_TYPE, payload, metaData);
         GenericCommandMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
         GenericCommandMessage<Object> message2 = message.withMetaData(
-                MetaData.from(Collections.singletonMap("key", (Object) "otherValue"))
+                MetaData.from(Collections.singletonMap("key", "otherValue"))
         );
 
         assertEquals(0, message1.getMetaData().size());
@@ -79,13 +79,13 @@ class GenericCommandMessageTest {
     @Test
     void andMetaData() {
         Object payload = new Object();
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
 
         CommandMessage<Object> command = new GenericCommandMessage<>(TEST_TYPE, payload, metaData);
         CommandMessage<Object> command1 = command.andMetaData(MetaData.emptyInstance());
         CommandMessage<Object> command2 =
-                command.andMetaData(MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
+                command.andMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(1, command1.getMetaData().size());
         assertEquals("value", command1.getMetaData().get("key"));
@@ -96,7 +96,7 @@ class GenericCommandMessageTest {
     @Test
     void toStringIsAsExpected() {
         String actual = new GenericCommandMessage<>(TEST_TYPE, "MyPayload")
-                .andMetaData(MetaData.with("key", "value").and("key2", 13))
+                .andMetaData(MetaData.with("key", "value").and("key2", "13"))
                 .toString();
 
         assertTrue(actual.startsWith("GenericCommandMessage{type={command#0.0.1}, payload={MyPayload}, metadata={"),

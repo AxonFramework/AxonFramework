@@ -16,12 +16,12 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
@@ -68,7 +68,7 @@ public class AnnotatedAggregateTest {
         LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = LegacyDefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =
-                uow.executeWithResult(() -> repository.newInstance(() -> {
+                uow.executeWithResult((ctx) -> repository.newInstance(() -> {
                        AggregateRoot root = new AggregateRoot();
                        root.handle(testPayload);
                        return root;
@@ -90,7 +90,7 @@ public class AnnotatedAggregateTest {
         LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = LegacyDefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =
-                uow.executeWithResult(() -> repository.newInstance(() -> {
+                uow.executeWithResult((ctx) -> repository.newInstance(() -> {
                        AggregateRoot root = new AggregateRoot();
                        root.handle(testPayload);
                        return root;
@@ -114,7 +114,7 @@ public class AnnotatedAggregateTest {
 
         AnnotatedAggregate<AggregateRoot> testSubject =
                 (AnnotatedAggregate<AggregateRoot>) uow.executeWithResult(
-                        () -> repository.newInstance(AggregateRoot::new)).getPayload();
+                        (ctx) -> repository.newInstance(AggregateRoot::new)).getPayload();
 
         assertNull(testSubject.lastSequence());
     }
@@ -127,7 +127,7 @@ public class AnnotatedAggregateTest {
         LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = LegacyDefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =
-                uow.executeWithResult(() -> repository.newInstance(() -> {
+                uow.executeWithResult((ctx) -> repository.newInstance(() -> {
                        AggregateRoot root = new AggregateRoot();
                        root.handle(testPayload, sideEffect);
                        return root;
@@ -251,7 +251,7 @@ public class AnnotatedAggregateTest {
         }
 
         @Override
-        protected Aggregate<AggregateRoot> doLoad(String aggregateIdentifier, Long expectedVersion) {
+        protected Aggregate<AggregateRoot> doLoad(String aggregateIdentifier) {
             return null;
         }
 

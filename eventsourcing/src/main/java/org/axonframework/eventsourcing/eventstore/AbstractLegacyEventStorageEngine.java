@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -49,7 +49,7 @@ import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserial
  * @since 3.0
  * @deprecated This class will be removed.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public abstract class AbstractLegacyEventStorageEngine implements LegacyEventStorageEngine {
 
     private final Serializer snapshotSerializer;

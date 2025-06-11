@@ -97,14 +97,14 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     }
 
     @Override
-    public GenericSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().withMetaData(metaData),
                                                      getResponseType(),
                                                      updateResponseType);
     }
 
     @Override
-    public GenericSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().andMetaData(metaData),
                                                      getResponseType(),
                                                      updateResponseType);

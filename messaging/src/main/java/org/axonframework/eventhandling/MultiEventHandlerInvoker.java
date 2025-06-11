@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of {@link EventHandlerInvoker} with capabilities to invoke several different invokers.
@@ -72,13 +72,13 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull Segment segment) {
-        return delegates.stream().anyMatch(i -> canHandle(i, eventMessage, segment));
+    public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
+        return delegates.stream().anyMatch(i -> canHandle(i, eventMessage, context, segment));
     }
 
-    private boolean canHandle(EventHandlerInvoker invoker, EventMessage<?> eventMessage, Segment segment) {
+    private boolean canHandle(EventHandlerInvoker invoker, EventMessage<?> eventMessage, ProcessingContext context, Segment segment) {
         return (invoker.supportsReset() || !ReplayToken.isReplay(eventMessage))
-                && invoker.canHandle(eventMessage, segment);
+                && invoker.canHandle(eventMessage, context, segment);
     }
 
     @Override
@@ -87,10 +87,10 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void handle(@Nonnull EventMessage<?> message, ProcessingContext processingContext, @Nonnull Segment segment) throws Exception {
+    public void handle(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext context, @Nonnull Segment segment) throws Exception {
         for (EventHandlerInvoker i : delegates) {
-            if (canHandle(i, message, segment)) {
-                i.handle(message, processingContext, segment);
+            if (canHandle(i, message, context, segment)) {
+                i.handle(message, context, segment);
             }
         }
     }
@@ -102,8 +102,8 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void performReset(ProcessingContext processingContext) {
-        performReset(null,processingContext );
+    public void performReset(ProcessingContext context) {
+        performReset(null, context);
     }
 
     @Override

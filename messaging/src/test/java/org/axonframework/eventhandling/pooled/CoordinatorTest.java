@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.stream.BlockingStream;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -28,6 +27,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.mockito.stubbing.*;
@@ -47,9 +47,9 @@ import static org.axonframework.eventhandling.Segment.computeSegment;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link Coordinator}.
@@ -81,7 +81,7 @@ class CoordinatorTest {
                                  .name(PROCESSOR_NAME)
                                  .messageSource(messageSource)
                                  .tokenStore(tokenStore)
-                                 .transactionManager(NoTransactionManager.instance())
+                                 .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                                  .executorService(executorService)
                                  .workPackageFactory((segment, trackingToken) -> workPackage)
                                  .initialToken(es -> ReplayToken.createReplayToken(es.createHeadToken()))

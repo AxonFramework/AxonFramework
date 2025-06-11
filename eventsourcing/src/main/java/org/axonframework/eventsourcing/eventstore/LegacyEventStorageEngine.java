@@ -25,8 +25,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static java.util.Arrays.asList;
 
@@ -37,7 +37,7 @@ import static java.util.Arrays.asList;
  * @author Rene de Waele
  * @deprecated In favor of the {@link EventStorageEngine}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface LegacyEventStorageEngine {
 
     /**

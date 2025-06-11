@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 
@@ -55,7 +55,7 @@ import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
  * @since 3.0
  * @deprecated In favor of the {@link InMemoryEventStorageEngine}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngine {
 
     @SuppressWarnings("SortedCollectionWithNonComparableKeys")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.*;
@@ -24,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -107,20 +108,23 @@ public class FixtureTest_RegisteringMethodEnhancements {
             this.assertion = assertion;
         }
 
+        @Nullable
         @Override
-        public ParameterResolver<AtomicBoolean> createInstance(Executable executable,
-                                                               Parameter[] parameters,
+        public ParameterResolver<AtomicBoolean> createInstance(@Nonnull Executable executable,
+                                                               @Nonnull Parameter[] parameters,
                                                                int parameterIndex) {
             return AtomicBoolean.class.equals(parameters[parameterIndex].getType()) ? this : null;
         }
 
+        @Nullable
         @Override
-        public AtomicBoolean resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
+        public AtomicBoolean resolveParameterValue(@Nonnull ProcessingContext context) {
             return assertion;
         }
 
         @Override
-        public boolean matches(Message<?> message, ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext context) {
+            Message<?> message = Message.fromContext(context);
             return message.getPayloadType().isAssignableFrom(ResolveParameterCommand.class);
         }
     }

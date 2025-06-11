@@ -54,7 +54,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     public static Clock clock = Clock.systemUTC();
 
     /**
-     * Constructs a {@link GenericEventMessage} for the given {@code type} and {@code payload}.
+     * Constructs a {@code GenericEventMessage} for the given {@code type} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
@@ -67,7 +67,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     }
 
     /**
-     * Constructs a {@link GenericEventMessage} for the given {@code type}, {@code payload} and {@code metaData}.
+     * Constructs a {@code GenericEventMessage} for the given {@code type}, {@code payload} and {@code metaData}.
      *
      * @param type     The {@link MessageType type} for this {@link EventMessage}.
      * @param payload  The payload of type {@code P} for this {@link EventMessage}.
@@ -75,12 +75,12 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      */
     public GenericEventMessage(@Nonnull MessageType type,
                                @Nonnull P payload,
-                               @Nonnull Map<String, ?> metaData) {
+                               @Nonnull Map<String, String> metaData) {
         this(new GenericMessage<>(type, payload, metaData), clock.instant());
     }
 
     /**
-     * Constructs a {@link GenericEventMessage} for the given {@code identifier}, {@code type}, {@code payload},
+     * Constructs a {@code GenericEventMessage} for the given {@code identifier}, {@code type}, {@code payload},
      * {@code metaData}, and {@code timestamp}.
      *
      * @param identifier The identifier of this {@link EventMessage}.
@@ -92,13 +92,13 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     public GenericEventMessage(@Nonnull String identifier,
                                @Nonnull MessageType type,
                                @Nonnull P payload,
-                               @Nonnull Map<String, ?> metaData,
+                               @Nonnull Map<String, String> metaData,
                                @Nonnull Instant timestamp) {
         this(new GenericMessage<>(identifier, type, payload, metaData), timestamp);
     }
 
     /**
-     * Constructs a {@link GenericEventMessage} for the given {@code delegate} and {@code timestampSupplier}, intended
+     * Constructs a {@code GenericEventMessage} for the given {@code delegate} and {@code timestampSupplier}, intended
      * to reconstruct another {@link EventMessage}.
      * <p>
      * The timestamp of the event is supplied lazily through the given {@code timestampSupplier} to prevent unnecessary
@@ -120,7 +120,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     }
 
     /**
-     * Constructs a {@link GenericEventMessage} with given {@code delegate} and {@code timestamp}.
+     * Constructs a {@code GenericEventMessage} with given {@code delegate} and {@code timestamp}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
@@ -146,7 +146,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     }
 
     @Override
-    public GenericEventMessage<P> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericEventMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         if (getMetaData().equals(metaData)) {
             return this;
         }
@@ -154,7 +154,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     }
 
     @Override
-    public GenericEventMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericEventMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         //noinspection ConstantConditions
         if (metaData == null || metaData.isEmpty() || getMetaData().equals(metaData)) {
             return this;

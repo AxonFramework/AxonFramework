@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.TrackingToken;
 
 import java.time.Duration;
 import java.time.Instant;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /**
  * Interface for a source of {@link Message messages} that processors can track.
@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
  * @author Rene de Waele
  *@deprecated In favor of the {@code org.axonframework.eventsourcing.eventstore.StreamableEventSource}.
  */
-@Deprecated(since = "5.0.0")
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface StreamableMessageSource<M extends Message<?>> {
 
     /**

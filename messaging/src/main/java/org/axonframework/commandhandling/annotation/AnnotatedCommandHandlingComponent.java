@@ -153,7 +153,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
             Message<R> commandResultMessage = (Message<R>) commandResult;
             return new GenericCommandResultMessage<>(commandResultMessage);
         }
-        MessageType type = messageTypeResolver.resolve(ObjectUtils.nullSafeTypeOf(commandResult));
+        MessageType type = messageTypeResolver.resolveOrThrow(ObjectUtils.nullSafeTypeOf(commandResult));
         return new GenericCommandResultMessage<>(type, (R) commandResult);
     }
 

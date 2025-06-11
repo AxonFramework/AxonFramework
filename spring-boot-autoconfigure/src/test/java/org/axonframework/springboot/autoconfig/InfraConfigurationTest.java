@@ -57,7 +57,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -201,7 +201,7 @@ class InfraConfigurationTest {
             assertThat(handlerInvoked).isFalse();
             assertThat(enhancerInvoked).isTrue();
 
-            context.getBean("commandGateway", CommandGateway.class).send(new Object(), ProcessingContext.NONE);
+            context.getBean("commandGateway", CommandGateway.class).send(new Object(), null);
             assertThat(handlerInvoked).isTrue();
             assertThat(enhancerInvoked).isTrue();
         });
