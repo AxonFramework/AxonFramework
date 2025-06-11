@@ -59,6 +59,7 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
         }
     }
 
+    // TODO this will be replaced by logic on the ComponentRegistry in a follow-up PR
     private <C> void registerIfNotPresentDef(ComponentRegistry registry,
                                              Class<C> type,
                                              ComponentDefinition<AxonServerConnectionManager> definition) {
