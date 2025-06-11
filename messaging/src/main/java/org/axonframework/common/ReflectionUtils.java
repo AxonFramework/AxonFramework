@@ -77,11 +77,12 @@ public abstract class ReflectionUtils {
      * Returns the value of the given {@code field} in the given {@code object}. If necessary, the field is made
      * accessible, assuming the security manager allows it.
      *
-     * @param field  The field containing the value
-     * @param object The object to retrieve the field's value from
-     * @return the value of the {@code field} in the {@code object}
-     * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be made
-     *                               accessible
+     * @param field  The field containing the value.
+     * @param object The object to retrieve the field's value from.
+     * @return The value of the {@code field} in the {@code object}.
+     * @throws IllegalStateException If the field is not accessible and the security manager doesn't allow it to be made
+     *                               accessible.
+     * @param <R> The type of the value to return.
      */
     @SuppressWarnings("unchecked")
     public static <R> R getFieldValue(Field field, Object object) {
@@ -522,29 +523,31 @@ public abstract class ReflectionUtils {
      * @return The name of the field represented by the given member.
      */
     public static String fieldNameFromMember(Member member) {
-        if (member instanceof Field field) {
-            return field.getName();
-        }
-        if (member instanceof Method method) {
-            String methodName = method.getName();
-            int prefixLength;
+        switch (member) {
+            case Field field -> {
+                return field.getName();
+            }
+            case Method method -> {
+                String methodName = method.getName();
+                int prefixLength;
 
-            if (methodName.startsWith("get") || methodName.startsWith("set")) {
-                prefixLength = 3;
-            } else if (methodName.startsWith("is")) {
-                prefixLength = 2;
-            } else {
-                return methodName;
+                if (methodName.startsWith("get") || methodName.startsWith("set")) {
+                    prefixLength = 3;
+                } else if (methodName.startsWith("is")) {
+                    prefixLength = 2;
+                } else {
+                    return methodName;
+                }
+                int length = methodName.length();
+                if (length <= prefixLength) {
+                    return methodName;
+                }
+                return Introspector.decapitalize(methodName.substring(prefixLength));
             }
-            int length = methodName.length();
-            if(length <= prefixLength) {
-                return methodName;
-            }
-            return Introspector.decapitalize(methodName.substring(prefixLength));
+            default -> throw new AxonConfigurationException(
+                    format("Member [%s] is not a field or method", member)
+            );
         }
-        throw new AxonConfigurationException(
-                format("Member [%s] is not a field or method", member)
-        );
     }
 
     private ReflectionUtils() {
