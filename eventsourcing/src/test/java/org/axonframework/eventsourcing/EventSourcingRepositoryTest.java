@@ -65,7 +65,7 @@ class   EventSourcingRepositoryTest {
         eventStoreTransaction = mock();
         when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
 
-        factory = (id, event) -> {
+        factory = (id, event, ctx) -> {
             if (event != null) {
                 return id + "(" + event.getPayload() + ")";
             }
@@ -75,7 +75,7 @@ class   EventSourcingRepositoryTest {
                 String.class,
                 String.class,
                 eventStore,
-                (identifier, event) -> factory.create(identifier, event),
+                (id, event, context) -> factory.create(id, event, context),
                 (identifier, ctx) -> TEST_CRITERIA,
                 (entity, event, context) -> entity + "-" + event.getPayload()
         );
@@ -210,7 +210,7 @@ class   EventSourcingRepositoryTest {
     @Test
     void loadOrCreateThrowsExceptionWhenEventStreamIsEmptyAndNullEntityIsCreated() {
         ProcessingContext processingContext = new StubProcessingContext();
-        factory = (id, event) -> {
+        factory = (id, event, ctx) -> {
             if (event != null) {
                 return id + "(" + event.getPayload() + ")";
             }
@@ -228,7 +228,7 @@ class   EventSourcingRepositoryTest {
     @Test
     void loadThrowsExceptionIfNullEntityIsReturnedAfterFirstEvent() {
         ProcessingContext processingContext = new StubProcessingContext();
-        factory = (id, event) -> {
+        factory = (id, event, ctx) -> {
             return null; // Simulating a null entity creation
         };
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0))))

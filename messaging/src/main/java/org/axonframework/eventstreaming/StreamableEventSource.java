@@ -55,4 +55,5 @@ public interface StreamableEventSource<E extends EventMessage<?>> extends Tracki
      * @return An {@link MessageStream event stream} matching the given {@code condition}.
      */
     MessageStream<E> open(@Nonnull StreamingCondition condition);
+
 }
