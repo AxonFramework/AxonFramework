@@ -400,12 +400,13 @@ command messaging and use the configuration API; the module just pulled in every
 As an act to clean this up, we have broken down the `Configurer` and `Configuration` into manageable chunks.
 As such, the (new) `ApplicationConfigurer` interface now only provides basic operations
 to [register components](#registering-components-with-the-componentbuilder-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface), [register enhancers](#registering-enhancers-with-the-configurationenhancer-interface), [register modules](#registering-modules-through-the-modulebuilder-interface),
-and [register factories](#registering-component-factories), besides the basic start-and-shutdown
-handler registration. It does this by having two different registries, being the `ComponentRegistry` and
-`LifecycleRegistry`. The former takes care of the component, decorator, enhancer, and module registration. The latter
-provides the aforementioned methods to register start and shutdown handlers as part of registering components. The
-`Configuration` in turn now only has the means to retrieve components (optionally), and it's modules' components. This
-means **all** infra-specific methods, like for example `Configuration#eventBus`, no longer exist.
+and [register factories](#registering-component-factories), besides the basic [start-and-shutdown
+handler registration](#component-lifecycle-management). It does this by having two different registries, being the
+`ComponentRegistry` and `LifecycleRegistry`. The former takes care of the component, decorator, enhancer, and module
+registration. The latter provides the aforementioned methods to register start and shutdown handlers as part of
+registering components. The `Configuration` in turn now only has the means to retrieve components (optionally), and it's
+modules' components. This means **all** infra-specific methods, like for example `Configuration#eventBus`, no longer
+exist.
 
 So, how do you start Axon's configuration? That depends on what you are going to use from Axon Framework. If you, for
 example, only want to use the basic messaging concepts, you can start with the `MessagingConfigurer`. You can construct
@@ -460,6 +461,63 @@ public static void main(String[] args) {
 
 Although the sample above uses the `MessagingConfigurer#componentRegistry(Consumer<ComponentRegistry>)` operation, the
 same `ComponentBuilder` behavior resides on higher-level operations like `MessagingConfigurer#registerCommandBus`.
+
+### Component Lifecycle Management
+
+As part of any application configuration, there are certain tasks that should happen on start-up and on shutdown. Axon
+Framework provided a space for this in three ways, being:
+
+1. On `Configurer` while registering components.
+2. By implementing `Lifecycle` on the component.
+3. By adding `@StartHandler` and `@ShutdownHandler` annotated methods to the component.
+
+Since Axon Framework 5, the `Lifecycle` interface and `@StartHandler` and `@ShutdownHandler` annotations no longer
+**exist**.
+
+We have done so, because the interface and annotation approach **require** an instance of the component to correctly
+invoke the register lifecycle handler operation. This requires eager initialization of components, as otherwise the
+methods cannot be accessed. This breaks the desire that defaults given by Axon Framework are not constructed when they
+are not used. On top of that, the annotations enforced reflection on all registered components, something we are
+steering away from as core component of Axon Framework (as it should be a choice of the user).
+
+Instead, we chose to stick to option one, as this allows for lazy initialization of the components. However, it still
+slightly differs from Axon Framework 4. Let us provide an example of registering start and shutdown handlers, for
+components **and** decorators:
+
+```java
+public static void main(String[] args) {
+    EventSourcingConfigurer.create()
+                           .componentRegistry(registry -> registry.registerComponent(
+                                   ComponentDefinition.ofType(AxonServerConnectionManager.class)
+                                                      .withInstance(AxonServerConnectionManager.builder()
+                                                                                               /* left out for brevity*/
+                                                                                               .build())
+                                                      .onStart(
+                                                              Phase.INSTRUCTION_COMPONENTS,
+                                                              AxonServerConnectionManager::start
+                                                      )
+                           ))
+                           .componentRegistry(registry -> registry.registerDecorator(
+                                   DecoratorDefinition.forType(DeadlineManager.class)
+                                                      .with((config, name, delegate) -> /* left out for brevity*/)
+                                                      .onShutdown(
+                                                              Phase.INBOUND_EVENT_CONNECTORS,
+                                                              DeadlineManager::shutdown
+                                                      )
+                           ));
+}
+```
+
+As shown in the example above, instead of directly registering the component or decorator, the so-called
+`ComponentDefinition` and `DecoratorDefinition` are used. These definitions allow you to describe the full extent of how
+the component/decorator should behave. Thus including any start or shutdown handlers that should be invoked. In this
+example, a definition is created for an `AxonServerConnectionManager` that should start in the `INSTRUCTION_COMPONENTS`.
+Furthermore, a decorator definition is given for all components of type `DeadlineManager`, that should be shutdown in
+the `INBOUND_EVENT_CONNECTORS`.
+
+This registration approach of a complete definition, wherein the construction of the component and the decoration
+thereof are kept and **only** invoked when used in your end application, ensures that lifecycle management does not
+cause eager initialization of _any_ component. 
 
 ### Decorating components with the ComponentDecorator interface
 
@@ -861,7 +919,6 @@ The way Event-Sourced entities are constructed is defined by the `EventSourcedEn
    `EventSourcedEntityFactory.fromEventMessage(...)` to use this.
 4. **Reflection**: Use the `AnnotationBasedEventSourcedEntityFactory` to construct the entity using reflection, marking
    constructors (or static methods) with the `@EntityFactory` annotation. This is the default behavior in Axon Framework
-   5.
 
 ### Creational Command Handlers
 
@@ -907,15 +964,13 @@ public class MyEntity {
 ```
 
 ### Exception mapping
+
 With the change from Aggregate to Entity, we have also changed some of the exceptions. If you depends on these
 exceptions, you will need to change your code. The following table shows the changes:
 
 | Old Exception                                                          | New Exception                                                     |
 |------------------------------------------------------------------------|-------------------------------------------------------------------|
 | `org.axonframework.modelling.command.AggregateEntityNotFoundException` | `org.axonframework.modelling.entity.ChildEntityNotFoundException` |
-
-
-
 
 ## Test Fixtures
 
@@ -972,8 +1027,13 @@ Minor API Changes
   as described in the [Event Store](#event-store) section. Furthermore, operations have been made "async-native," as
   described [here](#adjusted-apis). This is marked as a minor API changes since the `EventStorageEngine` should not be
   used directly
-* The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all EventProcessor builders. 
-  Exceptions need to be handled by an interceptor, or otherwise they are always considered an error.
+* The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all
+  EventProcessor builders. Exceptions need to be handled by an interceptor, or otherwise they are always considered an
+  error.
+* The `Lifecycle` interface has been removed, as component lifecycle management is done on component registration. This
+  allows component construction to be lazy instead of eager, since we do not require an active instance anymore (as was
+  the case with the `Lifecycle` interface). Please read
+  the [Component Lifecycle Management](#component-lifecycle-management) section for more details on this.
 
 Stored Format Changes
 =====================
@@ -1029,7 +1089,6 @@ This section contains two tables:
 | org.axonframework.config.ConfigurerModule                              | org.axonframework.configuration.ConfigurationEnhancer                       | Yes, to `axon-messaging` |
 | org.axonframework.config.ModuleConfiguration                           | org.axonframework.configuration.Module                                      | Yes, to `axon-messaging` |
 | org.axonframework.config.LifecycleHandler                              | org.axonframework.configuration.LifecycleHandler                            | Yes, to `axon-messaging` |
-| org.axonframework.config.LifecycleHandlerInspector                     | org.axonframework.configuration.LifecycleHandlerInspector                   | Yes, to `axon-messaging` |
 | org.axonframework.config.LifecycleOperations                           | org.axonframework.configuration.LifecycleRegistry                           | Yes, to `axon-messaging` |
 | org.axonframework.commandhandling.CommandCallback                      | org.axonframework.commandhandling.gateway.CommandResult                     | No                       |
 | org.axonframework.commandhandling.callbacks.FutureCallback             | org.axonframework.commandhandling.gateway.FutureCommandResult               | No                       |
@@ -1062,23 +1121,26 @@ This section contains two tables:
 | org.axonframework.modelling.command.ConflictingModificationException                     | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
 | org.axonframework.modelling.command.TargetAggregateVersion                               | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
 | org.axonframework.modelling.command.VersionedAggregateIdentifier                         | No longer supported in Axon Framework 5 due to limited use by the community.                                                                   |
+| org.axonframework.lifecycle.Lifecycle                                                    | [Lifecycle management](#component-lifecycle-management) is now only done lazy, eliminating the need for concrete component scanning.           |
+| org.axonframework.config.LifecycleHandlerInspector                                       | [Lifecycle management](#component-lifecycle-management) is now only done lazy, eliminating the need for concrete component scanning.           |
 
 ### Marked for removal Classes
 
 All classes in this table have been moved to the legacy package for ease in migration.
-However, they will eventually be removed entirely from Axon Framework 5, as we expect users to migrate to the new (and per class described) approoach.
+However, they will eventually be removed entirely from Axon Framework 5, as we expect users to migrate to the new (and
+per class described) approach.
 
-| Class                                                                    |
-|--------------------------------------------------------------------------|
-| org.axonframework.modelling.command.Repository                           |
+| Class                                          |
+|------------------------------------------------|
+| org.axonframework.modelling.command.Repository |
 
 ### Changed implements or extends
 
 Note that **any**  changes here may have far extending impact on the original class.
 
-| Class       | Before           | After            | Explanation                                                  | 
-|-------------|------------------|------------------|--------------------------------------------------------------|
-| `MetaData`  | `Map<String, ?>` | `Map<String, ?>` | See the [metadata description](#metadata-with-string-values) |
+| Class      | Before           | After            | Explanation                                                  | 
+|------------|------------------|------------------|--------------------------------------------------------------|
+| `MetaData` | `Map<String, ?>` | `Map<String, ?>` | See the [metadata description](#metadata-with-string-values) |
 
 ## Method Signature Changes
 
@@ -1147,37 +1209,39 @@ This section contains three subsections, called:
 
 ### Removed Methods and Constructors
 
-| Constructor / Method                                                                                 | Why                                                                                      | 
-|------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`                             | Initialize is now replace fully by start and shutdown handlers.                          |
-| `org.axonframework.config.ModuleConfiguration#unwrap()`                                              | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.          |
-| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                                      | Only use by `unwrap()` that's also removed.                                              |
-| `org.axonframework.config.Configuration#lifecycleRegistry()`                                         | A round about way to support life cycle handler registration.                            |
-| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                          | Fully replaced by start and shutdown handler registration.                               |
-| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                      | Each Configurer now has get optional operation replacing this functionality.             |
-| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                     | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation. |
-| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Leftover behavior to support aggregate validation on subsequent invocations.             |
-| `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)`    | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`.     |
-| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String)`                           | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).     | 
-| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String, long)`                     | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).     | 
-| `org.axonframework.eventsourcing.eventstore.EventStore#storeSnapshot(DomainEventMessage<?>)`         | Replaced for a dedicated `SnapshotStore`.                                                |
-| `org.axonframework.eventsourcing.eventstore.EventStore#lastSequenceNumberFor(String)`                | No longer necessary to support through the introduction of DCB.                          |
-| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#storeSnapshot(DomainEventMessage<?>)` | Replaced for a dedicated `SnapshotStore`.                                                |
-| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#readSnapshot(String)`                 | Replaced for a dedicated `SnapshotStore`.                                                |
-| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#lastSequenceNumberFor(String)`        | No longer necessary to support through the introduction of DCB.                          |
-| `org.axonframework.eventsourcing.CachingEventSourcingRepository#validateOnLoad(Aggregate<T>, Long)`  | Version-based loading is no longer supported due to limited use by the community.        |
-| `org.axonframework.eventsourcing.CachingEventSourcingRepository#doLoadWithLock(String, Long)`        | Version-based loading is no longer supported due to limited use by the community.        |
-| `org.axonframework.eventsourcing.EventSourcingRepository#doLoadWithLock(String, Long)`               | Version-based loading is no longer supported due to limited use by the community.        |
-| `org.axonframework.modelling.command.AbstractRepository#load(String, Long)`                          | Version-based loading is no longer supported due to limited use by the community.        |
-| `org.axonframework.modelling.command.GenericJpaRepository#doLoadWithLock(String, Long)`              | Version-based loading is no longer supported due to limited use by the community.        |
-| `org.axonframework.modelling.command.LockingRepository#doLoad(String, Long)`                         | Version-based loading is no longer supported due to limited use by the community.        |
-| `org.axonframework.modelling.command.LockingRepository#doLoadWithLock(String, Long)`                 | Version-based loading is no longer supported due to limited use by the community.        |
-| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Version-based loading is no longer supported due to limited use by the community.        |
-| `org.axonframework.modelling.command.Aggregate#version()`                                            | Version-based loading is no longer supported due to limited use by the community.        |
-| `org.axonframework.modelling.command.LockAwareAggregate#version()`                                   | Version-based loading is no longer supported due to limited use by the community.        |
+| Constructor / Method                                                                                 | Why                                                                                         | 
+|------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`                             | Initialize is now replace fully by start and shutdown handlers.                             |
+| `org.axonframework.config.ModuleConfiguration#unwrap()`                                              | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.             |
+| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                                      | Only use by `unwrap()` that's also removed.                                                 |
+| `org.axonframework.config.Configuration#lifecycleRegistry()`                                         | A round about way to support life cycle handler registration.                               |
+| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                          | Fully replaced by start and shutdown handler registration.                                  |
+| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                      | Each Configurer now has get optional operation replacing this functionality.                |
+| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                     | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation.    |
+| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Leftover behavior to support aggregate validation on subsequent invocations.                |
+| `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)`    | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`.        |
+| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String)`                           | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).        | 
+| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String, long)`                     | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).        | 
+| `org.axonframework.eventsourcing.eventstore.EventStore#storeSnapshot(DomainEventMessage<?>)`         | Replaced for a dedicated `SnapshotStore`.                                                   |
+| `org.axonframework.eventsourcing.eventstore.EventStore#lastSequenceNumberFor(String)`                | No longer necessary to support through the introduction of DCB.                             |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#storeSnapshot(DomainEventMessage<?>)` | Replaced for a dedicated `SnapshotStore`.                                                   |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#readSnapshot(String)`                 | Replaced for a dedicated `SnapshotStore`.                                                   |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#lastSequenceNumberFor(String)`        | No longer necessary to support through the introduction of DCB.                             |
+| `org.axonframework.eventsourcing.CachingEventSourcingRepository#validateOnLoad(Aggregate<T>, Long)`  | Version-based loading is no longer supported due to limited use by the community.           |
+| `org.axonframework.eventsourcing.CachingEventSourcingRepository#doLoadWithLock(String, Long)`        | Version-based loading is no longer supported due to limited use by the community.           |
+| `org.axonframework.eventsourcing.EventSourcingRepository#doLoadWithLock(String, Long)`               | Version-based loading is no longer supported due to limited use by the community.           |
+| `org.axonframework.modelling.command.AbstractRepository#load(String, Long)`                          | Version-based loading is no longer supported due to limited use by the community.           |
+| `org.axonframework.modelling.command.GenericJpaRepository#doLoadWithLock(String, Long)`              | Version-based loading is no longer supported due to limited use by the community.           |
+| `org.axonframework.modelling.command.LockingRepository#doLoad(String, Long)`                         | Version-based loading is no longer supported due to limited use by the community.           |
+| `org.axonframework.modelling.command.LockingRepository#doLoadWithLock(String, Long)`                 | Version-based loading is no longer supported due to limited use by the community.           |
+| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Version-based loading is no longer supported due to limited use by the community.           |
+| `org.axonframework.modelling.command.Aggregate#version()`                                            | Version-based loading is no longer supported due to limited use by the community.           |
+| `org.axonframework.modelling.command.LockAwareAggregate#version()`                                   | Version-based loading is no longer supported due to limited use by the community.           |
+| `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#startScheduler(boolean)`  | [Lifecycle management](#component-lifecycle-management) has become a configuration concern. |
+| `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#stopScheduler(boolean)`   | [Lifecycle management](#component-lifecycle-management) has become a configuration concern. |
 
 ### Changed method return types
 
-| Method                                         | Before               | After           |
-|------------------------------------------------|----------------------|-----------------|
-| `CorrelationDataProvider#correlationDataFor()` | Map<String, String>  | Map<String, ?>  | 
+| Method                                         | Before              | After          |
+|------------------------------------------------|---------------------|----------------|
+| `CorrelationDataProvider#correlationDataFor()` | Map<String, String> | Map<String, ?> | 
