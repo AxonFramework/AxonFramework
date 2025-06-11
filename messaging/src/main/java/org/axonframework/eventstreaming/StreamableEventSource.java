@@ -62,24 +62,35 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
     MessageStream<E> open(@Nonnull StreamingCondition condition);
 
     /**
-     * Creates a {@link TrackingToken} pointing at the start of the {@link MessageStream event stream}.
+     * Creates a {@link TrackingToken} representing the <b>first</b> position of the
+     * {@link MessageStream event stream}.
      * <p>
-     * The start of an event stream represents the token of the very first event in the stream.
+     * As the retrieved token represents the point from which to {@link #open(StreamingCondition) open} the event
+     * stream, the first event to be streamed when opening is the one right after the returned token.
+     * <p>
+     * Subsequent invocation of this method will yield the same result, <em>unless</em> the stream's initial values are
+     * deleted.
      *
-     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the start of the
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} representing the <b>first</b> event of the
      * {@link MessageStream event stream}.
      */
-    CompletableFuture<TrackingToken> headToken();
+    CompletableFuture<TrackingToken> firstToken();
 
     /**
-     * Creates a {@link TrackingToken} pointing at the end of the {@link MessageStream event stream}.
-     * <p>
-     * The end of an event stream represents the token of the very last event in the stream.
-     *
-     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the end of the
+     * Creates a {@link TrackingToken} representing the <b>latest</b> position, thus pointing at the next event of the
      * {@link MessageStream event stream}.
+     * <p>
+     * As the retrieved token represents the point from which to {@link #open(StreamingCondition) open} the event
+     * stream, the first event to be streamed when opening is the one right after the returned token.
+     * <p>
+     * Since the {@link MessageStream event stream} of this source is theoretically <em>infinite</em>, subsequent
+     * invocation of this operation typically return a different token. Only if this {@code StreamableEventSource} is
+     * idle, will several {@code latestToken()} invocations result in the same {@code TrackingToken}.
+     *
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} representing the <b>latest</b> event, thus
+     * pointing at the next event of the {@link MessageStream event stream}.
      */
-    CompletableFuture<TrackingToken> tailToken();
+    CompletableFuture<TrackingToken> latestToken();
 
     /**
      * Creates a {@link TrackingToken} tracking all {@link EventMessage events} after the given {@code at} from an

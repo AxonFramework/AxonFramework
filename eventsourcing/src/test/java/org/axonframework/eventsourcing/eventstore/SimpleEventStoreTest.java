@@ -91,31 +91,31 @@ class SimpleEventStoreTest {
         }
 
         @Test
-        void headTokenDelegatesToStorageEngine() {
+        void firstTokenDelegatesToStorageEngine() {
             // given
             CompletableFuture<TrackingToken> expectedFuture = completedFuture(aGlobalSequenceToken());
-            when(mockStorageEngine.headToken()).thenReturn(expectedFuture);
+            when(mockStorageEngine.firstToken()).thenReturn(expectedFuture);
 
             // when
-            CompletableFuture<TrackingToken> result = testSubject.headToken();
+            CompletableFuture<TrackingToken> result = testSubject.firstToken();
 
             // then
             assertSame(expectedFuture, result);
-            verify(mockStorageEngine).headToken();
+            verify(mockStorageEngine).firstToken();
         }
 
         @Test
-        void tailTokenDelegatesToStorageEngine() {
+        void latestTokenDelegatesToStorageEngine() {
             // given
             CompletableFuture<TrackingToken> expectedFuture = completedFuture(aGlobalSequenceToken());
-            when(mockStorageEngine.tailToken()).thenReturn(expectedFuture);
+            when(mockStorageEngine.latestToken()).thenReturn(expectedFuture);
 
             // when
-            CompletableFuture<TrackingToken> result = testSubject.tailToken();
+            CompletableFuture<TrackingToken> result = testSubject.latestToken();
 
             // then
             assertSame(expectedFuture, result);
-            verify(mockStorageEngine).tailToken();
+            verify(mockStorageEngine).latestToken();
         }
 
         @Test

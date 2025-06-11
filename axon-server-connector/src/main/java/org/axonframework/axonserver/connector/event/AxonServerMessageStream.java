@@ -62,6 +62,12 @@ class AxonServerMessageStream implements MessageStream<EventMessage<?>> {
         if (eventWithToken == null) {
             return Optional.empty();
         }
+        SimpleEntry<EventMessage<?>> entry = toSimpleEntry(eventWithToken);
+        return Optional.of(entry);
+    }
+
+    @Nonnull
+    private SimpleEntry<EventMessage<?>> toSimpleEntry(EventWithToken eventWithToken) {
         Event event = eventWithToken.getEvent();
         EventMessage<byte[]> message = messageConverter.apply(event);
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(eventWithToken.getToken());
@@ -72,7 +78,17 @@ class AxonServerMessageStream implements MessageStream<EventMessage<?>> {
                              .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
                              .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier());
         }
-        return Optional.of(new SimpleEntry<>(message, context));
+        return new SimpleEntry<>(message, context);
+    }
+
+    @Override
+    public Optional<Entry<EventMessage<?>>> peek() {
+        EventWithToken eventWithToken = stream.peek();
+        if (eventWithToken == null) {
+            return Optional.empty();
+        }
+        SimpleEntry<EventMessage<?>> entry = toSimpleEntry(eventWithToken);
+        return Optional.of(entry);
     }
 
     @Override

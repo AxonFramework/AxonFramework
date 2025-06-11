@@ -108,4 +108,9 @@ class EmptyMessageStream implements MessageStream.Empty<Message<Void>> {
             return MessageStream.failed(e);
         }
     }
+
+    @Override
+    public Optional<Entry<Message<Void>>> peek() {
+        return Optional.empty();
+    }
 }
