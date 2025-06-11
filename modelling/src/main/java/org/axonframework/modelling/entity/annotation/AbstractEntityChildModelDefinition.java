@@ -92,6 +92,8 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
 
     /**
      * Returns the actual child type. If it needs to be retrieved from a generic, this method should do so.
+     * This is used to construct the child {@link EntityModel} using the {@link AnnotatedEntityModelFactory} supplied
+     * by the parent entity model.
      *
      * @param member The member to retrieve the child type from.
      * @return The child type.
