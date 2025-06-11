@@ -36,9 +36,9 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 public class ChildAmbiguityException extends RuntimeException {
 
     /**
-     * Initializes the {@link ChildAmbiguityException} with the given {@code message}.
+     * Initializes the {@code ChildAmbiguityException} with the given {@code message}.
      *
-     * @param message the message describing the cause of this exception
+     * @param message The message describing the cause of this exception.
      */
     public ChildAmbiguityException(@Nonnull String message) {
         super(message);

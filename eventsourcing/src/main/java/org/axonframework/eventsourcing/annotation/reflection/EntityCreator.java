@@ -58,11 +58,15 @@ import java.lang.annotation.Target;
  * {@link #payloadQualifiedNames()} matches with the {@link org.axonframework.eventhandling.EventMessage}. If a payload
  * parameter is declared, and the {@link #payloadQualifiedNames()} is empty, it will be determined based on the
  * {@link org.axonframework.messaging.MessageTypeResolver}.
+ * <p>
+ * You can inject the entity identifier by declaring a parameter with the {@link InjectEntityId} annotation. This
+ * annotation is necessary to disambiguate the entity identifier from the payload, as the first parameter without an
+ * annotation is assumed to be the payload.
  *
  * <h3>Factory methods</h3>
- * It's not always possible to only use constructors. For example, when using polymorphic entities, factory method needs
- * to call the right constructor based on the arguments of the method. This methods needs to be static, and return the
- * entity type of one of the declared subtypes.
+ * It's not always possible to only use constructors. For example, when using polymorphic entities, the factory method
+ * needs to call the right constructor based on the arguments of the method. This method needs to be static, and return
+ * the entity type of one of the declared subtypes.
  *
  * <h3>Examples: Mutable entity</h3>
  * In the following example, the entity is created with a constructor that takes the identifier. The instance command
@@ -72,23 +76,23 @@ import java.lang.annotation.Target;
  *         private String identifier;
  *         private Boolean created;
  *
- *         @EntityFactoryMethod
- *         public MutableEntity(String identifier) {
- *              this.identifier = identifier;
- *              this.created = false;
+ *         @EntityCreator
+ *         public MutableEntity(@InjectEntityId String identifier) {
+ *             this.identifier = identifier;
+ *             this.created = false;
  *         }
  *
  *         @CommandHandler
  *         public void handle(CreateCommand command, EventAppender appender) {
- *              if(created) {
- *                  throw new IllegalStateException("Entity already created");
- *              }
- *              appender.append(new MutableEntityCreatedEvent(identifier));
+ *             if(created) {
+ *                 throw new IllegalStateException("Entity already created");
+ *             }
+ *             appender.append(new MutableEntityCreatedEvent(identifier));
  *         }
  *
  *         @EventSourcingHandler
  *         public void on(MutableEntityCreatedEvent event) {
- *           this.created = true;
+ *             this.created = true;
  *         }
  *     }
  * }
@@ -101,15 +105,15 @@ import java.lang.annotation.Target;
  *     class ImmutableEntity {
  *         private final String identifier;
  *
- *         @EntityFactoryMethod
- *         public MutableEntity(ImmutableEntityCreatedEvent createdEvent, String identifier) {
- *              this.identifier = createdEvent.identifier();
- *              // Or: this.identifier = identifier
+ *         @EntityCreator
+ *         public MutableEntity(ImmutableEntityCreatedEvent createdEvent, @InjectEntityId String identifier) {
+ *             this.identifier = createdEvent.identifier();
+ *             // Or: this.identifier = identifier
  *         }
  *
  *         @CommandHandler
  *         public static void handle(CreateCommand command, EventAppender appender) {
- *              appender.append(new MutableEntityCreatedEvent(identifier));
+ *             appender.append(new MutableEntityCreatedEvent(identifier));
  *         }
  *     }
  * }
@@ -120,8 +124,8 @@ import java.lang.annotation.Target;
  * factory method needs to be static, and be defined on the superclass.
  * <pre>{@code
  *     abstract class MutablePolymorphicEntity {
- *         @EntityFactoryMethod
- *         public static MutablePolymorphicEntity create(MyPolymorphicIdentifier identifier) {
+ *         @EntityCreator
+ *         public static MutablePolymorphicEntity create(@InjectEntityId MyPolymorphicIdentifier identifier) {
  *             if (identifier.type() == MyPolymorphicIdentifier.Type.TYPE1) {
  *                 return new MutablePolymorphicEntityType1(identifier);
  *             } else if (identifier.type() == MyPolymorphicIdentifier.Type.TYPE2) {
@@ -135,16 +139,16 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * <h3>Examples: Polymorphic immutable entities</h3>
- * When using immutable polymorphic entities, you can either declare an {@link EntityFactoryMethod} on superclass with
- * an event parameter, and call the right constructor. Alternatively, you can declare a constructor on each of the
- * subclasses, and use the {@link EntityFactoryMethod} to call the right constructor. For the latter, the event types
- * need to be unique.
+ * When using immutable polymorphic entities, you can either declare an {@link EntityCreator} on superclass with an
+ * event parameter, and call the right constructor. Alternatively, you can declare a constructor on each of the
+ * subclasses, and use the {@link EntityCreator} to call the right constructor. For the latter, the event types need to
+ * be unique.
  *
  * <pre>{@code
  *     class MutablePolymorphicEntityType1 extends MutablePolymorphicEntity {
- *     @EntityFactoryMethod
+ *     @EntityCreator
  *     public MutablePolymorphicEntityType1(MutablePolymorphicEntityType1CreatedEvent event) {
- *          // Initialize the entity with the event
+ *         // Initialize the entity with the event
  *     }
  * }</pre>
  *
@@ -153,7 +157,7 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface EntityFactoryMethod {
+public @interface EntityCreator {
 
     /**
      * The qualified names of the payload types that this factory method can handle. If a payload parameter is declared,

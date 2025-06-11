@@ -27,7 +27,7 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
-import org.axonframework.eventsourcing.annotation.reflection.EntityFactoryMethod;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.Repository;
@@ -140,7 +140,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
     @EventSourcedEntity
     record Course(CourseId id) {
 
-        @EntityFactoryMethod
+        @EntityCreator
         public Course {
         }
 
@@ -149,7 +149,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
     @EventSourcedEntity(criteriaResolverDefinition = CustomCriteriaResolverDefinition.class)
     record CustomCriteriaResolverCourse(CourseId id) {
 
-        @EntityFactoryMethod
+        @EntityCreator
         public CustomCriteriaResolverCourse {
         }
 
@@ -207,7 +207,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
     @MetaAnnotatedEventSourcingEntity
     record MetaAnnotatedCourse(CourseId id) {
 
-        @EntityFactoryMethod
+        @EntityCreator
         public MetaAnnotatedCourse {
         }
     }

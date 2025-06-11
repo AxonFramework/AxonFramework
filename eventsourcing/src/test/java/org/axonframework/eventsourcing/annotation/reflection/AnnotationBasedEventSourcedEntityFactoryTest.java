@@ -91,14 +91,14 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             private final String id;
             private final EventMessage<?> eventMessage;
 
-            @EntityFactoryMethod
-            public EventMessageTestEntity(String id) {
+            @EntityCreator
+            public EventMessageTestEntity(@InjectEntityId String id) {
                 this.id = id;
                 this.eventMessage = null;
             }
 
-            @EntityFactoryMethod
-            public EventMessageTestEntity(String id, EventMessage<?> eventMessage) {
+            @EntityCreator
+            public EventMessageTestEntity(@InjectEntityId String id, EventMessage<?> eventMessage) {
                 this.id = id;
                 this.eventMessage = eventMessage;
             }
@@ -142,15 +142,31 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
                 factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
-            assertTrue(exception.getMessage().contains("No suitable @EntityFactoryMethods found"));
+            assertTrue(exception.getMessage().contains("No suitable @EntityCreator found"));
+        }
+
+        @Test
+        void throwsErrorIfRuntimeParametersDontMatch() {
+            when(eventMessage.type()).thenReturn(new MessageType("metadata-required-test-type"));
+            when(eventMessage.getMetaData()).thenReturn(MetaData.emptyInstance());
+            AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
+                factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
+            });
+            assertTrue(exception.getMessage().contains("No @EntityCreator matched for entity id"));
         }
 
         public static class PayloadTypeSpecificTestEntity {
 
             private final EventMessage<?> eventMessage;
 
-            @EntityFactoryMethod(payloadQualifiedNames = "matching-test-type")
+            @EntityCreator(payloadQualifiedNames = "matching-test-type")
             public PayloadTypeSpecificTestEntity(EventMessage<String> eventMessage) {
+                this.eventMessage = eventMessage;
+            }
+
+
+            @EntityCreator(payloadQualifiedNames = "metadata-required-test-type")
+            public PayloadTypeSpecificTestEntity(EventMessage<String> eventMessage, @MetaDataValue(required = true, value = "blabla") Integer blabla) {
                 this.eventMessage = eventMessage;
             }
 
@@ -190,14 +206,14 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
                 factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
-            assertTrue(exception.getMessage().contains("No suitable @EntityFactoryMethods found"));
+            assertTrue(exception.getMessage().contains("No suitable @EntityCreator found"));
         }
 
         public static class PayloadSpecificTestEntity {
 
             private final String payload;
 
-            @EntityFactoryMethod()
+            @EntityCreator()
             public PayloadSpecificTestEntity(PayloadSpecificPayload payload) {
                 this.payload = payload.payload;
             }
@@ -253,13 +269,13 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                 this.eventMessage = eventMessage;
             }
 
-            @EntityFactoryMethod
-            public static FactoryMethodsTestEntity create(String id) {
+            @EntityCreator
+            public static FactoryMethodsTestEntity create(@InjectEntityId String id) {
                 return new FactoryMethodsTestEntity(id, null);
             }
 
-            @EntityFactoryMethod
-            public static FactoryMethodsTestEntity create(String id, EventMessage<?> eventMessage) {
+            @EntityCreator
+            public static FactoryMethodsTestEntity create(@InjectEntityId String id, EventMessage<?> eventMessage) {
                 return new FactoryMethodsTestEntity(id, eventMessage);
             }
 
@@ -321,13 +337,13 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
             private final String invoked;
 
-            @EntityFactoryMethod
-            public MostSpecificHandlerEntity(String id) {
+            @EntityCreator
+            public MostSpecificHandlerEntity(@InjectEntityId String id) {
                 this.invoked = "simply-id";
             }
 
-            @EntityFactoryMethod
-            public MostSpecificHandlerEntity(String id,
+            @EntityCreator
+            public MostSpecificHandlerEntity(@InjectEntityId String id,
                                              @MetaDataValue(required = true, value = "blabla") String blabla) {
                 this.invoked = "id-and-metadata";
             }
@@ -348,7 +364,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                         messageTypeResolver
                 );
             });
-            assertTrue(exception.getMessage().contains("@EntityFactoryMethod must be static"));
+            assertTrue(exception.getMessage().contains("Method-based @EntityCreator must be static"));
         }
 
         @Test
@@ -363,7 +379,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                 );
             });
             assertTrue(exception.getMessage()
-                                .contains("@EntityFactoryMethod must return the entity type or a subtype"));
+                                .contains("@EntityCreator must return the entity type or a subtype"));
         }
 
         @Test
@@ -378,12 +394,12 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                 );
             });
             assertTrue(exception.getMessage().contains(
-                    "No @EntityFactoryMethod present on entity. Can not initialize AnnotationBasedEventSourcedEntityFactory"));
+                    "No @EntityCreator present on entity of type"));
         }
 
         public static class InvalidEntityNonStaticMethod {
 
-            @EntityFactoryMethod
+            @EntityCreator
             public InvalidEntityNonStaticMethod create(String id) {
                 return new InvalidEntityNonStaticMethod();
             }
@@ -391,7 +407,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
         public static class InvalidEntityReturnType {
 
-            @EntityFactoryMethod
+            @EntityCreator
             public static String create(String id) {
                 return id;
             }
