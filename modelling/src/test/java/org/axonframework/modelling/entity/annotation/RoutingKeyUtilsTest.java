@@ -18,11 +18,8 @@ package org.axonframework.modelling.entity.annotation;
 
 
 import org.axonframework.commandhandling.annotation.RoutingKey;
-import org.axonframework.common.annotation.AnnotationUtils;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.util.Optional;
 

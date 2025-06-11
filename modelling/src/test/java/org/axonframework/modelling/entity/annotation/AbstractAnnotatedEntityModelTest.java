@@ -78,9 +78,7 @@ public abstract class AbstractAnnotatedEntityModelTest<E> {
     protected Object handleCreateCommand(Object command) {
         CommandMessage<?> message = createCommand(command);
         try {
-            return model.handleCreate(
-                                message, StubProcessingContext.forMessage(message)
-                        )
+            return model.handleCreate(message, StubProcessingContext.forMessage(message))
                         .first()
                         .asCompletableFuture()
                         .thenApply(MessageStream.Entry::message)

@@ -17,10 +17,7 @@
 package org.axonframework.modelling.entity.domain.development.commands;
 
 
-import org.axonframework.modelling.annotation.TargetEntityId;
-
 public record RenameProjectCommand(
-        @TargetEntityId
         String projectId,
         String name
 ) {

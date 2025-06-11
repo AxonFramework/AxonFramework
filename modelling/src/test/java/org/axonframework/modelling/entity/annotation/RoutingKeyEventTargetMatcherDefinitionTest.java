@@ -42,7 +42,7 @@ class RoutingKeyEventTargetMatcherDefinitionTest {
     }
 
     @Test
-    void doesNotAllowMissingRoutingKeyOnCollectionTypeMember() throws NoSuchFieldException {
+    void doesNotAllowMissingRoutingKeyOnCollectionTypeMember() {
         AnnotatedEntityModel<ChildEntityWithoutRoutingKey> childEntityModel = mock(AnnotatedEntityModel.class);
         when(childEntityModel.entityType()).thenReturn(ChildEntityWithoutRoutingKey.class);
         assertThrows(AxonConfigurationException.class, () -> definition.createChildEntityMatcher(

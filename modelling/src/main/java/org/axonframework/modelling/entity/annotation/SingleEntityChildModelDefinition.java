@@ -25,7 +25,6 @@ import org.axonframework.modelling.entity.child.EventTargetMatcher;
 import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
 import java.lang.reflect.Member;
-import java.util.List;
 
 import static org.axonframework.common.ReflectionUtils.getMemberValueType;
 
