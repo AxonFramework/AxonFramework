@@ -56,7 +56,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.StreamSupport.stream;
@@ -306,16 +305,27 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
         methods.forEach(method -> createOptionalChildForMember(builder, method, childEntityDefinitions));
 
         if (entityType.isRecord()) {
-            // Annotated record fields have both a backing `Field` and `Method`, so we can filter out any field
-            // that has a corresponding method, or we get duplicates.
-            fields = fields.stream().filter(field -> methods
-                                   .stream()
-                                   .noneMatch(method -> method.getName().equals(field.getName())
-                                           && method.getParameterCount() == 0
-                                           && method.getReturnType().equals(field.getType())))
-                           .toList();
+            fields = deduplicateRecordFields(fields, methods);
         }
         fields.forEach(field -> createOptionalChildForMember(builder, field, childEntityDefinitions));
+    }
+
+    /**
+     * Each property of a record has both a backing {@link Field} and a {@link Method} (the accessor). This method
+     * filters out the fields that have a corresponding method, as these would result in duplicate child entity
+     * otherwise.
+     *
+     * @param fields  The list of fields to deduplicate.
+     * @param methods The list of methods to check against the fields.
+     * @return A list of fields that do not have a corresponding method, thus deduplicated.
+     */
+    private static List<Field> deduplicateRecordFields(List<Field> fields, List<Method> methods) {
+        return fields.stream().filter(field -> methods
+                             .stream()
+                             .noneMatch(method -> method.getName().equals(field.getName())
+                                     && method.getParameterCount() == 0
+                                     && method.getReturnType().equals(field.getType())))
+                     .toList();
     }
 
     private void createOptionalChildForMember(EntityModelBuilder<E> builder,
