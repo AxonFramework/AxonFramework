@@ -22,14 +22,15 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorCore;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.MessageHandlerInterceptor;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
@@ -41,6 +42,7 @@ import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -53,6 +55,7 @@ import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -89,12 +92,11 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class PooledStreamingEventProcessor extends AbstractEventProcessor
-        implements StreamingEventProcessor, Lifecycle {
+public class PooledStreamingEventProcessor implements EventProcessor, StreamingEventProcessor, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final String name;
+    private final EventProcessorCore processorCore;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
@@ -128,14 +130,13 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      * @param builder the {@link Builder} used to instantiate a {@link PooledStreamingEventProcessor} instance
      */
     protected PooledStreamingEventProcessor(PooledStreamingEventProcessor.Builder builder) {
-        super(builder);
-        this.name = builder.name();
+        this.processorCore = builder.processorCoreBuilder.build();
         this.eventSource = builder.eventSource;
         this.tokenStore = builder.tokenStore;
         this.unitOfWorkFactory = builder.transactionManager == NoTransactionManager.instance()
                 ? new SimpleUnitOfWorkFactory()
                 : new TransactionalUnitOfWorkFactory(builder.transactionManager);
-        this.workerExecutor = builder.workerExecutorBuilder.apply(name);
+        this.workerExecutor = builder.workerExecutorBuilder.apply(processorCore.getName());
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
         this.maxSegmentProvider = builder.maxSegmentProvider;
@@ -144,11 +145,11 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         this.clock = builder.clock;
 
         this.coordinator = Coordinator.builder()
-                                      .name(name)
+                                      .name(processorCore.getName())
                                       .eventSource(eventSource)
                                       .tokenStore(tokenStore)
                                       .unitOfWorkFactory(unitOfWorkFactory)
-                                      .executorService(builder.coordinatorExecutorBuilder.apply(name))
+                                      .executorService(builder.coordinatorExecutorBuilder.apply(processorCore.getName()))
                                       .workPackageFactory(this::spawnWorker)
                                       .eventFilter(event -> canHandleType(event.getPayloadType()))
                                       .onMessageIgnored(this::reportIgnored)
@@ -447,8 +448,9 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      */
-    public static class Builder extends AbstractEventProcessor.Builder {
+    public static class Builder {
 
+        protected final EventProcessorCore.Builder processorCoreBuilder = EventProcessorCore.builder();
         private StreamableEventSource<? extends EventMessage<?>> eventSource;
         private TokenStore tokenStore;
         private TransactionManager transactionManager;
@@ -467,33 +469,65 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         protected Builder() {
         }
 
-        @Override
+        /**
+         * Sets the {@code name} of this {@link EventProcessor} implementation.
+         *
+         * @param name a {@link String} defining this {@link EventProcessor} implementation
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder name(@Nonnull String name) {
-            super.name(name);
+            processorCoreBuilder.name(name);
             return this;
         }
 
-        @Override
+        /**
+         * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
+         *
+         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
+         *                            {@link EventMessage}s
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
-            super.eventHandlerInvoker(eventHandlerInvoker);
+            processorCoreBuilder.eventHandlerInvoker(eventHandlerInvoker);
             return this;
         }
 
-        @Override
+        /**
+         * Sets the {@link ErrorHandler} invoked when an {@link org.axonframework.messaging.unitofwork.UnitOfWork}
+         * throws an exception during processing. Defaults to a {@link PropagatingErrorHandler}.
+         *
+         * @param errorHandler the {@link ErrorHandler} invoked when an
+         *                     {@link org.axonframework.messaging.unitofwork.UnitOfWork} throws an exception during
+         *                     processing
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder errorHandler(@Nonnull ErrorHandler errorHandler) {
-            super.errorHandler(errorHandler);
+            processorCoreBuilder.errorHandler(errorHandler);
             return this;
         }
 
-        @Override
+        /**
+         * Sets the {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're processed. Defaults
+         * to a {@link NoOpMessageMonitor}.
+         *
+         * @param messageMonitor a {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're
+         *                       processed
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
-            super.messageMonitor(messageMonitor);
+            processorCoreBuilder.messageMonitor(messageMonitor);
             return this;
         }
 
-        @Override
+        /**
+         * Sets the {@link EventProcessorSpanFactory} implementation to use for providing tracing capabilities. Defaults
+         * to a {@link org.axonframework.eventhandling.DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.
+         *
+         * @param spanFactory The {@link EventProcessorSpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
         public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
+            processorCoreBuilder.spanFactory(spanFactory);
             return this;
         }
 
@@ -670,7 +704,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
             assertNonNull(maxSegmentProvider,
                           "The max segment provider may not be null. "
                                   + "Provide a lambda of type (processorName: String) -> maxSegmentsToClaim");
-            assertStrictPositive(maxSegmentProvider.getMaxSegments(name),
+            assertStrictPositive(maxSegmentProvider.getMaxSegments(processorCoreBuilder.getName()),
                                  "Max claimed segments should be a higher valuer than zero");
             this.maxSegmentProvider = maxSegmentProvider;
             return this;
@@ -760,9 +794,14 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
             return new PooledStreamingEventProcessor(this);
         }
 
-        @Override
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
         protected void validate() throws AxonConfigurationException {
-            super.validate();
+            processorCoreBuilder.validate();
             assertNonNull(eventSource, "The StreamableEventSource is a hard requirement and should be provided");
             assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
@@ -782,7 +821,82 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
          * @return the name of this {@link PooledStreamingEventProcessor}
          */
         public String name() {
-            return name;
+            return processorCoreBuilder.getName();
         }
+    }
+
+    @Override
+    public String getName() {
+        return processorCore.getName();
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
+        return processorCore.registerHandlerInterceptor(interceptor);
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        return processorCore.getHandlerInterceptors();
+    }
+
+    /**
+     * Returns the invoker assigned to this processor. The invoker is responsible for invoking the correct handler
+     * methods for any given message.
+     *
+     * @return the invoker assigned to this processor
+     */
+    public EventHandlerInvoker eventHandlerInvoker() {
+        return processorCore.eventHandlerInvoker();
+    }
+
+    /**
+     * Indicates whether the processor can/should handle the given {@code eventMessage} for the given {@code segment}.
+     *
+     * @param eventMessage The message for which to identify if the processor can handle it
+     * @param context      The UnitOfWork processing context
+     * @param segment      The segment to handle the message in
+     * @return whether the given message should be handled as part of the given segment
+     * @throws Exception when an exception occurs evaluating the message
+     */
+    protected boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Segment segment)
+            throws Exception {
+        return processorCore.canHandle(eventMessage, context, segment);
+    }
+
+    /**
+     * Checks if this processor can handle events of the given payload type.
+     *
+     * @param payloadType the type of payload to check
+     * @return true if this processor can handle events with the given payload type, false otherwise
+     */
+    protected boolean canHandleType(Class<?> payloadType) {
+        return processorCore.canHandleType(payloadType);
+    }
+
+    /**
+     * Process a batch of events. The messages are processed in a new
+     * {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
+     *
+     * @param eventMessages      The batch of messages that is to be processed
+     * @param unitOfWork         The Unit of Work that has been prepared to process the messages
+     * @param processingSegments The segments for which the events should be processed in this unit of work
+     * @return CompletableFuture that completes when the processing is done
+     * @throws Exception when an exception occurred during processing of the batch
+     */
+    protected CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
+                                                          org.axonframework.messaging.unitofwork.UnitOfWork unitOfWork,
+                                                          Collection<Segment> processingSegments) throws Exception {
+        return processorCore.processInUnitOfWork(eventMessages, unitOfWork, processingSegments);
+    }
+
+    /**
+     * Report the given {@code eventMessage} as ignored.
+     *
+     * @param eventMessage the message that has been ignored.
+     */
+    protected void reportIgnored(EventMessage<?> eventMessage) {
+        processorCore.reportIgnored(eventMessage);
     }
 }

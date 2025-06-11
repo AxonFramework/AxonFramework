@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -23,6 +24,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
@@ -30,7 +32,6 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
 import java.util.function.Consumer;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -44,8 +45,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Rene de Waele
  * @since 3.0
  */
-public class SubscribingEventProcessor extends AbstractEventProcessor implements Lifecycle {
+public class SubscribingEventProcessor implements EventProcessor, Lifecycle {
 
+    private final EventProcessorCore processorCore;
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
     private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
@@ -62,7 +64,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      * @param builder the {@link Builder} used to instantiate a {@link SubscribingEventProcessor} instance
      */
     protected SubscribingEventProcessor(Builder builder) {
-        super(builder);
+        this.processorCore = builder.buildProcessorCore();
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
@@ -83,6 +85,22 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public String getName() {
+        return processorCore.getName();
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
+        return processorCore.registerHandlerInterceptor(interceptor);
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        return processorCore.getHandlerInterceptors();
     }
 
     @Override
@@ -128,7 +146,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
             var unitOfWork = transactionalUnitOfWorkFactory.create();
-            processInUnitOfWork(eventMessages, unitOfWork);
+            processorCore.processInUnitOfWork(eventMessages, unitOfWork);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -160,6 +178,21 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
     }
 
     /**
+     * Returns the invoker assigned to this processor. The invoker is responsible for invoking the correct handler
+     * methods for any given message.
+     *
+     * @return the invoker assigned to this processor
+     */
+    public EventHandlerInvoker eventHandlerInvoker() {
+        return processorCore.eventHandlerInvoker();
+    }
+
+    @Override
+    public String toString() {
+        return processorCore.toString();
+    }
+
+    /**
      * Builder class to instantiate a {@link SubscribingEventProcessor}.
      * <p>
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
@@ -170,43 +203,73 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      * {@link NoTransactionManager#INSTANCE}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
      * {@link SubscribableMessageSource} are <b>hard requirements</b> and as such should be provided.
      */
-    public static class Builder extends AbstractEventProcessor.Builder {
+    public static class Builder {
 
+        private final EventProcessorCore.Builder processorCoreBuilder = EventProcessorCore.builder();
         private SubscribableMessageSource<? extends EventMessage<?>> messageSource;
         private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
 
-        public Builder() {
-            super();
-        }
-
-        @Override
+        /**
+         * Sets the {@code name} of this {@link EventProcessor} implementation.
+         *
+         * @param name a {@link String} defining this {@link EventProcessor} implementation
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder name(@Nonnull String name) {
-            super.name(name);
+            processorCoreBuilder.name(name);
             return this;
         }
 
-        @Override
+        /**
+         * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
+         *
+         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
+         *                            {@link EventMessage}s
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
-            super.eventHandlerInvoker(eventHandlerInvoker);
+            processorCoreBuilder.eventHandlerInvoker(eventHandlerInvoker);
             return this;
         }
 
-        @Override
+        /**
+         * Sets the {@link ErrorHandler} invoked when an {@link org.axonframework.messaging.unitofwork.UnitOfWork}
+         * throws an exception during processing. Defaults to a {@link PropagatingErrorHandler}.
+         *
+         * @param errorHandler the {@link ErrorHandler} invoked when an
+         *                     {@link org.axonframework.messaging.unitofwork.UnitOfWork} throws an exception during
+         *                     processing
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder errorHandler(@Nonnull ErrorHandler errorHandler) {
-            super.errorHandler(errorHandler);
+            processorCoreBuilder.errorHandler(errorHandler);
             return this;
         }
 
-        @Override
+        /**
+         * Sets the {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're processed. Defaults
+         * to a {@link NoOpMessageMonitor}.
+         *
+         * @param messageMonitor a {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're
+         *                       processed
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
-            super.messageMonitor(messageMonitor);
+            processorCoreBuilder.messageMonitor(messageMonitor);
             return this;
         }
 
-        @Override
+        /**
+         * Sets the {@link EventProcessorSpanFactory} implementation to use for providing tracing capabilities. Defaults
+         * to a {@link DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory} by default, which provides
+         * no tracing capabilities.
+         *
+         * @param spanFactory The {@link EventProcessorSpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
         public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
+            processorCoreBuilder.spanFactory(spanFactory);
             return this;
         }
 
@@ -252,24 +315,28 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
         }
 
         /**
-         * Initializes a {@link SubscribingEventProcessor} as specified through this Builder.
-         *
-         * @return a {@link SubscribingEventProcessor} as specified through this Builder
-         */
-        public SubscribingEventProcessor build() {
-            return new SubscribingEventProcessor(this);
-        }
-
-        /**
          * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications
          */
-        @Override
         protected void validate() throws AxonConfigurationException {
-            super.validate();
+            processorCoreBuilder.validate();
             assertNonNull(messageSource, "The SubscribableMessageSource is a hard requirement and should be provided");
+        }
+
+        protected EventProcessorCore buildProcessorCore() {
+            return processorCoreBuilder.build();
+        }
+
+        /**
+         * Initializes a {@link SubscribingEventProcessor} as specified through this Builder.
+         *
+         * @return a {@link SubscribingEventProcessor} as specified through this Builder
+         */
+        public SubscribingEventProcessor build() {
+            validate();
+            return new SubscribingEventProcessor(this);
         }
     }
 }
