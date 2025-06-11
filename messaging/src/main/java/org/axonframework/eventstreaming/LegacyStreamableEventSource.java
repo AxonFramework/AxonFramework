@@ -108,9 +108,9 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
                 peeked = null;
                 return Optional.of(result);
             }
-            if (!stream.hasNextAvailable()) {
-                return Optional.empty();
-            }
+//            if (!stream.hasNextAvailable()) {
+//                return Optional.empty();
+//            }
             try {
                 while (stream.hasNextAvailable()) {
                     E message = stream.nextAvailable();
