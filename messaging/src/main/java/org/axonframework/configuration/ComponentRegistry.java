@@ -82,16 +82,16 @@ public interface ComponentRegistry extends DescribableComponent {
     }
 
     /**
-     * Registers a component based on the given {@code componentDefinition}.
+     * Registers a {@link Component} based on the given {@code definition}.
      *
-     * @param componentDefinition The definition of the component to register.
-     * @param <C>                 The declared type of the component.
+     * @param definition The definition of the component to register.
+     * @param <C>        The declared type of the component.
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @throws ComponentOverrideException If the override policy is set to
      *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
      *                                    with the same type and name is already defined.
      */
-    <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> componentDefinition);
+    <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> definition);
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on <b>all</b>
@@ -148,14 +148,14 @@ public interface ComponentRegistry extends DescribableComponent {
     }
 
     /**
-     * Registers a decorator based on the given {@code decoratorDefinition}.
+     * Registers a decorator based on the given {@code definition}.
      *
-     * @param decoratorDefinition The definition of the decorator to apply to components.
-     * @param <C>                 The declared type of the component(s) to decorate.
+     * @param definition The definition of the decorator to apply to components.
+     * @param <C>        The declared type of the component(s) to decorate.
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @see DecoratorDefinition
      */
-    <C> ComponentRegistry registerDecorator(@Nonnull DecoratorDefinition<C, ? extends C> decoratorDefinition);
+    <C> ComponentRegistry registerDecorator(@Nonnull DecoratorDefinition<C, ? extends C> definition);
 
     /**
      * Check whether there is a {@link Component} registered with this {@code Configurer} for the given {@code type}.
