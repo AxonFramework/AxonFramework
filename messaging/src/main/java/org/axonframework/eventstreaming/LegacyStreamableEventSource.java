@@ -24,14 +24,12 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.StreamableMessageSource;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -93,23 +91,22 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
     private static class BlockingMessageStream<E extends EventMessage<?>> implements MessageStream<E> {
 
         private final BlockingStream<E> stream;
-        private final EventCriteria criteria;
-        private Entry<E> peeked;
 
         BlockingMessageStream(BlockingStream<E> stream, EventCriteria criteria) {
             this.stream = stream;
-            this.criteria = criteria;
+            if (criteria != AnyEvent.INSTANCE) {
+                throw new IllegalArgumentException(
+                        "Only AnyEvent criteria is supported in this legacy adapter, but received: " + criteria);
+            }
         }
 
         @Override
         public Optional<Entry<E>> next() {
             try {
-                var message = stream.nextAvailable();
-                if (message == null) {
+                if (!stream.hasNextAvailable()) {
                     return Optional.empty();
                 }
-                Entry<E> entry = createEntryForMessage(message);
-                return Optional.of(entry);
+                return Optional.ofNullable(stream.nextAvailable()).map(this::createEntryForMessage);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return Optional.empty();
@@ -118,13 +115,7 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
 
         @Override
         public Optional<Entry<E>> peek() {
-            var message = stream.peek();
-            return message.map(this::createEntryForMessage);
-        }
-
-        private boolean matchesCriteria(EventMessage<?> message) {
-            QualifiedName qualifiedName = message.type().qualifiedName();
-            return criteria.matches(qualifiedName, Set.of());
+            return stream.peek().map(this::createEntryForMessage);
         }
 
         @Override
@@ -148,7 +139,6 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
 
         @Override
         public boolean hasNextAvailable() {
-//            return peeked != null || peek().isPresent();
             return stream.hasNextAvailable();
         }
 

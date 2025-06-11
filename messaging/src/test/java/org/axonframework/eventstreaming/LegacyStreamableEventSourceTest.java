@@ -16,33 +16,21 @@
 
 package org.axonframework.eventstreaming;
 
-import org.axonframework.common.stream.BlockingStream;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.mockito.*;
-import org.mockito.junit.jupiter.*;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Tests for the {@link LegacyStreamableEventSource} class, which it's an adapter for the deprecated
@@ -51,422 +39,199 @@ import static org.mockito.Mockito.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-@ExtendWith(MockitoExtension.class)
 class LegacyStreamableEventSourceTest {
 
-    @Mock
-    private StreamableMessageSource<EventMessage<?>> mockDelegate;
-
-    @Mock
-    private BlockingStream<EventMessage<?>> mockBlockingStream;
-
-    private LegacyStreamableEventSource<EventMessage<?>> testSubject;
-
-    private TrackingToken testToken;
-    private StreamingCondition testCondition;
-    private EventCriteria tagCriteria;
-    private EventMessage<?> testEvent;
+    private InMemoryStreamableEventSource legacyEventSource;
+    private LegacyStreamableEventSource<TrackedEventMessage<?>> testSubject;
 
     @BeforeEach
-    void setUp() {
-        testSubject = new LegacyStreamableEventSource<>(mockDelegate);
-
-        // Create real test objects
-        testToken = new GlobalSequenceTrackingToken(42L);
-        var noCriteria = EventCriteria.havingAnyTag();
-        tagCriteria = EventCriteria.havingTags("aggregate", "test-id");
-        testCondition = new DefaultStreamingCondition(testToken, noCriteria);
-
-        testEvent = createTestEventMessage("test-payload");
+    void beforeEach() {
+        legacyEventSource = new InMemoryStreamableEventSource();
+        testSubject = new LegacyStreamableEventSource<>(legacyEventSource);
     }
 
     @Nested
-    @DisplayName("Constructor")
     class ConstructorTest {
 
         @Test
-        @DisplayName("should create instance with valid delegate")
-        void shouldCreateInstanceWithValidDelegate() {
-            // Given - a valid StreamableMessageSource delegate
-
-            // When - creating LegacyStreamableEventSource
-            var result = new LegacyStreamableEventSource<>(mockDelegate);
-
-            // Then - instance should be created successfully
-            assertThat(result).isNotNull();
+        void doNotSupportEventCriteriaOtherThanAny() {
+            assertThatThrownBy(() -> testSubject.open(
+                    StreamingCondition.conditionFor(firstToken(), EventCriteria.havingTags("tag1", "tag2"))))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining(
+                            "Only AnyEvent criteria is supported in this legacy adapter, but received: TagFilteredEventCriteria[tags=[Tag[key=tag1, value=tag2]]]");
         }
 
         @Test
-        @DisplayName("should throw exception with null delegate")
         void shouldThrowExceptionWithNullDelegate() {
-            // Given - a null delegate
-
-            // When & Then - creating LegacyStreamableEventSource should throw
             assertThrows(NullPointerException.class, () ->
                     new LegacyStreamableEventSource<>(null));
         }
     }
 
     @Nested
-    @DisplayName("Token Operations")
-    class TokenOperationsTest {
+    class TrackingTokenTest {
 
         @Test
-        @DisplayName("headToken should delegate to underlying source")
-        void headTokenShouldDelegateToUnderlyingSource() {
-            // Given - delegate returns a token future
-            var expectedToken = new GlobalSequenceTrackingToken(0L);
-            when(mockDelegate.firstToken()).thenReturn(CompletableFuture.completedFuture(expectedToken));
-
-            // When - calling headToken
-            CompletableFuture<TrackingToken> result = testSubject.firstToken();
-
-            // Then - should delegate and return the same future
-            assertThat(result).succeedsWithin(java.time.Duration.ofSeconds(1))
-                              .isEqualTo(expectedToken);
-            verify(mockDelegate).firstToken();
+        void firstTokenShouldBeSameAsInDelegate() {
+            var expected = legacyEventSource.createHeadToken();
+            var actual = testSubject.firstToken().join();
+            assertThat(actual).isEqualTo(expected);
         }
 
         @Test
-        @DisplayName("tailToken should delegate to underlying source")
-        void tailTokenShouldDelegateToUnderlyingSource() {
-            // Given - delegate returns a token future
-            var expectedToken = new GlobalSequenceTrackingToken(100L);
-            when(mockDelegate.latestToken()).thenReturn(CompletableFuture.completedFuture(expectedToken));
-
-            // When - calling tailToken
-            CompletableFuture<TrackingToken> result = testSubject.latestToken();
-
-            // Then - should delegate and return the same future
-            assertThat(result).succeedsWithin(java.time.Duration.ofSeconds(1))
-                              .isEqualTo(expectedToken);
-            verify(mockDelegate).latestToken();
-        }
-
-        @Test
-        @DisplayName("tokenAt should delegate to underlying source with instant")
-        void tokenAtShouldDelegateToUnderlyingSourceWithInstant() {
-            // Given - a specific instant and expected token
-            var instant = Instant.now();
-            var expectedToken = new GlobalSequenceTrackingToken(50L);
-            when(mockDelegate.tokenAt(instant)).thenReturn(CompletableFuture.completedFuture(expectedToken));
-
-            // When - calling tokenAt
-            CompletableFuture<TrackingToken> result = testSubject.tokenAt(instant);
-
-            // Then - should delegate with the correct instant and return the same future
-            assertThat(result).succeedsWithin(java.time.Duration.ofSeconds(1))
-                              .isEqualTo(expectedToken);
-            verify(mockDelegate).tokenAt(eq(instant));
-        }
-
-        @Test
-        @DisplayName("should handle exceptions in token operations")
-        void shouldHandleExceptionsInTokenOperations() {
-            // Given - delegate throws exception
-            var expectedException = new RuntimeException("Token error");
-            when(mockDelegate.firstToken()).thenReturn(CompletableFuture.failedFuture(expectedException));
-
-            // When - calling headToken
-            CompletableFuture<TrackingToken> result = testSubject.firstToken();
-
-            // Then - should propagate the exception
-            assertThat(result).failsWithin(Duration.ofSeconds(1))
-                              .withThrowableOfType(ExecutionException.class)
-                              .withCauseInstanceOf(RuntimeException.class)
-                              .withMessageContaining("Token error");
+        void latestTokenShouldBeSameAsInDelegate() {
+            var expected = legacyEventSource.createTailToken();
+            var actual = testSubject.latestToken().join();
+            assertThat(actual).isEqualTo(expected);
         }
     }
 
     @Nested
-    @DisplayName("Open Stream")
-    class OpenStreamTest {
+    class MessageStreamTest {
+
+        private MessageStream<TrackedEventMessage<?>> messageStream;
 
         @BeforeEach
-        void setUp() {
-            when(mockDelegate.openStream(testToken)).thenReturn(mockBlockingStream);
+        void beforeEach() {
+            messageStream = testSubject.open(StreamingCondition.startingFrom(firstToken()));
         }
 
-        @Test
-        @DisplayName("should create MessageStream with BlockingStream from delegate")
-        void shouldCreateMessageStreamWithBlockingStreamFromDelegate() {
-            // Given - condition with position and criteria
-
-            // When - opening stream
-            MessageStream<EventMessage<?>> result = testSubject.open(testCondition);
-
-            // Then - should create MessageStream and delegate to the underlying source
-            assertThat(result).isNotNull();
-            verify(mockDelegate).openStream(eq(testToken));
-        }
-
-        @Test
-        @DisplayName("should use criteria from condition for filtering")
-        void shouldUseCriteriaFromConditionForFiltering() {
-            // Given - condition with specific criteria
-            var criteriaCondition = new DefaultStreamingCondition(testToken, tagCriteria);
-
-            // When - opening stream
-            MessageStream<EventMessage<?>> result = testSubject.open(criteriaCondition);
-
-            // Then - should create stream with criteria
-            assertThat(result).isNotNull();
-            verify(mockDelegate).openStream(eq(testToken));
-        }
-    }
-
-    @Nested
-    @DisplayName("BlockingMessageStream")
-    class BlockingMessageStreamTest {
-
-        private MessageStream<EventMessage<?>> messageStream;
-
-        @BeforeEach
-        void setUp() {
-            when(mockDelegate.openStream(testToken)).thenReturn(mockBlockingStream);
-            messageStream = testSubject.open(testCondition);
+        @AfterEach
+        void afterEach() {
+            messageStream.close();
         }
 
         @Nested
-        @DisplayName("Next Operation")
-        class NextOperationTest {
+        class NextTest {
 
             @Test
-            @DisplayName("should return empty when no messages available")
-            void shouldReturnEmptyWhenNoMessagesAvailable() {
-                // Given - no messages available in blocking stream
-                when(mockBlockingStream.hasNextAvailable()).thenReturn(false);
+            void shouldReturnEmptyIfNoMessagesAvailable() {
+                // when
+                var result = messageStream.next();
 
-                // When - calling next
-                Optional<MessageStream.Entry<EventMessage<?>>> result = messageStream.next();
-
-                // Then - should return empty
+                // then
                 assertThat(result).isEmpty();
-                verify(mockBlockingStream).hasNextAvailable();
             }
 
             @Test
-            @DisplayName("should return entry when message available and no criteria filtering")
-            void shouldReturnEntryWhenMessageAvailableAndNoCriteriaFiltering() throws Exception {
-                // Given - message available and no criteria (should match all)
-                when(mockBlockingStream.hasNextAvailable()).thenReturn(true);
-                when(mockBlockingStream.nextAvailable()).thenAnswer(invocation -> testEvent);
+            void shouldReturnEventIfMessageAvailable() {
+                // given
+                GlobalSequenceTrackingToken testToken = tokenAt(1);
+                var event1 = trackedEventMessage("event-1", testToken);
+                legacyEventSource.publishMessage(event1);
 
-                // When - calling next
-                Optional<MessageStream.Entry<EventMessage<?>>> result = messageStream.next();
+                // when
+                var result = messageStream.next();
 
-                // Then - should return entry with the message
+                // then
                 assertThat(result).isPresent();
-                assertThat(result.get().message()).isEqualTo(testEvent);
-                verify(mockBlockingStream).nextAvailable();
-            }
-
-            @Test
-            @DisplayName("should return entry with tracking token context for TrackedEventMessage")
-            void shouldReturnEntryWithTrackingTokenContextForTrackedEventMessage() throws Exception {
-                // Given - tracked event message available
-                when(mockBlockingStream.hasNextAvailable()).thenReturn(true);
-                when(mockBlockingStream.nextAvailable()).thenAnswer(invocation ->
-                                                                            createTestTrackedEventMessage(
-                                                                                    "tracked-payload",
-                                                                                    testToken));
-
-                // When - calling next
-                Optional<MessageStream.Entry<EventMessage<?>>> result = messageStream.next();
-
-                // Then - should return entry with tracking token in context
-                assertThat(result).isPresent();
-                var entry = result.get();
-                assertThat(entry.message()).isInstanceOf(TrackedEventMessage.class);
-                assertThat(TrackingToken.fromContext(entry)).hasValue(testToken);
-                assertThat(entry.getResource(Message.RESOURCE_KEY)).isEqualTo(entry.message());
-            }
-
-            @Test
-            @DisplayName("should handle InterruptedException gracefully")
-            void shouldHandleInterruptedExceptionGracefully() throws Exception {
-                // Given - blocking stream throws InterruptedException
-                when(mockBlockingStream.hasNextAvailable()).thenReturn(true);
-                when(mockBlockingStream.nextAvailable()).thenThrow(new InterruptedException("Test interruption"));
-
-                // When - calling next
-                Optional<MessageStream.Entry<EventMessage<?>>> result = messageStream.next();
-
-                // Then - should return an empty and set interrupt flag
-                assertThat(result).isEmpty();
-                assertThat(Thread.currentThread().isInterrupted()).isTrue();
-
-                // Clean up interrupt flag for other tests
-                Thread.interrupted();
-            }
-
-            @Test
-            @DisplayName("should return empty when nextAvailable returns null")
-            void shouldReturnEmptyWhenNextAvailableReturnsNull() throws Exception {
-                // Given - nextAvailable returns null
-                when(mockBlockingStream.hasNextAvailable()).thenReturn(true);
-                when(mockBlockingStream.nextAvailable()).thenAnswer(invocation -> null);
-
-                // When - calling next
-                Optional<MessageStream.Entry<EventMessage<?>>> result = messageStream.next();
-
-                // Then - should return empty
-                assertThat(result).isEmpty();
-            }
-
-            @Test
-            @DisplayName("should filter messages based on criteria")
-            void shouldFilterMessagesBasedOnCriteria() throws Exception {
-                // Given - stream with tag-based criteria that will reject our test event
-                var filteringCondition = new DefaultStreamingCondition(testToken, tagCriteria);
-                when(mockDelegate.openStream(testToken)).thenReturn(mockBlockingStream);
-                var filteringStream = testSubject.open(filteringCondition);
-
-                // Message available but won't match criteria (no tags)
-                when(mockBlockingStream.hasNextAvailable()).thenReturn(true, false);
-
-                // When - calling next
-                Optional<MessageStream.Entry<EventMessage<?>>> result = filteringStream.next();
-
-                // Then - should return empty because the message doesn't match criteria
-                assertThat(result).isEmpty();
+                assertEvent(result.get().message(), event1);
+                assertThat(TrackingToken.fromContext(result.get())).hasValue(testToken);
             }
         }
 
         @Nested
-        @DisplayName("Stream Lifecycle")
-        class StreamLifecycleTest {
+        class PeekTest {
 
             @Test
-            @DisplayName("should delegate hasNextAvailable to blocking stream")
-            void shouldDelegateHasNextAvailableToBlockingStream() {
-                // Given - blocking stream has messages available
-                when(mockBlockingStream.hasNextAvailable()).thenReturn(true);
+            void shouldReturnEmptyIfNoMessagesAvailable() {
+                // when
+                var result = messageStream.peek();
 
-                // When - checking if has next available
-                boolean result = messageStream.hasNextAvailable();
-
-                // Then - should delegate and return result
-                assertThat(result).isTrue();
-                verify(mockBlockingStream).hasNextAvailable();
-            }
-
-            @Test
-            @DisplayName("should delegate onAvailable callback to blocking stream")
-            void shouldDelegateOnAvailableCallbackToBlockingStream() {
-                // Given - a callback runnable
-                var callbackExecuted = new AtomicBoolean(false);
-                Runnable callback = () -> callbackExecuted.set(true);
-                when(mockBlockingStream.setOnAvailableCallback(callback)).thenReturn(true);
-
-                // When - setting callback
-                messageStream.onAvailable(callback);
-
-                // Then - should delegate to blocking stream
-                verify(mockBlockingStream).setOnAvailableCallback(eq(callback));
-            }
-
-            @Test
-            @DisplayName("should delegate close to blocking stream")
-            void shouldDelegateCloseToBlockingStream() {
-                // Given - message stream is open
-
-                // When - closing stream
-                messageStream.close();
-
-                // Then - should delegate close to blocking stream
-                verify(mockBlockingStream).close();
-            }
-
-            @Test
-            @DisplayName("should return empty error as BlockingStream doesn't support error reporting")
-            void shouldReturnEmptyErrorAsBlockingStreamDoesntSupportErrorReporting() {
-                // Given - message stream with no error reporting support
-
-                // When - checking for error
-                Optional<Throwable> result = messageStream.error();
-
-                // Then - should return empty
+                // then
                 assertThat(result).isEmpty();
             }
 
             @Test
-            @DisplayName("should consider stream completed when no messages available and peek is empty")
-            void shouldConsiderStreamCompletedWhenNoMessagesAvailableAndPeekIsEmpty() {
-                // Given - no messages available and peek returns empty
-                when(mockBlockingStream.hasNextAvailable()).thenReturn(false);
-                when(mockBlockingStream.peek()).thenReturn(Optional.empty());
+            void shouldReturnEventIfMessageAvailable() {
+                // given
+                GlobalSequenceTrackingToken testToken = tokenAt(1);
+                var event1 = trackedEventMessage("event-1", testToken);
+                legacyEventSource.publishMessage(event1);
 
-                // When - checking if completed
-                boolean result = messageStream.isCompleted();
+                // when
+                var result = messageStream.peek();
 
-                // Then - should return true
-                assertThat(result).isTrue();
+                // then
+                assertThat(result).isPresent();
+                assertEvent(result.get().message(), event1);
+                assertThat(TrackingToken.fromContext(result.get())).hasValue(testToken);
             }
 
             @Test
-            @DisplayName("should not consider stream completed when messages available")
-            void shouldNotConsiderStreamCompletedWhenMessagesAvailable() {
-                // Given - messages available
-                when(mockBlockingStream.hasNextAvailable()).thenReturn(true);
+            void shouldNotAdvanceTeStream() {
+                // given
+                GlobalSequenceTrackingToken testToken1 = tokenAt(1);
+                GlobalSequenceTrackingToken testToken2 = tokenAt(1);
+                var event1 = trackedEventMessage("event-1", testToken1);
+                var event2 = trackedEventMessage("event-2", testToken2);
+                legacyEventSource.publishMessage(event1);
+                legacyEventSource.publishMessage(event2);
 
-                // When - checking if completed
-                boolean result = messageStream.isCompleted();
+                // when
+                var next = messageStream.next();
 
-                // Then - should return false
+                // then
+                assertThat(next).isPresent();
+                assertEvent(next.get().message(), event1);
+
+                // when
+                var result1 = messageStream.peek();
+                var result2 = messageStream.peek();
+                var result3 = messageStream.peek();
+
+                // then
+                assertThat(result1).isEqualTo(result2);
+                assertThat(result1).isEqualTo(result3);
+            }
+        }
+
+        @Nested
+        class CompletedTest {
+
+            @Test
+            void shouldNotConsiderCompletedIfMessagesAvailable() {
+                // given
+                GlobalSequenceTrackingToken testToken = tokenAt(1);
+                var event1 = trackedEventMessage("event-1", testToken);
+                legacyEventSource.publishMessage(event1);
+
+                // when
+                var result = messageStream.isCompleted();
+
+                // then
                 assertThat(result).isFalse();
             }
-        }
-
-        @Nested
-        @DisplayName("Real Streaming Simulation")
-        class RealStreamingSimulationTest {
 
             @Test
-            @DisplayName("should handle multiple messages in sequence")
-            void shouldHandleMultipleMessagesInSequence() throws Exception {
-                // Given - multiple messages available in sequence
-                var callCount = new AtomicInteger(0);
-                when(mockBlockingStream.hasNextAvailable()).thenAnswer(invocation -> callCount.get() < 3);
-                when(mockBlockingStream.nextAvailable()).thenAnswer(invocation -> {
-                    int count = callCount.getAndIncrement();
-                    return switch (count) {
-                        case 0 -> createTestEventMessage("payload-1");
-                        case 1 -> createTestTrackedEventMessage("payload-2", new GlobalSequenceTrackingToken(10L));
-                        case 2 -> createTestEventMessage("payload-3");
-                        default -> null;
-                    };
-                });
+            void shouldConsiderCompletedIfNoMessagesAvailable() {
+                // when
+                var result = messageStream.isCompleted();
 
-                // When - consuming all messages
-                var result1 = messageStream.next();
-                var result2 = messageStream.next();
-                var result3 = messageStream.next();
-                var result4 = messageStream.next(); // Should be empty
-
-                // Then - should return all messages in order
-                assertThat(result1).isPresent();
-                assertThat(result1.get().message().getPayload()).isEqualTo("payload-1");
-
-                assertThat(result2).isPresent();
-                assertThat(result2.get().message().getPayload()).isEqualTo("payload-2");
-                assertThat(TrackingToken.fromContext(result2.get())).isPresent();
-                assertThat(TrackingToken.fromContext(result2.get()).get())
-                        .isEqualTo(new GlobalSequenceTrackingToken(10L));
-
-                assertThat(result3).isPresent();
-                assertThat(result3.get().message().getPayload()).isEqualTo("payload-3");
-
-                assertThat(result4).isEmpty(); // No more messages
+                // then
+                assertThat(result).isTrue();
             }
+        }
+
+        private static void assertEvent(EventMessage<?> actual, EventMessage<?> expected) {
+            assertEquals(expected.getIdentifier(), actual.getIdentifier());
+            assertEquals(expected.getPayload(), actual.getPayload());
+            assertEquals(expected.getTimestamp(), actual.getTimestamp());
+            assertEquals(expected.getMetaData(), actual.getMetaData());
         }
     }
 
-    private EventMessage<?> createTestEventMessage(String payload) {
-        return EventTestUtils.asEventMessage(payload);
+    private static GlobalSequenceTrackingToken firstToken() {
+        return tokenAt(0L);
     }
 
-    private TrackedEventMessage<?> createTestTrackedEventMessage(String payload, TrackingToken token) {
-        return new GenericTrackedEventMessage<>(token, createTestEventMessage(payload));
+    @Nonnull
+    private static GlobalSequenceTrackingToken tokenAt(long globalIndex) {
+        return new GlobalSequenceTrackingToken(globalIndex);
+    }
+
+    private TrackedEventMessage<?> trackedEventMessage(String payload, TrackingToken token) {
+        return new GenericTrackedEventMessage<>(token, EventTestUtils.asEventMessage(payload));
     }
 }
