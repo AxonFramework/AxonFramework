@@ -25,10 +25,8 @@ import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
-import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
@@ -96,7 +94,7 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * @author Christophe Bouhier
  * @since 3.0
  */
-public class TrackingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor, Lifecycle {
+public class TrackingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
 
@@ -106,7 +104,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final int batchSize;
     private final int segmentsSize;
-    private final boolean autoStart;
 
     private final ThreadFactory threadFactory;
     private final Map<String, Thread> workerThreads = new ConcurrentSkipListMap<>();
@@ -128,13 +125,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final EventTrackerStatusChangeListener trackerStatusChangeListener;
 
     /**
-     * Instantiate a {@link TrackingEventProcessor} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code TrackingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker}, {@link StreamableMessageSource},
      * {@link TokenStore} and {@link TransactionManager} are not {@code null}, and will throw an
      * {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link TrackingEventProcessor} instance
+     * @param builder the {@link Builder} used to instantiate a {@code TrackingEventProcessor} instance
      */
     protected TrackingEventProcessor(Builder builder) {
         super(builder);
@@ -143,7 +140,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.eventAvailabilityTimeout = config.getEventAvailabilityTimeout();
         this.storeTokenBeforeProcessing = builder.storeTokenBeforeProcessing;
         this.batchSize = config.getBatchSize();
-        this.autoStart = config.isAutoStart();
 
         this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
@@ -160,7 +156,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link TrackingEventProcessor}.
+     * Instantiate a Builder to be able to create a {@code TrackingEventProcessor}.
      * <p>
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link NoOpMessageMonitor}, the {@link TrackingEventProcessorConfiguration} to a
@@ -170,7 +166,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager} are
      * <b>hard requirements</b> and as such should be provided.
      *
-     * @return a Builder to be able to create a {@link TrackingEventProcessor}
+     * @return a Builder to be able to create a {@code TrackingEventProcessor}
      */
     public static Builder builder() {
         return new Builder();
@@ -178,14 +174,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private Instant now() {
         return GenericEventMessage.clock.instant();
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
-        if (autoStart) {
-            handle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
-        }
-        handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdownAsync);
     }
 
     /**

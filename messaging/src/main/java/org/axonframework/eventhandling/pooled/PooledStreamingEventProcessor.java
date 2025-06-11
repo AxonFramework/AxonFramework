@@ -38,8 +38,6 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
@@ -89,8 +87,7 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class PooledStreamingEventProcessor extends AbstractEventProcessor
-        implements StreamingEventProcessor, Lifecycle {
+public class PooledStreamingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -111,7 +108,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
 
     /**
-     * Instantiate a {@link PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert the following for their presence prior to constructing this processor:
      * <ul>
@@ -125,7 +122,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      * </ul>
      * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link PooledStreamingEventProcessor} instance
+     * @param builder the {@link Builder} used to instantiate a {@code PooledStreamingEventProcessor} instance
      */
     protected PooledStreamingEventProcessor(PooledStreamingEventProcessor.Builder builder) {
         super(builder);
@@ -165,7 +162,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link PooledStreamingEventProcessor}.
+     * Instantiate a Builder to be able to create a {@code PooledStreamingEventProcessor}.
      * <p>
      * Upon initialization of this builder, the following fields are defaulted:
      * <ul>
@@ -191,16 +188,10 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      *
-     * @return a Builder to be able to create a {@link PooledStreamingEventProcessor}
+     * @return a Builder to be able to create a {@code PooledStreamingEventProcessor}
      */
     public static Builder builder() {
         return new Builder();
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
-        handle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
-        handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdownAsync);
     }
 
     @Override

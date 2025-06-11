@@ -20,14 +20,11 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
@@ -44,7 +41,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -60,7 +56,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @see org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler
  * @since 0.7
  */
-public class SimpleEventScheduler implements EventScheduler, Lifecycle {
+public class SimpleEventScheduler implements EventScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventScheduler.class);
 
@@ -72,12 +68,12 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
     private final Map<String, Future<?>> tokens = new ConcurrentHashMap<>();
 
     /**
-     * Instantiate a {@link SimpleEventScheduler} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code SimpleEventScheduler} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link ScheduledExecutorService}, {@link EventBus} and {@link TransactionManager} are not
      * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link SimpleEventScheduler} instance
+     * @param builder the {@link Builder} used to instantiate a {@code SimpleEventScheduler} instance
      */
     protected SimpleEventScheduler(Builder builder) {
         builder.validate();
@@ -88,13 +84,13 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link SimpleEventScheduler}.
+     * Instantiate a Builder to be able to create a {@code SimpleEventScheduler}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}. The
      * {@link ScheduledExecutorService} and {@link EventBus} are a <b>hard requirements</b> and as such should be
      * provided.
      *
-     * @return a Builder to be able to create a {@link SimpleEventScheduler}
+     * @return a Builder to be able to create a {@code SimpleEventScheduler}
      */
     public static Builder builder() {
         return new Builder();
@@ -124,11 +120,6 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
         if (future != null) {
             future.cancel(false);
         }
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
     }
 
     @Override

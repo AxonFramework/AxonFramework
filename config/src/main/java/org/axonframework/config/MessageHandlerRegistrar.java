@@ -17,8 +17,6 @@
 package org.axonframework.config;
 
 import org.axonframework.common.Registration;
-import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +25,6 @@ import java.lang.invoke.MethodHandles;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -41,7 +38,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 4.3
  */
-public class MessageHandlerRegistrar implements Lifecycle {
+public class MessageHandlerRegistrar {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -71,12 +68,6 @@ public class MessageHandlerRegistrar implements Lifecycle {
         this.messageHandlerBuilder = messageHandlerBuilder;
         this.messageHandlerSubscriber = messageHandlerSubscriber;
         this.handlerRegistration = null;
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
-        handle.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, this::start);
-        handle.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, this::shutdown);
     }
 
     /**

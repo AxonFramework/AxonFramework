@@ -19,9 +19,11 @@ package org.axonframework.axonserver.connector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.lifecycle.Phase;
 
 import javax.annotation.Nonnull;
 
@@ -43,7 +45,7 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
         registerIfNotPresent(registry, AxonServerConfiguration.class, c -> new AxonServerConfiguration());
-        registerIfNotPresent(registry, AxonServerConnectionManager.class, this::buildAxonServerConnectionManager);
+        registerIfNotPresentDef(registry, AxonServerConnectionManager.class, connectionManagerDefinition());
         registerIfNotPresent(registry, ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity());
         registerIfNotPresent(registry, AxonServerEventStorageEngine.class, this::buildEventStorageEngine);
         registry.registerFactory(new AxonServerEventStorageEngineFactory());
@@ -57,7 +59,22 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
         }
     }
 
-    private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration config) {
+    private <C> void registerIfNotPresentDef(ComponentRegistry registry,
+                                             Class<C> type,
+                                             ComponentDefinition<AxonServerConnectionManager> definition) {
+        if (!registry.hasComponent(type)) {
+            registry.registerComponent(definition);
+        }
+    }
+
+    private ComponentDefinition<AxonServerConnectionManager> connectionManagerDefinition() {
+        return ComponentDefinition.ofType(AxonServerConnectionManager.class)
+                                  .withBuilder(this::buildConnectionManager)
+                                  .onStart(Phase.INSTRUCTION_COMPONENTS, AxonServerConnectionManager::start)
+                                  .onStart(Phase.EXTERNAL_CONNECTIONS, AxonServerConnectionManager::shutdown);
+    }
+
+    private AxonServerConnectionManager buildConnectionManager(Configuration config) {
         AxonServerConfiguration serverConfig = config.getComponent(AxonServerConfiguration.class);
         return AxonServerConnectionManager.builder()
                                           .routingServers(serverConfig.getServers())
