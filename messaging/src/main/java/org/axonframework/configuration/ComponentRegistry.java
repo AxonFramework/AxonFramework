@@ -229,7 +229,7 @@ public interface ComponentRegistry extends DescribableComponent {
      *
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    DefaultComponentRegistry disableEnhancerScanning();
+    ComponentRegistry disableEnhancerScanning();
 
     /**
      * Disables the given {@link ConfigurationEnhancer} class from being registered as an enhancer through the
@@ -240,5 +240,5 @@ public interface ComponentRegistry extends DescribableComponent {
      * @param enhancerClass The class of the enhancer to disable.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    DefaultComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass);
+    ComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass);
 }

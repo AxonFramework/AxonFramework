@@ -61,6 +61,9 @@
     </issueManagement>
 
     <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <!-- Main -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonar.coverage.jacoco.xmlReportPaths>
@@ -523,8 +526,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler.version}</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                     <encoding>UTF-8</encoding>
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>

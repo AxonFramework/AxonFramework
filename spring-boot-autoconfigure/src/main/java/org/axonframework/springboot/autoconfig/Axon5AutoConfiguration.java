@@ -17,17 +17,24 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.spring.SpringAxonApplication;
-import org.axonframework.spring.SpringComponentRegistry;
-import org.axonframework.spring.SpringLifecycleRegistry;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.spring.config.SpringAxonApplication;
+import org.axonframework.spring.config.SpringComponentRegistry;
+import org.axonframework.spring.config.SpringLifecycleRegistry;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 
+/**
+ * AutoConfiguration class that defines the Configuration and Configurer implementations that supports beans to
+ * be accessed as components. Lifecycle handlers are managed by the Spring Application context to allow "weaving"
+ * of these lifecycles with the Spring lifecycles.
+ *
+ * @author Allard Buijze
+ */
 @AutoConfiguration
 public class Axon5AutoConfiguration {
 
@@ -45,16 +52,17 @@ public class Axon5AutoConfiguration {
         return axonApplication.build();
     }
 
-    // TODO - SpringComponentRegistry should not implement NewConfiguration.
-    // Instead, define a bean that is created if a bean of type AxonConfiguration (or SpringAxonApplication) doesn't
-    // exist in the current context. The @Primary annotation can then be removed from SpringComponentRegistry
-
-    @Primary
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
-    SpringComponentRegistry axonConfiguration(SpringLifecycleRegistry springLifecycleRegistry,
-                                              ApplicationContext applicationContext) {
-        return new SpringComponentRegistry(springLifecycleRegistry, applicationContext);
+    @ConditionalOnBean(value = AxonConfiguration.class, search = SearchStrategy.ALL)
+    Configuration axonConfiguration(SpringComponentRegistry registry) {
+        return registry.configuration();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
+    SpringComponentRegistry springComponentRegistry(ApplicationContext applicationContext) {
+        return new SpringComponentRegistry(applicationContext);
     }
 
     @Bean

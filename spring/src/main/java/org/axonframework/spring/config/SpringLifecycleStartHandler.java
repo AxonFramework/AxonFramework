@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring;
+package org.axonframework.spring.config;
 
 import org.springframework.context.SmartLifecycle;
 
@@ -22,25 +22,26 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-public class SpringLifecycleShutdownHandler implements SmartLifecycle {
+public class SpringLifecycleStartHandler implements SmartLifecycle {
 
     private final int phase;
     private final Supplier<CompletableFuture<?>> task;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    public SpringLifecycleShutdownHandler(int phase, Supplier<CompletableFuture<?>> task) {
+    public SpringLifecycleStartHandler(int phase, Supplier<CompletableFuture<?>> task) {
         this.phase = phase;
         this.task = task;
     }
 
     @Override
     public void start() {
-        running.set(true);
+        task.get().whenComplete((result, throwable) -> running.set(true));
+        // TODO - Check expected behavior about starting state when method returns
     }
 
     @Override
     public void stop() {
-        task.get().whenComplete((result, throwable) -> running.set(false));
+        running.set(false);
     }
 
     @Override

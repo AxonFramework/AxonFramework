@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring;
+package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.NewConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -71,53 +72,57 @@ public class SpringAxonApplication implements ApplicationConfigurer {
 
             @Override
             public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nonnull String name) {
-                return springComponentRegistry.getOptionalComponent(type, name);
+                return springComponentRegistry.configuration().getOptionalComponent(type, name);
             }
 
             @Nonnull
             @Override
             public <C> C getComponent(@Nonnull Class<C> type) {
-                return springComponentRegistry.getComponent(type);
+                return springComponentRegistry.configuration().getComponent(type);
             }
 
             @Nonnull
             @Override
             public <C> C getComponent(@Nonnull Class<C> type, @Nonnull Supplier<C> defaultImpl) {
-                return springComponentRegistry.getComponent(type, defaultImpl);
+                return springComponentRegistry.configuration().getComponent(type, defaultImpl);
             }
 
             @Nonnull
             @Override
             public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name) {
-                return springComponentRegistry.getComponent(type, name);
+                return springComponentRegistry.configuration().getComponent(type, name);
             }
 
             @Override
             public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type) {
-                return springComponentRegistry.getOptionalComponent(type);
+                return springComponentRegistry.configuration().getOptionalComponent(type);
             }
 
             @Nonnull
             @Override
             public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name, @Nonnull Supplier<C> defaultImpl) {
-                return springComponentRegistry.getComponent(type, name, defaultImpl);
+                return springComponentRegistry.configuration().getComponent(type, name, defaultImpl);
             }
 
             @Override
-            public List<NewConfiguration> getModuleConfigurations() {
-                // TODO implement
-                return List.of();
+            public List<Configuration> getModuleConfigurations() {
+                return springComponentRegistry.configuration().getModuleConfigurations();
             }
 
             @Override
-            public Optional<NewConfiguration> getModuleConfiguration(@Nonnull String name) {
-                // TODO implement
-                return Optional.empty();
+            public Optional<Configuration> getModuleConfiguration(@Nonnull String name) {
+                return springComponentRegistry.configuration().getModuleConfiguration(name);
+            }
+
+            @Nullable
+            @Override
+            public Configuration getParent() {
+                return springComponentRegistry.configuration().getParent();
             }
 
             @Override
             public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-                // TODO implement
+                springComponentRegistry.describeTo(descriptor);
             }
         };
 

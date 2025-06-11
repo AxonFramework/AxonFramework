@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring;
+package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component;
 import org.axonframework.configuration.ComponentDefinition;
@@ -26,15 +27,14 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.Module;
-import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.configuration.OverridePolicy;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.util.ClassUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -44,18 +44,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 public class SpringComponentRegistry
-        implements Configuration, InitializingBean, ComponentRegistry, BeanPostProcessor, BeanFactoryPostProcessor {
+        implements InitializingBean, ComponentRegistry, BeanPostProcessor, BeanFactoryPostProcessor {
 
     private final Map<Component.Identifier<?>, Component<?>> components = new ConcurrentHashMap<>();
-    private final SpringLifecycleRegistry springLifecycleRegistry;
     private final List<Module> modules = new CopyOnWriteArrayList<>();
     private final List<ConfigurationEnhancer> configurationEnhancers = new CopyOnWriteArrayList<>();
     private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decorators = new CopyOnWriteArrayList<>();
     private ConfigurableListableBeanFactory beanFactory;
+    private final List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new CopyOnWriteArrayList<>();
+    private final Configuration configuration = new SpringConfiguration();
 
-    public SpringComponentRegistry(SpringLifecycleRegistry springLifecycleRegistry,
-                                   ListableBeanFactory appContext) {
-        this.springLifecycleRegistry = springLifecycleRegistry;
+    public SpringComponentRegistry(ListableBeanFactory appContext) {
         this.configurationEnhancers.addAll(appContext.getBeansOfType(ConfigurationEnhancer.class).values());
     }
 
@@ -89,35 +88,21 @@ public class SpringComponentRegistry
         return beanFactory.containsBean(name) && type.isInstance(beanFactory.getBean(name));
     }
 
+    public Configuration configuration() {
+        return configuration;
+    }
+
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         Component<?> springComponent = new SpringComponent<>(beanName, bean);
+        Component.Identifier<?> componentId = new Component.Identifier<>(bean.getClass(), beanName);
         for (DecoratorDefinition.CompletedDecoratorDefinition decorator : decorators) {
-            for (Class<?> iFace : ClassUtils.getAllInterfaces(bean)) {
-                if (decorator.matches(new Component.Identifier<>(iFace, beanName))) {
-                    springComponent = decorator.decorate(springComponent);
-                    break;
-                }
+            if (decorator.matches(componentId)) {
+                springComponent = decorator.decorate(springComponent);
+                break;
             }
         }
-        return springComponent.resolve(this);
-    }
-
-    @Nonnull
-    @Override
-    public <C> C getComponent(@Nonnull Class<C> type) {
-        return beanFactory.getBean(type);
-    }
-
-    @Nonnull
-    @Override
-    public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name) {
-        return beanFactory.getBean(name, type);
-    }
-
-    @Override
-    public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type) {
-        return Optional.ofNullable(beanFactory.getBeanProvider(type).getIfAvailable());
+        return springComponent.resolve(configuration);
     }
 
     @Override
@@ -141,48 +126,35 @@ public class SpringComponentRegistry
     }
 
     @Override
+    public ComponentRegistry disableEnhancerScanning() {
+        return disableEnhancer(ConfigurationEnhancer.class);
+    }
+
+    @Override
+    public ComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass) {
+        disabledEnhancers.add(enhancerClass);
+        return this;
+    }
+
+    @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         // TODO - Describe components
     }
 
     public void initialize() {
-        configurationEnhancers.forEach(eh -> eh.enhance(this));
+        configurationEnhancers.forEach(eh -> {
+            if (!disabledEnhancers.isEmpty()
+                    && disabledEnhancers.stream().noneMatch(de -> de.isInstance(eh))) {
+                eh.enhance(this);
+            }
+        });
         // TODO - Iterate over all components to register their instances in the app context
         // TODO - Detect all Module implementations
-        // TODO - Iterate over all configurationEnhancers
     }
 
     @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+    public void postProcessBeanFactory(@Nonnull ConfigurableListableBeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
-    }
-
-    @Override
-    public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nonnull String name) {
-        Map<String, C> beansOfType = beanFactory.getBeansOfType(type);
-        if (beansOfType.containsKey(name)) {
-            return Optional.of(beansOfType.get(name));
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    @Nonnull
-    @Override
-    public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name, @Nonnull Supplier<C> defaultImpl) {
-        return getOptionalComponent(type, name).orElseGet(defaultImpl);
-    }
-
-    @Override
-    public List<NewConfiguration> getModuleConfigurations() {
-        // TODO - Detect all Module implementations
-        return List.of();
-    }
-
-    @Override
-    public Optional<NewConfiguration> getModuleConfiguration(@Nonnull String name) {
-        // TODO - Detect all Module implementations
-        return Optional.empty();
     }
 
     @Override
@@ -190,7 +162,70 @@ public class SpringComponentRegistry
         configurationEnhancers.forEach(configurationEnhancer -> configurationEnhancer.enhance(this));
     }
 
-    private class SpringComponent<T> implements Component<T> {
+    private class SpringConfiguration implements Configuration {
+
+        @Override
+        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nonnull String name) {
+            Map<String, C> beansOfType = beanFactory.getBeansOfType(type);
+            if (beansOfType.containsKey(name)) {
+                return Optional.of(beansOfType.get(name));
+            } else {
+                return Optional.empty();
+            }
+        }
+
+        @Nonnull
+        @Override
+        public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name, @Nonnull Supplier<C> defaultImpl) {
+            return getOptionalComponent(type, name).orElseGet(defaultImpl);
+        }
+
+        @Override
+        public List<Configuration> getModuleConfigurations() {
+            // TODO - Detect all Module implementations
+            return List.of();
+        }
+
+        @Override
+        public Optional<Configuration> getModuleConfiguration(@Nonnull String name) {
+            // TODO - Detect all Module implementations
+            return Optional.empty();
+        }
+
+        @Nullable
+        @Override
+        public Configuration getParent() {
+            BeanFactory parentBeanFactory = beanFactory.getParentBeanFactory();
+            if (parentBeanFactory != null) {
+                return parentBeanFactory.getBean(Configuration.class);
+            }
+            return null;
+        }
+
+        @Nonnull
+        @Override
+        public <C> C getComponent(@Nonnull Class<C> type) {
+            return beanFactory.getBean(type);
+        }
+
+        @Nonnull
+        @Override
+        public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name) {
+            return beanFactory.getBean(name, type);
+        }
+
+        @Override
+        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type) {
+            return Optional.ofNullable(beanFactory.getBeanProvider(type).getIfAvailable());
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            SpringComponentRegistry.this.describeTo(descriptor);
+        }
+    }
+
+    private static class SpringComponent<T> implements Component<T> {
 
         private final String beanName;
         private final T bean;
@@ -202,11 +237,12 @@ public class SpringComponentRegistry
 
         @Override
         public Identifier<T> identifier() {
+            //noinspection unchecked
             return new Identifier<>((Class<T>) bean.getClass(), beanName);
         }
 
         @Override
-        public T resolve(@Nonnull NewConfiguration configuration) {
+        public T resolve(@Nonnull Configuration configuration) {
             return bean;
         }
 
@@ -216,7 +252,7 @@ public class SpringComponentRegistry
         }
 
         @Override
-        public void initLifecycle(@Nonnull NewConfiguration configuration,
+        public void initLifecycle(@Nonnull Configuration configuration,
                                   @Nonnull LifecycleRegistry lifecycleRegistry) {
 
         }
@@ -228,7 +264,7 @@ public class SpringComponentRegistry
 
         @Override
         public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-
+            // TODO - Describe
         }
     }
 }

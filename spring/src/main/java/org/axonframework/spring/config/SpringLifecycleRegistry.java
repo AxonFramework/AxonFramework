@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring;
+package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.AxonConfiguration;
@@ -28,6 +28,13 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * LifecycleRegistry implementation that registers all lifecycle handlers as Spring SmartLifecycle beans to ensure
+ * Spring weaves these lifecycles into the other Spring bean lifecycles.
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
+ */
 public class SpringLifecycleRegistry implements LifecycleRegistry, BeanFactoryAware {
 
     private ConfigurableListableBeanFactory beanFactory;
@@ -36,6 +43,7 @@ public class SpringLifecycleRegistry implements LifecycleRegistry, BeanFactoryAw
     @Override
     public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
         // not supported - lifecycle is managed by Spring
+        // TODO - Add some WARN logging to indicate this is managed by Spring
         return this;
     }
 

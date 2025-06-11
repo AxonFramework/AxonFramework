@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.springboot.axon5;
+package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
@@ -23,9 +23,11 @@ import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.spring.config.SpringLifecycleShutdownHandler;
+import org.axonframework.spring.config.SpringLifecycleStartHandler;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
+import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ApplicationContext;
@@ -34,32 +36,35 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextHierarchy;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @ContextHierarchy({
-        @ContextConfiguration(name = "parent", classes = {SpringAxon5Tests.AppConfig.class}),
-        @ContextConfiguration(name = "child", classes = {SpringAxon5Tests.AppOverrideConfig.class})}
+        @ContextConfiguration(name = "parent", classes = {Axon5AutoConfigurationTest.AppConfig.class}),
+        @ContextConfiguration(name = "child", classes = {Axon5AutoConfigurationTest.AppOverrideConfig.class})}
 )
+@TestPropertySource(properties = "axon.axonserver.enabled=false")
 @EnableAutoConfiguration
-public class SpringAxon5Tests {
+public class Axon5AutoConfigurationTest {
 
     @Autowired
     ApplicationContext applicationContext;
 
     @Autowired
-    NewConfiguration axonConfiguration;
+    org.axonframework.configuration.Configuration axonConfiguration;
 
     @Autowired
     AxonConfiguration rootConfiguration;
 
     @Test
-    void name() {
+    void componentFromChildContextOverruleComponentsFromParent() {
         CommandBus fromRegistry = axonConfiguration.getComponent(CommandBus.class);
         CommandBus fromAppContext = applicationContext.getBean(CommandBus.class);
         CommandBus fromParentAppContext = applicationContext.getParent().getBean(CommandBus.class);
@@ -78,6 +83,29 @@ public class SpringAxon5Tests {
         assertNotSame(fromRegistry, fromParentRegistry);
     }
 
+    @Test
+    void lifecycleRegistered() {
+        // we expect beans to be registered for lifecycle handlers
+        Map<String, SpringLifecycleStartHandler> startHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
+                applicationContext,
+                SpringLifecycleStartHandler.class);
+        Map<String, SpringLifecycleShutdownHandler> shutdownHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
+                applicationContext,
+                SpringLifecycleShutdownHandler.class);
+
+        assertTrue(startHandlers.values().stream().anyMatch(h -> h.getPhase() == 10));
+        assertTrue(shutdownHandlers.values().stream().anyMatch(h -> h.getPhase() == 12));
+
+        for (SpringLifecycleStartHandler startHandler : startHandlers.values()) {
+            assertTrue(startHandler.isRunning());
+        }
+        for (SpringLifecycleShutdownHandler shutdownHandler : shutdownHandlers.values()) {
+            assertTrue(shutdownHandler.isRunning());
+        }
+    }
+
+    // TODO - Add test that validates that the startup and shutdown handlers have been invoked.
+
     @Configuration("child")
     public static class AppOverrideConfig {
 
@@ -93,7 +121,10 @@ public class SpringAxon5Tests {
         @Bean
         CommandBus commandBus(LifecycleRegistry lifecycleRegistry) {
             SimpleCommandBus simpleCommandBus = new SimpleCommandBus();
-            lifecycleRegistry.onStart(10, () -> System.out.println("Bean is starting"));
+            lifecycleRegistry.onStart(10, () -> {
+            });
+            lifecycleRegistry.onShutdown(12, () -> {
+            });
             return simpleCommandBus;
         }
 
@@ -117,13 +148,11 @@ public class SpringAxon5Tests {
 
             @Override
             public void start() {
-                System.out.println("SimpleLifecycleBean is starting");
                 running.set(true);
             }
 
             @Override
             public void stop() {
-                System.out.println("SimpleLifecycleBean is stopping");
                 running.set(false);
             }
 
