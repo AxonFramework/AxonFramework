@@ -195,10 +195,8 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
         // types. So we tell concrete types to skip these commands.
         LinkedList<QualifiedName> registeredCommands = initializeDetectedHandlers(builder, inspected);
         concreteTypes.forEach(concreteType -> {
-            List<QualifiedName> mergedQualifiedNames = Stream.concat(commandsToSkip.stream(),
-                                                                     registeredCommands.stream()).toList();
             AnnotatedEntityModel<? extends E> createdConcreteEntityModel = new AnnotatedEntityModel<>(
-                    concreteType, Set.of(), parameterResolverFactory, messageTypeResolver, mergedQualifiedNames
+                    concreteType, Set.of(), parameterResolverFactory, messageTypeResolver, registeredCommands
             );
             concreteTypeModels.add(createdConcreteEntityModel);
             builder.addConcreteType(createdConcreteEntityModel);
