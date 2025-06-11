@@ -24,6 +24,7 @@ import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.Context.ResourceKey;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.repository.ManagedEntity;
@@ -65,17 +66,15 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
      * apply state transitions to the entity based on the events received, and given {@code criteriaResolver} to resolve
-     * the {@link EventCriteria} of the given identifier type used to source
-     * an entity.
+     * the {@link EventCriteria} of the given identifier type used to source an entity.
      *
      * @param idType           The type of the identifier for the event sourced entity this repository serves.
      * @param entityType       The type of the event sourced entity this repository serves.
      * @param eventStore       The event store to load events from.
      * @param entityFactory    A factory method to create new instances of the entity based on the entity's type and a
      *                         provided identifier.
-     * @param criteriaResolver Converts the given identifier to an
-     *                         {@link EventCriteria} used to load a matching
-     *                         event stream.
+     * @param criteriaResolver Converts the given identifier to an {@link EventCriteria} used to load a matching event
+     *                         stream.
      * @param entityEvolver    The function used to evolve the state of loaded entities based on events.
      */
     public EventSourcingRepository(@Nonnull Class<ID> idType,
@@ -139,14 +138,15 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         return managedEntities.computeIfAbsent(
                 identifier,
                 id -> doLoad(identifier, context)
-                        .thenApply((entity) -> createEntityIfNullFromLoad(identifier, entity))
+                        .thenApply((entity) -> createEntityIfNullFromLoad(identifier, entity, context))
                         .whenComplete((entity, exception) -> updateActiveEntity(entity, context, exception))
         ).thenApply(Function.identity());
     }
 
-    private EventSourcedEntity<ID, E> createEntityIfNullFromLoad(ID identifier, EventSourcedEntity<ID, E> entity) {
+    private EventSourcedEntity<ID, E> createEntityIfNullFromLoad(ID identifier, EventSourcedEntity<ID, E> entity,
+                                                                 ProcessingContext context) {
         if (entity.entity() == null) {
-            E createdEntity = entityFactory.create(identifier, null);
+            E createdEntity = entityFactory.create(identifier, null, context);
             if (createdEntity == null) {
                 throw new EntityMissingAfterLoadOrCreateException(identifier);
             }
@@ -161,7 +161,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
                 .source(SourcingCondition.conditionFor(criteriaResolver.resolve(identifier, context)))
                 .reduce(new EventSourcedEntity<>(identifier),
                         (entity, entry) -> {
-                            entity.ensureInitialState(() -> entityFactory.create(identifier, entry.message()));
+                            entity.ensureInitialState(() -> entityFactory.create(identifier, entry.message(), context));
                             entity.evolve(entry.message(), entityEvolver, context);
                             return entity;
                         });
@@ -178,6 +178,16 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
             updateActiveEntity(sourcedEntity, processingContext);
             return CompletableFuture.completedFuture(sourcedEntity);
         }).resultNow();
+    }
+
+    private void createInitialEntityStateBasedOnEvent(ID identifier, EventSourcedEntity<ID, E> entity,
+                                                      MessageStream.Entry<? extends EventMessage<?>> entry,
+                                                      ProcessingContext context) {
+        E createdEntity = entityFactory.create(identifier, entry.message(), context);
+        if (createdEntity == null) {
+            throw new EntityMissingAfterFirstEventException(identifier);
+        }
+        entity.applyStateChange(e -> createdEntity);
     }
 
     private void updateActiveEntity(EventSourcedEntity<ID, E> entity, ProcessingContext processingContext,
@@ -201,7 +211,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
                   .onAppend(event -> {
                       if (entity.entity() == null) {
                           entity.applyStateChange(e -> entityFactory.create(
-                                  entity.identifier(), event));
+                                  entity.identifier(), event, processingContext));
                       } else {
                           entity.evolve(event, entityEvolver, processingContext);
                       }

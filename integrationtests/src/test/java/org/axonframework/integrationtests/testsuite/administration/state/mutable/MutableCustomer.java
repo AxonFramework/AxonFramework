@@ -33,6 +33,12 @@ public class MutableCustomer extends MutablePerson {
                                             command.emailAddress()));
     }
 
+    @CommandHandler
+    public static void create(CreateCustomer command, EventAppender appender) {
+        appender.append(new CustomerCreated(command.identifier(),
+                                            command.emailAddress()));
+    }
+
     @EventSourcingHandler
     public void on(CustomerCreated event) {
         this.identifier = event.identifier();
