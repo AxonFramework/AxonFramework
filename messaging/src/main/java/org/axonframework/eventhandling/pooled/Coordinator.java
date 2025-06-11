@@ -1016,13 +1016,20 @@ class Coordinator {
         }
 
         private boolean eventsEqualingLastScheduledToken(TrackingToken lastScheduledToken) {
-            MessageStream.Entry<? extends EventMessage<?>> nextEntry = eventStream.peek().orElse(null);
+            MessageStream.Entry<? extends EventMessage<?>> nextEntry = peekNextEvent();
             if (nextEntry == null || lastScheduledToken == null) {
                 return false;
             }
 
             TrackingToken nextToken = TrackingToken.fromContext(nextEntry).orElse(null);
             return Objects.equals(lastScheduledToken, nextToken);
+        }
+
+        private MessageStream.Entry<? extends EventMessage<?>> peekNextEvent() {
+            if (eventStream != null && eventStream.hasNextAvailable()) {
+                return eventStream.peek().orElse(null);
+            }
+            return null;
         }
 
         /**
