@@ -57,6 +57,11 @@ class OnNextMessageStream<M extends Message<?>> extends DelegatingMessageStream<
         return next;
     }
 
+    @Override
+    public Optional<Entry<M>> peek() {
+        return delegate.peek();
+    }
+
     /**
      * An implementation of the {@link OnNextMessageStream} that expects a message stream with only a
      * {@link org.axonframework.messaging.MessageStream.Single entry}.

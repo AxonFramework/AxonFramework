@@ -85,6 +85,16 @@ public class StreamingEventMessageStream implements MessageStream<EventMessage<?
     }
 
     @Override
+    public Optional<Entry<EventMessage<?>>> peek() {
+        StreamEventsResponse response = stream.peek();
+        if (response == null) {
+            logger.debug("There are no more events to peek at this moment in time.");
+            return Optional.empty();
+        }
+        return Optional.of(convertToEntry(response.getEvent()));
+    }
+
+    @Override
     public void onAvailable(@Nonnull Runnable callback) {
         stream.onAvailable(callback);
     }

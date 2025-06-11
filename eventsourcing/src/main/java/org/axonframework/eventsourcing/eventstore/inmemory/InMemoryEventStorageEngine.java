@@ -119,7 +119,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                     if (containsConflicts(condition)) {
                         return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));
                     }
-                    Optional<ConsistencyMarker> newHead =
+                    Optional<ConsistencyMarker> newLatest =
                             events.stream()
                                   .map(event -> {
                                       long next = nextIndex();
@@ -137,7 +137,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                                   .reduce(ConsistencyMarker::upperBound);
 
                     openStreams.forEach(m -> m.callback().run());
-                    return CompletableFuture.completedFuture(newHead.orElse(ConsistencyMarker.ORIGIN));
+                    return CompletableFuture.completedFuture(newLatest.orElse(ConsistencyMarker.ORIGIN));
                 } finally {
                     appendLock.unlock();
                 }
@@ -201,9 +201,9 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tailToken() {
+    public CompletableFuture<TrackingToken> firstToken() {
         if (logger.isDebugEnabled()) {
-            logger.debug("Operation tailToken() is invoked.");
+            logger.debug("Operation firstToken() is invoked.");
         }
 
         return CompletableFuture.completedFuture(
@@ -214,9 +214,9 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> headToken() {
+    public CompletableFuture<TrackingToken> latestToken() {
         if (logger.isDebugEnabled()) {
-            logger.debug("Operation headToken() is invoked.");
+            logger.debug("Operation latestToken() is invoked.");
         }
 
         return CompletableFuture.completedFuture(
@@ -245,7 +245,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                            .map(GlobalSequenceTrackingToken::new)
                            .map(tt -> (TrackingToken) tt)
                            .map(CompletableFuture::completedFuture)
-                           .orElseGet(this::headToken);
+                           .orElseGet(this::latestToken);
     }
 
     @Override
@@ -283,6 +283,21 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                     return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
                 }
                 currentPosition = this.position.get();
+            }
+            return lastEntry();
+        }
+
+        @Override
+        public Optional<Entry<EventMessage<?>>> peek() {
+            long currentPosition = this.position.get();
+            while (currentPosition <= this.end && eventStorage.containsKey(currentPosition)) {
+                TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
+                if (match(nextEvent, this.condition)) {
+                    Context context = Context.empty();
+                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition + 1));
+                    return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
+                }
+                currentPosition++;
             }
             return lastEntry();
         }

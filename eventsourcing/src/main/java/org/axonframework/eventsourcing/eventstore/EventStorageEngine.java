@@ -89,8 +89,8 @@ public interface EventStorageEngine extends DescribableComponent {
      * {@code condition}.
      * <p>
      * The final entry of the stream <b>always</b> contains a {@link ConsistencyMarker} in the
-     * {@link MessageStream.Entry}'s resources, paired with a {@link TerminalEventMessage}.
-     * This {@code ConsistencyMarker} should be used to construct the {@link AppendCondition} when
+     * {@link MessageStream.Entry}'s resources, paired with a {@link TerminalEventMessage}. This
+     * {@code ConsistencyMarker} should be used to construct the {@link AppendCondition} when
      * {@link #appendEvents(AppendCondition, List) appending events}.
      * <p>
      * The {@code condition} dictates the sequence to load based on the {@link SourcingCondition#criteria()}.
@@ -123,22 +123,22 @@ public interface EventStorageEngine extends DescribableComponent {
     MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition);
 
     /**
-     * Creates a {@link TrackingToken} that is at the tail of an event stream.
+     * Creates a {@link TrackingToken} that is at the first position of an event stream.
      * <p>
      * In other words, a token that tracks events from the beginning of time.
      *
-     * @return A {@link CompletableFuture} of a {@link TrackingToken} at the tail of an event stream.
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} at the first position of an event stream.
      */
-    CompletableFuture<TrackingToken> tailToken();
+    CompletableFuture<TrackingToken> firstToken();
 
     /**
-     * Creates a {@link TrackingToken} that is at the head of an event stream.
+     * Creates a {@link TrackingToken} that is at the latest position of an event stream.
      * <p>
      * In other words, a token that tracks all <b>new</b> events from this point forward.
      *
-     * @return A {@link CompletableFuture} of a {@link TrackingToken} at the head of an event stream.
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} at the latest position of an event stream.
      */
-    CompletableFuture<TrackingToken> headToken();
+    CompletableFuture<TrackingToken> latestToken();
 
     /**
      * Creates a {@link TrackingToken} that tracks all {@link EventMessage events} after the given {@code at}.

@@ -35,6 +35,7 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     private final MessageStream<M> delegate;
     private final Predicate<Entry<M>> filter;
+    private Entry<M> peeked = null;
 
     /**
      * Construct a {@link MessageStream stream} that invokes the given {@code filter} {@link Predicate} each time a new
@@ -53,11 +54,32 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public Optional<Entry<M>> next() {
+        if (peeked != null) {
+            Entry<M> result = peeked;
+            peeked = null;
+            return Optional.of(result);
+        }
         Optional<Entry<M>> result = delegate.next();
-        while (result.isPresent() && result.filter(filter).isEmpty()) {
+        while (result.isPresent() && !filter.test(result.get())) {
             result = delegate.next();
         }
         return result;
+    }
+
+    @Override
+    public Optional<Entry<M>> peek() {
+        if (peeked != null) {
+            return Optional.of(peeked);
+        }
+        Optional<Entry<M>> result = delegate.next();
+        while (result.isPresent() && !filter.test(result.get())) {
+            result = delegate.next();
+        }
+        if (result.isPresent()) {
+            peeked = result.get();
+            return Optional.of(peeked);
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -72,12 +94,12 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public boolean isCompleted() {
-        return delegate.isCompleted();
+        return delegate.isCompleted() && peeked == null;
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return delegate.hasNextAvailable();
+        return peeked != null || peek().isPresent();
     }
 
     @Override
