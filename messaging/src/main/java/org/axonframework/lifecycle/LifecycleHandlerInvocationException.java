@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package org.axonframework.lifecycle;
 
-import org.axonframework.common.AxonNonTransientException;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import java.lang.reflect.Method;
 
@@ -26,11 +27,9 @@ import static java.lang.String.format;
  * Exception indicating a failure occurred during a lifecycle handler method invocation.
  *
  * @author Steven van Beelen
- * @see StartHandler
- * @see ShutdownHandler
- * @since 4.3
+ * @since 4.3.0
  */
-public class LifecycleHandlerInvocationException extends AxonNonTransientException {
+public class LifecycleHandlerInvocationException extends RuntimeException {
 
     private static final String DEFAULT_FAILURE_MESSAGE =
             "Failed during invocation of lifecycle handler [%s] on component [%s]";
@@ -39,9 +38,9 @@ public class LifecycleHandlerInvocationException extends AxonNonTransientExcepti
      * Instantiates an exception using the given {@code message} indicating a failure during a lifecycle handler method
      * invocation.
      *
-     * @param message the message describing the exception
+     * @param message The message describing the exception.
      */
-    public LifecycleHandlerInvocationException(String message) {
+    public LifecycleHandlerInvocationException(@Nonnull String message) {
         super(message);
     }
 
@@ -49,12 +48,14 @@ public class LifecycleHandlerInvocationException extends AxonNonTransientExcepti
      * Instantiates an exception using the given {@code lifecycleComponent}, {@code lifecycleHandler} and {@code cause},
      * indicating a failure during a lifecycle handler method invocation.
      *
-     * @param lifecycleHandler   the {@link Method} in question which failed
-     * @param lifecycleComponent the {@link Object} of which the given {@code lifecycleHandler} was invoked
-     *                           exceptionally
-     * @param cause              the underlying cause of the exception
+     * @param lifecycleHandler   The {@link Method} in question which failed.
+     * @param lifecycleComponent The {@link Object} of which the given {@code lifecycleHandler} was invoked
+     *                           exceptionally.
+     * @param cause              The underlying cause of the exception.
      */
-    public LifecycleHandlerInvocationException(Method lifecycleHandler, Object lifecycleComponent, Throwable cause) {
+    public LifecycleHandlerInvocationException(@Nonnull Method lifecycleHandler,
+                                               @Nonnull Object lifecycleComponent,
+                                               @Nullable Throwable cause) {
         this(format(DEFAULT_FAILURE_MESSAGE, lifecycleHandler, lifecycleComponent), cause);
     }
 
@@ -62,10 +63,10 @@ public class LifecycleHandlerInvocationException extends AxonNonTransientExcepti
      * Instantiates an exception using the given {@code message} and {@code cause} indicating a failure during a
      * lifecycle handler method invocation.
      *
-     * @param message the message describing the exception
-     * @param cause   the underlying cause of the exception
+     * @param message The message describing the exception.
+     * @param cause   The underlying cause of the exception.
      */
-    public LifecycleHandlerInvocationException(String message, Throwable cause) {
+    public LifecycleHandlerInvocationException(@Nonnull String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }
