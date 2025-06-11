@@ -226,7 +226,6 @@ class WorkPackageTest {
         assertEquals(1L, resultPosition.getAsLong());
     }
 
-
     @Test
     void replayTokenIsPropagatedAndAdvancedWithoutCurrent() {
         testSubjectBuilder.initialToken(ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(1L)));
@@ -564,6 +563,4 @@ class WorkPackageTest {
     record ContextMessage(EventMessage<?> message, Context context) {
 
     }
-
-    ;
 }
