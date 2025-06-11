@@ -212,10 +212,13 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void transactionRejectedWithConflictingEventsInStore() throws Exception {
-        testSubject.appendEvents(AppendCondition.none(),
-                                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
-                                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS))
-                   .thenApply(AppendTransaction::commit)
+        testSubject.appendEvents(
+                           AppendCondition.none(),
+                           taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
+                           taggedEventMessage("event-1", TEST_CRITERIA_TAGS)
+                   )
+                   .get(5, TimeUnit.SECONDS)
+                   .commit()
                    .get(5, TimeUnit.SECONDS);
 
         AppendCondition testCondition = AppendCondition.withCriteria(TEST_CRITERIA);
