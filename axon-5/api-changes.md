@@ -702,7 +702,7 @@ child entities. If you have a polymorphic entity, one that has multiple concrete
 you can use `EntityModel.forPolymorphicEntityType(entityType)` to define the entity model.
 
 ```java
-EntityModel<ImmutableTask> taskModel = SimpleEntityModel
+EntityModel<ImmutableTask> model = SimpleEntityModel
         .forEntityClass(ImmutableTask.class)
         .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableTask.class))
         .instanceCommandHandler(commandQualifiedName, (command, entity, context) -> {
@@ -719,7 +719,7 @@ clearly defined and debuggable,
 and less reflection is needed at runtime, which improves performance.
 
 ```java
-EntityModel<ImmutablePerson> personModel = AnnotatedEntityModel.forConcreteType(
+EntityModel<ImmutableTask> model = AnnotatedEntityModel.forConcreteType(
         ImmutableTask.class,
         configuration.getComponent(ParameterResolverFactory.class),
         configuration.getComponent(MessageTypeResolver.class)
@@ -932,9 +932,9 @@ public class MyEntity {
 }
 ```
 
-### Reflection-based entities 
+### Reflection-based entities
 
-While very similar to reflection-based aggregates, reflection-based entities have gained some new capabilities.
+While very similar to the reflection-based aggregates from AF4, reflection-based entities have gained some new capabilities.
 
 First, it is now possible to define two or more children of the same type. 
 Note that the `@EntityMember#commandTargetResolver` must resolve to only one value over all children.
@@ -973,7 +973,7 @@ public class Project {
 }
 ```
 
-Third, in Axon Framework 4, the default was to forwards events to all entities by default. In Axon Framework 5, this
+Third, in Axon Framework 4, the default was to forward events to all entities by default. In Axon Framework 5, this
 has changed to only forward events to entities that match the routing key. You can always customize this behavior
 by providing a custom `@EntityMember#eventRoutingResolver`:
 
@@ -997,7 +997,7 @@ public abstract class Project {
 }
 ```
 
-Fourth, `@EntityMember` can now be used on fields with a simply type, or a `List`. Other types of collections can
+Fourth, `@EntityMember` can now be used on fields with a simple type, or a `List`. Other types of collections can
 currently not be used.
 This is due to a limitation of the immutability of child entities that we now support. We might support this in the
 future, but for now, we recommend using a `List` or a simple type.
