@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -308,6 +308,41 @@ class ReflectionUtilsTest {
         Method method = SomeTypeWithMethods.class.getMethod("someMethodWithParameters", String.class, Integer.class, Object.class);
         String memberGenericString = toDiscernibleSignature(method);
         assertEquals("someMethodWithParameters(java.lang.String,java.lang.Integer,java.lang.Object)", memberGenericString);
+    }
+
+    @Test
+    void fieldNameFromMemberReturnsFieldName() throws NoSuchFieldException {
+        Field field = SomeType.class.getDeclaredField("field1");
+        assertEquals("field1", ReflectionUtils.fieldNameFromMember(field));
+    }
+
+    @Test
+    void fieldNameFromMemberStripsGetSetIsAndDecapitalizes() throws NoSuchMethodException {
+        Method getMethod = SomeType.class.getDeclaredMethod("getField1");
+        assertEquals("field1", ReflectionUtils.fieldNameFromMember(getMethod));
+        Method setMethod = SomeTypeWithSetters.class.getDeclaredMethod("setField1", String.class);
+        assertEquals("field1", ReflectionUtils.fieldNameFromMember(setMethod));
+        Method isMethod = SomeTypeWithSetters.class.getDeclaredMethod("isActive");
+        assertEquals("active", ReflectionUtils.fieldNameFromMember(isMethod));
+        Method plainMethod = SomeTypeWithSetters.class.getDeclaredMethod("plainField");
+        assertEquals("plainField", ReflectionUtils.fieldNameFromMember(plainMethod));
+    }
+
+    @Test
+    void fieldNameFromMemberHandlesGetURLSpecialCase() throws NoSuchMethodException {
+        Method getURLMethod = SomeTypeWithSetters.class.getDeclaredMethod("getURL");
+        assertEquals("URL", ReflectionUtils.fieldNameFromMember(getURLMethod));
+    }
+
+    private static class SomeTypeWithSetters {
+        private String field1;
+        private boolean active;
+        private String URL;
+        public String getField1() { return field1; }
+        public void setField1(String value) { this.field1 = value; }
+        public boolean isActive() { return active; }
+        public String getURL() { return URL; }
+        public String plainField() { return "plain"; }
     }
 
     @SuppressWarnings("FieldCanBeLocal")

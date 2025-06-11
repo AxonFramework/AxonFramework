@@ -36,6 +36,7 @@ import org.axonframework.modelling.entity.child.EntityChildModel;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -381,8 +382,7 @@ class SimpleEntityModelTest {
                             PARENT_ONLY_INSTANCE_COMMAND,
                             parentInstanceCommandHandler), descriptor.getProperty("commandHandlers"));
         assertEquals(parentEntityEvolver, descriptor.getProperty("entityEvolver"));
-        assertEquals(Map.of(TestChildEntityOne.class, childModelMockOne, TestChildEntityTwo.class, childModelMockTwo),
-                     descriptor.getProperty("children"));
+        assertEquals(List.of(childModelMockOne, childModelMockTwo), descriptor.getProperty("children"));
     }
 
     @Nested

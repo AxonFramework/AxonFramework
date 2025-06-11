@@ -154,8 +154,8 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .build();
 
         // Person is the polymorphic entity type
-        EntityModel<ImmutablePerson> personModel = PolymorphicEntityModel
-                .forSuperType(ImmutablePerson.class)
+        EntityModel<ImmutablePerson> personModel = EntityModel
+                .forPolymorphicEntityType(ImmutablePerson.class)
                 .addConcreteType(employeeModel)
                 .addConcreteType(customerModel)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutablePerson.class))

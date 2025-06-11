@@ -17,16 +17,14 @@
 package org.axonframework.integrationtests.testsuite.administration.state.immutable;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotation.RoutingKey;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.CompleteTaskCommand;
-import org.axonframework.integrationtests.testsuite.administration.events.TaskAssigned;
 import org.axonframework.integrationtests.testsuite.administration.events.TaskCompleted;
-import org.axonframework.modelling.command.EntityId;
 
 public record ImmutableTask(
-        @EntityId
+        @RoutingKey
         String taskId,
         Boolean completed
 ) {

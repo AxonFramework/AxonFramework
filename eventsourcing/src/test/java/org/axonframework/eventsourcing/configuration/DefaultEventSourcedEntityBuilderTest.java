@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
