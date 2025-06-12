@@ -155,8 +155,7 @@ public class MyInterceptingEventHandler {
 }
 ```
 
-You are able inject the `ProcessingContext` in any message-handling method, so this is always available. Any code that
-uses the old `UnitOfWork` should be rewritten to put resources in this context.
+You are able inject the `ProcessingContext` in any message-handling method, so this is always available. Any code that uses the old `UnitOfWork` should be rewritten to put resources in this context.
 
 We will provide a migration guide, as well as OpenWrite recipes for these scenarios.
 
@@ -448,13 +447,13 @@ Here's an example of how to register a `DefaultCommandGateway` through the `regi
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-            .componentRegistry(registry -> registry.registerComponent(
-                    CommandGateway.class,
-                    config -> new DefaultCommandGateway(
-                            config.getComponent(CommandBus.class),
-                            config.getComponent(MessageTypeResolver.class)
-                    )
-            ));
+                       .componentRegistry(registry -> registry.registerComponent(
+                               CommandGateway.class,
+                               config -> new DefaultCommandGateway(
+                                       config.getComponent(CommandBus.class),
+                                       config.getComponent(MessageTypeResolver.class)
+                               )
+                       ));
     // Further configuration...
 }
 ```
@@ -478,17 +477,17 @@ Here's an example of how we can decorate the `SimpleCommandBus` in with a `Compo
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-            .componentRegistry(registry -> registry.registerComponent(
-                    CommandBus.class, config -> new SimpleCommandBus()
-            ))
-            .componentRegistry(registry -> registry.registerDecorator(
-                    CommandBus.class,
-                    0,
-                    (config, name, delegate) -> new TracingCommandBus(
-                            delegate,
-                            config.getComponent(CommandBusSpanFactory.class)
-                    )
-            ));
+                       .componentRegistry(registry -> registry.registerComponent(
+                               CommandBus.class, config -> new SimpleCommandBus()
+                       ))
+                       .componentRegistry(registry -> registry.registerDecorator(
+                               CommandBus.class,
+                               0,
+                               (config, name, delegate) -> new TracingCommandBus(
+                                       delegate,
+                                       config.getComponent(CommandBusSpanFactory.class)
+                               )
+                       ));
     // Further configuration...
 }
 ```
@@ -516,17 +515,17 @@ present:
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-            .componentRegistry(registry -> registry.registerEnhancer(configurer -> {
-                if (configurer.hasComponent(CommandBus.class)) {
-                    configurer.registerDecorator(
-                            CommandBus.class, 0,
-                            (config, name, delegate) -> new TracingCommandBus(
-                                    delegate,
-                                    config.getComponent(CommandBusSpanFactory.class)
-                            )
-                    );
-                }
-            }));
+                       .componentRegistry(registry -> registry.registerEnhancer(configurer -> {
+                           if (configurer.hasComponent(CommandBus.class)) {
+                               configurer.registerDecorator(
+                                       CommandBus.class, 0,
+                                       (config, name, delegate) -> new TracingCommandBus(
+                                               delegate,
+                                               config.getComponent(CommandBusSpanFactory.class)
+                                       )
+                               );
+                           }
+                       }));
     // Further configuration...
 }
 ```
@@ -565,10 +564,10 @@ Down below is shortened example on how to register a `StatefulCommandHandlingMod
 ```java
 public static void main(String[] args) {
     ModellingConfigurer.create()
-            .registerStatefulCommandHandlingModule(
-                    StatefulCommandHandlingModule.named("my-module")
-                    // Further MODULE configuration...
-            );
+                       .registerStatefulCommandHandlingModule(
+                               StatefulCommandHandlingModule.named("my-module")
+                               // Further MODULE configuration...
+                       );
     // Further configuration...
 }
 ```
@@ -597,16 +596,16 @@ Down below is an example when a factory is **not** invoked:
 public static void main(String[] args) {
     AxonConfiguration configuration =
             MessagingConfigurer.create()
-                    .componentRegistry(registry -> registry.registerComponent(
-                            CommandGateway.class,
-                            config -> new DefaultCommandGateway(
-                                    config.getComponent(CommandBus.class),
-                                    config.getComponent(MessageTypeResolver.class)
-                            )
-                    ))
-                    .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
-                    // Further configuration...
-                    .build();
+                               .componentRegistry(registry -> registry.registerComponent(
+                                       CommandGateway.class,
+                                       config -> new DefaultCommandGateway(
+                                               config.getComponent(CommandBus.class),
+                                               config.getComponent(MessageTypeResolver.class)
+                                       )
+                               ))
+                               .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
+                               // Further configuration...
+                               .build();
 
     // This will invoke the CommandGatewayFactory!
     CommandGateway commandGateway = configuration.getComponent(CommandGateway.class, "some-context");
@@ -619,16 +618,16 @@ However, if we take the above example and invoke `getComponent` with a different
 public static void main(String[] args) {
     AxonConfiguration configuration =
             MessagingConfigurer.create()
-                    .componentRegistry(registry -> registry.registerComponent(
-                            CommandGateway.class,
-                            config -> new DefaultCommandGateway(
-                                    config.getComponent(CommandBus.class),
-                                    config.getComponent(MessageTypeResolver.class)
-                            )
-                    ))
-                    .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
-                    // Further configuration...
-                    .build();
+                               .componentRegistry(registry -> registry.registerComponent(
+                                       CommandGateway.class,
+                                       config -> new DefaultCommandGateway(
+                                               config.getComponent(CommandBus.class),
+                                               config.getComponent(MessageTypeResolver.class)
+                                       )
+                               ))
+                               .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
+                               // Further configuration...
+                               .build();
 
     // This will return the registered DefaultCommandGateway!
     CommandGateway commandGateway = configuration.getComponent(CommandGateway.class);
@@ -655,19 +654,19 @@ delegate to be given. For example the `MessagingConfigurer` has a `componentRegi
 ```java
 public static void main(String[] args) {
     ModellingConfigurer.create()
-            .componentRegistry(componentRegistry -> componentRegistry.registerComponent(
-                    CommandGateway.class,
-                    config -> new DefaultCommandGateway(
-                            config.getComponent(CommandBus.class),
-                            config.getComponent(MessageTypeResolver.class)
-                    )
-            ))
-            .lifecycleRegistry(lifecycleRegistry -> lifecycleRegistry.registerLifecyclePhaseTimeout(
-                    5, TimeUnit.DAYS
-            ))
-            .messaging(messagingConfigurer -> messagingConfigurer.registerEventSink(
-                    config -> new CustomEventSink()
-            ));
+                       .componentRegistry(componentRegistry -> componentRegistry.registerComponent(
+                               CommandGateway.class,
+                               config -> new DefaultCommandGateway(
+                                       config.getComponent(CommandBus.class),
+                                       config.getComponent(MessageTypeResolver.class)
+                               )
+                       ))
+                       .lifecycleRegistry(lifecycleRegistry -> lifecycleRegistry.registerLifecyclePhaseTimeout(
+                               5, TimeUnit.DAYS
+                       ))
+                       .messaging(messagingConfigurer -> messagingConfigurer.registerEventSink(
+                               config -> new CustomEventSink()
+                       ));
     // Further configuration...
 }
 ```
@@ -742,12 +741,9 @@ without mutating the original instance. This is particularly useful in functiona
 better immutability guarantees in your code. This works with both Java records and Kotlin data classes, as well as
 traditional classes.
 
-The first command is handled by a static method, responsible for verifying the command and creating the entity. Using
-the first event, the entity is created using the constructor defining the payload or `EventMessage`. Commands after this
-will be handled by methods on the instance of the entity.
+The first command is handled by a static method, responsible for verifying the command and creating the entity. Using the first event, the entity is created using the constructor defining the payload or `EventMessage`. Commands after this will be handled by methods on the instance of the entity.
 
-To evolve, or change the state, of an entity, `@EventSourcingHandlers` or `EntityEvolvers` can return a new instance of
-the entity based on an event. This entity will then be used for the next command or next event.
+To evolve, or change the state, of an entity, `@EventSourcingHandlers` or `EntityEvolvers` can return a new instance of the entity based on an event. This entity will then be used for the next command or next event.
 
 ### Entity Constructor changes
 
@@ -918,6 +914,9 @@ exceptions, you will need to change your code. The following table shows the cha
 |------------------------------------------------------------------------|-------------------------------------------------------------------|
 | `org.axonframework.modelling.command.AggregateEntityNotFoundException` | `org.axonframework.modelling.entity.ChildEntityNotFoundException` |
 
+
+
+
 ## Test Fixtures
 
 The `axon-test` module of Axon Framework has historically provided two different test fixtures:
@@ -973,8 +972,7 @@ Minor API Changes
   as described in the [Event Store](#event-store) section. Furthermore, operations have been made "async-native," as
   described [here](#adjusted-apis). This is marked as a minor API changes since the `EventStorageEngine` should not be
   used directly
-* The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all
-  EventProcessor builders.
+* The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all EventProcessor builders.
   Exceptions need to be handled by an interceptor, or otherwise they are always considered an error.
 
 Stored Format Changes
@@ -1070,20 +1068,19 @@ This section contains two tables:
 ### Marked for removal Classes
 
 All classes in this table have been moved to the legacy package for ease in migration.
-However, they will eventually be removed entirely from Axon Framework 5, as we expect users to migrate to the new (and
-per class described) approoach.
+However, they will eventually be removed entirely from Axon Framework 5, as we expect users to migrate to the new (and per class described) approoach.
 
-| Class                                          |
-|------------------------------------------------|
-| org.axonframework.modelling.command.Repository |
+| Class                                                                    |
+|--------------------------------------------------------------------------|
+| org.axonframework.modelling.command.Repository                           |
 
 ### Changed implements or extends
 
 Note that **any**  changes here may have far extending impact on the original class.
 
-| Class      | Before           | After            | Explanation                                                  | 
-|------------|------------------|------------------|--------------------------------------------------------------|
-| `MetaData` | `Map<String, ?>` | `Map<String, ?>` | See the [metadata description](#metadata-with-string-values) |
+| Class       | Before           | After            | Explanation                                                  | 
+|-------------|------------------|------------------|--------------------------------------------------------------|
+| `MetaData`  | `Map<String, ?>` | `Map<String, ?>` | See the [metadata description](#metadata-with-string-values) |
 
 ## Method Signature Changes
 
