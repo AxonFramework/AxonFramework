@@ -122,8 +122,8 @@
         <junit4.version>4.13.2</junit4.version>
         <junit.jupiter.version>5.12.2</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
-        <assertj-core.version>3.27.3</assertj-core.version>
         <testcontainers.version>1.19.3</testcontainers.version>
+        <assertj.version>3.27.3</assertj.version>
         <!-- Validation -->
         <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
@@ -166,7 +166,7 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>${assertj-core.version}</version>
+            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Logging -->
