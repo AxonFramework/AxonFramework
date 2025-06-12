@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,44 +16,53 @@
 
 package org.axonframework.serialization;
 
+import jakarta.annotation.Nonnull;
+
 /**
  * Interface describing a mechanism that can convert data from one to another type.
+ * <p>
+ * Used when object are added/retrieved from a storage solution or put on/received from a network. Clear example of this
+ * is the {@link org.axonframework.messaging.Message}.
  *
+ * @author Allard Buijze
  * @author Rene de Waele
+ * @since 3.0.0
  */
 public interface Converter {
 
     /**
-     * Indicates whether this converter is capable of converting the given {@code sourceType} to the {@code targetType}.
+     * Indicates whether this {@code Converter} is capable of converting the given {@code sourceType} to the
+     * {@code targetType}.
      *
-     * @param sourceType The type of data to convert from
-     * @param targetType The type of data to convert to
-     * @return {@code true} if conversion is possible, {@code false} otherwise
+     * @param sourceType The type of data to convert from.
+     * @param targetType The type of data to convert to.
+     * @return {@code true} if conversion is possible, {@code false} otherwise.
      */
-    boolean canConvert(Class<?> sourceType, Class<?> targetType);
+    boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType);
 
     /**
-     * Converts the given object into another.
+     * Converts the given {@code original} object into an object of the given {@code targetType}.
      *
-     * @param original   the value to convert
-     * @param targetType The type of data to convert to
-     * @param <T>        the target data type
-     * @return the converted value
+     * @param original   The value to convert.
+     * @param targetType The type to convert the given {@code original} into.
+     * @param <T>        The target data type.
+     * @return A converted version of the given {@code original} into the given {@code targetType}.
      */
-    default <T> T convert(Object original, Class<T> targetType) {
+    default <T> T convert(@Nonnull Object original, @Nonnull Class<T> targetType) {
         return convert(original, original.getClass(), targetType);
     }
 
     /**
-     * Converts the given object into another using the source type to find the conversion path.
+     * Converts the given {@code original} object into an object of the given {@code targetType}, using the given
+     * {@code sourceType} to deduce the conversion path.
      *
-     * @param original   the value to convert
-     * @param sourceType the type of data to convert
-     * @param targetType The type of data to convert to
-     * @param <T>        the target data type
-     * @return the converted value
+     * @param original   The value to convert.
+     * @param sourceType The type of data to convert.
+     * @param targetType The type to convert the given {@code original} into.
+     * @param <T>        The target data type.
+     * @return A converted version of the given {@code original} into the given {@code targetType}.
      */
-    <T> T convert(Object original, Class<?> sourceType, Class<T> targetType);
+    <T> T convert(@Nonnull Object original, @Nonnull Class<?> sourceType, @Nonnull Class<T> targetType);
 
     /**
      * Converts the data format of the given {@code original} IntermediateRepresentation to the target data type.
@@ -62,7 +71,9 @@ public interface Converter {
      * @param targetType The type of data to convert to
      * @param <T>        the target data type
      * @return the converted representation
+     * @deprecated As we will stop using the {@link SerializedObject}.
      */
+    @Deprecated(forRemoval = true, since = "5.0.0")
     @SuppressWarnings("unchecked")
     default <T> SerializedObject<T> convert(SerializedObject<?> original, Class<T> targetType) {
         if (original.getContentType().equals(targetType)) {
@@ -71,5 +82,4 @@ public interface Converter {
         return new SimpleSerializedObject<>(convert(original.getData(), original.getContentType(), targetType),
                                             targetType, original.getType());
     }
-
 }
