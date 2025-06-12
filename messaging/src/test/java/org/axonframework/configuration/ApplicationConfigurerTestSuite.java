@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -70,8 +71,24 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
      */
     public abstract C createConfigurer();
 
-    protected record TestComponent(String state) {
+    protected static class TestComponent {
 
+        private final String state;
+
+        protected TestComponent(String state) {
+            this.state = state;
+        }
+
+        protected String state() {
+            return state;
+        }
+    }
+
+    protected static class SpecificTestComponent extends TestComponent {
+
+        protected SpecificTestComponent(String state) {
+            super(state);
+        }
     }
 
     protected static class TestModule extends BaseModule<TestModule> {
@@ -349,6 +366,39 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             );
 
             TestComponent result = testSubject.build().getComponent(TestComponent.class);
+
+            assertEquals(expectedState, result.state());
+        }
+
+        @Test
+        void registerDecoratorForTypeActsOnImplementationsOfComponents() {
+            SpecificTestComponent testComponent = new SpecificTestComponent(INIT_STATE);
+            String expectedState = TEST_COMPONENT.state() + "1";
+
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, config -> testComponent)
+                            .registerDecorator(TestComponent.class, 0,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "1"))
+            );
+
+            TestComponent result = testSubject.build().getComponent(SpecificTestComponent.class);
+
+            assertEquals(expectedState, result.state());
+        }
+
+        @Test
+        void registerDecoratorForTypeAndNameActsOnImplementationsOfComponents() {
+            SpecificTestComponent testComponent = new SpecificTestComponent(INIT_STATE);
+            String testName = "some-name";
+            String expectedState = TEST_COMPONENT.state() + "1";
+
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, testName, config -> testComponent)
+                            .registerDecorator(TestComponent.class, testName, 0,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "1"))
+            );
+
+            TestComponent result = testSubject.build().getComponent(SpecificTestComponent.class, testName);
 
             assertEquals(expectedState, result.state());
         }
