@@ -362,15 +362,6 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
-        void registerComponentThrowsIllegalArgumentExceptionForNullName() {
-            //noinspection DataFlowIssue
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.componentRegistry(cr -> cr.registerComponent(Object.class,
-                                                                                        null,
-                                                                                        c -> new Object())));
-        }
-
-        @Test
         void registerComponentThrowsIllegalArgumentExceptionForEmptyName() {
             assertThrows(IllegalArgumentException.class,
                          () -> testSubject.componentRegistry(cr -> cr.registerComponent(Object.class,

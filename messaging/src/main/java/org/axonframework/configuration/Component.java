@@ -17,14 +17,17 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
+
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.nonEmpty;
 
 /**
- * Describes a component defined in a {@link Configuration}, that may depend on other component for its
- * initialization or during it's startup/shutdown operations.
+ * Describes a component defined in a {@link Configuration}, that may depend on other component for its initialization
+ * or during it's startup/shutdown operations.
  * <p>
  * Note: This interface is not expected to be used outside of Axon Framework!
  *
@@ -87,11 +90,12 @@ public interface Component<C> extends DescribableComponent {
     /**
      * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
      *
-     * @param type The type of the component this object identifiers, typically an interface.
-     * @param name The name of the component this object identifiers.
-     * @param <C>  The type of the component this object identifiers, typically an interface.
+     * @param type The type of the component this object identifies, typically an interface.
+     * @param name The name of the component this object identifies, potentially {@code null} when unimportant. Will
+     *             throw an {@link IllegalArgumentException} for an empty {@code name}.
+     * @param <C>  The type of the component this object identifies, typically an interface.
      */
-    record Identifier<C>(@Nonnull Class<C> type, @Nonnull String name) {
+    record Identifier<C>(@Nonnull Class<C> type, @Nullable String name) {
 
         /**
          * Compact constructor asserting whether the {@code type} and {@code name} are non-null and not empty.
@@ -101,7 +105,9 @@ public interface Component<C> extends DescribableComponent {
          */
         public Identifier {
             requireNonNull(type, "The given type is unsupported because it is null.");
-            nonEmpty(name, "The given name is unsupported because it is null or empty.");
+            if (name != null) {
+                nonEmpty(name, "The given name is unsupported because it is empty.");
+            }
         }
 
         @Override

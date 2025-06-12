@@ -102,7 +102,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public boolean hasComponent(@Nonnull Class<?> type,
-                                @Nonnull String name) {
+                                @Nullable String name) {
         return components.contains(new Identifier<>(type, name));
     }
 
@@ -301,7 +301,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         @Nonnull
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
-                                                    @Nonnull String name) {
+                                                    @Nullable String name) {
             return components.get(new Identifier<>(type, name))
                              .map(c -> c.resolve(this))
                              .or(() -> {
@@ -318,7 +318,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         @Nonnull
         @Override
         public <C> C getComponent(@Nonnull Class<C> type,
-                                  @Nonnull String name,
+                                  @Nullable String name,
                                   @Nonnull Supplier<C> defaultImpl) {
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
