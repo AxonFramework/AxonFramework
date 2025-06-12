@@ -22,7 +22,9 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,15 +49,50 @@ public class Components implements DescribableComponent {
 
     /**
      * Get an {@link Optional} on the {@link Component} registered under the given {@code identifier}.
+     * <p>
+     * When no exact match is found with the given {@code identifier}, a {@link Class#isAssignableFrom(Class)} check is
+     * done between the stored {@link Identifier#type() types} and the type of the given {@code identifier}.
      *
      * @param identifier The identifier to retrieve a {@link Component} for.
      * @param <C>        The type of the component to retrieve.
      * @return An {@link Optional} on the {@link Component} registered under the given {@code identifier}.
+     * @throws IllegalArgumentException When multiple matching {@link Component Components} are found for the given
+     *                                  {@code identifier}.
      */
     @Nonnull
     public <C> Optional<Component<C>> get(@Nonnull Identifier<C> identifier) {
         //noinspection unchecked
-        return Optional.ofNullable((Component<C>) components.get(identifier));
+        return Optional.ofNullable((Component<C>) components.get(identifier))
+                       .or(() -> {
+                           List<Component<C>> matches = getComponentsAssignableTo(identifier);
+                           return Optional.ofNullable(matches.isEmpty() ? null : matches.getFirst());
+                       });
+    }
+
+    private <C> List<Component<C>> getComponentsAssignableTo(Identifier<C> identifier) {
+        //noinspection unchecked
+        List<Component<C>> matches = components.entrySet().stream()
+                                               .filter(entry -> assignableTypeAndEqualName(entry.getKey(), identifier))
+                                               .map(Map.Entry::getValue)
+                                               .map(component -> (Component<C>) component)
+                                               .toList();
+
+        if (matches.size() > 1) {
+            throw new IllegalArgumentException(
+                    "No single instance found for type ["
+                            + identifier.type()
+                            + "] and name ["
+                            + identifier.name()
+                            + "]. Please try a more specific type-name combination."
+            );
+        }
+        return matches;
+    }
+
+    private static <C> boolean assignableTypeAndEqualName(Identifier<?> storedId,
+                                                          Identifier<C> givenId) {
+        return givenId.type().isAssignableFrom(storedId.type())
+                && Objects.equals(givenId.name(), storedId.name());
     }
 
     /**

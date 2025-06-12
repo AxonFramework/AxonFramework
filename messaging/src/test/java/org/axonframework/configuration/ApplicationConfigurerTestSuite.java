@@ -54,6 +54,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
     private static final String START_FAILURE_EXCEPTION_MESSAGE = "some start failure";
     private static final String INIT_STATE = "initial-state";
     protected static final TestComponent TEST_COMPONENT = new TestComponent(INIT_STATE);
+    protected static final SpecificTestComponent SPECIFIC_TEST_COMPONENT = new SpecificTestComponent(INIT_STATE);
 
     protected C testSubject;
 
@@ -81,6 +82,20 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         protected String state() {
             return state;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            TestComponent that = (TestComponent) o;
+            return Objects.equals(state, that.state);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(state);
         }
     }
 
@@ -153,7 +168,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
     class ComponentRegistration {
 
         @Test
-        void registerComponentExposesRegisteredComponentUponBuild() {
+        void registerComponentForTypeExposesRegisteredComponentOnGet() {
             TestComponent testComponent = TEST_COMPONENT;
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent));
 
@@ -163,13 +178,71 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
-        void registerComponentExposesRegisteredComponentOnOptionalGet() {
+        void registerComponentForTypeAndNameExposesRegisteredComponentOnGet() {
+            TestComponent testComponent = TEST_COMPONENT;
+            String testName = "some-name";
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, testName, c -> testComponent)
+            );
+
+            Configuration config = testSubject.build();
+
+            assertEquals(testComponent, config.getComponent(TestComponent.class, testName));
+        }
+
+        @Test
+        void registerComponentForTypeAndNameExposesRegisteredComponentWhenAssignableFrom() {
+            SpecificTestComponent testComponent = SPECIFIC_TEST_COMPONENT;
+            String testName = "some-name";
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, testName, c -> testComponent)
+            );
+
+            Configuration config = testSubject.build();
+
+            assertEquals(testComponent, config.getComponent(TestComponent.class, testName));
+        }
+
+        @Test
+        void registerComponentForTypeExposesRegisteredComponentOnOptionalGet() {
             TestComponent testComponent = TEST_COMPONENT;
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent));
 
             Configuration config = testSubject.build();
 
             Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class);
+
+            assertTrue(result.isPresent());
+            assertEquals(testComponent, result.get());
+        }
+
+        @Test
+        void registerComponentForTypeAndNameExposesRegisteredComponentOnOptionalGet() {
+            TestComponent testComponent = TEST_COMPONENT;
+            String testName = "some-name";
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, testName, c -> testComponent)
+            );
+
+            Configuration config = testSubject.build();
+
+            Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class, testName);
+
+            assertTrue(result.isPresent());
+            assertEquals(testComponent, result.get());
+        }
+
+        @Test
+        void registerComponentForTypeAndNameExposesRegisteredComponentOnOptionalGetWhenAssignableFrom() {
+            SpecificTestComponent testComponent = SPECIFIC_TEST_COMPONENT;
+            String testName = "some-name";
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, testName, c -> testComponent)
+            );
+
+            Configuration config = testSubject.build();
+
+            Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class, testName);
 
             assertTrue(result.isPresent());
             assertEquals(testComponent, result.get());
@@ -372,11 +445,10 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void registerDecoratorForTypeActsOnImplementationsOfComponents() {
-            SpecificTestComponent testComponent = new SpecificTestComponent(INIT_STATE);
             String expectedState = TEST_COMPONENT.state() + "1";
 
             testSubject.componentRegistry(
-                    cr -> cr.registerComponent(SpecificTestComponent.class, config -> testComponent)
+                    cr -> cr.registerComponent(SpecificTestComponent.class, config -> SPECIFIC_TEST_COMPONENT)
                             .registerDecorator(TestComponent.class, 0,
                                                (c, name, delegate) -> new TestComponent(delegate.state + "1"))
             );
@@ -388,12 +460,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void registerDecoratorForTypeAndNameActsOnImplementationsOfComponents() {
-            SpecificTestComponent testComponent = new SpecificTestComponent(INIT_STATE);
             String testName = "some-name";
             String expectedState = TEST_COMPONENT.state() + "1";
 
             testSubject.componentRegistry(
-                    cr -> cr.registerComponent(SpecificTestComponent.class, testName, config -> testComponent)
+                    cr -> cr.registerComponent(SpecificTestComponent.class, testName, config -> SPECIFIC_TEST_COMPONENT)
                             .registerDecorator(TestComponent.class, testName, 0,
                                                (c, name, delegate) -> new TestComponent(delegate.state + "1"))
             );
