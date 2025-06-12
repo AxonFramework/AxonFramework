@@ -1004,20 +1004,11 @@ class Coordinator {
                                .allMatch(WorkPackage::isDone);
         }
 
-        private MessageStream.Entry<? extends EventMessage<?>> peekNextEvent() {
-            return eventStream.peek().orElse(null);
-        }
-
-        private MessageStream.Entry<? extends EventMessage<?>> nextEvent() {
+        private MessageStream.Entry<? extends EventMessage<?>> nextEventOrNull() {
             if (eventStream == null) {
                 return null;
             }
-            try {
-                var next = eventStream.next();
-                return next.orElse(null);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to read next event from stream", e);
-            }
+            return eventStream.next().orElse(null);
         }
 
         private boolean hasNextEvent() {
@@ -1025,7 +1016,7 @@ class Coordinator {
         }
 
         private boolean eventsEqualingLastScheduledToken(TrackingToken lastScheduledToken) {
-            MessageStream.Entry<? extends EventMessage<?>> nextEntry = peekNextEvent();
+            MessageStream.Entry<? extends EventMessage<?>> nextEntry = eventStream.peek().orElse(null);
             if (nextEntry == null || lastScheduledToken == null) {
                 return false;
             }
@@ -1060,7 +1051,7 @@ class Coordinator {
             for (int fetched = 0;
                  fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && hasNextEvent();
                  fetched++) {
-                MessageStream.Entry<? extends EventMessage<?>> eventEntry = nextEvent();
+                MessageStream.Entry<? extends EventMessage<?>> eventEntry = nextEventOrNull();
                 if (eventEntry == null) {
                     break; // No more events available
                 }
@@ -1074,7 +1065,7 @@ class Coordinator {
                     List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries = new ArrayList<>();
                     eventEntries.add(eventEntry);
                     while (eventsEqualingLastScheduledToken(eventToken)) {
-                        MessageStream.Entry<? extends EventMessage<?>> nextEntry = nextEvent();
+                        MessageStream.Entry<? extends EventMessage<?>> nextEntry = nextEventOrNull();
                         if (nextEntry != null) {
                             eventEntries.add(nextEntry);
                         } else {

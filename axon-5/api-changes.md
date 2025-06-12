@@ -911,7 +911,6 @@ public class MyEntity {
 ```
 
 ### Exception mapping
-
 With the change from Aggregate to Entity, we have also changed some of the exceptions. If you depends on these
 exceptions, you will need to change your code. The following table shows the changes:
 
