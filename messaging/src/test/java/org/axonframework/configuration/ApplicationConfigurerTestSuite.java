@@ -178,6 +178,18 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
+        void registerComponentForTypeExposesRegisteredComponentOnGetWhenAssignableFrom() {
+            SpecificTestComponent testComponent = SPECIFIC_TEST_COMPONENT;
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, c -> testComponent)
+            );
+
+            Configuration config = testSubject.build();
+
+            assertEquals(testComponent, config.getComponent(TestComponent.class));
+        }
+
+        @Test
         void registerComponentForTypeAndNameExposesRegisteredComponentOnGet() {
             TestComponent testComponent = TEST_COMPONENT;
             String testName = "some-name";
@@ -207,6 +219,21 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         void registerComponentForTypeExposesRegisteredComponentOnOptionalGet() {
             TestComponent testComponent = TEST_COMPONENT;
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent));
+
+            Configuration config = testSubject.build();
+
+            Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class);
+
+            assertTrue(result.isPresent());
+            assertEquals(testComponent, result.get());
+        }
+
+        @Test
+        void registerComponentForTypeExposesRegisteredComponentOnOptionalGetWhenAssignableFrom() {
+            SpecificTestComponent testComponent = SPECIFIC_TEST_COMPONENT;
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, c -> testComponent)
+            );
 
             Configuration config = testSubject.build();
 

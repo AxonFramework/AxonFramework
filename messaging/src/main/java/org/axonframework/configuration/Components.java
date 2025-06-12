@@ -24,7 +24,6 @@ import org.axonframework.configuration.Component.Identifier;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,7 +71,7 @@ public class Components implements DescribableComponent {
     private <C> List<Component<C>> getComponentsAssignableTo(Identifier<C> identifier) {
         //noinspection unchecked
         List<Component<C>> matches = components.entrySet().stream()
-                                               .filter(entry -> assignableTypeAndEqualName(entry.getKey(), identifier))
+                                               .filter(entry -> identifier.matches(entry.getKey()))
                                                .map(Map.Entry::getValue)
                                                .map(component -> (Component<C>) component)
                                                .toList();
@@ -87,12 +86,6 @@ public class Components implements DescribableComponent {
             );
         }
         return matches;
-    }
-
-    private static <C> boolean assignableTypeAndEqualName(Identifier<?> storedId,
-                                                          Identifier<C> givenId) {
-        return givenId.type().isAssignableFrom(storedId.type())
-                && Objects.equals(givenId.name(), storedId.name());
     }
 
     /**

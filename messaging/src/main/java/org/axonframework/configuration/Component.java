@@ -110,6 +110,19 @@ public interface Component<C> extends DescribableComponent {
             }
         }
 
+        /**
+         * Validate whether the given {@code other Identifier} matches with {@code this Identifier}, by matching the
+         * {@link #name() names} and checking if the {@link #type()}  is {@link Class#isAssignableFrom(Class)} to give
+         * {@code other} type.
+         *
+         * @param other The other identifier to compare with this identifier.
+         * @return {@code true} if the {@link #type()} is assignable from the {@code other} type <b>and</b> the
+         * {@link #name()} is identical, {@code false} otherwise.
+         */
+        public boolean matches(@Nonnull Identifier<?> other) {
+            return type.isAssignableFrom(other.type()) && Objects.equals(other.name(), name);
+        }
+
         @Override
         public String toString() {
             return type.getName() + ":" + name;
