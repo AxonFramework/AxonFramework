@@ -46,10 +46,12 @@ public interface Converter {
      * @param original   The value to convert.
      * @param targetType The type to convert the given {@code original} into.
      * @param <T>        The target data type.
+     * @param <S>        The source data type.
      * @return A converted version of the given {@code original} into the given {@code targetType}.
      */
-    default <T> T convert(@Nonnull Object original, @Nonnull Class<T> targetType) {
-        return convert(original, original.getClass(), targetType);
+    default <S, T> T convert(@Nonnull S original, @Nonnull Class<T> targetType) {
+        //noinspection unchecked
+        return convert(original, (Class<S>) original.getClass(), targetType);
     }
 
     /**
@@ -60,9 +62,10 @@ public interface Converter {
      * @param sourceType The type of data to convert.
      * @param targetType The type to convert the given {@code original} into.
      * @param <T>        The target data type.
+     * @param <S>        The source data type.
      * @return A converted version of the given {@code original} into the given {@code targetType}.
      */
-    <T> T convert(@Nonnull Object original, @Nonnull Class<?> sourceType, @Nonnull Class<T> targetType);
+    <S, T> T convert(@Nonnull S original, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType);
 
     /**
      * Converts the data format of the given {@code original} IntermediateRepresentation to the target data type.
@@ -75,7 +78,7 @@ public interface Converter {
      */
     @Deprecated(forRemoval = true, since = "5.0.0")
     @SuppressWarnings("unchecked")
-    default <T> SerializedObject<T> convert(SerializedObject<?> original, Class<T> targetType) {
+    default <T, S> SerializedObject<T> convert(SerializedObject<S> original, Class<T> targetType) {
         if (original.getContentType().equals(targetType)) {
             return (SerializedObject<T>) original;
         }
