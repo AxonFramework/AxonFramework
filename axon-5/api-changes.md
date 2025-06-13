@@ -155,9 +155,9 @@ public class MyInterceptingEventHandler {
 }
 ```
 
-You are able inject the `ProcessingContext` in any message-handling method, so this is always available. Any code that uses the old `UnitOfWork` should be rewritten to put resources in this context. 
+You are able inject the `ProcessingContext` in any message-handling method, so this is always available. Any code that uses the old `UnitOfWork` should be rewritten to put resources in this context.
 
-We will provide a migration guide, as well as OpenWrite recipes for these scenarios. 
+We will provide a migration guide, as well as OpenWrite recipes for these scenarios.
 
 ## Message
 
@@ -799,7 +799,7 @@ without mutating the original instance. This is particularly useful in functiona
 better immutability guarantees in your code. This works with both Java records and Kotlin data classes, as well as
 traditional classes.
 
-The first command is handled by a static method, responsible for verifying the command and creating the entity. Using the first event, the entity is created using the constructor defining the payload or `EventMessage`. Commands after this will be handled by methods on the instance of the entity. 
+The first command is handled by a static method, responsible for verifying the command and creating the entity. Using the first event, the entity is created using the constructor defining the payload or `EventMessage`. Commands after this will be handled by methods on the instance of the entity.
 
 To evolve, or change the state, of an entity, `@EventSourcingHandlers` or `EntityEvolvers` can return a new instance of the entity based on an event. This entity will then be used for the next command or next event.
 
@@ -1183,33 +1183,37 @@ This section contains three subsections, called:
 
 ### Moved / Renamed Methods and Constructors
 
-| Constructor / Method                                                 | To where                                                                             |
-|----------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| `Configurer#configureCommandBus`                                     | `MessagingConfigurer#registerCommandBus`                                             | 
-| `Configurer#configureEventBus`                                       | `MessagingConfigurer#registerEventSink`                                              | 
-| `Configurer#configureQueryBus`                                       | `MessagingConfigurer#registerQueryBus`                                               | 
-| `Configurer#configureQueryUpdateEmitter`                             | `MessagingConfigurer#registerQueryUpdateEmitter`                                     | 
-| `ConfigurerModule#configureModule`                                   | `ConfigurationEnhancer#enhance`                                                      | 
-| `ConfigurerModule#configureLifecyclePhaseTimeout`                    | `LifecycleRegistry#registerLifecyclePhaseTimeout`                                    | 
-| `Configurer#registerComponent(Function<Configuration, ? extends C>)` | `ComponentRegistry#registerComponent(ComponentBuilder<C>)`                           | 
-| `Configurer#registerModule(ModuleConfiguration)`                     | `ComponentRegistry#registerComponent(Module)`                                        | 
-| `StreamableMessageSource#openStream(TrackingToken)`                  | `StreamableEventSource#open(SourcingCondition)`                                      | 
-| `StreamableMessageSource#createTailToken()`                          | `StreamableEventSource#firstToken()`                                                 | 
-| `StreamableMessageSource#createHeadToken()`                          | `StreamableEventSource#latestToken()`                                                | 
-| `StreamableMessageSource#createTokenAt(Instant)`                     | `StreamableEventSource#tokenAt(Instant)`                                             | 
-| `Repository#newInstance(Callable<T>)`                                | `Repository#persist(ID, T, ProcessingContext)`                                       | 
-| `Repository#load(String)`                                            | `Repository#load(ID, ProcessingContext)`                                             | 
-| `Repository#loadOrCreate(String, Callable<T>)`                       | `Repository#loadOrCreate(ID, ProcessingContext)`                                     | 
-| `EventStore#readEvents(String)`                                      | `EventStoreTransaction#source(SourcingCondition)`                                    | 
-| `EventStorageEngine#readEvents(EventMessage<?>...)`                  | `EventStorageEngine#appendEvents(AppendCondition, TaggedEventMessage...)`            | 
-| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`   | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`      | 
-| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`   | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`      | 
-| `EventStorageEngine#readEvents(String)`                              | `EventStorageEngine#source(SourcingCondition)`                                       | 
-| `EventStorageEngine#readEvents(String, long)`                        | `EventStorageEngine#source(SourcingCondition)`                                       | 
-| `EventStorageEngine#readEvents(TrackingToken, boolean)`              | `EventStorageEngine#stream(StreamingCondition)`                                      | 
-| `EventStorageEngine#createTailToken()`                               | `EventStorageEngine#firstToken()`                                                    | 
-| `EventStorageEngine#createHeadToken()`                               | `EventStorageEngine#latestToken()`                                                   | 
-| `EventStorageEngine#createTokenAt(Instant)`                          | `EventStorageEngine#tokenAt(Instant)`                                                | 
+| Constructor / Method                                                                                                            | To where                                                                                                               |
+|---------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| `Configurer#configureCommandBus`                                                                                                | `MessagingConfigurer#registerCommandBus`                                                                               | 
+| `Configurer#configureEventBus`                                                                                                  | `MessagingConfigurer#registerEventSink`                                                                                | 
+| `Configurer#configureQueryBus`                                                                                                  | `MessagingConfigurer#registerQueryBus`                                                                                 | 
+| `Configurer#configureQueryUpdateEmitter`                                                                                        | `MessagingConfigurer#registerQueryUpdateEmitter`                                                                       | 
+| `ConfigurerModule#configureModule`                                                                                              | `ConfigurationEnhancer#enhance`                                                                                        | 
+| `ConfigurerModule#configureLifecyclePhaseTimeout`                                                                               | `LifecycleRegistry#registerLifecyclePhaseTimeout`                                                                      | 
+| `Configurer#registerComponent(Function<Configuration, ? extends C>)`                                                            | `ComponentRegistry#registerComponent(ComponentBuilder<C>)`                                                             | 
+| `Configurer#registerModule(ModuleConfiguration)`                                                                                | `ComponentRegistry#registerComponent(Module)`                                                                          | 
+| `StreamableMessageSource#openStream(TrackingToken)`                                                                             | `StreamableEventSource#open(SourcingCondition)`                                                                        | 
+| `StreamableMessageSource#createTailToken()`                                                                                     | `StreamableEventSource#firstToken()`                                                                                   | 
+| `StreamableMessageSource#createHeadToken()`                                                                                     | `StreamableEventSource#latestToken()`                                                                                  | 
+| `StreamableMessageSource#createTokenAt(Instant)`                                                                                | `StreamableEventSource#tokenAt(Instant)`                                                                               | 
+| `Repository#newInstance(Callable<T>)`                                                                                           | `Repository#persist(ID, T, ProcessingContext)`                                                                         | 
+| `Repository#load(String)`                                                                                                       | `Repository#load(ID, ProcessingContext)`                                                                               | 
+| `Repository#loadOrCreate(String, Callable<T>)`                                                                                  | `Repository#loadOrCreate(ID, ProcessingContext)`                                                                       | 
+| `EventStore#readEvents(String)`                                                                                                 | `EventStoreTransaction#source(SourcingCondition)`                                                                      | 
+| `EventStorageEngine#readEvents(EventMessage<?>...)`                                                                             | `EventStorageEngine#appendEvents(AppendCondition, TaggedEventMessage...)`                                              | 
+| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`                                                              | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`                                        | 
+| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`                                                              | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`                                        | 
+| `EventStorageEngine#readEvents(String)`                                                                                         | `EventStorageEngine#source(SourcingCondition)`                                                                         | 
+| `EventStorageEngine#readEvents(String, long)`                                                                                   | `EventStorageEngine#source(SourcingCondition)`                                                                         | 
+| `EventStorageEngine#readEvents(TrackingToken, boolean)`                                                                         | `EventStorageEngine#stream(StreamingCondition)`                                                                        | 
+| `EventStorageEngine#createTailToken()`                                                                                          | `EventStorageEngine#firstToken()`                                                                                      | 
+| `EventStorageEngine#createHeadToken()`                                                                                          | `EventStorageEngine#latestToken()`                                                                                     | 
+| `EventStorageEngine#createTokenAt(Instant)`                                                                                     | `EventStorageEngine#tokenAt(Instant)`                                                                                  | 
+| `StreamingEventProcessor#resetTokens(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>)`                 | `StreamingEventProcessor#resetTokens(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>)`                 |
+| `StreamingEventProcessor#resetTokens(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>, R resetContext)` | `StreamingEventProcessor#resetTokens(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>, R resetContext)` |
+| `PooledStreamingEventProcessor.Builder#initialToken(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>)`  | `PooledStreamingEventProcessor.Builder#initialToken(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>)`  |
+| `PooledStreamingEventProcessor.Builder#messageSource(StreamableMessageSource<TrackedEventMessage<?>>)`                          | `PooledStreamingEventProcessor.Builder#eventSource(StreamableEventSource<? extends EventMessage<?>>)`                  |
 
 ### Removed Methods and Constructors
 

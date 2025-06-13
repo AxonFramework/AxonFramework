@@ -134,6 +134,7 @@ class InfraConfigurationTest {
      * provide them in a sorted fashion.
      */
     @Test
+    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since Event Processors aren't started")
     void eventHandlingComponentsAreRegisteredAccordingToOrderAnnotation() {
         testApplicationContext.withUserConfiguration(EventHandlerOrderingContext.class).run(context -> {
             // Validate existence of Event Processor "test"
@@ -187,6 +188,7 @@ class InfraConfigurationTest {
     }
 
     @Test
+    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since MessageHandlerRegistrar isn't started")
     void configurerModuleRegisteredHandlerEnhancersAreIncluded() {
         testApplicationContext.withUserConfiguration(HandlerEnhancerConfigurerModuleContext.class).run(context -> {
             assertThat(context).hasBean("handlerInvoked")

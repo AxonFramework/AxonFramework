@@ -54,7 +54,7 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
         return ComponentDefinition.ofType(AxonServerConnectionManager.class)
                                   .withBuilder(this::buildConnectionManager)
                                   .onStart(Phase.INSTRUCTION_COMPONENTS, AxonServerConnectionManager::start)
-                                  .onStart(Phase.EXTERNAL_CONNECTIONS, AxonServerConnectionManager::shutdown);
+                                  .onShutdown(Phase.EXTERNAL_CONNECTIONS, AxonServerConnectionManager::shutdown);
     }
 
     private AxonServerConnectionManager buildConnectionManager(Configuration config) {

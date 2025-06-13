@@ -19,7 +19,10 @@ package org.axonframework.configuration;
 import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -59,5 +62,25 @@ class HierarchicalConfigurationTest {
         assertEquals(1, lifecycleRegistry.getShutdownHandlers().get(42).size());
         lifecycleRegistry.getShutdownHandlers().get(42).getFirst().run(parentConfiguration);
         assertTrue(shutdownHandlerCalled.get());
+    }
+
+    @Test
+    void propagatesExceptionInLifecycleHandler() {
+        var parentConfiguration = mock(Configuration.class);
+        var lifecycleRegistry = new StubLifecycleRegistry();
+        Configuration configuration = HierarchicalConfiguration.build(
+                lifecycleRegistry,
+                (childLifecycleRegistry) -> {
+                    childLifecycleRegistry.onStart(42, (Consumer<Configuration>) (c) -> {
+                        throw new RuntimeException("Expected exception");
+                    });
+                    return parentConfiguration;
+                }
+        );
+        var result = lifecycleRegistry.getStartHandlers().get(42).getFirst().run(parentConfiguration);
+        assertTrue(result.isCompletedExceptionally());
+        assertInstanceOf(RuntimeException.class, result.exceptionNow());
+        assertSame("Expected exception", result.exceptionNow().getMessage());
+
     }
 }

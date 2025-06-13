@@ -277,7 +277,7 @@ class MultiStreamableMessageSourceTest {
     }
 
     @Test
-    void createTailToken() {
+    void createLatestToken() {
         EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
@@ -295,7 +295,7 @@ class MultiStreamableMessageSourceTest {
     }
 
     @Test
-    void createHeadToken() {
+    void createFirstToken() {
         EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
