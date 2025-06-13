@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,41 @@
 
 package org.axonframework.serialization;
 
+import jakarta.annotation.Nonnull;
+
 /**
- * Interface describing a mechanism that converts the data type of IntermediateRepresentations of SerializedObjects for
- * Upcasters. Different upcasters may require different data type (e.g. {@code byte[]} or
- * {@code InputStream}), or may produce a different data type than they consume.
+ * Interface describing a mechanism that converts the data of a specified {@link #expectedSourceType() source type} into
+ * the defined {@link #targetType() target type}.
  *
- * @param <S> The expected source type
- * @param <T> The output type
+ * @param <S> The expected source type for this {@code ContentTypeConverter} to {@link #convert(Object) convert}.
+ * @param <T> The output type of this {@code ContentTypeConverter's} {@link #convert(Object) convert} method.
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
 public interface ContentTypeConverter<S, T> {
 
     /**
-     * The expected type of input data.
+     * Returns the expected type of input data for this {@code ContentTypeConverter} to {@link #convert(Object)}.
      *
-     * @return the expected data format in IntermediateRepresentation
+     * @return The expected type of input data for this {@code ContentTypeConverter} to {@link #convert(Object)}.
      */
+    @Nonnull
     Class<S> expectedSourceType();
 
     /**
-     * The returned type of IntermediateRepresentation
+     * Returns the type of output for this {@code ContentTypeConverter} to {@link #convert(Object)} into.
      *
-     * @return the output data format in IntermediateRepresentation
+     * @return The type of output for this {@code ContentTypeConverter} to {@link #convert(Object)} into.
      */
+    @Nonnull
     Class<T> targetType();
 
     /**
-     * Converts the given object into another. Typically, these values are contained by a {@link SerializedObject}
-     * instance.
+     * Converts the given {@code original} object of generic type {@code S} into an object of generic type {@code T}.
      *
-     * @param original the value to convert
-     * @return the converted value
+     * @param original The object of generic type {@code S} to convert into an object of generic type {@code T}.
+     * @return The converted version of the given {@code original} in type {@code T}.
      */
-    T convert(S original);
+    @Nonnull
+    T convert(@Nonnull S original);
 }
