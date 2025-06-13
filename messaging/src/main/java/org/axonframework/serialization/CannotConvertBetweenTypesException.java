@@ -16,33 +16,34 @@
 
 package org.axonframework.serialization;
 
-import org.axonframework.common.AxonConfigurationException;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Exception indicating that a conversion is required between to upcasters, but there is no converter capable of doing
  * the conversion.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
-public class CannotConvertBetweenTypesException extends AxonConfigurationException {
+public class CannotConvertBetweenTypesException extends IllegalArgumentException {
 
     /**
      * Initializes the exception with the given {@code message}.
      *
-     * @param message The message describing the problem
+     * @param message The message describing the problem.
      */
-    public CannotConvertBetweenTypesException(String message) {
+    public CannotConvertBetweenTypesException(@Nonnull String message) {
         super(message);
     }
 
     /**
      * Initializing the exception with given {@code message} and {@code cause}.
      *
-     * @param message The message describing the problem
-     * @param cause   The original cause of the exception
+     * @param message The message describing the problem.
+     * @param cause   The original cause of the exception.
      */
-    public CannotConvertBetweenTypesException(String message, Throwable cause) {
+    public CannotConvertBetweenTypesException(@Nonnull String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }
