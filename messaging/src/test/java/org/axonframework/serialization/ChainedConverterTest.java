@@ -82,6 +82,17 @@ class ChainedConverterTest {
     }
 
     @Test
+    void validateSourceAndTargetType() {
+        Class<Number> testSourceType = Number.class;
+        Class<InputStream> testTargetType = InputStream.class;
+
+        testSubject = ChainedConverter.calculateChain(testSourceType, testTargetType, candidates);
+
+        assertEquals(testSourceType, testSubject.expectedSourceType());
+        assertEquals(testTargetType, testSubject.targetType());
+    }
+
+    @Test
     void complexRoute() throws Exception {
         target = InputStream.class;
         source = 1L;
