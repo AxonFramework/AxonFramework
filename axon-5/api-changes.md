@@ -1117,7 +1117,7 @@ This section contains three subsections, called:
 |---------------------------------------|--------------------------------|---------------------|
 | `CommandTargetResolver#resolveTarget` | `VersionedAggregateIdentifier` | `String`            |
 
-### Moved / Renamed Methods and Constructors
+### Moved, Renamed, or parameter adjusted Methods
 
 | Constructor / Method                                                                                                            | To where                                                                                                               |
 |---------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
@@ -1150,6 +1150,8 @@ This section contains three subsections, called:
 | `StreamingEventProcessor#resetTokens(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>, R resetContext)` | `StreamingEventProcessor#resetTokens(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>, R resetContext)` |
 | `PooledStreamingEventProcessor.Builder#initialToken(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>)`  | `PooledStreamingEventProcessor.Builder#initialToken(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>)`  |
 | `PooledStreamingEventProcessor.Builder#messageSource(StreamableMessageSource<TrackedEventMessage<?>>)`                          | `PooledStreamingEventProcessor.Builder#eventSource(StreamableEventSource<? extends EventMessage<?>>)`                  |
+| `Converter.#convert(Object, Class<T>)`                                                                                          | `Converter.#convert(S, Class<T>)`                                                                                      |
+| `Converter.#convert(Object, Class<?>, Class<T>)`                                                                                | `Converter.#convert(S, Class<S>, Class<T>)`                                                                            |
 
 ### Removed Methods and Constructors
 
