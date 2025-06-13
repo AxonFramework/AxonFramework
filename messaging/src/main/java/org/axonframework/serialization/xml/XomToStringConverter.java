@@ -17,6 +17,7 @@
 package org.axonframework.serialization.xml;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import nu.xom.Document;
 import org.axonframework.serialization.ContentTypeConverter;
 
@@ -43,8 +44,8 @@ public class XomToStringConverter implements ContentTypeConverter<Document, Stri
     }
 
     @Override
-    @Nonnull
-    public String convert(@Nonnull Document original) {
-        return original.toXML();
+    @Nullable
+    public String convert(@Nullable Document original) {
+        return original != null ? original.toXML() : null;
     }
 }

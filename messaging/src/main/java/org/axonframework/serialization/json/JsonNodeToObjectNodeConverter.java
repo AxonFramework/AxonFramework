@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.ContentTypeConverter;
 import org.axonframework.serialization.SerializationException;
 
@@ -48,8 +49,12 @@ public class JsonNodeToObjectNodeConverter implements ContentTypeConverter<JsonN
     }
 
     @Override
-    @Nonnull
-    public ObjectNode convert(@Nonnull JsonNode original) {
+    @Nullable
+    public ObjectNode convert(@Nullable JsonNode original) {
+        if (original == null) {
+            return null;
+        }
+
         JsonNodeType originalNodeType = original.getNodeType();
         if (JsonNodeType.OBJECT.equals(originalNodeType)) {
             return ((ObjectNode) original);

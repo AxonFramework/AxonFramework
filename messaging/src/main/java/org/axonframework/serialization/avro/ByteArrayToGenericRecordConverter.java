@@ -17,6 +17,7 @@
 package org.axonframework.serialization.avro;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
@@ -67,15 +68,19 @@ public class ByteArrayToGenericRecordConverter implements ContentTypeConverter<b
     }
 
     @Override
-    @Nonnull
-    public GenericRecord convert(@Nonnull byte[] singleObjectEncodeBytes) {
-        long fingerprint = AvroUtil.fingerprint(singleObjectEncodeBytes);
+    @Nullable
+    public GenericRecord convert(@Nullable byte[] original) {
+        if (original == null) {
+            return null;
+        }
+
+        long fingerprint = AvroUtil.fingerprint(original);
         Schema writerSchema = schemaStore.findByFingerprint(fingerprint);
         GenericDatumReader<GenericRecord> reader =
                 new GenericDatumReader<>(writerSchema, writerSchema, AvroUtil.genericData);
 
         try {
-            return reader.read(null, decoderFactory.binaryDecoder(AvroUtil.payload(singleObjectEncodeBytes), null));
+            return reader.read(null, decoderFactory.binaryDecoder(AvroUtil.payload(original), null));
         } catch (IOException e) {
             throw new CannotConvertBetweenTypesException("Cannot convert bytes to GenericRecord.", e);
         }

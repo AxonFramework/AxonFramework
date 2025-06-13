@@ -19,6 +19,7 @@ package org.axonframework.serialization.json;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.ContentTypeConverter;
 
 /**
@@ -45,8 +46,8 @@ public class ObjectNodeToJsonNodeConverter implements ContentTypeConverter<Objec
     }
 
     @Override
-    @Nonnull
-    public JsonNode convert(@Nonnull ObjectNode original) {
+    @Nullable
+    public JsonNode convert(@Nullable ObjectNode original) {
         return original;
     }
 }

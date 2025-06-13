@@ -17,6 +17,7 @@
 package org.axonframework.serialization.converters;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.ContentTypeConverter;
 
@@ -47,8 +48,12 @@ public class InputStreamToByteArrayConverter implements ContentTypeConverter<Inp
     }
 
     @Override
-    @Nonnull
-    public byte[] convert(@Nonnull InputStream original) {
+    @Nullable
+    public byte[] convert(@Nullable InputStream original) {
+        if (original == null) {
+            return null;
+        }
+
         try {
             return bytesFrom(original);
         } catch (IOException e) {

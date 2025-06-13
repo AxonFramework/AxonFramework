@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.event;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.Converter;
 
 import java.nio.charset.StandardCharsets;
@@ -34,7 +35,8 @@ public class TestConverter implements Converter {
     }
 
     @Override
-    public <S, T> T convert(@Nonnull S original, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
+    @Nullable
+    public <S, T> T convert(@Nullable S original, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
         if (byte[].class.isAssignableFrom(targetType)) {
             return (T) original.toString().getBytes(StandardCharsets.UTF_8);
         } else if (String.class.isAssignableFrom(targetType)) {

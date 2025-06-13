@@ -17,6 +17,7 @@
 package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Interface describing a mechanism that converts the data of a specified {@link #expectedSourceType() source type} into
@@ -51,6 +52,6 @@ public interface ContentTypeConverter<S, T> {
      * @param original The object of generic type {@code S} to convert into an object of generic type {@code T}.
      * @return The converted version of the given {@code original} in type {@code T}.
      */
-    @Nonnull
-    T convert(@Nonnull S original);
+    @Nullable
+    T convert(@Nullable S original);
 }

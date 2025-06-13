@@ -17,6 +17,7 @@
 package org.axonframework.serialization.xml;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.ParsingException;
@@ -51,8 +52,12 @@ public class InputStreamToXomConverter implements ContentTypeConverter<InputStre
     }
 
     @Override
-    @Nonnull
-    public Document convert(@Nonnull InputStream original) {
+    @Nullable
+    public Document convert(@Nullable InputStream original) {
+        if (original == null) {
+            return null;
+        }
+
         try {
             return new Builder().build(new InputStreamReader(original));
         } catch (ParsingException | IOException e) {

@@ -17,6 +17,7 @@
 package org.axonframework.serialization.converters;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.ByteArrayInputStream;
@@ -45,8 +46,8 @@ public class ByteArrayToInputStreamConverter implements ContentTypeConverter<byt
     }
 
     @Override
-    @Nonnull
-    public InputStream convert(@Nonnull byte[] original) {
-        return new ByteArrayInputStream(original);
+    @Nullable
+    public InputStream convert(@Nullable byte[] original) {
+        return original != null ? new ByteArrayInputStream(original) : null;
     }
 }

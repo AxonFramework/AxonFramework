@@ -17,6 +17,7 @@
 package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,8 +92,9 @@ public class ChainingConverter implements Converter {
     }
 
     @Override
-    public <S, T> T convert(@Nonnull S original, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
-        if (sourceType.equals(targetType)) {
+    @Nullable
+    public <S, T> T convert(@Nullable S original, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
+        if (sourceType.equals(targetType) || original == null) {
             //noinspection unchecked
             return (T) original;
         }

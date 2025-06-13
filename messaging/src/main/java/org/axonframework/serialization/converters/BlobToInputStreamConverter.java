@@ -17,6 +17,7 @@
 package org.axonframework.serialization.converters;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.ContentTypeConverter;
 
@@ -45,8 +46,12 @@ public class BlobToInputStreamConverter implements ContentTypeConverter<Blob, In
     }
 
     @Override
-    @Nonnull
-    public InputStream convert(@Nonnull Blob original) {
+    @Nullable
+    public InputStream convert(@Nullable Blob original) {
+        if (original == null) {
+            return null;
+        }
+
         try {
             return original.getBinaryStream();
         } catch (SQLException e) {

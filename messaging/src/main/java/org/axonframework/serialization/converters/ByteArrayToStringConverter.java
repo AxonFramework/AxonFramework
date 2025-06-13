@@ -17,6 +17,7 @@
 package org.axonframework.serialization.converters;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.ContentTypeConverter;
 
 import java.nio.charset.StandardCharsets;
@@ -44,8 +45,8 @@ public class ByteArrayToStringConverter implements ContentTypeConverter<byte[], 
     }
 
     @Override
-    @Nonnull
-    public String convert(@Nonnull byte[] original) {
-        return new String(original, StandardCharsets.UTF_8);
+    @Nullable
+    public String convert(@Nullable byte[] original) {
+        return original != null ? new String(original, StandardCharsets.UTF_8) : null;
     }
 }

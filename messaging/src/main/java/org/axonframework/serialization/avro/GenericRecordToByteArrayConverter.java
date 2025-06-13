@@ -17,6 +17,7 @@
 package org.axonframework.serialization.avro;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.BinaryMessageEncoder;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
@@ -48,11 +49,15 @@ public class GenericRecordToByteArrayConverter implements ContentTypeConverter<G
     }
 
     @Override
-    @Nonnull
-    public byte[] convert(@Nonnull GenericRecord genericRecord) {
+    @Nullable
+    public byte[] convert(@Nullable GenericRecord original) {
+        if (original == null) {
+            return null;
+        }
+
         try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            new BinaryMessageEncoder<GenericRecord>(AvroUtil.genericData, genericRecord.getSchema())
-                    .encode(genericRecord, baos);
+            new BinaryMessageEncoder<GenericRecord>(AvroUtil.genericData, original.getSchema())
+                    .encode(original, baos);
             baos.flush();
             return baos.toByteArray();
         } catch (IOException e) {

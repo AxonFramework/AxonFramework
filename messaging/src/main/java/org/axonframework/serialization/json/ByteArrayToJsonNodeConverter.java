@@ -19,6 +19,7 @@ package org.axonframework.serialization.json;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.ContentTypeConverter;
 
@@ -58,8 +59,12 @@ public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[]
     }
 
     @Override
-    @Nonnull
-    public JsonNode convert(@Nonnull byte[] original) {
+    @Nullable
+    public JsonNode convert(@Nullable byte[] original) {
+        if (original == null) {
+            return null;
+        }
+
         try {
             return objectMapper.readTree(original);
         } catch (IOException e) {

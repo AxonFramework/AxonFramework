@@ -17,6 +17,7 @@
 package org.axonframework.serialization.xml;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.ContentTypeConverter;
 import org.dom4j.Document;
 
@@ -46,8 +47,8 @@ public class Dom4JToByteArrayConverter implements ContentTypeConverter<Document,
     }
 
     @Override
-    @Nonnull
-    public byte[] convert(@Nonnull Document original) {
-        return original.asXML().getBytes(StandardCharsets.UTF_8);
+    @Nullable
+    public byte[] convert(@Nullable Document original) {
+        return original != null ? original.asXML().getBytes(StandardCharsets.UTF_8) : null;
     }
 }

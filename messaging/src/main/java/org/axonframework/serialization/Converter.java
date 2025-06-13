@@ -17,6 +17,7 @@
 package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Interface describing a mechanism that can convert data from one to another type.
@@ -49,9 +50,10 @@ public interface Converter {
      * @param <S>        The source data type.
      * @return A converted version of the given {@code original} into the given {@code targetType}.
      */
-    default <S, T> T convert(@Nonnull S original, @Nonnull Class<T> targetType) {
+    @Nullable
+    default <S, T> T convert(@Nullable S original, @Nonnull Class<T> targetType) {
         //noinspection unchecked
-        return convert(original, (Class<S>) original.getClass(), targetType);
+        return original != null ? convert(original, (Class<S>) original.getClass(), targetType) : null;
     }
 
     /**
@@ -65,7 +67,8 @@ public interface Converter {
      * @param <S>        The source data type.
      * @return A converted version of the given {@code original} into the given {@code targetType}.
      */
-    <S, T> T convert(@Nonnull S original, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType);
+    @Nullable
+    <S, T> T convert(@Nullable S original, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType);
 
     /**
      * Converts the data format of the given {@code original} IntermediateRepresentation to the target data type.

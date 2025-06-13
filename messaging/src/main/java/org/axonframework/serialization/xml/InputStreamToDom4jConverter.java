@@ -17,6 +17,7 @@
 package org.axonframework.serialization.xml;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.ContentTypeConverter;
 import org.dom4j.Document;
@@ -51,8 +52,12 @@ public class InputStreamToDom4jConverter implements ContentTypeConverter<InputSt
     }
 
     @Override
-    @Nonnull
-    public Document convert(@Nonnull InputStream original) {
+    @Nullable
+    public Document convert(@Nullable InputStream original) {
+        if (original == null) {
+            return null;
+        }
+
         try {
             return new STAXEventReader().readDocument(new InputStreamReader(original, StandardCharsets.UTF_8));
         } catch (XMLStreamException e) {
