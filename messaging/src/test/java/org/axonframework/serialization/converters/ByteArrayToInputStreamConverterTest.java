@@ -18,42 +18,44 @@ package org.axonframework.serialization.converters;
 
 import org.junit.jupiter.api.*;
 
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link InputStreamToByteArrayConverter}.
+ * Test class validating the {@link ByteArrayToInputStreamConverter}.
  *
- * @author Allard Buijze
+ * @author Steven van Beelen
  */
-class InputStreamToByteArrayConverterTest {
+class ByteArrayToInputStreamConverterTest {
 
-    private InputStreamToByteArrayConverter testSubject;
+    private ByteArrayToInputStreamConverter testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new InputStreamToByteArrayConverter();
+        testSubject = new ByteArrayToInputStreamConverter();
     }
 
     @Test
     void validateSourceAndTargetType() {
-        assertEquals(InputStream.class, testSubject.expectedSourceType());
-        assertEquals(byte[].class, testSubject.targetType());
+        assertEquals(byte[].class, testSubject.expectedSourceType());
+        assertEquals(InputStream.class, testSubject.targetType());
     }
 
     @Test
-    void convert() {
-        byte[] bytes = "Hello, world!".getBytes();
-        InputStream inputStream = new ByteArrayInputStream(bytes);
-        byte[] actual = testSubject.convert(inputStream);
+    void convert() throws IOException {
+        byte[] testObject = "Hello, world!".getBytes();
 
-        assertArrayEquals(bytes, actual);
+        InputStream result = testSubject.convert(testObject);
+
+        assertNotNull(result);
+        assertArrayEquals(testObject, result.readAllBytes());
     }
 
     @Test
     void convertIsNullSafe() {
+        //noinspection resource
         assertDoesNotThrow(() -> testSubject.convert(null));
         assertNull(testSubject.convert(null));
     }

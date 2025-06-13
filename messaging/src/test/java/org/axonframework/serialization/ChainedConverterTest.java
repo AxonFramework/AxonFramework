@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package org.axonframework.serialization;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -33,45 +32,64 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link ChainedConverter}.
+ *
  * @author Allard Buijze
  */
 class ChainedConverterTest {
 
-    private ContentTypeConverter testSubject;
-    private Object source;
-    private Class<?> target;
     private List<ContentTypeConverter<?, ?>> candidates;
-    private ContentTypeConverter<?, ?> stringToReaderConverter;
     private ContentTypeConverter<?, ?> stringToByteConverter;
+    private ContentTypeConverter<?, ?> stringToReaderConverter;
     private ContentTypeConverter<?, ?> bytesToInputStreamConverter;
     private ContentTypeConverter<?, ?> numberToStringConverter;
 
+    private Object source;
+    private Class<?> target;
+
+    @SuppressWarnings("rawtypes")
+    private ContentTypeConverter testSubject;
+
     @BeforeEach
     void setUp() {
-        candidates = new ArrayList<>();
-        numberToStringConverter = mockConverter(Number.class, String.class, "hello");
-        stringToByteConverter = mockConverter(String.class, byte[].class, "hello".getBytes());
-        stringToReaderConverter = mockConverter(String.class, Reader.class, new StringReader("hello"));
-        bytesToInputStreamConverter = mockConverter(byte[].class, InputStream.class,
-                                                    new ByteArrayInputStream("hello".getBytes()));
-        ContentTypeConverter<?, ?> inputStreamToNumberConverter = mockConverter(InputStream.class,
-                                                                                byte[].class,
-                                                                                "hello".getBytes());
+        this.candidates = new ArrayList<>();
+        this.stringToByteConverter = mockConverter(String.class, byte[].class, "hello".getBytes());
+        this.stringToReaderConverter = mockConverter(String.class, Reader.class, new StringReader("hello"));
+        this.bytesToInputStreamConverter = mockConverter(
+                byte[].class,
+                InputStream.class,
+                new ByteArrayInputStream("hello".getBytes())
+        );
+        this.numberToStringConverter = mockConverter(Number.class, String.class, "hello");
 
-        candidates.add(stringToByteConverter);
-        candidates.add(stringToReaderConverter);
-        candidates.add(bytesToInputStreamConverter);
-        candidates.add(inputStreamToNumberConverter);
-        candidates.add(numberToStringConverter);
+        this.candidates.add(stringToByteConverter);
+        this.candidates.add(stringToReaderConverter);
+        this.candidates.add(numberToStringConverter);
+        this.candidates.add(bytesToInputStreamConverter);
+        this.candidates.add(mockConverter(InputStream.class, byte[].class, "hello".getBytes()));
     }
 
-    private ContentTypeConverter<?, ?> mockConverter(Class<?> expectedType, Class<?> targetType,
+    private ContentTypeConverter<?, ?> mockConverter(Class<?> expectedType,
+                                                     Class<?> targetType,
                                                      Object representation) {
+        //noinspection rawtypes
         ContentTypeConverter mock = mock(ContentTypeConverter.class);
         when(mock.expectedSourceType()).thenReturn(expectedType);
         when(mock.targetType()).thenReturn(targetType);
+        //noinspection unchecked
         when(mock.convert(any())).thenReturn(representation);
         return mock;
+    }
+
+    @Test
+    void validateSourceAndTargetType() {
+        Class<Number> testSourceType = Number.class;
+        Class<InputStream> testTargetType = InputStream.class;
+
+        testSubject = ChainedConverter.calculateChain(testSourceType, testTargetType, candidates);
+
+        assertEquals(testSourceType, testSubject.expectedSourceType());
+        assertEquals(testTargetType, testSubject.targetType());
     }
 
     @Test
@@ -95,10 +113,6 @@ class ChainedConverterTest {
         verify(stringToReaderConverter, never()).convert(any());
     }
 
-    private <T> T convertSource() {
-        return (T) testSubject.convert(source);
-    }
-    
     @Test
     void simpleRoute() {
         target = String.class;
@@ -119,11 +133,17 @@ class ChainedConverterTest {
         verify(stringToByteConverter, never()).convert(any());
     }
 
+    private <T> T convertSource() {
+        //noinspection unchecked
+        return (T) testSubject.convert(source);
+    }
+
     @Test
     void inexistentRoute() {
         target = InputStream.class;
         source = new StringReader("hello");
-        assertThrows(CannotConvertBetweenTypesException.class, () -> ChainedConverter.calculateChain(Reader.class, target, candidates));
+        assertThrows(ConversionException.class,
+                     () -> ChainedConverter.calculateChain(Reader.class, target, candidates));
     }
 
     // Detects an issue where the ChainedConverter hangs as it evaluates a recursive route
@@ -132,21 +152,25 @@ class ChainedConverterTest {
         target = Number.class;
         source = "hello";
         assertFalse(ChainedConverter.canConvert(String.class, target, candidates));
-        assertThrows(CannotConvertBetweenTypesException.class, () -> ChainedConverter.calculateChain(String.class, target, candidates));
+        assertThrows(ConversionException.class,
+                     () -> ChainedConverter.calculateChain(String.class, target, candidates));
     }
 
     @Test
     void aThirdInexistentRoute() {
         target = Documented.class;
         source = "hello".getBytes();
-        assertThrows(CannotConvertBetweenTypesException.class, () -> ChainedConverter.calculateChain(byte[].class, target, candidates));
+        assertThrows(ConversionException.class,
+                     () -> ChainedConverter.calculateChain(byte[].class, target, candidates));
     }
 
     @Test
     void discontinuousChainIsRejected() {
         try {
-            testSubject = new ChainedConverter(Arrays.<ContentTypeConverter>asList(numberToStringConverter,
-                                                                                   bytesToInputStreamConverter));
+            //noinspection rawtypes,unchecked
+            testSubject = new ChainedConverter(Arrays.<ContentTypeConverter>asList(
+                    numberToStringConverter, bytesToInputStreamConverter
+            ));
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("continuous chain"), "Wrong message: " + e.getMessage());

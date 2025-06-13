@@ -22,7 +22,7 @@ import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
@@ -115,7 +115,7 @@ class GenericMessageTest {
         );
         CurrentUnitOfWork.set(unitOfWork);
         unitOfWork.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
-        CannotConvertBetweenTypesException exception = new CannotConvertBetweenTypesException("foo");
+        ConversionException exception = new ConversionException("foo");
 
         Message<?> result = new GenericMessage<>(new MessageType("exception"), exception);
 

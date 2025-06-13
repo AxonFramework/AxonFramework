@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,16 @@
 package org.axonframework.serialization.xml;
 
 import nu.xom.Document;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link InputStreamToXomConverter}.
+ *
  * @author Jochen Munz
  */
 class InputStreamToXomConverterTest {
@@ -38,11 +39,24 @@ class InputStreamToXomConverterTest {
     }
 
     @Test
+    void validateSourceAndTargetType() {
+        assertEquals(InputStream.class, testSubject.expectedSourceType());
+        assertEquals(Document.class, testSubject.targetType());
+    }
+
+    @Test
     void convert() {
         byte[] bytes = "<parent><child/></parent>".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
         Document actual = testSubject.convert(inputStream);
 
+        assertNotNull(actual);
         assertEquals("parent", actual.getRootElement().getLocalName());
+    }
+
+    @Test
+    void convertIsNullSafe() {
+        assertDoesNotThrow(() -> testSubject.convert(null));
+        assertNull(testSubject.convert(null));
     }
 }

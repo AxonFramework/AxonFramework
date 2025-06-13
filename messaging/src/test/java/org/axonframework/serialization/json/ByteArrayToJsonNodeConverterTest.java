@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,13 @@ package org.axonframework.serialization.json;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.common.io.IOUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link ByteArrayToJsonNodeConverter}.
+ *
  * @author Allard Buijze
  */
 class ByteArrayToJsonNodeConverterTest {
@@ -39,9 +40,27 @@ class ByteArrayToJsonNodeConverterTest {
     }
 
     @Test
-    void convertNodeToBytes() throws Exception {
+    void throwsNullPointerExceptionWhenConstructingWithNullObjectMapper() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> new ByteArrayToJsonNodeConverter(null));
+    }
+
+    @Test
+    void validateSourceAndTargetType() {
+        assertEquals(byte[].class, testSubject.expectedSourceType());
+        assertEquals(JsonNode.class, testSubject.targetType());
+    }
+
+    @Test
+    void convert() throws Exception {
         final String content = "{\"someKey\":\"someValue\",\"someOther\":true}";
         JsonNode expected = objectMapper.readTree(content);
         assertEquals(expected, testSubject.convert(content.getBytes(IOUtils.UTF8)));
+    }
+
+    @Test
+    void convertIsNullSafe() {
+        assertDoesNotThrow(() -> testSubject.convert(null));
+        assertNull(testSubject.convert(null));
     }
 }
