@@ -21,8 +21,8 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.ContentTypeConverter;
-import org.axonframework.serialization.SerializationException;
 
 /**
  * A {@link ContentTypeConverter} implementation that converts a {@link JsonNode} into an {@link ObjectNode}.
@@ -59,7 +59,7 @@ public class JsonNodeToObjectNodeConverter implements ContentTypeConverter<JsonN
         if (JsonNodeType.OBJECT.equals(originalNodeType)) {
             return ((ObjectNode) original);
         } else {
-            throw new SerializationException(
+            throw new ConversionException(
                     "Cannot convert from JsonNode to ObjectNode because the node type is [" + originalNodeType + "]."
             );
         }
