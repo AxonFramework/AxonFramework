@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,45 @@
 
 package org.axonframework.serialization.xml;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.ContentTypeConverter;
 import org.dom4j.Document;
 import org.dom4j.io.STAXEventReader;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import javax.xml.stream.XMLStreamException;
 
 /**
- * Converter that converts an input stream to a Dom4J document. It assumes that the input stream provides UTF-8
- * formatted XML.
+ * A {@link ContentTypeConverter} implementation that converts an {@link InputStream} to a Dom4J
+ * {@link Document document}.
+ * <p>
+ * This converter assumes that the input stream provides UTF-8 formatted XML.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
-public class InputStreamToDom4jConverter implements ContentTypeConverter<InputStream,Document> {
+public class InputStreamToDom4jConverter implements ContentTypeConverter<InputStream, Document> {
 
     @Override
+    @Nonnull
     public Class<InputStream> expectedSourceType() {
         return InputStream.class;
     }
 
     @Override
+    @Nonnull
     public Class<Document> targetType() {
         return Document.class;
     }
 
     @Override
-    public Document convert(InputStream original) {
+    @Nonnull
+    public Document convert(@Nonnull InputStream original) {
         try {
-            return new STAXEventReader().readDocument(new InputStreamReader(original,
-                                                                            Charset.forName("UTF-8")));
+            return new STAXEventReader().readDocument(new InputStreamReader(original, StandardCharsets.UTF_8));
         } catch (XMLStreamException e) {
             throw new CannotConvertBetweenTypesException("Cannot convert from InputStream to dom4j Document.", e);
         }

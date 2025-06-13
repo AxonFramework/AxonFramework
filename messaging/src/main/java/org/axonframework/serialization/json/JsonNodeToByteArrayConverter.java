@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,42 +19,49 @@ package org.axonframework.serialization.json;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nonnull;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.ContentTypeConverter;
 
+import java.util.Objects;
+
 /**
- * ContentTypeConverter implementation that converts a JsonNode object into a byte[]. The byte[] will contain the UTF8
- * encoded JSON string.
+ * A {@link ContentTypeConverter} implementation that converts a {@link JsonNode} object into a {@code byte[]}.
+ * <p>
+ * The {@code byte[]} will contain the UTF8 encoded JSON string.
  *
  * @author Allard Buijze
- * @since 2.2
+ * @since 2.2.0
  */
-public class JsonNodeToByteArrayConverter implements ContentTypeConverter<JsonNode,byte[]> {
+public class JsonNodeToByteArrayConverter implements ContentTypeConverter<JsonNode, byte[]> {
 
     private final ObjectMapper objectMapper;
 
     /**
-     * Initialize the converter, using given {@code objectMapper} to convert the JSonNode into bytes. Typically,
-     * this would be the objectMapper used by the Serializer that serializes objects into JsonNode.
+     * Initialize the {@code JsonNodeToByteArrayConverter} using the given {@code objectMapper} to convert the
+     * {@link JsonNode} into {@code byte[]}.
      *
-     * @param objectMapper The objectMapper to serialize the JsonNode with.
+     * @param objectMapper The object mapper to serialize the {@link JsonNode} into {@code byte[].
      */
-    public JsonNodeToByteArrayConverter(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public JsonNodeToByteArrayConverter(@Nonnull ObjectMapper objectMapper) {
+        this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
     }
 
     @Override
+    @Nonnull
     public Class<JsonNode> expectedSourceType() {
         return JsonNode.class;
     }
 
     @Override
+    @Nonnull
     public Class<byte[]> targetType() {
         return byte[].class;
     }
 
     @Override
-    public byte[] convert(JsonNode original) {
+    @Nonnull
+    public byte[] convert(@Nonnull JsonNode original) {
         try {
             return objectMapper.writeValueAsBytes(original);
         } catch (JsonProcessingException e) {

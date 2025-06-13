@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.annotation.Nonnull;
 import org.axonframework.serialization.ContentTypeConverter;
 
 /**
@@ -32,17 +33,20 @@ import org.axonframework.serialization.ContentTypeConverter;
 public class ObjectNodeToJsonNodeConverter implements ContentTypeConverter<ObjectNode, JsonNode> {
 
     @Override
+    @Nonnull
     public Class<ObjectNode> expectedSourceType() {
         return ObjectNode.class;
     }
 
     @Override
+    @Nonnull
     public Class<JsonNode> targetType() {
         return JsonNode.class;
     }
 
     @Override
-    public JsonNode convert(ObjectNode original) {
+    @Nonnull
+    public JsonNode convert(@Nonnull ObjectNode original) {
         return original;
     }
 }

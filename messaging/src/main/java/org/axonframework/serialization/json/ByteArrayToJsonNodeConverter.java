@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,21 @@ package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nonnull;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
- * ContentTypeConverter implementation that converts byte[] containing UTF8 encoded JSON string to a Jackson JsonNode.
+ * A {@link ContentTypeConverter} implementation that converts {@code byte[]} containing UTF8 encoded JSON string to a
+ * {@link JsonNode}.
  *
  * @author Allard Buijze
- * @since 2.2
+ * @since 2.2.0
  */
-public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[],JsonNode> {
+public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[], JsonNode> {
 
     private final ObjectMapper objectMapper;
 
@@ -38,26 +41,29 @@ public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[]
      *
      * @param objectMapper the Jackson ObjectMapper to parse the byte array with
      */
-    public ByteArrayToJsonNodeConverter(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public ByteArrayToJsonNodeConverter(@Nonnull ObjectMapper objectMapper) {
+        this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
     }
 
     @Override
+    @Nonnull
     public Class<byte[]> expectedSourceType() {
         return byte[].class;
     }
 
     @Override
+    @Nonnull
     public Class<JsonNode> targetType() {
         return JsonNode.class;
     }
 
     @Override
-    public JsonNode convert(byte[] original) {
+    @Nonnull
+    public JsonNode convert(@Nonnull byte[] original) {
         try {
             return objectMapper.readTree(original);
         } catch (IOException e) {
-            throw new CannotConvertBetweenTypesException("An error occurred while converting a JsonNode to byte[]", e);
+            throw new CannotConvertBetweenTypesException("An error occurred while converting a JsonNode to byte[].", e);
         }
     }
 }

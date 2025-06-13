@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.serialization.xml;
 
+import jakarta.annotation.Nonnull;
 import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.ParsingException;
@@ -27,26 +28,31 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 /**
- * Converter that converts an input stream to a XOM document. It assumes that the input stream provides UTF-8
- * formatted XML.
+ * A {@link ContentTypeConverter} implementation that converts an {@link InputStream input stream} to a XOM
+ * {@link Document document}.
+ * <p>
+ * This converter assumes that the input stream provides UTF-8 formatted XML.
  *
  * @author Jochen Munz
- * @since 2.2
+ * @since 2.2.0
  */
-public class InputStreamToXomConverter implements ContentTypeConverter<InputStream,Document> {
+public class InputStreamToXomConverter implements ContentTypeConverter<InputStream, Document> {
 
     @Override
+    @Nonnull
     public Class<InputStream> expectedSourceType() {
         return InputStream.class;
     }
 
     @Override
+    @Nonnull
     public Class<Document> targetType() {
         return Document.class;
     }
 
     @Override
-    public Document convert(InputStream original) {
+    @Nonnull
+    public Document convert(@Nonnull InputStream original) {
         try {
             return new Builder().build(new InputStreamReader(original));
         } catch (ParsingException | IOException e) {

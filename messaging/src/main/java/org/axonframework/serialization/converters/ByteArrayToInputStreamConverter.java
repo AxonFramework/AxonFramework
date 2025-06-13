@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,37 @@
 
 package org.axonframework.serialization.converters;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 /**
- * ContentTypeConverter that converts byte arrays into InputStream. More specifically, it returns an
- * ByteArrayInputStream with the underlying byte[] is backing data.
+ * A {@link ContentTypeConverter} implementation that converts {@code byte[]} into an {@link InputStream}.
+ * <p>
+ * More specifically, it returns an {@link ByteArrayInputStream} with the underlying {@code byte[]} is backing data.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
-public class ByteArrayToInputStreamConverter implements ContentTypeConverter<byte[],InputStream> {
+public class ByteArrayToInputStreamConverter implements ContentTypeConverter<byte[], InputStream> {
 
     @Override
+    @Nonnull
     public Class<byte[]> expectedSourceType() {
         return byte[].class;
     }
 
     @Override
+    @Nonnull
     public Class<InputStream> targetType() {
         return InputStream.class;
     }
 
     @Override
-    public InputStream convert(byte[] original) {
+    @Nonnull
+    public InputStream convert(@Nonnull byte[] original) {
         return new ByteArrayInputStream(original);
     }
 }
