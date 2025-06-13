@@ -21,7 +21,7 @@ import jakarta.annotation.Nullable;
 import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.ParsingException;
-import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.IOException;
@@ -61,7 +61,7 @@ public class InputStreamToXomConverter implements ContentTypeConverter<InputStre
         try {
             return new Builder().build(new InputStreamReader(original));
         } catch (ParsingException | IOException e) {
-            throw new CannotConvertBetweenTypesException("Cannot convert from InputStream to XOM Document.", e);
+            throw new ConversionException("Cannot convert from InputStream to XOM Document.", e);
         }
     }
 }

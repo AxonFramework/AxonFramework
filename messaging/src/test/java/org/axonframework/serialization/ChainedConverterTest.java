@@ -142,7 +142,7 @@ class ChainedConverterTest {
     void inexistentRoute() {
         target = InputStream.class;
         source = new StringReader("hello");
-        assertThrows(CannotConvertBetweenTypesException.class,
+        assertThrows(ConversionException.class,
                      () -> ChainedConverter.calculateChain(Reader.class, target, candidates));
     }
 
@@ -152,7 +152,7 @@ class ChainedConverterTest {
         target = Number.class;
         source = "hello";
         assertFalse(ChainedConverter.canConvert(String.class, target, candidates));
-        assertThrows(CannotConvertBetweenTypesException.class,
+        assertThrows(ConversionException.class,
                      () -> ChainedConverter.calculateChain(String.class, target, candidates));
     }
 
@@ -160,7 +160,7 @@ class ChainedConverterTest {
     void aThirdInexistentRoute() {
         target = Documented.class;
         source = "hello".getBytes();
-        assertThrows(CannotConvertBetweenTypesException.class,
+        assertThrows(ConversionException.class,
                      () -> ChainedConverter.calculateChain(byte[].class, target, candidates));
     }
 

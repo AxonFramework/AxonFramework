@@ -57,7 +57,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
      * @param <S>        The source type of the converter.
      * @param <T>        The target type of the converter.
      * @return A converter for the given source and target types.
-     * @throws CannotConvertBetweenTypesException if no converter can be created using given candidates.
+     * @throws ConversionException if no converter can be created using given candidates.
      */
     public static <S, T> ChainedConverter<S, T> calculateChain(
             @Nonnull Class<S> sourceType,
@@ -66,8 +66,8 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
     ) {
         Route route = calculateRoute(sourceType, targetType, candidates);
         if (route == null) {
-            throw new CannotConvertBetweenTypesException(format("Cannot build a converter to convert from %s to %s",
-                                                                sourceType.getName(), targetType.getName()));
+            throw new ConversionException(format("Cannot build a converter to convert from %s to %s",
+                                                 sourceType.getName(), targetType.getName()));
         }
         return new ChainedConverter<>(route.asList());
     }

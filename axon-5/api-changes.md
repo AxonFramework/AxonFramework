@@ -1037,6 +1037,7 @@ This section contains two tables:
 | org.axonframework.modelling.command.CommandTargetResolver              | org.axonframework.modelling.command.EntityIdResolver                        | No                             |
 | org.axonframework.modelling.command.ForwardingMode                     | org.axonframework.modelling.command.entity.child.EventTargetMatcher         | No                             |
 | org.axonframework.axonserver.connector.ServerConnectorConfigurerModule | org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer | No                             |
+| org.axonframework.serialization.CannotConvertBetweenTypesException     | org.axonframework.serialization.ConversionException                         | No                             |
 
 ### Removed Classes
 

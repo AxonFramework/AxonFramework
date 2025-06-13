@@ -26,14 +26,14 @@ import jakarta.annotation.Nullable;
  * @author Allard Buijze
  * @since 2.0.0
  */
-public class CannotConvertBetweenTypesException extends IllegalArgumentException {
+public class ConversionException extends IllegalArgumentException {
 
     /**
      * Initializes the exception with the given {@code message}.
      *
      * @param message The message describing the problem.
      */
-    public CannotConvertBetweenTypesException(@Nonnull String message) {
+    public ConversionException(@Nonnull String message) {
         super(message);
     }
 
@@ -43,7 +43,7 @@ public class CannotConvertBetweenTypesException extends IllegalArgumentException
      * @param message The message describing the problem.
      * @param cause   The original cause of the exception.
      */
-    public CannotConvertBetweenTypesException(@Nonnull String message, @Nullable Throwable cause) {
+    public ConversionException(@Nonnull String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }

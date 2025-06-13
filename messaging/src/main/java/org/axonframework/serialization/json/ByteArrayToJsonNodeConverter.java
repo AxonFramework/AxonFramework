@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.IOException;
@@ -68,7 +68,7 @@ public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[]
         try {
             return objectMapper.readTree(original);
         } catch (IOException e) {
-            throw new CannotConvertBetweenTypesException("An error occurred while converting a JsonNode to byte[].", e);
+            throw new ConversionException("An error occurred while converting a JsonNode to byte[].", e);
         }
     }
 }

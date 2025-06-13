@@ -23,7 +23,7 @@ import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.message.SchemaStore;
-import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.IOException;
@@ -82,7 +82,7 @@ public class ByteArrayToGenericRecordConverter implements ContentTypeConverter<b
         try {
             return reader.read(null, decoderFactory.binaryDecoder(AvroUtil.payload(original), null));
         } catch (IOException e) {
-            throw new CannotConvertBetweenTypesException("Cannot convert bytes to GenericRecord.", e);
+            throw new ConversionException("Cannot convert bytes to GenericRecord.", e);
         }
     }
 }
