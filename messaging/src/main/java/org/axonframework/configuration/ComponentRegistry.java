@@ -191,9 +191,6 @@ public interface ComponentRegistry extends DescribableComponent {
      * @param builder The builder building the component.
      * @param <C>     The type of component the {@code builder} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
-     * @throws ComponentOverrideException If the override policy is set to
-     *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
-     *                                    with the same type is already defined.
      */
     default <C> ComponentRegistry registerIfNotPresent(@Nonnull Class<C> type,
                                                        @Nonnull ComponentBuilder<C> builder) {
@@ -214,9 +211,6 @@ public interface ComponentRegistry extends DescribableComponent {
      * @param builder The builder building the component.
      * @param <C>     The type of component the {@code builder} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
-     * @throws ComponentOverrideException If the override policy is set to
-     *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
-     *                                    with the same type is already defined.
      */
     default <C> ComponentRegistry registerIfNotPresent(@Nonnull Class<C> type,
                                                        @Nonnull String name,
@@ -231,9 +225,6 @@ public interface ComponentRegistry extends DescribableComponent {
      * @param definition The definition of the component to register.
      * @param <C>        The declared type of the component.
      * @return The current instance of the {@code Configurer} for a fluent API.
-     * @throws ComponentOverrideException If the override policy is set to
-     *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
-     *                                    with the same type is already defined.
      */
     default <C> ComponentRegistry registerIfNotPresent(@Nonnull ComponentDefinition<C> definition) {
         return hasComponent(definition.type(), definition.name()) ? this : registerComponent(definition);
