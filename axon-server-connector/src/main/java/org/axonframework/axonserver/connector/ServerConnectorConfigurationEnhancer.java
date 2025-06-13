@@ -18,10 +18,11 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
-import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.lifecycle.Phase;
 
 import javax.annotation.Nonnull;
 
@@ -42,22 +43,21 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-        registerIfNotPresent(registry, AxonServerConfiguration.class, c -> new AxonServerConfiguration());
-        registerIfNotPresent(registry, AxonServerConnectionManager.class, this::buildAxonServerConnectionManager);
-        registerIfNotPresent(registry, ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity());
-        registerIfNotPresent(registry, AxonServerEventStorageEngine.class, this::buildEventStorageEngine);
-        registry.registerFactory(new AxonServerEventStorageEngineFactory());
+        registry.registerIfNotPresent(AxonServerConfiguration.class, c -> new AxonServerConfiguration())
+                .registerIfNotPresent(connectionManagerDefinition())
+                .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity())
+                .registerIfNotPresent(eventStorageEngineDefinition())
+                .registerFactory(new AxonServerEventStorageEngineFactory());
     }
 
-    private <C> void registerIfNotPresent(ComponentRegistry registry,
-                                          Class<C> type,
-                                          ComponentBuilder<C> builder) {
-        if (!registry.hasComponent(type)) {
-            registry.registerComponent(type, builder);
-        }
+    private ComponentDefinition<AxonServerConnectionManager> connectionManagerDefinition() {
+        return ComponentDefinition.ofType(AxonServerConnectionManager.class)
+                                  .withBuilder(this::buildConnectionManager)
+                                  .onStart(Phase.INSTRUCTION_COMPONENTS, AxonServerConnectionManager::start)
+                                  .onShutdown(Phase.EXTERNAL_CONNECTIONS, AxonServerConnectionManager::shutdown);
     }
 
-    private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration config) {
+    private AxonServerConnectionManager buildConnectionManager(Configuration config) {
         AxonServerConfiguration serverConfig = config.getComponent(AxonServerConfiguration.class);
         return AxonServerConnectionManager.builder()
                                           .routingServers(serverConfig.getServers())
@@ -69,9 +69,16 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
                                           .build();
     }
 
-    private AxonServerEventStorageEngine buildEventStorageEngine(Configuration c) {
-        String defaultContext = c.getComponent(AxonServerConfiguration.class).getContext();
-        return AxonServerEventStorageEngineFactory.constructForContext(defaultContext, c);
+    private ComponentDefinition<AxonServerEventStorageEngine> eventStorageEngineDefinition() {
+        return ComponentDefinition.ofType(AxonServerEventStorageEngine.class)
+                                  .withBuilder(config -> {
+                                      String defaultContext = config.getComponent(AxonServerConfiguration.class)
+                                                                    .getContext();
+                                      return AxonServerEventStorageEngineFactory.constructForContext(
+                                              defaultContext,
+                                              config
+                                      );
+                                  });
     }
 
     @Override

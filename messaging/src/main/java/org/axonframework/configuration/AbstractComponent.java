@@ -91,7 +91,17 @@ public abstract class AbstractComponent<C, A extends C>
 
     @Override
     public Identifier<C> identifier() {
-        return identifier;
+        return this.identifier;
+    }
+
+    @Override
+    public Class<C> type() {
+        return this.identifier.type();
+    }
+
+    @Override
+    public String name() {
+        return this.identifier.name();
     }
 
     @Override

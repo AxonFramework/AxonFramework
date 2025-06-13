@@ -16,19 +16,17 @@
 
 package org.axonframework.deadline.quartz;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
@@ -55,7 +53,6 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 import static java.util.Date.from;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -69,7 +66,7 @@ import static org.quartz.JobKey.jobKey;
  * @author Steven van Beelen
  * @since 3.3
  */
-public class QuartzDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
+public class QuartzDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger logger = LoggerFactory.getLogger(QuartzDeadlineManager.class);
     private static final String CANCEL_ERROR_MESSAGE = "An error occurred while cancelling a timer for a deadline manager";
@@ -84,7 +81,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
     private final DeadlineManagerSpanFactory spanFactory;
 
     /**
-     * Instantiate a Builder to be able to create a {@link QuartzDeadlineManager}.
+     * Instantiate a Builder to be able to create a {@code QuartzDeadlineManager}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
      * <p>
@@ -93,21 +90,21 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
      * The {@link Scheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as such
      * should be provided.
      *
-     * @return a Builder to be able to create a {@link QuartzDeadlineManager}
+     * @return a Builder to be able to create a {@code QuartzDeadlineManager}
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Instantiate a {@link QuartzDeadlineManager} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code QuartzDeadlineManager} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link Scheduler}, {@link ScopeAwareProvider}, {@link TransactionManager} and
      * {@link Serializer} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of them is
      * {@code null}. The TransactionManager, ScopeAwareProvider and Serializer will be tied to the Scheduler's context.
      * If this initialization step fails, this will too result in an AxonConfigurationException.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link QuartzDeadlineManager} instance
+     * @param builder the {@link Builder} used to instantiate a {@code QuartzDeadlineManager} instance
      */
     protected QuartzDeadlineManager(Builder builder) {
         builder.validate();
@@ -238,11 +235,6 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
                              .forJob(key)
                              .startAt(from(triggerDateTime))
                              .build();
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
     }
 
     @Override

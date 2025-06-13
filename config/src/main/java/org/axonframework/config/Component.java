@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 /**
  * A Component used in the Axon Configurer. A Component describes an object that needs to be created, possibly based on
@@ -75,9 +75,7 @@ public class Component<B> {
 
     /**
      * Retrieves the object contained in this component, triggering the builder function if the component hasn't been
-     * built yet. Upon initiation of the instance the
-     * {@link LifecycleHandlerInspector#registerLifecycleHandlers(LegacyConfiguration, Object)} methods will be called
-     * to resolve and register lifecycle methods.
+     * built yet.
      *
      * @return the initialized component contained in this instance
      */
@@ -86,7 +84,6 @@ public class Component<B> {
             LegacyConfiguration configuration = configSupplier.get();
             instance = builderFunction.apply(configuration);
             logger.debug("Instantiated component [{}]: {}", name, instance);
-            LifecycleHandlerInspector.registerLifecycleHandlers(configuration, instance);
         }
         return instance;
     }

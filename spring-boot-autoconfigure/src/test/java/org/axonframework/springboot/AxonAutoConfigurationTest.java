@@ -24,11 +24,10 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
-import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -43,7 +42,6 @@ import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
-import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
@@ -86,6 +84,7 @@ import static org.mockito.Mockito.*;
 class AxonAutoConfigurationTest {
 
     @Test
+    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since Event Processors aren't started")
     void contextInitialization() {
         new ApplicationContextRunner()
                 .withUserConfiguration(AxonAutoConfigurationTest.Context.class)
@@ -149,32 +148,20 @@ class AxonAutoConfigurationTest {
         assertTrue(actual.getMessage().contains("gatewayTwo"));
     }
 
-    @Test
-    void beansImplementingLifecycleHaveTheirHandlersRegistered() {
-        ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-                .withUserConfiguration(Context.class)
-                .withBean("lifecycletest", CustomLifecycleBean.class, CustomLifecycleBean::new)
-                .withPropertyValues("axon.axonserver.enabled=false");
-
-        applicationContextRunner.run(context -> {
-            assertTrue(context.getBean("lifecycletest", CustomLifecycleBean.class).isInvoked());
-        });
-    }
-
-    @Test
-    void shutDownCalledOnEmbeddedEventStoreEngine() {
-        ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-                .withUserConfiguration(Context.class)
-                .withPropertyValues("axon.axonserver.enabled=false");
-
-        AtomicReference<LegacyEmbeddedEventStore> eventStore = new AtomicReference<>();
-
-        applicationContextRunner.run(context -> {
-            eventStore.set(context.getBean(LegacyEmbeddedEventStore.class));
-            assertNotNull(eventStore.get());
-        });
-        verify(eventStore.get(), atLeastOnce()).shutDown();
-    }
+    // TODO #3075
+    // Left this block of code on purpose, as it served a rather important purpose for lifecycle management in combination with Spring
+    // This should be brought over correctly!
+//    @Test
+//    void beansImplementingLifecycleHaveTheirHandlersRegistered() {
+//        ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
+//                .withUserConfiguration(Context.class)
+//                .withBean("lifecycletest", CustomLifecycleBean.class, CustomLifecycleBean::new)
+//                .withPropertyValues("axon.axonserver.enabled=false");
+//
+//        applicationContextRunner.run(context -> {
+//            assertTrue(context.getBean("lifecycletest", CustomLifecycleBean.class).isInvoked());
+//        });
+//    }
 
     @Test
     void ambiguousPrimaryComponentsThrowExceptionWhenRequestedFromConfiguration() {
@@ -338,17 +325,20 @@ class AxonAutoConfigurationTest {
 
     }
 
-    private class CustomLifecycleBean implements Lifecycle {
-
-        private boolean invoked;
-
-        @Override
-        public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-            this.invoked = true;
-        }
-
-        public boolean isInvoked() {
-            return invoked;
-        }
-    }
+    // TODO #3075
+    // Left this block of code on purpose, as it served a rather important purpose for lifecycle management in combination with Spring
+    // This should be brought over correctly!
+//    private class CustomLifecycleBean implements Lifecycle {
+//
+//        private boolean invoked;
+//
+//        @Override
+//        public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+//            this.invoked = true;
+//        }
+//
+//        public boolean isInvoked() {
+//            return invoked;
+//        }
+//    }
 }

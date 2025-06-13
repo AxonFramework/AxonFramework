@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,18 @@
 
 package org.axonframework.lifecycle;
 
+import java.util.function.Consumer;
+
 /**
- * Utility class containing constants which can be used as input for the {@link StartHandler} and {@link
- * ShutdownHandler} annotations, or components implementing the {@link Lifecycle} interface.
+ * Utility class containing constants that can be used as input when registering
+ * {@link org.axonframework.configuration.ComponentDefinition ComponentDefinitions} with
+ * {@link org.axonframework.configuration.ComponentDefinition#onStart(int, Consumer) start} and/or
+ * {@link org.axonframework.configuration.ComponentDefinition#onShutdown(int, Consumer) shutdown} handlers.
  *
  * @author Steven van Beelen
- * @see Lifecycle
- * @see StartHandler
- * @see ShutdownHandler
- * @since 4.3
+ * @see org.axonframework.configuration.ComponentDefinition#onStart(int, Consumer)
+ * @see org.axonframework.configuration.ComponentDefinition#onShutdown(int, Consumer)
+ * @since 4.3.0
  */
 public abstract class Phase {
 

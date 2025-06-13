@@ -16,10 +16,11 @@
 
 package org.axonframework.deadline.jobrunr;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
@@ -27,9 +28,6 @@ import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.deadline.quartz.QuartzDeadlineManager;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
@@ -57,8 +55,6 @@ import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.util.UUID;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -74,7 +70,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @author Gerard Klijs
  * @since 4.7.0
  */
-public class JobRunrDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
+public class JobRunrDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger logger = getLogger(JobRunrDeadlineManager.class);
     protected static final String DELETE_REASON = "Deleted via Axon DeadlineManager API";
@@ -90,7 +86,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
     private final DeadlineManagerSpanFactory spanFactory;
 
     /**
-     * Instantiate a Builder to be able to create a {@link JobRunrDeadlineManager}.
+     * Instantiate a Builder to be able to create a {@code JobRunrDeadlineManager}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
      * <p>
@@ -99,21 +95,20 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
      * The {@link JobScheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as
      * such should be provided.
      *
-     * @return a Builder to be able to create a {@link JobRunrDeadlineManager}
+     * @return a Builder to be able to create a {@code JobRunrDeadlineManager}
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Instantiate a {@link JobRunrDeadlineManager} based on the fields contained in the
+     * Instantiate a {@code JobRunrDeadlineManager} based on the fields contained in the
      * {@link JobRunrDeadlineManager.Builder}.
      * <p>
      * Will assert that the {@link ScopeAwareProvider}, {@link JobScheduler} and {@link Serializer} are not
      * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param builder the {@link QuartzDeadlineManager.Builder} used to instantiate a {@link QuartzDeadlineManager}
-     *                instance
+     * @param builder The {@link Builder} used to instantiate a {@code JobRunrDeadlineManager} instance.
      */
     protected JobRunrDeadlineManager(Builder builder) {
         builder.validate();
@@ -267,11 +262,6 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
     @Override
     public void shutdown() {
         jobScheduler.shutdown();
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
     }
 
     /**

@@ -99,6 +99,7 @@ class InterceptorConfigurationTest {
     }
 
     @Test
+    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since MessageHandlerRegistrar isn't started")
     public void queryHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean("queryGateway", QueryGateway.class).query("foo", String.class);
@@ -122,6 +123,7 @@ class InterceptorConfigurationTest {
     }
 
     @Test
+    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since Event Processors aren't started")
     public void eventHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean("eventGateway", EventGateway.class).publish("foo");

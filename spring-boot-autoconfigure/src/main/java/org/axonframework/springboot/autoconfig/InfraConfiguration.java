@@ -16,10 +16,9 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ModuleConfiguration;
-import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -34,7 +33,6 @@ import org.axonframework.spring.config.SpringSagaLookup;
 import org.axonframework.spring.config.annotation.HandlerDefinitionFactoryBean;
 import org.axonframework.spring.config.annotation.SpringParameterResolverFactoryBean;
 import org.axonframework.spring.saga.SpringResourceInjector;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -107,13 +105,16 @@ public class InfraConfiguration {
         return configurer;
     }
 
-    @Bean
-    public InitializingBean lifecycleInitializer(LegacyConfigurer configurer,
-                                                 List<Lifecycle> lifecycleBeans) {
-        return () -> configurer.onInitialize(
-                config -> lifecycleBeans.forEach(bean -> bean.registerLifecycleHandlers(config.lifecycleRegistry()))
-        );
-    }
+    // TODO #3075
+    // Left this block of code on purpose, as it served a rather important purpose for lifecycle management in combination with Spring
+    // This should be brought over correctly!
+//    @Bean
+//    public InitializingBean lifecycleInitializer(LegacyConfigurer configurer,
+//                                                 List<Lifecycle> lifecycleBeans) {
+//        return () -> configurer.onInitialize(
+//                config -> lifecycleBeans.forEach(bean -> bean.registerLifecycleHandlers(config.lifecycleRegistry()))
+//        );
+//    }
 
     @Primary
     @Bean

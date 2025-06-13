@@ -69,34 +69,17 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-        Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.");
-
-        registerIfNotPresent(registry, MessageTypeResolver.class,
-                             MessagingConfigurationDefaults::defaultMessageTypeResolver);
-        registerIfNotPresent(registry, CommandGateway.class,
-                             MessagingConfigurationDefaults::defaultCommandGateway);
-        registerIfNotPresent(registry, CommandBus.class,
-                             MessagingConfigurationDefaults::defaultCommandBus);
-        registerIfNotPresent(registry, EventGateway.class,
-                             MessagingConfigurationDefaults::defaultEventGateway);
-        registerIfNotPresent(registry, EventSink.class,
-                             MessagingConfigurationDefaults::defaultEventSink);
-        registerIfNotPresent(registry, EventBus.class,
-                             MessagingConfigurationDefaults::defaultEventBus);
-        registerIfNotPresent(registry, QueryGateway.class,
-                             MessagingConfigurationDefaults::defaultQueryGateway);
-        registerIfNotPresent(registry, QueryBus.class,
-                             MessagingConfigurationDefaults::defaultQueryBus);
-        registerIfNotPresent(registry, QueryUpdateEmitter.class,
-                             MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
-    }
-
-    private <C> void registerIfNotPresent(ComponentRegistry registry,
-                                          Class<C> type,
-                                          ComponentBuilder<C> builder) {
-        if (!registry.hasComponent(type)) {
-            registry.registerComponent(type, builder);
-        }
+        registry.registerIfNotPresent(MessageTypeResolver.class,
+                                      MessagingConfigurationDefaults::defaultMessageTypeResolver)
+                .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
+                .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
+                .registerIfNotPresent(EventGateway.class, MessagingConfigurationDefaults::defaultEventGateway)
+                .registerIfNotPresent(EventSink.class, MessagingConfigurationDefaults::defaultEventSink)
+                .registerIfNotPresent(EventBus.class, MessagingConfigurationDefaults::defaultEventBus)
+                .registerIfNotPresent(QueryGateway.class, MessagingConfigurationDefaults::defaultQueryGateway)
+                .registerIfNotPresent(QueryBus.class, MessagingConfigurationDefaults::defaultQueryBus)
+                .registerIfNotPresent(QueryUpdateEmitter.class,
+                                      MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {

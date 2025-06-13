@@ -23,11 +23,12 @@ import com.github.kagkarlsson.scheduler.task.Task;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
 import com.github.kagkarlsson.scheduler.task.TaskWithDataDescriptor;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
@@ -38,8 +39,6 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.jobrunr.DeadlineDetails;
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerBinaryEventData;
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
@@ -65,8 +64,6 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
@@ -82,7 +79,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @since 4.8.0
  */
 @SuppressWarnings("Duplicates")
-public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
+public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger logger = getLogger(DbSchedulerDeadlineManager.class);
     private static final TaskWithDataDescriptor<DbSchedulerBinaryDeadlineDetails> binaryTaskDescriptor =
@@ -96,37 +93,36 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
     private final TransactionManager transactionManager;
     private final DeadlineManagerSpanFactory spanFactory;
     private final boolean useBinaryPojo;
-    private final boolean startScheduler;
-    private final boolean stopScheduler;
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
     /**
-     * Instantiate a Builder to be able to create a {@link DbSchedulerDeadlineManager}.
+     * Instantiate a Builder to be able to create a {@code DbSchedulerDeadlineManager}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
      * <p>
-     * The {@link DeadlineManagerSpanFactory} is defaulted to a {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}.
+     * The {@link DeadlineManagerSpanFactory} is defaulted to a {@link DefaultDeadlineManagerSpanFactory} backed by a
+     * {@link NoOpSpanFactory}.
      * <p>
      * The {@code useBinaryPojo} and {@code startScheduler} are defaulted to {@code true}.
      * <p>
      * The {@link Scheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as such
      * should be provided.
      *
-     * @return a Builder to be able to create a {@link DbSchedulerDeadlineManager}
+     * @return a Builder to be able to create a {@code DbSchedulerDeadlineManager}
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Instantiate a {@link DbSchedulerDeadlineManager} based on the fields contained in the
+     * Instantiate a {@code DbSchedulerDeadlineManager} based on the fields contained in the
      * {@link DbSchedulerDeadlineManager.Builder}.
      * <p>
      * Will assert that the {@link ScopeAwareProvider}, {@link Scheduler} and {@link Serializer} are not {@code null},
      * and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link DbSchedulerDeadlineManager.Builder} used to instantiate a
-     *                {@link DbSchedulerDeadlineManager} instance
+     *                {@code DbSchedulerDeadlineManager} instance
      */
     protected DbSchedulerDeadlineManager(Builder builder) {
         builder.validate();
@@ -136,8 +132,6 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         this.transactionManager = builder.transactionManager;
         this.spanFactory = builder.spanFactory;
         this.useBinaryPojo = builder.useBinaryPojo;
-        this.startScheduler = builder.startScheduler;
-        this.stopScheduler = builder.stopScheduler;
         this.messageTypeResolver = builder.messageTypeResolver;
     }
 
@@ -196,7 +190,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      * {@link Scheduler}. To be able to execute the task, this should be added to the task list, used to create the
      * scheduler.
      *
-     * @param deadlineManagerSupplier a {@link Supplier} of a {@link DbSchedulerDeadlineManager}. Preferably a method
+     * @param deadlineManagerSupplier a {@link Supplier} of a {@code DbSchedulerDeadlineManager}. Preferably a method
      *                                involving dependency injection is used. When those are not available the
      *                                {@link DbSchedulerDeadlineManagerSupplier} can be used instead.
      * @return a {@link Task} to execute a deadline
@@ -218,7 +212,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      * {@link Scheduler}. To be able to execute the task, this should be added to the task list, used to create the
      * scheduler.
      *
-     * @param deadlineManagerSupplier a {@link Supplier} of a {@link DbSchedulerDeadlineManager}. Preferably a method
+     * @param deadlineManagerSupplier a {@link Supplier} of a {@code DbSchedulerDeadlineManager}. Preferably a method
      *                                involving dependency injection is used. When those are not available the
      *                                {@link DbSchedulerDeadlineManagerSupplier} can be used instead.
      * @return a {@link Task} to execute a deadline
@@ -383,7 +377,9 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         }
     }
 
-    private void executeScheduledDeadline(DeadlineMessage<?> deadlineMessage, ProcessingContext context, ScopeDescriptor deadlineScope) {
+    private void executeScheduledDeadline(DeadlineMessage<?> deadlineMessage,
+                                          ProcessingContext context,
+                                          ScopeDescriptor deadlineScope) {
         scopeAwareProvider.provideScopeAwareStream(deadlineScope)
                           .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
                           .forEach(scopeAwareComponent -> {
@@ -403,9 +399,6 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      * Will start the {@link Scheduler} depending on its current state and the value of {@code startScheduler},
      */
     public void start() {
-        if (!startScheduler) {
-            return;
-        }
         SchedulerState state = scheduler.getSchedulerState();
         if (state.isShuttingDown()) {
             logger.warn("Scheduler is shutting down - will not attempting to start");
@@ -421,23 +414,17 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
 
     @Override
     public void shutdown() {
-        if (isShutdown.compareAndSet(false, true) && stopScheduler) {
+        if (isShutdown.compareAndSet(false, true)) {
             scheduler.stop();
         }
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-        lifecycle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
-        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
     }
 
     /**
      * Builder class to instantiate a {@link DbSchedulerDeadlineManager}.
      * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link DefaultDeadlineManagerSpanFactory} defaults
-     * to a {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}. The {@code useBinaryPojo} and {@code startScheduler} are defaulted to
-     * {@code true}.
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the
+     * {@link DefaultDeadlineManagerSpanFactory} defaults to a {@link DefaultDeadlineManagerSpanFactory} backed by a
+     * {@link NoOpSpanFactory}. The {@code useBinaryPojo} default to {@code true}.
      * <p>
      * The {@link JobScheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as
      * such should be provided.
@@ -452,18 +439,13 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
                                                                                           .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                           .build();
         private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
-
         private boolean useBinaryPojo = true;
-        private boolean startScheduler = true;
-        private boolean stopScheduler = true;
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of deadlines. It should have either
          * the {@link #binaryTask(Supplier)} or the {@link #humanReadableTask(Supplier)} from this class as one of its
          * tasks to work. Which one depends on the setting of {@code useBinaryPojo}. When {@code true}, use
-         * {@link #binaryTask(Supplier)} else {@link #humanReadableTask(Supplier)}. Depending on you application, you
-         * can manage when to start the scheduler, or leave {@code startScheduler} to true, to start it via the
-         * {@link Lifecycle}.
+         * {@link #binaryTask(Supplier)} else {@link #humanReadableTask(Supplier)}.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines
          * @return the current Builder instance, for fluent interfacing
@@ -545,34 +527,12 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         }
 
         /**
-         * Sets whether to start the {@link Scheduler} using the {@link Lifecycle}, or to never start the scheduler from
-         * this component instead. defaults to {@code true}.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when scheduling
+         * {@link DeadlineMessage DeadlineMessages}. If not set, a {@link ClassBasedMessageTypeResolver} is used by
+         * default.
          *
-         * @param startScheduler a {@code boolean} to determine whether to start the scheduler.
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder startScheduler(boolean startScheduler) {
-            this.startScheduler = startScheduler;
-            return this;
-        }
-
-        /**
-         * Sets whether to stop the {@link Scheduler} using the {@link Lifecycle}, or to never stop the scheduler from
-         * this component instead. defaults to {@code true}.
-         *
-         * @param stopScheduler a {@code boolean} to determine whether to start the scheduler.
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder stopScheduler(boolean stopScheduler) {
-            this.stopScheduler = stopScheduler;
-            return this;
-        }
-
-        /**
-         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when scheduling {@link DeadlineMessage DeadlineMessages}.
-         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
-         *
-         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for {@link DeadlineMessage DeadlineMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for
+         *                            {@link DeadlineMessage DeadlineMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {

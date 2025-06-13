@@ -28,13 +28,10 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.StringUtils;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -46,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -58,7 +54,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.4
  */
-public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
+public class AxonServerEventScheduler implements EventScheduler {
 
     private final long requestTimeout;
     private final Serializer serializer;
@@ -69,21 +65,21 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
     private final AtomicBoolean started = new AtomicBoolean();
 
     /**
-     * Instantiate a Builder to be able to create a {@link AxonServerEventScheduler}.
+     * Instantiate a Builder to be able to create a {@code AxonServerEventScheduler}.
      * <p>
      * The {@code requestTimeout} is defaulted to {@code 15000} millis.
      * <p>
-     * The {@link Serializer} and {@link AxonServerConnectionManager} are <b>hard requirements</b> and as such
-     * should be provided.
+     * The {@link Serializer} and {@link AxonServerConnectionManager} are <b>hard requirements</b> and as such should be
+     * provided.
      *
-     * @return a Builder to be able to create a {@link AxonServerEventScheduler}
+     * @return a Builder to be able to create a {@code AxonServerEventScheduler}
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Instantiates an {@link AxonServerEventScheduler} using the given {@link Builder}.
+     * Instantiates an {@code AxonServerEventScheduler} using the given {@link Builder}.
      * <p>
      * Will assert that the {@link Serializer} and {@link AxonServerConnectionManager} are not {@code null} and will
      * throw an {@link AxonConfigurationException} if this is the case.
@@ -97,12 +93,6 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
         this.axonServerConnectionManager = builder.axonServerConnectionManager;
         this.context = builder.defaultContext;
         this.converter = new GrpcMetaDataConverter(serializer);
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-        lifecycle.onStart(Phase.OUTBOUND_EVENT_CONNECTORS, this::start);
-        lifecycle.onShutdown(Phase.OUTBOUND_EVENT_CONNECTORS, this::shutdownDispatching);
     }
 
     /**

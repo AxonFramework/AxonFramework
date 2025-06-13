@@ -189,6 +189,23 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
     }
 
     /**
+     * Returns the given type of this {@code ComponentDefinition}, set on {@link #ofType(Class)} or
+     * {@link #ofTypeAndName(Class, String)}.
+     *
+     * @return The given type of this {@code ComponentDefinition}.
+     */
+    Class<C> type();
+
+    /**
+     * Returns the given name of this {@code ComponentDefinition}, set on {@link #ofTypeAndName(Class, String)}.
+     * <p>
+     * Defaults to the {@link Class#getSimpleName()} of the {@link #type()} when not explicitely set.
+     *
+     * @return The given name of this {@code ComponentDefinition}.
+     */
+    String name();
+
+    /**
      * Mandatory interface to be implemented by all implementations of {@code ComponentDefinition}.
      * <p>
      * This separation will hide these methods from general use of the {@code ComponentDefinition}, while enforcing that

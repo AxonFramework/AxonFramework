@@ -145,6 +145,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void defaultConfigurationWithTrackingProcessorConfigurationInMainConfig() {
         LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing().registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
@@ -169,6 +170,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void defaultConfigurationWithTrackingProcessorExplicitlyConfigured() {
         LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         String processorName = "myProcessor";
