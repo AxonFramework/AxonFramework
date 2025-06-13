@@ -70,6 +70,31 @@ class ComponentsTest {
     }
 
     @Test
+    void getReturnsPutComponentWhenComponentTypeIsAssignableToGivenIdType() {
+        Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
+        Identifier<Object> testId = new Identifier<>(Object.class, "id");
+
+        testSubject.put(testComponent);
+
+        Optional<Component<Object>> result = testSubject.get(testId);
+        assertTrue(result.isPresent());
+        assertEquals(testComponent, result.get());
+    }
+
+    @Test
+    void getThrowsIllegalArgumentExceptionWhenMultipleComponentsAreAssignableToGivenIdType() {
+        Component<String> stringTestComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
+        Component<Integer> integerTestComponent =
+                new InstantiatedComponentDefinition<>(new Identifier<>(Integer.class, "id"), 42);
+        Identifier<Object> testId = new Identifier<>(Object.class, "id");
+
+        testSubject.put(stringTestComponent);
+        testSubject.put(integerTestComponent);
+
+        assertThrows(IllegalArgumentException.class, () -> testSubject.get(testId));
+    }
+
+    @Test
     void computeIfAbsentDoesNotComputeIfIdentifierIsAlreadyPresent() {
         Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
         AtomicBoolean invoked = new AtomicBoolean(false);

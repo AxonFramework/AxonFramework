@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * A {@code RuntimeException} dedicated when a {@link Component} cannot be found in the {@link Configuration}.
@@ -32,9 +33,15 @@ public class ComponentNotFoundException extends RuntimeException {
      * found for the given {@code type} and {@code name}.
      *
      * @param type The type of the component that could not be found, typically an interface.
-     * @param name The name of the component that could not be found.
+     * @param name The name of the component that could not be found, potentially {@code null} when unimportant.
      */
-    public ComponentNotFoundException(@Nonnull Class<?> type, @Nonnull String name) {
-        super("No component found for type [" + type + "] name [" + name + "]");
+    public ComponentNotFoundException(@Nonnull Class<?> type, @Nullable String name) {
+        super(exceptionMessageFor(type, name));
+    }
+
+    private static String exceptionMessageFor(Class<?> type, String name) {
+        return name != null
+                ? "No component found for type [" + type + "] name [" + name + "]."
+                : "No component found for type [" + type + "].";
     }
 }

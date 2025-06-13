@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -237,13 +238,13 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
         }
 
         @Override
-        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nonnull String name) {
+        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nullable String name) {
             return config.getOptionalComponent(type, name);
         }
 
         @Nonnull
         @Override
-        public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name, @Nonnull Supplier<C> defaultImpl) {
+        public <C> C getComponent(@Nonnull Class<C> type, @Nullable String name, @Nonnull Supplier<C> defaultImpl) {
             return config.getComponent(type, name, defaultImpl);
         }
 
@@ -266,7 +267,7 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
 
         @Nonnull
         @Override
-        public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name) {
+        public <C> C getComponent(@Nonnull Class<C> type, @Nullable String name) {
             return config.getComponent(type, name);
         }
 

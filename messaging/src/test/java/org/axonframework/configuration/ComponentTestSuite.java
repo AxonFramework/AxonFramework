@@ -175,12 +175,6 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     }
 
     @Test
-    void identifierConstructorThrowsIllegalArgumentExceptionForNullName() {
-        //noinspection DataFlowIssue
-        assertThrows(IllegalArgumentException.class, () -> new Identifier<>(String.class, null));
-    }
-
-    @Test
     void identifierConstructorThrowsIllegalArgumentExceptionForEmptyName() {
         assertThrows(IllegalArgumentException.class, () -> new Identifier<>(String.class, ""));
     }
