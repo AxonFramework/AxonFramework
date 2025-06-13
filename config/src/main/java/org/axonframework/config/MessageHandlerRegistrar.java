@@ -38,6 +38,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 4.3
  */
+// TODO #3075 - Validate we have a correct replacement for this tool
 public class MessageHandlerRegistrar {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

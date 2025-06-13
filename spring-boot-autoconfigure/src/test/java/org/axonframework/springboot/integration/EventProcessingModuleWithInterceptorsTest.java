@@ -65,6 +65,7 @@ class EventProcessingModuleWithInterceptorsTest {
     }
 
     @Test
+    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since Event Processors aren't started")
     void interceptorRegistration() {
         testApplicationContext.run(context -> {
             EventBus eventBus = context.getBean(EventBus.class);
