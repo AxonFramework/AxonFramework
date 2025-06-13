@@ -387,7 +387,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             // when second registration if present...
             testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class, testName, c -> {
-                firstConstruction.set(true);
+                secondConstruction.set(true);
                 return TEST_COMPONENT;
             }));
 
