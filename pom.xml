@@ -61,6 +61,9 @@
     </issueManagement>
 
     <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <!-- Main -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonar.coverage.jacoco.xmlReportPaths>
@@ -113,8 +116,8 @@
         <jobrunr.version>7.5.1</jobrunr.version>
         <quartz.version>2.4.0</quartz.version>
         <!-- Spring -->
-        <spring.version>6.2.1</spring.version>
-        <spring.boot.version>3.4.3</spring.boot.version>
+        <spring.version>6.2.5</spring.version>
+        <spring.boot.version>3.4.4</spring.boot.version>
         <spring-security.version>6.4.2</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.3.0</awaitility.version>
@@ -122,8 +125,8 @@
         <junit4.version>4.13.2</junit4.version>
         <junit.jupiter.version>5.12.2</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
-        <assertj-core.version>3.27.3</assertj-core.version>
         <testcontainers.version>1.19.3</testcontainers.version>
+        <assertj.version>3.27.3</assertj.version>
         <!-- Validation -->
         <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
@@ -166,7 +169,7 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>${assertj-core.version}</version>
+            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Logging -->
@@ -536,8 +539,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler.version}</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                     <encoding>UTF-8</encoding>
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>

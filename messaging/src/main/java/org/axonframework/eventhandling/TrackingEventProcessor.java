@@ -27,6 +27,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
@@ -100,7 +101,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
-    private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder;
+    private final Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenBuilder;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final int batchSize;
     private final int segmentsSize;
@@ -671,16 +672,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     @Override
     public void resetTokens(
-            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier) {
-        resetTokens(initialTrackingTokenSupplier.apply(messageSource));
+            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier) {
+        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(messageSource)));
     }
 
     @Override
     public <R> void resetTokens(
-            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
+            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             R resetContext
     ) {
-        resetTokens(initialTrackingTokenSupplier.apply(messageSource), resetContext);
+        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(messageSource)), resetContext);
     }
 
     @Override
@@ -1289,7 +1290,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                                      .executeWithResult(
                                                              context -> {
                                                                  TrackingToken initialToken = initialTrackingTokenBuilder.apply(
-                                                                         messageSource);
+                                                                         messageSource).join();
                                                                  tokenStore.initializeTokenSegments(
                                                                          processorName,
                                                                          segmentsSize,
