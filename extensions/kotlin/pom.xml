@@ -57,7 +57,7 @@
         <axon.version>4.11.2</axon.version>
         <kotlin.version>2.1.21</kotlin.version>
         <!-- Serialization -->
-        <jackson-kotlin.version>2.19.0</jackson-kotlin.version>
+        <jackson-kotlin.version>2.19.1</jackson-kotlin.version>
         <kotlin-serialization.version>1.6.3</kotlin-serialization.version>
         <!-- Logging -->
         <slf4j.version>2.0.17</slf4j.version>
