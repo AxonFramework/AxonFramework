@@ -1075,6 +1075,7 @@ This section contains five tables:
 2. [Removed Classes](#removed-classes)
 3. [Classes marked for removal](#marked-for-removal-classes)
 4. [Changed implements or extends](#changed-implements-or-extends)
+5. [Adjusted Constants](#adjusted-constants)
 
 ### Moved or Renamed Classes
 
@@ -1147,6 +1148,13 @@ Note that **any**  changes here may have far extending impact on the original cl
 | Class      | Before           | After            | Explanation                                                  | 
 |------------|------------------|------------------|--------------------------------------------------------------|
 | `MetaData` | `Map<String, ?>` | `Map<String, ?>` | See the [metadata description](#metadata-with-string-values) |
+
+### Adjusted Constants
+
+| Class                | Constant          | Change   | Why                                   |
+|----------------------|-------------------|----------|---------------------------------------|
+| `HandlerAttributes`  | `START_PHASE`     | Removed  | StartHandler annotation is removed    |
+| `HandlerAttributes`  | `SHUTDOWN_PHASE`  | Removed  | ShutdownHandler annotation is removed |
 
 ## Method Signature Changes
 
