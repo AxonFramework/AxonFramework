@@ -62,9 +62,8 @@ import java.util.function.Consumer;
 public sealed interface ComponentDefinition<C> permits ComponentDefinition.ComponentCreator {
 
     /**
-     * Starts defining a component with given declared {@code type}. The name will default to the simple class name of
-     * that {@code type}. To distinguish between different instances of the same type, consider using
-     * {@link #ofTypeAndName(Class, String)} instead.
+     * Starts defining a component with given declared {@code type}. To distinguish between different instances of the
+     * same type, consider using {@link #ofTypeAndName(Class, String)} instead.
      * <p>
      * Either {@link IncompleteComponentDefinition#withBuilder(ComponentBuilder) withBuilder(...)} or
      * {@link IncompleteComponentDefinition#withInstance(Object) withInstance(...)} must be called on the result of this
