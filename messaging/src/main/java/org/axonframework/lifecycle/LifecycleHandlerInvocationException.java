@@ -19,10 +19,6 @@ package org.axonframework.lifecycle;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
-import java.lang.reflect.Method;
-
-import static java.lang.String.format;
-
 /**
  * Exception indicating a failure occurred during a lifecycle handler method invocation.
  *
@@ -30,34 +26,6 @@ import static java.lang.String.format;
  * @since 4.3.0
  */
 public class LifecycleHandlerInvocationException extends RuntimeException {
-
-    private static final String DEFAULT_FAILURE_MESSAGE =
-            "Failed during invocation of lifecycle handler [%s] on component [%s]";
-
-    /**
-     * Instantiates an exception using the given {@code message} indicating a failure during a lifecycle handler method
-     * invocation.
-     *
-     * @param message The message describing the exception.
-     */
-    public LifecycleHandlerInvocationException(@Nonnull String message) {
-        super(message);
-    }
-
-    /**
-     * Instantiates an exception using the given {@code lifecycleComponent}, {@code lifecycleHandler} and {@code cause},
-     * indicating a failure during a lifecycle handler method invocation.
-     *
-     * @param lifecycleHandler   The {@link Method} in question which failed.
-     * @param lifecycleComponent The {@link Object} of which the given {@code lifecycleHandler} was invoked
-     *                           exceptionally.
-     * @param cause              The underlying cause of the exception.
-     */
-    public LifecycleHandlerInvocationException(@Nonnull Method lifecycleHandler,
-                                               @Nonnull Object lifecycleComponent,
-                                               @Nullable Throwable cause) {
-        this(format(DEFAULT_FAILURE_MESSAGE, lifecycleHandler, lifecycleComponent), cause);
-    }
 
     /**
      * Instantiates an exception using the given {@code message} and {@code cause} indicating a failure during a
