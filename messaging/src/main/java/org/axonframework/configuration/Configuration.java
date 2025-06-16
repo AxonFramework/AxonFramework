@@ -44,7 +44,7 @@ public interface Configuration extends DescribableComponent {
      */
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type) {
-        return getComponent(type, type.getSimpleName());
+        return getComponent(type, (String) null);
     }
 
     /**
@@ -52,7 +52,8 @@ public interface Configuration extends DescribableComponent {
      * {@link NullPointerException} if it does not exist.
      *
      * @param type The type of component, typically the interface the component implements.
-     * @param name The name of the component to retrieve.
+     * @param name The name of the component to retrieve. Use {@code null} when there is no name or use
+     *             {@link #getComponent(Class)} instead.
      * @param <C>  The type of component.
      * @return The component registered for the given {@code type} and {@code name}.
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type} and
@@ -60,7 +61,7 @@ public interface Configuration extends DescribableComponent {
      */
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type,
-                               @Nonnull String name) {
+                               @Nullable String name) {
         return getOptionalComponent(type, name)
                 .orElseThrow(() -> new ComponentNotFoundException(type, name));
     }
@@ -74,20 +75,21 @@ public interface Configuration extends DescribableComponent {
      * there is no component present for the given {@code type}.
      */
     default <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type) {
-        return getOptionalComponent(type, type.getSimpleName());
+        return getOptionalComponent(type, null);
     }
 
     /**
      * Returns the component declared under the given {@code type} and {@code name} within an {@code Optional}.
      *
      * @param type The type of component, typically the interface the component implements.
-     * @param name The name of the component to retrieve.
+     * @param name The name of the component to retrieve. Use {@code null} when there is no name or use
+     *             {@link #getOptionalComponent(Class)} instead.
      * @param <C>  The type of component.
      * @return An {@code Optional} wrapping the component registered for the given {@code type} and {@code name}. Might
      * be empty when there is no component present for the given {@code type} and {@code name}.
      */
     <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
-                                         @Nonnull String name);
+                                         @Nullable String name);
 
     /**
      * Returns the component declared under the given {@code type}, reverting to the given {@code defaultImpl} if no
@@ -104,7 +106,7 @@ public interface Configuration extends DescribableComponent {
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type,
                                @Nonnull Supplier<C> defaultImpl) {
-        return getComponent(type, type.getSimpleName(), defaultImpl);
+        return getComponent(type, null, defaultImpl);
     }
 
     /**
@@ -114,7 +116,8 @@ public interface Configuration extends DescribableComponent {
      * When no component was previously registered, the default is then configured as the component for the given type.
      *
      * @param type        The type of component, typically the interface the component implements.
-     * @param name        The name of the component to retrieve.
+     * @param name        The name of the component to retrieve. Use {@code null} when there is no name or use
+     *                    {@link #getComponent(Class, Supplier)} instead.
      * @param defaultImpl The supplier of the default component to return if it was not registered.
      * @param <C>         The type of component.
      * @return The component declared under the given {@code type} and {@code name}, reverting to the given
@@ -122,7 +125,7 @@ public interface Configuration extends DescribableComponent {
      */
     @Nonnull
     <C> C getComponent(@Nonnull Class<C> type,
-                       @Nonnull String name,
+                       @Nullable String name,
                        @Nonnull Supplier<C> defaultImpl);
 
     /**
