@@ -23,7 +23,7 @@ import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link ByteArrayToStringConverter}
+ * Test class validating the {@link ByteArrayToStringConverter}.
  *
  * @author Allard Buijze
  */
