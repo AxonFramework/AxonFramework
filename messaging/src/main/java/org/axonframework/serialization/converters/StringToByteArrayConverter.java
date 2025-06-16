@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,37 @@
 
 package org.axonframework.serialization.converters;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.ContentTypeConverter;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
- * ContentTypeConverter that converts String into byte arrays. Conversion is done using the UTF-8 character set.
+ * A {@link ContentTypeConverter} implementation that converts {@code Strings} into {@code byte[]}.
+ * <p>
+ * Conversion is done using the {@link StandardCharsets#UTF_8 UTF-8 character set}.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
-public class StringToByteArrayConverter implements ContentTypeConverter<String,byte[]> {
-
-    private static final Charset UTF8 = Charset.forName("UTF-8");
+public class StringToByteArrayConverter implements ContentTypeConverter<String, byte[]> {
 
     @Override
+    @Nonnull
     public Class<String> expectedSourceType() {
         return String.class;
     }
 
     @Override
+    @Nonnull
     public Class<byte[]> targetType() {
         return byte[].class;
     }
 
     @Override
-    public byte[] convert(String original) {
-        return original.getBytes(UTF8);
+    @Nullable
+    public byte[] convert(@Nullable String input) {
+        return input != null ? input.getBytes(StandardCharsets.UTF_8) : null;
     }
 }
