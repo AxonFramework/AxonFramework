@@ -46,7 +46,7 @@ public class ByteArrayToStringConverter implements ContentTypeConverter<byte[], 
 
     @Override
     @Nullable
-    public String convert(@Nullable byte[] original) {
-        return original != null ? new String(original, StandardCharsets.UTF_8) : null;
+    public String convert(@Nullable byte[] input) {
+        return input != null ? new String(input, StandardCharsets.UTF_8) : null;
     }
 }

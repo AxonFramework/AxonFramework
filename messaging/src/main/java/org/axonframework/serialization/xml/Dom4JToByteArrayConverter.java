@@ -48,7 +48,7 @@ public class Dom4JToByteArrayConverter implements ContentTypeConverter<Document,
 
     @Override
     @Nullable
-    public byte[] convert(@Nullable Document original) {
-        return original != null ? original.asXML().getBytes(StandardCharsets.UTF_8) : null;
+    public byte[] convert(@Nullable Document input) {
+        return input != null ? input.asXML().getBytes(StandardCharsets.UTF_8) : null;
     }
 }

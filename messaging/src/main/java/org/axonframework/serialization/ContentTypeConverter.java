@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
 /**
- * Interface describing a mechanism that converts the data of a specified {@link #expectedSourceType() source type} into
+ * Interface describing a mechanism that converts an object from a specified {@link #expectedSourceType() source type} to
  * the defined {@link #targetType() target type}.
  *
  * @param <S> The expected source type for this {@code ContentTypeConverter} to {@link #convert(Object) convert}.
@@ -47,11 +47,11 @@ public interface ContentTypeConverter<S, T> {
     Class<T> targetType();
 
     /**
-     * Converts the given {@code original} object of generic type {@code S} into an object of generic type {@code T}.
+     * Converts the given {@code input} object of generic type {@code S} into an object of generic type {@code T}.
      *
-     * @param original The object of generic type {@code S} to convert into an object of generic type {@code T}.
-     * @return The converted version of the given {@code original} in type {@code T}.
+     * @param input The object of generic type {@code S} to convert into an object of generic type {@code T}.
+     * @return The converted version of the given {@code input} in type {@code T}.
      */
     @Nullable
-    T convert(@Nullable S original);
+    T convert(@Nullable S input);
 }

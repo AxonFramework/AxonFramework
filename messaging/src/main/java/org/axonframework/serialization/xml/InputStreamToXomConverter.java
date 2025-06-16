@@ -53,13 +53,13 @@ public class InputStreamToXomConverter implements ContentTypeConverter<InputStre
 
     @Override
     @Nullable
-    public Document convert(@Nullable InputStream original) {
-        if (original == null) {
+    public Document convert(@Nullable InputStream input) {
+        if (input == null) {
             return null;
         }
 
         try {
-            return new Builder().build(new InputStreamReader(original));
+            return new Builder().build(new InputStreamReader(input));
         } catch (ParsingException | IOException e) {
             throw new ConversionException("Cannot convert from InputStream to XOM Document.", e);
         }

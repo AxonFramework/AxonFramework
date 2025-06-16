@@ -45,7 +45,7 @@ public class XomToStringConverter implements ContentTypeConverter<Document, Stri
 
     @Override
     @Nullable
-    public String convert(@Nullable Document original) {
-        return original != null ? original.toXML() : null;
+    public String convert(@Nullable Document input) {
+        return input != null ? input.toXML() : null;
     }
 }

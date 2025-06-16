@@ -50,14 +50,14 @@ public class JsonNodeToObjectNodeConverter implements ContentTypeConverter<JsonN
 
     @Override
     @Nullable
-    public ObjectNode convert(@Nullable JsonNode original) {
-        if (original == null) {
+    public ObjectNode convert(@Nullable JsonNode input) {
+        if (input == null) {
             return null;
         }
 
-        JsonNodeType originalNodeType = original.getNodeType();
+        JsonNodeType originalNodeType = input.getNodeType();
         if (JsonNodeType.OBJECT.equals(originalNodeType)) {
-            return ((ObjectNode) original);
+            return ((ObjectNode) input);
         } else {
             throw new ConversionException(
                     "Cannot convert from JsonNode to ObjectNode because the node type is [" + originalNodeType + "]."

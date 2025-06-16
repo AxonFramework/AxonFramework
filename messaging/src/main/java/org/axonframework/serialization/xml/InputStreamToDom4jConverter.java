@@ -53,13 +53,13 @@ public class InputStreamToDom4jConverter implements ContentTypeConverter<InputSt
 
     @Override
     @Nullable
-    public Document convert(@Nullable InputStream original) {
-        if (original == null) {
+    public Document convert(@Nullable InputStream input) {
+        if (input == null) {
             return null;
         }
 
         try {
-            return new STAXEventReader().readDocument(new InputStreamReader(original, StandardCharsets.UTF_8));
+            return new STAXEventReader().readDocument(new InputStreamReader(input, StandardCharsets.UTF_8));
         } catch (XMLStreamException e) {
             throw new ConversionException("Cannot convert from InputStream to dom4j Document.", e);
         }

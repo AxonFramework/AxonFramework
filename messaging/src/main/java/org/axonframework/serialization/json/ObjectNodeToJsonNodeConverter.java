@@ -47,7 +47,7 @@ public class ObjectNodeToJsonNodeConverter implements ContentTypeConverter<Objec
 
     @Override
     @Nullable
-    public JsonNode convert(@Nullable ObjectNode original) {
-        return original;
+    public JsonNode convert(@Nullable ObjectNode input) {
+        return input;
     }
 }
