@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * A functional interface describing how to decorate a component of type {@code C}.
@@ -34,8 +35,8 @@ import jakarta.annotation.Nonnull;
 public interface ComponentDecorator<C, D> {
 
     /**
-     * Decorates the given {@code delegate} into a mutated or replaced instance of type {@code D}, which must be the
-     * same or a subclass of {@code C}.
+     * Decorates the given {@code delegate} into a mutated or replaced instance of type {@code D}, which <b>must be</b>
+     * the same or a subclass of {@code C}.
      * <p>
      * Decorating can roughly take two angles. One, it may choose to wrap the {@code delegate} into a new instance of
      * type {@code C}. Second, it could mutate the state of the {@code delegate}.
@@ -52,8 +53,9 @@ public interface ComponentDecorator<C, D> {
      * @param name     The name of the component to be decorated.
      * @param delegate The delegate of type {@code C} to be decorated.
      * @return A decorated component of type {@code C}, typically based on the given {@code delegate}.
+     * @throws ClassCastException When this decorator does not return a subclass of {@code C}.
      */
     D decorate(@Nonnull Configuration config,
-               @Nonnull String name,
+               @Nullable String name,
                @Nonnull C delegate);
 }
