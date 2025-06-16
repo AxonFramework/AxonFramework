@@ -107,8 +107,8 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
     }
 
     /**
-     * Starts defining a component with given declared {@code type}. The name will default to the simple class name of
-     * that {@code type}. To distinguish between different instances of the same type, consider using
+     * Starts defining a component with given declared {@code type}. The name will default to {@code null}.
+     * To distinguish between different instances of the same type, consider using
      * {@link #ofTypeAndName(TypeReference, String)} instead.
      * <p>
      * This method is a convenience overload of {@link #ofTypeAndName(Class, String)} that can accept a type reference
