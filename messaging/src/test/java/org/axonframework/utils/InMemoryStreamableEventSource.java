@@ -37,9 +37,11 @@ import java.util.concurrent.TimeUnit;
  * An in-memory representation of the {@link StreamableMessageSource}. Should be used to test event handling components
  * requiring test flexibility when events are published.
  *
+ * @deprecated In favor of {@link AsyncInMemoryStreamableEventSource}.
  * @author Allard Buijze
  * @author Steven van Beelen
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class InMemoryStreamableEventSource implements StreamableMessageSource<TrackedEventMessage<?>> {
 
     /**

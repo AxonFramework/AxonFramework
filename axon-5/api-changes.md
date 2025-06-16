@@ -155,9 +155,9 @@ public class MyInterceptingEventHandler {
 }
 ```
 
-You are able inject the `ProcessingContext` in any message-handling method, so this is always available. Any code that uses the old `UnitOfWork` should be rewritten to put resources in this context. 
+You are able inject the `ProcessingContext` in any message-handling method, so this is always available. Any code that uses the old `UnitOfWork` should be rewritten to put resources in this context.
 
-We will provide a migration guide, as well as OpenWrite recipes for these scenarios. 
+We will provide a migration guide, as well as OpenWrite recipes for these scenarios.
 
 ## Message
 
@@ -1069,7 +1069,7 @@ Minor API Changes
   as described in the [Event Store](#event-store) section. Furthermore, operations have been made "async-native," as
   described [here](#adjusted-apis). This is marked as a minor API changes since the `EventStorageEngine` should not be
   used directly
-* The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all EventProcessor builders. 
+* The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all EventProcessor builders.
   Exceptions need to be handled by an interceptor, or otherwise they are always considered an error.
 
 Stored Format Changes
@@ -1220,33 +1220,37 @@ This section contains three subsections, called:
 
 ### Moved / Renamed Methods and Constructors
 
-| Constructor / Method                                                 | To where                                                                             |
-|----------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| `Configurer#configureCommandBus`                                     | `MessagingConfigurer#registerCommandBus`                                             | 
-| `Configurer#configureEventBus`                                       | `MessagingConfigurer#registerEventSink`                                              | 
-| `Configurer#configureQueryBus`                                       | `MessagingConfigurer#registerQueryBus`                                               | 
-| `Configurer#configureQueryUpdateEmitter`                             | `MessagingConfigurer#registerQueryUpdateEmitter`                                     | 
-| `ConfigurerModule#configureModule`                                   | `ConfigurationEnhancer#enhance`                                                      | 
-| `ConfigurerModule#configureLifecyclePhaseTimeout`                    | `LifecycleRegistry#registerLifecyclePhaseTimeout`                                    | 
-| `Configurer#registerComponent(Function<Configuration, ? extends C>)` | `ComponentRegistry#registerComponent(ComponentBuilder<C>)`                           | 
-| `Configurer#registerModule(ModuleConfiguration)`                     | `ComponentRegistry#registerComponent(Module)`                                        | 
-| `StreamableMessageSource#openStream(TrackingToken)`                  | `StreamableEventSource#open(SourcingCondition)`                                      | 
-| `StreamableMessageSource#createTailToken()`                          | `StreamableEventSource#firstToken()`                                                 | 
-| `StreamableMessageSource#createHeadToken()`                          | `StreamableEventSource#latestToken()`                                                | 
-| `StreamableMessageSource#createTokenAt(Instant)`                     | `StreamableEventSource#tokenAt(Instant)`                                             | 
-| `Repository#newInstance(Callable<T>)`                                | `Repository#persist(ID, T, ProcessingContext)`                                       | 
-| `Repository#load(String)`                                            | `Repository#load(ID, ProcessingContext)`                                             | 
-| `Repository#loadOrCreate(String, Callable<T>)`                       | `Repository#loadOrCreate(ID, ProcessingContext)`                                     | 
-| `EventStore#readEvents(String)`                                      | `EventStoreTransaction#source(SourcingCondition)`                                    | 
-| `EventStorageEngine#readEvents(EventMessage<?>...)`                  | `EventStorageEngine#appendEvents(AppendCondition, TaggedEventMessage...)`            | 
-| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`   | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`      | 
-| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`   | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`      | 
-| `EventStorageEngine#readEvents(String)`                              | `EventStorageEngine#source(SourcingCondition)`                                       | 
-| `EventStorageEngine#readEvents(String, long)`                        | `EventStorageEngine#source(SourcingCondition)`                                       | 
-| `EventStorageEngine#readEvents(TrackingToken, boolean)`              | `EventStorageEngine#stream(StreamingCondition)`                                      | 
-| `EventStorageEngine#createTailToken()`                               | `EventStorageEngine#firstToken()`                                                    | 
-| `EventStorageEngine#createHeadToken()`                               | `EventStorageEngine#latestToken()`                                                   | 
-| `EventStorageEngine#createTokenAt(Instant)`                          | `EventStorageEngine#tokenAt(Instant)`                                                | 
+| Constructor / Method                                                                                                            | To where                                                                                                               |
+|---------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| `Configurer#configureCommandBus`                                                                                                | `MessagingConfigurer#registerCommandBus`                                                                               | 
+| `Configurer#configureEventBus`                                                                                                  | `MessagingConfigurer#registerEventSink`                                                                                | 
+| `Configurer#configureQueryBus`                                                                                                  | `MessagingConfigurer#registerQueryBus`                                                                                 | 
+| `Configurer#configureQueryUpdateEmitter`                                                                                        | `MessagingConfigurer#registerQueryUpdateEmitter`                                                                       | 
+| `ConfigurerModule#configureModule`                                                                                              | `ConfigurationEnhancer#enhance`                                                                                        | 
+| `ConfigurerModule#configureLifecyclePhaseTimeout`                                                                               | `LifecycleRegistry#registerLifecyclePhaseTimeout`                                                                      | 
+| `Configurer#registerComponent(Function<Configuration, ? extends C>)`                                                            | `ComponentRegistry#registerComponent(ComponentBuilder<C>)`                                                             | 
+| `Configurer#registerModule(ModuleConfiguration)`                                                                                | `ComponentRegistry#registerComponent(Module)`                                                                          | 
+| `StreamableMessageSource#openStream(TrackingToken)`                                                                             | `StreamableEventSource#open(SourcingCondition)`                                                                        | 
+| `StreamableMessageSource#createTailToken()`                                                                                     | `StreamableEventSource#firstToken()`                                                                                   | 
+| `StreamableMessageSource#createHeadToken()`                                                                                     | `StreamableEventSource#latestToken()`                                                                                  | 
+| `StreamableMessageSource#createTokenAt(Instant)`                                                                                | `StreamableEventSource#tokenAt(Instant)`                                                                               | 
+| `Repository#newInstance(Callable<T>)`                                                                                           | `Repository#persist(ID, T, ProcessingContext)`                                                                         | 
+| `Repository#load(String)`                                                                                                       | `Repository#load(ID, ProcessingContext)`                                                                               | 
+| `Repository#loadOrCreate(String, Callable<T>)`                                                                                  | `Repository#loadOrCreate(ID, ProcessingContext)`                                                                       | 
+| `EventStore#readEvents(String)`                                                                                                 | `EventStoreTransaction#source(SourcingCondition)`                                                                      | 
+| `EventStorageEngine#readEvents(EventMessage<?>...)`                                                                             | `EventStorageEngine#appendEvents(AppendCondition, TaggedEventMessage...)`                                              | 
+| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`                                                              | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`                                        | 
+| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`                                                              | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`                                        | 
+| `EventStorageEngine#readEvents(String)`                                                                                         | `EventStorageEngine#source(SourcingCondition)`                                                                         | 
+| `EventStorageEngine#readEvents(String, long)`                                                                                   | `EventStorageEngine#source(SourcingCondition)`                                                                         | 
+| `EventStorageEngine#readEvents(TrackingToken, boolean)`                                                                         | `EventStorageEngine#stream(StreamingCondition)`                                                                        | 
+| `EventStorageEngine#createTailToken()`                                                                                          | `EventStorageEngine#firstToken()`                                                                                      | 
+| `EventStorageEngine#createHeadToken()`                                                                                          | `EventStorageEngine#latestToken()`                                                                                     | 
+| `EventStorageEngine#createTokenAt(Instant)`                                                                                     | `EventStorageEngine#tokenAt(Instant)`                                                                                  | 
+| `StreamingEventProcessor#resetTokens(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>)`                 | `StreamingEventProcessor#resetTokens(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>)`                 |
+| `StreamingEventProcessor#resetTokens(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>, R resetContext)` | `StreamingEventProcessor#resetTokens(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>, R resetContext)` |
+| `PooledStreamingEventProcessor.Builder#initialToken(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>)`  | `PooledStreamingEventProcessor.Builder#initialToken(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>)`  |
+| `PooledStreamingEventProcessor.Builder#messageSource(StreamableMessageSource<TrackedEventMessage<?>>)`                          | `PooledStreamingEventProcessor.Builder#eventSource(StreamableEventSource<? extends EventMessage<?>>)`                  |
 
 ### Removed Methods and Constructors
 
@@ -1281,6 +1285,6 @@ This section contains three subsections, called:
 
 ### Changed method return types
 
-| Method                                         | Before               | After           |
-|------------------------------------------------|----------------------|-----------------|
-| `CorrelationDataProvider#correlationDataFor()` | Map<String, String>  | Map<String, ?>  | 
+| Method                                         | Before              | After          |
+|------------------------------------------------|---------------------|----------------|
+| `CorrelationDataProvider#correlationDataFor()` | Map<String, String> | Map<String, ?> | 

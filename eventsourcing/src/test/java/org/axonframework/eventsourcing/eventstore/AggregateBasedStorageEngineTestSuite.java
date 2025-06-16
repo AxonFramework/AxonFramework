@@ -408,7 +408,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA)
                                                 .withMarker(consistencyMarker),
                                  taggedEventMessage("event-1", TEST_AGGREGATE_TAGS))
-                   .thenApply(AppendTransaction::commit)
+                   .thenCompose(AppendTransaction::commit)
                    .join();
 
         CompletableFuture<ConsistencyMarker> actual =

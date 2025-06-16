@@ -20,11 +20,11 @@ import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
@@ -58,7 +58,7 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * event can be handled through a {@link EventFilter} and after that processing a collection of events in the
  * {@link BatchProcessor}.
  * <p>
- * Events are received through the {@link #scheduleEvent(TrackedEventMessage)} operation, delegated by a
+ * Events are received through the {@link #scheduleEvent(MessageStream.Entry)} operation, delegated by a
  * {@link Coordinator}. Receiving event(s) means this {@link WorkPackage} will be scheduled to process these events
  * through an {@link ExecutorService}. As there are local threads and outside threads invoking methods on the
  * {@code WorkPackage}, several methods have threading notes describing what can invoke them safely.
@@ -136,52 +136,59 @@ class WorkPackage {
     }
 
     /**
-     * Schedule a collection of {@link TrackedEventMessage TrackedEventMessages} for processing by this work package.
+     * Schedule a collection of {@link MessageStream.Entry MessageStream.Entries} for processing by this work package.
      * <p>
      * Only use this method if the {@link TrackingToken TrackingTokens} of every event are equal, as those events should
      * be handled within a single transaction. This scenario presents itself whenever an event is upcasted into
      * <em>several instances</em>. When tokens differ between events please use
-     * {@link #scheduleEvent(TrackedEventMessage)}.
+     * {@link #scheduleEvent(MessageStream.Entry)}.
      * <p>
-     * Will disregard the given {@code events} if their {@code TrackingTokens} are covered by the previously scheduled
+     * Will disregard the given {@code eventEntries} if their {@code TrackingTokens} are covered by the previously scheduled
      * event.
      * <p>
      * <b>Threading note:</b> This method is and should only to be called by the {@link Coordinator} thread of a {@link
      * PooledStreamingEventProcessor}.
      *
-     * @param events The events to schedule for work in this work package.
+     * @param eventEntries The event entries to schedule for work in this work package.
      * @return {@code True} if this {@link WorkPackage} scheduled one of the events for execution, otherwise
      * {@code false}.
      */
-    public boolean scheduleEvents(List<TrackedEventMessage<?>> events) {
-        if (events.isEmpty()) {
+    public boolean scheduleEvents(List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries) {
+        if (eventEntries.isEmpty()) {
             // cannot schedule an empty events list
             return false;
         }
-        assertEqualTokens(events);
+        assertEqualTokens(eventEntries);
 
-        if (events.stream().allMatch(this::shouldNotSchedule)) {
+        if (eventEntries.stream().allMatch(this::shouldNotSchedule)) {
             if (logger.isTraceEnabled()) {
-                events.forEach(event -> logger.trace(
-                        "Ignoring event [{}] with position [{}] for work package [{}]. "
-                                + "The last token [{}] covers event's token [{}].",
-                        event.getIdentifier(), event.trackingToken().position().orElse(-1), segment.getSegmentId(),
-                        lastDeliveredToken, event.trackingToken()
-                ));
+                eventEntries.forEach(eventEntry -> {
+                    TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
+                    logger.trace(
+                            "Ignoring event [{}] with position [{}] for work package [{}]. "
+                                    + "The last token [{}] covers event's token [{}].",
+                            eventEntry.message().getIdentifier(),
+                            eventToken != null ? eventToken.position().orElse(-1) : -1,
+                            segment.getSegmentId(),
+                            lastDeliveredToken,
+                            eventToken
+                    );
+                });
             }
             return false;
         }
 
         BatchProcessingEntry batchProcessingEntry = new BatchProcessingEntry();
-        boolean canHandleAny = events.stream()
-                                     .map(event -> {
-                                         LegacyMessageSupportingContext context = new LegacyMessageSupportingContext(event);
-                                         boolean canHandle = canHandle(event, context);
-                                         batchProcessingEntry.add(new DefaultProcessingEntry(event, canHandle, context));
-                                         return canHandle;
-                                     })
-                                     .reduce(Boolean::logicalOr)
-                                     .orElse(false);
+        boolean canHandleAny = eventEntries.stream()
+                                           .map(eventEntry -> {
+                                               var context = new LegacyMessageSupportingContext(eventEntry.message());
+                                               boolean canHandle = canHandle(eventEntry.message(), context);
+                                               batchProcessingEntry.add(new DefaultProcessingEntry(eventEntry,
+                                                                                                   canHandle));
+                                               return canHandle;
+                                           })
+                                           .reduce(Boolean::logicalOr)
+                                           .orElse(false);
 
         processingQueue.add(batchProcessingEntry);
         lastDeliveredToken = batchProcessingEntry.trackingToken();
@@ -191,41 +198,48 @@ class WorkPackage {
         return canHandleAny;
     }
 
-    private void assertEqualTokens(List<TrackedEventMessage<?>> events) {
-        TrackingToken expectedToken = events.get(0).trackingToken();
+    private void assertEqualTokens(List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries) {
+        TrackingToken expectedToken = TrackingToken.fromContext(eventEntries.get(0)).orElse(null);
         Assert.isTrue(
-                events.stream()
-                      .map(TrackedEventMessage::trackingToken)
-                      .allMatch(token -> Objects.equals(expectedToken, token)),
+                eventEntries.stream()
+                            .map(entry -> TrackingToken.fromContext(entry).orElse(null))
+                            .allMatch(token -> Objects.equals(expectedToken, token)),
                 () -> "All tokens should match when scheduling multiple events in one go."
         );
     }
 
     /**
-     * Schedule a {@link TrackedEventMessage} for processing by this work package. Will immediately disregard the given
-     * {@code event} if its {@link TrackingToken} is covered by the previously scheduled event.
+     * Schedule a {@link MessageStream.Entry} for processing by this work package. Will immediately disregard the given
+     * {@code eventEntry} if its {@link TrackingToken} is covered by the previously scheduled event.
      * <p>
      * <b>Threading note:</b> This method is and should only to be called by the {@link Coordinator} thread of a {@link
      * PooledStreamingEventProcessor}.
      *
-     * @param event The event to schedule for work in this work package.
+     * @param eventEntry The event entry to schedule for work in this work package.
      * @return {@code True} if this {@link WorkPackage} scheduled the event for execution, otherwise {@code false}.
      */
-    public boolean scheduleEvent(TrackedEventMessage<?> event) {
-        if (shouldNotSchedule(event)) {
+    public boolean scheduleEvent(MessageStream.Entry<? extends EventMessage<?>> eventEntry) {
+        TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
+        if (shouldNotSchedule(eventEntry)) {
             logger.trace("Ignoring event [{}] with position [{}] for work package [{}]. "
                                  + "The last token [{}] covers event's token [{}].",
-                         event.getIdentifier(), event.trackingToken().position().orElse(-1), segment.getSegmentId(),
-                         lastDeliveredToken, event.trackingToken());
+                         eventEntry.message().getIdentifier(),
+                         eventToken != null ? eventToken.position().orElse(-1) : -1,
+                         segment.getSegmentId(),
+                         lastDeliveredToken,
+                         eventToken);
             return false;
         }
-        logger.debug("Assigned event [{}] with position [{}] to work package [{}].",
-                     event.getIdentifier(), event.trackingToken().position().orElse(-1), segment.getSegmentId());
 
-        ProcessingContext context = new LegacyMessageSupportingContext(event);
-        boolean canHandle = canHandle(event, context);
-        processingQueue.add(new DefaultProcessingEntry(event, canHandle, context));
-        lastDeliveredToken = event.trackingToken();
+        logger.debug("Assigned event [{}] with position [{}] to work package [{}].",
+                     eventEntry.message().getIdentifier(),
+                     eventToken != null ? eventToken.position().orElse(-1) : -1,
+                     segment.getSegmentId());
+
+        var context = new LegacyMessageSupportingContext(eventEntry.message());
+        boolean canHandle = canHandle(eventEntry.message(), context);
+        processingQueue.add(new DefaultProcessingEntry(eventEntry, canHandle));
+        lastDeliveredToken = eventToken;
         // the worker must always be scheduled to ensure claims are extended
         scheduleWorker();
 
@@ -233,22 +247,23 @@ class WorkPackage {
     }
 
     /**
-     * The given {@code event} should not be scheduled if the {@link TrackedEventMessage#trackingToken()}
+     * The given {@code eventEntry} should not be scheduled if the {@link TrackingToken} extracted from its context
      * {@link TrackingToken#covers(TrackingToken)} the last delivered token.
      * <p>
      * This validation ensures events that this work package already covered are ignored.
      *
-     * @param event The event to validate whether it should be scheduled yes or no.
-     * @return {@code true} if the given {@code event} should not be scheduled, {@code false} otherwise.
+     * @param eventEntry The event entry to validate whether it should be scheduled yes or no.
+     * @return {@code true} if the given {@code eventEntry} should not be scheduled, {@code false} otherwise.
      */
-    private boolean shouldNotSchedule(TrackedEventMessage<?> event) {
+    private boolean shouldNotSchedule(MessageStream.Entry<? extends EventMessage<?>> eventEntry) {
+        TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
         // Null check is done to solve potential NullPointerException.
-        return lastDeliveredToken != null && lastDeliveredToken.covers(event.trackingToken());
+        return lastDeliveredToken != null && eventToken != null && lastDeliveredToken.covers(eventToken);
     }
 
-    private boolean canHandle(TrackedEventMessage<?> event, ProcessingContext context) {
+    private boolean canHandle(EventMessage<?> eventMessage, ProcessingContext processingContext) {
         try {
-            return eventFilter.canHandle(event, context, segment);
+            return eventFilter.canHandle(eventMessage, processingContext, segment);
         } catch (Exception e) {
             logger.warn("Error while detecting whether event can be handled in Work Package [{}]-[{}]. "
                                 + "Aborting Work Package...",
@@ -297,11 +312,11 @@ class WorkPackage {
     }
 
     private void processEvents() throws Exception {
-        List<TrackedEventMessage<?>> eventBatch = new ArrayList<>();
+        List<EventMessage<?>> eventBatch = new ArrayList<>();
         while (!isAbortTriggered() && eventBatch.size() < batchSize && !processingQueue.isEmpty()) {
             ProcessingEntry entry = processingQueue.poll();
             lastConsumedToken = WrappedToken.advance(lastConsumedToken, entry.trackingToken());
-            entry.addToBatch(eventBatch, lastConsumedToken);
+            entry.addToBatch(eventBatch);
         }
 
         // Make sure all subsequent events with the same token (if non-null) as the last are added as well.
@@ -403,13 +418,13 @@ class WorkPackage {
     }
 
     /**
-     * Returns the {@link TrackingToken} of the {@link TrackedEventMessage} that was delivered in the last
-     * {@link #scheduleEvent(TrackedEventMessage)} call.
+     * Returns the {@link TrackingToken} of the {@link MessageStream.Entry} that was delivered in the last
+     * {@link #scheduleEvent(MessageStream.Entry)} call.
      * <p>
      * <b>Threading note:</b> This method is only safe to call from {@link Coordinator} threads. The {@link
      * WorkPackage} threads must not rely on this method.
      *
-     * @return the {@link TrackingToken} of the last {@link TrackedEventMessage} that was delivered to this
+     * @return the {@link TrackingToken} of the last {@link MessageStream.Entry} that was delivered to this
      * {@link WorkPackage}
      */
     public TrackingToken lastDeliveredToken() {
@@ -494,7 +509,7 @@ class WorkPackage {
     }
 
     /**
-     * Functional interface defining a validation if a given {@link TrackedEventMessage} can be handled within the given
+     * Functional interface defining a validation if a given {@link EventMessage} can be handled within the given
      * {@link Segment}.
      */
     @FunctionalInterface
@@ -508,7 +523,7 @@ class WorkPackage {
          * @return {@code true} if the event message can be handled, otherwise {@code false}
          * @throws Exception when validating of the given {@code eventMessage} fails
          */
-        boolean canHandle(TrackedEventMessage<?> eventMessage, ProcessingContext context, Segment segment) throws Exception;
+        boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Segment segment) throws Exception;
     }
 
     /**
@@ -717,54 +732,38 @@ class WorkPackage {
         TrackingToken trackingToken();
 
         /**
-         * The {@link ProcessingContext} in which this event will be handled.
-         * @return The {@link ProcessingContext} in which this event will be handled.
-         */
-        ProcessingContext context();
-
-        /**
-         * Add this entry's events to the {@code eventBatch}. The events should reference the {@code wrappedToken} for
-         * correctly handling token progression.
+         * Add this entry's events to the {@code eventBatch}. Since tracking is handled at the UnitOfWork level,
+         * we only need to add the actual event messages to the batch.
          *
-         * @param eventBatch   The list of events to add this entry's events to.
-         * @param wrappedToken The wrapped token to attach to all events of this entry.
+         * @param eventBatch The list of events to add this entry's events to.
          */
-        void addToBatch(List<TrackedEventMessage<?>> eventBatch, TrackingToken wrappedToken);
+        void addToBatch(List<EventMessage<?>> eventBatch);
     }
 
     /**
-     * Container of a {@link TrackedEventMessage} and {@code boolean} whether the given {@code eventMessage} can be
+     * Container of a {@link MessageStream.Entry} and {@code boolean} whether the given {@code eventMessage} can be
      * handled in this package. The combination constitutes to a processing entry the {@link WorkPackage} should
      * ingest.
      */
     private static class DefaultProcessingEntry implements ProcessingEntry {
 
-        private final TrackedEventMessage<?> eventMessage;
+        private final MessageStream.Entry<? extends EventMessage<?>> eventEntry;
         private final boolean canHandle;
-        private final ProcessingContext context;
 
-        public DefaultProcessingEntry(TrackedEventMessage<?> eventMessage,
-                                      boolean canHandle,
-                                      ProcessingContext context) {
-            this.eventMessage = eventMessage;
+        public DefaultProcessingEntry(MessageStream.Entry<? extends EventMessage<?>> eventEntry, boolean canHandle) {
+            this.eventEntry = eventEntry;
             this.canHandle = canHandle;
-            this.context = context;
         }
 
         @Override
         public TrackingToken trackingToken() {
-            return eventMessage.trackingToken();
+            return TrackingToken.fromContext(eventEntry).orElse(null);
         }
 
         @Override
-        public ProcessingContext context() {
-            return context;
-        }
-
-        @Override
-        public void addToBatch(List<TrackedEventMessage<?>> eventBatch, TrackingToken wrappedToken) {
+        public void addToBatch(List<EventMessage<?>> eventBatch) {
             if (canHandle) {
-                eventBatch.add(eventMessage.withTrackingToken(wrappedToken));
+                eventBatch.add(eventEntry.message());
             }
         }
     }
@@ -791,13 +790,8 @@ class WorkPackage {
         }
 
         @Override
-        public ProcessingContext context() {
-            return processingEntries.get(0).context();
-        }
-
-        @Override
-        public void addToBatch(List<TrackedEventMessage<?>> eventBatch, TrackingToken wrappedToken) {
-            processingEntries.forEach(entry -> entry.addToBatch(eventBatch, wrappedToken));
+        public void addToBatch(List<EventMessage<?>> eventBatch) {
+            processingEntries.forEach(entry -> entry.addToBatch(eventBatch));
         }
     }
 }

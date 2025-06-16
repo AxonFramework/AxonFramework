@@ -16,21 +16,23 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.Context;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -45,6 +47,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static org.axonframework.utils.AssertUtils.assertWithin;
@@ -72,8 +75,8 @@ class WorkPackageTest {
 
     private TrackerStatus trackerStatus;
     private List<TrackerStatus> trackerStatusUpdates;
-    private Predicate<TrackedEventMessage<?>> eventFilterPredicate;
-    private Predicate<List<? extends EventMessage<?>>> batchProcessorPredicate;
+    private Predicate<EventMessage<?>> eventFilterPredicate;
+    private BiPredicate<List<? extends EventMessage<?>>, TrackingToken> batchProcessorPredicate;
 
     @BeforeEach
     void setUp() {
@@ -87,7 +90,7 @@ class WorkPackageTest {
         trackerStatus = new TrackerStatus(segment, initialTrackingToken);
         trackerStatusUpdates = new ArrayList<>();
         eventFilterPredicate = event -> true;
-        batchProcessorPredicate = event -> true;
+        batchProcessorPredicate = (event, token) -> true;
 
         testSubjectBuilder = WorkPackage.builder()
                                         .name(PROCESSOR_NAME)
@@ -121,9 +124,7 @@ class WorkPackageTest {
      */
     @Test
     void scheduleEventDoesNotScheduleIfTheLastDeliveredTokenCoversTheEventsToken() {
-        TrackedEventMessage<String> testEvent = new GenericTrackedEventMessage<>(
-                new GlobalSequenceTrackingToken(1L), EventTestUtils.asEventMessage("some-event")
-        );
+        var testEvent = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"), globalTrackingTokenContext(1L));
 
         WorkPackage testSubjectWithCustomInitialToken =
                 testSubjectBuilder.initialToken(new GlobalSequenceTrackingToken(2L))
@@ -137,8 +138,8 @@ class WorkPackageTest {
     @Test
     void scheduleEventUpdatesLastDeliveredToken() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> testEvent =
-                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
+        var testEvent = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"), globalTrackingTokenContext(1L));
+
 
         testSubject.scheduleEvent(testEvent);
 
@@ -148,10 +149,11 @@ class WorkPackageTest {
     @Test
     void scheduleEventFailsOnEventValidator() throws ExecutionException, InterruptedException {
         TrackingToken testToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> testEvent =
-                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("some-event"));
+        var testMessage = EventTestUtils.asEventMessage("some-event");
+        var testEvent = new SimpleEntry<>(testMessage, trackingTokenContext(testToken));
+
         eventFilterPredicate = event -> {
-            if (event.equals(testEvent)) {
+            if (event.equals(testMessage)) {
                 throw new IllegalStateException("Some exception");
             }
             return true;
@@ -172,10 +174,10 @@ class WorkPackageTest {
     @Test
     void scheduleEventFailsOnBatchProcessor() throws ExecutionException, InterruptedException {
         TrackingToken testToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> testEvent =
-                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("some-event"));
-        batchProcessorPredicate = event -> {
-            if (event.stream().anyMatch(e -> ((TrackedEventMessage<?>) e).trackingToken().equals(testToken))) {
+        var testMessage = EventTestUtils.asEventMessage("some-event");
+        var testEvent = new SimpleEntry<>(testMessage, trackingTokenContext(testToken));
+        batchProcessorPredicate = (event, token) -> {
+            if (event.stream().anyMatch(e -> token.equals(testToken))) {
                 throw new IllegalStateException("Some exception");
             }
             return true;
@@ -201,18 +203,18 @@ class WorkPackageTest {
     @Test
     void scheduleEventRunsSuccessfully() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
+        var testMessage = EventTestUtils.asEventMessage("some-event");
+        var expectedEvent = new SimpleEntry<>(testMessage, trackingTokenContext(expectedToken));
 
         testSubject.scheduleEvent(expectedEvent);
 
         List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, validatedEvents.size()));
-        assertEquals(expectedEvent, validatedEvents.get(0));
+        assertEquals(testMessage, validatedEvents.get(0));
 
-        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
+        var processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
-        assertEquals(expectedEvent.trackingToken(), ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
+        assertEquals(expectedToken, TrackingToken.fromContext(processedEvents.getFirst().context()).get());
 
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
         verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
@@ -229,16 +231,16 @@ class WorkPackageTest {
         testSubjectBuilder.initialToken(ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(1L)));
         testSubject = testSubjectBuilder.build();
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
+        var expectedPayload = EventTestUtils.asEventMessage("some-event");
+        var expectedEvent = new SimpleEntry<>(expectedPayload, trackingTokenContext(expectedToken));
 
         testSubject.scheduleEvent(expectedEvent);
 
-        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
+        var processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
 
-        TrackingToken resultAdvancedToken = ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken();
-        assertTrue(resultAdvancedToken instanceof ReplayToken);
+        TrackingToken resultAdvancedToken = TrackingToken.fromContext(processedEvents.getFirst().context()).get();
+        assertInstanceOf(ReplayToken.class, resultAdvancedToken);
         assertEquals(expectedToken, ((ReplayToken) resultAdvancedToken).getCurrentToken());
         assertEquals(expectedToken, ((ReplayToken) resultAdvancedToken).getTokenAtReset());
     }
@@ -250,16 +252,16 @@ class WorkPackageTest {
                                                                       new GlobalSequenceTrackingToken(0L)));
         testSubject = testSubjectBuilder.build();
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
+        var expectedPayload = EventTestUtils.asEventMessage("some-event");
+        var expectedEvent = new SimpleEntry<>(expectedPayload, trackingTokenContext(expectedToken));
 
         testSubject.scheduleEvent(expectedEvent);
 
-        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
+        var processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
 
-        TrackingToken resultAdvancedToken = ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken();
-        assertTrue(resultAdvancedToken instanceof ReplayToken);
+        TrackingToken resultAdvancedToken = TrackingToken.fromContext(processedEvents.getFirst().context()).get();
+        assertInstanceOf(ReplayToken.class, resultAdvancedToken);
         assertEquals(expectedToken, ((ReplayToken) resultAdvancedToken).getCurrentToken());
         assertEquals(expectedToken, ((ReplayToken) resultAdvancedToken).getTokenAtReset());
     }
@@ -274,14 +276,14 @@ class WorkPackageTest {
                                   .build();
 
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
+        var expectedPayload = EventTestUtils.asEventMessage("some-event");
+        var expectedEvent = new SimpleEntry<>(expectedPayload, trackingTokenContext(expectedToken));
         testSubjectWithShortThreshold.scheduleEvent(expectedEvent);
 
         // Should have handled one event, so a subsequent run of WorkPackage#processEvents will extend the claim.
-        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
+        var processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
-        assertEquals(expectedEvent.trackingToken(), ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
+        assertEquals(expectedToken, TrackingToken.fromContext(processedEvents.getFirst().context()).get());
         // We  need to verify the TokenStore#storeToken operation, otherwise the extendClaim verify will not succeed.
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
         verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
@@ -313,13 +315,13 @@ class WorkPackageTest {
         eventFilterPredicate = event -> false;
 
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
+        var expectedPayload = EventTestUtils.asEventMessage("some-event");
+        var expectedEvent = new SimpleEntry<>(expectedPayload, trackingTokenContext(expectedToken));
         testSubjectWithShortThreshold.scheduleEvent(expectedEvent);
 
-        List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
+        var validatedEvents = eventFilter.getValidatedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, validatedEvents.size()));
-        assertEquals(expectedEvent, validatedEvents.get(0));
+        assertEquals(expectedPayload, validatedEvents.getFirst());
 
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
 
@@ -404,12 +406,12 @@ class WorkPackageTest {
     @Test
     void scheduleEventsThrowsIllegalArgumentExceptionForNoneMatchingTokens() {
         TrackingToken testTokenOne = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> testEventOne =
-                new GenericTrackedEventMessage<>(testTokenOne, EventTestUtils.asEventMessage("this-event"));
+        var testEventOne = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
+                                             trackingTokenContext(testTokenOne));
         TrackingToken testTokenTwo = new GlobalSequenceTrackingToken(2L);
-        TrackedEventMessage<String> testEventTwo =
-                new GenericTrackedEventMessage<>(testTokenTwo, EventTestUtils.asEventMessage("that-event"));
-        List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
+        var testEventTwo = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
+                                             trackingTokenContext(testTokenTwo));
+        List<MessageStream.Entry<? extends EventMessage<?>>> testEvents = new ArrayList<>();
         testEvents.add(testEventOne);
         testEvents.add(testEventTwo);
 
@@ -422,11 +424,11 @@ class WorkPackageTest {
     @Test
     void scheduleEventsDoesNotScheduleIfTheLastDeliveredTokensCoversTheEventsToken() {
         TrackingToken testToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> testEventOne =
-                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("this-event"));
-        TrackedEventMessage<String> testEventTwo =
-                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("that-event"));
-        List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
+        var testEventOne = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
+                                             trackingTokenContext(testToken));
+        var testEventTwo = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
+                                             trackingTokenContext(testToken));
+        List<MessageStream.Entry<? extends EventMessage<?>>> testEvents = new ArrayList<>();
         testEvents.add(testEventOne);
         testEvents.add(testEventTwo);
 
@@ -444,15 +446,15 @@ class WorkPackageTest {
     @Test
     void scheduleEventsReturnsTrueIfOnlyOneEventIsAcceptedByTheEventValidator() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> filteredEvent =
-                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("this-event"));
-        TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("that-event"));
-        List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
+        var filteredEvent = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
+                                              trackingTokenContext(expectedToken));
+        var expectedEvent = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
+                                              trackingTokenContext(expectedToken));
+        List<MessageStream.Entry<? extends EventMessage<?>>> testEvents = new ArrayList<>();
         testEvents.add(filteredEvent);
         testEvents.add(expectedEvent);
 
-        eventFilterPredicate = event -> !event.equals(filteredEvent);
+        eventFilterPredicate = event -> !event.equals(filteredEvent.message());
 
         boolean result = testSubject.scheduleEvents(testEvents);
 
@@ -460,11 +462,11 @@ class WorkPackageTest {
 
         List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(2, validatedEvents.size()));
-        assertTrue(validatedEvents.containsAll(testEvents));
+        assertTrue(validatedEvents.containsAll(testEvents.stream().map(MessageStream.Entry::message).toList()));
 
-        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
+        var processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
-        assertEquals(expectedEvent.trackingToken(), ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
+        assertEquals(expectedToken, TrackingToken.fromContext(processedEvents.getFirst().context).get());
 
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
         verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
@@ -480,11 +482,11 @@ class WorkPackageTest {
     @Test
     void scheduleEventsHandlesAllEventsInOneTransactionWhenAllEventsCanBeHandled() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> expectedEventOne =
-                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("this-event"));
-        TrackedEventMessage<String> expectedEventTwo =
-                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("that-event"));
-        List<TrackedEventMessage<?>> expectedEvents = new ArrayList<>();
+        var expectedEventOne = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
+                                                 trackingTokenContext(expectedToken));
+        var expectedEventTwo = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
+                                                 trackingTokenContext(expectedToken));
+        List<MessageStream.Entry<? extends EventMessage<?>>> expectedEvents = new ArrayList<>();
         expectedEvents.add(expectedEventOne);
         expectedEvents.add(expectedEventTwo);
 
@@ -494,14 +496,14 @@ class WorkPackageTest {
 
         List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(2, validatedEvents.size()));
-        assertTrue(validatedEvents.containsAll(expectedEvents));
+        assertTrue(validatedEvents.containsAll(expectedEvents.stream().map(MessageStream.Entry::message).toList()));
 
-        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
+        var processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(2, processedEvents.size()));
-        assertEquals(expectedEventOne.trackingToken(),
-                     ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
-        assertEquals(expectedEventTwo.trackingToken(),
-                     ((TrackedEventMessage<?>) processedEvents.get(1)).trackingToken());
+        assertEquals(expectedToken,
+                     TrackingToken.fromContext(processedEvents.get(0).context).get());
+        assertEquals(expectedToken,
+                     TrackingToken.fromContext(processedEvents.get(1).context).get());
 
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
         verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
@@ -513,12 +515,22 @@ class WorkPackageTest {
         assertEquals(1L, resultPosition.getAsLong());
     }
 
+    private static Context globalTrackingTokenContext(long globalIndex) {
+        return trackingTokenContext(new GlobalSequenceTrackingToken(globalIndex));
+    }
+
+    private static Context trackingTokenContext(TrackingToken token) {
+        return TrackingToken.addToContext(
+                Context.empty(), token);
+    }
+
     private class TestEventFilter implements WorkPackage.EventFilter {
 
         private final List<EventMessage<?>> validatedEvents = new ArrayList<>();
 
         @Override
-        public boolean canHandle(TrackedEventMessage<?> eventMessage, ProcessingContext context, Segment segment) {
+        public boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Segment segment)
+                throws Exception {
             validatedEvents.add(eventMessage);
             return eventFilterPredicate.test(eventMessage);
         }
@@ -530,21 +542,25 @@ class WorkPackageTest {
 
     private class TestBatchProcessor implements WorkPackage.BatchProcessor {
 
-        private final List<EventMessage<?>> processedEvents = new ArrayList<>();
+        private final List<ContextMessage> processedEvents = new ArrayList<>();
 
         @Override
         public void processBatch(List<? extends EventMessage<?>> eventMessages, UnitOfWork unitOfWork,
-                                 Collection<Segment> processingSegments) throws Exception {
-            if (batchProcessorPredicate.test(eventMessages)) {
-                unitOfWork.executeWithResult(ctx -> {
-                    processedEvents.addAll(eventMessages);
-                    return null;
-                }).join();
-            }
+                                 Collection<Segment> processingSegments) {
+            FutureUtils.joinAndUnwrap(unitOfWork.executeWithResult(ctx -> {
+                if (batchProcessorPredicate.test(eventMessages, TrackingToken.fromContext(ctx).orElse(null))) {
+                    processedEvents.addAll(eventMessages.stream().map(m -> new ContextMessage(m, ctx)).toList());
+                }
+                return null;
+            }));
         }
 
-        public List<EventMessage<?>> getProcessedEvents() {
+        public List<ContextMessage> getProcessedEvents() {
             return processedEvents;
         }
+    }
+
+    record ContextMessage(EventMessage<?> message, Context context) {
+
     }
 }

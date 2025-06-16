@@ -16,21 +16,24 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventstreaming.TrackingTokenSource;
 
 import java.time.Duration;
 import java.time.Instant;
-import jakarta.annotation.Nullable;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Interface for a source of {@link Message messages} that processors can track.
  *
  * @author Rene de Waele
- *@deprecated In favor of the {@code org.axonframework.eventsourcing.eventstore.StreamableEventSource}.
+ * @deprecated In favor of the {@code org.axonframework.eventsourcing.eventstore.StreamableEventSource}.
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
-public interface StreamableMessageSource<M extends Message<?>> {
+public interface StreamableMessageSource<M extends Message<?>> extends TrackingTokenSource {
 
     /**
      * Open a stream containing all messages since given tracking token. Pass a {@code trackingToken} of {@code null} to
@@ -48,8 +51,8 @@ public interface StreamableMessageSource<M extends Message<?>> {
      * token of very first event in the stream.
      * <p>
      * The default behavior for this method is to return {@code null}, which always represents the tail position of a
-     * stream. However, implementations are encouraged to return an instance that explicitly represents the tail
-     * of the stream.
+     * stream. However, implementations are encouraged to return an instance that explicitly represents the tail of the
+     * stream.
      *
      * @return the token at the beginning of an event stream
      */
@@ -68,14 +71,29 @@ public interface StreamableMessageSource<M extends Message<?>> {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    default CompletableFuture<TrackingToken> firstToken() {
+        return CompletableFuture.completedFuture(createHeadToken());
+    }
+
+    @Override
+    default CompletableFuture<TrackingToken> latestToken() {
+        return CompletableFuture.completedFuture(createTailToken());
+    }
+
+    @Override
+    default CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+        return CompletableFuture.completedFuture(createTokenAt(at));
+    }
+
     /**
      * Creates a token that tracks all events after given {@code dateTime}. If there is an event exactly at the given
      * {@code dateTime}, it will be tracked too.
      *
      * @param dateTime The date and time for determining criteria how the tracking token should be created. A tracking
      *                 token should point at very first event before this date and time.
-     * @return a tracking token at the given {@code dateTime}, if there aren't events matching this criteria {@code
-     * null} is returned
+     * @return a tracking token at the given {@code dateTime}, if there aren't events matching this criteria
+     * {@code null} is returned
      * @throws UnsupportedOperationException if the implementation does not support the creation of time-based tokens
      */
     default TrackingToken createTokenAt(Instant dateTime) {
