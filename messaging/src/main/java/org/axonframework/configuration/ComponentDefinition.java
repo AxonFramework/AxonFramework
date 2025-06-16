@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -125,7 +126,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @see #ofTypeAndName(Class, String)
      */
     static <C> IncompleteComponentDefinition<C> ofType(@Nonnull TypeReference<C> type) {
-        return ofTypeAndName(type, requireNonNull(type, "The type cannot be null.").getType().getSimpleName());
+        return ofTypeAndName(type, null);
     }
 
     /**
@@ -141,11 +142,10 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param <C>  The declared type of this component.
      * @return A builder to complete the creation of a {@code ComponentDefinition}.
      */
-    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull TypeReference<C> type, @Nonnull String name) {
-        //noinspection unchecked
+    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull TypeReference<C> type, @Nullable String name) {
         return new IncompleteComponentDefinition<>() {
             private final Component.Identifier<C> identifier = new Component.Identifier<>(
-                    (Class<C>) type.getType(), name
+                    type.getType(), name
             );
 
             @Override
@@ -295,21 +295,5 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
          * @return A {@code ComponentDefinition} for further configuration.
          */
         ComponentDefinition<C> withBuilder(@Nonnull ComponentBuilder<? extends C> builder);
-    }
-
-    /**
-     * Represents a reference to a type of component, allowing for generic types to be specified without casting
-     * errors.
-     *
-     * @param <E> The type of the component.
-     */
-    interface TypeReference<E> {
-
-        /**
-         * Returns the type of the component.
-         *
-         * @return The type of the component.
-         */
-        Class<? super E> getType();
     }
 }

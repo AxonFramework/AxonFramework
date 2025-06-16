@@ -27,7 +27,7 @@ class GenericsComponentDefinitionTest {
     void canCreateComponentDefinitionWithGenericsWithBuilder() {
         MyGenericComponent<String> componentToBuild = new MyGenericComponent<>("testValue");
         ComponentDefinition<MyGenericComponent<String>> definition = ComponentDefinition.ofTypeAndName(
-                (ComponentDefinition.TypeReference<MyGenericComponent<String>>) () -> MyGenericComponent.class,
+                new TypeReference<MyGenericComponent<String>>() {},
                 "myGenericComponent"
         ).withBuilder(config -> componentToBuild);
 
@@ -44,7 +44,7 @@ class GenericsComponentDefinitionTest {
     void canCreateComponentDefinitionWithGenericsWithInstance() {
         MyGenericComponent<Integer> componentToBuild = new MyGenericComponent<>(42);
         ComponentDefinition<MyGenericComponent<Integer>> definition = ComponentDefinition.ofTypeAndName(
-                (ComponentDefinition.TypeReference<MyGenericComponent<Integer>>) () -> MyGenericComponent.class,
+                new TypeReference<MyGenericComponent<Integer>>() {},
                 "myGenericComponent"
         ).withInstance(componentToBuild);
 
