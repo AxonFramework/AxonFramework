@@ -19,6 +19,7 @@ package org.axonframework.serialization.xml;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.serialization.ContentTypeConverter;
+import org.axonframework.serialization.Converter;
 import org.dom4j.Document;
 
 import java.nio.charset.StandardCharsets;
@@ -31,7 +32,9 @@ import java.nio.charset.StandardCharsets;
  *
  * @author Allard Buijze
  * @since 2.0.0
+ * @deprecated In favor of an XML-based Jackson-specific {@link Converter} implementation.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class Dom4JToByteArrayConverter implements ContentTypeConverter<Document, byte[]> {
 
     @Override
