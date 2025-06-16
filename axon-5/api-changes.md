@@ -1069,10 +1069,12 @@ Class and Method Changes
 
 ## Class Changes
 
-This section contains two tables:
+This section contains five tables:
 
-1. A table of all the moved and renamed classes.
-2. A table of all the removed classes.
+1. [Moved or Renamed Classes](#moved-or-renamed-classes)
+2. [Removed Classes](#removed-classes)
+3. [Classes marked for removal](#marked-for-removal-classes)
+4. [Changed implements or extends](#changed-implements-or-extends)
 
 ### Moved or Renamed Classes
 
@@ -1148,15 +1150,14 @@ Note that **any**  changes here may have far extending impact on the original cl
 
 ## Method Signature Changes
 
-This section contains three subsections, called:
+This section contains four subsections, called:
 
-1. [Parameter adjustments](#parameter-adjustments)
+1. [Constructor Parameter adjustments](#constructor-parameter-adjustments)
 2. [Moved methods and constructors](#moved--renamed-methods-and-constructors)
 3. [Removed methods and constructors](#removed-methods-and-constructors)
+4. [Changed Method return types](#changed-method-return-types)
 
-### Parameter adjustments
-
-#### Constructors
+### Constructor Parameter adjustments
 
 | Constructor                                                                                | What                         | Why                                          | 
 |--------------------------------------------------------------------------------------------|------------------------------|----------------------------------------------|
@@ -1174,12 +1175,6 @@ This section contains three subsections, called:
 | All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
 | All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
 | All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-
-#### Method return types
-
-| Method                                | Previous return type           | Current return type |
-|---------------------------------------|--------------------------------|---------------------|
-| `CommandTargetResolver#resolveTarget` | `VersionedAggregateIdentifier` | `String`            |
 
 ### Moved / Renamed Methods and Constructors
 
@@ -1248,8 +1243,9 @@ This section contains three subsections, called:
 | `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#startScheduler(boolean)`  | [Lifecycle management](#component-lifecycle-management) has become a configuration concern. |
 | `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#stopScheduler(boolean)`   | [Lifecycle management](#component-lifecycle-management) has become a configuration concern. |
 
-### Changed method return types
+### Changed Method return types
 
-| Method                                         | Before              | After          |
-|------------------------------------------------|---------------------|----------------|
-| `CorrelationDataProvider#correlationDataFor()` | Map<String, String> | Map<String, ?> | 
+| Method                                         | Before                           | After            |
+|------------------------------------------------|----------------------------------|------------------|
+| `CorrelationDataProvider#correlationDataFor()` | `Map<String, String>`            | `Map<String, ?>` | 
+| `CommandTargetResolver#resolveTarget`          | `VersionedAggregateIdentifier`   | `String`         |
