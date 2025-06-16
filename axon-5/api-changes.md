@@ -464,7 +464,7 @@ same `ComponentBuilder` behavior resides on higher-level operations like `Messag
 
 ### Component Lifecycle Management
 
-As part of any application configuration, there are certain tasks that should happen on start-up and on shutdown. Axon
+As part of any application configuration, there are certain tasks that should be completed on start-up or shutdown. Axon
 Framework provided a space for this in three ways, being:
 
 1. On `Configurer` while registering components.
