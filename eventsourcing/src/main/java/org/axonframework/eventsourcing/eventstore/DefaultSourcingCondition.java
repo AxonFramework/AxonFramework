@@ -24,18 +24,16 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 /**
  * The default {@link SourcingCondition} implementation.
  * <p>
- * The {@code start} and {@code end} refer to the window of events that is of interest to this
+ * The {@code start} refers to the start point of the event stream that is of interest to this
  * {@link SourcingCondition}.
  *
- * @param start    The start position in the event sequence to retrieve of the model to source.
- * @param end      The end position in the event sequence to retrieve of the model to source.
- * @param criteria The {@link EventCriteria} set of the model to source.
+ * @param start    The start position in the event sequence to retrieve of the entity to source.
+ * @param criteria The {@link EventCriteria} set of the entity to source.
  * @author Steven van Beelen
  * @since 5.0.0
  */
 record DefaultSourcingCondition(
         long start,
-        long end,
         @Nonnull EventCriteria criteria
 ) implements SourcingCondition {
 
@@ -46,8 +44,6 @@ record DefaultSourcingCondition(
     @Override
     public SourcingCondition or(@Nonnull SourcingCondition other) {
         var combinedCriteria = other.criteria().or(this.criteria());
-        return new DefaultSourcingCondition(Math.min(this.start, other.start()),
-                                            Math.max(this.end, other.end()),
-                                            combinedCriteria);
+        return new DefaultSourcingCondition(Math.min(this.start, other.start()), combinedCriteria);
     }
 }

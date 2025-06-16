@@ -303,7 +303,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     private AggregateSource aggregateSourceForCriterion(SourcingCondition condition, EventCriterion criterion) {
         AtomicReference<AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
         var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
-        var events = batchingOperations.readEventData(aggregateIdentifier, condition.start(), condition.end());
+        var events = batchingOperations.readEventData(aggregateIdentifier, condition.start());
 
         MessageStream<EventMessage<?>> source =
                 MessageStream.fromStream(events,
@@ -463,15 +463,14 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
             this.maxGapOffset = maxGapOffset;
         }
 
-        Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber,
-                                                           long lastSequenceNumber) {
+        Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber) {
             EventStreamSpliterator<? extends DomainEventData<?>> spliterator = new EventStreamSpliterator<>(
                     lastItem -> transactionManager.fetchInTransaction(
                             () -> legacyJpaOperations.fetchDomainEvents(
                                     identifier,
                                     lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
-                                    lastSequenceNumber,
-                                    batchSize)
+                                    batchSize
+                            )
                     )
                     , finalAggregateBatchPredicate);
             return StreamSupport.stream(spliterator, false);
