@@ -467,7 +467,7 @@ same `ComponentBuilder` behavior resides on higher-level operations like `Messag
 As part of any application configuration, there are certain tasks that should be completed on start-up or shutdown. Axon
 Framework provided a space for this in three ways, being:
 
-1. On `Configurer` while registering components.
+1. On the `Configurer` while registering components.
 2. By implementing `Lifecycle` on the component.
 3. By adding `@StartHandler` and `@ShutdownHandler` annotated methods to the component.
 
