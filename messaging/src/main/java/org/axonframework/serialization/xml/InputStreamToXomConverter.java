@@ -21,8 +21,9 @@ import jakarta.annotation.Nullable;
 import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.ParsingException;
-import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.ContentTypeConverter;
+import org.axonframework.serialization.ConversionException;
+import org.axonframework.serialization.Converter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +37,9 @@ import java.io.InputStreamReader;
  *
  * @author Jochen Munz
  * @since 2.2.0
+ * @deprecated In favor of an XML-based Jackson-specific {@link Converter} implementation.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class InputStreamToXomConverter implements ContentTypeConverter<InputStream, Document> {
 
     @Override
@@ -53,13 +56,13 @@ public class InputStreamToXomConverter implements ContentTypeConverter<InputStre
 
     @Override
     @Nullable
-    public Document convert(@Nullable InputStream original) {
-        if (original == null) {
+    public Document convert(@Nullable InputStream input) {
+        if (input == null) {
             return null;
         }
 
         try {
-            return new Builder().build(new InputStreamReader(original));
+            return new Builder().build(new InputStreamReader(input));
         } catch (ParsingException | IOException e) {
             throw new ConversionException("Cannot convert from InputStream to XOM Document.", e);
         }

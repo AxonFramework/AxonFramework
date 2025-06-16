@@ -60,13 +60,13 @@ public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[]
 
     @Override
     @Nullable
-    public JsonNode convert(@Nullable byte[] original) {
-        if (original == null) {
+    public JsonNode convert(@Nullable byte[] input) {
+        if (input == null) {
             return null;
         }
 
         try {
-            return objectMapper.readTree(original);
+            return objectMapper.readTree(input);
         } catch (IOException e) {
             throw new ConversionException("An error occurred while converting a JsonNode to byte[].", e);
         }

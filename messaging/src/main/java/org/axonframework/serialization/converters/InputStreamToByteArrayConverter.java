@@ -49,13 +49,13 @@ public class InputStreamToByteArrayConverter implements ContentTypeConverter<Inp
 
     @Override
     @Nullable
-    public byte[] convert(@Nullable InputStream original) {
-        if (original == null) {
+    public byte[] convert(@Nullable InputStream input) {
+        if (input == null) {
             return null;
         }
 
         try {
-            return bytesFrom(original);
+            return bytesFrom(input);
         } catch (IOException e) {
             throw new ConversionException(
                     "Unable to convert InputStream to byte[]. Error while reading from Stream.", e

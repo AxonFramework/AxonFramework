@@ -93,23 +93,23 @@ public class ChainingConverter implements Converter {
 
     @Override
     @Nullable
-    public <S, T> T convert(@Nullable S original, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
-        if (sourceType.equals(targetType) || original == null) {
+    public <S, T> T convert(@Nullable S input, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
+        if (sourceType.equals(targetType) || input == null) {
             //noinspection unchecked
-            return (T) original;
+            return (T) input;
         }
 
         for (ContentTypeConverter<?, ?> converter : converters) {
             if (canConvert(converter, sourceType, targetType)) {
                 //noinspection unchecked
                 ContentTypeConverter<S, T> typedConverter = (ContentTypeConverter<S, T>) converter;
-                return typedConverter.convert(original);
+                return typedConverter.convert(input);
             }
         }
 
         ChainedConverter<S, T> converter = ChainedConverter.calculateChain(sourceType, targetType, converters);
         converters.addFirst(converter);
-        return converter.convert(original);
+        return converter.convert(input);
     }
 
     private <S, T> boolean canConvert(ContentTypeConverter<?, ?> converter,

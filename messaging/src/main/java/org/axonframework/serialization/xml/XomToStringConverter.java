@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import nu.xom.Document;
 import org.axonframework.serialization.ContentTypeConverter;
+import org.axonframework.serialization.Converter;
 
 /**
  * A {@link ContentTypeConverter} implementation that converts XOM {@link Document} instances to {@code Strings}.
@@ -28,7 +29,9 @@ import org.axonframework.serialization.ContentTypeConverter;
  *
  * @author Jochen Munz
  * @since 2.2.0
+ * @deprecated In favor of an XML-based Jackson-specific {@link Converter} implementation.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class XomToStringConverter implements ContentTypeConverter<Document, String> {
 
     @Override
@@ -45,7 +48,7 @@ public class XomToStringConverter implements ContentTypeConverter<Document, Stri
 
     @Override
     @Nullable
-    public String convert(@Nullable Document original) {
-        return original != null ? original.toXML() : null;
+    public String convert(@Nullable Document input) {
+        return input != null ? input.toXML() : null;
     }
 }

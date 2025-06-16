@@ -18,8 +18,9 @@ package org.axonframework.serialization.xml;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.ContentTypeConverter;
+import org.axonframework.serialization.ConversionException;
+import org.axonframework.serialization.Converter;
 import org.dom4j.Document;
 import org.dom4j.io.STAXEventReader;
 
@@ -36,7 +37,9 @@ import javax.xml.stream.XMLStreamException;
  *
  * @author Allard Buijze
  * @since 2.0.0
+ * @deprecated In favor of an XML-based Jackson-specific {@link Converter} implementation.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class InputStreamToDom4jConverter implements ContentTypeConverter<InputStream, Document> {
 
     @Override
@@ -53,13 +56,13 @@ public class InputStreamToDom4jConverter implements ContentTypeConverter<InputSt
 
     @Override
     @Nullable
-    public Document convert(@Nullable InputStream original) {
-        if (original == null) {
+    public Document convert(@Nullable InputStream input) {
+        if (input == null) {
             return null;
         }
 
         try {
-            return new STAXEventReader().readDocument(new InputStreamReader(original, StandardCharsets.UTF_8));
+            return new STAXEventReader().readDocument(new InputStreamReader(input, StandardCharsets.UTF_8));
         } catch (XMLStreamException e) {
             throw new ConversionException("Cannot convert from InputStream to dom4j Document.", e);
         }

@@ -47,7 +47,7 @@ public class ByteArrayToInputStreamConverter implements ContentTypeConverter<byt
 
     @Override
     @Nullable
-    public InputStream convert(@Nullable byte[] original) {
-        return original != null ? new ByteArrayInputStream(original) : null;
+    public InputStream convert(@Nullable byte[] input) {
+        return input != null ? new ByteArrayInputStream(input) : null;
     }
 }
