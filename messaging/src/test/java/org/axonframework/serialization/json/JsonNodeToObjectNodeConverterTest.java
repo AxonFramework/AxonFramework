@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.SerializationException;
 import org.junit.jupiter.api.*;
 
@@ -53,7 +54,7 @@ class JsonNodeToObjectNodeConverterTest {
     void convertThrowsException() {
         JsonNode testJsonNode = new TextNode("some-text");
 
-        assertThrows(SerializationException.class, () -> testSubject.convert(testJsonNode));
+        assertThrows(ConversionException.class, () -> testSubject.convert(testJsonNode));
     }
 
     @Test
