@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
 /**
- * Interface describing a mechanism that converts the data of a specified {@link #expectedSourceType() source type} into
+ * Interface describing a mechanism that converts an object from a specified {@link #expectedSourceType() source type} to
  * the defined {@link #targetType() target type}.
  *
  * @param <S> The expected source type for this {@code ContentTypeConverter} to {@link #convert(Object) convert}.
