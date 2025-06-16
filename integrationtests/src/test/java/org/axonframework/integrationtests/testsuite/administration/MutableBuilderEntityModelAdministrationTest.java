@@ -16,12 +16,11 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
-import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
@@ -29,6 +28,7 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Comp
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateCustomer;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateEmployee;
 import org.axonframework.integrationtests.testsuite.administration.commands.GiveRaise;
+import org.axonframework.integrationtests.testsuite.administration.commands.PersonCommand;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
 import org.axonframework.integrationtests.testsuite.administration.events.TaskCompleted;
@@ -40,21 +40,21 @@ import org.axonframework.integrationtests.testsuite.administration.state.mutable
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
-import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
-import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
+import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.PolymorphicEntityModel;
 import org.axonframework.modelling.entity.SimpleEntityModel;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
+import static java.lang.String.format;
+
 /**
  * Runs the administration test suite using the builders of {@link SimpleEntityModel} and related classes.
  */
 public class MutableBuilderEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
-    @Override
-    CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
+    EntityModel<MutablePerson> buildEntityModel(Configuration configuration) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
 
         // Task is the list-based child-model of Employee
@@ -148,8 +148,8 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .build();
 
         // Person is the polymorphic entity type
-        EntityModel<MutablePerson> personModel = EntityModel
-                .forPolymorphicEntityType(MutablePerson.class)
+        return PolymorphicEntityModel
+                .forSuperType(MutablePerson.class)
                 .addConcreteType(employeeModel)
                 .addConcreteType(customerModel)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutablePerson.class))
@@ -161,27 +161,34 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                                             return MessageStream.empty().cast();
                                         })
                 .build();
+    }
 
-        EventSourcingRepository<PersonIdentifier, MutablePerson> repository = new EventSourcingRepository<>(
-                PersonIdentifier.class,
-                MutablePerson.class,
-                configuration.getComponent(EventStore.class),
-                EventSourcedEntityFactory.fromIdentifier(id -> {
+    @Override
+    Module getModule() {
+        EventSourcedEntityModule<PersonIdentifier, MutablePerson> personEntityModule = EventSourcedEntityModule
+                .declarative(PersonIdentifier.class, MutablePerson.class)
+                .entityModel(this::buildEntityModel)
+                .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(id -> {
                     if (id.type() == PersonType.EMPLOYEE) {
                         return new MutableEmployee();
                     } else if (id.type() == PersonType.CUSTOMER) {
                         return new MutableCustomer();
                     }
                     throw new IllegalArgumentException("Unknown type: " + id.type());
-                }),
-                (s, ctx) -> EventCriteria.havingTags("Person", s.key()),
-                personModel
-        );
-
-        return new EntityCommandHandlingComponent<>(
-                repository,
-                personModel,
-                new AnnotationBasedEntityIdResolver<>()
-        );
+                }))
+                .criteriaResolver(c -> (s, ctx) -> EventCriteria.havingTags("Person", s.key()))
+                .entityIdResolver(config -> (message, context) -> {
+                    if (message.getPayload() instanceof PersonCommand personCommand) {
+                        return personCommand.identifier();
+                    }
+                    throw new IllegalArgumentException(
+                            format("Unknown command type: %s", message.getPayloadType().getName()));
+                });
+        return StatefulCommandHandlingModule
+                .named("MutableBuilderEntityModelAdministrationTest")
+                .entities()
+                .entity(personEntityModule)
+                .commandHandlers()
+                .build();
     }
 }

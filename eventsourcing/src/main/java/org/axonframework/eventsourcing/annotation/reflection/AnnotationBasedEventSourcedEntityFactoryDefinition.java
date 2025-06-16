@@ -24,6 +24,8 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefin
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
+import java.util.Set;
+
 /**
  * Definition for an annotation-based {@link EventSourcedEntityFactory} that constructs an
  * {@link EventSourcedEntity}-annotated class. This is the default implementation of the
@@ -42,12 +44,14 @@ public class AnnotationBasedEventSourcedEntityFactoryDefinition
     @Override
     public EventSourcedEntityFactory<Object, Object> createFactory(
             @Nonnull Class<Object> entityType,
+            @Nonnull Set<Class<? extends Object>> entitySubTypes,
             @Nonnull Class<Object> idType,
             @Nonnull Configuration configuration
     ) {
         return new AnnotationBasedEventSourcedEntityFactory<>(
                 entityType,
                 idType,
+                entitySubTypes,
                 configuration.getComponent(ParameterResolverFactory.class),
                 configuration.getComponent(MessageTypeResolver.class)
         );

@@ -17,6 +17,7 @@
 package org.axonframework.utils;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleHandler;
 import org.axonframework.configuration.LifecycleRegistry;
 
@@ -68,5 +69,18 @@ public class StubLifecycleRegistry  implements LifecycleRegistry {
 
     public Map<Integer, List<LifecycleHandler>> getShutdownHandlers() {
         return new HashMap<>(shutdownHandlers);
+    }
+
+    /**
+     * Executes all start handlers in the order of their phase.
+     * @param configuration the configuration to pass to the lifecycle handlers.
+     */
+    public void start(Configuration configuration) {
+        startHandlers.keySet().stream().sorted().forEach(phase -> {
+            List<LifecycleHandler> handlers = startHandlers.get(phase);
+            if (handlers != null) {
+                handlers.forEach(h -> h.run(configuration).join());
+            }
+        });
     }
 }

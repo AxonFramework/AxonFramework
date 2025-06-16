@@ -20,12 +20,14 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.modelling.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.SimpleRepositoryEntityPersister;
+import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.repository.Repository;
 
 /**
  * An expansion on the {@link EntityBuilder}, specifically for state-based entities.
  * <p>
- * Invoke the {@code static} {@link #entity(Class, Class)} operation to start the builder flow for a state-based
+ * Invoke the {@code static} {@link #declarative(Class, Class)} operation to start the builder flow for a state-based
  * entity.
  * <p>
  * Provides operations to either (1) register a {@link RepositoryPhase#loader(ComponentBuilder) entity loader} and
@@ -43,7 +45,7 @@ import org.axonframework.modelling.repository.Repository;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface StateBasedEntityBuilder<I, E> extends EntityBuilder<I, E> {
+public interface StateBasedEntityModule<I, E> extends EntityModule<I, E> {
 
     /**
      * Starts the builder for a state-based entity with the given {@code entityType} and {@code idType}.
@@ -54,9 +56,9 @@ public interface StateBasedEntityBuilder<I, E> extends EntityBuilder<I, E> {
      * @param <E>        The type of the state-based entity being built.
      * @return The repository phase of this builder, for a fluent API.
      */
-    static <I, E> RepositoryPhase<I, E> entity(@Nonnull Class<I> idType,
-                                               @Nonnull Class<E> entityType) {
-        return new DefaultStateBasedEntityBuilder<>(idType, entityType);
+    static <I, E> RepositoryPhase<I, E> declarative(@Nonnull Class<I> idType,
+                                                    @Nonnull Class<E> entityType) {
+        return new SimpleStateBasedEntityModule<>(idType, entityType);
     }
 
     /**
@@ -84,9 +86,9 @@ public interface StateBasedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * Registers the given {@code repository} as a factory method for the state-based entity being built.
          *
          * @param repository A factory method constructing a {@link Repository}.
-         * @return The parent {@link StateBasedEntityBuilder}, signaling the end of configuring a state-based entity.
+         * @return The parent {@link StateBasedEntityModule}, signaling the end of configuring a state-based entity.
          */
-        StateBasedEntityBuilder<I, E> repository(@Nonnull ComponentBuilder<Repository<I, E>> repository);
+        EntityModelPhase<I, E> repository(@Nonnull ComponentBuilder<Repository<I, E>> repository);
     }
 
     /**
@@ -103,10 +105,25 @@ public interface StateBasedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * Registers the given {@code persister} as a factory method for the state-based entity being built.
          *
          * @param persister A factory method constructing a {@link SimpleRepositoryEntityPersister}.
-         * @return The parent {@link StateBasedEntityBuilder}, signaling the end of configuring a state-based entity.
+         * @return The parent {@link StateBasedEntityModule}, signaling the end of configuring a state-based entity.
          */
-        StateBasedEntityBuilder<I, E> persister(
+        EntityModelPhase<I, E> persister(
                 @Nonnull ComponentBuilder<SimpleRepositoryEntityPersister<I, E>> persister
+        );
+    }
+
+    interface EntityModelPhase<I, E> {
+
+        EntityIdResolverPhase<I, E> modeled(
+                @Nonnull ComponentBuilder<EntityModel<E>> entityFactory
+        );
+
+        StateBasedEntityModule<I, E> withoutModel();
+    }
+
+    interface EntityIdResolverPhase<I, E> {
+        StateBasedEntityModule<I, E> entityIdResolver(
+                @Nonnull ComponentBuilder<EntityIdResolver<I>> entityIdResolver
         );
     }
 }

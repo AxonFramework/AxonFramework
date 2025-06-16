@@ -17,7 +17,6 @@
 package org.axonframework.modelling;
 
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 
@@ -38,9 +37,8 @@ class SimpleStateManagerTest {
     @Test
     void registerAllowsEntitiesToBeLoadedFromTheRepository() {
         // given
-        SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                            .register(repository)
-                                                            .build();
+        StateManager stateManager = SimpleStateManager.named("test")
+                                                      .register(repository);
 
         // when
         var state = stateManager.loadEntity(Integer.class, "42", new StubProcessingContext()).join();
@@ -52,7 +50,7 @@ class SimpleStateManagerTest {
     @Test
     void throwsExceptionOnMissingModelDefinition() {
         // given
-        StateManager testSubject = SimpleStateManager.builder("test").build();
+        StateManager testSubject = SimpleStateManager.named("test");
 
         // when & then
         assertThrows(MissingRepositoryException.class,
@@ -62,8 +60,8 @@ class SimpleStateManagerTest {
     @Test
     void canRegisterEachModelClassOnlyOnce() {
         // given
-        SimpleStateManager.Builder builder = SimpleStateManager.builder("test")
-                                                               .register(repository);
+        StateManager builder = SimpleStateManager.named("test")
+                                                 .register(repository);
 
         // when & then
         assertThrows(ConflictingRepositoryAlreadyRegisteredException.class, () -> builder.register(repository));
@@ -72,9 +70,8 @@ class SimpleStateManagerTest {
     @Test
     void canRetrieveRegisteredEntities() {
         // given
-        SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                            .register(repository)
-                                                            .build();
+        StateManager stateManager = SimpleStateManager.named("test")
+                                                      .register(repository);
 
         // when
         var registeredTypes = stateManager.registeredEntities();
@@ -87,9 +84,8 @@ class SimpleStateManagerTest {
     @Test
     void canGetRepositoryForRegisteredType() {
         // given
-        SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                            .register(repository)
-                                                            .build();
+        StateManager stateManager = SimpleStateManager.named("test")
+                                                      .register(repository);
 
         // when
         var result = stateManager.repository(Integer.class, String.class);
@@ -101,9 +97,8 @@ class SimpleStateManagerTest {
     @Test
     void returnsNullIfTryingToGetRepositoryForUnregisteredType() {
         // given
-        SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                            .register(repository)
-                                                            .build();
+        StateManager stateManager = SimpleStateManager.named("test")
+                                                      .register(repository);
 
         // when & then
         assertNull(stateManager.repository(String.class, Integer.class));
@@ -127,10 +122,9 @@ class SimpleStateManagerTest {
                 (id, entity, context) -> CompletableFuture.completedFuture(null)
         );
 
-        SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                            .register(repository)
-                                                            .register(repository2)
-                                                            .build();
+        StateManager stateManager = SimpleStateManager.named("test")
+                                                      .register(repository)
+                                                      .register(repository2);
 
         // when
         var result = stateManager.registeredIdsFor(MyFirstImplementingEntity.class);
@@ -153,9 +147,8 @@ class SimpleStateManagerTest {
                     (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
-            SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                                .register(repository)
-                                                                .build();
+            StateManager stateManager = SimpleStateManager.named("test")
+                                                          .register(repository);
 
             // when
             var result = stateManager.loadManagedEntity(MyFirstImplementingEntity.class,
@@ -175,9 +168,8 @@ class SimpleStateManagerTest {
                     (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
-            SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                                .register(repository)
-                                                                .build();
+            StateManager stateManager = SimpleStateManager.named("test")
+                                                          .register(repository);
 
             // when & then
             assertThrows(MissingRepositoryException.class,
@@ -194,9 +186,8 @@ class SimpleStateManagerTest {
                     (id, context) -> CompletableFuture.completedFuture(new MySuperEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
-            SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                                .register(repository)
-                                                                .build();
+            StateManager stateManager = SimpleStateManager.named("test")
+                                                          .register(repository);
 
             // when
             var result = stateManager.loadManagedEntity(MySuperEntity.class,
@@ -215,9 +206,8 @@ class SimpleStateManagerTest {
                     MySuperEntity.class,
                     (id, context) -> CompletableFuture.completedFuture(new MySuperEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null));
-            SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                                .register(repository)
-                                                                .build();
+            StateManager stateManager = SimpleStateManager.named("test")
+                                                          .register(repository);
 
             // when & then
             assertThrows(MissingRepositoryException.class,
@@ -243,10 +233,9 @@ class SimpleStateManagerTest {
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
-            SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                                .register(repository)
-                                                                .register(repository2)
-                                                                .build();
+            StateManager stateManager = SimpleStateManager.named("test")
+                                                          .register(repository)
+                                                          .register(repository2);
 
             // when
             var result = stateManager.loadManagedEntity(MyFirstImplementingEntity.class,
@@ -270,9 +259,8 @@ class SimpleStateManagerTest {
                     (id, context) -> CompletableFuture.completedFuture(new MySuperEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
-            SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                                .register(repository)
-                                                                .build();
+            StateManager stateManager = SimpleStateManager.named("test")
+                                                          .register(repository);
 
             // when & then
             var exception = assertThrows(CompletionException.class, () -> stateManager.loadManagedEntity(
@@ -299,8 +287,7 @@ class SimpleStateManagerTest {
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
-            SimpleStateManager.Builder builder = SimpleStateManager.builder("test")
-                                                                   .register(repository);
+            StateManager builder = SimpleStateManager.named("test").register(repository);
 
             // when & then
             assertThrows(ConflictingRepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));
@@ -324,8 +311,8 @@ class SimpleStateManagerTest {
             );
 
 
-            SimpleStateManager.Builder builder = SimpleStateManager.builder("test")
-                                                                   .register(repository);
+            StateManager builder = SimpleStateManager.named("test")
+                                                     .register(repository);
 
             // when & then
             assertThrows(ConflictingRepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));
@@ -348,10 +335,9 @@ class SimpleStateManagerTest {
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
-            SimpleStateManager stateManager = SimpleStateManager.builder("test")
-                                                                .register(repository)
-                                                                .register(repository2)
-                                                                .build();
+            StateManager stateManager = SimpleStateManager.named("test")
+                                                          .register(repository)
+                                                          .register(repository2);
 
             // when
             var result = stateManager.loadManagedEntity(MyFirstImplementingEntity.class,
@@ -383,8 +369,8 @@ class SimpleStateManagerTest {
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
-            SimpleStateManager.Builder builder = SimpleStateManager.builder("test")
-                                                                   .register(repository);
+            StateManager builder = SimpleStateManager.named("test")
+                                                     .register(repository);
 
             // when & then
             assertThrows(ConflictingRepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));
@@ -408,8 +394,8 @@ class SimpleStateManagerTest {
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
-            SimpleStateManager.Builder builder = SimpleStateManager.builder("test")
-                                                                   .register(repository);
+            StateManager builder = SimpleStateManager.named("test")
+                                                     .register(repository);
 
             // when & then
             assertThrows(ConflictingRepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));

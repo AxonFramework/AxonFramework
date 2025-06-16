@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -44,22 +45,21 @@ import java.util.stream.Collectors;
 public class SimpleStateManager implements StateManager, DescribableComponent {
 
     private final String name;
-    private final List<Repository<?, ?>> repositories;
+    private final List<Repository<?, ?>> repositories = new CopyOnWriteArrayList<>();
 
     /**
-     * Constructs a new simple {@link StateManager} instance with the given {@code name}.
+     * Creates a new {@code SimpleStateManager} with the given {@code name}.
      *
-     * @param name The name of the component, used for {@link DescribableComponent describing} the component.
-     * @return A {@link Builder} to construct a simple {@link StateManager}.
+     * @param name The name of the state manager, used for describing the component.
+     * @return A new {@code SimpleStateManager} with the given name.
      */
-    public static Builder builder(@Nonnull String name) {
-        BuilderUtils.assertNonBlank(name, "Name may not be blank");
-        return new Builder(name);
+    public static StateManager named(@Nonnull String name) {
+        return new SimpleStateManager(name);
     }
 
-    private SimpleStateManager(@Nonnull Builder builder) {
-        this.name = builder.name;
-        this.repositories = builder.repositories;
+    private SimpleStateManager(@Nonnull String name) {
+        BuilderUtils.assertNonEmpty(name, "The name must be non-empty.");
+        this.name = name;
     }
 
     @SuppressWarnings("unchecked")
@@ -117,102 +117,40 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
         descriptor.describeProperty("repositories", repositories);
     }
 
+    @Override
+    public <I, T> StateManager register(Repository<I, T> repository) {
+        Optional<Repository<?, ?>> registeredRepository = repositories
+                .stream()
+                .filter(r -> match(r, repository))
+                .findFirst();
+
+        if (registeredRepository.isPresent()) {
+            throw new ConflictingRepositoryAlreadyRegisteredException(repository, registeredRepository.get());
+        }
+
+        repositories.add(repository);
+        return this;
+    }
+
     /**
-     * Builder class for the {@link SimpleStateManager}.
+     * Checks if the given repositories match based on their entity and id types. Types match if it's the same type or
+     * if one type is a superclass of the other. This ensures that there are no conflicts when loading entities. For any
+     * id and entity type combination, only one repository should exist.
      */
-    public static class Builder {
+    private boolean match(Repository<?, ?> repositoryOne, Repository<?, ?> repositoryTwo) {
+        return matchesBasedOnEntityType(repositoryOne, repositoryTwo) && matchesBasedOnIdType(repositoryOne,
+                                                                                              repositoryTwo);
+    }
 
-        private final String name;
-        private final List<Repository<?, ?>> repositories = new LinkedList<>();
+    private static boolean matchesBasedOnIdType(Repository<?, ?> repositoryOne,
+                                                Repository<?, ?> repositoryTwo) {
+        return repositoryOne.idType().isAssignableFrom(repositoryTwo.idType())
+                || repositoryTwo.idType().isAssignableFrom(repositoryOne.idType());
+    }
 
-        private Builder(String name) {
-            BuilderUtils.assertNonBlank(name, "Name may not be blank");
-            this.name = name;
-        }
-
-        /**
-         * Registers an {@link Repository} for use with this {@link SimpleStateManager}. The combination of
-         * {@link Repository#entityType()} and {@link Repository#idType()} must be unique for all registered
-         * repositories. If a repository with the same combination is already registered, a
-         * {@link ConflictingRepositoryAlreadyRegisteredException} is thrown.
-         * <p>
-         * The combination of {@link Repository#entityType() entity type} and {@link Repository#idType() id type} of all
-         * repositories must be unique and unambigious. This means you can not register a repository if another
-         * conflicting repository already exists. If you do, a {@link ConflictingRepositoryAlreadyRegisteredException}
-         * will be thrown. Note that superclasses and subclasses of each other are considered conflicting.
-         *
-         * @param repository The {@link Repository} to use for loading state.
-         * @param <I>        The type of id.
-         * @param <T>        The type of the entity.
-         * @return This instance for fluent interfacing.
-         */
-        public <I, T> Builder register(Repository<I, T> repository) {
-            Optional<Repository<?, ?>> registeredRepository = repositories
-                    .stream()
-                    .filter(r -> match(r, repository))
-                    .findFirst();
-
-            if (registeredRepository.isPresent()) {
-                throw new ConflictingRepositoryAlreadyRegisteredException(repository, registeredRepository.get());
-            }
-
-            repositories.add(repository);
-            return this;
-        }
-
-        /**
-         * Registers a load and save function for state type {@code T} with id of type {@code I}. Creates a
-         * {@link SimpleRepository} for the given type with the given load and save functions.
-         * <p>
-         * The combination of {@code idType} and {@code entityType} must be unique for all registered repositories,
-         * whether registered through this method or {@link #register(Repository)}. If a repository with the same
-         * combination is already registered, a {@link ConflictingRepositoryAlreadyRegisteredException} is thrown.
-         * <p>
-         * The combination of {@link Repository#entityType() entity type} and {@link Repository#idType() id type} of all
-         * repositories must be unique and unambigious. This means you can not register a repository if another
-         * conflicting repository already exists. If you do, a {@link ConflictingRepositoryAlreadyRegisteredException}
-         * will be thrown. Note that superclasses and subclasses of each other are considered conflicting.
-         *
-         * @param idType     The type of the identifier.
-         * @param entityType The type of the state.
-         * @param loader     The function to load state.
-         * @param persister  The function to persist state.
-         * @param <I>        The type of id.
-         * @param <T>        The type of state.
-         * @return This instance for fluent interfacing.
-         */
-        public <I, T> Builder register(Class<I> idType,
-                                       Class<T> entityType,
-                                       SimpleRepositoryEntityLoader<I, T> loader,
-                                       SimpleRepositoryEntityPersister<I, T> persister
-        ) {
-            return register(new SimpleRepository<>(idType, entityType, loader, persister));
-        }
-
-        public SimpleStateManager build() {
-            return new SimpleStateManager(this);
-        }
-
-        /**
-         * Checks if the given repositories match based on their entity and id types. Types match if it's the same type
-         * or if one type is a superclass of the other. This ensures that there are no conflicts when loading entities.
-         * For any id and entity type combination, only one repository should exist.
-         */
-        private boolean match(Repository<?, ?> repositoryOne, Repository<?, ?> repositoryTwo) {
-            return matchesBasedOnEntityType(repositoryOne, repositoryTwo) && matchesBasedOnIdType(repositoryOne,
-                                                                                                  repositoryTwo);
-        }
-
-        private static boolean matchesBasedOnIdType(Repository<?, ?> repositoryOne,
+    private static boolean matchesBasedOnEntityType(Repository<?, ?> repositoryOne,
                                                     Repository<?, ?> repositoryTwo) {
-            return repositoryOne.idType().isAssignableFrom(repositoryTwo.idType())
-                    || repositoryTwo.idType().isAssignableFrom(repositoryOne.idType());
-        }
-
-        private static boolean matchesBasedOnEntityType(Repository<?, ?> repositoryOne,
-                                                        Repository<?, ?> repositoryTwo) {
-            return repositoryOne.entityType().isAssignableFrom(repositoryTwo.entityType())
-                    || repositoryTwo.entityType().isAssignableFrom(repositoryOne.entityType());
-        }
+        return repositoryOne.entityType().isAssignableFrom(repositoryTwo.entityType())
+                || repositoryTwo.entityType().isAssignableFrom(repositoryOne.entityType());
     }
 }

@@ -415,8 +415,8 @@ package io.axoniq.demo.university.faculty.write.createcourse;
 public class CreateCourseConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
-        var stateEntity = EventSourcedEntityBuilder
-                .annotatedEntity(CourseId.class, CreateCourseCommandHandler.State.class);  // <1>
+        var stateEntity = EventSourcedEntityModule
+                .annotated(CourseId.class, CreateCourseCommandHandler.State.class);  // <1>
 
         var commandHandlingModule = StatefulCommandHandlingModule.named("CreateCourse")
                 .entities()
@@ -429,8 +429,8 @@ public class CreateCourseConfiguration {
 }
 ----
 
-<1> The `EventSourcedEntityBuilder` is a builder that allows us to create an entity with the given identifier type and state class.
-We use `annotatedEntity`, because of the style we follow here, but you may also invoke just an `entity` builder method and do everything like defining event handlers here, so you can keep your domain model free from annotations if it's your preferred way of coding.
+<1> The `EventSourcedEntityModule` is a module which defines an entity, including the repository and the model, and registers it with the `StateManager` and `CommandBus` of the parent module.
+We use `annotated`, because of the style we follow here, but you may also invoke just an `declarative` builder method and do everything like defining event handlers here, so you can keep your domain model free from annotations if it's your preferred way of coding.
 <2> The `entity` method allows us to register the `State` class as the entity for the `CreateCourse` command handling module.
 
 You may run the tests again and see that all of them should pass!
