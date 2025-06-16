@@ -152,7 +152,7 @@ public class JacksonSerializer implements Serializer {
             return (T) converter.convert(source, valueType.getRawClass());
         } else if (converter.canConvert(sourceType, byte[].class)) {
             // must be a serialized form
-            byte[] bytes = converter.convert(source, sourceType, byte[].class);
+            byte[] bytes = converter.convert(source, byte[].class);
             try {
                 return objectMapper.readValue(bytes, valueType);
             } catch (IOException e) {

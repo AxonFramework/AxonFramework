@@ -17,17 +17,16 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * Defines the structure of a {@link Component} that is available in the {@link Configuration} of the application or
- * one of its {@link Module Modules}.
+ * Defines the structure of a {@link Component} that is available in the {@link Configuration} of the application or one
+ * of its {@link Module Modules}.
  * <p>
  * Components are identified by a combination of their declared type and a name. The declared type is generally an
  * interface that all implementations are expected to implement. The name can be any non-empty string value that
@@ -63,9 +62,8 @@ import static java.util.Objects.requireNonNull;
 public sealed interface ComponentDefinition<C> permits ComponentDefinition.ComponentCreator {
 
     /**
-     * Starts defining a component with given declared {@code type}. The name will default to the simple class name of
-     * that {@code type}. To distinguish between different instances of the same type, consider using
-     * {@link #ofTypeAndName(Class, String)} instead.
+     * Starts defining a component with given declared {@code type}. To distinguish between different instances of the
+     * same type, consider using {@link #ofTypeAndName(Class, String)} instead.
      * <p>
      * Either {@link IncompleteComponentDefinition#withBuilder(ComponentBuilder) withBuilder(...)} or
      * {@link IncompleteComponentDefinition#withInstance(Object) withInstance(...)} must be called on the result of this
@@ -77,7 +75,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @see #ofTypeAndName(Class, String)
      */
     static <C> IncompleteComponentDefinition<C> ofType(@Nonnull Class<C> type) {
-        return ofTypeAndName(type, requireNonNull(type, "The type cannot be null.").getSimpleName());
+        return ofTypeAndName(type, null);
     }
 
     /**
@@ -85,11 +83,12 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * component is expected to be used, consider using {@link #ofType(Class)} instead.
      *
      * @param type The declared type of this component.
-     * @param name The name of this component.
+     * @param name The name of this component. Use {@code null} when there is no name or use {@link #ofType(Class)}
+     *             instead.
      * @param <C>  The declared type of this component.
      * @return A builder to complete the creation of a {@code ComponentDefinition}.
      */
-    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull Class<C> type, @Nonnull String name) {
+    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull Class<C> type, @Nullable String name) {
         return new IncompleteComponentDefinition<>() {
 
             @Override

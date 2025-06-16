@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,13 @@ package org.axonframework.serialization.xml;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link Dom4JToByteArrayConverter}.
+ *
  * @author Allard Buijze
  */
 class Dom4JToByteArrayConverterTest {
@@ -36,7 +37,7 @@ class Dom4JToByteArrayConverterTest {
     }
 
     @Test
-    void canConvert() {
+    void validateSourceAndTargetType() {
         assertEquals(Document.class, testSubject.expectedSourceType());
         assertEquals(byte[].class, testSubject.targetType());
     }
@@ -53,5 +54,11 @@ class Dom4JToByteArrayConverterTest {
         String actualString = new String(actual);
 
         assertTrue(actualString.contains("rootElement"), "Wrong output: " + actualString);
+    }
+
+    @Test
+    void convertIsNullSafe() {
+        assertDoesNotThrow(() -> testSubject.convert(null));
+        assertNull(testSubject.convert(null));
     }
 }

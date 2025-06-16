@@ -19,16 +19,24 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-
+/**
+ * An {@link EventSink} implementation recording all the events that are
+ * {@link #publish(ProcessingContext, List) published}.
+ * <p>
+ * The recorded events can then be used to assert expectations with test cases.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 class RecordingEventSink implements EventSink {
 
-    private final EventSink delegate;
+    protected final EventSink delegate;
     private final List<EventMessage<?>> recorded;
 
     RecordingEventSink(EventSink delegate) {
