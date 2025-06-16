@@ -147,8 +147,8 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
 
     @Override
     @Nullable
-    public T convert(@Nullable S original) {
-        Object intermediate = original;
+    public T convert(@Nullable S input) {
+        Object intermediate = input;
         //noinspection rawtypes - Supressed inspection as each step has a different type
         for (ContentTypeConverter step : delegates) {
             //noinspection unchecked

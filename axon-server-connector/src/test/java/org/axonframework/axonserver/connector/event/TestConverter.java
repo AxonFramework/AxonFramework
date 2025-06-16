@@ -36,12 +36,12 @@ public class TestConverter implements Converter {
 
     @Override
     @Nullable
-    public <S, T> T convert(@Nullable S original, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
+    public <S, T> T convert(@Nullable S input, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
         if (byte[].class.isAssignableFrom(targetType)) {
-            return (T) original.toString().getBytes(StandardCharsets.UTF_8);
+            return (T) input.toString().getBytes(StandardCharsets.UTF_8);
         } else if (String.class.isAssignableFrom(targetType)) {
             //noinspection unchecked
-            return (T) original.toString();
+            return (T) input.toString();
         } else {
             throw new IllegalArgumentException("Only supports byte[] and String.");
         }

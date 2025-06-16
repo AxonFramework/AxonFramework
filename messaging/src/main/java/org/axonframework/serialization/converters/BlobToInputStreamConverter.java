@@ -47,13 +47,13 @@ public class BlobToInputStreamConverter implements ContentTypeConverter<Blob, In
 
     @Override
     @Nullable
-    public InputStream convert(@Nullable Blob original) {
-        if (original == null) {
+    public InputStream convert(@Nullable Blob input) {
+        if (input == null) {
             return null;
         }
 
         try {
-            return original.getBinaryStream();
+            return input.getBinaryStream();
         } catch (SQLException e) {
             throw new ConversionException("Error while attempting to read data from Blob.", e);
         }

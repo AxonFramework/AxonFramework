@@ -50,14 +50,14 @@ public class GenericRecordToByteArrayConverter implements ContentTypeConverter<G
 
     @Override
     @Nullable
-    public byte[] convert(@Nullable GenericRecord original) {
-        if (original == null) {
+    public byte[] convert(@Nullable GenericRecord input) {
+        if (input == null) {
             return null;
         }
 
         try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            new BinaryMessageEncoder<GenericRecord>(AvroUtil.genericData, original.getSchema())
-                    .encode(original, baos);
+            new BinaryMessageEncoder<GenericRecord>(AvroUtil.genericData, input.getSchema())
+                    .encode(input, baos);
             baos.flush();
             return baos.toByteArray();
         } catch (IOException e) {

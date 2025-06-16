@@ -69,18 +69,18 @@ public class ByteArrayToGenericRecordConverter implements ContentTypeConverter<b
 
     @Override
     @Nullable
-    public GenericRecord convert(@Nullable byte[] original) {
-        if (original == null) {
+    public GenericRecord convert(@Nullable byte[] input) {
+        if (input == null) {
             return null;
         }
 
-        long fingerprint = AvroUtil.fingerprint(original);
+        long fingerprint = AvroUtil.fingerprint(input);
         Schema writerSchema = schemaStore.findByFingerprint(fingerprint);
         GenericDatumReader<GenericRecord> reader =
                 new GenericDatumReader<>(writerSchema, writerSchema, AvroUtil.genericData);
 
         try {
-            return reader.read(null, decoderFactory.binaryDecoder(AvroUtil.payload(original), null));
+            return reader.read(null, decoderFactory.binaryDecoder(AvroUtil.payload(input), null));
         } catch (IOException e) {
             throw new ConversionException("Cannot convert bytes to GenericRecord.", e);
         }
