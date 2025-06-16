@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 
@@ -66,7 +67,8 @@ public interface ComponentRegistry extends DescribableComponent {
      * {@code type} and {@code name} combination.
      *
      * @param type    The declared type of the component to build, typically an interface.
-     * @param name    The name of the component to build.
+     * @param name    The name of the component to build. Use {@code null} when there is no name or use
+     *                {@link #registerComponent(Class, ComponentBuilder)} instead.
      * @param builder The builder building the component.
      * @param <C>     The type of component the {@code builder} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
@@ -75,7 +77,7 @@ public interface ComponentRegistry extends DescribableComponent {
      *                                    with the same type and name is already defined.
      */
     default <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
-                                                    @Nonnull String name,
+                                                    @Nullable String name,
                                                     @Nonnull ComponentBuilder<? extends C> builder) {
         return registerComponent(ComponentDefinition.ofTypeAndName(type, name)
                                                     .withBuilder(builder));
@@ -165,7 +167,7 @@ public interface ComponentRegistry extends DescribableComponent {
      * otherwise.
      */
     default boolean hasComponent(@Nonnull Class<?> type) {
-        return hasComponent(type, type.getSimpleName());
+        return hasComponent(type, null);
     }
 
     /**
@@ -173,12 +175,13 @@ public interface ComponentRegistry extends DescribableComponent {
      * {@code name} combination.
      *
      * @param type The type of the {@link Component} to check if it exists, typically an interface.
-     * @param name The name of the {@link Component} to check if it exists.
+     * @param name The name of the {@link Component} to check if it exists. Use {@code null} when there is no name or
+     *             use {@link #hasComponent(Class)} instead.
      * @return {@code true} when there is a {@link Component} registered under the given {@code type} and
      * {@code name combination}, {@code false} otherwise.
      */
     boolean hasComponent(@Nonnull Class<?> type,
-                         @Nonnull String name);
+                         @Nullable String name);
 
     /**
      * Registers an {@link ConfigurationEnhancer} with this {@code ComponentRegistry}.
