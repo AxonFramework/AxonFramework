@@ -64,8 +64,8 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
     /**
      * Starts defining a component with given declared {@code type}. To distinguish between different instances of the
      * same type, consider using {@link #ofTypeAndName(Class, String)} instead. In case the component carries a generic
-     * type, consider using {@link #ofTypeAndName(TypeReference, String)} instead to prevent casting errors during
-     * registration of the component.
+     * type, consider using {@link #ofType(TypeReference)} instead to prevent casting errors during registration of the
+     * component.
      * <p>
      * Either {@link IncompleteComponentDefinition#withBuilder(ComponentBuilder) withBuilder(...)} or
      * {@link IncompleteComponentDefinition#withInstance(Object) withInstance(...)} must be called on the result of this
@@ -82,7 +82,9 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
 
     /**
      * Starts defining a component with given declared {@code type} and {@code name}. If only a single instance of a
-     * component is expected to be used, consider using {@link #ofType(Class)} instead.
+     * component is expected to be used, consider using {@link #ofType(Class)} instead. In case the component carries a
+     * generic type, consider using {@link #ofTypeAndName(TypeReference, String)} instead to prevent casting errors
+     * during registration of the component.
      *
      * @param type The declared type of this component.
      * @param name The name of this component. Use {@code null} when there is no name or use {@link #ofType(Class)}
@@ -106,9 +108,8 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
     }
 
     /**
-     * Starts defining a component with given declared {@code type}. The name will default to {@code null}.
-     * To distinguish between different instances of the same type, consider using
-     * {@link #ofTypeAndName(TypeReference, String)} instead.
+     * Starts defining a component with given declared {@code type}. To distinguish between different instances of the
+     * same type, consider using {@link #ofTypeAndName(TypeReference, String)} instead.
      * <p>
      * This method is a convenience overload of {@link #ofTypeAndName(Class, String)} that can accept a type reference
      * so components with generic types can be registered without casting errors. If your component does not have a
@@ -143,7 +144,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
     static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull TypeReference<C> type, @Nullable String name) {
         return new IncompleteComponentDefinition<>() {
             private final Component.Identifier<C> identifier = new Component.Identifier<>(
-                    type.getType(), name
+                    type.getTypeAsClass(), name
             );
 
             @Override

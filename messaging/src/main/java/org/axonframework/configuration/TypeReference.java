@@ -25,34 +25,48 @@ import java.lang.reflect.Type;
  * Represents a reference to a type of component, allowing for generic types to be specified without casting errors.
  *
  * @param <E> The type of the component.
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
 public abstract class TypeReference<E> {
-    protected final Class<E> type;
 
-    @SuppressWarnings("unchecked")
+    protected final Type type;
+
     protected TypeReference() {
         Type superClass = this.getClass().getGenericSuperclass();
         if (superClass instanceof Class) {
-            throw new IllegalArgumentException("Internal error: TypeReference constructed without actual type information");
+            throw new IllegalArgumentException(
+                    "Internal error: TypeReference constructed without actual type information");
         } else {
-            var type = ((ParameterizedType)superClass).getActualTypeArguments()[0];
-            if(type instanceof Class<?> clazz) {
-                this.type = (Class<E>) clazz;
-            } else if (type instanceof ParameterizedType parameterizedType) {
-                this.type = (Class<E>) parameterizedType.getRawType();
-            } else {
-                throw new IllegalArgumentException("Internal error: TypeReference constructed with unsupported type: " + type);
-            }
+            this.type = ((ParameterizedType) superClass).getActualTypeArguments()[0];
         }
+    }
+
+    /**
+     * Returns the class of the type of the component represented by this {@code TypeReference}.
+     *
+     * @return The class of the component.
+     */
+    @SuppressWarnings("unchecked")
+    @Nonnull
+    public Class<E> getTypeAsClass() {
+        if (type instanceof Class<?> clazz) {
+            return (Class<E>) clazz;
+        }
+        if (type instanceof ParameterizedType parameterizedType) {
+            return (Class<E>) parameterizedType.getRawType();
+        }
+        throw new IllegalArgumentException(
+                "Internal error: TypeReference constructed with unsupported type: %s".formatted(type)
+        );
     }
 
     /**
      * Returns the type of the component represented by this {@code TypeReference}.
      *
-     * @return the type of the component.
+     * @return The type of the component.
      */
-    @Nonnull
-    public Class<E> getType() {
+    public Type getType() {
         return type;
     }
 }
