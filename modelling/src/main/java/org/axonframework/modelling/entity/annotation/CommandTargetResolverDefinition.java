@@ -42,7 +42,7 @@ public interface CommandTargetResolverDefinition {
      * @param member The member that represents the child entity in the parent entity model. This member is typically a
      *               field or a method that returns the child entity, annotated with {@link EntityMember}.
      * @param <E>    The type of the child entity.
-     * @return A {@link EventTargetMatcher} that can be used to match child entities against messages.
+     * @return A {@link CommandTargetResolver} that can be used to match child entities against messages.
      */
     @Nonnull
     <E> CommandTargetResolver<E> createCommandTargetResolver(
