@@ -19,18 +19,18 @@ package org.axonframework.modelling.entity;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.entity.child.EntityChildModel;
+import org.axonframework.modelling.entity.child.EntityChildMessagingMetamodel;
 
 /**
  * Exception indicating that there was no child entity available to handle a command. This happens when one or multiple
- * children declare the command as supported via {@link EntityChildModel#supportedCommands()}, but none of them return
- * true for {@link EntityChildModel#canHandle(CommandMessage, Object, ProcessingContext)}. This indicates that the
- * command is not valid for the current state of the child entity.
+ * children declare the command as supported via {@link EntityChildMessagingMetamodel#supportedCommands()}, but none of
+ * them return true for {@link EntityChildMessagingMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}. This
+ * indicates that the command is not valid for the current state of the child entity.
  *
  * <h4>Before 5.0.0</h4>
- * This exception was called {@code org.axonframework.modelling.command.AggregateEntityNotFoundException} and was thrown when
- * no child entity was available for an aggregate. It has been renamed to reflect the move to entities in Axon 5.0.0. In
- * all other aspects, it remains the same.
+ * This exception was called {@code org.axonframework.modelling.command.AggregateEntityNotFoundException} and was thrown
+ * when no child entity was available for an aggregate. It has been renamed to reflect the move to entities in Axon
+ * 5.0.0. In all other aspects, it remains the same.
  *
  * @author Steven van Beelen
  * @author Mitchell Herrijgers

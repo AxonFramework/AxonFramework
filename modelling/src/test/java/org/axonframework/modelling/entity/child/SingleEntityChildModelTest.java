@@ -25,10 +25,10 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStreamTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
-import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityMessagingMetamodel;
 import org.axonframework.modelling.entity.child.mock.RecordingChildEntity;
 import org.axonframework.modelling.entity.child.mock.RecordingParentEntity;
 import org.junit.jupiter.api.*;
@@ -44,12 +44,13 @@ class SingleEntityChildModelTest {
     public static final QualifiedName COMMAND = new QualifiedName("Command");
     public static final QualifiedName EVENT = new QualifiedName("Event");
 
-    private final EntityModel<RecordingChildEntity> childEntityEntityModel = mock(EntityModel.class);
+    private final EntityMessagingMetamodel<RecordingChildEntity> childEntityMetamodel = mock(
+            EntityMessagingMetamodel.class);
     private final ChildEntityFieldDefinition<RecordingParentEntity, RecordingChildEntity> childEntityFieldDefinition = mock(
             ChildEntityFieldDefinition.class);
 
-    private final SingleEntityChildModel<RecordingChildEntity, RecordingParentEntity> testSubject = SingleEntityChildModel
-            .forEntityModel(RecordingParentEntity.class, childEntityEntityModel)
+    private final SingleEntityChildMessagingMetamodel<RecordingChildEntity, RecordingParentEntity> testSubject = SingleEntityChildMessagingMetamodel
+            .forEntityModel(RecordingParentEntity.class, childEntityMetamodel)
             .childEntityFieldDefinition(childEntityFieldDefinition)
             .build();
 
@@ -66,7 +67,7 @@ class SingleEntityChildModelTest {
 
         @BeforeEach
         void setUp() {
-            when(childEntityEntityModel.handleInstance(any(), any(), any())).thenReturn(
+            when(childEntityMetamodel.handleInstance(any(), any(), any())).thenReturn(
                     MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class), "result")));
         }
 
@@ -81,7 +82,7 @@ class SingleEntityChildModelTest {
             assertEquals("result", result.asCompletableFuture().join().message().getPayload());
 
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityEntityModel).handleInstance(command, entityToBeFound, context);
+            verify(childEntityMetamodel).handleInstance(command, entityToBeFound, context);
         }
 
         @Test
@@ -97,7 +98,7 @@ class SingleEntityChildModelTest {
 
         @Test
         void supportedCommandsIsSameAsChildEntity() {
-            when(childEntityEntityModel.supportedCommands()).thenReturn(Set.of(COMMAND));
+            when(childEntityMetamodel.supportedCommands()).thenReturn(Set.of(COMMAND));
 
             assertEquals(Set.of(COMMAND), testSubject.supportedCommands());
         }
@@ -105,14 +106,14 @@ class SingleEntityChildModelTest {
 
     @Test
     void entityTypeIsSameAsChildEntity() {
-        when(childEntityEntityModel.entityType()).thenReturn(RecordingChildEntity.class);
+        when(childEntityMetamodel.entityType()).thenReturn(RecordingChildEntity.class);
 
         assertEquals(RecordingChildEntity.class, testSubject.entityType());
     }
 
     @Test
     void returnsEntityModel() {
-        assertEquals(childEntityEntityModel, testSubject.entityModel());
+        assertEquals(childEntityMetamodel, testSubject.entityMetamodel());
     }
 
     @Nested
@@ -140,7 +141,7 @@ class SingleEntityChildModelTest {
         void evolvesChildEntityAndParentEntityWhenChildEntityIsFound() {
             RecordingChildEntity childEntity = new RecordingChildEntity();
             when(childEntityFieldDefinition.getChildValue(any())).thenReturn(childEntity);
-            when(childEntityEntityModel.evolve(any(), any(), any())).thenAnswer(answ -> {
+            when(childEntityMetamodel.evolve(any(), any(), any())).thenAnswer(answ -> {
                 RecordingChildEntity child = answ.getArgument(0);
                 EventMessage<String> event = answ.getArgument(1);
                 return child.evolve("child evolve: " + event.getPayload());
@@ -160,14 +161,14 @@ class SingleEntityChildModelTest {
                     eq(parentEntity),
                     argThat(a -> a.getEvolves().contains("child evolve: myPayload"))
             );
-            verify(childEntityEntityModel).evolve(childEntity, event, context);
+            verify(childEntityMetamodel).evolve(childEntity, event, context);
         }
 
         @Test
         void childEntityCanBeEvolvedToNull() {
             RecordingChildEntity childEntity = new RecordingChildEntity();
             when(childEntityFieldDefinition.getChildValue(any())).thenReturn(childEntity);
-            when(childEntityEntityModel.evolve(any(), any(), any())).thenReturn(null);
+            when(childEntityMetamodel.evolve(any(), any(), any())).thenReturn(null);
             when(childEntityFieldDefinition.evolveParentBasedOnChildInput(any(), any())).thenAnswer(answ -> {
                 RecordingParentEntity parent = answ.getArgument(0);
                 RecordingChildEntity child = answ.getArgument(1);
@@ -183,7 +184,7 @@ class SingleEntityChildModelTest {
                     eq(parentEntity),
                     argThat(Objects::isNull)
             );
-            verify(childEntityEntityModel).evolve(childEntity, event, context);
+            verify(childEntityMetamodel).evolve(childEntity, event, context);
         }
     }
 
@@ -194,20 +195,21 @@ class SingleEntityChildModelTest {
 
         @Test
         void canNotCompleteBuilderWithoutFieldDefinition() {
-            var builder = SingleEntityChildModel.forEntityModel(RecordingParentEntity.class, childEntityEntityModel);
+            var builder = SingleEntityChildMessagingMetamodel.forEntityModel(RecordingParentEntity.class,
+                                                                             childEntityMetamodel);
             assertThrows(NullPointerException.class, builder::build);
         }
 
         @Test
         void canNotStartBuilderWithNullParentEntityClass() {
             assertThrows(NullPointerException.class,
-                         () -> SingleEntityChildModel.forEntityModel(null, childEntityEntityModel));
+                         () -> SingleEntityChildMessagingMetamodel.forEntityModel(null, childEntityMetamodel));
         }
 
         @Test
         void canNotStartBuilderWithNullEntityModel() {
             assertThrows(NullPointerException.class,
-                         () -> SingleEntityChildModel.forEntityModel(RecordingParentEntity.class, null));
+                         () -> SingleEntityChildMessagingMetamodel.forEntityModel(RecordingParentEntity.class, null));
         }
     }
 }

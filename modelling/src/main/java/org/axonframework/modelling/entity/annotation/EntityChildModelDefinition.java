@@ -17,15 +17,15 @@
 package org.axonframework.modelling.entity.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.modelling.entity.EntityModel;
-import org.axonframework.modelling.entity.child.EntityChildModel;
+import org.axonframework.modelling.entity.EntityMessagingMetamodel;
+import org.axonframework.modelling.entity.child.EntityChildMessagingMetamodel;
 
 import java.lang.reflect.Member;
 import java.util.Optional;
 
 /**
- * Interface describing the definition of an {@link EntityChildModel}. These definitions are automatically detected by
- * the {@link AnnotatedEntityModel} if the definition's implementation is registered in the
+ * Interface describing the definition of an {@link EntityChildMessagingMetamodel}. These definitions are automatically
+ * detected by the {@link AnnotatedEntityMessagingMetamodel} if the definition's implementation is registered in the
  * {@code META-INF/services/org.axonframework.modelling.entity.annotation.EntityChildModelDefinition} file.
  * <p>
  * Note: This class was known as {code org.axonframework.modelling.command.inspection.ChildEntityDefinition} before
@@ -40,21 +40,22 @@ public interface EntityChildModelDefinition {
 
     /**
      * Inspect the given {@code member}, which is declared on the given {@code parentClass} for the presence of a child
-     * entity according to this definition. If a child entity is found, an {@link EntityChildModel} is returned. This
-     * model can use the given {@code entityModelFactory} to create the child {@link EntityModel} based on the class.
+     * entity according to this definition. If a child entity is found, an {@link EntityChildMessagingMetamodel} is
+     * returned. This metamodel can use the given {@code metamodelFactory} to create the child
+     * {@link EntityMessagingMetamodel} based on the class.
      *
-     * @param parentClass        The class of the parent entity.
-     * @param entityModelFactory A factory to create the child {@link EntityModel} based on the class.
-     * @param member             The member to inspect for a child entity.
-     * @param <C>                The type of the child entity.
-     * @param <P>                The type of the parent entity.
-     * @return An {@link Optional} that resolves to an {@link EntityChildModel} if the field represents a child entity,
-     * or an empty optional if no child entity is found.
+     * @param parentClass      The class of the parent entity.
+     * @param metamodelFactory A factory to create the child {@link EntityMessagingMetamodel} based on the class.
+     * @param member           The member to inspect for a child entity.
+     * @param <C>              The type of the child entity.
+     * @param <P>              The type of the parent entity.
+     * @return An {@link Optional} that resolves to an {@link EntityChildMessagingMetamodel} if the field represents a
+     * child entity, or an empty optional if no child entity is found.
      */
     @Nonnull
-    <C, P> Optional<EntityChildModel<C, P>> createChildDefinition(
+    <C, P> Optional<EntityChildMessagingMetamodel<C, P>> createChildDefinition(
             @Nonnull Class<P> parentClass,
-            @Nonnull AnnotatedEntityModelFactory entityModelFactory,
+            @Nonnull AnnotatedEntityMessagingMetamodelFactory metamodelFactory,
             @Nonnull Member member
     );
 }

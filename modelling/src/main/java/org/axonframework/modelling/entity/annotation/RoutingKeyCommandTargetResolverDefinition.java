@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.annotation.RoutingKey;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
-import org.axonframework.modelling.entity.child.EventTargetMatcher;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
@@ -48,16 +47,19 @@ public class RoutingKeyCommandTargetResolverDefinition implements CommandTargetR
 
     @Nonnull
     @Override
-    public <E> CommandTargetResolver<E> createCommandTargetResolver(@Nonnull AnnotatedEntityModel<E> entity,
-                                                                    @Nonnull Member member) {
+    public <E> CommandTargetResolver<E> createCommandTargetResolver(
+            @Nonnull AnnotatedEntityMessagingMetamodel<E> metamodel,
+            @Nonnull Member member) {
         Optional<String> messageRoutingField = RoutingKeyUtils.getMessageRoutingKey((AnnotatedElement) member);
-        Optional<String> entityRoutingField = RoutingKeyUtils.getEntityRoutingKey(entity.entityType());
+        Optional<String> entityRoutingField = RoutingKeyUtils.getEntityRoutingKey(metamodel.entityType());
         if (messageRoutingField.isPresent() && entityRoutingField.isPresent()) {
-            return new RoutingKeyCommandTargetResolver<>(entity, entityRoutingField.get(), messageRoutingField.get());
+            return new RoutingKeyCommandTargetResolver<>(metamodel,
+                                                         entityRoutingField.get(),
+                                                         messageRoutingField.get());
         }
         if (entityRoutingField.isPresent()) {
             // Default the message routing key to the entity routing key if it is not explicitly defined.
-            return new RoutingKeyCommandTargetResolver<>(entity, entityRoutingField.get(), entityRoutingField.get());
+            return new RoutingKeyCommandTargetResolver<>(metamodel, entityRoutingField.get(), entityRoutingField.get());
         }
         // Only a message routing key (or none at all) is not enough to create a matcher.
         Class<?> memberValueType = getMemberValueType(member);

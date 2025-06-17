@@ -20,24 +20,24 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 
 /**
- * Factory for creating {@link AnnotatedEntityModel} instances for a given entity type. Used by the
- * {@link AnnotatedEntityModel} to create child models using the same configuration that were used to create the
- * parent model.
+ * Factory for creating {@link AnnotatedEntityMessagingMetamodel} instances for a given entity type. Used by the
+ * {@link AnnotatedEntityMessagingMetamodel} to create child metamodels using the same configuration that were used to
+ * create the parent model.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
 @FunctionalInterface
 @Internal
-public interface AnnotatedEntityModelFactory {
+public interface AnnotatedEntityMessagingMetamodelFactory {
 
     /**
-     * Creates an {@link AnnotatedEntityModel} for the given entity type.
+     * Creates an {@link AnnotatedEntityMessagingMetamodel} for the given entity type.
      *
-     * @param entityType The type of the entity to create a model for.
+     * @param entityType The type of the entity to create a metamodel for.
      * @param <C>        The type of the entity.
-     * @return An {@link AnnotatedEntityModel} for the given entity type.
+     * @return An {@link AnnotatedEntityMessagingMetamodel} for the given entity type.
      */
     @Nonnull
-    <C> AnnotatedEntityModel<C> createModelForType(@Nonnull Class<C> entityType);
+    <C> AnnotatedEntityMessagingMetamodel<C> createModelForType(@Nonnull Class<C> entityType);
 }

@@ -23,25 +23,24 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
-import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityMessagingMetamodel;
 
-import java.util.Objects;
 import java.util.Set;
 
 /**
- * Interface describing a child {@link EntityModel} that can be handled in the context of its parent. Handling commands
- * for this model is done in the context of the parent. This model resolves the child from the given parent and can
- * then invoke the right child instance to handle the command.
+ * Interface describing a child {@link EntityMessagingMetamodel} that can be handled in the context of its parent.
+ * Handling commands for this model is done in the context of the parent. This metamodel resolves the child from the
+ * given parent and can then invoke the right child instance to handle the command.
  *
  * @param <C> The type of the child entity.
  * @param <P> The type of the parent entity.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public interface EntityChildModel<C, P> extends EntityEvolver<P> {
+public interface EntityChildMessagingMetamodel<C, P> extends EntityEvolver<P> {
 
     /**
-     * Returns the set of all {@link QualifiedName QualifiedNames} that this model supports for command handlers.
+     * Returns the set of all {@link QualifiedName QualifiedNames} that this metamodel supports for command handlers.
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */
@@ -62,9 +61,9 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
     /**
      * Handles the given {@link CommandMessage} for the given child entity, using the provided parent entity.
      *
-     * @param message The {@link CommandMessage} to handle.
-     * @param parentEntity  The child entity instance to handle the command for.
-     * @param context The {@link ProcessingContext} for the command.
+     * @param message      The {@link CommandMessage} to handle.
+     * @param parentEntity The child entity instance to handle the command for.
+     * @param context      The {@link ProcessingContext} for the command.
      * @return The result of the command handling, which may be a {@link CommandResultMessage} or an error message.
      */
     @Nonnull
@@ -73,48 +72,50 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
                                                          @Nonnull ProcessingContext context);
 
     /**
-     * Returns the {@link Class} of the child entity this model describes.
+     * Returns the {@link Class} of the child entity this metamodel describes.
      *
-     * @return The {@link Class} of the child entity this model describes.
+     * @return The {@link Class} of the child entity this metamodel describes.
      */
     @Nonnull
     Class<C> entityType();
 
     /**
-     * Returns the {@link EntityModel} of the child entity this model describes.
+     * Returns the {@link EntityMessagingMetamodel} of the child entity this metamodel describes.
      *
-     * @return The {@link EntityModel} of the child entity this model describes.
+     * @return The {@link EntityMessagingMetamodel} of the child entity this metamodel describes.
      */
     @Nonnull
-    EntityModel<C> entityModel();
+    EntityMessagingMetamodel<C> entityMetamodel();
 
     /**
      * Starts a builder for a single child entity within the given parent entity type.
      *
-     * @param parentClass      The class of the parent entity.
-     * @param childEntityModel The {@link EntityModel} of the child entity.
-     * @param <C>              The type of the child entity.
-     * @param <P>              The type of the parent entity.
-     * @return A {@link SingleEntityChildModel.Builder} for the child entity.
+     * @param parentClass The class of the parent entity.
+     * @param metamodel   The {@link EntityMessagingMetamodel} of the child entity.
+     * @param <C>         The type of the child entity.
+     * @param <P>         The type of the parent entity.
+     * @return A {@link SingleEntityChildMessagingMetamodel.Builder} for the child entity.
      */
     @Nonnull
-    static <C, P> SingleEntityChildModel.Builder<C, P> single(@Nonnull Class<P> parentClass,
-                                                              @Nonnull EntityModel<C> childEntityModel) {
-        return SingleEntityChildModel.forEntityModel(parentClass, childEntityModel);
+    static <C, P> SingleEntityChildMessagingMetamodel.Builder<C, P> single(
+            @Nonnull Class<P> parentClass,
+            @Nonnull EntityMessagingMetamodel<C> metamodel) {
+        return SingleEntityChildMessagingMetamodel.forEntityModel(parentClass, metamodel);
     }
 
     /**
      * Starts a builder for a list of child entities within the given parent entity type.
      *
-     * @param parentClass      The class of the parent entity.
-     * @param childEntityModel The {@link EntityModel} of the child entity.
-     * @param <C>              The type of the child entity.
-     * @param <P>              The type of the parent entity.
-     * @return A {@link ListEntityChildModel.Builder} for the child entity.
+     * @param parentClass The class of the parent entity.
+     * @param metamodel   The {@link EntityMessagingMetamodel} of the child entity.
+     * @param <C>         The type of the child entity.
+     * @param <P>         The type of the parent entity.
+     * @return A {@link ListEntityChildMessagingMetamodel.Builder} for the child entity.
      */
     @Nonnull
-    static <C, P> ListEntityChildModel.Builder<C, P> list(@Nonnull Class<P> parentClass,
-                                                          @Nonnull EntityModel<C> childEntityModel) {
-        return ListEntityChildModel.forEntityModel(parentClass, childEntityModel);
+    static <C, P> ListEntityChildMessagingMetamodel.Builder<C, P> list(
+            @Nonnull Class<P> parentClass,
+            @Nonnull EntityMessagingMetamodel<C> metamodel) {
+        return ListEntityChildMessagingMetamodel.forEntityModel(parentClass, metamodel);
     }
 }

@@ -32,7 +32,7 @@ class RoutingKeyEventTargetMatcherDefinitionTest {
 
     @Test
     void allowsNoRoutingKeyOnSingleValueEntityMember() throws NoSuchFieldException {
-        AnnotatedEntityModel<ChildEntityWithoutRoutingKey> childEntityModel = mock(AnnotatedEntityModel.class);
+        var childEntityModel = mock(AnnotatedEntityMessagingMetamodel.class);
         when(childEntityModel.entityType()).thenReturn(ChildEntityWithoutRoutingKey.class);
         EventTargetMatcher<ChildEntityWithoutRoutingKey> result = definition.createChildEntityMatcher(childEntityModel,
                                                                                                       SimpleSingleChildValueEntity.class.getDeclaredField(
@@ -43,7 +43,7 @@ class RoutingKeyEventTargetMatcherDefinitionTest {
 
     @Test
     void doesNotAllowMissingRoutingKeyOnCollectionTypeMember() {
-        AnnotatedEntityModel<ChildEntityWithoutRoutingKey> childEntityModel = mock(AnnotatedEntityModel.class);
+        var childEntityModel = mock(AnnotatedEntityMessagingMetamodel.class);
         when(childEntityModel.entityType()).thenReturn(ChildEntityWithoutRoutingKey.class);
         assertThrows(AxonConfigurationException.class, () -> definition.createChildEntityMatcher(
                              childEntityModel,

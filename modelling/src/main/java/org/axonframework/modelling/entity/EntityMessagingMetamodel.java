@@ -28,22 +28,51 @@ import org.axonframework.modelling.EntityEvolver;
 import java.util.Set;
 
 /**
- * The model of an entity, containing the information needed to handle commands and events for a specific entity type
- * {@code E}. An {@link EntityModel} can be created through the builder by using the {@link #forEntityType(Class)}
- * method. The model can then be used to handle commands and events for an entity. If the entity already exists,
- * the {@link #handleInstance} method should be used to handle commands for the entity. If the entity is new,
- * the {@link #handleCreate} method should be used to handle commands for creating the entity.
+ * The messaging metamodel of entity type {@code E}, containing the information needed to handle commands and events. An
+ * {@link EntityMessagingMetamodel} can be created through the builder by using the {@link #forEntityType(Class)}
+ * method. The metamodel can then be used to handle commands and events for an entity. If the entity already exists, the
+ * {@link #handleInstance} method should be used to handle commands for the entity. If the entity is new, the
+ * {@link #handleCreate} method should be used to handle commands for creating the entity.
  *
- * @param <E> The type of the entity modeled by this interface.
+ * @param <E> The type of the entity supported by this metamodel.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
+public interface EntityMessagingMetamodel<E> extends EntityEvolver<E>, DescribableComponent {
 
     /**
-     * Returns the {@link Class} of the entity this model describes.
+     * Starts a new {@link EntityMessagingMetamodelBuilder} for the given entity type. The builder can be used to add
+     * command handlers and child entities to the metamodel.
      *
-     * @return The {@link Class} of the entity this model describes.
+     * @param entityType The type of the entity to create a metamodel for.
+     * @param <E>        The type of the entity to create a metamodel for.
+     * @return A new {@link EntityMessagingMetamodelBuilder} for the given entity type.
+     */
+    @Nonnull
+    static <E> EntityMessagingMetamodelBuilder<E> forEntityType(Class<E> entityType) {
+        return ConcreteEntityMessagingMetamodel.forEntityClass(entityType);
+    }
+
+    /**
+     * Starts a new {@link PolymorphicEntityMessagingMetamodelBuilder} for the given entity type. The builder can be
+     * used to add command handlers and child entities to the metamodel, specifically for polymorphic entities. The
+     * builder also supports adding concrete entity types that extend the given entity type, through
+     * {@link PolymorphicEntityMessagingMetamodelBuilder#addConcreteType(EntityMessagingMetamodel)}. The required
+     * concrete metamodel can be created with {@link #forEntityType(Class)}.
+     *
+     * @param entityType The type of the entity to create a metamodel for.
+     * @param <E>        The type of the entity to create a metamodel for.
+     * @return A new {@link PolymorphicEntityMessagingMetamodelBuilder} for the given entity type.
+     */
+    @Nonnull
+    static <E> PolymorphicEntityMessagingMetamodelBuilder<E> forPolymorphicEntityType(@Nonnull Class<E> entityType) {
+        return PolymorphicEntityMessagingMetamodel.forSuperType(entityType);
+    }
+
+    /**
+     * Returns the {@link Class} of the entity this metamodel describes.
+     *
+     * @return The {@link Class} of the entity this metamodel describes.
      */
     @Nonnull
     Class<E> entityType();
@@ -68,8 +97,9 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
 
     /**
      * Handles the given {@link CommandMessage} for the given {@code entity}. If any of its children can handle the
-     * command, it will be delegated to them. Otherwise, the command will be handled by this model. If the command is
-     * not handled by this model or any of its children, an {@link MessageStream#failed(Throwable)} will be returned.
+     * command, it will be delegated to them. Otherwise, the command will be handled by this metamodel. If the command
+     * is not handled by this metamodel or any of its children, an {@link MessageStream#failed(Throwable)} will be
+     * returned.
      * <p>
      * This method is used to handle commands for existing entities. If you want to handle commands for new entities,
      * use the {@link #handleCreate} method instead. If the command handler is only known as a creational command
@@ -87,8 +117,8 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
     );
 
     /**
-     * Returns the set of all {@link QualifiedName QualifiedNames} that this model supports for creating entities. These
-     * are the commands types that can be used to create an entity of this type through the {@link #handleCreate}
+     * Returns the set of all {@link QualifiedName QualifiedNames} that this metamodel supports for creating entities.
+     * These are the command types that can be used to create an entity of this type through the {@link #handleCreate}
      * method.
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
@@ -97,8 +127,8 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
     Set<QualifiedName> supportedCreationalCommands();
 
     /**
-     * Returns the set of all {@link QualifiedName QualifiedNames} that this model supports for instance commands. These
-     * are the command types that can be used on entity instances of this type through the {@link #handleInstance}
+     * Returns the set of all {@link QualifiedName QualifiedNames} that this metamodel supports for instance commands.
+     * These are the command types that can be used on entity instances of this type through the {@link #handleInstance}
      * method.
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
@@ -107,41 +137,12 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
     Set<QualifiedName> supportedInstanceCommands();
 
     /**
-     * Returns the set of all {@link QualifiedName QualifiedNames} that this model supports for command handlers, both
-     * creational and instance commands. This is the union of the {@link #supportedCreationalCommands()} and
+     * Returns the set of all {@link QualifiedName QualifiedNames} that this metamodel supports for command handlers,
+     * both creational and instance commands. This is the union of the {@link #supportedCreationalCommands()} and
      * {@link #supportedInstanceCommands()} methods.
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */
     @Nonnull
     Set<QualifiedName> supportedCommands();
-
-    /**
-     * Starts a new {@link EntityModelBuilder} for the given entity type. The builder can be used to add command
-     * handlers and child entities to the model.
-     *
-     * @param entityType The type of the entity to create a model for.
-     * @param <E>        The type of the entity to create a model for.
-     * @return A new {@link EntityModelBuilder} for the given entity type.
-     */
-    @Nonnull
-    static <E> EntityModelBuilder<E> forEntityType(Class<E> entityType) {
-        return SimpleEntityModel.forEntityClass(entityType);
-    }
-
-    /**
-     * Starts a new {@link PolymorphicEntityModelBuilder} for the given entity type. The builder can be used to add
-     * command handlers and child entities to the model, specifically for polymorphic entities. The builder also
-     * supports adding concrete entity types that extend the given entity type, through
-     * {@link PolymorphicEntityModelBuilder#addConcreteType(EntityModel)}. The required concrete entitymodel can be
-     * created with {@link #forEntityType(Class)}.
-     *
-     * @param entityType The type of the entity to create a model for.
-     * @param <E>        The type of the entity to create a model for.
-     * @return A new {@link PolymorphicEntityModelBuilder} for the given entity type.
-     */
-    @Nonnull
-    static <E> PolymorphicEntityModelBuilder<E> forPolymorphicEntityType(@Nonnull Class<E> entityType) {
-        return PolymorphicEntityModel.forSuperType(entityType);
-    }
 }

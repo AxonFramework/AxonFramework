@@ -63,7 +63,7 @@ class EntityCommandHandlingComponentTest {
 
     // We create a SimpleEntityModel, and rely on its API. If not, we basically have to mock every piece of behavior.
     @Spy
-    private EntityModel<TestEntity> entityModel = EntityModel
+    private EntityMessagingMetamodel<TestEntity> metamodel = EntityMessagingMetamodel
             .forEntityType(TestEntity.class)
             .creationalCommandHandler(creationalMessageType.qualifiedName(),
                                       ((command, c) -> resultMessage("creational")))
@@ -111,7 +111,7 @@ class EntityCommandHandlingComponentTest {
             CommandResultMessage<?> resultMessage = testComponent.handle(creationalCommandMessage, context)
                                                                  .first().asCompletableFuture().join().message();
 
-            verify(entityModel).handleCreate(eq(creationalCommandMessage), any());
+            verify(metamodel).handleCreate(eq(creationalCommandMessage), any());
             assertEquals("creational", resultMessage.getPayload());
         }
 
@@ -122,7 +122,7 @@ class EntityCommandHandlingComponentTest {
             MessageStream.Single<CommandResultMessage<?>> result = testComponent.handle(creationalCommandMessage,
                                                                                         context);
 
-            verify(entityModel, times(0)).handleCreate(eq(creationalCommandMessage), any());
+            verify(metamodel, times(0)).handleCreate(eq(creationalCommandMessage), any());
             assertCompletedExceptionally(result, EntityExistsForCreationalCommandHandler.class);
         }
 
@@ -163,7 +163,7 @@ class EntityCommandHandlingComponentTest {
             MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
                     instanceCommandMessage, context);
 
-            verify(entityModel).handleInstance(eq(instanceCommandMessage), eq(testEntity), any());
+            verify(metamodel).handleInstance(eq(instanceCommandMessage), eq(testEntity), any());
             Assertions.assertEquals("instance", componentResult.asCompletableFuture().join().message().getPayload());
         }
 
@@ -194,7 +194,7 @@ class EntityCommandHandlingComponentTest {
 
             MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
                     mixedCommandMessage, context);
-            verify(entityModel).handleCreate(mixedCommandMessage, context);
+            verify(metamodel).handleCreate(mixedCommandMessage, context);
             assertEquals("creational-mixed",
                          componentResult.first().asCompletableFuture().join().message().getPayload());
         }
@@ -207,7 +207,7 @@ class EntityCommandHandlingComponentTest {
             MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
                     mixedCommandMessage, context);
 
-            verify(entityModel).handleInstance(mixedCommandMessage, entity, context);
+            verify(metamodel).handleInstance(mixedCommandMessage, entity, context);
             Assertions.assertEquals("instance-mixed",
                                     componentResult.asCompletableFuture().join().message().getPayload());
         }
@@ -246,7 +246,7 @@ class EntityCommandHandlingComponentTest {
         testComponent.describeTo(descriptor);
 
         assertEquals(repository, descriptor.getProperty("repository"));
-        assertEquals(entityModel, descriptor.getProperty("entityModel"));
+        assertEquals(metamodel, descriptor.getProperty("metamodel"));
         assertEquals(idResolver, descriptor.getProperty("idResolver"));
     }
 

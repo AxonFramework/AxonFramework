@@ -23,10 +23,10 @@ import java.lang.reflect.Member;
 
 /**
  * Defines how a {@link EventTargetMatcher} should be constructed for an {@link EntityMember}-annotated member of an
- * {@link AnnotatedEntityModel}.
+ * {@link AnnotatedEntityMessagingMetamodel}.
  *
  * @author Mitchell Herrijgers
- * @see AnnotatedEntityModel
+ * @see AnnotatedEntityMessagingMetamodel
  * @see EventTargetMatcher
  * @see EntityMember
  * @since 5.0.0
@@ -36,15 +36,15 @@ public interface EventTargetMatcherDefinition {
     /**
      * Creates a {@link EventTargetMatcher} for the given {@code entity} and {@code member}.
      *
-     * @param entity The annotated entity model representing the child entity.
+     * @param entity The {@link AnnotatedEntityMessagingMetamodel} representing the child entity.
      * @param member The member that represents the child entity in the parent entity model. This member is typically a
      *               field or a method that returns the child entity, annotated with {@link EntityMember}.
      * @param <E>    The type of the child entity.
-     * @return A {@link EventTargetMatcher} that can be used to match child entities against messages.
+     * @return An {@link EventTargetMatcher} that can be used to match child entities against messages.
      */
     @Nonnull
     <E> EventTargetMatcher<E> createChildEntityMatcher(
-            @Nonnull AnnotatedEntityModel<E> entity,
+            @Nonnull AnnotatedEntityMessagingMetamodel<E> entity,
             @Nonnull Member member
     );
 }

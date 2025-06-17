@@ -39,11 +39,11 @@ class RoutingKeyCommandTargetResolver<E> implements CommandTargetResolver<E> {
 
     private final AnnotatedEntityModelRoutingKeyMatcher<E> routingKeyEntityMatcher;
 
-    public RoutingKeyCommandTargetResolver(AnnotatedEntityModel<E> entity,
+    public RoutingKeyCommandTargetResolver(AnnotatedEntityMessagingMetamodel<E> metamodel,
                                            String entityRoutingProperty,
                                            String messageRoutingProperty) {
         this.routingKeyEntityMatcher = new AnnotatedEntityModelRoutingKeyMatcher<>(
-                entity,
+                metamodel,
                 entityRoutingProperty, messageRoutingProperty
         );
     }

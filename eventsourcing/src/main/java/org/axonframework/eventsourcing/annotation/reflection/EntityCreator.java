@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.annotation.reflection;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.entity.EntityMessagingMetamodelBuilder;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -40,8 +41,8 @@ import java.lang.annotation.Target;
  * properties, based on the origin event. If no event is found, the entity will be {@code null} until the first event is
  * published and the entity is created using this method. This means that, for commands that target an entity that might
  * not have an origin event, an
- * {@link org.axonframework.modelling.entity.EntityModelBuilder#creationalCommandHandler(QualifiedName, CommandHandler)}
- * should be defined.
+ * {@link EntityMessagingMetamodelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command
+ * handler} should be defined.
  * <p>
  * Secondly, a constructor or factory method can define no payload. It can still define the identifier as an argument.
  * This will always initialize the entity, even if no events are found in the stream. This is useful for entities that

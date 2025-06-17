@@ -36,11 +36,11 @@ class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
 
     private final AnnotatedEntityModelRoutingKeyMatcher<E> routingKeyEntityMatcher;
 
-    public RoutingKeyEventTargetMatcher(AnnotatedEntityModel<E> entity,
+    public RoutingKeyEventTargetMatcher(AnnotatedEntityMessagingMetamodel<E> metamodel,
                                         String entityRoutingProperty,
                                         String messageRoutingProperty) {
         this.routingKeyEntityMatcher = new AnnotatedEntityModelRoutingKeyMatcher<>(
-                entity,
+                metamodel,
                 entityRoutingProperty, messageRoutingProperty
         );
     }

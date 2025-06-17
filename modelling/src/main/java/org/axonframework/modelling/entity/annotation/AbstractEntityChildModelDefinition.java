@@ -19,9 +19,9 @@ package org.axonframework.modelling.entity.annotation;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityMessagingMetamodel;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
-import org.axonframework.modelling.entity.child.EntityChildModel;
+import org.axonframework.modelling.entity.child.EntityChildMessagingMetamodel;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
 
 import java.lang.reflect.AnnotatedElement;
@@ -38,14 +38,14 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
  * Abstract implementation of the {@link EntityChildModelDefinition} interface that makes concrete implementations
  * easier to maintain. It constructs the necessary definitions from the {@link EntityMember} annotation, determines the
  * field name based on the member and calls the
- * {@link #doCreate(Class, EntityModel, String, EventTargetMatcher, CommandTargetResolver)} method to create the actual
- * child model.
+ * {@link #doCreate(Class, EntityMessagingMetamodel, String, EventTargetMatcher, CommandTargetResolver)} method to
+ * create the actual {@link EntityChildMessagingMetamodel}.
  * <p>
  * Implementors define what kind of fields they support by implementing the {@link #isMemberTypeSupported(Class)}
  * method. If this method returns {@code true}, the {@link #getChildTypeFromMember(Member)} will be called to determine
  * the child type (which may be a generic argument, such as when using a {@link List} as a field type). Then, the
- * {@link #doCreate(Class, EntityModel, String, EventTargetMatcher, CommandTargetResolver)} methods will be called with
- * all information needed to create the child model.
+ * {@link #doCreate(Class, EntityMessagingMetamodel, String, EventTargetMatcher, CommandTargetResolver)} methods will be
+ * called with all information needed to create the child model.
  * <p>
  * Before version 5.0.0, this class was known as the
  * {@code org.axonframework.modelling.command.inspection.AbstractChildEntityDefinition}.
@@ -59,9 +59,9 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
 
     @Nonnull
     @Override
-    public <C, P> Optional<EntityChildModel<C, P>> createChildDefinition(
+    public <C, P> Optional<EntityChildMessagingMetamodel<C, P>> createChildDefinition(
             @Nonnull Class<P> parentClass,
-            @Nonnull AnnotatedEntityModelFactory entityModelFactory,
+            @Nonnull AnnotatedEntityMessagingMetamodelFactory metamodelFactory,
             @Nonnull Member member
     ) {
         Map<String, Object> attributes = findAnnotationAttributes((AnnotatedElement) member, EntityMember.class)
@@ -73,7 +73,7 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
 
         //noinspection unchecked - this is the actual C type
         Class<C> childType = (Class<C>) getChildTypeFromMember(member);
-        AnnotatedEntityModel<C> childModel = entityModelFactory.createModelForType(childType);
+        AnnotatedEntityMessagingMetamodel<C> childModel = metamodelFactory.createModelForType(childType);
 
         String fieldName = fieldNameFromMember(member);
         var eventForwardingMode = constructForwardingDefinition(attributes)
@@ -87,7 +87,8 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
     /**
      * Check if the given member type supports this definition. Returning {@code true} from this method implies that the
      * {@link #getChildTypeFromMember(Member)} and
-     * {@link #doCreate(Class, EntityModel, String, EventTargetMatcher, CommandTargetResolver)} methods will be called.
+     * {@link #doCreate(Class, EntityMessagingMetamodel, String, EventTargetMatcher, CommandTargetResolver)} methods
+     * will be called.
      *
      * @param memberType The type of the member to check.
      * @return Should return {@code true} if the member type is supported, {@code false} otherwise.
@@ -96,8 +97,8 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
 
     /**
      * Returns the actual child type. If it needs to be retrieved from a generic, this method should do so. This is used
-     * to construct the child {@link EntityModel} using the {@link AnnotatedEntityModelFactory} supplied by the parent
-     * entity model.
+     * to construct the child {@link EntityMessagingMetamodel} using the
+     * {@link AnnotatedEntityMessagingMetamodelFactory} supplied by the parent entity model.
      *
      * @param member The member to retrieve the child type from.
      * @return The child type.
@@ -105,11 +106,11 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
     protected abstract Class<?> getChildTypeFromMember(@Nonnull Member member);
 
     /**
-     * Creates a new {@link EntityChildModel} for the given parent class and child model. This method will be called if
-     * the {@link #isMemberTypeSupported(Class)} returns {@code true} for the given member type.
+     * Creates a new {@link EntityChildMessagingMetamodel} for the given parent class and child metamodel. This method
+     * will be called if the {@link #isMemberTypeSupported(Class)} returns {@code true} for the given member type.
      *
      * @param parentClass           The class of the parent entity.
-     * @param childModel            The child model to use for the child entity.
+     * @param entityMetamodel       The {@link EntityMessagingMetamodel} to use for the child entity.
      * @param fieldName             The name of the field to use for the child entity. If the member is a field, this
      *                              will be the field name. If it is a method, the supposed field name will be the
      *                              method name without the "get", "set" or "is" prefix and starting with a lowercase
@@ -118,12 +119,12 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
      * @param commandTargetResolver The {@link CommandTargetResolver} to use for the child entity.
      * @param <C>                   The type of the child entity.
      * @param <P>                   The type of the parent entity.
-     * @return A new {@link EntityChildModel} for the given parent class and child model.
+     * @return A new {@link EntityChildMessagingMetamodel} for the given parent class and child metamodel.
      */
     @Nonnull
-    protected abstract <C, P> EntityChildModel<C, P> doCreate(
+    protected abstract <C, P> EntityChildMessagingMetamodel<C, P> doCreate(
             @Nonnull Class<P> parentClass,
-            @Nonnull EntityModel<C> childModel,
+            @Nonnull EntityMessagingMetamodel<C> entityMetamodel,
             @Nonnull String fieldName,
             @Nonnull EventTargetMatcher<C> eventTargetMatcher,
             @Nonnull CommandTargetResolver<C> commandTargetResolver);
