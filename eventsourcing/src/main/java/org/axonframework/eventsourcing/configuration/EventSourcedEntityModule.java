@@ -67,7 +67,7 @@ import org.axonframework.modelling.repository.Repository;
  * This module does not provide a {@link StateManager} by itself, but rather registers the entity to the nearest
  * {@link StateManager} in the module hierarchy. This means that you can load the event-sourced entity from the
  * nearest parent configuration that provides a {@link StateManager}, or any of that parent's children modules.
- * As such,to ensure access, this module should be registered at the right place in the module hierarchy.
+ * As such, to ensure access, this module should be registered at the right place in the module hierarchy.
  *
  * @param <I> The type of identifier used to identify the event-sourced entity.
  * @param <E> The type of the event-sourced entity.
@@ -123,7 +123,7 @@ public interface EventSourcedEntityModule<I, E> extends EntityModule<I, E> {
          *                      entity.
          * @return The {@link EntityFactoryPhase} phase of this builder, for a fluent API.
          */
-        EntityFactoryPhase<I, E> entityModel(@Nonnull ComponentBuilder<EntityModel<E>> entityFactory);
+        EntityFactoryPhase<I, E> entityModel(@Nonnull BiFunction<Configuration, EntityMOdelBEntityModel<E>> entityFactory);
     }
 
     /**
