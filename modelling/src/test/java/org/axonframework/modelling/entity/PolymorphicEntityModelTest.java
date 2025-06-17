@@ -25,6 +25,7 @@ import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStreamTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
@@ -247,6 +248,19 @@ class PolymorphicEntityModelTest {
         verify(entityInstanceCommandHandler).handle(eq(commandMessage), same(entity), eq(context));
         verify(concreteTestEntityOneEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
         verify(concreteTestEntityTwoEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+    }
+
+    @Test
+    void throwsWrongPolymorphicTypeExceptionForWrongTypeDuringCommand() {
+        CommandMessage<?> commandMessage = new GenericCommandMessage<>(
+                new MessageType(CONCRETE_TWO_INSTANCE_COMMAND), "concrete-two");
+        ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
+        ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
+
+        MessageStream.Single<CommandResultMessage<?>> commandResultMessageSingle = polymorphicModel.handleInstance(
+                commandMessage, entity, context
+        );
+        MessageStreamTestUtils.assertCompletedExceptionally(commandResultMessageSingle, WrongPolymorphicEntityTypeException.class);
     }
 
     @Test
