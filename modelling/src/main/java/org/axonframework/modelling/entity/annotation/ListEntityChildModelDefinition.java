@@ -57,14 +57,6 @@ public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefi
         return getChildTypeFromList(member);
     }
 
-    @SuppressWarnings("unchecked")
-    private static <C> Class<C> getChildTypeFromList(Member member) {
-        return (Class<C>) resolveMemberGenericType(member, 0).orElseThrow(
-                () -> new AxonConfigurationException(format(
-                        "Unable to resolve entity type of member [%s].", ReflectionUtils.getMemberGenericString(member)
-                )));
-    }
-
     @Nonnull
     @Override
     protected <C, P> EntityChildModel<C, P> doCreate(
@@ -80,5 +72,13 @@ public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefi
                 .commandTargetResolver(commandTargetResolver)
                 .eventTargetMatcher(eventTargetMatcher)
                 .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private <C> Class<C> getChildTypeFromList(Member member) {
+        return (Class<C>) resolveMemberGenericType(member, 0).orElseThrow(
+                () -> new AxonConfigurationException(format(
+                        "Unable to resolve entity type of member [%s].", ReflectionUtils.getMemberGenericString(member)
+                )));
     }
 }

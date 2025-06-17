@@ -30,7 +30,7 @@ import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.getMemberValueType;
 
 /**
- * Definition for creating {@link EventTargetMatcher} instances based on the routing key definitions.
+ * Definition for creating {@link CommandTargetResolver} instances based on the routing key definitions.
  * <p>
  * The routing key of the message is determined by the {@link EntityMember#routingKey} annotation on the declaring
  * member in the parent entity, or the {@link RoutingKey} annotation on the child entity's member if absent. The routing

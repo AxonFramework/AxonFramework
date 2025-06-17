@@ -80,7 +80,7 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
             modelState = null;
 
             // When
-            var createdIdentifier = handleCreateCommand(new CreateProjectCommand("Axon Framework 5", ProjectType.INTERNAL));
+            var createdIdentifier = dispatchCreateCommand(new CreateProjectCommand("Axon Framework 5", ProjectType.INTERNAL));
 
             // Then
             assertThat(createdIdentifier).isInstanceOf(String.class);
@@ -99,7 +99,7 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
             modelState = new InternalProject("project-id", "Axon Framework 5");
 
             // When
-            handleInstanceCommand(new RenameProjectCommand("project-id", "Axon Framework 6"));
+            dispatchInstanceCommand(new RenameProjectCommand("project-id", "Axon Framework 6"));
 
             // Then
             assertThat(publishedEvents).containsExactly(
@@ -115,8 +115,8 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
 
             // When & Then
             assertThatExceptionOfType(EntityExistsForCreationalCommandHandler.class)
-                    .isThrownBy(() -> handleInstanceCommand(new CreateProjectCommand("Axon Framework 6",
-                                                                                 ProjectType.INTERNAL))
+                    .isThrownBy(() -> dispatchInstanceCommand(new CreateProjectCommand("Axon Framework 6",
+                                                                                       ProjectType.INTERNAL))
 
                     );
         }
@@ -195,7 +195,7 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
             modelState = new OpenSourceProject("project-id", "Axon Framework 5");
 
             // When
-            handleInstanceCommand(new AssignMarketeer("project-id", "aad@axoniq.io", "Aad"));
+            dispatchInstanceCommand(new AssignMarketeer("project-id", "aad@axoniq.io", "Aad"));
 
             // Then
             assertThat(publishedEvents).containsExactly(
@@ -216,7 +216,7 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
 
             // When & Then
             assertThatExceptionOfType(WrongPolymorphicEntityTypeException.class)
-                    .isThrownBy(() -> handleInstanceCommand(new AssignMarketeer("project-id", "aad@axoniq.io", "Aad")));
+                    .isThrownBy(() -> dispatchInstanceCommand(new AssignMarketeer("project-id", "aad@axoniq.io", "Aad")));
         }
 
         /**
@@ -228,11 +228,11 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
         void canChangeHubspotUsernameOfMarketeer() {
             // Given an existing open source project with a marketeer
             modelState = new OpenSourceProject("project-id", "Axon Framework 5");
-            handleInstanceCommand(new AssignMarketeer("project-id", "aad@axoniq.io", "aad"));
+            dispatchInstanceCommand(new AssignMarketeer("project-id", "aad@axoniq.io", "aad"));
             publishedEvents.clear();
 
             // When
-            handleInstanceCommand(new ChangeMarketeerHubspotUsername("project-id", "aad@axoniq.io", "aad-hubspot"));
+            dispatchInstanceCommand(new ChangeMarketeerHubspotUsername("project-id", "aad@axoniq.io", "aad-hubspot"));
 
             // Then
             assertThat(publishedEvents).containsExactly(
@@ -256,15 +256,15 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
             setupAxonFramework5ProjectWithDevelopers(false);
 
             // When
-            handleInstanceCommand(new AssignDeveloperAsLeadDeveloper("project-id", "steven.van.beelen@axoniq.io"));
+            dispatchInstanceCommand(new AssignDeveloperAsLeadDeveloper("project-id", "steven.vanbeelen@axoniq.io"));
 
             // Then
             assertThat(publishedEvents).containsExactly(
-                    new LeadDeveloperAssigned("project-id", "steven.van.beelen@axoniq.io"));
+                    new LeadDeveloperAssigned("project-id", "steven.vanbeelen@axoniq.io"));
 
-            assertThat(modelState.getLeadDeveloper().email()).isEqualTo("steven.van.beelen@axoniq.io");
+            assertThat(modelState.getLeadDeveloper().email()).isEqualTo("steven.vanbeelen@axoniq.io");
             assertThat(modelState.getOtherDevelopers()).extracting("email")
-                                                   .doesNotContain("steven.van.beelen@axoniq.io");
+                                                   .doesNotContain("steven.vanbeelen@axoniq.io");
         }
 
         /**
@@ -277,9 +277,9 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
             setupAxonFramework5ProjectWithDevelopers(true);
 
             // When
-            handleInstanceCommand(new ChangeDeveloperGithubUsername("project-id",
-                                                                    "mitchell.herrijgers@axoniq.io",
-                                                                    "CodeDrivenMitch-two"));
+            dispatchInstanceCommand(new ChangeDeveloperGithubUsername("project-id",
+                                                                      "mitchell.herrijgers@axoniq.io",
+                                                                      "CodeDrivenMitch-two"));
 
             // Then
             assertThat(publishedEvents).containsExactly(
@@ -306,14 +306,14 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
             setupAxonFramework5ProjectWithDevelopers(true);
 
             // When
-            handleInstanceCommand(new ChangeDeveloperGithubUsername("project-id",
-                                                                    "steven.van.beelen@axoniq.io",
-                                                                    "smcvb-two"));
+            dispatchInstanceCommand(new ChangeDeveloperGithubUsername("project-id",
+                                                                      "steven.vanbeelen@axoniq.io",
+                                                                      "smcvb-two"));
 
             // Then
             assertThat(publishedEvents).containsExactly(
                     new DeveloperGithubUsernameChanged("project-id",
-                                                       "steven.van.beelen@axoniq.io",
+                                                       "steven.vanbeelen@axoniq.io",
                                                        "smcvb",
                                                        "smcvb-two"));
 
@@ -330,23 +330,23 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
 
             // When & Then
             assertThatExceptionOfType(ChildAmbiguityException.class)
-                    .isThrownBy(() -> handleInstanceCommand(new ChangeDeveloperGithubUsername("project-id",
-                                                                                              "mitchell.herrijgers@axoniq.io",
-                                                                                              "CodeDrivenMitch-two")));
+                    .isThrownBy(() -> dispatchInstanceCommand(new ChangeDeveloperGithubUsername("project-id",
+                                                                                                "mitchell.herrijgers@axoniq.io",
+                                                                                                "CodeDrivenMitch-two")));
         }
 
         @Test
         void failsIfMultipleDevelopersOfSameEmailExistWithinBothMembers() {
             // In this case, we need to set wrong state so the command goes wrong
             modelState = new OpenSourceProject("project-id", "Axon Framework 5");
-            modelState.setLeadDeveloper(new Developer("steven.van.beelen@axoniq.io", "smcvb"));
-            modelState.getOtherDevelopers().add(new Developer("steven.van.beelen@axoniq.io", "smcvb"));
+            modelState.setLeadDeveloper(new Developer("steven.vanbeelen@axoniq.io", "smcvb"));
+            modelState.getOtherDevelopers().add(new Developer("steven.vanbeelen@axoniq.io", "smcvb"));
 
             // When & Then
             assertThatExceptionOfType(ChildAmbiguityException.class)
-                    .isThrownBy(() -> handleInstanceCommand(new ChangeDeveloperGithubUsername("project-id",
-                                                                                              "steven.van.beelen@axoniq.io",
-                                                                                              "smcvb-two")));
+                    .isThrownBy(() -> dispatchInstanceCommand(new ChangeDeveloperGithubUsername("project-id",
+                                                                                                "steven.vanbeelen@axoniq.io",
+                                                                                                "smcvb-two")));
         }
 
         @Test
@@ -356,9 +356,9 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
 
             // When & Then - trying to change a developer that doesn't exist
             assertThatExceptionOfType(ChildEntityNotFoundException.class)
-                    .isThrownBy(() -> handleInstanceCommand(new ChangeDeveloperGithubUsername("project-id",
-                                                                                             "nonexistent@example.com",
-                                                                                             "new-username")));
+                    .isThrownBy(() -> dispatchInstanceCommand(new ChangeDeveloperGithubUsername("project-id",
+                                                                                                "nonexistent@example.com",
+                                                                                                "new-username")));
         }
     }
 
@@ -368,14 +368,14 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
      */
     private void setupAxonFramework5ProjectWithDevelopers(boolean assignLeadDeveloper) {
         modelState = new OpenSourceProject("project-id", "Axon Framework 5");
-        handleInstanceCommand(new AssignDeveloperToProject("project-id", "steven.van.beelen@axoniq.io", "smcvb"));
-        handleInstanceCommand(new AssignDeveloperToProject("project-id",
-                                                           "mitchell.herrijgers@axoniq.io",
-                                                           "CodeDrivenMitch"));
-        handleInstanceCommand(new AssignDeveloperToProject("project-id", "mateusz.nowak@axoniq.io", "MateuszNaKodach"));
-        handleInstanceCommand(new AssignDeveloperToProject("project-id", "allard@axoniq.io", "abuijze"));
+        dispatchInstanceCommand(new AssignDeveloperToProject("project-id", "steven.vanbeelen@axoniq.io", "smcvb"));
+        dispatchInstanceCommand(new AssignDeveloperToProject("project-id",
+                                                             "mitchell.herrijgers@axoniq.io",
+                                                             "CodeDrivenMitch"));
+        dispatchInstanceCommand(new AssignDeveloperToProject("project-id", "mateusz.nowak@axoniq.io", "MateuszNaKodach"));
+        dispatchInstanceCommand(new AssignDeveloperToProject("project-id", "allard@axoniq.io", "abuijze"));
         if (assignLeadDeveloper) {
-            handleInstanceCommand(new AssignDeveloperAsLeadDeveloper("project-id", "steven.van.beelen@axoniq.io"));
+            dispatchInstanceCommand(new AssignDeveloperAsLeadDeveloper("project-id", "steven.vanbeelen@axoniq.io"));
         }
         publishedEvents.clear();
     }

@@ -42,6 +42,8 @@ import java.util.concurrent.CompletionException;
 /**
  * Abstract base class for tests of the {@link AnnotatedEntityModel} that provide common setup for parameter resolver
  * factory and message type resolver. In addition, it makes it easier to fire commands and events against the model.
+ * <p>
+ * This class evolves the entity based on any events published, mimicking the behavior of a repository.
  *
  * @param <E> The type of the entity being tested.
  * @author Mitchell Herrijgers
@@ -56,7 +58,7 @@ public abstract class AbstractAnnotatedEntityModelTest<E> {
 
     protected abstract AnnotatedEntityModel<E> getModel();
 
-    protected Object handleInstanceCommand(Object command) {
+    protected Object dispatchInstanceCommand(Object command) {
         CommandMessage<?> message = createCommand(command);
         try {
             return model.handleInstance(
@@ -75,7 +77,7 @@ public abstract class AbstractAnnotatedEntityModelTest<E> {
         }
     }
 
-    protected Object handleCreateCommand(Object command) {
+    protected Object dispatchCreateCommand(Object command) {
         CommandMessage<?> message = createCommand(command);
         try {
             return model.handleCreate(message, StubProcessingContext.forMessage(message))
@@ -114,6 +116,10 @@ public abstract class AbstractAnnotatedEntityModelTest<E> {
         );
     }
 
+    protected QualifiedName qualifiedName(Class<?> clazz) {
+        return messageTypeResolver.resolveOrThrow(clazz).qualifiedName();
+    }
+
     private class ModelEvolvingEventAppender implements EventAppender {
 
         @Override
@@ -134,9 +140,5 @@ public abstract class AbstractAnnotatedEntityModelTest<E> {
                 );
             });
         }
-    }
-
-    protected QualifiedName qualifiedName(Class<?> clazz) {
-        return messageTypeResolver.resolveOrThrow(clazz).qualifiedName();
     }
 }

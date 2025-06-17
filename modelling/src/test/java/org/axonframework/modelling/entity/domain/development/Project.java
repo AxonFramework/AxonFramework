@@ -35,12 +35,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Fictional domain model representing a project in a software development context. Uses for validating the Axon
+ * Fictional domain model representing a project in a software development context. Used for validating the Axon
  * Framework's modelling capabilities, such as the
  * {@link org.axonframework.modelling.entity.annotation.AnnotatedEntityModel}.
  * <p>
  * The model handles various commands that are validated based on state, and events that are published to reflect
- * changes in the project state.This model does use events to evolve its state, but does not use an event store to
+ * changes in the project state. This model does use events to evolve its state, but does not use an event store to
  * source the model from earlier events. As such, it is a state-stored model rather than an event-sourced model.
  * <p>
  * It uses various features, as many as possible in fact, of the entity model, such as:
