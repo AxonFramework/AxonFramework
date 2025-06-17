@@ -25,7 +25,7 @@ import java.util.Objects;
 /**
  * An {@link EntityChildMessagingMetamodel} that handles commands and events for a single child entity. It will use the
  * provided {@link ChildEntityFieldDefinition} to resolve the child entity from the parent entity. Once the entity is
- * resolved, it will delegate the command- and event-handling to the child entity model.
+ * resolved, it will delegate the command- and event-handling to the child entity metamodel.
  * <p>
  * The commands and events will, by default, be forwarded unconditionally to the child entity. If you have multiple
  * member fields, and want to match commands and events to a specific child entity, you can configure the

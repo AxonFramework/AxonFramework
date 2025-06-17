@@ -22,8 +22,8 @@ import org.axonframework.modelling.entity.child.CommandTargetResolver;
 import java.lang.reflect.Member;
 
 /**
- * Defines how a {@link CommandTargetResolver} should be constructed for an {@link EntityMember}-annotated member of
- * an {@link AnnotatedEntityMessagingMetamodel}.
+ * Defines how a {@link CommandTargetResolver} should be constructed for an {@link EntityMember}-annotated member of an
+ * {@link AnnotatedEntityMessagingMetamodel}.
  *
  * @author Mitchell Herrijgers
  * @see AnnotatedEntityMessagingMetamodel
@@ -38,9 +38,10 @@ public interface CommandTargetResolverDefinition {
      * Creates a {@link CommandTargetResolver} for the given {@code entity} and {@code member}.
      *
      * @param metamodel The {@link AnnotatedEntityMessagingMetamodel} of the child entity.
-     * @param member The member that represents the child entity in the parent entity model. This member is typically a
-     *               field or a method that returns the child entity, annotated with {@link EntityMember}.
-     * @param <E>    The type of the child entity.
+     * @param member    The member that represents the child entity in the parent entity metamodel. This member is
+     *                  typically a field or a method that returns the child entity, annotated with
+     *                  {@link EntityMember}.
+     * @param <E>       The type of the child entity.
      * @return A {@link CommandTargetResolver} that can be used to match child entities against messages.
      */
     @Nonnull

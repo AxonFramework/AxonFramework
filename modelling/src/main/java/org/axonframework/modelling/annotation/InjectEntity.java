@@ -27,12 +27,12 @@ import java.lang.annotation.Target;
 /**
  * Annotation to be placed on a parameter of a {@link org.axonframework.messaging.annotation.MessageHandler} annotated
  * method that should receive an entity loaded from the {@link org.axonframework.modelling.StateManager}. The parameter
- * should be of the type of the model to inject, or of a {@link org.axonframework.modelling.repository.ManagedEntity}
- * with the generic of the model to inject.
+ * should be of the type of the entity to inject, or of a {@link org.axonframework.modelling.repository.ManagedEntity}
+ * with the generic of the entity to inject.
  * <p>
  * The {@code idProperty} attribute can be used to specify the property of the message payload that contains the
- * identifier of the model to inject. If not specified, the {@code idResolver} is used to resolve the identifier of the
- * model to inject.
+ * identifier of the entity to inject. If not specified, the {@code idResolver} is used to resolve the identifier of the
+ * entity to inject.
  * <p>
  * Unless a specific {@code idResolver} is specified, the {@link AnnotationBasedEntityIdResolver} is used to resolve the
  * entity id from the message. This is based on finding a {@link TargetEntityId} annotation on a field or

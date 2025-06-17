@@ -74,9 +74,9 @@ import static org.axonframework.messaging.annotation.AnnotatedHandlerInspector.i
  * NOTE: This class is a complete rewrite of the pre-5.0.0
  * {@code org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory}. Both scan the class for
  * annotated methods and fields, but the AnnotatedEntityModel dropped aggregate versioning (conflict resolution), no
- * longer required an id in the entity, and creates a declarative model instead of relying on reflection at runtime.
+ * longer required an id in the entity, and creates a declarative metamodel instead of relying on reflection at runtime.
  *
- * @param <E> The type of entity this model describes.
+ * @param <E> The type of entity this metamodel describes.
  * @author Mitchell Herrijgers
  * @author Allard Buijze
  * @since 3.1.0
@@ -371,7 +371,7 @@ public class AnnotatedEntityMessagingMetamodel<E> implements EntityMessagingMeta
      * {@link ParameterResolverFactory} and {@link MessageTypeResolver} as this instance.
      */
     private <C> AnnotatedEntityMessagingMetamodel<C> createChildEntityModel(Class<C> clazz) {
-        logger.debug("Creating child entity model for class: {}", clazz);
+        logger.debug("Creating child entity metamodel for class: {}", clazz);
         return new AnnotatedEntityMessagingMetamodel<>(clazz,
                                                        Set.of(),
                                                        parameterResolverFactory,
@@ -417,7 +417,7 @@ public class AnnotatedEntityMessagingMetamodel<E> implements EntityMessagingMeta
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        logger.debug("Describing entity model to descriptor for entity type: {}", entityType());
+        logger.debug("Describing entity metamodel to descriptor for entity type: {}", entityType());
         descriptor.describeWrapperOf(delegateMetamodel);
         descriptor.describeProperty("entityType", entityType());
     }

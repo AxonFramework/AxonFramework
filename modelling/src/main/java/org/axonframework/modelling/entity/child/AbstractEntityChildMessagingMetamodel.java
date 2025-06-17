@@ -157,9 +157,9 @@ public abstract class AbstractEntityChildMessagingMetamodel<C, P> implements Ent
 
         protected void validate() {
             BuilderUtils.assertNonNull(commandTargetResolver,
-                                       "The commandTargetResolver must be set before building the model.");
+                                       "The commandTargetResolver must be set before building the metamodel.");
             BuilderUtils.assertNonNull(eventTargetMatcher,
-                                       "The eventTargetMatcher must be set before building the model.");
+                                       "The eventTargetMatcher must be set before building the metamodel.");
         }
 
         /**

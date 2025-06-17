@@ -45,13 +45,13 @@ import java.util.Set;
  * example, {@code Employee} and {@code Customer} could be two concrete types of {@code Person}, sharing properties and
  * a set of commands and events.
  * <p>
- * This model delegates commands to the concrete type if the concrete type is registered for the command. If not, it
+ * This metamodel delegates commands to the concrete type if the concrete type is registered for the command. If not, it
  * will attempt to handle the command with the super type. Concrete types thus take precedence over the super type for
  * commands.
  * <p>
  * Events are delegates to both the super type and the concrete type.
  *
- * @param <E> The type of polymorphic entity this model represents.
+ * @param <E> The type of polymorphic entity this metamodel represents.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
@@ -202,7 +202,8 @@ public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMe
 
     /**
      * Builder for a {@link PolymorphicEntityMessagingMetamodel}. This builder allows you to add concrete types to the
-     * model. Any method inherited from {@link EntityMessagingMetamodelBuilder} is delegated to the super type metamodel.
+     * metamodel. Any method inherited from {@link EntityMessagingMetamodelBuilder} is delegated to the super type
+     * metamodel.
      *
      * @param <E> The type of the entity this metamodel represents.
      */
@@ -252,7 +253,7 @@ public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMe
             Objects.requireNonNull(metamodel, "The metamodel may not be null.");
             if (polymorphicMetamodels.stream().anyMatch(p -> p.entityType()
                                                               .equals(metamodel.entityType()))) {
-                throw new IllegalArgumentException("Concrete type [%s] already registered for this model.".formatted(
+                throw new IllegalArgumentException("Concrete type [%s] already registered for this metamodel.".formatted(
                         metamodel.entityType().getName()));
             }
             // Check if any existing polymorphic model clashes with the creational commands of the new model.

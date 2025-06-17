@@ -29,7 +29,7 @@ import java.util.Set;
 
 /**
  * Interface describing a child {@link EntityMessagingMetamodel} that can be handled in the context of its parent.
- * Handling commands for this model is done in the context of the parent. This metamodel resolves the child from the
+ * Handling commands for this metamodel is done in the context of the parent. This metamodel resolves the child from the
  * given parent and can then invoke the right child instance to handle the command.
  *
  * @param <C> The type of the child entity.

@@ -28,7 +28,7 @@ import org.axonframework.modelling.repository.Repository;
 
 /**
  * Builder for a {@link EntityMessagingMetamodel} instance. This builder allows for the configuration of the entity
- * model, including the addition of command handlers and child entity metamodels.
+ * metamodel, including the addition of command handlers and child entity metamodels.
  * <p>
  * Entity models can handle two types of commands:
  * <ul>

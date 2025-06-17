@@ -26,8 +26,8 @@ import static java.util.Objects.requireNonNull;
 /**
  * An {@link EntityChildMessagingMetamodel} that handles commands and events for a list of child entities. It will use
  * the provided {@link ChildEntityFieldDefinition} to resolve the child entities from the parent entity. Once the
- * entities are resolved, it will delegate the command- and event-handling to the child entity model(s), based on the
- * {@code commandTargetResolver} and {@code eventTargetMatcher} respectively.
+ * entities are resolved, it will delegate the command- and event-handling to the child entity metamodel(s), based on
+ * the {@code commandTargetResolver} and {@code eventTargetMatcher} respectively.
  *
  * @param <C> The type of the child entity.
  * @param <P> The type of the parent entity.
@@ -97,7 +97,7 @@ public class ListEntityChildMessagingMetamodel<C, P> extends AbstractEntityChild
 
     /**
      * Builder for creating a {@link ListEntityChildMessagingMetamodel} for the given parent class and child entity
-     * metamodel. The builder can be used to configure the child entity model and create a new instance of
+     * metamodel. The builder can be used to configure the child entity metamodel and create a new instance of
      * {@link ListEntityChildMessagingMetamodel}. The {@link ChildEntityFieldDefinition} is required to resolve the
      * child entities from the parent entity and evolve the parent entity based on the child entities. The
      * {@link CommandTargetResolver commandTargetResolver} and {@link EventTargetMatcher eventTargetMatcher} are both

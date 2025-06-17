@@ -45,7 +45,7 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
  * method. If this method returns {@code true}, the {@link #getChildTypeFromMember(Member)} will be called to determine
  * the child type (which may be a generic argument, such as when using a {@link List} as a field type). Then, the
  * {@link #doCreate(Class, EntityMessagingMetamodel, String, EventTargetMatcher, CommandTargetResolver)} methods will be
- * called with all information needed to create the child model.
+ * called with all information needed to create the child metamodel.
  * <p>
  * Before version 5.0.0, this class was known as the
  * {@code org.axonframework.modelling.command.inspection.AbstractChildEntityDefinition}.

@@ -53,7 +53,7 @@ import static java.util.Objects.requireNonNull;
  * During the handling of commands, handlers defined in child entities take precedence over the parent entity's command
  * handlers. Event handlers are invoked on both the parent and child models, with child models being invoked first.
  *
- * @param <E> The type of the entity this model describes.
+ * @param <E> The type of the entity this metamodel describes.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
@@ -256,7 +256,7 @@ public class ConcreteEntityMessagingMetamodel<E> implements DescribableComponent
      * provides a fluent API to configure the metamodel by specifying command handlers, child entities, and the entity
      * evolver.
      *
-     * @param <E> The type of the entity for which the model is being constructed.
+     * @param <E> The type of the entity for which the metamodel is being constructed.
      */
     private static class Builder<E> implements EntityMessagingMetamodelBuilder<E> {
 

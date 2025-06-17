@@ -696,14 +696,19 @@ aggregates have been replaced with "entities."
 
 ### Declarative modeling first
 
-While aggregates only worked through reflection before, entities can be declaratively defined. You can start one
-by calling `EntityModel.forEntityType(entityType)` and declare command handlers, event handlers, and
+When handling messaging for an entity, the framework needs to know which commands and events can be handled
+by the entity, and which child entities it has. This is what we call the 'Entity Messaging Metamodel.'
+
+While aggregates worked only through reflection before, with the Axon Framework 5' entities this can be declaratively
+defined.
+You can start defining a metamodel by calling `EntityMessagingMetamodel.forEntityType(entityType)` and declare command
+handlers, event handlers, and
 child entities. If you have a polymorphic entity, one that has multiple concrete types and extends one supertype,
-you can use `EntityModel.forPolymorphicEntityType(entityType)` to define the entity model.
+you can use `EntityMessagingMetamodel.forPolymorphicEntityType(entityType)` to define the entity metamodel.
 
 ```java
-EntityModel<ImmutableTask> model = SimpleEntityModel
-        .forEntityClass(ImmutableTask.class)
+EntityModel<ImmutableTask> metamodel = EntityMessagingMetamodel
+        .forEntityType(ImmutableTask.class)
         .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableTask.class))
         .instanceCommandHandler(commandQualifiedName, (command, entity, context) -> {
             // Handle the command
@@ -713,13 +718,13 @@ EntityModel<ImmutableTask> model = SimpleEntityModel
         .build();
 ```
 
-However, the use of reflection is still possible. The `AnnotatedEntityModel` reads the entity information in a way
-that is similar to Axon Framework 4, and creates a declarative model out of it. This means that the entity structure is
-clearly defined and debuggable,
+However, the use of reflection is still possible. The `AnnotatedEntityMessagingMetamodel` reads the entity information
+in a way that is similar to Axon Framework 4, and creates a delegate `EntityMessagingMetamodel` of the right type, with
+the right handlers. This means that the entity structure is clearly defined and debuggable,
 and less reflection is needed at runtime, which improves performance.
 
 ```java
-EntityModel<ImmutableTask> model = AnnotatedEntityModel.forConcreteType(
+EntityModel<ImmutableTask> metamodel = AnnotatedEntityMessagingMetamodel.forConcreteType(
         ImmutableTask.class,
         configuration.getComponent(ParameterResolverFactory.class),
         configuration.getComponent(MessageTypeResolver.class)

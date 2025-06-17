@@ -22,9 +22,9 @@ import org.axonframework.commandhandling.CommandMessage;
 import java.util.List;
 
 /**
- * Exception indicating that the entity model for a given class cannot handle a command because it is of the wrong type.
- * This typically occurs when a polymorphic entity is passed to a command handler, but the entity type does not match
- * the expected type for that command.
+ * Exception indicating that the {@link PolymorphicEntityMessagingMetamodel} for a given class cannot handle a command
+ * because it is of the wrong type. This typically occurs when a polymorphic entity is passed to a command handler, but
+ * the entity type does not match the expected type for that command.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -47,7 +47,7 @@ public class WrongPolymorphicEntityTypeException extends RuntimeException {
                                                    @Nonnull Class<E> givenEntityType
     ) {
         super(String.format(
-                "Polymorphic entity model [%s] can not handle command [%s] as it is of the wrong type [%s]. Expected one of the following types: [%s]",
+                "PolymorphicEntityMessagingMetamodel [%s] can not handle command [%s] as it is of the wrong type [%s]. Expected one of the following types: [%s]",
                 polymorphicEntityType.getName(),
                 commandMessage.type(),
                 givenEntityType.getName(),

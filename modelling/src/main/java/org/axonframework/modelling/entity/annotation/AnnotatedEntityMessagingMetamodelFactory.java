@@ -22,7 +22,7 @@ import org.axonframework.common.annotation.Internal;
 /**
  * Factory for creating {@link AnnotatedEntityMessagingMetamodel} instances for a given entity type. Used by the
  * {@link AnnotatedEntityMessagingMetamodel} to create child metamodels using the same configuration that were used to
- * create the parent model.
+ * create the parent metamodel.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
