@@ -46,36 +46,43 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
 
     private final String entityRoutingProperty;
     private final String messageRoutingProperty;
-    private final AnnotatedEntityModel<E> entity;
+    private final AnnotatedEntityModel<E> entityModel;
 
     /**
-     * @param entity                 The {@link AnnotatedEntityModel} of the entity to match against.
+     * Constructs an {@code AnnotatedEntityModelRoutingKeyMatcher} that matches the routing key of the given
+     * {@code entity} against the routing key of a message. The routing key of the entity is determined by the
+     * {@code entityRoutingProperty} and the routing key of the message is determined by the
+     * {@code messageRoutingProperty}.
+     *
+     * @param model                  The {@link AnnotatedEntityModel} of the entity to match against.
      * @param entityRoutingProperty  The routing key property of the entity, which is used to match against the message
      *                               routing key.
      * @param messageRoutingProperty The routing key property of the message, which is used to match against the entity
      *                               routing key.
      */
-    public AnnotatedEntityModelRoutingKeyMatcher(@Nonnull AnnotatedEntityModel<E> entity,
+    public AnnotatedEntityModelRoutingKeyMatcher(@Nonnull AnnotatedEntityModel<E> model,
                                                  @Nonnull String entityRoutingProperty,
                                                  @Nonnull String messageRoutingProperty) {
-        this.entity = Objects.requireNonNull(entity, "entity may not be null");
-        this.entityRoutingProperty = Objects.requireNonNull(entityRoutingProperty, "entityRoutingProperty may not be null");
-        this.messageRoutingProperty = Objects.requireNonNull(messageRoutingProperty, "messageRoutingProperty may not be null");
+        this.entityModel = Objects.requireNonNull(model, "entity may not be null");
+        this.entityRoutingProperty = Objects.requireNonNull(entityRoutingProperty,
+                                                            "entityRoutingProperty may not be null");
+        this.messageRoutingProperty = Objects.requireNonNull(messageRoutingProperty,
+                                                             "messageRoutingProperty may not be null");
         this.messageRoutingPropertyCache = new ConcurrentHashMap<>();
         this.entityRoutingPropertyCache = new ConcurrentHashMap<>();
     }
 
     /**
      * Matches the given entity against the provided message based on the routing keys of both. The routing key of the
-     * message is extracted from the expected payload type of the message, and compared to the routing key of the entity.
+     * message is extracted from the expected payload type of the message, and compared to the routing key of the
+     * entity.
      *
-     * @param entity   The entity to match against.
-     * @param message  The message to match against.
+     * @param entity  The entity to match against.
+     * @param message The message to match against.
      * @return {@code true} if the routing keys match, {@code false} otherwise.
      */
-    public boolean matches(@Nonnull E entity, @Nonnull Message<?> message
-    ) {
-        var payloadType = this.entity.getExpectedRepresentation(message.type().qualifiedName());
+    public boolean matches(@Nonnull E entity, @Nonnull Message<?> message) {
+        var payloadType = entityModel.getExpectedRepresentation(message.type().qualifiedName());
         if (payloadType == null) {
             // This message is not handled in this entity model, so we cannot match it.
             return false;
@@ -97,7 +104,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
 
     private boolean matchesInstance(E candidate, Object routingValue) {
         Property<Object> objectProperty = entityRoutingPropertyCache.computeIfAbsent(
-                candidate.getClass(), c -> getProperty(entity.entityType(), entityRoutingProperty)
+                candidate.getClass(), c -> getProperty(entityModel.entityType(), entityRoutingProperty)
         );
         if (objectProperty == null) {
             throw new IllegalStateException(String.format(

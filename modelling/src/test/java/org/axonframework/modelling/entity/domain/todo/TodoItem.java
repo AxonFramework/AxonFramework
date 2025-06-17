@@ -25,7 +25,7 @@ import org.axonframework.modelling.entity.domain.todo.commands.FinishTodoItem;
  * {@link org.axonframework.modelling.entity.annotation.AnnotatedEntityModel}. This is to ensure that even without bells
  * and whistles, the {@link org.axonframework.modelling.entity.annotation.AnnotatedEntityModel} functions as expected.
  */
-public class Todo {
+public class TodoItem {
 
     private String id;
     private String description;

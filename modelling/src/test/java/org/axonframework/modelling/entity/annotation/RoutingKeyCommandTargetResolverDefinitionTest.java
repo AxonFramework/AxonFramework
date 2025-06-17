@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 
 class RoutingKeyCommandTargetResolverDefinitionTest {
 
-    CommandTargetResolverDefinition definition = new RoutingKeyCommandTargetResolverDefinition();
+    private final CommandTargetResolverDefinition definition = new RoutingKeyCommandTargetResolverDefinition();
 
 
     @Test

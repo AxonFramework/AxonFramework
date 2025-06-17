@@ -103,11 +103,11 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
      * @param parameterResolverFactory The {@link ParameterResolverFactory} to use for resolving parameters.
      * @param messageTypeResolver      The {@link MessageTypeResolver} to use for resolving message types from payload
      *                                 classes.
-     * @param <T>                      The type of entity this model describes.
+     * @param <E>                      The type of entity this model describes.
      * @return An annotated {@link EntityModel} backed by a {@link SimpleEntityModel} for the given entity type.
      */
-    public static <T> AnnotatedEntityModel<T> forConcreteType(
-            @Nonnull Class<T> entityType,
+    public static <E> AnnotatedEntityModel<E> forConcreteType(
+            @Nonnull Class<E> entityType,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
             @Nonnull MessageTypeResolver messageTypeResolver
     ) {
@@ -127,12 +127,12 @@ public class AnnotatedEntityModel<E> implements EntityModel<E>, DescribableCompo
      * @param parameterResolverFactory The {@link ParameterResolverFactory} to use for resolving parameters.
      * @param messageTypeResolver      The {@link MessageTypeResolver} to use for resolving message types from payload
      *                                 classes.
-     * @param <T>                      The type of the polymorphic entity.
+     * @param <E>                      The type of the polymorphic entity.
      * @return An annotated {@link EntityModel} backed by a {@link PolymorphicEntityModel} for the given entity type.
      */
-    public static <T> AnnotatedEntityModel<T> forPolymorphicType(
-            @Nonnull Class<T> entityType,
-            @Nonnull Set<Class<? extends T>> concreteTypes,
+    public static <E> AnnotatedEntityModel<E> forPolymorphicType(
+            @Nonnull Class<E> entityType,
+            @Nonnull Set<Class<? extends E>> concreteTypes,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
             @Nonnull MessageTypeResolver messageTypeResolver
     ) {

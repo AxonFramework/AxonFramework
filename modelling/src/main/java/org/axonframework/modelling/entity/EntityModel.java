@@ -141,7 +141,7 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
      * @return A new {@link PolymorphicEntityModelBuilder} for the given entity type.
      */
     @Nonnull
-    static <E> PolymorphicEntityModelBuilder<E> forPolymorphicEntityType(Class<E> entityType) {
+    static <E> PolymorphicEntityModelBuilder<E> forPolymorphicEntityType(@Nonnull Class<E> entityType) {
         return PolymorphicEntityModel.forSuperType(entityType);
     }
 }

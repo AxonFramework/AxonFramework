@@ -16,6 +16,8 @@
 
 package org.axonframework.common;
 
+import jakarta.annotation.Nonnull;
+
 import java.beans.Introspector;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Executable;
@@ -522,7 +524,8 @@ public abstract class ReflectionUtils {
      * @param member The member to get the field name for.
      * @return The name of the field represented by the given member.
      */
-    public static String fieldNameFromMember(Member member) {
+    public static String fieldNameFromMember(@Nonnull Member member) {
+        Objects.requireNonNull(member, "The member may not be null.");
         switch (member) {
             case Field field -> {
                 return field.getName();

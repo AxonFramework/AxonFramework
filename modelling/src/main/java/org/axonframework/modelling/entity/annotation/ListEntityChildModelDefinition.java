@@ -48,21 +48,13 @@ import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
  */
 public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefinition {
 
-    protected boolean isMemberTypeSupported(Class<?> memberType) {
+    protected boolean isMemberTypeSupported(@Nonnull Class<?> memberType) {
         return List.class.isAssignableFrom(memberType);
     }
 
     @Override
-    protected Class<?> getChildTypeFromMember(Member member) {
+    protected Class<?> getChildTypeFromMember(@Nonnull Member member) {
         return getChildTypeFromList(member);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <C> Class<C> getChildTypeFromList(Member member) {
-        return (Class<C>) resolveMemberGenericType(member, 0).orElseThrow(
-                () -> new AxonConfigurationException(format(
-                        "Unable to resolve entity type of member [%s].", ReflectionUtils.getMemberGenericString(member)
-                )));
     }
 
     @Nonnull
@@ -80,5 +72,13 @@ public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefi
                 .commandTargetResolver(commandTargetResolver)
                 .eventTargetMatcher(eventTargetMatcher)
                 .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private <C> Class<C> getChildTypeFromList(Member member) {
+        return (Class<C>) resolveMemberGenericType(member, 0).orElseThrow(
+                () -> new AxonConfigurationException(format(
+                        "Unable to resolve entity type of member [%s].", ReflectionUtils.getMemberGenericString(member)
+                )));
     }
 }

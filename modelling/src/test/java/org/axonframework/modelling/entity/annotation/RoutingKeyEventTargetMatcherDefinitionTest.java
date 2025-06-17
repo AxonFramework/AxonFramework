@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 
 class RoutingKeyEventTargetMatcherDefinitionTest {
 
-    RoutingKeyEventTargetMatcherDefinition definition = new RoutingKeyEventTargetMatcherDefinition();
+    private final RoutingKeyEventTargetMatcherDefinition definition = new RoutingKeyEventTargetMatcherDefinition();
 
 
     @Test
