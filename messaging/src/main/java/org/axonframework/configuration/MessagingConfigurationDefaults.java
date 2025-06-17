@@ -40,8 +40,6 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 
-import java.util.Objects;
-
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link MessagingConfigurer}.
  * <p>
@@ -107,7 +105,7 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     // TODO #3392 - Replace for actual EventSink implementation.
     private static EventSink defaultEventSink(Configuration config) {
         EventBus eventBus = config.getComponent(EventBus.class);
-        return (events) -> {
+        return (context, events) -> {
             eventBus.publish(events);
             return FutureUtils.emptyCompletedFuture();
         };

@@ -17,18 +17,18 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.thoughtworks.xstream.XStream;
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingModule;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.config.MessageHandlerLookup;
@@ -57,7 +57,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -151,7 +150,7 @@ class InfraConfigurationTest {
 
             String testEvent = "some-event-payload";
             context.getBean(EventGateway.class)
-                   .publish(testEvent);
+                   .publish(null, testEvent);
 
             // Wait for all the event handlers to had their chance.
             assertThat(eventHandlerInvocations.await(1, TimeUnit.SECONDS)).isTrue();

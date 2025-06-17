@@ -19,7 +19,9 @@ package org.axonframework.springboot.autoconfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import com.thoughtworks.xstream.XStream;
+import jakarta.annotation.Nonnull;
 import org.apache.avro.message.SchemaStore;
+import org.axonframework.axonserver.connector.TagsConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -33,7 +35,6 @@ import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.SubscribableMessageSourceDefinition;
-import org.axonframework.axonserver.connector.TagsConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
@@ -102,7 +103,6 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
@@ -313,7 +313,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean
     @Bean
     public EventSink eventSink(EventBus eventBus) {
-        return events -> {
+        return (context, events) -> {
             eventBus.publish(events);
             return FutureUtils.emptyCompletedFuture();
         };

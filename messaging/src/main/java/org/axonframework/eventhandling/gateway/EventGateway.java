@@ -16,38 +16,54 @@
 
 package org.axonframework.eventhandling.gateway;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Arrays;
 import java.util.List;
-import jakarta.annotation.Nonnull;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Interface towards the Event Handling components of an application. This interface provides a friendlier API toward
- * the {@link org.axonframework.eventhandling.EventSink} and allows for components to easily publish events.
+ * Interface towards the Event Handling components of an application.
  * <p>
- * Any call to this interface will publish the given events in a new
- * {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
+ * This interface provides a friendlier API toward the {@link org.axonframework.eventhandling.EventSink} and allows for
+ * components to easily publish events.
  *
  * @author Bert Laverman
  * @see DefaultEventGateway
- * @since 4.1
+ * @since 4.1.0
  */
 public interface EventGateway {
 
     /**
-     * Publish a collection of events immediately in a new {@link ProcessingContext}.
+     * Publishes the given {@code events} within the given {@code context}. When present, the {@code events} should be
+     * published as part of the {@code context's} lifecycle.
+     * <p>
+     * The {@code events} are mapped to {@link org.axonframework.eventhandling.EventMessage EventMessages} before they
+     * are given to an {@link org.axonframework.eventhandling.EventSink}.
      *
-     * @param events The collection of events to publish.
+     * @param context The processing context, if any, to publish the given {@code events} in.
+     * @param events  The collection of events to publish.
+     * @return A {@link CompletableFuture} of {@link Void}. Completion of the future depends on the
+     * {@link org.axonframework.eventhandling.EventSink} used by this gateway.
      */
-    default void publish(Object... events) {
-        publish(Arrays.asList(events));
+    default CompletableFuture<Void> publish(@Nullable ProcessingContext context, Object... events) {
+        return publish(context, Arrays.asList(events));
     }
 
     /**
-     * Publish a collection of events immediately in a new {@link ProcessingContext}.
+     * Publishes the given {@code events} within the given {@code context}. When present, the {@code events} should be
+     * published as part of the {@code context's} lifecycle.
+     * <p>
+     * The {@code events} are mapped to {@link org.axonframework.eventhandling.EventMessage EventMessages} before they
+     * are given to an {@link org.axonframework.eventhandling.EventSink}.
      *
-     * @param events The collection of events to publish.
+     * @param context The processing context, if any, to publish the given {@code events} in.
+     * @param events  The collection of events to publish.
+     * @return A {@link CompletableFuture} of {@link Void}. Completion of the future depends on the
+     * {@link org.axonframework.eventhandling.EventSink} used by this gateway.
      */
-    void publish(@Nonnull List<?> events);
+    CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                    @Nonnull List<?> events);
 }

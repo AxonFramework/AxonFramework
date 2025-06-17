@@ -104,15 +104,8 @@ class AxonTestWhen implements AxonTestPhase.When {
 
     @Override
     public Event events(@Nonnull EventMessage<?>... messages) {
-        inUnitOfWorkRunOnInvocation(processingContext -> eventSink.publish(processingContext,
-                                                                           messages));
+        inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext, messages));
         return new Event();
-    }
-
-    private void inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
-        var unitOfWork = new UnitOfWork();
-        unitOfWork.runOnInvocation(action);
-        awaitCompletion(unitOfWork.execute());
     }
 
     private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
