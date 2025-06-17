@@ -49,16 +49,21 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
     private final AnnotatedEntityModel<E> entity;
 
     /**
-     * @param entity                 The {@link AnnotatedEntityModel} of the entity to match against.
+     * Constructs an {@code AnnotatedEntityModelRoutingKeyMatcher} that matches the routing key of the given
+     * {@code entity} against the routing key of a message. The routing key of the entity is determined by the
+     * {@code entityRoutingProperty} and the routing key of the message is determined by the
+     * {@code messageRoutingProperty}.
+     *
+     * @param model                  The {@link AnnotatedEntityModel} of the entity to match against.
      * @param entityRoutingProperty  The routing key property of the entity, which is used to match against the message
      *                               routing key.
      * @param messageRoutingProperty The routing key property of the message, which is used to match against the entity
      *                               routing key.
      */
-    public AnnotatedEntityModelRoutingKeyMatcher(@Nonnull AnnotatedEntityModel<E> entity,
+    public AnnotatedEntityModelRoutingKeyMatcher(@Nonnull AnnotatedEntityModel<E> model,
                                                  @Nonnull String entityRoutingProperty,
                                                  @Nonnull String messageRoutingProperty) {
-        this.entity = Objects.requireNonNull(entity, "entity may not be null");
+        this.entity = Objects.requireNonNull(model, "entity may not be null");
         this.entityRoutingProperty = Objects.requireNonNull(entityRoutingProperty, "entityRoutingProperty may not be null");
         this.messageRoutingProperty = Objects.requireNonNull(messageRoutingProperty, "messageRoutingProperty may not be null");
         this.messageRoutingPropertyCache = new ConcurrentHashMap<>();
