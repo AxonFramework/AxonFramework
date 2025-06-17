@@ -16,6 +16,7 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.common.TypeReference;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
