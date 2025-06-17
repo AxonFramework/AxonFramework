@@ -46,7 +46,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
 
     private final String entityRoutingProperty;
     private final String messageRoutingProperty;
-    private final AnnotatedEntityModel<E> entity;
+    private final AnnotatedEntityModel<E> entityModel;
 
     /**
      * Constructs an {@code AnnotatedEntityModelRoutingKeyMatcher} that matches the routing key of the given
@@ -63,24 +63,26 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
     public AnnotatedEntityModelRoutingKeyMatcher(@Nonnull AnnotatedEntityModel<E> model,
                                                  @Nonnull String entityRoutingProperty,
                                                  @Nonnull String messageRoutingProperty) {
-        this.entity = Objects.requireNonNull(model, "entity may not be null");
-        this.entityRoutingProperty = Objects.requireNonNull(entityRoutingProperty, "entityRoutingProperty may not be null");
-        this.messageRoutingProperty = Objects.requireNonNull(messageRoutingProperty, "messageRoutingProperty may not be null");
+        this.entityModel = Objects.requireNonNull(model, "entity may not be null");
+        this.entityRoutingProperty = Objects.requireNonNull(entityRoutingProperty,
+                                                            "entityRoutingProperty may not be null");
+        this.messageRoutingProperty = Objects.requireNonNull(messageRoutingProperty,
+                                                             "messageRoutingProperty may not be null");
         this.messageRoutingPropertyCache = new ConcurrentHashMap<>();
         this.entityRoutingPropertyCache = new ConcurrentHashMap<>();
     }
 
     /**
      * Matches the given entity against the provided message based on the routing keys of both. The routing key of the
-     * message is extracted from the expected payload type of the message, and compared to the routing key of the entity.
+     * message is extracted from the expected payload type of the message, and compared to the routing key of the
+     * entity.
      *
-     * @param entity   The entity to match against.
-     * @param message  The message to match against.
+     * @param entity  The entity to match against.
+     * @param message The message to match against.
      * @return {@code true} if the routing keys match, {@code false} otherwise.
      */
-    public boolean matches(@Nonnull E entity, @Nonnull Message<?> message
-    ) {
-        var payloadType = this.entity.getExpectedRepresentation(message.type().qualifiedName());
+    public boolean matches(@Nonnull E entity, @Nonnull Message<?> message) {
+        var payloadType = entityModel.getExpectedRepresentation(message.type().qualifiedName());
         if (payloadType == null) {
             // This message is not handled in this entity model, so we cannot match it.
             return false;
@@ -102,7 +104,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
 
     private boolean matchesInstance(E candidate, Object routingValue) {
         Property<Object> objectProperty = entityRoutingPropertyCache.computeIfAbsent(
-                candidate.getClass(), c -> getProperty(entity.entityType(), entityRoutingProperty)
+                candidate.getClass(), c -> getProperty(entityModel.entityType(), entityRoutingProperty)
         );
         if (objectProperty == null) {
             throw new IllegalStateException(String.format(
