@@ -46,9 +46,13 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
  * the child type (which may be a generic argument, such as when using a {@link List} as a field type). Then, the
  * {@link #doCreate(Class, EntityModel, String, EventTargetMatcher, CommandTargetResolver)} methods will be called with
  * all information needed to create the child model.
+ * <p>
+ * Before version 5.0.0, this class was known as the
+ * {@code org.axonframework.modelling.command.inspection.AbstractChildEntityDefinition}.
  *
+ * @author Steven van Beelen
  * @author Mitchell Herrijgers
- * @since 5.0.0
+ * @since 3.1
  */
 @Internal
 public abstract class AbstractEntityChildModelDefinition implements EntityChildModelDefinition {
@@ -91,9 +95,9 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
     protected abstract boolean isMemberTypeSupported(Class<?> memberType);
 
     /**
-     * Returns the actual child type. If it needs to be retrieved from a generic, this method should do so.
-     * This is used to construct the child {@link EntityModel} using the {@link AnnotatedEntityModelFactory} supplied
-     * by the parent entity model.
+     * Returns the actual child type. If it needs to be retrieved from a generic, this method should do so. This is used
+     * to construct the child {@link EntityModel} using the {@link AnnotatedEntityModelFactory} supplied by the parent
+     * entity model.
      *
      * @param member The member to retrieve the child type from.
      * @return The child type.
