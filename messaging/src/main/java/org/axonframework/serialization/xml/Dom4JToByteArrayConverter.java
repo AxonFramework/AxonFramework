@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,39 @@
 
 package org.axonframework.serialization.xml;
 
-import org.axonframework.common.io.IOUtils;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.serialization.ContentTypeConverter;
 import org.dom4j.Document;
 
+import java.nio.charset.StandardCharsets;
+
 /**
- * Converter that converts Dom4j Document instances to a byte array. The Document is written as XML string, and
- * converted to bytes using the UTF-8 character set.
+ * A {@link ContentTypeConverter} implementation that converts Dom4j {@link Document} instances to a {@code byte[]}.
+ * <p>
+ * The {@code Document} is written as XML {@code String}, and converted to bytes using the
+ * {@link StandardCharsets#UTF_8 UTF-8 character set}.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
-public class Dom4JToByteArrayConverter implements ContentTypeConverter<Document,byte[]> {
+public class Dom4JToByteArrayConverter implements ContentTypeConverter<Document, byte[]> {
 
     @Override
+    @Nonnull
     public Class<Document> expectedSourceType() {
         return Document.class;
     }
 
     @Override
+    @Nonnull
     public Class<byte[]> targetType() {
         return byte[].class;
     }
 
     @Override
-    public byte[] convert(Document original) {
-        return original.asXML().getBytes(IOUtils.UTF8);
+    @Nullable
+    public byte[] convert(@Nullable Document input) {
+        return input != null ? input.asXML().getBytes(StandardCharsets.UTF_8) : null;
     }
 }

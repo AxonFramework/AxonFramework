@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,19 @@
 
 package org.axonframework.serialization.avro;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.BinaryMessageEncoder;
-import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import static org.axonframework.serialization.avro.AvroUtil.genericData;
-
 /**
- * Content type converter between Avro generic record and single-object-encoded bytes.
+ * A {@link ContentTypeConverter} implementation that converts an Avro {@link GenericRecord} into a
+ * single-object-encoded {@code byte[]}.
  *
  * @author Simon Zambrovski
  * @author Jan Galinski
@@ -36,24 +37,31 @@ import static org.axonframework.serialization.avro.AvroUtil.genericData;
 public class GenericRecordToByteArrayConverter implements ContentTypeConverter<GenericRecord, byte[]> {
 
     @Override
+    @Nonnull
     public Class<GenericRecord> expectedSourceType() {
         return GenericRecord.class;
     }
 
     @Override
+    @Nonnull
     public Class<byte[]> targetType() {
         return byte[].class;
     }
 
     @Override
-    public byte[] convert(GenericRecord genericRecord) {
+    @Nullable
+    public byte[] convert(@Nullable GenericRecord input) {
+        if (input == null) {
+            return null;
+        }
 
         try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            new BinaryMessageEncoder<GenericRecord>(AvroUtil.genericData, genericRecord.getSchema()).encode(genericRecord, baos);
+            new BinaryMessageEncoder<GenericRecord>(AvroUtil.genericData, input.getSchema())
+                    .encode(input, baos);
             baos.flush();
             return baos.toByteArray();
         } catch (IOException e) {
-            throw new CannotConvertBetweenTypesException("Cannot convert GenericRecord to bytes", e);
+            throw new ConversionException("Cannot convert GenericRecord to bytes.", e);
         }
     }
 }
