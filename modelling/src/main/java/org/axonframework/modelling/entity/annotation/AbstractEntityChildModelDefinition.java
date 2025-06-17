@@ -92,7 +92,7 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
      * @param memberType The type of the member to check.
      * @return Should return {@code true} if the member type is supported, {@code false} otherwise.
      */
-    protected abstract boolean isMemberTypeSupported(Class<?> memberType);
+    protected abstract boolean isMemberTypeSupported(@Nonnull Class<?> memberType);
 
     /**
      * Returns the actual child type. If it needs to be retrieved from a generic, this method should do so. This is used
@@ -102,7 +102,7 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
      * @param member The member to retrieve the child type from.
      * @return The child type.
      */
-    protected abstract Class<?> getChildTypeFromMember(Member member);
+    protected abstract Class<?> getChildTypeFromMember(@Nonnull Member member);
 
     /**
      * Creates a new {@link EntityChildModel} for the given parent class and child model. This method will be called if

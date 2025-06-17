@@ -43,12 +43,12 @@ import static org.axonframework.common.ReflectionUtils.getMemberValueType;
 public class SingleEntityChildModelDefinition extends AbstractEntityChildModelDefinition {
 
     @Override
-    protected boolean isMemberTypeSupported(Class<?> memberType) {
+    protected boolean isMemberTypeSupported(@Nonnull Class<?> memberType) {
         return !Iterable.class.isAssignableFrom(memberType);
     }
 
     @Override
-    protected Class<?> getChildTypeFromMember(Member member) {
+    protected Class<?> getChildTypeFromMember(@Nonnull Member member) {
         return getMemberValueType(member);
     }
 
