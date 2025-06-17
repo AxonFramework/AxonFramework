@@ -16,14 +16,12 @@
 
 package org.axonframework.deadline;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
@@ -53,7 +51,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -70,7 +67,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 3.3
  */
-public class SimpleDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
+public class SimpleDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleDeadlineManager.class);
     private static final String THREAD_FACTORY_GROUP_NAME = "deadlineManager";
@@ -83,7 +80,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
     private final Map<DeadlineId, Future<?>> scheduledTasks = new ConcurrentHashMap<>();
 
     /**
-     * Instantiate a Builder to be able to create a {@link SimpleDeadlineManager}.
+     * Instantiate a Builder to be able to create a {@code SimpleDeadlineManager}.
      * <p>
      * The {@link ScheduledExecutorService} is defaulted to an {@link Executors#newSingleThreadScheduledExecutor()}
      * which contains an {@link AxonThreadFactory}, the {@link TransactionManager} defaults to a
@@ -91,20 +88,20 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
      * {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}. The {@link ScopeAwareProvider} is
      * a <b>hard requirement</b> and as such should be provided.
      *
-     * @return a Builder to be able to create a {@link SimpleDeadlineManager}
+     * @return a Builder to be able to create a {@code SimpleDeadlineManager}
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Instantiate a {@link SimpleDeadlineManager} based on the fields contained in the {@link Builder} to handle the
+     * Instantiate a {@code SimpleDeadlineManager} based on the fields contained in the {@link Builder} to handle the
      * process around scheduling and triggering a {@link DeadlineMessage}.
      * <p>
      * Will assert that the {@link ScopeAwareProvider}, {@link ScheduledExecutorService} and {@link TransactionManager}
      * are not {@code null}, and will throw an {@link AxonConfigurationException} if either of them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link SimpleDeadlineManager} instance
+     * @param builder the {@link Builder} used to instantiate a {@code SimpleDeadlineManager} instance
      */
     protected SimpleDeadlineManager(Builder builder) {
         builder.validate();
@@ -176,11 +173,6 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         if (future != null) {
             future.cancel(false);
         }
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
     }
 
     @Override
@@ -319,10 +311,12 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         }
 
         /**
-         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when scheduling {@link DeadlineMessage DeadlineMessages}.
-         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when scheduling
+         * {@link DeadlineMessage DeadlineMessages}. If not set, a {@link ClassBasedMessageTypeResolver} is used by
+         * default.
          *
-         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for {@link DeadlineMessage DeadlineMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for
+         *                            {@link DeadlineMessage DeadlineMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {
@@ -404,7 +398,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         }
 
         @SuppressWarnings("Duplicates")
-        private void executeScheduledDeadline(DeadlineMessage deadlineMessage, ProcessingContext context, ScopeDescriptor deadlineScope) {
+        private void executeScheduledDeadline(DeadlineMessage deadlineMessage,
+                                              ProcessingContext context,
+                                              ScopeDescriptor deadlineScope) {
             scopeAwareProvider.provideScopeAwareStream(deadlineScope)
                               .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
                               .forEach(scopeAwareComponent -> {

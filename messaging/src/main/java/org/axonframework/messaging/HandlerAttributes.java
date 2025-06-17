@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,15 +83,6 @@ public interface HandlerAttributes {
      * Attribute key referencing the type of association resolver used by a saga event handler.
      */
     String SAGA_ASSOCIATION_RESOLVER = "SagaEventHandler.associationResolver";
-
-    /**
-     * Attribute key referencing the {@link org.axonframework.lifecycle.Phase} to invoke a start handler in.
-     */
-    String START_PHASE = "StartHandler.phase";
-    /**
-     * Attribute key referencing the {@link org.axonframework.lifecycle.Phase} to invoke a shutdown handler in.
-     */
-    String SHUTDOWN_PHASE = "ShutdownHandler.phase";
 
     /**
      * Attribute key referencing an aggregate creation policy to be used when handling a command.

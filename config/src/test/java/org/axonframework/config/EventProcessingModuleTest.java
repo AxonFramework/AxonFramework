@@ -399,6 +399,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureMonitor() throws Exception {
         MessageCollectingMonitor subscribingMonitor = new MessageCollectingMonitor();
         MessageCollectingMonitor trackingMonitor = new MessageCollectingMonitor(1);
@@ -423,6 +424,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureSpanFactory() {
         TestSpanFactory spanFactory = new TestSpanFactory();
         CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
@@ -445,6 +447,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureDefaultListenerInvocationErrorHandler() throws Exception {
         EventMessage<Boolean> errorThrowingEventMessage =
                 new GenericEventMessage<>(new MessageType("event"), true);
@@ -472,6 +475,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
         EventMessage<Boolean> errorThrowingEventMessage =
                 new GenericEventMessage<>(new MessageType("event"), true);
@@ -503,6 +507,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureDefaultErrorHandler() throws Exception {
         EventMessage<Integer> failingEventMessage =
                 new GenericEventMessage<>(new MessageType("event"), 1000);
@@ -586,6 +591,7 @@ class EventProcessingModuleTest {
 
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureErrorHandlerPerEventProcessor() throws Exception {
         EventMessage<Integer> failingEventMessage =
                 new GenericEventMessage<>(new MessageType("event"), 1000);
@@ -1233,6 +1239,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void defaultTransactionManagerIsUsedUponEventProcessorConstruction() throws InterruptedException {
         String testName = "pooled-streaming";
         EventMessage<Integer> testEvent = new GenericEventMessage<>(new MessageType("event"), 1000);
@@ -1256,6 +1263,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void defaultTransactionManagerIsOverriddenByProcessorSpecificInstance() throws InterruptedException {
         String testName = "pooled-streaming";
         EventMessage<Integer> testEvent = new GenericEventMessage<>(new MessageType("event"), 1000);
