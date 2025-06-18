@@ -43,7 +43,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.axonframework.eventhandling.EventTestUtils.eventMessage;
+import static org.axonframework.eventhandling.EventTestUtils.createEvent;
 import static org.axonframework.utils.AssertUtils.awaitSuccessfullCompletion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -149,7 +149,7 @@ class SimpleEventStoreTest {
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
             var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
-                transaction.appendEvent(eventMessage(0));
+                transaction.appendEvent(createEvent(0));
                 return completedFuture(transaction);
             });
             var newAppendPosition = result.get(5, TimeUnit.SECONDS).appendPosition();
@@ -172,7 +172,7 @@ class SimpleEventStoreTest {
             var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
                 doConsumeAll(transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag())));
-                transaction.appendEvent(eventMessage(0));
+                transaction.appendEvent(createEvent(0));
                 return completedFuture(transaction);
             });
 
@@ -212,7 +212,7 @@ class SimpleEventStoreTest {
                 var secondStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
                 var thirdStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
                 doConsumeAll(firstStream, secondStream, thirdStream);
-                transaction.appendEvent(eventMessage(0));
+                transaction.appendEvent(createEvent(0));
                 return completedFuture(transaction);
             });
             var newAppendPosition = result.get(5, TimeUnit.SECONDS).appendPosition();
@@ -234,8 +234,8 @@ class SimpleEventStoreTest {
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
 
-            EventMessage<?> testEventZero = eventMessage(0);
-            EventMessage<?> testEventOne = eventMessage(1);
+            EventMessage<?> testEventZero = createEvent(0);
+            EventMessage<?> testEventOne = createEvent(1);
 
             UnitOfWork uow = new UnitOfWork();
             uow.onPreInvocation(context -> {
@@ -256,7 +256,7 @@ class SimpleEventStoreTest {
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
 
-            CompletableFuture<Void> result = testSubject.publish(null, eventMessage(0));
+            CompletableFuture<Void> result = testSubject.publish(null, createEvent(0));
             awaitSuccessfullCompletion(result);
         }
     }
@@ -276,7 +276,7 @@ class SimpleEventStoreTest {
     private static @Nonnull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
         return MessageStream.fromStream(
                 IntStream.range(0, messageCount).boxed(),
-                EventTestUtils::eventMessage,
+                EventTestUtils::createEvent,
                 i -> ConsistencyMarker.addToContext(Context.empty(), new GlobalIndexConsistencyMarker(i))
         );
     }

@@ -48,13 +48,27 @@ public abstract class EventTestUtils {
     }
 
     /**
+     * Constructs a {@link List} of {@link EventMessage EventMessages} with a size equalling the given {@code number}.
+     * <p>
+     * The {@link EventMessage#getPayload() payload} of the events equals it's position within the sequence.
+     *
+     * @param number The number of events to construct.
+     * @return A {@link List} of {@link EventMessage EventMessages} with a size equalling the given {@code number}.
+     */
+    public static List<EventMessage<?>> createEvents(int number) {
+        return IntStream.range(0, number)
+                        .mapToObj(EventTestUtils::createEvent)
+                        .collect(Collectors.toList());
+    }
+
+    /**
      * Constructs an {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() payload}.
      *
      * @param seq The payload for the message to construct.
      * @return An {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() payload}.
      */
-    public static EventMessage<?> eventMessage(int seq) {
-        return EventTestUtils.asEventMessage("Event[" + seq + "]");
+    public static EventMessage<?> createEvent(int seq) {
+        return EventTestUtils.asEventMessage(seq);
     }
 
     /**
