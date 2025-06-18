@@ -128,4 +128,20 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
     static <E> EntityModelBuilder<E> forEntityType(Class<E> entityType) {
         return SimpleEntityModel.forEntityClass(entityType);
     }
+
+    /**
+     * Starts a new {@link PolymorphicEntityModelBuilder} for the given entity type. The builder can be used to add
+     * command handlers and child entities to the model, specifically for polymorphic entities. The builder also
+     * supports adding concrete entity types that extend the given entity type, through
+     * {@link PolymorphicEntityModelBuilder#addConcreteType(EntityModel)}. The required concrete entitymodel can be
+     * created with {@link #forEntityType(Class)}.
+     *
+     * @param entityType The type of the entity to create a model for.
+     * @param <E>        The type of the entity to create a model for.
+     * @return A new {@link PolymorphicEntityModelBuilder} for the given entity type.
+     */
+    @Nonnull
+    static <E> PolymorphicEntityModelBuilder<E> forPolymorphicEntityType(@Nonnull Class<E> entityType) {
+        return PolymorphicEntityModel.forSuperType(entityType);
+    }
 }
