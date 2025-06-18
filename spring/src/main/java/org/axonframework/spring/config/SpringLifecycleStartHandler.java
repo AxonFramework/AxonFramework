@@ -54,8 +54,21 @@ class SpringLifecycleStartHandler implements SmartLifecycle {
 
     @Override
     public void start() {
-        task.get().whenComplete((result, throwable) -> running.set(true));
-        // TODO - Check expected behavior about starting state when method returns
+        if (running.get()) {
+            return;
+        }
+
+        try {
+            task.get()
+                .whenComplete((result, throwable) -> running.set(true))
+                .get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CompletionException(e);
+        } catch (ExecutionException e) {
+            // This is what the join() would throw
+            throw new CompletionException(e);
+        }
     }
 
     @Override
