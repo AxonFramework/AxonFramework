@@ -17,6 +17,7 @@
 package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.springframework.context.SmartLifecycle;
 
 import java.util.concurrent.CompletableFuture;
@@ -33,7 +34,8 @@ import java.util.function.Supplier;
  * @author Allard Buijze
  * @since 5.0.0
  */
-class SpringLifecycleStartHandler implements SmartLifecycle {
+@Internal
+public class SpringLifecycleStartHandler implements SmartLifecycle {
 
     private final int phase;
     private final Supplier<CompletableFuture<?>> task;

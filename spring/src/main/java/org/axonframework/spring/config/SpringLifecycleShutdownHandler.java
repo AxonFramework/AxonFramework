@@ -17,6 +17,7 @@
 package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
@@ -36,7 +37,8 @@ import java.util.function.Supplier;
  * @author Allard Buijze
  * @since 5.0.0
  */
-class SpringLifecycleShutdownHandler implements SmartLifecycle {
+@Internal
+public class SpringLifecycleShutdownHandler implements SmartLifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
