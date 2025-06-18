@@ -18,6 +18,7 @@ package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
@@ -28,32 +29,52 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/**
+ * An {@link ApplicationConfigurer} implementation using Spring-based {@link ComponentRegistry} and
+ * {@link LifecycleRegistry}.
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
+ */
+@Internal
 @Component
 public class SpringAxonApplication implements ApplicationConfigurer {
 
-    private final SpringLifecycleRegistry springLifecycleRegistry;
-    private final SpringComponentRegistry springComponentRegistry;
+    private final SpringComponentRegistry componentRegistry;
+    private final SpringLifecycleRegistry lifecycleRegistry;
 
+    /**
+     * Construct a {@code SpringAxonApplicationConfigurer} with the given {@code componentRegistry} and
+     * {@code lifecycleRegistry}
+     *
+     * @param componentRegistry The Spring-based {@link ComponentRegistry} used for {@link #componentRegistry(Consumer)}
+     *                          operation and the {@link AxonConfiguration} {@link #build()} by this
+     *                          {@link ApplicationConfigurer}.
+     * @param lifecycleRegistry The Spring-based {@link ComponentRegistry} used for {@link #lifecycleRegistry(Consumer)}
+     *                          operation
+     */
+    @Internal
     @Autowired
-    public SpringAxonApplication(SpringComponentRegistry springComponentRegistry,
-                                 SpringLifecycleRegistry springLifecycleRegistry) {
-        this.springLifecycleRegistry = springLifecycleRegistry;
-        this.springComponentRegistry = springComponentRegistry;
+    public SpringAxonApplication(@Nonnull SpringComponentRegistry componentRegistry,
+                                 @Nonnull SpringLifecycleRegistry lifecycleRegistry) {
+        this.componentRegistry = Objects.requireNonNull(componentRegistry, "The componentRegistry may not be null.");
+        this.lifecycleRegistry = Objects.requireNonNull(lifecycleRegistry, "The lifecycleRegistry may not be null.");
     }
 
     @Override
     public ApplicationConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
-        componentRegistrar.accept(springComponentRegistry);
+        componentRegistrar.accept(componentRegistry);
         return this;
     }
 
     @Override
     public ApplicationConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
-        lifecycleRegistrar.accept(springLifecycleRegistry);
+        lifecycleRegistrar.accept(lifecycleRegistry);
         return this;
     }
 
@@ -70,61 +91,64 @@ public class SpringAxonApplication implements ApplicationConfigurer {
                 // ignore, connected to Spring Lifecycle
             }
 
-            @Override
-            public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nonnull String name) {
-                return springComponentRegistry.configuration().getOptionalComponent(type, name);
-            }
-
             @Nonnull
             @Override
             public <C> C getComponent(@Nonnull Class<C> type) {
-                return springComponentRegistry.configuration().getComponent(type);
+                return componentRegistry.configuration().getComponent(type);
             }
 
             @Nonnull
             @Override
-            public <C> C getComponent(@Nonnull Class<C> type, @Nonnull Supplier<C> defaultImpl) {
-                return springComponentRegistry.configuration().getComponent(type, defaultImpl);
-            }
-
-            @Nonnull
-            @Override
-            public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name) {
-                return springComponentRegistry.configuration().getComponent(type, name);
+            public <C> C getComponent(@Nonnull Class<C> type, @Nullable String name) {
+                return componentRegistry.configuration()
+                                        .getComponent(type, name);
             }
 
             @Override
             public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type) {
-                return springComponentRegistry.configuration().getOptionalComponent(type);
+                return componentRegistry.configuration().getOptionalComponent(type);
+            }
+
+            @Override
+            public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nullable String name) {
+                return componentRegistry.configuration().getOptionalComponent(type, name);
             }
 
             @Nonnull
             @Override
-            public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name, @Nonnull Supplier<C> defaultImpl) {
-                return springComponentRegistry.configuration().getComponent(type, name, defaultImpl);
+            public <C> C getComponent(@Nonnull Class<C> type,
+                                      @Nullable String name,
+                                      @Nonnull Supplier<C> defaultImpl) {
+                return componentRegistry.configuration().getComponent(type, name, defaultImpl);
+            }
+
+            @Nonnull
+            @Override
+            public <C> C getComponent(@Nonnull Class<C> type,
+                                      @Nonnull Supplier<C> defaultImpl) {
+                return componentRegistry.configuration().getComponent(type, defaultImpl);
             }
 
             @Override
             public List<Configuration> getModuleConfigurations() {
-                return springComponentRegistry.configuration().getModuleConfigurations();
+                return componentRegistry.configuration().getModuleConfigurations();
             }
 
             @Override
             public Optional<Configuration> getModuleConfiguration(@Nonnull String name) {
-                return springComponentRegistry.configuration().getModuleConfiguration(name);
+                return componentRegistry.configuration().getModuleConfiguration(name);
             }
 
             @Nullable
             @Override
             public Configuration getParent() {
-                return springComponentRegistry.configuration().getParent();
+                return componentRegistry.configuration().getParent();
             }
 
             @Override
             public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-                springComponentRegistry.describeTo(descriptor);
+                descriptor.describeProperty("components", componentRegistry);
             }
         };
-
     }
 }
