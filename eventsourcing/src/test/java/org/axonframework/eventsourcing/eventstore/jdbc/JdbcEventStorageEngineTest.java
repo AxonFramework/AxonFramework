@@ -33,8 +33,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.serialization.UnknownSerializedType;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.sql.Connection;
@@ -54,19 +53,10 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.axonframework.eventhandling.EventTestUtils.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link LegacyJdbcEventStorageEngine}.
@@ -120,14 +110,14 @@ class JdbcEventStorageEngineTest
 
     @Test
     void storeTwoExactSameSnapshots() {
-        testSubject.storeSnapshot(createEvent(1));
-        testSubject.storeSnapshot(createEvent(1));
+        testSubject.storeSnapshot(createDomainEvent(1));
+        testSubject.storeSnapshot(createDomainEvent(1));
     }
 
     @Test
     void loadLastSequenceNumber() {
         String aggregateId = UUID.randomUUID().toString();
-        testSubject.appendEvents(createEvent(aggregateId, 0), createEvent(aggregateId, 1));
+        testSubject.appendEvents(createDomainEvent(aggregateId, 0), createDomainEvent(aggregateId, 1));
         assertEquals(1L, (long) testSubject.lastSequenceNumberFor(aggregateId).orElse(-1L));
         assertFalse(testSubject.lastSequenceNumberFor("inexistent").isPresent());
     }
@@ -168,18 +158,18 @@ class JdbcEventStorageEngineTest
     void gapsForVeryOldEventsAreNotIncluded() throws SQLException {
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-1), createEvent(0));
+        testSubject.appendEvents(createDomainEvent(-1), createDomainEvent(0));
 
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-2), createEvent(1));
+        testSubject.appendEvents(createDomainEvent(-2), createDomainEvent(1));
 
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-3), createEvent(2));
+        testSubject.appendEvents(createDomainEvent(-3), createDomainEvent(2));
 
         GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant(), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-4), createEvent(3));
+        testSubject.appendEvents(createDomainEvent(-4), createDomainEvent(3));
 
         try (Connection conn = dataSource.getConnection()) {
             conn.prepareStatement("DELETE FROM DomainEventEntry WHERE sequenceNumber < 0").executeUpdate();
@@ -197,13 +187,13 @@ class JdbcEventStorageEngineTest
 
         Instant now = Clock.systemUTC().instant();
         GenericEventMessage.clock = Clock.fixed(now.minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-1), createEvent(0)); // index 0 and 1
+        testSubject.appendEvents(createDomainEvent(-1), createDomainEvent(0)); // index 0 and 1
         GenericEventMessage.clock = Clock.fixed(now.minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-2), createEvent(1)); // index 2 and 3
+        testSubject.appendEvents(createDomainEvent(-2), createDomainEvent(1)); // index 2 and 3
         GenericEventMessage.clock = Clock.fixed(now.minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-3), createEvent(2)); // index 4 and 5
+        testSubject.appendEvents(createDomainEvent(-3), createDomainEvent(2)); // index 4 and 5
         GenericEventMessage.clock = Clock.fixed(now, Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-4), createEvent(3)); // index 6 and 7
+        testSubject.appendEvents(createDomainEvent(-4), createDomainEvent(3)); // index 6 and 7
 
         try (Connection conn = dataSource.getConnection()) {
             conn.prepareStatement("DELETE FROM DomainEventEntry WHERE sequenceNumber < 0").executeUpdate();
@@ -228,15 +218,15 @@ class JdbcEventStorageEngineTest
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
         LegacyEmbeddedEventStore testEventStore = LegacyEmbeddedEventStore.builder().storageEngine(testSubject).build();
 
-        testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"),
-                                 createEvent(AGGREGATE, 2, "Payload2"));
+        testSubject.appendEvents(createDomainEvent(AGGREGATE, 1, "Payload1"),
+                                 createDomainEvent(AGGREGATE, 2, "Payload2"));
         // Update events which will be part of the first batch to an unknown payload type
         try (Connection conn = dataSource.getConnection()) {
             conn.prepareStatement("UPDATE DomainEventEntry e SET e.payloadType = 'unknown'")
                 .executeUpdate();
         }
-        testSubject.appendEvents(createEvent(AGGREGATE, 3, expectedPayloadOne),
-                                 createEvent(AGGREGATE, 4, expectedPayloadTwo));
+        testSubject.appendEvents(createDomainEvent(AGGREGATE, 3, expectedPayloadOne),
+                                 createDomainEvent(AGGREGATE, 4, expectedPayloadTwo));
 
         List<String> eventStorageEngineResult = testSubject.readEvents(null, false)
                                                            .filter(m -> m.getPayload() instanceof String)
@@ -256,7 +246,7 @@ class JdbcEventStorageEngineTest
     void streamCrossesConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
         int testBatchSize = 10;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
-        testSubject.appendEvents(createEvents(100));
+        testSubject.appendEvents(createDomainEvents(100));
 
         try (Connection conn = dataSource.getConnection()) {
             conn.prepareStatement("DELETE FROM DomainEventEntry WHERE globalIndex >= 20 and globalIndex < 40")
@@ -283,7 +273,7 @@ class JdbcEventStorageEngineTest
             throw new IllegalStateException(e);
         }
 
-        testSubject.appendEvents(createEvents(100));
+        testSubject.appendEvents(createDomainEvents(100));
 
         try (Connection conn = dataSource.getConnection()) {
             conn.prepareStatement("DELETE FROM DomainEventEntry WHERE globalIndex >= 20 and globalIndex < 40")
@@ -300,7 +290,7 @@ class JdbcEventStorageEngineTest
         int testBatchSize = 10;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
-        testSubject.appendEvents(createEvents(100));
+        testSubject.appendEvents(createDomainEvents(100));
 
         try (Connection conn = dataSource.getConnection()) {
             conn.prepareStatement("DELETE FROM DomainEventEntry WHERE globalIndex < 20")
@@ -317,11 +307,11 @@ class JdbcEventStorageEngineTest
         int testBatchSize = 10;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
-        DomainEventMessage<String> testEventOne = createEvent(0);
-        DomainEventMessage<String> testEventTwo = createEvent(1);
-        DomainEventMessage<String> testEventThree = createEvent(2);
-        DomainEventMessage<String> testEventFour = createEvent(3);
-        DomainEventMessage<String> testEventFive = createEvent(4);
+        DomainEventMessage<String> testEventOne = createDomainEvent(0);
+        DomainEventMessage<String> testEventTwo = createDomainEvent(1);
+        DomainEventMessage<String> testEventThree = createDomainEvent(2);
+        DomainEventMessage<String> testEventFour = createDomainEvent(3);
+        DomainEventMessage<String> testEventFive = createDomainEvent(4);
 
         testSubject.appendEvents(testEventOne, testEventTwo, testEventThree, testEventFour, testEventFive);
 
@@ -341,11 +331,11 @@ class JdbcEventStorageEngineTest
         int testBatchSize = 10;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
-        DomainEventMessage<String> testEventOne = createEvent(0);
-        DomainEventMessage<String> testEventTwo = createEvent(1);
+        DomainEventMessage<String> testEventOne = createDomainEvent(0);
+        DomainEventMessage<String> testEventTwo = createDomainEvent(1);
         // Event with sequence number 2 is missing -> the gap
-        DomainEventMessage<String> testEventFour = createEvent(3);
-        DomainEventMessage<String> testEventFive = createEvent(4);
+        DomainEventMessage<String> testEventFour = createDomainEvent(3);
+        DomainEventMessage<String> testEventFive = createDomainEvent(4);
 
         testSubject.appendEvents(testEventOne, testEventTwo, testEventFour, testEventFive);
 
@@ -365,14 +355,14 @@ class JdbcEventStorageEngineTest
         int testBatchSize = 5;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
-        DomainEventMessage<String> testEventOne = createEvent(0);
-        DomainEventMessage<String> testEventTwo = createEvent(1);
-        DomainEventMessage<String> testEventThree = createEvent(2);
-        DomainEventMessage<String> testEventFour = createEvent(3);
-        DomainEventMessage<String> testEventFive = createEvent(4);
-        DomainEventMessage<String> testEventSix = createEvent(5);
-        DomainEventMessage<String> testEventSeven = createEvent(6);
-        DomainEventMessage<String> testEventEight = createEvent(7);
+        DomainEventMessage<String> testEventOne = createDomainEvent(0);
+        DomainEventMessage<String> testEventTwo = createDomainEvent(1);
+        DomainEventMessage<String> testEventThree = createDomainEvent(2);
+        DomainEventMessage<String> testEventFour = createDomainEvent(3);
+        DomainEventMessage<String> testEventFive = createDomainEvent(4);
+        DomainEventMessage<String> testEventSix = createDomainEvent(5);
+        DomainEventMessage<String> testEventSeven = createDomainEvent(6);
+        DomainEventMessage<String> testEventEight = createDomainEvent(7);
 
         testSubject.appendEvents(
                 testEventOne, testEventTwo, testEventThree, testEventFour, testEventFive, testEventSix, testEventSeven,
@@ -399,14 +389,14 @@ class JdbcEventStorageEngineTest
         int testBatchSize = 5;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
-        DomainEventMessage<String> testEventOne = createEvent(0);
-        DomainEventMessage<String> testEventTwo = createEvent(1);
+        DomainEventMessage<String> testEventOne = createDomainEvent(0);
+        DomainEventMessage<String> testEventTwo = createDomainEvent(1);
         // Event with sequence number 2 is missing -> the gap
-        DomainEventMessage<String> testEventFour = createEvent(3);
-        DomainEventMessage<String> testEventFive = createEvent(4);
-        DomainEventMessage<String> testEventSix = createEvent(5);
-        DomainEventMessage<String> testEventSeven = createEvent(6);
-        DomainEventMessage<String> testEventEight = createEvent(7);
+        DomainEventMessage<String> testEventFour = createDomainEvent(3);
+        DomainEventMessage<String> testEventFive = createDomainEvent(4);
+        DomainEventMessage<String> testEventSix = createDomainEvent(5);
+        DomainEventMessage<String> testEventSeven = createDomainEvent(6);
+        DomainEventMessage<String> testEventEight = createDomainEvent(7);
 
         testSubject.appendEvents(
                 testEventOne, testEventTwo, testEventFour, testEventFive, testEventSix, testEventSeven,

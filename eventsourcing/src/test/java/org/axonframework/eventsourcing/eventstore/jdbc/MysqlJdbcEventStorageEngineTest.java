@@ -29,7 +29,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventhandling.EventTestUtils.createDomainEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -65,7 +65,7 @@ class MysqlJdbcEventStorageEngineTest {
     @Test
     void loadLastSequenceNumber() {
         final String aggregateId = UUID.randomUUID().toString();
-        testSubject.appendEvents(createEvent(aggregateId, 0), createEvent(aggregateId, 1));
+        testSubject.appendEvents(createDomainEvent(aggregateId, 0), createDomainEvent(aggregateId, 1));
         assertEquals(1L, (long) testSubject.lastSequenceNumberFor(aggregateId).orElse(-1L));
         assertFalse(testSubject.lastSequenceNumberFor("nonexistent").isPresent());
     }

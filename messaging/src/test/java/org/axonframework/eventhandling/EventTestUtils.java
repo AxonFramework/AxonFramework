@@ -25,6 +25,7 @@ import org.axonframework.messaging.MetaData;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -35,6 +36,12 @@ import java.util.stream.IntStream;
  * @author Steven van Beelen
  */
 public abstract class EventTestUtils {
+
+    private static final MessageType TYPE = new MessageType("event");
+    public static final String PAYLOAD = "payload";
+    public static final String AGGREGATE = "aggregate";
+    private static final String AGGREGATE_TYPE = "aggregateType";
+    private static final MetaData METADATA = MetaData.emptyInstance();
 
     private EventTestUtils() {
         // Utility class
@@ -76,18 +83,18 @@ public abstract class EventTestUtils {
         );
     }
 
-    private static final MessageType TYPE = new MessageType("event");
-    private static final String PAYLOAD = "payload";
-    public static final String AGGREGATE = "aggregate";
-    private static final String AGGREGATE_TYPE = "aggregateType";
-    private static final MetaData METADATA = MetaData.emptyInstance();
+    // Deciding not to document the methods below until we actually need a non-DomainEventMessage version.
 
     public static List<DomainEventMessage<?>> createDomainEvents(int numberOfEvents) {
+        return createDomainEvents(() -> AGGREGATE, numberOfEvents);
+    }
+
+    public static List<DomainEventMessage<?>> createDomainEvents(Supplier<String> aggregateId, int numberOfEvents) {
         return IntStream.range(0, numberOfEvents)
                         .mapToObj(sequenceNumber -> createDomainEvent(AGGREGATE_TYPE,
                                                                       IdentifierFactory.getInstance()
                                                                                        .generateIdentifier(),
-                                                                      AGGREGATE,
+                                                                      aggregateId.get(),
                                                                       sequenceNumber,
                                                                       PAYLOAD + sequenceNumber,
                                                                       METADATA))

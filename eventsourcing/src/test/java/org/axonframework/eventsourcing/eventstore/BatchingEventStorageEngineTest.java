@@ -25,8 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
+import static org.axonframework.eventhandling.EventTestUtils.AGGREGATE;
+import static org.axonframework.eventhandling.EventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -43,7 +43,7 @@ public abstract class BatchingEventStorageEngineTest<E extends LegacyBatchingEve
     @Test
     protected void loadLargeAmountOfEventsFromAggregateStream() {
         int eventCount = testSubject.batchSize() + 10;
-        testSubject.appendEvents(createEvents(eventCount));
+        testSubject.appendEvents(createDomainEvents(eventCount));
         testSubject.appendEvents(new GenericEventMessage<>(new MessageType("event"), "test"));
         assertEquals(eventCount, testSubject.readEvents(AGGREGATE).asStream().count());
         Optional<? extends DomainEventMessage<?>> resultEventMessage =
@@ -55,7 +55,7 @@ public abstract class BatchingEventStorageEngineTest<E extends LegacyBatchingEve
     @Test
     void loadLargeAmountFromOpenStream() {
         int eventCount = testSubject.batchSize() + 10;
-        testSubject.appendEvents(createEvents(eventCount));
+        testSubject.appendEvents(createDomainEvents(eventCount));
         GenericEventMessage<String> last =
                 new GenericEventMessage<>(new MessageType("event"), "test");
         testSubject.appendEvents(last);
