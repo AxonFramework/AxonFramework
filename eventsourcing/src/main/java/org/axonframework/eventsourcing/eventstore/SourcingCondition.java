@@ -76,8 +76,9 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      * and {@code start} of the given {@code other SourcingCondition}.
      * <p>
      * Any event that would have been sourced under either condition, will also be sourced under the combined condition.
-     * If the conditions' start does not overlap or is not contingent, some event may be returned under the combined
-     * condition that would not have been returned under either this or the other individual conditions.
+     * If the {@link #start()} of {@code this} and the given {@code other} do <b>not</b> overlap or are <b>not</b>
+     * dependent one another, the combined condition may return events under the combined that would not have been
+     * returned under either this or the other individual conditions.
      * <p>
      * Typically, the minimum value of the {@code start} value will be part of the end result of using
      * {@code this SourcingCondition}.
