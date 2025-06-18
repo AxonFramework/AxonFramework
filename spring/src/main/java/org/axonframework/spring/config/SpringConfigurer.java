@@ -32,8 +32,9 @@ import java.util.Optional;
  *
  * @author Allard Buijze
  * @since 4.6.0
+ * @deprecated In favor of the {@link SpringAxonApplicationConfigurer}.
  */
-@Deprecated
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class SpringConfigurer extends LegacyDefaultConfigurer {
 
     private final ComponentLocator locator;
