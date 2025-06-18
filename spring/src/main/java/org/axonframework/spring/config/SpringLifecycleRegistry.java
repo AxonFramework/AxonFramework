@@ -17,52 +17,75 @@
 package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.LifecycleHandler;
 import org.axonframework.configuration.LifecycleRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * LifecycleRegistry implementation that registers all lifecycle handlers as Spring SmartLifecycle beans to ensure
- * Spring weaves these lifecycles into the other Spring bean lifecycles.
+ * A {@link LifecycleRegistry} implementation that registers all lifecycle handlers as Spring
+ * {@link org.springframework.context.SmartLifecycle} beans to ensure Spring weaves these lifecycles into the other
+ * Spring bean lifecycles.
+ * <p>
+ * By being a {@link BeanFactory} implementation, this {@code LifecycleRegistry} is capable of registering the
+ * aforementioned {@code SmartLifecycle} beans based on the {@link LifecycleHandler LifecycleHandlers} provided through
+ * {@link #onStart(int, LifecycleHandler)}  and {@link #onShutdown(int, LifecycleHandler)}.
  *
  * @author Allard Buijze
  * @since 5.0.0
  */
-public class SpringLifecycleRegistry implements LifecycleRegistry, BeanFactoryAware {
+@Internal
+public class SpringLifecycleRegistry implements BeanFactoryAware, LifecycleRegistry {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private final AtomicInteger uniqueId = new AtomicInteger(0);
 
     private ConfigurableListableBeanFactory beanFactory;
-    private final AtomicInteger uniqueId = new AtomicInteger(0);
+
+    @Override
+    public void setBeanFactory(@Nonnull BeanFactory beanFactory) throws BeansException {
+        this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
+    }
 
     @Override
     public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
-        // not supported - lifecycle is managed by Spring
-        // TODO - Add some WARN logging to indicate this is managed by Spring
+        logger.warn("Registering lifecycle phase timeout on a Spring-based LifecycleRegistry is not supported. "
+                            + "Please use Spring Boot's \"Graceful Shutdown\" support instead.");
         return this;
     }
 
     @Override
     public LifecycleRegistry onStart(int phase, @Nonnull LifecycleHandler startHandler) {
-        beanFactory.registerSingleton("lifecyclehandler-" + uniqueId.getAndIncrement(),
-                                      new SpringLifecycleStartHandler(phase, () -> startHandler.run(beanFactory.getBean(AxonConfiguration.class))));
+        SpringLifecycleStartHandler springStartHandler = new SpringLifecycleStartHandler(
+                phase,
+                () -> startHandler.run(beanFactory.getBean(AxonConfiguration.class))
+        );
+        beanFactory.registerSingleton(getBeanName("start"), springStartHandler);
         return this;
     }
 
     @Override
     public LifecycleRegistry onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
-        beanFactory.registerSingleton("lifecyclehandler-" + uniqueId.getAndIncrement(),
-                                      new SpringLifecycleShutdownHandler(phase, () -> shutdownHandler.run(beanFactory.getBean(AxonConfiguration.class))));
+        SpringLifecycleShutdownHandler springShutdownHandler = new SpringLifecycleShutdownHandler(
+                phase,
+                () -> shutdownHandler.run(beanFactory.getBean(AxonConfiguration.class))
+        );
+        beanFactory.registerSingleton(getBeanName("shutdown") + uniqueId.getAndIncrement(), springShutdownHandler);
         return this;
     }
 
-    @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-        this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
+    private String getBeanName(@Nonnull String type) {
+        return "axon-" + type + "-lifecycle-handler-" + uniqueId.getAndIncrement();
     }
 }
