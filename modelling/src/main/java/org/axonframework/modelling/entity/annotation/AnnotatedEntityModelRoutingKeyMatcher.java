@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.lang.String.format;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
@@ -63,11 +64,11 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
     public AnnotatedEntityModelRoutingKeyMatcher(@Nonnull AnnotatedEntityMessagingMetamodel<E> metamodel,
                                                  @Nonnull String entityRoutingProperty,
                                                  @Nonnull String messageRoutingProperty) {
-        this.metamodel = Objects.requireNonNull(metamodel, "entity may not be null");
+        this.metamodel = Objects.requireNonNull(metamodel, "The metamodel may not be null.");
         this.entityRoutingProperty = Objects.requireNonNull(entityRoutingProperty,
-                                                            "entityRoutingProperty may not be null");
+                                                            "The entityRoutingProperty may not be null.");
         this.messageRoutingProperty = Objects.requireNonNull(messageRoutingProperty,
-                                                             "messageRoutingProperty may not be null");
+                                                             "The messageRoutingProperty may not be null.");
         this.messageRoutingPropertyCache = new ConcurrentHashMap<>();
         this.entityRoutingPropertyCache = new ConcurrentHashMap<>();
     }
@@ -82,7 +83,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
      * @return {@code true} if the routing keys match, {@code false} otherwise.
      */
     public boolean matches(@Nonnull E entity, @Nonnull Message<?> message) {
-        var payloadType = metamodel.getExpectedRepresentation(message.type().qualifiedName());
+        Class<?> payloadType = metamodel.getExpectedRepresentation(message.type().qualifiedName());
         if (payloadType == null) {
             // This message is not handled in this entity metamodel, so we cannot match it.
             return false;
@@ -91,7 +92,11 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
                 message.type(), unused -> resolveProperty(payloadType)
         );
         if (routingProperty == null) {
-            return false;
+            throw new UnknownRoutingKeyException(format(
+                    "Message of type [%s] doesn't have a property matching the routing key [%s] necessary to route to child entity of type [%s]",
+                    message.type(),
+                    messageRoutingProperty,
+                    metamodel.entityType()));
         }
 
         Object routingValue = routingProperty.getValue(message.getPayload());
@@ -107,7 +112,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
                 candidate.getClass(), c -> getProperty(metamodel.entityType(), entityRoutingProperty)
         );
         if (objectProperty == null) {
-            throw new IllegalStateException(String.format(
+            throw new IllegalStateException(format(
                     "No value found for routing key property [%s] found in entity type [%s]",
                     entityRoutingProperty,
                     candidate.getClass()));

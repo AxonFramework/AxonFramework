@@ -19,8 +19,8 @@ package org.axonframework.springboot.autoconfig;
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.task.Task;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.dbscheduler.DbSchedulerBinaryDeadlineDetails;
@@ -105,10 +105,6 @@ public class AxonDbSchedulerAutoConfiguration {
                                          .serializer(serializer)
                                          .transactionManager(transactionManager)
                                          .spanFactory(spanFactory)
-                                         //Set to false, as a DbSchedulerStarter is expected to start the scheduler.
-                                         .startScheduler(false)
-                                         //Set to false as the auto config of DbScheduler manages this.
-                                         .stopScheduler(false)
                                          .build();
     }
 }

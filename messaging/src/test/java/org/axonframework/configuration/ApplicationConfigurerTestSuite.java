@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -53,6 +54,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
     private static final String START_FAILURE_EXCEPTION_MESSAGE = "some start failure";
     private static final String INIT_STATE = "initial-state";
     protected static final TestComponent TEST_COMPONENT = new TestComponent(INIT_STATE);
+    protected static final SpecificTestComponent SPECIFIC_TEST_COMPONENT = new SpecificTestComponent(INIT_STATE);
 
     protected C testSubject;
 
@@ -70,8 +72,38 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
      */
     public abstract C createConfigurer();
 
-    protected record TestComponent(String state) {
+    protected static class TestComponent {
 
+        private final String state;
+
+        protected TestComponent(String state) {
+            this.state = state;
+        }
+
+        protected String state() {
+            return state;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            TestComponent that = (TestComponent) o;
+            return Objects.equals(state, that.state);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(state);
+        }
+    }
+
+    protected static class SpecificTestComponent extends TestComponent {
+
+        protected SpecificTestComponent(String state) {
+            super(state);
+        }
     }
 
     protected static class TestModule extends BaseModule<TestModule> {
@@ -136,7 +168,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
     class ComponentRegistration {
 
         @Test
-        void registerComponentExposesRegisteredComponentUponBuild() {
+        void registerComponentForTypeExposesRegisteredComponentOnGet() {
             TestComponent testComponent = TEST_COMPONENT;
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent));
 
@@ -146,13 +178,98 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
-        void registerComponentExposesRegisteredComponentOnOptionalGet() {
+        void registerComponentForTypeExposesRegisteredComponentOnGetWhenAssignableFrom() {
+            SpecificTestComponent testComponent = SPECIFIC_TEST_COMPONENT;
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, c -> testComponent)
+            );
+
+            Configuration config = testSubject.build();
+
+            assertEquals(testComponent, config.getComponent(TestComponent.class));
+        }
+
+        @Test
+        void registerComponentForTypeAndNameExposesRegisteredComponentOnGet() {
+            TestComponent testComponent = TEST_COMPONENT;
+            String testName = "some-name";
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, testName, c -> testComponent)
+            );
+
+            Configuration config = testSubject.build();
+
+            assertEquals(testComponent, config.getComponent(TestComponent.class, testName));
+        }
+
+        @Test
+        void registerComponentForTypeAndNameExposesRegisteredComponentWhenAssignableFrom() {
+            SpecificTestComponent testComponent = SPECIFIC_TEST_COMPONENT;
+            String testName = "some-name";
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, testName, c -> testComponent)
+            );
+
+            Configuration config = testSubject.build();
+
+            assertEquals(testComponent, config.getComponent(TestComponent.class, testName));
+        }
+
+        @Test
+        void registerComponentForTypeExposesRegisteredComponentOnOptionalGet() {
             TestComponent testComponent = TEST_COMPONENT;
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent));
 
             Configuration config = testSubject.build();
 
             Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class);
+
+            assertTrue(result.isPresent());
+            assertEquals(testComponent, result.get());
+        }
+
+        @Test
+        void registerComponentForTypeExposesRegisteredComponentOnOptionalGetWhenAssignableFrom() {
+            SpecificTestComponent testComponent = SPECIFIC_TEST_COMPONENT;
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, c -> testComponent)
+            );
+
+            Configuration config = testSubject.build();
+
+            Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class);
+
+            assertTrue(result.isPresent());
+            assertEquals(testComponent, result.get());
+        }
+
+        @Test
+        void registerComponentForTypeAndNameExposesRegisteredComponentOnOptionalGet() {
+            TestComponent testComponent = TEST_COMPONENT;
+            String testName = "some-name";
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, testName, c -> testComponent)
+            );
+
+            Configuration config = testSubject.build();
+
+            Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class, testName);
+
+            assertTrue(result.isPresent());
+            assertEquals(testComponent, result.get());
+        }
+
+        @Test
+        void registerComponentForTypeAndNameExposesRegisteredComponentOnOptionalGetWhenAssignableFrom() {
+            SpecificTestComponent testComponent = SPECIFIC_TEST_COMPONENT;
+            String testName = "some-name";
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, testName, c -> testComponent)
+            );
+
+            Configuration config = testSubject.build();
+
+            Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class, testName);
 
             assertTrue(result.isPresent());
             assertEquals(testComponent, result.get());
@@ -272,15 +389,6 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
-        void registerComponentThrowsIllegalArgumentExceptionForNullName() {
-            //noinspection DataFlowIssue
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.componentRegistry(cr -> cr.registerComponent(Object.class,
-                                                                                        null,
-                                                                                        c -> new Object())));
-        }
-
-        @Test
         void registerComponentThrowsIllegalArgumentExceptionForEmptyName() {
             assertThrows(IllegalArgumentException.class,
                          () -> testSubject.componentRegistry(cr -> cr.registerComponent(Object.class,
@@ -330,6 +438,114 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
     }
 
     @Nested
+    class ComponentRegistrationIfPresent {
+
+        @Test
+        void registersComponentValidatesForType() {
+            // given...
+            AtomicBoolean firstConstruction = new AtomicBoolean(false);
+            AtomicBoolean secondConstruction = new AtomicBoolean(false);
+
+            testSubject.componentRegistry(cr -> assertFalse(cr.hasComponent(TestComponent.class)));
+
+            // when first registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class, c -> {
+                firstConstruction.set(true);
+                return TEST_COMPONENT;
+            }));
+
+            // then...
+            testSubject.componentRegistry(cr -> assertTrue(cr.hasComponent(TestComponent.class)));
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class);
+            assertTrue(firstConstruction.get());
+
+            // when second registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class, c -> {
+                secondConstruction.set(true);
+                return TEST_COMPONENT;
+            }));
+
+            // then...
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class);
+            assertFalse(secondConstruction.get());
+        }
+
+        @Test
+        void registersComponentValidatesForTypeAndName() {
+            // given...
+            AtomicBoolean firstConstruction = new AtomicBoolean(false);
+            AtomicBoolean secondConstruction = new AtomicBoolean(false);
+            String testName = "some-name";
+
+            testSubject.componentRegistry(cr -> assertFalse(cr.hasComponent(TestComponent.class, testName)));
+
+            // when first registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class, testName, c -> {
+                firstConstruction.set(true);
+                return TEST_COMPONENT;
+            }));
+
+            // then...
+            testSubject.componentRegistry(cr -> assertTrue(cr.hasComponent(TestComponent.class, testName)));
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class, testName);
+            assertTrue(firstConstruction.get());
+
+            // when second registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class, testName, c -> {
+                secondConstruction.set(true);
+                return TEST_COMPONENT;
+            }));
+
+            // then...
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class, testName);
+            assertFalse(secondConstruction.get());
+        }
+
+        @Test
+        void registersComponentValidatesForComponentDefinition() {
+            // given...
+            AtomicBoolean firstConstruction = new AtomicBoolean(false);
+            AtomicBoolean secondConstruction = new AtomicBoolean(false);
+            String testName = "some-name";
+
+            testSubject.componentRegistry(cr -> assertFalse(cr.hasComponent(TestComponent.class, testName)));
+
+            // when first registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(
+                    ComponentDefinition.ofTypeAndName(TestComponent.class, testName)
+                                       .withBuilder(c -> {
+                                           firstConstruction.set(true);
+                                           return TEST_COMPONENT;
+                                       })
+            ));
+
+            // then...
+            testSubject.componentRegistry(cr -> assertTrue(cr.hasComponent(TestComponent.class, testName)));
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class, testName);
+            assertTrue(firstConstruction.get());
+
+            // when second registration if present...
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(
+                    ComponentDefinition.ofTypeAndName(TestComponent.class, testName)
+                                       .withBuilder(c -> {
+                                           secondConstruction.set(true);
+                                           return TEST_COMPONENT;
+                                       })
+            ));
+
+            // then...
+            // Retrieve the component, otherwise the builder is never invoked.
+            testSubject.build().getComponent(TestComponent.class, testName);
+            assertFalse(secondConstruction.get());
+        }
+    }
+
+    @Nested
     class ComponentDecoration {
 
         @Test
@@ -349,6 +565,37 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             );
 
             TestComponent result = testSubject.build().getComponent(TestComponent.class);
+
+            assertEquals(expectedState, result.state());
+        }
+
+        @Test
+        void registerDecoratorForTypeActsOnImplementationsOfComponents() {
+            String expectedState = TEST_COMPONENT.state() + "1";
+
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, config -> SPECIFIC_TEST_COMPONENT)
+                            .registerDecorator(TestComponent.class, 0,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "1"))
+            );
+
+            TestComponent result = testSubject.build().getComponent(SpecificTestComponent.class);
+
+            assertEquals(expectedState, result.state());
+        }
+
+        @Test
+        void registerDecoratorForTypeAndNameActsOnImplementationsOfComponents() {
+            String testName = "some-name";
+            String expectedState = TEST_COMPONENT.state() + "1";
+
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, testName, config -> SPECIFIC_TEST_COMPONENT)
+                            .registerDecorator(TestComponent.class, testName, 0,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "1"))
+            );
+
+            TestComponent result = testSubject.build().getComponent(SpecificTestComponent.class, testName);
 
             assertEquals(expectedState, result.state());
         }

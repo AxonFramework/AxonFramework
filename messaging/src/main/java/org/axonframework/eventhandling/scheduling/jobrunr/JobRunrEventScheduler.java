@@ -16,18 +16,16 @@
 
 package org.axonframework.eventhandling.scheduling.jobrunr;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -47,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
-import jakarta.annotation.Nonnull;
 
 import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -60,7 +57,7 @@ import static org.axonframework.eventhandling.GenericEventMessage.clock;
  * @author Gerard Klijs
  * @since 4.7.0
  */
-public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
+public class JobRunrEventScheduler implements EventScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(JobRunrEventScheduler.class);
     private final JobScheduler jobScheduler;
@@ -71,13 +68,13 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
     private final MessageTypeResolver messageTypeResolver;
 
     /**
-     * Instantiate a {@link JobRunrEventScheduler} based on the fields contained in the
+     * Instantiate a {@code JobRunrEventScheduler} based on the fields contained in the
      * {@link JobRunrEventScheduler.Builder}.
      * <p>
      * Will assert that the {@link JobScheduler}, {@link Serializer} and {@link EventBus} are not {@code null}, and will
      * throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link JobRunrEventScheduler} instance
+     * @param builder the {@link Builder} used to instantiate a {@code JobRunrEventScheduler} instance
      */
     protected JobRunrEventScheduler(Builder builder) {
         builder.validate();
@@ -90,14 +87,14 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link JobRunrEventScheduler}.
+     * Instantiate a Builder to be able to create a {@code JobRunrEventScheduler}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
      * <p>
      * The {@link JobScheduler}, {@link Serializer} and {@link EventBus} are <b>hard requirements</b> and as such should
      * be provided.
      *
-     * @return a Builder to be able to create a {@link JobRunrEventScheduler}
+     * @return a Builder to be able to create a {@code JobRunrEventScheduler}
      */
     public static Builder builder() {
         return new Builder();
@@ -172,11 +169,6 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
     @Override
     public void shutdown() {
         jobScheduler.shutdown();
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
     }
 
     /**
@@ -365,10 +357,11 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
         }
 
         /**
-         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
-         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when publishing
+         * {@link EventMessage EventMessages}. If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for {@link EventMessage EventMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for
+         *                            {@link EventMessage EventMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {

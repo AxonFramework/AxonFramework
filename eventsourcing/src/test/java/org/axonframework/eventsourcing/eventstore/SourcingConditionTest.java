@@ -38,7 +38,6 @@ class SourcingConditionTest {
 
         assertEquals(TEST_CRITERIA, result.criteria());
         assertEquals(0, result.start());
-        assertEquals(Long.MAX_VALUE, result.end());
     }
 
     @Test
@@ -47,17 +46,5 @@ class SourcingConditionTest {
 
         assertEquals(TEST_CRITERIA, result.criteria());
         assertEquals(TEST_START, result.start());
-        assertEquals(Long.MAX_VALUE, result.end());
-    }
-
-    @Test
-    void conditionForCriteriaAndStartPositionAndEndPosition() {
-        long testEnd = 1337L;
-
-        SourcingCondition result = SourcingCondition.conditionFor(TEST_START, testEnd, TEST_CRITERIA);
-
-        assertEquals(TEST_CRITERIA, result.criteria());
-        assertEquals(TEST_START, result.start());
-        assertEquals(testEnd, result.end());
     }
 }

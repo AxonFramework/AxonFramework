@@ -28,17 +28,30 @@ import org.axonframework.modelling.entity.child.EventTargetMatcher;
  * Note: This class was known as {code org.axonframework.modelling.command.ForwardMatchingInstances} before version
  * 5.0.0.
  *
+ * @param <E> The type of the child entity this matcher matches against.
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
  * @since 3.1
  */
-class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
+public class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
 
     private final AnnotatedEntityModelRoutingKeyMatcher<E> routingKeyEntityMatcher;
 
-    public RoutingKeyEventTargetMatcher(AnnotatedEntityMessagingMetamodel<E> metamodel,
-                                        String entityRoutingProperty,
-                                        String messageRoutingProperty) {
+    /**
+     * Constructs a {@code RoutingKeyEventTargetMatcher} that matches the routing key of the given {@code entity}
+     * against the routing key of an event message. The routing key of the entity is determined by the
+     * {@code entityRoutingProperty} and the routing key of the event message is determined by the
+     * {@code messageRoutingProperty}.
+     *
+     * @param metamodel              The {@link AnnotatedEntityMessagingMetamodel} of the entity to match against.
+     * @param entityRoutingProperty  The routing key property of the entity, which is used to match against the
+     *                               message.
+     * @param messageRoutingProperty The routing key property of the message, which is used to match against the
+     *                               entity.
+     */
+    public RoutingKeyEventTargetMatcher(@Nonnull AnnotatedEntityMessagingMetamodel<E> metamodel,
+                                        @Nonnull String entityRoutingProperty,
+                                        @Nonnull String messageRoutingProperty) {
         this.routingKeyEntityMatcher = new AnnotatedEntityModelRoutingKeyMatcher<>(
                 metamodel,
                 entityRoutingProperty, messageRoutingProperty

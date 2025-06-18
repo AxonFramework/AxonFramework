@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 
 import java.util.Objects;
 
@@ -29,12 +30,16 @@ class MessagesRecordingConfigurationEnhancer implements ConfigurationEnhancer {
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
         Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.")
+               .registerDecorator(EventStore.class,
+                                  Integer.MAX_VALUE,
+                                  (config, name, delegate) -> new RecordingEventStore(delegate))
                .registerDecorator(EventSink.class,
                                   Integer.MAX_VALUE,
-                                  (c, name, d) -> new RecordingEventSink(d))
+                                  (config, name, delegate) -> EventStore.class.isAssignableFrom(delegate.getClass())
+                                          ? delegate : new RecordingEventSink(delegate))
                .registerDecorator(CommandBus.class,
                                   Integer.MAX_VALUE,
-                                  (c, name, d) -> new RecordingCommandBus(d));
+                                  (config, name, delegate) -> new RecordingCommandBus(delegate));
     }
 
     @Override

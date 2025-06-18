@@ -32,19 +32,33 @@ import java.util.List;
  * Note: This class was known as {code org.axonframework.modelling.command.ForwardMatchingInstances} before version
  * 5.0.0.
  *
+ * @param <E> The type of the child entity this resolver matches against.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-class RoutingKeyCommandTargetResolver<E> implements CommandTargetResolver<E> {
+public class RoutingKeyCommandTargetResolver<E> implements CommandTargetResolver<E> {
 
     private final AnnotatedEntityModelRoutingKeyMatcher<E> routingKeyEntityMatcher;
 
-    public RoutingKeyCommandTargetResolver(AnnotatedEntityMessagingMetamodel<E> metamodel,
-                                           String entityRoutingProperty,
-                                           String messageRoutingProperty) {
+    /**
+     * Constructs a {@code RoutingKeyCommandTargetResolver} that matches the routing key of the given {@code entity}
+     * against the routing key of a command message. The routing key of the entity is determined by the
+     * {@code entityRoutingProperty} and the routing key of the command message is determined by the
+     * {@code messageRoutingProperty}.
+     *
+     * @param metamodel              The {@link AnnotatedEntityMessagingMetamodel} of the entity to match against.
+     * @param entityRoutingProperty  The routing key property of the entity, which is used to match against the
+     *                               command.
+     * @param messageRoutingProperty The routing key property of the command, which is used to match against the
+     *                               entity.
+     */
+    public RoutingKeyCommandTargetResolver(@Nonnull AnnotatedEntityMessagingMetamodel<E> metamodel,
+                                           @Nonnull String entityRoutingProperty,
+                                           @Nonnull String messageRoutingProperty) {
         this.routingKeyEntityMatcher = new AnnotatedEntityModelRoutingKeyMatcher<>(
                 metamodel,
-                entityRoutingProperty, messageRoutingProperty
+                entityRoutingProperty,
+                messageRoutingProperty
         );
     }
 

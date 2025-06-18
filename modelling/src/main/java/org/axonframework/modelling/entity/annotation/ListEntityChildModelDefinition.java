@@ -48,6 +48,7 @@ import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
  */
 public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefinition {
 
+    @Override
     protected boolean isMemberTypeSupported(@Nonnull Class<?> memberType) {
         return List.class.isAssignableFrom(memberType);
     }
