@@ -63,7 +63,7 @@ class EntityCommandHandlingComponentTest {
 
     // We create a SimpleEntityModel, and rely on its API. If not, we basically have to mock every piece of behavior.
     @Spy
-    private EntityMessagingMetamodel<TestEntity> metamodel = EntityMessagingMetamodel
+    private EntityMetamodel<TestEntity> metamodel = EntityMetamodel
             .forEntityType(TestEntity.class)
             .creationalCommandHandler(creationalMessageType.qualifiedName(),
                                       ((command, c) -> resultMessage("creational")))

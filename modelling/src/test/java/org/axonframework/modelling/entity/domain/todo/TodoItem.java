@@ -17,14 +17,14 @@
 package org.axonframework.modelling.entity.domain.todo;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.modelling.entity.annotation.AnnotatedEntityMessagingMetamodel;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 import org.axonframework.modelling.entity.domain.todo.commands.CreateTodoItem;
 import org.axonframework.modelling.entity.domain.todo.commands.FinishTodoItem;
 
 /**
  * A simple entity designed for representing the most minimal usecase of the
- * {@link AnnotatedEntityMessagingMetamodel}. This is to ensure that even without bells
- * and whistles, the {@link AnnotatedEntityMessagingMetamodel} functions as expected.
+ * {@link AnnotatedEntityMetamodel}. This is to ensure that even without bells
+ * and whistles, the {@link AnnotatedEntityMetamodel} functions as expected.
  */
 public class TodoItem {
 

@@ -17,21 +17,21 @@
 package org.axonframework.modelling.entity.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.modelling.entity.EntityMessagingMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
-import org.axonframework.modelling.entity.child.EntityChildMessagingMetamodel;
+import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
-import org.axonframework.modelling.entity.child.SingleEntityChildMessagingMetamodel;
+import org.axonframework.modelling.entity.child.SingleEntityChildMetamodel;
 
 import java.lang.reflect.Member;
 
 import static org.axonframework.common.ReflectionUtils.getMemberValueType;
 
 /**
- * {@link EntityChildModelDefinition} that creates {@link EntityChildMessagingMetamodel} instances for child entities that are
+ * {@link EntityChildModelDefinition} that creates {@link EntityChildMetamodel} instances for child entities that are
  * represented as a single entity (not iterable). It resolves the child type from the member's type and creates a
- * {@link SingleEntityChildMessagingMetamodel} accordingly.
+ * {@link SingleEntityChildMetamodel} accordingly.
  * <p>
  * Before version 5.0.0, this class was known as the
  * {@code org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityDefinition}. The class has
@@ -54,13 +54,13 @@ public class SingleEntityChildModelDefinition extends AbstractEntityChildModelDe
 
     @Nonnull
     @Override
-    protected <C, P> EntityChildMessagingMetamodel<C, P> doCreate(
+    protected <C, P> EntityChildMetamodel<C, P> doCreate(
             @Nonnull Class<P> parentClass,
-            @Nonnull EntityMessagingMetamodel<C> entityMetamodel,
+            @Nonnull EntityMetamodel<C> entityMetamodel,
             @Nonnull String fieldName,
             @Nonnull EventTargetMatcher<C> eventTargetMatcher,
             @Nonnull CommandTargetResolver<C> commandTargetResolver) {
-        return SingleEntityChildMessagingMetamodel
+        return SingleEntityChildMetamodel
                 .forEntityModel(parentClass, entityMetamodel)
                 .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
                         parentClass, fieldName

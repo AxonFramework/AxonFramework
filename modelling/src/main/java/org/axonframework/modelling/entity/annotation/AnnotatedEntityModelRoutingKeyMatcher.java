@@ -32,7 +32,7 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
 /**
  * Utility class that matches an entity instance to a message based on the routing key of a message and the routing key
  * of the entity. The expected payload type of the message is requested from the
- * {@link AnnotatedEntityMessagingMetamodel} to be able to resolve the payload and extract the requested properties.
+ * {@link AnnotatedEntityMetamodel} to be able to resolve the payload and extract the requested properties.
  * Once extracted, both routing keys are then compared for a match.
  *
  * @param <E> The type of the entity this matcher is used for.
@@ -47,7 +47,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
 
     private final String entityRoutingProperty;
     private final String messageRoutingProperty;
-    private final AnnotatedEntityMessagingMetamodel<E> metamodel;
+    private final AnnotatedEntityMetamodel<E> metamodel;
 
     /**
      * Constructs an {@code AnnotatedEntityModelRoutingKeyMatcher} that matches the routing key of the given
@@ -55,13 +55,13 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
      * {@code entityRoutingProperty} and the routing key of the message is determined by the
      * {@code messageRoutingProperty}.
      *
-     * @param metamodel              The {@link AnnotatedEntityMessagingMetamodel} of the entity to match against.
+     * @param metamodel              The {@link AnnotatedEntityMetamodel} of the entity to match against.
      * @param entityRoutingProperty  The routing key property of the entity, which is used to match against the message
      *                               routing key.
      * @param messageRoutingProperty The routing key property of the message, which is used to match against the entity
      *                               routing key.
      */
-    public AnnotatedEntityModelRoutingKeyMatcher(@Nonnull AnnotatedEntityMessagingMetamodel<E> metamodel,
+    public AnnotatedEntityModelRoutingKeyMatcher(@Nonnull AnnotatedEntityMetamodel<E> metamodel,
                                                  @Nonnull String entityRoutingProperty,
                                                  @Nonnull String messageRoutingProperty) {
         this.metamodel = Objects.requireNonNull(metamodel, "The metamodel may not be null.");

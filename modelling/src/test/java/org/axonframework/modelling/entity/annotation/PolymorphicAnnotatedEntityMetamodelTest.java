@@ -48,8 +48,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
- * Tests the {@link AnnotatedEntityMessagingMetamodel} through the {@link Project} domain model. This domain model has
- * been designed to touch as many aspects of the {@link AnnotatedEntityMessagingMetamodel} as possible, such as
+ * Tests the {@link AnnotatedEntityMetamodel} through the {@link Project} domain model. This domain model has
+ * been designed to touch as many aspects of the {@link AnnotatedEntityMetamodel} as possible, such as
  * polymorphic types, command routing, and event publication.
  * <p>
  * Note that the domain might not be feature-complete or realistic. In addition, while the model is not event-sourced
@@ -59,11 +59,11 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
  *
  * @author Mitchell Herrijgers
  */
-class PolymorphicAnnotatedEntityMessagingMetamodel extends AbstractAnnotatedEntityMessagingMetamodel<Project> {
+class PolymorphicAnnotatedEntityMetamodelTest extends AbstractAnnotatedEntityMetamodelTest<Project> {
 
     @Override
-    protected AnnotatedEntityMessagingMetamodel<Project> getMetamodel() {
-        return AnnotatedEntityMessagingMetamodel.forPolymorphicType(
+    protected AnnotatedEntityMetamodel<Project> getMetamodel() {
+        return AnnotatedEntityMetamodel.forPolymorphicType(
                 Project.class,
                 Set.of(InternalProject.class, OpenSourceProject.class),
                 parameterResolverFactory,

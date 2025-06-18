@@ -31,7 +31,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.ChildAmbiguityException;
-import org.axonframework.modelling.entity.child.EntityChildMessagingMetamodel;
+import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,7 +45,7 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Implementation of the {@link EntityMessagingMetamodel} interface that enables the definition of command handlers and
+ * Implementation of the {@link EntityMetamodel} interface that enables the definition of command handlers and
  * child entities for a given entity type {@code E}. Optionally, an {@link EntityEvolver} can be provided to evolve the
  * entity state based on events. If no {@link EntityEvolver} is provided, state can exclusively be changed through
  * command handlers.
@@ -57,10 +57,10 @@ import static java.util.Objects.requireNonNull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ConcreteEntityMessagingMetamodel<E> implements DescribableComponent, EntityMessagingMetamodel<E> {
+public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityMetamodel<E> {
 
     private final Class<E> entityType;
-    private final List<EntityChildMessagingMetamodel<?, E>> children = new LinkedList<>();
+    private final List<EntityChildMetamodel<?, E>> children = new LinkedList<>();
     private final Map<QualifiedName, EntityCommandHandler<E>> instanceCommandHandlers = new HashMap<>();
     private final Map<QualifiedName, CommandHandler> creationalCommandHandlers = new HashMap<>();
     private final EntityEvolver<E> entityEvolver;
@@ -68,11 +68,11 @@ public class ConcreteEntityMessagingMetamodel<E> implements DescribableComponent
     private final Set<QualifiedName> supportedInstanceCommandNames = new HashSet<>();
     private final Set<QualifiedName> supportedCreationalCommandNames = new HashSet<>();
 
-    private ConcreteEntityMessagingMetamodel(@Nonnull Class<E> entityType,
-                                             @Nonnull Map<QualifiedName, EntityCommandHandler<E>> instanceCommandHandlers,
-                                             @Nonnull Map<QualifiedName, CommandHandler> creationalCommandHandlers,
-                                             @Nonnull List<EntityChildMessagingMetamodel<?, E>> children,
-                                             @Nullable EntityEvolver<E> entityEvolver) {
+    private ConcreteEntityMetamodel(@Nonnull Class<E> entityType,
+                                    @Nonnull Map<QualifiedName, EntityCommandHandler<E>> instanceCommandHandlers,
+                                    @Nonnull Map<QualifiedName, CommandHandler> creationalCommandHandlers,
+                                    @Nonnull List<EntityChildMetamodel<?, E>> children,
+                                    @Nullable EntityEvolver<E> entityEvolver) {
         this.entityType = requireNonNull(entityType, "The entityType may not be null.");
         this.entityEvolver = entityEvolver;
         this.instanceCommandHandlers.putAll(requireNonNull(instanceCommandHandlers,
@@ -93,7 +93,7 @@ public class ConcreteEntityMessagingMetamodel<E> implements DescribableComponent
 
     /**
      * Creates a {@link Builder builder} for the specified entity type. This builder provides a fluent API for defining
-     * and constructing an {@link EntityMessagingMetamodel} for the given entity class, allowing the registration of
+     * and constructing an {@link EntityMetamodel} for the given entity class, allowing the registration of
      * command handlers, child entities, and an optional entity evolver.
      *
      * @param <E>        The type of the entity for which the model is being built.
@@ -101,7 +101,7 @@ public class ConcreteEntityMessagingMetamodel<E> implements DescribableComponent
      * @return A {@link Builder} instance configured for the specified entity type.
      */
     @Nonnull
-    public static <E> EntityMessagingMetamodelBuilder<E> forEntityClass(@Nonnull Class<E> entityType) {
+    public static <E> EntityMetamodelBuilder<E> forEntityClass(@Nonnull Class<E> entityType) {
         requireNonNull(entityType, "The entityType may not be null.");
         return new Builder<>(entityType);
     }
@@ -178,7 +178,7 @@ public class ConcreteEntityMessagingMetamodel<E> implements DescribableComponent
     @Override
     public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         var currentEntity = entity;
-        for (EntityChildMessagingMetamodel<?, E> child : children) {
+        for (EntityChildMetamodel<?, E> child : children) {
             currentEntity = child.evolve(currentEntity, event, context);
         }
         if (entityEvolver == null) {
@@ -191,11 +191,11 @@ public class ConcreteEntityMessagingMetamodel<E> implements DescribableComponent
      * Helper method that determines on which child to handle a certain instance command. If only one child can handle
      * the command, it will be used. If multiple children declare the command, we try to find the one that can handle it
      * based on runtime instances (via
-     * {@link EntityChildMessagingMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}. If multiple children
+     * {@link EntityChildMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}. If multiple children
      * can handle the command, an exception is thrown.
      */
     private MessageStream.Single<CommandResultMessage<?>> handleForChildren(
-            List<EntityChildMessagingMetamodel<?, E>> childrenWithCommandHandler,
+            List<EntityChildMetamodel<?, E>> childrenWithCommandHandler,
             CommandMessage<?> message,
             E entity,
             ProcessingContext context
@@ -252,18 +252,18 @@ public class ConcreteEntityMessagingMetamodel<E> implements DescribableComponent
     }
 
     /**
-     * Builder class for constructing an {@link EntityMessagingMetamodel} for a specific entity type. This class
+     * Builder class for constructing an {@link EntityMetamodel} for a specific entity type. This class
      * provides a fluent API to configure the metamodel by specifying command handlers, child entities, and the entity
      * evolver.
      *
      * @param <E> The type of the entity for which the metamodel is being constructed.
      */
-    private static class Builder<E> implements EntityMessagingMetamodelBuilder<E> {
+    private static class Builder<E> implements EntityMetamodelBuilder<E> {
 
         private final Class<E> entityType;
         private final Map<QualifiedName, EntityCommandHandler<E>> commandHandlers = new HashMap<>();
         private final Map<QualifiedName, CommandHandler> creationalCommandHandlers = new HashMap<>();
-        private final List<EntityChildMessagingMetamodel<?, E>> children = new ArrayList<>();
+        private final List<EntityChildMetamodel<?, E>> children = new ArrayList<>();
         private EntityEvolver<E> entityEvolver;
 
         private Builder(Class<E> entityType) {
@@ -290,8 +290,8 @@ public class ConcreteEntityMessagingMetamodel<E> implements DescribableComponent
 
         @Nonnull
         @Override
-        public EntityMessagingMetamodelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
-                                                                           @Nonnull CommandHandler messageHandler) {
+        public EntityMetamodelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                                  @Nonnull CommandHandler messageHandler) {
             requireNonNull(qualifiedName, "The qualifiedName may not be null.");
             requireNonNull(messageHandler, "The messageHandler may not be null.");
             if (creationalCommandHandlers.containsKey(qualifiedName)) {
@@ -308,7 +308,7 @@ public class ConcreteEntityMessagingMetamodel<E> implements DescribableComponent
 
         @Nonnull
         @Override
-        public Builder<E> addChild(@Nonnull EntityChildMessagingMetamodel<?, E> child) {
+        public Builder<E> addChild(@Nonnull EntityChildMetamodel<?, E> child) {
             requireNonNull(child, "The child may not be null.");
             if (!child.entityMetamodel().supportedCreationalCommands().isEmpty()) {
                 throw new IllegalArgumentException(
@@ -321,18 +321,18 @@ public class ConcreteEntityMessagingMetamodel<E> implements DescribableComponent
 
         @Nonnull
         @Override
-        public EntityMessagingMetamodelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver) {
+        public EntityMetamodelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver) {
             this.entityEvolver = entityEvolver;
             return this;
         }
 
         @Nonnull
-        public EntityMessagingMetamodel<E> build() {
-            return new ConcreteEntityMessagingMetamodel<>(entityType,
-                                                          commandHandlers,
-                                                          creationalCommandHandlers,
-                                                          children,
-                                                          entityEvolver);
+        public EntityMetamodel<E> build() {
+            return new ConcreteEntityMetamodel<>(entityType,
+                                                 commandHandlers,
+                                                 creationalCommandHandlers,
+                                                 children,
+                                                 entityEvolver);
         }
     }
 }

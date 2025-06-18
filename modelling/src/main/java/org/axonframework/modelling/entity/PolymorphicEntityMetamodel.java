@@ -29,7 +29,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
-import org.axonframework.modelling.entity.child.EntityChildMessagingMetamodel;
+import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +41,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Polymorphic {@link EntityMessagingMetamodel} that represents an entity that can have multiple concrete types. For
+ * Polymorphic {@link EntityMetamodel} that represents an entity that can have multiple concrete types. For
  * example, {@code Employee} and {@code Customer} could be two concrete types of {@code Person}, sharing properties and
  * a set of commands and events.
  * <p>
@@ -55,17 +55,17 @@ import java.util.Set;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMetamodel<E>, DescribableComponent {
+public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, DescribableComponent {
 
-    private final EntityMessagingMetamodel<E> superTypeMetamodel;
-    private final Map<Class<? extends E>, EntityMessagingMetamodel<? extends E>> concreteMetamodels;
+    private final EntityMetamodel<E> superTypeMetamodel;
+    private final Map<Class<? extends E>, EntityMetamodel<? extends E>> concreteMetamodels;
     private final Set<QualifiedName> supportedCommandNames = new HashSet<>();
     private final Set<QualifiedName> supportedInstanceCommandNames = new HashSet<>();
     private final Set<QualifiedName> supportedCreationalCommandNames = new HashSet<>();
 
-    private PolymorphicEntityMessagingMetamodel(
-            EntityMessagingMetamodel<E> superTypeMetamodel,
-            List<EntityMessagingMetamodel<? extends E>> concreteMetamodels
+    private PolymorphicEntityMetamodel(
+            EntityMetamodel<E> superTypeMetamodel,
+            List<EntityMetamodel<? extends E>> concreteMetamodels
     ) {
         this.superTypeMetamodel = Objects.requireNonNull(superTypeMetamodel, "The superTypeMetamodel may not be null.");
         Objects.requireNonNull(concreteMetamodels, "The concreteMetamodels may not be null.");
@@ -73,24 +73,24 @@ public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMe
         this.supportedCommandNames.addAll(superTypeMetamodel.supportedCommands());
         this.supportedInstanceCommandNames.addAll(this.superTypeMetamodel.supportedInstanceCommands());
         this.supportedCreationalCommandNames.addAll(superTypeMetamodel.supportedCreationalCommands());
-        for (EntityMessagingMetamodel<? extends E> polymorphicModel : concreteMetamodels) {
-            this.concreteMetamodels.put(polymorphicModel.entityType(), polymorphicModel);
-            this.supportedCommandNames.addAll(polymorphicModel.supportedCommands());
-            this.supportedInstanceCommandNames.addAll(polymorphicModel.supportedInstanceCommands());
-            this.supportedCreationalCommandNames.addAll(polymorphicModel.supportedCreationalCommands());
+        for (EntityMetamodel<? extends E> concreteMetamodel : concreteMetamodels) {
+            this.concreteMetamodels.put(concreteMetamodel.entityType(), concreteMetamodel);
+            this.supportedCommandNames.addAll(concreteMetamodel.supportedCommands());
+            this.supportedInstanceCommandNames.addAll(concreteMetamodel.supportedInstanceCommands());
+            this.supportedCreationalCommandNames.addAll(concreteMetamodel.supportedCreationalCommands());
         }
     }
 
     /**
-     * Creates a new polymorphic {@link EntityMessagingMetamodel} for the given super type. The metamodel can then be
-     * used to add concrete types to the metamodel. Any method inherited from {@link EntityMessagingMetamodelBuilder} is
+     * Creates a new polymorphic {@link EntityMetamodel} for the given super type. The metamodel can then be
+     * used to add concrete types to the metamodel. Any method inherited from {@link EntityMetamodelBuilder} is
      * delegated to the super type metamodel.
      *
      * @param entityType The type of the entity to create a metamodel for.
      * @param <E>        The type of the entity to create a metamodel for.
      * @return A new {@link Builder} for the given entity type.
      */
-    public static <E> PolymorphicEntityMessagingMetamodelBuilder<E> forSuperType(Class<E> entityType) {
+    public static <E> PolymorphicEntityMetamodelBuilder<E> forSuperType(Class<E> entityType) {
         return new Builder<>(entityType);
     }
 
@@ -104,9 +104,9 @@ public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMe
      * Helper that “captures” the ? extends E for this particular entity instance.
      */
     @SuppressWarnings("unchecked")
-    private <T extends E> EntityMessagingMetamodel<T> metamodelFor(T entity) {
+    private <T extends E> EntityMetamodel<T> metamodelFor(T entity) {
         // we know at runtime the metamodel was stored under entity.getClass()
-        return (EntityMessagingMetamodel<T>) concreteMetamodels.get(entity.getClass());
+        return (EntityMetamodel<T>) concreteMetamodels.get(entity.getClass());
     }
 
     @Nonnull
@@ -134,7 +134,7 @@ public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMe
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
             return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
         }
-        for (EntityMessagingMetamodel<? extends E> metamodel : concreteMetamodels.values()) {
+        for (EntityMetamodel<? extends E> metamodel : concreteMetamodels.values()) {
             if (metamodel.supportedCreationalCommands().contains(message.type().qualifiedName())) {
                 return metamodel.handleCreate(message, context);
             }
@@ -153,7 +153,7 @@ public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMe
         if (isCreationalCommand(message) && !isInstanceCommand(message)) {
             return MessageStream.failed(new EntityExistsForCreationalCommandHandler(message, entity));
         }
-        EntityMessagingMetamodel<E> concreteMetamodel = metamodelFor(entity);
+        EntityMetamodel<E> concreteMetamodel = metamodelFor(entity);
         if (concreteMetamodel.supportedInstanceCommands().contains(message.type().qualifiedName())) {
             return concreteMetamodel.handleInstance(message, entity, context);
         }
@@ -197,23 +197,23 @@ public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMe
 
     @Override
     public String toString() {
-        return "PolymorphicEntityMessagingMetaModel{entityType=" + entityType().getName() + '}';
+        return "PolymorphicEntityMetaModel{entityType=" + entityType().getName() + '}';
     }
 
     /**
-     * Builder for a {@link PolymorphicEntityMessagingMetamodel}. This builder allows you to add concrete types to the
-     * metamodel. Any method inherited from {@link EntityMessagingMetamodelBuilder} is delegated to the super type
+     * Builder for a {@link PolymorphicEntityMetamodel}. This builder allows you to add concrete types to the
+     * metamodel. Any method inherited from {@link EntityMetamodelBuilder} is delegated to the super type
      * metamodel.
      *
      * @param <E> The type of the entity this metamodel represents.
      */
-    private static class Builder<E> implements PolymorphicEntityMessagingMetamodelBuilder<E> {
+    private static class Builder<E> implements PolymorphicEntityMetamodelBuilder<E> {
 
-        private final EntityMessagingMetamodelBuilder<E> superTypeBuilder;
-        private final List<EntityMessagingMetamodel<? extends E>> polymorphicMetamodels = new ArrayList<>();
+        private final EntityMetamodelBuilder<E> superTypeBuilder;
+        private final List<EntityMetamodel<? extends E>> polymorphicMetamodels = new ArrayList<>();
 
         private Builder(Class<E> entityType) {
-            this.superTypeBuilder = ConcreteEntityMessagingMetamodel.forEntityClass(entityType);
+            this.superTypeBuilder = ConcreteEntityMetamodel.forEntityClass(entityType);
         }
 
         @Nonnull
@@ -234,7 +234,7 @@ public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMe
 
         @Nonnull
         @Override
-        public Builder<E> addChild(@Nonnull EntityChildMessagingMetamodel<?, E> child) {
+        public Builder<E> addChild(@Nonnull EntityChildMetamodel<?, E> child) {
             superTypeBuilder.addChild(child);
             return this;
         }
@@ -249,7 +249,7 @@ public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMe
 
         @Override
         @Nonnull
-        public Builder<E> addConcreteType(@Nonnull EntityMessagingMetamodel<? extends E> metamodel) {
+        public Builder<E> addConcreteType(@Nonnull EntityMetamodel<? extends E> metamodel) {
             Objects.requireNonNull(metamodel, "The metamodel may not be null.");
             if (polymorphicMetamodels.stream().anyMatch(p -> p.entityType()
                                                               .equals(metamodel.entityType()))) {
@@ -257,7 +257,7 @@ public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMe
                         metamodel.entityType().getName()));
             }
             // Check if any existing polymorphic model clashes with the creational commands of the new model.
-            for (EntityMessagingMetamodel<? extends E> existingMetamodel : polymorphicMetamodels) {
+            for (EntityMetamodel<? extends E> existingMetamodel : polymorphicMetamodels) {
                 if (existingMetamodel.supportedCreationalCommands().stream()
                                      .anyMatch(metamodel.supportedCreationalCommands()::contains)) {
                     throw new IllegalArgumentException(
@@ -272,9 +272,9 @@ public class PolymorphicEntityMessagingMetamodel<E> implements EntityMessagingMe
 
         @Override
         @Nonnull
-        public EntityMessagingMetamodel<E> build() {
-            EntityMessagingMetamodel<E> metamodel = superTypeBuilder.build();
-            return new PolymorphicEntityMessagingMetamodel<>(metamodel, polymorphicMetamodels);
+        public EntityMetamodel<E> build() {
+            EntityMetamodel<E> metamodel = superTypeBuilder.build();
+            return new PolymorphicEntityMetamodel<>(metamodel, polymorphicMetamodels);
         }
     }
 }

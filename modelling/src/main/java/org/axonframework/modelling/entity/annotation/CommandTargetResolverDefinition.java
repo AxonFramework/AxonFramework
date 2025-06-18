@@ -23,10 +23,10 @@ import java.lang.reflect.Member;
 
 /**
  * Defines how a {@link CommandTargetResolver} should be constructed for an {@link EntityMember}-annotated member of an
- * {@link AnnotatedEntityMessagingMetamodel}.
+ * {@link AnnotatedEntityMetamodel}.
  *
  * @author Mitchell Herrijgers
- * @see AnnotatedEntityMessagingMetamodel
+ * @see AnnotatedEntityMetamodel
  * @see CommandTargetResolver
  * @see EntityMember
  * @since 5.0.0
@@ -37,7 +37,7 @@ public interface CommandTargetResolverDefinition {
     /**
      * Creates a {@link CommandTargetResolver} for the given {@code entity} and {@code member}.
      *
-     * @param metamodel The {@link AnnotatedEntityMessagingMetamodel} of the child entity.
+     * @param metamodel The {@link AnnotatedEntityMetamodel} of the child entity.
      * @param member    The member that represents the child entity in the parent entity metamodel. This member is
      *                  typically a field or a method that returns the child entity, annotated with
      *                  {@link EntityMember}.
@@ -46,7 +46,7 @@ public interface CommandTargetResolverDefinition {
      */
     @Nonnull
     <E> CommandTargetResolver<E> createCommandTargetResolver(
-            @Nonnull AnnotatedEntityMessagingMetamodel<E> metamodel,
+            @Nonnull AnnotatedEntityMetamodel<E> metamodel,
             @Nonnull Member member
     );
 }

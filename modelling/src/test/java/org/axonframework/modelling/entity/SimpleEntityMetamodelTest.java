@@ -32,7 +32,7 @@ import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.ChildAmbiguityException;
-import org.axonframework.modelling.entity.child.EntityChildMessagingMetamodel;
+import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -43,7 +43,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class SimpleEntityModelTest {
+class SimpleEntityMetamodelTest {
 
     private static final QualifiedName PARENT_ONLY_INSTANCE_COMMAND = new QualifiedName("ParentCommand");
     private static final QualifiedName PARENT_ONLY_CREATIONAL_COMMAND = new QualifiedName("ParentCreationalCommand");
@@ -53,10 +53,10 @@ class SimpleEntityModelTest {
     private static final QualifiedName CHILD_TWO_ONLY_COMMAND = new QualifiedName("ChildTwoOnlyCommand");
     private static final MessageType SHARED_EVENT = new MessageType("SharedEvent");
 
-    private final EntityChildMessagingMetamodel<TestChildEntityOne, TestEntity> childModelMockOne = mock(
-            EntityChildMessagingMetamodel.class);
-    private final EntityChildMessagingMetamodel<TestChildEntityTwo, TestEntity> childModelMockTwo = mock(
-            EntityChildMessagingMetamodel.class);
+    private final EntityChildMetamodel<TestChildEntityOne, TestEntity> childModelMockOne = mock(
+            EntityChildMetamodel.class);
+    private final EntityChildMetamodel<TestChildEntityTwo, TestEntity> childModelMockTwo = mock(
+            EntityChildMetamodel.class);
     private final EntityCommandHandler<TestEntity> parentInstanceCommandHandler = mock(EntityCommandHandler.class);
     private final CommandHandler parentCreationalCommandHandler = mock(CommandHandler.class);
     private final EntityEvolver<TestEntity> parentEntityEvolver = mock(EntityEvolver.class);
@@ -64,7 +64,7 @@ class SimpleEntityModelTest {
     private final TestEntity entity = new TestEntity();
     private final ProcessingContext context = new StubProcessingContext();
 
-    private EntityMessagingMetamodel<TestEntity> metamodel;
+    private EntityMetamodel<TestEntity> metamodel;
 
     @BeforeEach
     void setUp() {
@@ -84,18 +84,18 @@ class SimpleEntityModelTest {
         when(childModelMockOne.evolve(any(), any(), any())).thenAnswer(answ -> answ.getArgument(0));
         when(childModelMockTwo.evolve(any(), any(), any())).thenAnswer(answ -> answ.getArgument(0));
         when(childModelMockOne.entityType()).thenReturn(TestChildEntityOne.class);
-        EntityMessagingMetamodel childEntityMessagingMetamodelMockOne = mock(EntityMessagingMetamodel.class);
-        when(childModelMockOne.entityMetamodel()).thenReturn(childEntityMessagingMetamodelMockOne);
-        EntityMessagingMetamodel childEntityMessagingMetamodelMockTwo = mock(EntityMessagingMetamodel.class);
+        EntityMetamodel childEntityMetamodelMockOne = mock(EntityMetamodel.class);
+        when(childModelMockOne.entityMetamodel()).thenReturn(childEntityMetamodelMockOne);
+        EntityMetamodel childEntityMetamodelMockTwo = mock(EntityMetamodel.class);
         when(childModelMockTwo.entityType()).thenReturn(TestChildEntityTwo.class);
-        when(childModelMockTwo.entityMetamodel()).thenReturn(childEntityMessagingMetamodelMockTwo);
+        when(childModelMockTwo.entityMetamodel()).thenReturn(childEntityMetamodelMockTwo);
         when(parentInstanceCommandHandler.handle(any(), any(), any()))
                 .thenReturn(MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class),
                                                                                  "parent")));
         when(parentCreationalCommandHandler.handle(any(), any()))
                 .thenReturn(MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class),
                                                                                  "parent-creational")));
-        metamodel = ConcreteEntityMessagingMetamodel
+        metamodel = ConcreteEntityMetamodel
                 .forEntityClass(TestEntity.class)
                 .entityEvolver(parentEntityEvolver)
                 .instanceCommandHandler(SHARED_COMMAND, parentInstanceCommandHandler)
@@ -299,7 +299,7 @@ class SimpleEntityModelTest {
 
     @Test
     void withoutEntityEvolverWillStillEvolveChildren() {
-        metamodel = ConcreteEntityMessagingMetamodel
+        metamodel = ConcreteEntityMetamodel
                 .forEntityClass(TestEntity.class)
                 .instanceCommandHandler(SHARED_COMMAND, parentInstanceCommandHandler)
                 .instanceCommandHandler(PARENT_ONLY_INSTANCE_COMMAND, parentInstanceCommandHandler)
@@ -391,7 +391,7 @@ class SimpleEntityModelTest {
     @DisplayName("Builder verifications")
     class BuilderVerifications {
 
-        EntityMessagingMetamodelBuilder<TestEntity> builder = ConcreteEntityMessagingMetamodel
+        EntityMetamodelBuilder<TestEntity> builder = ConcreteEntityMetamodel
                 .forEntityClass(TestEntity.class);
 
         @Test
@@ -425,16 +425,16 @@ class SimpleEntityModelTest {
         @Test
         void canNotStartBuilderForNullEntityType() {
             //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class, () -> ConcreteEntityMessagingMetamodel.forEntityClass(null));
+            assertThrows(NullPointerException.class, () -> ConcreteEntityMetamodel.forEntityClass(null));
         }
 
         @Test
         void canNotAddChildThatSupportsCreationalCommand() {
-            EntityMessagingMetamodel childEntityMessagingMetamodel = mock(EntityMessagingMetamodel.class);
-            when(childEntityMessagingMetamodel.supportedCreationalCommands()).thenReturn(Set.of(CHILD_ONE_ONLY_COMMAND));
-            EntityChildMessagingMetamodel<TestChildEntityOne, TestEntity> childModel = mock(
-                    EntityChildMessagingMetamodel.class);
-            when(childModel.entityMetamodel()).thenReturn(childEntityMessagingMetamodel);
+            EntityMetamodel childEntityMetamodel = mock(EntityMetamodel.class);
+            when(childEntityMetamodel.supportedCreationalCommands()).thenReturn(Set.of(CHILD_ONE_ONLY_COMMAND));
+            EntityChildMetamodel<TestChildEntityOne, TestEntity> childModel = mock(
+                    EntityChildMetamodel.class);
+            when(childModel.entityMetamodel()).thenReturn(childEntityMetamodel);
             assertThrows(IllegalArgumentException.class, () -> builder.addChild(childModel));
         }
     }

@@ -21,46 +21,46 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.EntityEvolver;
-import org.axonframework.modelling.entity.child.EntityChildMessagingMetamodel;
+import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 
 /**
- * Builder for a polymorphic {@link EntityMessagingMetamodel}, where a parent entity can have multiple concrete child
+ * Builder for a polymorphic {@link EntityMetamodel}, where a parent entity can have multiple concrete child
  * entities. Command handlers of concrete types take precedence over the parent entity's command handlers. Event
  * handlers are invoked on both, with the super entity's event handlers being invoked first.
  *
  * @param <E> The type of the polymorphic entity this metamodel represents.
  * @author Mitchell Herrijgers
- * @see PolymorphicEntityMessagingMetamodel
+ * @see PolymorphicEntityMetamodel
  * @since 5.0.0
  */
-public interface PolymorphicEntityMessagingMetamodelBuilder<E> extends EntityMessagingMetamodelBuilder<E> {
+public interface PolymorphicEntityMetamodelBuilder<E> extends EntityMetamodelBuilder<E> {
 
     @Nonnull
     @Override
-    PolymorphicEntityMessagingMetamodelBuilder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
-                                                                         @Nonnull EntityCommandHandler<E> messageHandler);
+    PolymorphicEntityMetamodelBuilder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                                @Nonnull EntityCommandHandler<E> messageHandler);
 
     @Nonnull
     @Override
-    PolymorphicEntityMessagingMetamodelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
-                                                                           @Nonnull CommandHandler messageHandler);
+    PolymorphicEntityMetamodelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                                  @Nonnull CommandHandler messageHandler);
 
     @Nonnull
     @Override
-    PolymorphicEntityMessagingMetamodelBuilder<E> addChild(@Nonnull EntityChildMessagingMetamodel<?, E> child);
+    PolymorphicEntityMetamodelBuilder<E> addChild(@Nonnull EntityChildMetamodel<?, E> child);
 
     @Nonnull
     @Override
-    PolymorphicEntityMessagingMetamodelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
+    PolymorphicEntityMetamodelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
 
     /**
      * Adds a concrete type to this metamodel. The concrete type must be a subclass of the parent entity
      * type.
      *
-     * @param metamodel The {@link EntityMessagingMetamodel} for the concrete type.
+     * @param metamodel The {@link EntityMetamodel} for the concrete type.
      * @return This builder for further configuration.
      */
     @Nonnull
-    PolymorphicEntityMessagingMetamodelBuilder<E> addConcreteType(
-            @Nonnull EntityMessagingMetamodel<? extends E> metamodel);
+    PolymorphicEntityMetamodelBuilder<E> addConcreteType(
+            @Nonnull EntityMetamodel<? extends E> metamodel);
 }

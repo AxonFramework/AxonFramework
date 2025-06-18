@@ -43,13 +43,13 @@ public class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
      * {@code entityRoutingProperty} and the routing key of the event message is determined by the
      * {@code messageRoutingProperty}.
      *
-     * @param metamodel              The {@link AnnotatedEntityMessagingMetamodel} of the entity to match against.
+     * @param metamodel              The {@link AnnotatedEntityMetamodel} of the entity to match against.
      * @param entityRoutingProperty  The routing key property of the entity, which is used to match against the
      *                               message.
      * @param messageRoutingProperty The routing key property of the message, which is used to match against the
      *                               entity.
      */
-    public RoutingKeyEventTargetMatcher(@Nonnull AnnotatedEntityMessagingMetamodel<E> metamodel,
+    public RoutingKeyEventTargetMatcher(@Nonnull AnnotatedEntityMetamodel<E> metamodel,
                                         @Nonnull String entityRoutingProperty,
                                         @Nonnull String messageRoutingProperty) {
         this.routingKeyEntityMatcher = new AnnotatedEntityModelRoutingKeyMatcher<>(

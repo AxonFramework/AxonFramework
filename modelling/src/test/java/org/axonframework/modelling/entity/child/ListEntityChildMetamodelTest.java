@@ -29,7 +29,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
-import org.axonframework.modelling.entity.EntityMessagingMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.mock.RecordingChildEntity;
 import org.axonframework.modelling.entity.child.mock.RecordingEntity;
 import org.axonframework.modelling.entity.child.mock.RecordingParentEntity;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class ListEntityChildModelTest {
+class ListEntityChildMetamodelTest {
 
     private static final QualifiedName COMMAND = new QualifiedName("Command");
     private static final QualifiedName EVENT = new QualifiedName("Event");
@@ -52,11 +52,11 @@ class ListEntityChildModelTest {
     private static final String EVENT_MATCHING_ID = "42";
     private static final String EVENT_SKIPPING_ID = "456";
 
-    private final EntityMessagingMetamodel<RecordingChildEntity> childEntityMetamodel = mock(EntityMessagingMetamodel.class);
+    private final EntityMetamodel<RecordingChildEntity> childEntityMetamodel = mock(EntityMetamodel.class);
     private final ChildEntityFieldDefinition<RecordingParentEntity, List<RecordingChildEntity>> childEntityFieldDefinition = mock(
             ChildEntityFieldDefinition.class);
 
-    private final ListEntityChildMessagingMetamodel<RecordingChildEntity, RecordingParentEntity> testSubject = ListEntityChildMessagingMetamodel
+    private final ListEntityChildMetamodel<RecordingChildEntity, RecordingParentEntity> testSubject = ListEntityChildMetamodel
             .forEntityModel(RecordingParentEntity.class, childEntityMetamodel)
             .childEntityFieldDefinition(childEntityFieldDefinition)
             .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
@@ -245,46 +245,46 @@ class ListEntityChildModelTest {
 
         @Test
         void canNotCompleteBuilderWithoutFieldDefinition() {
-            var builder = ListEntityChildMessagingMetamodel.forEntityModel(RecordingParentEntity.class,
-                                                                           childEntityMetamodel)
-                                                           .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
+            var builder = ListEntityChildMetamodel.forEntityModel(RecordingParentEntity.class,
+                                                                  childEntityMetamodel)
+                                                  .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
                                                                                           .filter(c -> c.getId().contains(COMMAND_MATCHING_ID))
                                                                                           .findFirst()
                                                                                           .orElse(null))
-                                                           .eventTargetMatcher((o, eventMessage, ctx) -> o.getId().contains(EVENT_MATCHING_ID));
+                                                  .eventTargetMatcher((o, eventMessage, ctx) -> o.getId().contains(EVENT_MATCHING_ID));
             assertThrows(NullPointerException.class, builder::build);
         }
 
         @Test
         void canNotStartBuilderWithNullParentEntityClass() {
             assertThrows(NullPointerException.class,
-                         () -> ListEntityChildMessagingMetamodel.forEntityModel(null, childEntityMetamodel));
+                         () -> ListEntityChildMetamodel.forEntityModel(null, childEntityMetamodel));
         }
 
         @Test
         void canNotStartBuilderWithNullEntityModel() {
             assertThrows(NullPointerException.class,
-                         () -> ListEntityChildMessagingMetamodel.forEntityModel(RecordingParentEntity.class, null));
+                         () -> ListEntityChildMetamodel.forEntityModel(RecordingParentEntity.class, null));
         }
 
         @Test
         void canNotCompleteBuilderWithoutCommandTargetResolver() {
-            var builder = ListEntityChildMessagingMetamodel.forEntityModel(RecordingParentEntity.class,
-                                                                           childEntityMetamodel)
-                                                           .eventTargetMatcher((o, eventMessage, ctx) -> true)
-                                                           .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
+            var builder = ListEntityChildMetamodel.forEntityModel(RecordingParentEntity.class,
+                                                                  childEntityMetamodel)
+                                                  .eventTargetMatcher((o, eventMessage, ctx) -> true)
+                                                  .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
             assertThrows(AxonConfigurationException.class, builder::build);
         }
 
         @Test
         void canNotCompleteBuilderWithoutEventTargetMatcher() {
-            var builder = ListEntityChildMessagingMetamodel.forEntityModel(RecordingParentEntity.class,
-                                                                           childEntityMetamodel)
-                                                           .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
+            var builder = ListEntityChildMetamodel.forEntityModel(RecordingParentEntity.class,
+                                                                  childEntityMetamodel)
+                                                  .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
                                                                                           .filter(c -> c.getId().contains(COMMAND_MATCHING_ID))
                                                                                           .findFirst()
                                                                                           .orElse(null))
-                                                           .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
+                                                  .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
             assertThrows(AxonConfigurationException.class, builder::build);
         }
     }

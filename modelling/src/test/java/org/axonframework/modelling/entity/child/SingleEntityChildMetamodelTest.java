@@ -28,7 +28,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
-import org.axonframework.modelling.entity.EntityMessagingMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.mock.RecordingChildEntity;
 import org.axonframework.modelling.entity.child.mock.RecordingParentEntity;
 import org.junit.jupiter.api.*;
@@ -39,17 +39,17 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class SingleEntityChildModelTest {
+class SingleEntityChildMetamodelTest {
 
     public static final QualifiedName COMMAND = new QualifiedName("Command");
     public static final QualifiedName EVENT = new QualifiedName("Event");
 
-    private final EntityMessagingMetamodel<RecordingChildEntity> childEntityMetamodel = mock(
-            EntityMessagingMetamodel.class);
+    private final EntityMetamodel<RecordingChildEntity> childEntityMetamodel = mock(
+            EntityMetamodel.class);
     private final ChildEntityFieldDefinition<RecordingParentEntity, RecordingChildEntity> childEntityFieldDefinition = mock(
             ChildEntityFieldDefinition.class);
 
-    private final SingleEntityChildMessagingMetamodel<RecordingChildEntity, RecordingParentEntity> testSubject = SingleEntityChildMessagingMetamodel
+    private final SingleEntityChildMetamodel<RecordingChildEntity, RecordingParentEntity> testSubject = SingleEntityChildMetamodel
             .forEntityModel(RecordingParentEntity.class, childEntityMetamodel)
             .childEntityFieldDefinition(childEntityFieldDefinition)
             .build();
@@ -195,21 +195,21 @@ class SingleEntityChildModelTest {
 
         @Test
         void canNotCompleteBuilderWithoutFieldDefinition() {
-            var builder = SingleEntityChildMessagingMetamodel.forEntityModel(RecordingParentEntity.class,
-                                                                             childEntityMetamodel);
+            var builder = SingleEntityChildMetamodel.forEntityModel(RecordingParentEntity.class,
+                                                                    childEntityMetamodel);
             assertThrows(NullPointerException.class, builder::build);
         }
 
         @Test
         void canNotStartBuilderWithNullParentEntityClass() {
             assertThrows(NullPointerException.class,
-                         () -> SingleEntityChildMessagingMetamodel.forEntityModel(null, childEntityMetamodel));
+                         () -> SingleEntityChildMetamodel.forEntityModel(null, childEntityMetamodel));
         }
 
         @Test
         void canNotStartBuilderWithNullEntityModel() {
             assertThrows(NullPointerException.class,
-                         () -> SingleEntityChildMessagingMetamodel.forEntityModel(RecordingParentEntity.class, null));
+                         () -> SingleEntityChildMetamodel.forEntityModel(RecordingParentEntity.class, null));
         }
     }
 }

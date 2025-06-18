@@ -19,12 +19,12 @@ package org.axonframework.modelling.entity;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.entity.child.EntityChildMessagingMetamodel;
+import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 
 /**
  * Exception indicating that there was no child entity available to handle a command. This happens when one or multiple
- * children declare the command as supported via {@link EntityChildMessagingMetamodel#supportedCommands()}, but none of
- * them return true for {@link EntityChildMessagingMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}. This
+ * children declare the command as supported via {@link EntityChildMetamodel#supportedCommands()}, but none of
+ * them return true for {@link EntityChildMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}. This
  * indicates that the command is not valid for the current state of the child entity.
  *
  * <h4>Before 5.0.0</h4>

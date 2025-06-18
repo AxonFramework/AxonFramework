@@ -36,10 +36,10 @@ class RoutingKeyCommandTargetResolverDefinitionTest {
 
     @Test
     void allowsNoRoutingKeyOnSingleValueEntityMember() throws NoSuchFieldException {
-        var childEntityModel = mock(AnnotatedEntityMessagingMetamodel.class);
-        when(childEntityModel.entityType()).thenReturn(ChildEntityWithoutRoutingKey.class);
+        var childEntityMetamodel = mock(AnnotatedEntityMetamodel.class);
+        when(childEntityMetamodel.entityType()).thenReturn(ChildEntityWithoutRoutingKey.class);
         CommandTargetResolver<ChildEntityWithoutRoutingKey> result = definition.createCommandTargetResolver(
-                childEntityModel,
+                childEntityMetamodel,
                 SimpleSingleChildValueEntity.class.getDeclaredField(
                         "child"));
 
@@ -48,10 +48,10 @@ class RoutingKeyCommandTargetResolverDefinitionTest {
 
     @Test
     void doesNotAllowMissingRoutingKeyOnCollectionTypeMember() {
-        var childEntityModel = mock(AnnotatedEntityMessagingMetamodel.class);
-        when(childEntityModel.entityType()).thenReturn(ChildEntityWithoutRoutingKey.class);
+        var childEntityMetamodel = mock(AnnotatedEntityMetamodel.class);
+        when(childEntityMetamodel.entityType()).thenReturn(ChildEntityWithoutRoutingKey.class);
         assertThrows(AxonConfigurationException.class, () -> definition.createCommandTargetResolver(
-                             childEntityModel,
+                             childEntityMetamodel,
                              SimpleMultiChildValueEntity.class.getDeclaredField("child")),
                      "Expected IllegalArgumentException when no routing key is present on a collection type member");
     }
@@ -75,15 +75,16 @@ class RoutingKeyCommandTargetResolverDefinitionTest {
 
     @Test
     void doesNotAllowMissingRoutingKeyOnMessage() throws NoSuchFieldException {
-        AnnotatedEntityMessagingMetamodel<ChildEntityWithWrongRoutingKey> childEntityModel = mock(AnnotatedEntityMessagingMetamodel.class);
-        when(childEntityModel.entityType()).thenReturn(ChildEntityWithWrongRoutingKey.class);
+        AnnotatedEntityMetamodel<ChildEntityWithWrongRoutingKey> childEntityMetamodel = mock(
+                AnnotatedEntityMetamodel.class);
+        when(childEntityMetamodel.entityType()).thenReturn(ChildEntityWithWrongRoutingKey.class);
 
         CommandTargetResolver<ChildEntityWithWrongRoutingKey> resolver = definition.createCommandTargetResolver(
-                childEntityModel,
+                childEntityMetamodel,
                 ParentEntityWithWrongRoutingKeyChild.class.getDeclaredField("child"));
 
         MessageType messageType = new MessageType(MyCommandPayload.class);
-        when(childEntityModel.getExpectedRepresentation(messageType.qualifiedName())).thenReturn((Class) MyCommandPayload.class);
+        when(childEntityMetamodel.getExpectedRepresentation(messageType.qualifiedName())).thenReturn((Class) MyCommandPayload.class);
 
         assertThrows(UnknownRoutingKeyException.class, () -> {
             resolver.getTargetChildEntity(

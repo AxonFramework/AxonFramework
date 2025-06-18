@@ -755,17 +755,17 @@ aggregates have been replaced with "entities."
 ### Declarative modeling first
 
 When handling messaging for an entity, the framework needs to know which commands and events can be handled
-by the entity, and which child entities it has. This is what we call the 'Entity Messaging Metamodel.'
+by the entity and which child entities it has. This is what we call the 'EntityMetamodel.'
 
 While aggregates worked only through reflection before, with the Axon Framework 5' entities this can be declaratively
 defined.
-You can start defining a metamodel by calling `EntityMessagingMetamodel.forEntityType(entityType)` and declare command
+You can start defining a metamodel by calling `EntityMetamodel.forEntityType(entityType)` and declare command
 handlers, event handlers, and
 child entities. If you have a polymorphic entity, one that has multiple concrete types and extends one supertype,
-you can use `EntityMessagingMetamodel.forPolymorphicEntityType(entityType)` to define the entity metamodel.
+you can use `EntityMetamodel.forPolymorphicEntityType(entityType)` to define the entity metamodel.
 
 ```java
-EntityModel<ImmutableTask> metamodel = EntityMessagingMetamodel
+EntityMetamodel<ImmutableTask> metamodel = EntityMetamodel
         .forEntityType(ImmutableTask.class)
         .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableTask.class))
         .instanceCommandHandler(commandQualifiedName, (command, entity, context) -> {
@@ -776,13 +776,13 @@ EntityModel<ImmutableTask> metamodel = EntityMessagingMetamodel
         .build();
 ```
 
-However, the use of reflection is still possible. The `AnnotatedEntityMessagingMetamodel` reads the entity information
-in a way that is similar to Axon Framework 4, and creates a delegate `EntityMessagingMetamodel` of the right type, with
+However, the use of reflection is still possible. The `AnnotatedEntityMetamodel` reads the entity information
+in a way that is similar to Axon Framework 4, and creates a delegate `EntityMetamodel` of the right type, with
 the right handlers. This means that the entity structure is clearly defined and debuggable,
 and less reflection is needed at runtime, which improves performance.
 
 ```java
-EntityModel<ImmutableTask> metamodel = AnnotatedEntityMessagingMetamodel.forConcreteType(
+EntityMetamodel<ImmutableTask> metamodel = AnnotatedEntityMetamodel.forConcreteType(
         ImmutableTask.class,
         configuration.getComponent(ParameterResolverFactory.class),
         configuration.getComponent(MessageTypeResolver.class)
@@ -1201,7 +1201,7 @@ This section contains five tables:
 | org.axonframework.modelling.command.CommandTargetResolver                                              | org.axonframework.modelling.command.EntityIdResolver                             | No                             |
 | org.axonframework.modelling.command.ForwardingMode                                                     | org.axonframework.modelling.command.entity.child.EventTargetMatcher              | No                             |
 | org.axonframework.modelling.command.AggregateMember                                                    | org.axonframework.modelling.entity.annotation.EntityMember                       | No                             |
-| org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory                      | org.axonframework.modelling.entity.annotation.AnnotatedEntityMessagingMetamodel  | No                             |
+| org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory                      | org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel           | No                             |
 | org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityCollectionDefinition | org.axonframework.modelling.entity.annotation.ListEntityModelDefinition          | No                             |
 | org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityDefinition           | org.axonframework.modelling.entity.annotation.SingleEntityChildModelDefinition   | No                             |
 | org.axonframework.modelling.command.inspection.AbstractChildEntityDefinition                           | org.axonframework.modelling.entity.annotation.AbstractEntityChildModelDefinition | No                             |

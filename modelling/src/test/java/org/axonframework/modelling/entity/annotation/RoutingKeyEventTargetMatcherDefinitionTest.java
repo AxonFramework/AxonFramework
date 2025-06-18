@@ -36,21 +36,22 @@ class RoutingKeyEventTargetMatcherDefinitionTest {
 
     @Test
     void allowsNoRoutingKeyOnSingleValueEntityMember() throws NoSuchFieldException {
-        var childEntityModel = mock(AnnotatedEntityMessagingMetamodel.class);
-        when(childEntityModel.entityType()).thenReturn(ChildEntityWithoutRoutingKey.class);
-        EventTargetMatcher<ChildEntityWithoutRoutingKey> result = definition.createChildEntityMatcher(childEntityModel,
-                                                                                                      SimpleSingleChildValueEntity.class.getDeclaredField(
-                                                                                                              "child"));
+        var childEntityMetamodel = mock(AnnotatedEntityMetamodel.class);
+        when(childEntityMetamodel.entityType()).thenReturn(ChildEntityWithoutRoutingKey.class);
+        EventTargetMatcher<ChildEntityWithoutRoutingKey> result = definition.createChildEntityMatcher(
+                childEntityMetamodel,
+                SimpleSingleChildValueEntity.class.getDeclaredField(
+                        "child"));
 
         assertNotNull(result, "Expected a non-null EventTargetMatcher");
     }
 
     @Test
     void doesNotAllowMissingRoutingKeyOnCollectionTypeMember() {
-        var childEntityModel = mock(AnnotatedEntityMessagingMetamodel.class);
-        when(childEntityModel.entityType()).thenReturn(ChildEntityWithoutRoutingKey.class);
+        var childEntityMetamodel = mock(AnnotatedEntityMetamodel.class);
+        when(childEntityMetamodel.entityType()).thenReturn(ChildEntityWithoutRoutingKey.class);
         assertThrows(AxonConfigurationException.class, () -> definition.createChildEntityMatcher(
-                             childEntityModel,
+                             childEntityMetamodel,
                              SimpleMultiChildValueEntity.class.getDeclaredField("child")),
                      "Expected IllegalArgumentException when no routing key is present on a collection type member");
     }
@@ -74,15 +75,16 @@ class RoutingKeyEventTargetMatcherDefinitionTest {
 
     @Test
     void doesNotAllowMissingRoutingKeyOnMessage() throws NoSuchFieldException {
-        AnnotatedEntityMessagingMetamodel<ChildEntityWithWrongRoutingKey> childEntityModel = mock(AnnotatedEntityMessagingMetamodel.class);
-        when(childEntityModel.entityType()).thenReturn(ChildEntityWithWrongRoutingKey.class);
+        AnnotatedEntityMetamodel<ChildEntityWithWrongRoutingKey> childEntityMetamodel = mock(
+                AnnotatedEntityMetamodel.class);
+        when(childEntityMetamodel.entityType()).thenReturn(ChildEntityWithWrongRoutingKey.class);
 
         EventTargetMatcher<ChildEntityWithWrongRoutingKey> resolver = definition.createChildEntityMatcher(
-                childEntityModel,
+                childEntityMetamodel,
                 ParentEntityWithWrongRoutingKeyChild.class.getDeclaredField("child"));
 
         MessageType messageType = new MessageType(MyCommandPayload.class);
-        when(childEntityModel.getExpectedRepresentation(messageType.qualifiedName())).thenReturn((Class) MyCommandPayload.class);
+        when(childEntityMetamodel.getExpectedRepresentation(messageType.qualifiedName())).thenReturn((Class) MyCommandPayload.class);
 
         assertThrows(UnknownRoutingKeyException.class, () -> {
             resolver.matches(

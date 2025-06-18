@@ -30,20 +30,20 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
-import org.axonframework.modelling.entity.EntityMessagingMetamodel;
-import org.axonframework.modelling.entity.annotation.AnnotatedEntityMessagingMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 
 import java.util.Set;
 
 /**
- * Runs the administration test suite using as many reflection components of the {@link EntityMessagingMetamodel} and
+ * Runs the administration test suite using as many reflection components of the {@link EntityMetamodel} and
  * related classes as possible. As reflection-based components are added, this test may change to use more of them.
  */
 public class MutableReflectionEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
     @Override
     CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
-        EntityMessagingMetamodel<MutablePerson> personModel = AnnotatedEntityMessagingMetamodel.forPolymorphicType(
+        EntityMetamodel<MutablePerson> personModel = AnnotatedEntityMetamodel.forPolymorphicType(
                 MutablePerson.class,
                 Set.of(MutableEmployee.class, MutableCustomer.class),
                 configuration.getComponent(ParameterResolverFactory.class),

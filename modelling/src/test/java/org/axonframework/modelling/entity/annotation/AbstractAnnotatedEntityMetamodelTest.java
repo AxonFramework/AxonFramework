@@ -40,7 +40,7 @@ import java.util.Set;
 import java.util.concurrent.CompletionException;
 
 /**
- * Abstract base class for tests of the {@link AnnotatedEntityMessagingMetamodel} that provide common setup for
+ * Abstract base class for tests of the {@link AnnotatedEntityMetamodel} that provide common setup for
  * parameter resolver factory and message type resolver. In addition, it makes it easier to fire commands and events
  * against the metamodel.
  * <p>
@@ -49,15 +49,15 @@ import java.util.concurrent.CompletionException;
  * @param <E> The type of the entity being tested.
  * @author Mitchell Herrijgers
  */
-public abstract class AbstractAnnotatedEntityMessagingMetamodel<E> {
+public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
 
     protected final ParameterResolverFactory parameterResolverFactory = createParameterResolverFactory();
     protected final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
-    protected final AnnotatedEntityMessagingMetamodel<E> metamodel = getMetamodel();
+    protected final AnnotatedEntityMetamodel<E> metamodel = getMetamodel();
     protected E entityState = null;
     protected List<Object> publishedEvents = new LinkedList<>();
 
-    protected abstract AnnotatedEntityMessagingMetamodel<E> getMetamodel();
+    protected abstract AnnotatedEntityMetamodel<E> getMetamodel();
 
     protected Object dispatchInstanceCommand(Object command) {
         CommandMessage<?> message = createCommand(command);

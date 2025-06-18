@@ -23,26 +23,28 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
-import org.axonframework.modelling.entity.child.EntityChildMessagingMetamodel;
+import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 import org.axonframework.modelling.repository.Repository;
 
 /**
- * Builder for a {@link EntityMessagingMetamodel} instance. This builder allows for the configuration of the entity
- * metamodel, including the addition of command handlers and child entity metamodels.
+ * Builder for an {@link EntityMetamodel} instance, allowing the registration of command handlers, an entity evolver,
+ * and child entities.
  * <p>
  * Entity models can handle two types of commands:
  * <ul>
  *     <li>Instance commands: Commands that are handled by an existing entity. These commands are registered by the
- *     {@link #instanceCommandHandler(QualifiedName, EntityCommandHandler)} method and will be invoked through {@link EntityMessagingMetamodel#handleInstance(CommandMessage, Object, ProcessingContext)}.
+ *     {@link #instanceCommandHandler(QualifiedName, EntityCommandHandler)} method and will be invoked through
+ *     {@link EntityMetamodel#handleInstance(CommandMessage, Object, ProcessingContext)}.
  *     These are comparable with static methods on an entity.</li>
  *     <li>Creational commands: Commands that are handled by a new entity. These commands are registered by the
- *     {@link #creationalCommandHandler(QualifiedName, CommandHandler)} method and will be invoked through {@link EntityMessagingMetamodel#handleCreate(CommandMessage, ProcessingContext)}.
+ *     {@link #creationalCommandHandler(QualifiedName, CommandHandler)} method and will be invoked through
+ *     {@link EntityMetamodel#handleCreate(CommandMessage, ProcessingContext)}.
  *     These are comparable with class instance methods on an entity.</li>
  * </ul>
  * <p>
  * You can also register the same {@link QualifiedName} for both instance and creational command handlers. In that case, the
- * instance command handler will be invoked when {@link EntityMessagingMetamodel#handleInstance(CommandMessage, Object, ProcessingContext)} is invoked, and the creational command handler will be
- * invoked when {@link EntityMessagingMetamodel#handleCreate(CommandMessage, ProcessingContext)} is invoked.
+ * instance command handler will be invoked when {@link EntityMetamodel#handleInstance(CommandMessage, Object, ProcessingContext)} is invoked, and the creational command handler will be
+ * invoked when {@link EntityMetamodel#handleCreate(CommandMessage, ProcessingContext)} is invoked.
  * <p>
  * Upon a mismatch a {@link RuntimeException} will be thrown:
  * <ul>
@@ -56,7 +58,7 @@ import org.axonframework.modelling.repository.Repository;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public interface EntityMessagingMetamodelBuilder<E> {
+public interface EntityMetamodelBuilder<E> {
 
     /**
      * Adds an {@link EntityCommandHandler} to this metamodel for the given {@link QualifiedName}. The command handler
@@ -68,15 +70,15 @@ public interface EntityMessagingMetamodelBuilder<E> {
      * {@code qualifiedName} when the entity is not yet created.
      * <p>
      * You can register the same {@link QualifiedName} for both instance and creational command handlers. See the
-     * {@link EntityMessagingMetamodelBuilder} class documentation for more information on how this works.
+     * {@link EntityMetamodelBuilder} class documentation for more information on how this works.
      *
      * @param qualifiedName  The {@link QualifiedName} of the command this handler handles.
      * @param messageHandler The {@link EntityCommandHandler} to handle the command.
      * @return This builder for further configuration.
      */
     @Nonnull
-    EntityMessagingMetamodelBuilder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
-                                                              @Nonnull EntityCommandHandler<E> messageHandler);
+    EntityMetamodelBuilder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                     @Nonnull EntityCommandHandler<E> messageHandler);
 
     /**
      * Adds a {@link CommandHandler} to this metamodel for the given {@link QualifiedName} that is in charge of creation
@@ -88,7 +90,7 @@ public interface EntityMessagingMetamodelBuilder<E> {
      * {@code qualifiedName} when the entity is not yet created.
      * <p>
      * You can register the same {@link QualifiedName} for both instance and creational command handlers. See the
-     * {@link EntityMessagingMetamodelBuilder} class documentation for more information on how this works.
+     * {@link EntityMetamodelBuilder} class documentation for more information on how this works.
      * <p>
      * Note: If this metamodel is added as a child to another entity metamodel and has a creational command handler, it
      * will result in an exception as child entities cannot be created through a creational command handler.
@@ -98,31 +100,31 @@ public interface EntityMessagingMetamodelBuilder<E> {
      * @return This builder for further configuration.
      */
     @Nonnull
-    EntityMessagingMetamodelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
-                                                                @Nonnull CommandHandler messageHandler);
+    EntityMetamodelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                       @Nonnull CommandHandler messageHandler);
 
     /**
-     * Adds a {@link EntityChildMessagingMetamodel} to this metamodel. The child metamodel will be used to handle
+     * Adds a {@link EntityChildMetamodel} to this metamodel. The child metamodel will be used to handle
      * commands for the child entity. You can build a tree of entities by adding child metamodels to the parent
      * metamodel. Children command handlers take precedence over the parent command handlers. Event handlers will be
      * invoked on both the parent and child metamodels, but the child metamodels will be invoked first.
      * <p>
      * There are various types of children that can be added to an entity model:
      * <ul>
-     *     <li>Single instances: For a field with a single instance, use the {@link EntityChildMessagingMetamodel#single(Class, EntityMessagingMetamodel)}.</li>
-     *     <li>List instances: For a {@link java.util.List list}, use the {@link EntityChildMessagingMetamodel#list(Class, EntityMessagingMetamodel)}.</li>
+     *     <li>Single instances: For a field with a single instance, use the {@link EntityChildMetamodel#single(Class, EntityMetamodel)}.</li>
+     *     <li>List instances: For a {@link java.util.List list}, use the {@link EntityChildMetamodel#list(Class, EntityMetamodel)}.</li>
      * </ul>
      * <p>
      * When multiple children that can handle the same command are present, the children will be filtered based on
-     * {@link EntityChildMessagingMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}, and thus only invoke the child
+     * {@link EntityChildMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}, and thus only invoke the child
      * with a matching entity. If no child can handle the command, an exception will be thrown. If after
      * filtering, multiple children can handle the command, an exception will be thrown.
      *
-     * @param child The {@link EntityChildMessagingMetamodel} to add.
+     * @param child The {@link EntityChildMetamodel} to add.
      * @return This builder for further configuration.
      */
     @Nonnull
-    EntityMessagingMetamodelBuilder<E> addChild(@Nonnull EntityChildMessagingMetamodel<?, E> child);
+    EntityMetamodelBuilder<E> addChild(@Nonnull EntityChildMetamodel<?, E> child);
 
     /**
      * Adds a {@link EntityEvolver} to this metamodel. This evolver will be called upon applying an event to the entity.
@@ -135,14 +137,14 @@ public interface EntityMessagingMetamodelBuilder<E> {
      * @return This builder for further configuration.
      */
     @Nonnull
-    EntityMessagingMetamodelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
+    EntityMetamodelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
 
     /**
-     * Builds the {@link EntityMessagingMetamodel} instance based on the configuration of this builder. This method
-     * should be called after all configuration is done.
+     * Builds the {@link EntityMetamodel} instance based on the configuration of this builder. This method should be
+     * called after all configuration is done.
      *
-     * @return The {@link EntityMessagingMetamodel} instance based on the configuration of this builder.
+     * @return The {@link EntityMetamodel} instance based on the configuration of this builder.
      */
     @Nonnull
-    EntityMessagingMetamodel<E> build();
+    EntityMetamodel<E> build();
 }

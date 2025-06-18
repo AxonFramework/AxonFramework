@@ -17,13 +17,13 @@
 package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.modelling.entity.EntityMessagingMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 
 import java.util.List;
 import java.util.Objects;
 
 /**
- * An {@link EntityChildMessagingMetamodel} that handles commands and events for a single child entity. It will use the
+ * An {@link EntityChildMetamodel} that handles commands and events for a single child entity. It will use the
  * provided {@link ChildEntityFieldDefinition} to resolve the child entity from the parent entity. Once the entity is
  * resolved, it will delegate the command- and event-handling to the child entity metamodel.
  * <p>
@@ -37,14 +37,14 @@ import java.util.Objects;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class SingleEntityChildMessagingMetamodel<C, P> extends AbstractEntityChildMessagingMetamodel<C, P> {
+public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamodel<C, P> {
 
     private final ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
-    private SingleEntityChildMessagingMetamodel(@Nonnull EntityMessagingMetamodel<C> metamodel,
-                                                @Nonnull ChildEntityFieldDefinition<P, C> childEntityFieldDefinition,
-                                                @Nonnull CommandTargetResolver<C> commandTargetMatcher,
-                                                @Nonnull EventTargetMatcher<C> eventTargetMatcher
+    private SingleEntityChildMetamodel(@Nonnull EntityMetamodel<C> metamodel,
+                                       @Nonnull ChildEntityFieldDefinition<P, C> childEntityFieldDefinition,
+                                       @Nonnull CommandTargetResolver<C> commandTargetMatcher,
+                                       @Nonnull EventTargetMatcher<C> eventTargetMatcher
     ) {
         super(
                 metamodel,
@@ -80,7 +80,7 @@ public class SingleEntityChildMessagingMetamodel<C, P> extends AbstractEntityChi
 
     @Nonnull
     @Override
-    public EntityMessagingMetamodel<C> entityMetamodel() {
+    public EntityMetamodel<C> entityMetamodel() {
         return metamodel;
     }
 
@@ -95,19 +95,19 @@ public class SingleEntityChildMessagingMetamodel<C, P> extends AbstractEntityChi
      * parent entity based on the child entities.
      *
      * @param parentClass              The class of the parent entity.
-     * @param metamodel The {@link EntityMessagingMetamodel} of the child entity.
+     * @param metamodel The {@link EntityMetamodel} of the child entity.
      * @param <C>                      The type of the child entity.
      * @param <P>                      The type of the parent entity.
      * @return A new {@link Builder} for the given parent class and child entity model.
      */
     public static <C, P> Builder<C, P> forEntityModel(@Nonnull Class<P> parentClass,
-                                                      @Nonnull EntityMessagingMetamodel<C> metamodel) {
+                                                      @Nonnull EntityMetamodel<C> metamodel) {
         return new Builder<>(parentClass, metamodel);
     }
 
 
     /**
-     * Builder for creating a {@link SingleEntityChildMessagingMetamodel} for the given parent class and child entity
+     * Builder for creating a {@link SingleEntityChildMetamodel} for the given parent class and child entity
      * metamodel. The {@link ChildEntityFieldDefinition} is required to resolve the child entities from the parent entity
      * and evolve the parent entity based on the child entities.
      * <p>
@@ -120,15 +120,15 @@ public class SingleEntityChildMessagingMetamodel<C, P> extends AbstractEntityChi
      * @param <C> The type of the child entity.
      * @param <P> The type of the parent entity.
      */
-    public static class Builder<C, P> extends AbstractEntityChildMessagingMetamodel.Builder<C, P, Builder<C, P>> {
+    public static class Builder<C, P> extends AbstractEntityChildMetamodel.Builder<C, P, Builder<C, P>> {
 
         private ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
         @SuppressWarnings("unused") // Uses for generics
         private Builder(@Nonnull Class<P> parentClass,
-                        @Nonnull EntityMessagingMetamodel<C> childEntityMessagingMetamodel
+                        @Nonnull EntityMetamodel<C> childEntityMetamodel
         ) {
-            super(parentClass, childEntityMessagingMetamodel);
+            super(parentClass, childEntityMetamodel);
             this.commandTargetResolver = CommandTargetResolver.MATCH_ANY();
             this.eventTargetMatcher = EventTargetMatcher.MATCH_ANY();
         }
@@ -148,17 +148,17 @@ public class SingleEntityChildMessagingMetamodel<C, P> extends AbstractEntityChi
         }
 
         /**
-         * Builds a new {@link SingleEntityChildMessagingMetamodel} instance with the configured properties. The
+         * Builds a new {@link SingleEntityChildMetamodel} instance with the configured properties. The
          * {@link ChildEntityFieldDefinition} is required to be set before calling this method.
          *
-         * @return A new {@link SingleEntityChildMessagingMetamodel} instance with the configured properties.
+         * @return A new {@link SingleEntityChildMetamodel} instance with the configured properties.
          */
-        public SingleEntityChildMessagingMetamodel<C, P> build() {
+        public SingleEntityChildMetamodel<C, P> build() {
             this.validate();
-            return new SingleEntityChildMessagingMetamodel<>(metamodel,
-                                                             childEntityFieldDefinition,
-                                                             commandTargetResolver,
-                                                             eventTargetMatcher
+            return new SingleEntityChildMetamodel<>(metamodel,
+                                                    childEntityFieldDefinition,
+                                                    commandTargetResolver,
+                                                    eventTargetMatcher
             );
         }
     }

@@ -46,13 +46,13 @@ public class RoutingKeyCommandTargetResolver<E> implements CommandTargetResolver
      * {@code entityRoutingProperty} and the routing key of the command message is determined by the
      * {@code messageRoutingProperty}.
      *
-     * @param metamodel              The {@link AnnotatedEntityMessagingMetamodel} of the entity to match against.
+     * @param metamodel              The {@link AnnotatedEntityMetamodel} of the entity to match against.
      * @param entityRoutingProperty  The routing key property of the entity, which is used to match against the
      *                               command.
      * @param messageRoutingProperty The routing key property of the command, which is used to match against the
      *                               entity.
      */
-    public RoutingKeyCommandTargetResolver(@Nonnull AnnotatedEntityMessagingMetamodel<E> metamodel,
+    public RoutingKeyCommandTargetResolver(@Nonnull AnnotatedEntityMetamodel<E> metamodel,
                                            @Nonnull String entityRoutingProperty,
                                            @Nonnull String messageRoutingProperty) {
         this.routingKeyEntityMatcher = new AnnotatedEntityModelRoutingKeyMatcher<>(

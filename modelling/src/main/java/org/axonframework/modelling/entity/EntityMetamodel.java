@@ -29,7 +29,7 @@ import java.util.Set;
 
 /**
  * The messaging metamodel of entity type {@code E}, containing the information needed to handle commands and events. An
- * {@link EntityMessagingMetamodel} can be created through the builder by using the {@link #forEntityType(Class)}
+ * {@link EntityMetamodel} can be created through the builder by using the {@link #forEntityType(Class)}
  * method. The metamodel can then be used to handle commands and events for an entity. If the entity already exists, the
  * {@link #handleInstance} method should be used to handle commands for the entity. If the entity is new, the
  * {@link #handleCreate} method should be used to handle commands for creating the entity.
@@ -38,35 +38,35 @@ import java.util.Set;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public interface EntityMessagingMetamodel<E> extends EntityEvolver<E>, DescribableComponent {
+public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableComponent {
 
     /**
-     * Starts a new {@link EntityMessagingMetamodelBuilder} for the given entity type. The builder can be used to add
+     * Starts a new {@link EntityMetamodelBuilder} for the given entity type. The builder can be used to add
      * command handlers and child entities to the metamodel.
      *
      * @param entityType The type of the entity to create a metamodel for.
      * @param <E>        The type of the entity to create a metamodel for.
-     * @return A new {@link EntityMessagingMetamodelBuilder} for the given entity type.
+     * @return A new {@link EntityMetamodelBuilder} for the given entity type.
      */
     @Nonnull
-    static <E> EntityMessagingMetamodelBuilder<E> forEntityType(Class<E> entityType) {
-        return ConcreteEntityMessagingMetamodel.forEntityClass(entityType);
+    static <E> EntityMetamodelBuilder<E> forEntityType(Class<E> entityType) {
+        return ConcreteEntityMetamodel.forEntityClass(entityType);
     }
 
     /**
-     * Starts a new {@link PolymorphicEntityMessagingMetamodelBuilder} for the given entity type. The builder can be
+     * Starts a new {@link PolymorphicEntityMetamodelBuilder} for the given entity type. The builder can be
      * used to add command handlers and child entities to the metamodel, specifically for polymorphic entities. The
      * builder also supports adding concrete entity types that extend the given entity type, through
-     * {@link PolymorphicEntityMessagingMetamodelBuilder#addConcreteType(EntityMessagingMetamodel)}. The required
+     * {@link PolymorphicEntityMetamodelBuilder#addConcreteType(EntityMetamodel)}. The required
      * concrete metamodel can be created with {@link #forEntityType(Class)}.
      *
      * @param entityType The type of the entity to create a metamodel for.
      * @param <E>        The type of the entity to create a metamodel for.
-     * @return A new {@link PolymorphicEntityMessagingMetamodelBuilder} for the given entity type.
+     * @return A new {@link PolymorphicEntityMetamodelBuilder} for the given entity type.
      */
     @Nonnull
-    static <E> PolymorphicEntityMessagingMetamodelBuilder<E> forPolymorphicEntityType(@Nonnull Class<E> entityType) {
-        return PolymorphicEntityMessagingMetamodel.forSuperType(entityType);
+    static <E> PolymorphicEntityMetamodelBuilder<E> forPolymorphicEntityType(@Nonnull Class<E> entityType) {
+        return PolymorphicEntityMetamodel.forSuperType(entityType);
     }
 
     /**

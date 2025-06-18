@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.EntityCommandHandler;
-import org.axonframework.modelling.entity.EntityMessagingMetamodelBuilder;
+import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -48,21 +48,21 @@ import java.util.function.Supplier;
  * <ul>
  *     <li>
  *         Mutable entities: these entities are created with a no-argument constructor. All command handlers of the
- *         entity should be {@link EntityMessagingMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance
+ *         entity should be {@link EntityMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance
  *         command handlers}. Use {@link #fromNoArgument(Supplier)} to create a factory for this type of entity.
  *     </li>
  *     <li>
  *         Mutable entities with non-null identifier: these entities are created with a constructor that takes the
  *         identifier as parameter. All command handlers of the entity should be
- *         {@link EntityMessagingMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handlers}.
+ *         {@link EntityMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handlers}.
  *         Use {@link #fromIdentifier(Function)} to create a factory for this type of entity.
  *     </li>
  *     <li>
  *         Immutable entities, or entities with non-nullable parameters: these entities are created with a constructor that takes
  *         the identifier and the event message as parameters. The entity should have a combination of
- *         {@link EntityMessagingMetamodelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command handlers} to
+ *         {@link EntityMetamodelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command handlers} to
  *         create the entity if no events exist for it, and
- *         {@link EntityMessagingMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handlers} to
+ *         {@link EntityMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handlers} to
  *         handle commands when it does exist. If a command could potentially handle both cases, it would need to be
  *         registered as both a creational and instance command handler.
  *         Use {@link #fromEventMessage(BiFunction)} to create a factory for this type of entity.
@@ -92,9 +92,9 @@ public interface EventSourcedEntityFactory<ID, E> {
      * <p>
      * Whether to return {@code null} from a {@code null} {@code firstEventMessage} invocation depends on the type of
      * command handler which should be invoked when the entity does not exist. If this is a
-     * {@link EntityMessagingMetamodelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command
+     * {@link EntityMetamodelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command
      * handler}, this should return {@code null}. If this is a
-     * {@link EntityMessagingMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance
+     * {@link EntityMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance
      * command handler}, this should return the non-null initial state of the entity. For example, using the no-argument
      * constructor of the entity, or a constructor that takes the identifier as a parameter.
      * <p>
@@ -116,7 +116,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * <p>
      * Should be used when your entity is mutable, and you want to create it with a no-argument constructor. All command
      * handlers of your entity should be
-     * {@link EntityMessagingMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance
+     * {@link EntityMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance
      * command handler}. If you would like the identifier to be passed to the constructor, use
      * {@link #fromIdentifier(Function)} instead.
      *
@@ -136,7 +136,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * <p>
      * Should be used when your entity is mutable, and you want to create it with a constructor that takes the
      * identifier as parameter. All command handlers of your entity should be
-     * {@link EntityMessagingMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance
+     * {@link EntityMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance
      * command handler}.
      *
      * @param creator A {@link Function} that creates the entity. This should be a constructor with the identifier as
@@ -157,9 +157,9 @@ public interface EventSourcedEntityFactory<ID, E> {
      * Should be used if your entity is immutable, and/or you want to create it with a constructor that takes the
      * identifier and the event message as parameters to set non-nullable parameters on it. Your entity should have a
      * combination of
-     * {@link EntityMessagingMetamodelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command
+     * {@link EntityMetamodelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command
      * handlers} to create the entity if no events exist for it, and
-     * {@link EntityMessagingMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance
+     * {@link EntityMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance
      * command handlers} to handle commands when it does exist. If a command could potentially handle both cases, it
      * would need to be registered as both a creational and instance command handler.
      *

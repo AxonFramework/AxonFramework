@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.modelling.entity.annotation.AnnotatedEntityMessagingMetamodel;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 import org.axonframework.modelling.entity.annotation.EntityMember;
 import org.axonframework.modelling.entity.domain.development.commands.AssignDeveloperAsLeadDeveloper;
 import org.axonframework.modelling.entity.domain.development.commands.AssignDeveloperToProject;
@@ -38,7 +38,7 @@ import java.util.List;
 /**
  * Fictional domain model representing a project in a software development context. Used for validating the Axon
  * Framework's modelling capabilities, such as the
- * {@link AnnotatedEntityMessagingMetamodel}.
+ * {@link AnnotatedEntityMetamodel}.
  * <p>
  * The model handles various commands that are validated based on state, and events that are published to reflect
  * changes in the project state. This model does use events to evolve its state, but does not use an event store to

@@ -25,7 +25,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
-import org.axonframework.modelling.entity.EntityMessagingMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 
 import java.util.List;
 import java.util.Objects;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Abstract {@link EntityChildMessagingMetamodel} that implements common functionality for most implementations. It
+ * Abstract {@link EntityChildMetamodel} that implements common functionality for most implementations. It
  * defines how to handle commands and events for a child entity. The implementor is responsible for defining how to
  * resolve the child entities from the parent ({@link #getChildEntities(Object)}) and how to apply the evolved child
  * entities to the parent ({@link #applyEvolvedChildEntities(Object, List)}).
@@ -46,14 +46,14 @@ import static java.util.Objects.requireNonNull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public abstract class AbstractEntityChildMessagingMetamodel<C, P> implements EntityChildMessagingMetamodel<C, P> {
+public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildMetamodel<C, P> {
 
-    protected final EntityMessagingMetamodel<C> metamodel;
+    protected final EntityMetamodel<C> metamodel;
     protected final CommandTargetResolver<C> commandTargetResolver;
     protected final EventTargetMatcher<C> eventTargetMatcher;
 
-    protected AbstractEntityChildMessagingMetamodel(
-            @Nonnull EntityMessagingMetamodel<C> metamodel,
+    protected AbstractEntityChildMetamodel(
+            @Nonnull EntityMetamodel<C> metamodel,
             @Nonnull CommandTargetResolver<C> commandTargetResolver,
             @Nonnull EventTargetMatcher<C> eventTargetMatcher
     ) {
@@ -129,13 +129,13 @@ public abstract class AbstractEntityChildMessagingMetamodel<C, P> implements Ent
 
     protected abstract static class Builder<C, P, R extends Builder<C, P, R>> {
 
-        protected final EntityMessagingMetamodel<C> metamodel;
+        protected final EntityMetamodel<C> metamodel;
         protected CommandTargetResolver<C> commandTargetResolver;
         protected EventTargetMatcher<C> eventTargetMatcher;
 
         @SuppressWarnings("unused") // Is used for generics
         protected Builder(@Nonnull Class<P> parentClass,
-                          @Nonnull EntityMessagingMetamodel<C> metamodel) {
+                          @Nonnull EntityMetamodel<C> metamodel) {
             requireNonNull(parentClass, "The parentClass may not be null.");
             this.metamodel = requireNonNull(metamodel, "The metamodel may not be null.");
         }

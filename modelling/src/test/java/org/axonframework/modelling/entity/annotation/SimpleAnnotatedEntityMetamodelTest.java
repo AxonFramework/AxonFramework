@@ -24,8 +24,8 @@ import org.junit.jupiter.api.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests the {@link AnnotatedEntityMessagingMetamodel} through the {@link TodoItem} domain model. This domain model has
- * been designed to touch as few aspects of the {@link AnnotatedEntityMessagingMetamodel} as possible, so the least
+ * Tests the {@link AnnotatedEntityMetamodel} through the {@link TodoItem} domain model. This domain model has
+ * been designed to touch as few aspects of the {@link AnnotatedEntityMetamodel} as possible, so the least
  * extensive testcase is covered.
  * <p>
  * Note that the domain might not be feature-complete or realistic. In addition, while the model is not event-sourced
@@ -35,11 +35,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Mitchell Herrijgers
  */
-class SimpleAnnotatedEntityMessagingMetamodel extends AbstractAnnotatedEntityMessagingMetamodel<TodoItem> {
+class SimpleAnnotatedEntityMetamodelTest extends AbstractAnnotatedEntityMetamodelTest<TodoItem> {
 
     @Override
-    protected AnnotatedEntityMessagingMetamodel<TodoItem> getMetamodel() {
-        return AnnotatedEntityMessagingMetamodel.forConcreteType(
+    protected AnnotatedEntityMetamodel<TodoItem> getMetamodel() {
+        return AnnotatedEntityMetamodel.forConcreteType(
                 TodoItem.class,
                 parameterResolverFactory,
                 messageTypeResolver

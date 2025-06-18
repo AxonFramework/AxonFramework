@@ -23,12 +23,12 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
-import org.axonframework.modelling.entity.EntityMessagingMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 
 import java.util.Set;
 
 /**
- * Interface describing a child {@link EntityMessagingMetamodel} that can be handled in the context of its parent.
+ * Interface describing a child {@link EntityMetamodel} that can be handled in the context of its parent.
  * Handling commands for this metamodel is done in the context of the parent. This metamodel resolves the child from the
  * given parent and can then invoke the right child instance to handle the command.
  *
@@ -37,7 +37,7 @@ import java.util.Set;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public interface EntityChildMessagingMetamodel<C, P> extends EntityEvolver<P> {
+public interface EntityChildMetamodel<C, P> extends EntityEvolver<P> {
 
     /**
      * Returns the set of all {@link QualifiedName QualifiedNames} that this metamodel supports for command handlers.
@@ -80,42 +80,42 @@ public interface EntityChildMessagingMetamodel<C, P> extends EntityEvolver<P> {
     Class<C> entityType();
 
     /**
-     * Returns the {@link EntityMessagingMetamodel} of the child entity this metamodel describes.
+     * Returns the {@link EntityMetamodel} of the child entity this metamodel describes.
      *
-     * @return The {@link EntityMessagingMetamodel} of the child entity this metamodel describes.
+     * @return The {@link EntityMetamodel} of the child entity this metamodel describes.
      */
     @Nonnull
-    EntityMessagingMetamodel<C> entityMetamodel();
+    EntityMetamodel<C> entityMetamodel();
 
     /**
      * Starts a builder for a single child entity within the given parent entity type.
      *
      * @param parentClass The class of the parent entity.
-     * @param metamodel   The {@link EntityMessagingMetamodel} of the child entity.
+     * @param metamodel   The {@link EntityMetamodel} of the child entity.
      * @param <C>         The type of the child entity.
      * @param <P>         The type of the parent entity.
-     * @return A {@link SingleEntityChildMessagingMetamodel.Builder} for the child entity.
+     * @return A {@link SingleEntityChildMetamodel.Builder} for the child entity.
      */
     @Nonnull
-    static <C, P> SingleEntityChildMessagingMetamodel.Builder<C, P> single(
+    static <C, P> SingleEntityChildMetamodel.Builder<C, P> single(
             @Nonnull Class<P> parentClass,
-            @Nonnull EntityMessagingMetamodel<C> metamodel) {
-        return SingleEntityChildMessagingMetamodel.forEntityModel(parentClass, metamodel);
+            @Nonnull EntityMetamodel<C> metamodel) {
+        return SingleEntityChildMetamodel.forEntityModel(parentClass, metamodel);
     }
 
     /**
      * Starts a builder for a list of child entities within the given parent entity type.
      *
      * @param parentClass The class of the parent entity.
-     * @param metamodel   The {@link EntityMessagingMetamodel} of the child entity.
+     * @param metamodel   The {@link EntityMetamodel} of the child entity.
      * @param <C>         The type of the child entity.
      * @param <P>         The type of the parent entity.
-     * @return A {@link ListEntityChildMessagingMetamodel.Builder} for the child entity.
+     * @return A {@link ListEntityChildMetamodel.Builder} for the child entity.
      */
     @Nonnull
-    static <C, P> ListEntityChildMessagingMetamodel.Builder<C, P> list(
+    static <C, P> ListEntityChildMetamodel.Builder<C, P> list(
             @Nonnull Class<P> parentClass,
-            @Nonnull EntityMessagingMetamodel<C> metamodel) {
-        return ListEntityChildMessagingMetamodel.forEntityModel(parentClass, metamodel);
+            @Nonnull EntityMetamodel<C> metamodel) {
+        return ListEntityChildMetamodel.forEntityModel(parentClass, metamodel);
     }
 }
