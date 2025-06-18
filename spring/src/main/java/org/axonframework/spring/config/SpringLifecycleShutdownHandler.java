@@ -66,7 +66,12 @@ class SpringLifecycleShutdownHandler implements SmartLifecycle {
     public void stop() {
         try {
             task.get()
-                .whenComplete((result, throwable) -> running.set(false))
+                .whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        logger.warn("Failed running shutdown task [{}] in phase [{}].", task, phase, throwable);
+                    }
+                    running.set(false);
+                })
                 // This API forces us to block
                 .get();
         } catch (InterruptedException e) {
@@ -81,9 +86,14 @@ class SpringLifecycleShutdownHandler implements SmartLifecycle {
     @Override
     public void stop(Runnable callback) {
         task.get()
-            .whenComplete((result, throwable) -> running.set(false))
-            .whenComplete((r, e) -> callback.run());
-        // TODO - Log exceptions
+            .whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    logger.warn("Failed running shutdown task [{}] in phase [{}].", task, phase, throwable);
+                }
+                running.set(false);
+                callback.run();
+            })
+            .whenComplete((result, throwable) -> callback.run());
     }
 
     @Override
