@@ -27,8 +27,8 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
+import static org.axonframework.eventhandling.EventTestUtils.createDomainEvents;
 import static org.axonframework.messaging.unitofwork.StubProcessingContext.forMessage;
-import static org.axonframework.utils.EventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConcludesBatchParameterResolverFactoryTest {

@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.utils.EventTestUtils;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -26,8 +26,8 @@ import org.mockito.*;
 import java.util.Collections;
 import java.util.List;
 
-import static org.axonframework.utils.EventTestUtils.createDomainEvent;
-import static org.axonframework.utils.EventTestUtils.createDomainEvents;
+import static org.axonframework.eventhandling.EventTestUtils.createDomainEvent;
+import static org.axonframework.eventhandling.EventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -56,7 +56,7 @@ class SimpleEventHandlerInvokerTest {
 
     @Test
     void singleEventPublication() throws Exception {
-        EventMessage<?> event = EventTestUtils.createDomainEvent();
+        EventMessage<?> event = createDomainEvent();
 
         ProcessingContext context = StubProcessingContext.forMessage(event);
         testSubject.handle(event, context, Segment.ROOT_SEGMENT);

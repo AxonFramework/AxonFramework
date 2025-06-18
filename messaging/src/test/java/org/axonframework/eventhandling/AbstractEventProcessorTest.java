@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -30,10 +31,9 @@ import org.junit.jupiter.api.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import jakarta.annotation.Nonnull;
 
-import static org.axonframework.utils.EventTestUtils.createDomainEvent;
-import static org.axonframework.utils.EventTestUtils.createDomainEvents;
+import static org.axonframework.eventhandling.EventTestUtils.createDomainEvent;
+import static org.axonframework.eventhandling.EventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -80,7 +80,7 @@ class AbstractEventProcessorTest {
             public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
                                  @Nonnull ProcessingContext context,
                                  @Nonnull InterceptorChain interceptorChain) throws Exception {
-                unitOfWork.transformMessage(m -> EventTestUtils.createDomainEvent());
+                unitOfWork.transformMessage(m -> createDomainEvent());
                 return interceptorChain.proceedSync(context);
             }
 
@@ -88,7 +88,7 @@ class AbstractEventProcessorTest {
             public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
                     @Nonnull M message, @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain<M, R> interceptorChain) {
-                var event = EventTestUtils.createDomainEvent();
+                var event = createDomainEvent();
                 //noinspection unchecked
                 return interceptorChain.proceed((M) event, context);
             }

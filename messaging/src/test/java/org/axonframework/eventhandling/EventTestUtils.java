@@ -17,9 +17,16 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MetaData;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Test utilities when dealing with events.
@@ -67,5 +74,74 @@ public abstract class EventTestUtils {
                 new GenericMessage<>(new MessageType(event.getClass()), (P) event),
                 GenericEventMessage.clock.instant()
         );
+    }
+
+    private static final MessageType TYPE = new MessageType("event");
+    private static final String PAYLOAD = "payload";
+    private static final String AGGREGATE = "aggregate";
+    private static final String AGGREGATE_TYPE = "aggregateType";
+    private static final MetaData METADATA = MetaData.emptyInstance();
+
+    public static List<DomainEventMessage<?>> createDomainEvents(int numberOfEvents) {
+        return IntStream.range(0, numberOfEvents)
+                        .mapToObj(sequenceNumber -> createDomainEvent(AGGREGATE_TYPE,
+                                                                      IdentifierFactory.getInstance()
+                                                                                       .generateIdentifier(),
+                                                                      AGGREGATE,
+                                                                      sequenceNumber,
+                                                                      PAYLOAD + sequenceNumber,
+                                                                      METADATA))
+                        .collect(Collectors.toList());
+    }
+
+    public static DomainEventMessage<String> createDomainEvent() {
+        return createDomainEvent(0);
+    }
+
+    public static DomainEventMessage<String> createDomainEvent(long sequenceNumber) {
+        return createDomainEvent(AGGREGATE, sequenceNumber);
+    }
+
+    public static DomainEventMessage<String> createDomainEvent(long sequenceNumber, Instant timestamp) {
+        return new GenericDomainEventMessage<>(
+                AGGREGATE_TYPE, AGGREGATE, sequenceNumber,
+                IdentifierFactory.getInstance().generateIdentifier(), TYPE,
+                PAYLOAD, METADATA, timestamp
+        );
+    }
+
+    public static DomainEventMessage<String> createDomainEvent(String aggregateId, long sequenceNumber) {
+        return createDomainEvent(aggregateId, sequenceNumber, PAYLOAD);
+    }
+
+    public static DomainEventMessage<String> createDomainEvent(String aggregateId, long sequenceNumber,
+                                                               String payload) {
+        return createDomainEvent(AGGREGATE_TYPE,
+                                 IdentifierFactory.getInstance().generateIdentifier(),
+                                 aggregateId,
+                                 sequenceNumber,
+                                 payload,
+                                 METADATA);
+    }
+
+    public static DomainEventMessage<String> createDomainEvent(String eventId, String aggregateId,
+                                                               long sequenceNumber) {
+        return createDomainEvent(AGGREGATE_TYPE, eventId, aggregateId, sequenceNumber, PAYLOAD, METADATA);
+    }
+
+    public static DomainEventMessage<String> createDomainEvent(String type,
+                                                               String eventId,
+                                                               String aggregateId,
+                                                               long sequenceNumber,
+                                                               String payload,
+                                                               MetaData metaData) {
+        return new GenericDomainEventMessage<>(type,
+                                               aggregateId,
+                                               sequenceNumber,
+                                               eventId,
+                                               TYPE,
+                                               payload,
+                                               metaData,
+                                               GenericDomainEventMessage.clock.instant());
     }
 }
