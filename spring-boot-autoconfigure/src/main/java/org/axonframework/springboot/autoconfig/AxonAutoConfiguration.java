@@ -29,15 +29,31 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 /**
- * AutoConfiguration class that defines the Configuration and Configurer implementations that supports beans to
- * be accessed as components. Lifecycle handlers are managed by the Spring Application context to allow "weaving"
- * of these lifecycles with the Spring lifecycles.
- *
+ * Autoconfiguration class that defines the {@link AxonConfiguration} and
+ * {@link org.axonframework.configuration.ComponentRegistry} implementations that supports beans to be accessed as
+ * components.
+ * <p>
+ * Lifecycle handlers are managed by the Spring Application context to allow "weaving" of these lifecycles with the
+ * Spring lifecycles.
  *
  * @author Allard Buijze
+ * @author Josh Long
+ * @since 3.0.0
  */
 @AutoConfiguration
 public class AxonAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
+    SpringComponentRegistry springComponentRegistry(ApplicationContext applicationContext) {
+        return new SpringComponentRegistry(applicationContext);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(search = SearchStrategy.ALL)
+    SpringLifecycleRegistry springLifecycleRegistry() {
+        return new SpringLifecycleRegistry();
+    }
 
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.ALL)
@@ -58,17 +74,5 @@ public class AxonAutoConfiguration {
     @ConditionalOnBean(value = AxonConfiguration.class, search = SearchStrategy.ALL)
     Configuration axonConfiguration(SpringComponentRegistry registry) {
         return registry.configuration();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
-    SpringComponentRegistry springComponentRegistry(ApplicationContext applicationContext) {
-        return new SpringComponentRegistry(applicationContext);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(search = SearchStrategy.ALL)
-    SpringLifecycleRegistry springLifecycleRegistry() {
-        return new SpringLifecycleRegistry();
     }
 }
