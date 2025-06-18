@@ -24,7 +24,6 @@ import org.axonframework.messaging.MetaData;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -37,37 +36,26 @@ public abstract class EventTestUtils {
     private static final String AGGREGATE_TYPE = "aggregateType";
     private static final MetaData METADATA = MetaData.emptyInstance();
 
-    public static List<DomainEventMessage<?>> createEvents(int numberOfEvents) {
+    public static List<DomainEventMessage<?>> createDomainEvents(int numberOfEvents) {
         return IntStream.range(0, numberOfEvents)
-                        .mapToObj(sequenceNumber -> createEvent(AGGREGATE_TYPE,
-                                                                IdentifierFactory.getInstance().generateIdentifier(),
-                                                                AGGREGATE,
-                                                                sequenceNumber,
-                                                                PAYLOAD + sequenceNumber,
-                                                                METADATA))
+                        .mapToObj(sequenceNumber -> createDomainEvent(AGGREGATE_TYPE,
+                                                                      IdentifierFactory.getInstance().generateIdentifier(),
+                                                                      AGGREGATE,
+                                                                      sequenceNumber,
+                                                                      PAYLOAD + sequenceNumber,
+                                                                      METADATA))
                         .collect(Collectors.toList());
     }
 
-    public static List<DomainEventMessage<?>> createUUIDEvents(int numberOfEvents) {
-        return IntStream.range(0, numberOfEvents).mapToObj(
-                                sequenceNumber -> createEvent(AGGREGATE_TYPE,
-                                                              IdentifierFactory.getInstance().generateIdentifier(),
-                                                              UUID.randomUUID().toString(),
-                                                              sequenceNumber,
-                                                              PAYLOAD + sequenceNumber,
-                                                              METADATA))
-                        .collect(Collectors.toList());
+    public static DomainEventMessage<String> createDomainEvent() {
+        return createDomainEvent(0);
     }
 
-    public static DomainEventMessage<String> createEvent() {
-        return createEvent(0);
+    public static DomainEventMessage<String> createDomainEvent(long sequenceNumber) {
+        return createDomainEvent(AGGREGATE, sequenceNumber);
     }
 
-    public static DomainEventMessage<String> createEvent(long sequenceNumber) {
-        return createEvent(AGGREGATE, sequenceNumber);
-    }
-
-    public static DomainEventMessage<String> createEvent(long sequenceNumber, Instant timestamp) {
+    public static DomainEventMessage<String> createDomainEvent(long sequenceNumber, Instant timestamp) {
         return new GenericDomainEventMessage<>(
                 AGGREGATE_TYPE, AGGREGATE, sequenceNumber,
                 IdentifierFactory.getInstance().generateIdentifier(), TYPE,
@@ -75,29 +63,29 @@ public abstract class EventTestUtils {
         );
     }
 
-    public static DomainEventMessage<String> createEvent(String aggregateId, long sequenceNumber) {
-        return createEvent(aggregateId, sequenceNumber, PAYLOAD);
+    public static DomainEventMessage<String> createDomainEvent(String aggregateId, long sequenceNumber) {
+        return createDomainEvent(aggregateId, sequenceNumber, PAYLOAD);
     }
 
-    public static DomainEventMessage<String> createEvent(String aggregateId, long sequenceNumber, String payload) {
-        return createEvent(AGGREGATE_TYPE,
-                           IdentifierFactory.getInstance().generateIdentifier(),
-                           aggregateId,
-                           sequenceNumber,
-                           payload,
-                           METADATA);
+    public static DomainEventMessage<String> createDomainEvent(String aggregateId, long sequenceNumber, String payload) {
+        return createDomainEvent(AGGREGATE_TYPE,
+                                 IdentifierFactory.getInstance().generateIdentifier(),
+                                 aggregateId,
+                                 sequenceNumber,
+                                 payload,
+                                 METADATA);
     }
 
-    public static DomainEventMessage<String> createEvent(String eventId, String aggregateId, long sequenceNumber) {
-        return createEvent(AGGREGATE_TYPE, eventId, aggregateId, sequenceNumber, PAYLOAD, METADATA);
+    public static DomainEventMessage<String> createDomainEvent(String eventId, String aggregateId, long sequenceNumber) {
+        return createDomainEvent(AGGREGATE_TYPE, eventId, aggregateId, sequenceNumber, PAYLOAD, METADATA);
     }
 
-    public static DomainEventMessage<String> createEvent(String type,
-                                                         String eventId,
-                                                         String aggregateId,
-                                                         long sequenceNumber,
-                                                         String payload,
-                                                         MetaData metaData) {
+    public static DomainEventMessage<String> createDomainEvent(String type,
+                                                               String eventId,
+                                                               String aggregateId,
+                                                               long sequenceNumber,
+                                                               String payload,
+                                                               MetaData metaData) {
         return new GenericDomainEventMessage<>(type,
                                                aggregateId,
                                                sequenceNumber,

@@ -28,7 +28,7 @@ import java.util.List;
 
 import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
 import static org.axonframework.messaging.unitofwork.StubProcessingContext.forMessage;
-import static org.axonframework.utils.EventTestUtils.createEvents;
+import static org.axonframework.utils.EventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConcludesBatchParameterResolverFactoryTest {
@@ -66,7 +66,7 @@ class ConcludesBatchParameterResolverFactoryTest {
 
     @Test
     void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsNotLast() {
-        List<? extends EventMessage<?>> events = createEvents(5);
+        List<? extends EventMessage<?>> events = createDomainEvents(5);
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
                     ProcessingContext event0Context = forMessage(events.get(0));
@@ -76,7 +76,7 @@ class ConcludesBatchParameterResolverFactoryTest {
 
     @Test
     void resolvesToTrueWithBatchingUnitOfWorkIfMessageIsLast() {
-        List<? extends EventMessage<?>> events = createEvents(5);
+        List<? extends EventMessage<?>> events = createDomainEvents(5);
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
                     ProcessingContext lastEventContext = forMessage(events.get(4));
