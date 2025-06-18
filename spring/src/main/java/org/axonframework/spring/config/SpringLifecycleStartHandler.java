@@ -16,19 +16,38 @@
 
 package org.axonframework.spring.config;
 
+import jakarta.annotation.Nonnull;
 import org.springframework.context.SmartLifecycle;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-public class SpringLifecycleStartHandler implements SmartLifecycle {
+/**
+ * A {@link SmartLifecycle} implementation wrapping a
+ * {@link org.axonframework.configuration.LifecycleHandler start-specific lifecycle handler} to allow it to be managed
+ * by Spring.
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
+ */
+class SpringLifecycleStartHandler implements SmartLifecycle {
 
     private final int phase;
     private final Supplier<CompletableFuture<?>> task;
+
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    public SpringLifecycleStartHandler(int phase, Supplier<CompletableFuture<?>> task) {
+    /**
+     * Initialize the bean to have the given {@code task} executed on start-up in the given {@code phase}.
+     *
+     * @param phase The start-up phase to invoke the task in.
+     * @param task  The task to execute on start-up.
+     */
+    SpringLifecycleStartHandler(int phase,
+                                @Nonnull Supplier<CompletableFuture<?>> task) {
         this.phase = phase;
         this.task = task;
     }

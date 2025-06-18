@@ -16,8 +16,12 @@
 
 package org.axonframework.spring.config;
 
+import jakarta.annotation.Nonnull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
 
+import java.lang.invoke.MethodHandles;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -25,23 +29,30 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 /**
- * Spring bean implementing SmartLifecycle to allow lifecycle handlers to be managed by Spring.
+ * A {@link SmartLifecycle} implementation wrapping a
+ * {@link org.axonframework.configuration.LifecycleHandler shutdown-specific lifecycle handler} to allow it to be
+ * managed by Spring.
  *
+ * @author Allard Buijze
  * @since 5.0.0
  */
-public class SpringLifecycleShutdownHandler implements SmartLifecycle {
+class SpringLifecycleShutdownHandler implements SmartLifecycle {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final int phase;
     private final Supplier<CompletableFuture<?>> task;
+
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     /**
-     * Initialize the bean to have the given {@code task} executed on shutdown in the given {@code phase.}
+     * Initialize the bean to have the given {@code task} executed on shutdown in the given {@code phase}.
      *
-     * @param phase The shutdown phase to invoke the task in
-     * @param task  The task to execute
+     * @param phase The shutdown phase to invoke the task in.
+     * @param task  The task to execute on shutdown.
      */
-    public SpringLifecycleShutdownHandler(int phase, Supplier<CompletableFuture<?>> task) {
+    SpringLifecycleShutdownHandler(int phase,
+                                   @Nonnull Supplier<CompletableFuture<?>> task) {
         this.phase = phase;
         this.task = task;
     }
@@ -56,13 +67,13 @@ public class SpringLifecycleShutdownHandler implements SmartLifecycle {
         try {
             task.get()
                 .whenComplete((result, throwable) -> running.set(false))
-                // this API forces us to block
+                // This API forces us to block
                 .get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CompletionException(e);
         } catch (ExecutionException e) {
-            // this is what the join() would throw
+            // This is what the join() would throw
             throw new CompletionException(e);
         }
     }
