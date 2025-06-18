@@ -50,7 +50,9 @@ import jakarta.annotation.Nonnull;
  * @author Allard Buijze
  * @see com.thoughtworks.xstream.XStream
  * @since 1.2
+ * @deprecated In favor of an XML-based Jackson-specific {@link Converter} implementation.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class XStreamSerializer extends AbstractXStreamSerializer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

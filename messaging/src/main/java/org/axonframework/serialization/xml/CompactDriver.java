@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,9 @@ import java.net.URL;
  *
  * @author Allard Buijze
  * @since 2.0
+ * @deprecated In favor of an XML-based Jackson-specific {@link Converter} implementation.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class CompactDriver implements HierarchicalStreamDriver {
 
     private final XppDriver xppDriver = new XppDriver();
