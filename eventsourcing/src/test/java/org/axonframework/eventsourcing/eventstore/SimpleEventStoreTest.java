@@ -43,6 +43,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.axonframework.utils.AssertUtils.awaitSuccessfullCompletion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -220,6 +221,42 @@ class SimpleEventStoreTest {
                                                                  .equals(new GlobalIndexConsistencyMarker(
                                                                          Math.min(Math.min(size1, size2), size3) - 1))),
                                                    anyList());
+        }
+    }
+
+    @Nested
+    class Publish {
+
+        @Test
+        void publishUsesTheGivenContextToInvokeTheTransactionInCompletingTheReturnedFutureImmediately() {
+            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+
+            EventMessage<?> testEventZero = eventMessage(0);
+            EventMessage<?> testEventOne = eventMessage(1);
+
+            UnitOfWork uow = new UnitOfWork();
+            uow.onPreInvocation(context -> {
+                   CompletableFuture<Void> result = testSubject.publish(context, testEventZero, testEventOne);
+                   assertTrue(result.isDone());
+                   assertFalse(result.isCompletedExceptionally());
+                   return result;
+               })
+               .runOnInvocation(context -> verifyNoInteractions(mockStorageEngine))
+               .runOnCommit(context -> verify(mockStorageEngine).appendEvents(any(), anyList()));
+
+            awaitSuccessfullCompletion(uow.execute());
+        }
+
+        @Test
+        void publishConstructsNewUnitOfWorkToInvokeTheTransactionIn() {
+            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+
+            CompletableFuture<Void> result = testSubject.publish(null, eventMessage(0));
+            awaitSuccessfullCompletion(result);
         }
     }
 
