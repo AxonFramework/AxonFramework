@@ -72,16 +72,13 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
     }
 
     /**
-     * Combine the {@link #criteria()} and {@link #start()} of {@code this SourcingCondition} with the {@code criteria}
-     * and {@code start} of the given {@code other SourcingCondition}.
+     * Merges {@code this SourcingCondition} with the given {@code other SourcingCondition}, by combining their
+     * {@link #criteria() search criteria} and {@link #start() starting points}.
      * <p>
-     * Any event that would have been sourced under either condition, will also be sourced under the combined condition.
-     * If the {@link #start()} of {@code this} and the given {@code other} do <b>not</b> overlap or are <b>not</b>
-     * dependent one another, the combined condition may return events under the combined that would not have been
-     * returned under either this or the other individual conditions.
+     * Warning: If the starting points don't overlap or connect properly, the merged condition might return some events
+     * that neither of the original conditions would have returned on their own.
      * <p>
-     * Typically, the minimum value of the {@code start} value will be part of the end result of using
-     * {@code this SourcingCondition}.
+     * Usually, the earlier starting point (minimum start value) will be used in the final merged condition.
      *
      * @param other The {@code SourcingCondition} to combine with {@code this SourcingCondition}.
      * @return A combined {@code SourcingCondition} based on {@code this SourcingCondition} and the given {@code other}.
