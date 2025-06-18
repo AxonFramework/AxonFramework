@@ -47,12 +47,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @ContextHierarchy({
-        @ContextConfiguration(name = "parent", classes = {Axon5AutoConfigurationTest.AppConfig.class}),
-        @ContextConfiguration(name = "child", classes = {Axon5AutoConfigurationTest.AppOverrideConfig.class})}
+        @ContextConfiguration(name = "parent", classes = {AxonAutoConfigurationTest.AppConfig.class}),
+        @ContextConfiguration(name = "child", classes = {AxonAutoConfigurationTest.AppOverrideConfig.class})}
 )
 @TestPropertySource(properties = "axon.axonserver.enabled=false")
 @EnableAutoConfiguration
-public class Axon5AutoConfigurationTest {
+public class AxonAutoConfigurationTest {
 
     @Autowired
     ApplicationContext applicationContext;

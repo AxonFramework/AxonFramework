@@ -14,9 +14,9 @@
 # limitations under the License.
 #
 
-org.axonframework.springboot.autoconfig.Axon5AutoConfiguration
-org.axonframework.springboot.autoconfig.AvroSerializerAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonAutoConfiguration
+org.axonframework.springboot.autoconfig.AvroSerializerAutoConfiguration
+org.axonframework.springboot.autoconfig.LegacyAxonAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonTimeoutAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonDbSchedulerAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonJobRunrAutoConfiguration
