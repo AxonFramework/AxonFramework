@@ -16,17 +16,15 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -47,7 +45,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -76,7 +73,7 @@ import static org.axonframework.common.BuilderUtils.assertPositive;
  * @deprecated This will be removed.
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
-public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implements Lifecycle {
+public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(LegacyEmbeddedEventStore.class);
 
@@ -95,12 +92,12 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implement
     private volatile Node oldest;
 
     /**
-     * Instantiate a {@link LegacyEmbeddedEventStore} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code LegacyEmbeddedEventStore} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link LegacyEventStorageEngine} is not {@code null}, and will throw an {@link
      * AxonConfigurationException} if it is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link LegacyEmbeddedEventStore} instance
+     * @param builder the {@link Builder} used to instantiate a {@code LegacyEmbeddedEventStore} instance
      */
     protected LegacyEmbeddedEventStore(Builder builder) {
         super(builder);
@@ -113,7 +110,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implement
     }
 
     /**
-     * Instantiate a Builder to be able to create an {@link LegacyEmbeddedEventStore}.
+     * Instantiate a Builder to be able to create an {@code LegacyEmbeddedEventStore}.
      * <p>
      * The following configurable fields have defaults:
      * <ul>
@@ -129,7 +126,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implement
      * </ul>
      * The {@link LegacyEventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
      *
-     * @return a Builder to be able to create a {@link LegacyEmbeddedEventStore}
+     * @return a Builder to be able to create a {@code LegacyEmbeddedEventStore}
      */
     public static Builder builder() {
         return new Builder();
@@ -183,11 +180,6 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implement
             node = node.next;
         }
         return node;
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
-        handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS - 10, this::shutDown);
     }
 
     private static class Node {

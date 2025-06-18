@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,12 +33,8 @@ class ObjectNodeToJsonNodeConverterTest {
     private final ObjectNodeToJsonNodeConverter testSubject = new ObjectNodeToJsonNodeConverter();
 
     @Test
-    void expectedSourceType() {
+    void validateSourceAndTargetType() {
         assertEquals(ObjectNode.class, testSubject.expectedSourceType());
-    }
-
-    @Test
-    void targetType() {
         assertEquals(JsonNode.class, testSubject.targetType());
     }
 
@@ -49,5 +45,11 @@ class ObjectNodeToJsonNodeConverterTest {
         JsonNode result = testSubject.convert(expectedJsonNode);
 
         assertEquals(expectedJsonNode, result);
+    }
+
+    @Test
+    void convertIsNullSafe() {
+        assertDoesNotThrow(() -> testSubject.convert(null));
+        assertNull(testSubject.convert(null));
     }
 }

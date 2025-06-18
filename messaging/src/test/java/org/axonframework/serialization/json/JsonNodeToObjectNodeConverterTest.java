@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.SerializationException;
 import org.junit.jupiter.api.*;
 
@@ -35,12 +36,8 @@ class JsonNodeToObjectNodeConverterTest {
     private final JsonNodeToObjectNodeConverter testSubject = new JsonNodeToObjectNodeConverter();
 
     @Test
-    void expectedSourceType() {
+    void validateSourceAndTargetType() {
         assertEquals(JsonNode.class, testSubject.expectedSourceType());
-    }
-
-    @Test
-    void targetType() {
         assertEquals(ObjectNode.class, testSubject.targetType());
     }
 
@@ -57,6 +54,12 @@ class JsonNodeToObjectNodeConverterTest {
     void convertThrowsException() {
         JsonNode testJsonNode = new TextNode("some-text");
 
-        assertThrows(SerializationException.class, () -> testSubject.convert(testJsonNode));
+        assertThrows(ConversionException.class, () -> testSubject.convert(testJsonNode));
+    }
+
+    @Test
+    void convertIsNullSafe() {
+        assertDoesNotThrow(() -> testSubject.convert(null));
+        assertNull(testSubject.convert(null));
     }
 }

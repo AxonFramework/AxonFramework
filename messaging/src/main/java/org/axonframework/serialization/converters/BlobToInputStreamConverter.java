@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package org.axonframework.serialization.converters;
 
-import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.InputStream;
@@ -24,26 +26,36 @@ import java.sql.Blob;
 import java.sql.SQLException;
 
 /**
+ * A {@link ContentTypeConverter} implementation that converts {@link Blob} into an {@link InputStream}.
+ *
  * @author Allard Buijze
+ * @since 2.3.0
  */
-public class BlobToInputStreamConverter implements ContentTypeConverter<Blob,InputStream> {
+public class BlobToInputStreamConverter implements ContentTypeConverter<Blob, InputStream> {
 
     @Override
+    @Nonnull
     public Class<Blob> expectedSourceType() {
         return Blob.class;
     }
 
     @Override
+    @Nonnull
     public Class<InputStream> targetType() {
         return InputStream.class;
     }
 
     @Override
-    public InputStream convert(Blob original) {
+    @Nullable
+    public InputStream convert(@Nullable Blob input) {
+        if (input == null) {
+            return null;
+        }
+
         try {
-            return original.getBinaryStream();
+            return input.getBinaryStream();
         } catch (SQLException e) {
-            throw new CannotConvertBetweenTypesException("Error while attempting to read data from Blob", e);
+            throw new ConversionException("Error while attempting to read data from Blob.", e);
         }
     }
 }

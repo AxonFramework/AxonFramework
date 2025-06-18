@@ -26,12 +26,10 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.config.EventProcessingConfiguration;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +39,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -52,7 +49,7 @@ import static java.util.stream.Collectors.toMap;
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class EventProcessorControlService implements Lifecycle {
+public class EventProcessorControlService {
 
     private static final Logger logger = LoggerFactory.getLogger(EventProcessorControlService.class);
     private static final String SUBSCRIBING_EVENT_PROCESSOR_MODE = "Subscribing";
@@ -64,7 +61,7 @@ public class EventProcessorControlService implements Lifecycle {
     protected final Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorConfig;
 
     /**
-     * Initialize a {@link EventProcessorControlService}.
+     * Initialize a {@code EventProcessorControlService}.
      * <p>
      * This service adds processor instruction handlers to the {@link ControlChannel} of the
      * {@link AxonServerConnectionManager#getDefaultContext() default context}. Doing so ensures operation like the
@@ -90,7 +87,7 @@ public class EventProcessorControlService implements Lifecycle {
     }
 
     /**
-     * Initialize a {@link EventProcessorControlService}.
+     * Initialize a {@code EventProcessorControlService}.
      * <p>
      * This service adds processor instruction handlers to the {@link ControlChannel} of the given {@code context}.
      * Doing so ensures operation like the {@link EventProcessor#start() start} and
@@ -114,11 +111,6 @@ public class EventProcessorControlService implements Lifecycle {
         this.eventProcessingConfiguration = eventProcessingConfiguration;
         this.context = context;
         this.processorConfig = processorConfig;
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-        lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
     }
 
     /**
