@@ -343,13 +343,6 @@ class PooledStreamingEventProcessorTest {
         });
     }
 
-    // HERE TODO - Discuss: Perfect candidate to move to a commons test utils module?
-//    private static List<EventMessage<?>> createEvents(int number) {
-//        return IntStream.range(0, number)
-//                        .mapToObj(i -> new GenericEventMessage<>(new MessageType("event"), i))
-//                        .collect(Collectors.toList());
-//    }
-
     private long tokenPosition(TrackingToken token) {
         return token == null ? 0 : token.position().orElse(0);
     }
