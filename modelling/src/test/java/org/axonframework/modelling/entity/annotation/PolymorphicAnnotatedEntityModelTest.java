@@ -268,7 +268,7 @@ class PolymorphicAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTe
         }
 
         /**
-         * Tests that changing the GitHub username of the lead developer works correctly. In other words, it tests whether
+         * Tests that changing the GitHub username of a regular developer works correctly. In other words, it tests whether
          * it chooses the matching field out of the two in the parent class.
          */
         @Test
