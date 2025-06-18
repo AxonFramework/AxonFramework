@@ -19,14 +19,13 @@ package org.axonframework.modelling.entity.child;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.BuilderUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
-import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 
 import java.util.List;
 import java.util.Objects;
@@ -37,28 +36,28 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Abstract {@link EntityChildModel} that implements common functionality for most implementations. It defines how to
- * handle commands and events for a child entity. The implementor is responsible for defining how to resolve the child
- * entities from the parent ({@link #getChildEntities(Object)}) and how to apply the evolved child entities to the
- * parent ({@link #applyEvolvedChildEntities(Object, List)}).
+ * Abstract {@link EntityChildMetamodel} that implements common functionality for most implementations. It
+ * defines how to handle commands and events for a child entity. The implementor is responsible for defining how to
+ * resolve the child entities from the parent ({@link #getChildEntities(Object)}) and how to apply the evolved child
+ * entities to the parent ({@link #applyEvolvedChildEntities(Object, List)}).
  *
  * @param <C> The type of the child entity.
  * @param <P> The type of the parent entity.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel<C, P> {
+public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildMetamodel<C, P> {
 
-    protected final EntityModel<C> childEntityModel;
+    protected final EntityMetamodel<C> metamodel;
     protected final CommandTargetResolver<C> commandTargetResolver;
     protected final EventTargetMatcher<C> eventTargetMatcher;
 
-    protected AbstractEntityChildModel(
-            @Nonnull EntityModel<C> childEntityModel,
+    protected AbstractEntityChildMetamodel(
+            @Nonnull EntityMetamodel<C> metamodel,
             @Nonnull CommandTargetResolver<C> commandTargetResolver,
             @Nonnull EventTargetMatcher<C> eventTargetMatcher
     ) {
-        this.childEntityModel = requireNonNull(childEntityModel, "The childEntityModel may not be null.");
+        this.metamodel = requireNonNull(metamodel, "The metamodel may not be null.");
         this.commandTargetResolver =
                 requireNonNull(commandTargetResolver, "The commandTargetResolver may not be null.");
         this.eventTargetMatcher =
@@ -68,7 +67,7 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
     @Nonnull
     @Override
     public Set<QualifiedName> supportedCommands() {
-        return childEntityModel.supportedCommands();
+        return metamodel.supportedCommands();
     }
 
     @Override
@@ -95,7 +94,7 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
         if (targetChildEntity == null) {
             return MessageStream.failed(new ChildEntityNotFoundException(message, parentEntity));
         }
-        return childEntityModel.handleInstance(message, targetChildEntity, context);
+        return metamodel.handleInstance(message, targetChildEntity, context);
     }
 
     protected abstract List<C> getChildEntities(P entity);
@@ -108,7 +107,7 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
                 .map(child -> {
                     if (eventTargetMatcher.matches(child, event, context)) {
                         evolvedChildEntity.set(true);
-                        return childEntityModel.evolve(child, event, context);
+                        return metamodel.evolve(child, event, context);
                     }
                     return child;
                 })
@@ -125,28 +124,28 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
     @Nonnull
     @Override
     public Class<C> entityType() {
-        return childEntityModel.entityType();
+        return metamodel.entityType();
     }
 
     protected abstract static class Builder<C, P, R extends Builder<C, P, R>> {
 
-        protected final EntityModel<C> childEntityModel;
+        protected final EntityMetamodel<C> metamodel;
         protected CommandTargetResolver<C> commandTargetResolver;
         protected EventTargetMatcher<C> eventTargetMatcher;
 
         @SuppressWarnings("unused") // Is used for generics
         protected Builder(@Nonnull Class<P> parentClass,
-                          @Nonnull EntityModel<C> childEntityModel) {
+                          @Nonnull EntityMetamodel<C> metamodel) {
             requireNonNull(parentClass, "The parentClass may not be null.");
-            this.childEntityModel = requireNonNull(childEntityModel, "The childEntityModel may not be null.");
+            this.metamodel = requireNonNull(metamodel, "The metamodel may not be null.");
         }
 
         /**
          * Sets the {@link CommandTargetResolver} to use for resolving the child entity to handle the command. This
          * should return one child entity, or {@code null} if no child entity should handle the command.
          *
-         * @param commandTargetResolver The {@link CommandTargetResolver} to use for resolving the child entity
-         *                              to handle the command.
+         * @param commandTargetResolver The {@link CommandTargetResolver} to use for resolving the child entity to
+         *                              handle the command.
          * @return This builder instance.
          */
         @SuppressWarnings("unchecked")
@@ -157,8 +156,10 @@ public abstract class AbstractEntityChildModel<C, P> implements EntityChildModel
         }
 
         protected void validate() {
-            BuilderUtils.assertNonNull(commandTargetResolver, "The commandTargetResolver must be set before building the model.");
-            BuilderUtils.assertNonNull(eventTargetMatcher, "The eventTargetMatcher must be set before building the model.");
+            BuilderUtils.assertNonNull(commandTargetResolver,
+                                       "The commandTargetResolver must be set before building the metamodel.");
+            BuilderUtils.assertNonNull(eventTargetMatcher,
+                                       "The eventTargetMatcher must be set before building the metamodel.");
         }
 
         /**

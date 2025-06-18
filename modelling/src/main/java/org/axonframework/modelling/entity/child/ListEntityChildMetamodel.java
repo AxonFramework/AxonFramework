@@ -17,34 +17,34 @@
 package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * An {@link EntityChildModel} that handles commands and events for a list of child entities. It will use the provided
- * {@link ChildEntityFieldDefinition} to resolve the child entities from the parent entity. Once the entities are
- * resolved, it will delegate the command- and event-handling to the child entity model(s), based on the
- * {@code commandTargetResolver} and {@code eventTargetMatcher} respectively.
+ * An {@link EntityChildMetamodel} that handles commands and events for a list of child entities. It will use
+ * the provided {@link ChildEntityFieldDefinition} to resolve the child entities from the parent entity. Once the
+ * entities are resolved, it will delegate the command- and event-handling to the child entity metamodel(s), based on
+ * the {@code commandTargetResolver} and {@code eventTargetMatcher} respectively.
  *
  * @param <C> The type of the child entity.
  * @param <P> The type of the parent entity.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
+public class ListEntityChildMetamodel<C, P> extends AbstractEntityChildMetamodel<C, P> {
 
     private final ChildEntityFieldDefinition<P, List<C>> childEntityFieldDefinition;
 
-    private ListEntityChildModel(
-            @Nonnull EntityModel<C> childEntityModel,
+    private ListEntityChildMetamodel(
+            @Nonnull EntityMetamodel<C> metamodel,
             @Nonnull ChildEntityFieldDefinition<P, List<C>> childEntityFieldDefinition,
             @Nonnull CommandTargetResolver<C> commandTargetResolver,
             @Nonnull EventTargetMatcher<C> eventTargetMatcher
     ) {
-        super(childEntityModel, commandTargetResolver, eventTargetMatcher);
+        super(metamodel, commandTargetResolver, eventTargetMatcher);
         this.childEntityFieldDefinition =
                 requireNonNull(childEntityFieldDefinition, "The childEntityFieldDefinition may not be null.");
     }
@@ -66,8 +66,8 @@ public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
 
     @Override
     @Nonnull
-    public EntityModel<C> entityModel() {
-        return childEntityModel;
+    public EntityMetamodel<C> entityMetamodel() {
+        return metamodel;
     }
 
     @Override
@@ -76,44 +76,43 @@ public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
     }
 
     /**
-     * Creates a new {@link Builder} for the given parent class and child entity model. The
+     * Creates a new {@link Builder} for the given parent class and child entity metamodel. The
      * {@link ChildEntityFieldDefinition} is required to resolve the child entities from the parent entity and evolve
      * the parent entity based on the child entities. The {@link CommandTargetResolver commandTargetResolver} and
      * {@link EventTargetMatcher eventTargetMatcher} are both required, as they are used to match the child entities to
      * the command and event respectively.
      *
-     * @param parentClass The class of the parent entity.
-     * @param entityModel The {@link EntityModel} of the child entity.
-     * @param <C>         The type of the child entity.
-     * @param <P>         The type of the parent entity.
-     * @return A new {@link Builder} for the given parent class and child entity model.
+     * @param parentClass              The class of the parent entity.
+     * @param entityMetamodel The {@link EntityMetamodel} of the child entity.
+     * @param <C>                      The type of the child entity.
+     * @param <P>                      The type of the parent entity.
+     * @return A new {@link Builder} for the given parent class and child entity metamodel.
      */
     @Nonnull
     public static <C, P> Builder<C, P> forEntityModel(@Nonnull Class<P> parentClass,
-                                                      @Nonnull EntityModel<C> entityModel
+                                                      @Nonnull EntityMetamodel<C> entityMetamodel
     ) {
-        return new Builder<>(parentClass, entityModel);
+        return new Builder<>(parentClass, entityMetamodel);
     }
 
     /**
-     * Builder for creating a {@link ListEntityChildModel} for the given parent class and child entity model. The
-     * builder can be used to configure the child entity model and create a new instance of
-     * {@link ListEntityChildModel}. The {@link ChildEntityFieldDefinition} is required to resolve the child entities
-     * from the parent entity and evolve the parent entity based on the child entities. The
+     * Builder for creating a {@link ListEntityChildMetamodel} for the given parent class and child entity
+     * metamodel. The builder can be used to configure the child entity metamodel and create a new instance of
+     * {@link ListEntityChildMetamodel}. The {@link ChildEntityFieldDefinition} is required to resolve the
+     * child entities from the parent entity and evolve the parent entity based on the child entities. The
      * {@link CommandTargetResolver commandTargetResolver} and {@link EventTargetMatcher eventTargetMatcher} are both
      * required, as they are used to match the child entities to the command and event respectively.
      *
      * @param <C> The type of the child entity.
      * @param <P> The type of the parent entity.
      */
-    public static class Builder<C, P> extends AbstractEntityChildModel.Builder<C, P, Builder<C, P>> {
+    public static class Builder<C, P> extends AbstractEntityChildMetamodel.Builder<C, P, Builder<C, P>> {
 
         private ChildEntityFieldDefinition<P, List<C>> childEntityFieldDefinition;
 
         @SuppressWarnings("unused") // Is used for generics
-        private Builder(@Nonnull Class<P> parentClass,
-                        @Nonnull EntityModel<C> childEntityModel) {
-            super(parentClass, childEntityModel);
+        private Builder(@Nonnull Class<P> parentClass, @Nonnull EntityMetamodel<C> metamodel) {
+            super(parentClass, metamodel);
         }
 
         /**
@@ -132,16 +131,16 @@ public class ListEntityChildModel<C, P> extends AbstractEntityChildModel<C, P> {
         }
 
         /**
-         * Builds a new {@link ListEntityChildModel} instance with the configured properties. The
+         * Builds a new {@link ListEntityChildMetamodel} instance with the configured properties. The
          * {@link ChildEntityFieldDefinition}, {@link EventTargetMatcher}, and {@link CommandTargetResolver} are
          * required to be set before calling this method.
          *
-         * @return A new {@link ListEntityChildModel} instance with the configured properties.
+         * @return A new {@link ListEntityChildMetamodel} instance with the configured properties.
          */
-        public ListEntityChildModel<C, P> build() {
+        public ListEntityChildMetamodel<C, P> build() {
             this.validate();
-            return new ListEntityChildModel<>(
-                    childEntityModel,
+            return new ListEntityChildMetamodel<>(
+                    metamodel,
                     childEntityFieldDefinition,
                     commandTargetResolver,
                     eventTargetMatcher

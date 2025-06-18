@@ -45,7 +45,7 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
                     ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
                     eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
-                    // Model through magic of repository automatically updated
+                    // Entity through magic of repository automatically updated
                     assertEquals(student.getName(), payload.name());
                     return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
                 }
@@ -88,7 +88,7 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
                            EventAppender eventAppender) {
             // Change name through event
             eventAppender.append(new StudentNameChangedEvent(student.getId(), command.name()));
-            // Model through magic of repository automatically updated
+            // Entity through magic of repository automatically updated
             assertEquals(student.getName(), command.name());
         }
     }

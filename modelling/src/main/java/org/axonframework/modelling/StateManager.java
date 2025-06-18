@@ -83,9 +83,9 @@ public interface StateManager {
      * @param <T>     The type of state to retrieve.
      * @param type    The type of state to retrieve.
      * @param id      The id of the state to retrieve.
-     * @param context The {@link ProcessingContext context} to load the model in.
+     * @param context The {@link ProcessingContext context} to load the entity in.
      * @param <I>     The type of the identifier of the entity.
-     * @return a {@link CompletableFuture} which resolves to the model instance.
+     * @return a {@link CompletableFuture} which resolves to the entity instance.
      */
     @Nonnull
     default <I, T> CompletableFuture<T> loadEntity(
@@ -102,10 +102,10 @@ public interface StateManager {
      *
      * @param type    The type of state to retrieve.
      * @param id      The id of the state to retrieve.
-     * @param context The {@link ProcessingContext context} to load the model in.
+     * @param context The {@link ProcessingContext context} to load the entity in.
      * @param <I>     The type of the identifier of the entity.
      * @param <T>     The type of the entity.
-     * @return a {@link CompletableFuture} which resolves to the model instance.
+     * @return a {@link CompletableFuture} which resolves to the entity instance.
      */
     <I, T> CompletableFuture<ManagedEntity<I, T>> loadManagedEntity(
             @Nonnull Class<T> type,

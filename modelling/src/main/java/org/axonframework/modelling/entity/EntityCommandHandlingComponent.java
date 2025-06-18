@@ -38,7 +38,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * A {@link CommandHandlingComponent} that handles commands for an entity. It will resolve the identifier of the entity
  * through the provided {@link EntityIdResolver}, load it from the provided {@link Repository} and delegate the handling
- * of the command to the {@link EntityModel} of the entity.
+ * of the command to the {@link EntityMetamodel} of the entity.
  *
  * @param <ID> The type of the identifier of the entity.
  * @param <E>  The type of the entity.
@@ -48,29 +48,29 @@ import java.util.concurrent.CompletableFuture;
 public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingComponent, DescribableComponent {
 
     private final Repository<ID, E> repository;
-    private final EntityModel<E> entityModel;
+    private final EntityMetamodel<E> metamodel;
     private final EntityIdResolver<ID> idResolver;
 
     /**
      * Creates a new {@link CommandHandlingComponent} that handles commands for the given entity type.
      *
-     * @param repository  The {@link Repository} to load the entity from.
-     * @param entityModel The {@link EntityModel} to delegate the handling of the command to.
-     * @param idResolver  The {@link EntityIdResolver} to resolve the identifier of the entity.
+     * @param repository The {@link Repository} to load the entity from.
+     * @param metamodel  The {@link EntityMetamodel} to delegate the handling of the command to.
+     * @param idResolver The {@link EntityIdResolver} to resolve the identifier of the entity.
      */
     public EntityCommandHandlingComponent(
             @Nonnull Repository<ID, E> repository,
-            @Nonnull EntityModel<E> entityModel,
+            @Nonnull EntityMetamodel<E> metamodel,
             @Nonnull EntityIdResolver<ID> idResolver
     ) {
         this.repository = Objects.requireNonNull(repository, "The repository may not be null.");
-        this.entityModel = Objects.requireNonNull(entityModel, "The entityModel may not be null.");
+        this.metamodel = Objects.requireNonNull(metamodel, "The metamodel may not be null.");
         this.idResolver = Objects.requireNonNull(idResolver, "The idResolver may not be null.");
     }
 
     @Override
     public Set<QualifiedName> supportedCommands() {
-        return entityModel.supportedCommands();
+        return metamodel.supportedCommands();
     }
 
     @Nonnull
@@ -84,9 +84,9 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
             var loadFuture = loadFromRepository(context, id, messageName);
             return DelayedMessageStream.createSingle(loadFuture.thenApply(me -> {
                 if (me.entity() != null) {
-                    return entityModel.handleInstance(command, me.entity(), context).first();
+                    return metamodel.handleInstance(command, me.entity(), context).first();
                 }
-                return entityModel.handleCreate(command, context).first();
+                return metamodel.handleCreate(command, context).first();
             }));
         } catch (Exception e) {
             return MessageStream.failed(e);
@@ -107,8 +107,8 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
      */
     private CompletableFuture<ManagedEntity<ID, E>> loadFromRepository(
             ProcessingContext context, ID id, QualifiedName messageName) {
-        var isCreationalHandler = entityModel.supportedCreationalCommands().contains(messageName);
-        var isInstanceHandler = entityModel.supportedInstanceCommands().contains(messageName);
+        var isCreationalHandler = metamodel.supportedCreationalCommands().contains(messageName);
+        var isInstanceHandler = metamodel.supportedInstanceCommands().contains(messageName);
         if (isCreationalHandler) {
             // With a creational command, we don't want to create an initial state if it doesn't exist yet.
             // As such, we call load.
@@ -123,13 +123,13 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
         throw new NoHandlerForCommandException(
                 ("No handler for command [%s] in entity [%s] with id [%s]. "
                         + "Ensure that the command is either a creational or an instance command.").formatted(
-                        messageName, entityModel.entityType().getName(), id));
+                        messageName, metamodel.entityType().getName(), id));
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("repository", repository);
-        descriptor.describeProperty("entityModel", entityModel);
+        descriptor.describeProperty("metamodel", metamodel);
         descriptor.describeProperty("idResolver", idResolver);
     }
 }

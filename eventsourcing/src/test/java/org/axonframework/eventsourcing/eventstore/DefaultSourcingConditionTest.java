@@ -31,44 +31,30 @@ class DefaultSourcingConditionTest {
 
     private static final EventCriteria TEST_CRITERIA = EventCriteria.havingTags("key", "value");
     private static final long TEST_START = 1L;
-    private static final long TEST_END = 10L;
 
     private SourcingCondition testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new DefaultSourcingCondition(TEST_START, TEST_END, TEST_CRITERIA);
+        testSubject = new DefaultSourcingCondition(TEST_START, TEST_CRITERIA);
     }
 
     @Test
     void throwsExceptionWhenConstructingWithNullEventCriteria() {
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class,
-                     () -> new DefaultSourcingCondition(TEST_START, TEST_END, null));
+                     () -> new DefaultSourcingCondition(TEST_START, null));
     }
 
     @Test
     void combineUsesTheSmallestStartValue() {
         long biggerStart = testSubject.start() + 10;
         SourcingCondition testSubjectWithLargerStart =
-                new DefaultSourcingCondition(biggerStart, TEST_END, TEST_CRITERIA);
+                new DefaultSourcingCondition(biggerStart, TEST_CRITERIA);
 
         SourcingCondition result = testSubject.or(testSubjectWithLargerStart);
 
         assertNotEquals(biggerStart, result.start());
         assertEquals(testSubject.start(), result.start());
-    }
-
-    @Test
-    void combineUsesTheLargestEndValue() {
-        long smallerEnd = testSubject.end() - 5;
-        SourcingCondition testSubjectWithSmallerEnd =
-                new DefaultSourcingCondition(TEST_START, smallerEnd, TEST_CRITERIA);
-
-        SourcingCondition result = testSubject.or(testSubjectWithSmallerEnd);
-
-        long resultEnd = result.end();
-        assertNotEquals(smallerEnd, resultEnd);
-        assertEquals(testSubject.end(), resultEnd);
     }
 }

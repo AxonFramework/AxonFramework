@@ -40,35 +40,34 @@ import java.util.Set;
 import java.util.concurrent.CompletionException;
 
 /**
- * Abstract base class for tests of the {@link AnnotatedEntityModel} that provide common setup for parameter resolver
- * factory and message type resolver. In addition, it makes it easier to fire commands and events against the model.
+ * Abstract base class for tests of the {@link AnnotatedEntityMetamodel} that provide common setup for
+ * parameter resolver factory and message type resolver. In addition, it makes it easier to fire commands and events
+ * against the metamodel.
  * <p>
  * This class evolves the entity based on any events published, mimicking the behavior of a repository.
  *
  * @param <E> The type of the entity being tested.
  * @author Mitchell Herrijgers
  */
-public abstract class AbstractAnnotatedEntityModelTest<E> {
+public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
 
     protected final ParameterResolverFactory parameterResolverFactory = createParameterResolverFactory();
     protected final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
-    protected final AnnotatedEntityModel<E> model = getModel();
-    protected E modelState = null;
+    protected final AnnotatedEntityMetamodel<E> metamodel = getMetamodel();
+    protected E entityState = null;
     protected List<Object> publishedEvents = new LinkedList<>();
 
-    protected abstract AnnotatedEntityModel<E> getModel();
+    protected abstract AnnotatedEntityMetamodel<E> getMetamodel();
 
     protected Object dispatchInstanceCommand(Object command) {
         CommandMessage<?> message = createCommand(command);
         try {
-            return model.handleInstance(
-                                message, modelState, StubProcessingContext.forMessage(message)
-                        )
-                        .first()
-                        .asCompletableFuture()
-                        .thenApply(MessageStream.Entry::message)
-                        .thenApply(CommandResultMessage::getPayload)
-                        .join();
+            return metamodel.handleInstance(message, entityState, StubProcessingContext.forMessage(message))
+                            .first()
+                            .asCompletableFuture()
+                            .thenApply(MessageStream.Entry::message)
+                            .thenApply(CommandResultMessage::getPayload)
+                            .join();
         } catch (Exception e) {
             if (e instanceof CompletionException && e.getCause() instanceof RuntimeException) {
                 throw (RuntimeException) e.getCause();
@@ -80,12 +79,12 @@ public abstract class AbstractAnnotatedEntityModelTest<E> {
     protected Object dispatchCreateCommand(Object command) {
         CommandMessage<?> message = createCommand(command);
         try {
-            return model.handleCreate(message, StubProcessingContext.forMessage(message))
-                        .first()
-                        .asCompletableFuture()
-                        .thenApply(MessageStream.Entry::message)
-                        .thenApply(CommandResultMessage::getPayload)
-                        .join();
+            return metamodel.handleCreate(message, StubProcessingContext.forMessage(message))
+                            .first()
+                            .asCompletableFuture()
+                            .thenApply(MessageStream.Entry::message)
+                            .thenApply(CommandResultMessage::getPayload)
+                            .join();
         } catch (Exception e) {
             if (e instanceof CompletionException && e.getCause() instanceof RuntimeException) {
                 throw (RuntimeException) e.getCause();
@@ -96,7 +95,7 @@ public abstract class AbstractAnnotatedEntityModelTest<E> {
 
     protected E evolve(E entity, Object event) {
         EventMessage<?> message = new GenericEventMessage<>(new MessageType(event.getClass()), event);
-        return model.evolve(entity, message, StubProcessingContext.forMessage(message));
+        return metamodel.evolve(entity, message, StubProcessingContext.forMessage(message));
     }
 
     protected <P> CommandMessage<P> createCommand(P command) {
@@ -108,7 +107,7 @@ public abstract class AbstractAnnotatedEntityModelTest<E> {
     }
 
     protected ParameterResolverFactory createParameterResolverFactory() {
-        var appender = new ModelEvolvingEventAppender();
+        var appender = new EntityEvolvingEventAppender();
         return new MultiParameterResolverFactory(
                 ClasspathParameterResolverFactory.forClass(
                         getClass()),
@@ -120,12 +119,12 @@ public abstract class AbstractAnnotatedEntityModelTest<E> {
         return messageTypeResolver.resolveOrThrow(clazz).qualifiedName();
     }
 
-    private class ModelEvolvingEventAppender implements EventAppender {
+    private class EntityEvolvingEventAppender implements EventAppender {
 
         @Override
         public void append(@Nonnull List<?> events) {
             publishedEvents.addAll(events);
-            if (modelState == null) {
+            if (entityState == null) {
                 return;
             }
             events.forEach(event -> {
@@ -135,9 +134,7 @@ public abstract class AbstractAnnotatedEntityModelTest<E> {
                 } else {
                     eventMessage = createEvent(event);
                 }
-                model.evolve(
-                        modelState, eventMessage, StubProcessingContext.forMessage(eventMessage)
-                );
+                metamodel.evolve(entityState, eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
         }
     }

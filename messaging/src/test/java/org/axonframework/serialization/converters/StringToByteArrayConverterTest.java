@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,43 @@
 
 package org.axonframework.serialization.converters;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link StringToByteArrayConverter}.
+ *
  * @author Allard Buijze
  */
 class StringToByteArrayConverterTest {
 
+    private StringToByteArrayConverter testSubject;
+
+    @BeforeEach
+    void setUp() {
+        testSubject = new StringToByteArrayConverter();
+    }
+
+
     @Test
-    void convert() throws UnsupportedEncodingException {
-        StringToByteArrayConverter testSubject = new StringToByteArrayConverter();
+    void validateSourceAndTargetType() {
+        assertEquals(String.class, testSubject.expectedSourceType());
+        assertEquals(byte[].class, testSubject.targetType());
+    }
+
+    @Test
+    void convert() {
         assertEquals(String.class, testSubject.expectedSourceType());
         assertEquals(byte[].class, testSubject.targetType());
         assertArrayEquals("hello".getBytes(StandardCharsets.UTF_8), testSubject.convert("hello"));
+    }
+
+    @Test
+    void convertIsNullSafe() {
+        assertDoesNotThrow(() -> testSubject.convert(null));
+        assertNull(testSubject.convert(null));
     }
 }

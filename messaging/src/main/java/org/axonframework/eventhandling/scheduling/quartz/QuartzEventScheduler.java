@@ -16,19 +16,17 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -53,7 +51,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.eventhandling.GenericEventMessage.clock;
@@ -69,7 +66,7 @@ import static org.quartz.JobKey.jobKey;
  * @see FireEventJob
  * @since 0.7
  */
-public class QuartzEventScheduler implements EventScheduler, Lifecycle {
+public class QuartzEventScheduler implements EventScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(QuartzEventScheduler.class);
 
@@ -233,11 +230,6 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     }
 
     @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
-    }
-
-    @Override
     public void shutdown() {
         try {
             scheduler.shutdown(true);
@@ -264,7 +256,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         private final Serializer serializer;
 
         /**
-         * Instantiate a {@link DirectEventJobDataBinder} with the provided {@link Serializer} for de-/serializing event
+         * Instantiate a {@code DirectEventJobDataBinder} with the provided {@link Serializer} for de-/serializing event
          * messages.
          *
          * @param serializer the {@link Serializer} used for de-/serializing event messages

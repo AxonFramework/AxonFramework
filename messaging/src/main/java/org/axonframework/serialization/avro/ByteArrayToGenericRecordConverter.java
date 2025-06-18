@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,24 @@
 
 package org.axonframework.serialization.avro;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.message.SchemaStore;
-import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
- * Content type converter between single-object-encoded bytes and Avro generic record.
+ * A {@link ContentTypeConverter} implementation that converts {@code byte[]} into an Avro {@link GenericRecord}.
+ * <p>
+ * Searches for the correct Avro {@link Schema} by extracting the {@link AvroUtil#fingerprint(Schema) fingerprint} from
+ * the given {@code byte[]}.
  *
  * @author Simon Zambrovski
  * @author Jan Galinski
@@ -40,38 +46,43 @@ public class ByteArrayToGenericRecordConverter implements ContentTypeConverter<b
     private final SchemaStore schemaStore;
 
     /**
-     * Constructs a content type converter used during deserialization for upcasting,
-     * to create {@link GenericRecord} from single-object-encoded for a given schema.
+     * Constructs a content type converter used during deserialization for upcasting, to create {@link GenericRecord}
+     * from single-object-encoded for a given schema.
      *
-     * @param schemaStore schema store to resolve schema from fingerprint.
+     * @param schemaStore The schema store to resolve schemas with based on a fingerprint.
      */
-    public ByteArrayToGenericRecordConverter(SchemaStore schemaStore) {
-        this.schemaStore = schemaStore;
+    public ByteArrayToGenericRecordConverter(@Nonnull SchemaStore schemaStore) {
+        this.schemaStore = Objects.requireNonNull(schemaStore, "The SchemaStore may not be null.");
     }
 
     @Override
+    @Nonnull
     public Class<byte[]> expectedSourceType() {
         return byte[].class;
     }
 
     @Override
+    @Nonnull
     public Class<GenericRecord> targetType() {
         return GenericRecord.class;
     }
 
     @Override
-    public GenericRecord convert(byte[] singleObjectEncodeBytes) {
+    @Nullable
+    public GenericRecord convert(@Nullable byte[] input) {
+        if (input == null) {
+            return null;
+        }
 
-        long fingerprint = AvroUtil.fingerprint(singleObjectEncodeBytes);
+        long fingerprint = AvroUtil.fingerprint(input);
         Schema writerSchema = schemaStore.findByFingerprint(fingerprint);
-        GenericDatumReader<GenericRecord> reader = new GenericDatumReader<>(writerSchema,
-                writerSchema,
-                AvroUtil.genericData);
+        GenericDatumReader<GenericRecord> reader =
+                new GenericDatumReader<>(writerSchema, writerSchema, AvroUtil.genericData);
 
         try {
-            return reader.read(null, decoderFactory.binaryDecoder(AvroUtil.payload(singleObjectEncodeBytes), null));
+            return reader.read(null, decoderFactory.binaryDecoder(AvroUtil.payload(input), null));
         } catch (IOException e) {
-            throw new CannotConvertBetweenTypesException("Cannot convert bytes to GenericRecord", e);
+            throw new ConversionException("Cannot convert bytes to GenericRecord.", e);
         }
     }
 }
