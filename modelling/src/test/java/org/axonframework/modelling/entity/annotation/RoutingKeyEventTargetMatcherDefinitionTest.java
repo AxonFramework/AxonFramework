@@ -16,7 +16,11 @@
 
 package org.axonframework.modelling.entity.annotation;
 
+import org.axonframework.commandhandling.annotation.RoutingKey;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
 import org.junit.jupiter.api.*;
 
@@ -66,5 +70,42 @@ class RoutingKeyEventTargetMatcherDefinitionTest {
 
     class ChildEntityWithoutRoutingKey {
 
+    }
+
+    @Test
+    void doesNotAllowMissingRoutingKeyOnMessage() throws NoSuchFieldException {
+        AnnotatedEntityModel<ChildEntityWithWrongRoutingKey> childEntityModel = mock(AnnotatedEntityModel.class);
+        when(childEntityModel.entityType()).thenReturn(ChildEntityWithWrongRoutingKey.class);
+
+        EventTargetMatcher<ChildEntityWithWrongRoutingKey> resolver = definition.createChildEntityMatcher(
+                childEntityModel,
+                ParentEntityWithWrongRoutingKeyChild.class.getDeclaredField("child"));
+
+        MessageType messageType = new MessageType(MyCommandPayload.class);
+        when(childEntityModel.getExpectedRepresentation(messageType.qualifiedName())).thenReturn((Class) MyCommandPayload.class);
+
+        assertThrows(UnknownRoutingKeyException.class, () -> {
+            resolver.matches(
+                    new ChildEntityWithWrongRoutingKey(),
+                    new GenericEventMessage<>(messageType, new MyCommandPayload("someValue")),
+                    new StubProcessingContext()
+            );
+        });
+    }
+
+    record MyCommandPayload(String notRoutingKey) {
+
+    }
+
+    class ParentEntityWithWrongRoutingKeyChild {
+
+        @EntityMember()
+        private List<ChildEntityWithWrongRoutingKey> child;
+    }
+
+    class ChildEntityWithWrongRoutingKey {
+
+        @RoutingKey
+        private String id;
     }
 }
