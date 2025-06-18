@@ -17,26 +17,26 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.stream.BlockingStream;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.Context;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.mockito.stubbing.*;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -71,20 +71,22 @@ class CoordinatorTest {
     private final TokenStore tokenStore = mock(TokenStore.class);
     private final ScheduledThreadPoolExecutor executorService = mock(ScheduledThreadPoolExecutor.class);
     @SuppressWarnings("unchecked")
-    private final StreamableMessageSource<TrackedEventMessage<?>> messageSource = mock(StreamableMessageSource.class);
+    private final StreamableEventSource<EventMessage<?>> messageSource = mock(StreamableEventSource.class);
 
     private final WorkPackage workPackage = mock(WorkPackage.class);
 
     @BeforeEach
     void setUp() {
+        when(messageSource.latestToken()).thenReturn(CompletableFuture.completedFuture(null));
+        when(messageSource.firstToken()).thenReturn(CompletableFuture.completedFuture(null));
         testSubject = Coordinator.builder()
                                  .name(PROCESSOR_NAME)
-                                 .messageSource(messageSource)
+                                 .eventSource(messageSource)
                                  .tokenStore(tokenStore)
                                  .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                                  .executorService(executorService)
                                  .workPackageFactory((segment, trackingToken) -> workPackage)
-                                 .initialToken(es -> ReplayToken.createReplayToken(es.createHeadToken()))
+                                 .initialToken(es -> es.firstToken().thenApply(ReplayToken::createReplayToken))
                                  .eventFilter(eventMessage -> true)
                                  .maxSegmentProvider(e -> SEGMENT_IDS.length)
                                  .build();
@@ -101,7 +103,7 @@ class CoordinatorTest {
         doReturn(token).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
         doThrow(releaseClaimException).when(tokenStore).releaseClaim(eq(PROCESSOR_NAME), anyInt());
         //noinspection resource
-        doThrow(streamOpenException).when(messageSource).openStream(any());
+        doThrow(streamOpenException).when(messageSource).open(any());
         doReturn(completedFuture(streamOpenException)).when(workPackage).abort(any());
         doReturn(SEGMENT_ZERO).when(workPackage).segment();
         doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
@@ -133,57 +135,49 @@ class CoordinatorTest {
         verify(tokenStore, times(1)).initializeTokenSegments(anyString(), anyInt(), isNull());
     }
 
-    @SuppressWarnings("rawtypes") // Mockito cannot deal with the wildcard generics of the TrackedEventMessage
     @Test
-    void ifCoordinationTaskSchedulesEventsWithTheSameTokenTogether() throws InterruptedException {
+    void ifCoordinationTaskSchedulesEventsWithTheSameTokenTogether() {
         TrackingToken testToken = new GlobalSequenceTrackingToken(0);
-        TrackedEventMessage testEventOne =
-                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("this-event"));
-        TrackedEventMessage testEventTwo =
-                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("that-event"));
-        List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
-        testEvents.add(testEventOne);
-        testEvents.add(testEventTwo);
+        var testEventOne = EventTestUtils.asEventMessage("this-event");
+        var testEventTwo = EventTestUtils.asEventMessage("this-event");
+        var testEntryOne = new SimpleEntry<>(testEventOne, trackingTokenContext(testToken));
+        var testEntryTwo = new SimpleEntry<>(testEventTwo, trackingTokenContext(testToken));
+        List<MessageStream.Entry<? extends EventMessage<?>>> testEntries = List.of(testEntryOne, testEntryTwo);
 
         when(workPackage.hasRemainingCapacity()).thenReturn(true)
                                                 .thenReturn(false);
         when(workPackage.isAbortTriggered()).thenReturn(false);
-        when(workPackage.scheduleEvents(testEvents)).thenReturn(true);
 
-        //noinspection unchecked
-        BlockingStream<TrackedEventMessage<?>> testStream = mock(BlockingStream.class);
-        when(testStream.setOnAvailableCallback(any())).thenReturn(false);
-        when(testStream.hasNextAvailable()).thenReturn(true)
-                                           .thenReturn(true)
-                                           .thenReturn(false);
-        //noinspection unchecked
-        when(testStream.nextAvailable()).thenReturn(testEventOne)
-                                        .thenReturn(testEventTwo);
-        //noinspection unchecked
-        when(testStream.peek()).thenReturn(Optional.of(testEventTwo))
-                               .thenReturn(Optional.of(testEventTwo))
-                               .thenReturn(Optional.empty());
+        when(workPackage.scheduleEvents(testEntries)).thenReturn(true);
+        when(workPackage.scheduleEvents(any())).thenReturn(true);
+
+        MessageStream<EventMessage<?>> testStream = MessageStream.fromIterable(
+                List.of(testEventOne, testEventTwo),
+                (e) -> trackingTokenContext(testToken)
+        );
 
         when(executorService.submit(any(Runnable.class))).thenAnswer(runTaskAsync());
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(SEGMENT_IDS);
         when(tokenStore.fetchAvailableSegments(PROCESSOR_NAME)).thenReturn(Collections.singletonList(SEGMENT_ONE));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ONE)).thenReturn(testToken);
-        when(messageSource.openStream(testToken)).thenReturn(testStream);
+        when(messageSource.open(StreamingCondition.startingFrom(testToken))).thenReturn(testStream);
 
         testSubject.start();
 
         assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(tokenStore).fetchToken(PROCESSOR_NAME, SEGMENT_ONE));
-        //noinspection resource
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(messageSource).openStream(testToken));
+
+        assertWithin(500,
+                     TimeUnit.MILLISECONDS,
+                     () -> verify(messageSource).open(StreamingCondition.startingFrom(testToken)));
 
         //noinspection unchecked
-        ArgumentCaptor<List<TrackedEventMessage<?>>> eventsCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<MessageStream.Entry<? extends EventMessage<?>>>> eventsCaptor = ArgumentCaptor.forClass(List.class);
         assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(workPackage).scheduleEvents(eventsCaptor.capture()));
 
-        List<TrackedEventMessage<?>> resultEvents = eventsCaptor.getValue();
+        var resultEvents = eventsCaptor.getValue();
         assertEquals(2, resultEvents.size());
-        assertTrue(resultEvents.contains(testEventOne));
-        assertTrue(resultEvents.contains(testEventTwo));
+        assertTrue(resultEvents.contains(testEntryOne));
+        assertTrue(resultEvents.contains(testEntryTwo));
 
         verify(workPackage, times(0)).scheduleEvent(any());
     }
@@ -208,7 +202,7 @@ class CoordinatorTest {
         testSubject.start();
 
         //asserts
-        verify(messageSource, never()).openStream(any(TrackingToken.class));
+        verify(messageSource, never()).open(any(StreamingCondition.class));
     }
 
     private Answer<Future<Void>> runTaskSync() {
@@ -221,5 +215,10 @@ class CoordinatorTest {
 
     private Answer<Future<Void>> runTaskAsync() {
         return invocationOnMock -> CompletableFuture.runAsync(invocationOnMock.getArgument(0));
+    }
+
+    private static Context trackingTokenContext(TrackingToken token) {
+        return TrackingToken.addToContext(
+                Context.empty(), token);
     }
 }

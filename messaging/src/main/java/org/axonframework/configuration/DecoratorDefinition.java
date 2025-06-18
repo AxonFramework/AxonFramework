@@ -97,7 +97,7 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
             @Override
             public <D extends C> DecoratorDefinition<C, D> with(@Nonnull ComponentDecorator<C, D> decorator) {
                 return new DefaultDecoratorDefinition<>(
-                        id -> Objects.equals(type, id.type()) && Objects.equals(name, id.name()),
+                        id -> type.isAssignableFrom(id.type()) && Objects.equals(name, id.name()),
                         decorator
                 );
             }

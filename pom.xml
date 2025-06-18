@@ -79,9 +79,9 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hikari.version>6.2.1</hikari.version>
         <hsqldb.version>2.7.2</hsqldb.version>
-        <hibernate-core.version>6.6.15.Final</hibernate-core.version>
+        <hibernate-core.version>6.6.18.Final</hibernate-core.version>
         <mysql-connector-java.version>9.3.0</mysql-connector-java.version>
-        <postgresql.version>42.7.5</postgresql.version>
+        <postgresql.version>42.7.7</postgresql.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>2.1.1</jakarta.annotation.version><!-- Don't upgrade due to JDK8 -->
         <jakarta.el.version>4.0.0</jakarta.el.version><!-- Don't upgrade due to JDK11 -->
@@ -93,8 +93,8 @@
         <log4j.version>2.24.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
-        <dropwizard.metrics.version>4.2.30</dropwizard.metrics.version>
-        <micrometer.version>1.15.0</micrometer.version>
+        <dropwizard.metrics.version>4.2.32</dropwizard.metrics.version>
+        <micrometer.version>1.15.1</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.17.5</byte-buddy.version>
         <commons-io.version>2.19.0</commons-io.version>
@@ -103,13 +103,13 @@
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.7.6</projectreactor.version>
+        <projectreactor.version>3.7.7</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
         <avro.version>1.12.0</avro.version>
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.13.1</gson.version>
-        <jackson.version>2.19.0</jackson.version>
+        <jackson.version>2.19.1</jackson.version>
         <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version>
@@ -123,19 +123,19 @@
         <awaitility.version>4.3.0</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.12.2</junit.jupiter.version>
+        <junit.jupiter.version>5.13.1</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
-        <assertj-core.version>3.27.3</assertj-core.version>
-        <testcontainers.version>1.19.3</testcontainers.version>
+        <testcontainers.version>1.21.1</testcontainers.version>
+        <assertj.version>3.27.3</assertj.version>
         <!-- Validation -->
-        <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
+        <hibernate-validator.version>8.0.2.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
         <central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
         <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
         <felix.maven-bundle-plugin.version>5.1.9</felix.maven-bundle-plugin.version>
         <jacoco-maven.version>0.8.13</jacoco-maven.version>
         <maven-assembly.version>3.7.1</maven-assembly.version>
-        <maven-clean.version>3.4.1</maven-clean.version>
+        <maven-clean.version>3.5.0</maven-clean.version>
         <maven-compiler.version>3.14.0</maven-compiler.version>
         <maven-enforcer.version>3.5.0</maven-enforcer.version>
         <maven-failsafe.version>3.5.3</maven-failsafe.version>
@@ -169,7 +169,7 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>${assertj-core.version}</version>
+            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Logging -->

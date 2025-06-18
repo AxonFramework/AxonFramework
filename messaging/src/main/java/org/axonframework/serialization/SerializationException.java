@@ -23,7 +23,9 @@ import org.axonframework.common.AxonNonTransientException;
  *
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated By shifting from the {@link Serializer} to the {@link Converter}, this exception becomes obsolete.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class SerializationException extends AxonNonTransientException {
 
     /**

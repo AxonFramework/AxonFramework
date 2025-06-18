@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,9 @@ import jakarta.annotation.Nonnull;
  *
  * @author Marc Gathier
  * @since 4.0
+ * @deprecated Replaced entirely by the fact that metadata only accepts String-based values.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public final class GrpcMetaDataAwareSerializer implements Serializer {
 
     private final Serializer delegate;

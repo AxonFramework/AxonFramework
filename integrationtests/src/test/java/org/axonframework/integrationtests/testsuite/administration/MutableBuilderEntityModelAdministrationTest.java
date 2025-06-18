@@ -148,8 +148,8 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .build();
 
         // Person is the polymorphic entity type
-        EntityModel<MutablePerson> personModel = PolymorphicEntityModel
-                .forSuperType(MutablePerson.class)
+        EntityModel<MutablePerson> personModel = EntityModel
+                .forPolymorphicEntityType(MutablePerson.class)
                 .addConcreteType(employeeModel)
                 .addConcreteType(customerModel)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutablePerson.class))

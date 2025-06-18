@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * A {@link RuntimeException} thrown whenever a {@link Component} has been overridden in a {@link ComponentRegistry}.
@@ -33,9 +34,17 @@ public class ComponentOverrideException extends RuntimeException {
      * identifier of the {@link Component} that has been overridden in a {@link ApplicationConfigurer}.
      *
      * @param type The type of the component this object identifiers, typically an interface.
-     * @param name The name of the component this object identifiers.
+     * @param name The name of the component this object identifiers, potentially {@code null} when unimportant.
      */
-    public ComponentOverrideException(@Nonnull Class<?> type, @Nonnull String name) {
-        super("Cannot override Component with type [" + type + "] and name [" + name + "]; it is already registered.");
+    public ComponentOverrideException(@Nonnull Class<?> type, @Nullable String name) {
+        super(exceptionMessageFor(type, name));
+    }
+
+    private static String exceptionMessageFor(Class<?> type, String name) {
+        if (name != null) {
+            return "Cannot override Component with type [" + type + "] and name ["
+                    + name + "]; it is already registered.";
+        }
+        return "Cannot override Component with type [" + type + "]; it is already registered.";
     }
 }

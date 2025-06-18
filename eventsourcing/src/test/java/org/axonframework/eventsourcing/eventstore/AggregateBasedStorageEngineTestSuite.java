@@ -320,9 +320,9 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     }
 
     @Test
-    void sourcingWithStartAndEndReturnsEventsWithinBounds() {
+    void sourcingBeginsEventStreamFromTheSpecifiedPosition() {
         // given...
-        Set<String> expected = Set.of("event-2");
+        Set<String> expected = Set.of("event-2", "event-4");
         Set<String> actual = new HashSet<>();
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_AGGREGATE_TAGS),
@@ -335,10 +335,11 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                    .join();
 
         // when...
-        SourcingCondition testCondition = SourcingCondition.conditionFor(1, 1, TEST_AGGREGATE_CRITERIA);
+        SourcingCondition testCondition = SourcingCondition.conditionFor(1, TEST_AGGREGATE_CRITERIA);
         MessageStream<EventMessage<?>> result = testSubject.source(testCondition);
         // then...
         StepVerifier.create(result.asFlux())
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().getPayload()))
                     .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().getPayload()))
                     .assertNext(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
@@ -346,7 +347,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     }
 
     @Test
-    void sourcingFromTwoAggregatesWithStartAndEndRespectsBounds() {
+    void sourcingFromTwoAggregatesBeginsEventStreamsFromTheSpecifiedPositions() {
         // given...
         Set<String> expected = Set.of("event-2", "event-3", "event-4", "event-5");
         Set<String> actual = new HashSet<>();
@@ -362,7 +363,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         // when...
         MessageStream<EventMessage<?>> source;
         SourcingCondition testCondition =
-                SourcingCondition.conditionFor(1, 2, TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
+                SourcingCondition.conditionFor(1, TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
         try {
             source = testSubject.source(testCondition);
         } catch (IllegalArgumentException e) {
@@ -408,7 +409,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA)
                                                 .withMarker(consistencyMarker),
                                  taggedEventMessage("event-1", TEST_AGGREGATE_TAGS))
-                   .thenApply(AppendTransaction::commit)
+                   .thenCompose(AppendTransaction::commit)
                    .join();
 
         CompletableFuture<ConsistencyMarker> actual =

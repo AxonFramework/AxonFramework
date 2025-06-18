@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,41 +16,55 @@
 
 package org.axonframework.serialization.xml;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.ParsingException;
-import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.ContentTypeConverter;
+import org.axonframework.serialization.ConversionException;
+import org.axonframework.serialization.Converter;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
 /**
- * Converter that converts an input stream to a XOM document. It assumes that the input stream provides UTF-8
- * formatted XML.
+ * A {@link ContentTypeConverter} implementation that converts an {@link InputStream input stream} to a XOM
+ * {@link Document document}.
+ * <p>
+ * This converter assumes that the input stream provides UTF-8 formatted XML.
  *
  * @author Jochen Munz
- * @since 2.2
+ * @since 2.2.0
+ * @deprecated In favor of an XML-based Jackson-specific {@link Converter} implementation.
  */
-public class InputStreamToXomConverter implements ContentTypeConverter<InputStream,Document> {
+@Deprecated(forRemoval = true, since = "5.0.0")
+public class InputStreamToXomConverter implements ContentTypeConverter<InputStream, Document> {
 
     @Override
+    @Nonnull
     public Class<InputStream> expectedSourceType() {
         return InputStream.class;
     }
 
     @Override
+    @Nonnull
     public Class<Document> targetType() {
         return Document.class;
     }
 
     @Override
-    public Document convert(InputStream original) {
+    @Nullable
+    public Document convert(@Nullable InputStream input) {
+        if (input == null) {
+            return null;
+        }
+
         try {
-            return new Builder().build(new InputStreamReader(original));
+            return new Builder().build(new InputStreamReader(input));
         } catch (ParsingException | IOException e) {
-            throw new CannotConvertBetweenTypesException("Cannot convert from InputStream to XOM Document.", e);
+            throw new ConversionException("Cannot convert from InputStream to XOM Document.", e);
         }
     }
 }

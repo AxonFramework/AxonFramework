@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -41,6 +42,8 @@ import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvok
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventstreaming.LegacyStreamableEventSource;
+import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
@@ -53,8 +56,6 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.monitoring.MessageMonitor;
@@ -74,7 +75,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
@@ -96,10 +96,10 @@ public class EventProcessingModule
     private static final TrackingEventProcessorConfiguration DEFAULT_TEP_CONFIG =
             TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
     private static final TrackingEventProcessorConfiguration DEFAULT_SAGA_TEP_CONFIG =
-            DEFAULT_TEP_CONFIG.andInitialTrackingToken(StreamableMessageSource::createHeadToken);
+            DEFAULT_TEP_CONFIG.andInitialTrackingToken(TrackingTokenSource::firstToken);
     private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
     private static final PooledStreamingProcessorConfiguration DEFAULT_SAGA_PSEP_CONFIG =
-            (config, builder) -> builder.initialToken(StreamableMessageSource::createHeadToken);
+            (config, builder) -> builder.initialToken(TrackingTokenSource::firstToken);
     private static final Function<Class<?>, String> DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION =
             c -> c.getSimpleName() + "Processor";
 
@@ -1006,7 +1006,7 @@ public class EventProcessingModule
                                              .eventHandlerInvoker(eventHandlerInvoker)
                                              .errorHandler(errorHandler(name))
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
-                                             .messageSource(messageSource)
+                                             .eventSource(new LegacyStreamableEventSource<>(messageSource))
                                              .tokenStore(tokenStore(name))
                                              .transactionManager(transactionManager(name))
                                              .coordinatorExecutor(processorName -> {

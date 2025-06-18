@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,7 +60,7 @@ import static java.util.Objects.requireNonNull;
 public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E> {
 
     private final Class<E> entityType;
-    private final Map<Class<?>, EntityChildModel<?, E>> children = new HashMap<>();
+    private final List<EntityChildModel<?, E>> children = new LinkedList<>();
     private final Map<QualifiedName, EntityCommandHandler<E>> instanceCommandHandlers = new HashMap<>();
     private final Map<QualifiedName, CommandHandler> creationalCommandHandlers = new HashMap<>();
     private final EntityEvolver<E> entityEvolver;
@@ -79,8 +80,7 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         this.creationalCommandHandlers.putAll(requireNonNull(creationalCommandHandlers,
                                                              "The creationalCommandHandlers may not be null."));
 
-        requireNonNull(children, "The children may not be null.")
-                .forEach(child -> this.children.put(child.entityType(), child));
+        this.children.addAll(requireNonNull(children, "The children may not be null."));
 
         // To prevent constantly creating new sets, we create specific sets for the command names
         supportedCreationalCommandNames.addAll(creationalCommandHandlers.keySet());
@@ -154,7 +154,7 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
             return MessageStream.failed(new EntityExistsForCreationalCommandHandler(message, entity));
         }
         try {
-            var childrenWithCommandHandlers = children.values().stream()
+            var childrenWithCommandHandlers = children.stream()
                                                       .filter(childEntity -> childEntity
                                                               .supportedCommands()
                                                               .contains(message.type().qualifiedName()))
@@ -178,7 +178,7 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
     @Override
     public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         var currentEntity = entity;
-        for (EntityChildModel<?, E> child : children.values()) {
+        for (EntityChildModel<?, E> child : children) {
             currentEntity = child.evolve(currentEntity, event, context);
         }
         if (entityEvolver == null) {

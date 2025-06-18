@@ -56,7 +56,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  *
  * @author Allard Buijze
  * @since 2.2
+ * @deprecated in favor of a Jackson-specific {@link Converter} implementation.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class JacksonSerializer implements Serializer {
 
     private final RevisionResolver revisionResolver;
@@ -152,7 +154,7 @@ public class JacksonSerializer implements Serializer {
             return (T) converter.convert(source, valueType.getRawClass());
         } else if (converter.canConvert(sourceType, byte[].class)) {
             // must be a serialized form
-            byte[] bytes = converter.convert(source, sourceType, byte[].class);
+            byte[] bytes = converter.convert(source, byte[].class);
             try {
                 return objectMapper.readValue(bytes, valueType);
             } catch (IOException e) {
