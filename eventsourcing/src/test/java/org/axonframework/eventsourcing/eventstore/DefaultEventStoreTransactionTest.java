@@ -30,18 +30,17 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.utils.AssertUtils.awaitExceptionalCompletion;
+import static org.axonframework.utils.AssertUtils.awaitSuccessfullCompletion;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Test class validating the {@link DefaultEventStoreTransaction}.
@@ -95,7 +94,7 @@ class DefaultEventStoreTransactionTest {
 
                    consistencyMarker.set(transaction.appendPosition());
                });
-            awaitCompletion(uow.execute());
+            awaitSuccessfullCompletion(uow.execute());
 
             // then
             assertNull(beforeCommitEvents.get().first().asCompletableFuture().join());
@@ -131,7 +130,7 @@ class DefaultEventStoreTransactionTest {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                    afterCommitEvents.set(transaction.source(sourcingCondition));
                });
-            awaitCompletion(uow.execute());
+            awaitSuccessfullCompletion(uow.execute());
 
             // then: before commit - no events should be visible
             StepVerifier.create(beforeCommitEvents.get().asFlux())
@@ -179,7 +178,7 @@ class DefaultEventStoreTransactionTest {
                                       Tag tagToCommitOn) {
 
             var uow = new UnitOfWork();
-            awaitCompletion(uow.executeWithResult(context -> {
+            awaitSuccessfullCompletion(uow.executeWithResult(context -> {
                 // Transaction which will result in even being appended for non-existent tag
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context,
                                                                                     m -> Set.of(tagToCommitOn));
@@ -213,7 +212,7 @@ class DefaultEventStoreTransactionTest {
                 transaction.onAppend(onAppendCallback2::add);
                 transaction.appendEvent(event1);
             });
-            awaitCompletion(uow.execute());
+            awaitSuccessfullCompletion(uow.execute());
 
             // then
             assertEquals(1, onAppendCallback1.size());
@@ -239,7 +238,7 @@ class DefaultEventStoreTransactionTest {
             });
 
             // then
-            assertThrows(RuntimeException.class, () -> awaitCompletion(uow.execute()));
+            assertThrows(RuntimeException.class, () -> awaitSuccessfullCompletion(uow.execute()));
             assertTrue(callbackInvoked.get());
         }
     }
@@ -256,7 +255,7 @@ class DefaultEventStoreTransactionTest {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 result.set(transaction.appendPosition());
             });
-            awaitCompletion(uow.execute());
+            awaitSuccessfullCompletion(uow.execute());
 
             // then
             assertEquals(ConsistencyMarker.ORIGIN, result.get());
@@ -277,7 +276,7 @@ class DefaultEventStoreTransactionTest {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 result.set(transaction.appendPosition());
             });
-            awaitCompletion(uow.execute());
+            awaitSuccessfullCompletion(uow.execute());
 
             // then
             assertEquals(
@@ -309,7 +308,7 @@ class DefaultEventStoreTransactionTest {
                });
 
             // then
-            assertThrows(CompletionException.class, () -> awaitException(uow.execute()));
+            assertThrows(CompletionException.class, () -> awaitExceptionalCompletion(uow.execute()));
 
             var verificationUow = new UnitOfWork();
             var eventsAfterRollback = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
@@ -317,7 +316,7 @@ class DefaultEventStoreTransactionTest {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 eventsAfterRollback.set(transaction.source(sourcingCondition));
             });
-            awaitCompletion(verificationUow.execute());
+            awaitSuccessfullCompletion(verificationUow.execute());
 
             StepVerifier.create(eventsAfterRollback.get().asFlux())
                         .verifyComplete();
@@ -344,7 +343,8 @@ class DefaultEventStoreTransactionTest {
                .runOnAfterCommit(context -> onAfterCommitExecuted.set(true))
                .runOnPostInvocation(context -> onPostInvocationExecuted.set(true));
 
-            RuntimeException exception = assertThrows(CompletionException.class, () -> awaitException(uow.execute()));
+            RuntimeException exception =
+                    assertThrows(CompletionException.class, () -> awaitExceptionalCompletion(uow.execute()));
 
             // then
             assertNotNull(capturedError.get());
@@ -355,22 +355,6 @@ class DefaultEventStoreTransactionTest {
             assertTrue(onPostInvocationExecuted.get(), "Post invocation step should be executed after an error");
         }
     }
-
-    // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?
-    private static <R> R awaitCompletion(CompletableFuture<R> completion) {
-        await().atMost(Duration.ofMillis(500)).pollDelay(Duration.ofMillis(25)).untilAsserted(() -> assertFalse(
-                completion.isCompletedExceptionally(),
-                () -> completion.exceptionNow().toString()));
-        return completion.join();
-    }
-
-    private static <R> R awaitException(CompletableFuture<R> completion) {
-        await().atMost(Duration.ofMillis(500)).pollDelay(Duration.ofMillis(25)).untilAsserted(() -> assertTrue(
-                completion.isCompletedExceptionally(),
-                "Expected exception but none occurred"));
-        return completion.join();
-    }
-
 
     private EventStoreTransaction defaultEventStoreTransactionFor(ProcessingContext processingContext) {
         return defaultEventStoreTransactionFor(processingContext, m -> Set.of(AGGREGATE_ID_TAG));
