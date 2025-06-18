@@ -43,6 +43,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.axonframework.eventhandling.EventTestUtils.eventMessage;
 import static org.axonframework.utils.AssertUtils.awaitSuccessfullCompletion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -275,7 +276,7 @@ class SimpleEventStoreTest {
     private static @Nonnull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
         return MessageStream.fromStream(
                 IntStream.range(0, messageCount).boxed(),
-                SimpleEventStoreTest::eventMessage,
+                EventTestUtils::eventMessage,
                 i -> ConsistencyMarker.addToContext(Context.empty(), new GlobalIndexConsistencyMarker(i))
         );
     }
@@ -293,10 +294,5 @@ class SimpleEventStoreTest {
             assertionFailedError.addSuppressed(e);
             throw assertionFailedError;
         }
-    }
-
-    // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?
-    private static EventMessage<?> eventMessage(int seq) {
-        return EventTestUtils.asEventMessage("Event[" + seq + "]");
     }
 }
