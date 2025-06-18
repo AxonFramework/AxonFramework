@@ -48,7 +48,8 @@ public interface EventGateway {
      * @return A {@link CompletableFuture} of {@link Void}. Completion of the future depends on the
      * {@link org.axonframework.eventhandling.EventSink} used by this gateway.
      */
-    default CompletableFuture<Void> publish(@Nullable ProcessingContext context, Object... events) {
+    default CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                            Object... events) {
         return publish(context, Arrays.asList(events));
     }
 
