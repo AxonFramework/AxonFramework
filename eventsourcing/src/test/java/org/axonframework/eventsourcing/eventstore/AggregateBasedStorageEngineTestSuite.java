@@ -320,7 +320,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     }
 
     @Test
-    void sourcingWithStartReturnsEventsWithinBounds() {
+    void sourcingBeginsEventStreamFromTheSpecifiedPosition() {
         // given...
         Set<String> expected = Set.of("event-2", "event-4");
         Set<String> actual = new HashSet<>();
@@ -347,7 +347,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     }
 
     @Test
-    void sourcingFromTwoAggregatesWithStartRespectsBounds() {
+    void sourcingFromTwoAggregatesBeginsEventStreamsFromTheSpecifiedPositions() {
         // given...
         Set<String> expected = Set.of("event-2", "event-3", "event-4", "event-5");
         Set<String> actual = new HashSet<>();
