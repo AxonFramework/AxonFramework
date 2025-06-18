@@ -43,7 +43,7 @@ public class MutableReflectionEntityModelAdministrationTest extends AbstractAdmi
 
     @Override
     CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
-        EntityMetamodel<MutablePerson> personModel = AnnotatedEntityMetamodel.forPolymorphicType(
+        EntityMetamodel<MutablePerson> personMetamodel = AnnotatedEntityMetamodel.forPolymorphicType(
                 MutablePerson.class,
                 Set.of(MutableEmployee.class, MutableCustomer.class),
                 configuration.getComponent(ParameterResolverFactory.class),
@@ -60,12 +60,12 @@ public class MutableReflectionEntityModelAdministrationTest extends AbstractAdmi
                                                                configuration.getComponent(ParameterResolverFactory.class),
                                                                configuration.getComponent(MessageTypeResolver.class)),
                 (s, ctx) -> EventCriteria.havingTags("Person", s.key()),
-                personModel
+                personMetamodel
         );
 
         return new EntityCommandHandlingComponent<>(
                 repository,
-                personModel,
+                personMetamodel,
                 new AnnotationBasedEntityIdResolver<>()
         );
     }

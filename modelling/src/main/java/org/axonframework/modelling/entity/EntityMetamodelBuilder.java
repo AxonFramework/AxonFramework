@@ -62,7 +62,7 @@ public interface EntityMetamodelBuilder<E> {
 
     /**
      * Adds an {@link EntityCommandHandler} to this metamodel for the given {@link QualifiedName}. The command handler
-     * will be invoked when a command with the given {@link QualifiedName} is received by the model.
+     * will be invoked when a command with the given {@link QualifiedName} is received by the metamodel.
      * <p>
      * The entity should <b>not</b> exist for this command handler to be invoked. A non-null initial state is considered
      * to be an existing entity. As such, only register this command if the
@@ -109,7 +109,7 @@ public interface EntityMetamodelBuilder<E> {
      * metamodel. Children command handlers take precedence over the parent command handlers. Event handlers will be
      * invoked on both the parent and child metamodels, but the child metamodels will be invoked first.
      * <p>
-     * There are various types of children that can be added to an entity model:
+     * There are various types of children that can be added to an entity metamodel:
      * <ul>
      *     <li>Single instances: For a field with a single instance, use the {@link EntityChildMetamodel#single(Class, EntityMetamodel)}.</li>
      *     <li>List instances: For a {@link java.util.List list}, use the {@link EntityChildMetamodel#list(Class, EntityMetamodel)}.</li>

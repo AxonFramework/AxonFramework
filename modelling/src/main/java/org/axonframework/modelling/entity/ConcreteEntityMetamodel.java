@@ -45,10 +45,10 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Implementation of the {@link EntityMetamodel} interface that enables the definition of command handlers and
- * child entities for a given entity type {@code E}. Optionally, an {@link EntityEvolver} can be provided to evolve the
- * entity state based on events. If no {@link EntityEvolver} is provided, state can exclusively be changed through
- * command handlers.
+ * Implementation of the {@link EntityMetamodel} interface that enables the definition of command handlers and child
+ * entities for a given entity type {@code E}. Optionally, an {@link EntityEvolver} can be provided to evolve the entity
+ * state based on events. If no {@link EntityEvolver} is provided, state can exclusively be changed through command
+ * handlers.
  * <p>
  * During the handling of commands, handlers defined in child entities take precedence over the parent entity's command
  * handlers. Event handlers are invoked on both the parent and child models, with child models being invoked first.
@@ -93,10 +93,10 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
 
     /**
      * Creates a {@link Builder builder} for the specified entity type. This builder provides a fluent API for defining
-     * and constructing an {@link EntityMetamodel} for the given entity class, allowing the registration of
-     * command handlers, child entities, and an optional entity evolver.
+     * and constructing an {@link EntityMetamodel} for the given entity class, allowing the registration of command
+     * handlers, child entities, and an optional entity evolver.
      *
-     * @param <E>        The type of the entity for which the model is being built.
+     * @param <E>        The type of the entity for which the metamodel is being built.
      * @param entityType The {@code Class} object representing the entity type.
      * @return A {@link Builder} instance configured for the specified entity type.
      */
@@ -191,8 +191,8 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
      * Helper method that determines on which child to handle a certain instance command. If only one child can handle
      * the command, it will be used. If multiple children declare the command, we try to find the one that can handle it
      * based on runtime instances (via
-     * {@link EntityChildMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}. If multiple children
-     * can handle the command, an exception is thrown.
+     * {@link EntityChildMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}. If multiple children can
+     * handle the command, an exception is thrown.
      */
     private MessageStream.Single<CommandResultMessage<?>> handleForChildren(
             List<EntityChildMetamodel<?, E>> childrenWithCommandHandler,
@@ -252,9 +252,8 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
     }
 
     /**
-     * Builder class for constructing an {@link EntityMetamodel} for a specific entity type. This class
-     * provides a fluent API to configure the metamodel by specifying command handlers, child entities, and the entity
-     * evolver.
+     * Builder class for constructing an {@link EntityMetamodel} for a specific entity type. This class provides a
+     * fluent API to configure the metamodel by specifying command handlers, child entities, and the entity evolver.
      *
      * @param <E> The type of the entity for which the metamodel is being constructed.
      */

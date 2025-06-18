@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * An {@link EntityChildMetamodel} that handles commands and events for a single child entity. It will use the
- * provided {@link ChildEntityFieldDefinition} to resolve the child entity from the parent entity. Once the entity is
- * resolved, it will delegate the command- and event-handling to the child entity metamodel.
+ * An {@link EntityChildMetamodel} that handles commands and events for a single child entity. It will use the provided
+ * {@link ChildEntityFieldDefinition} to resolve the child entity from the parent entity. Once the entity is resolved,
+ * it will delegate the command- and event-handling to the child entity metamodel.
  * <p>
  * The commands and events will, by default, be forwarded unconditionally to the child entity. If you have multiple
  * member fields, and want to match commands and events to a specific child entity, you can configure the
@@ -86,19 +86,19 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
 
     @Override
     public String toString() {
-        return "SingleEntityChildModel{entityType=" + entityType().getName() + '}';
+        return "SingleEntityChildMetaModel{entityType=" + entityType().getName() + '}';
     }
 
     /**
-     * Creates a new {@link Builder} for the given parent class and child entity model. The
+     * Creates a new {@link Builder} for the given parent class and child entity metamodel. The
      * {@link ChildEntityFieldDefinition} is required to resolve the child entity from the parent entity and evolve the
      * parent entity based on the child entities.
      *
-     * @param parentClass              The class of the parent entity.
-     * @param metamodel The {@link EntityMetamodel} of the child entity.
-     * @param <C>                      The type of the child entity.
-     * @param <P>                      The type of the parent entity.
-     * @return A new {@link Builder} for the given parent class and child entity model.
+     * @param parentClass The class of the parent entity.
+     * @param metamodel   The {@link EntityMetamodel} of the child entity.
+     * @param <C>         The type of the child entity.
+     * @param <P>         The type of the parent entity.
+     * @return A new {@link Builder} for the given parent class and child entity metamodel.
      */
     public static <C, P> Builder<C, P> forEntityModel(@Nonnull Class<P> parentClass,
                                                       @Nonnull EntityMetamodel<C> metamodel) {
@@ -107,9 +107,9 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
 
 
     /**
-     * Builder for creating a {@link SingleEntityChildMetamodel} for the given parent class and child entity
-     * metamodel. The {@link ChildEntityFieldDefinition} is required to resolve the child entities from the parent entity
-     * and evolve the parent entity based on the child entities.
+     * Builder for creating a {@link SingleEntityChildMetamodel} for the given parent class and child entity metamodel.
+     * The {@link ChildEntityFieldDefinition} is required to resolve the child entities from the parent entity and
+     * evolve the parent entity based on the child entities.
      * <p>
      * The {@link CommandTargetResolver} and {@link EventTargetMatcher} are defaulted to
      * {@link CommandTargetResolver#MATCH_ANY()} and {@link EventTargetMatcher#MATCH_ANY()} respectively, meaning that

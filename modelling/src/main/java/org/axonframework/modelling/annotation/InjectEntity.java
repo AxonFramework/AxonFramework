@@ -53,17 +53,17 @@ import java.lang.annotation.Target;
 public @interface InjectEntity {
 
     /**
-     * The property of the message payload that contains the identifier of the model to inject. If not specified, the
-     * {@code idResolver} is used to resolve the identifier of the model to inject.
+     * The property of the message payload that contains the identifier of the entity to inject. If not specified, the
+     * {@code idResolver} is used to resolve the identifier of the entity to inject.
      *
-     * @return The property of the message payload that contains the identifier of the model to inject.
+     * @return The property of the message payload that contains the identifier of the entity to inject.
      */
     String idProperty() default "";
 
     /**
-     * The {@link EntityIdResolver} to resolve the identifier of the model to inject. Should have a no-arg constructor.
+     * The {@link EntityIdResolver} to resolve the identifier of the entity to inject. Should have a no-arg constructor.
      *
-     * @return The {@link EntityIdResolver} to resolve the identifier of the model to inject.
+     * @return The {@link EntityIdResolver} to resolve the identifier of the entity to inject.
      */
     Class<? extends EntityIdResolver> idResolver() default AnnotationBasedEntityIdResolver.class;
 }

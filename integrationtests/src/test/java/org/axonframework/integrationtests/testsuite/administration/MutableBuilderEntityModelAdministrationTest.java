@@ -57,7 +57,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
 
         // Task is the list-based child-model of Employee
-        EntityMetamodel<MutableTask> taskModel = ConcreteEntityMetamodel
+        EntityMetamodel<MutableTask> taskMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableTask.class)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableTask.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
@@ -70,7 +70,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .build();
 
         // SalaryInformation is the singular child-model of Employee
-        EntityMetamodel<MutableSalaryInformation> salaryInformationModel = ConcreteEntityMetamodel
+        EntityMetamodel<MutableSalaryInformation> salaryInformationMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableSalaryInformation.class)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableSalaryInformation.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
@@ -83,7 +83,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .build();
 
         // Employee is a concrete entity type
-        EntityMetamodel<MutableEmployee> employeeModel = ConcreteEntityMetamodel
+        EntityMetamodel<MutableEmployee> employeeMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableEmployee.class)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableEmployee.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
@@ -101,7 +101,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                                             return MessageStream.empty().cast();
                                         }))
                 .addChild(EntityChildMetamodel
-                                  .list(MutableEmployee.class, taskModel)
+                                  .list(MutableEmployee.class, taskMetamodel)
                                   .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterSetter(
                                           MutableEmployee::getTaskList, MutableEmployee::setTaskList
                                   ))
@@ -125,7 +125,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
 
                 )
                 .addChild(EntityChildMetamodel
-                                  .single(MutableEmployee.class, salaryInformationModel)
+                                  .single(MutableEmployee.class, salaryInformationMetamodel)
                                   .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
                                           MutableEmployee.class, "salary"
                                   ))
@@ -134,7 +134,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .build();
 
         // Customer is a concrete entity type
-        EntityMetamodel<MutableCustomer> customerModel = ConcreteEntityMetamodel
+        EntityMetamodel<MutableCustomer> customerMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableCustomer.class)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableCustomer.class))
                 .instanceCommandHandler(
@@ -147,10 +147,10 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .build();
 
         // Person is the polymorphic entity type
-        EntityMetamodel<MutablePerson> personModel = EntityMetamodel
+        EntityMetamodel<MutablePerson> personMetamodel = EntityMetamodel
                 .forPolymorphicEntityType(MutablePerson.class)
-                .addConcreteType(employeeModel)
-                .addConcreteType(customerModel)
+                .addConcreteType(employeeMetamodel)
+                .addConcreteType(customerMetamodel)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutablePerson.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
@@ -174,12 +174,12 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                     throw new IllegalArgumentException("Unknown type: " + id.type());
                 }),
                 (s, ctx) -> EventCriteria.havingTags("Person", s.key()),
-                personModel
+                personMetamodel
         );
 
         return new EntityCommandHandlingComponent<>(
                 repository,
-                personModel,
+                personMetamodel,
                 new AnnotationBasedEntityIdResolver<>()
         );
     }

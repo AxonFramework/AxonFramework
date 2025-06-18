@@ -363,7 +363,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     /**
      * This is the {@link AnnotatedEntityMetamodelFactory} method to create a child
      * {@link AnnotatedEntityMetamodel} for the given {@code clazz}, while using the same resources as its
-     * parent model (this instance).
+     * parent metamodel (this instance).
      *
      * @param clazz The class of the child entity to create a metamodel for.
      * @param <C>   The type of the child entity to create a metamodel for.

@@ -86,7 +86,7 @@ public class ListEntityChildMetamodel<C, P> extends AbstractEntityChildMetamodel
      * @param entityMetamodel The {@link EntityMetamodel} of the child entity.
      * @param <C>                      The type of the child entity.
      * @param <P>                      The type of the parent entity.
-     * @return A new {@link Builder} for the given parent class and child entity model.
+     * @return A new {@link Builder} for the given parent class and child entity metamodel.
      */
     @Nonnull
     public static <C, P> Builder<C, P> forEntityModel(@Nonnull Class<P> parentClass,

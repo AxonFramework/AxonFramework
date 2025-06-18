@@ -256,7 +256,7 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
                 throw new IllegalArgumentException("Concrete type [%s] already registered for this metamodel.".formatted(
                         metamodel.entityType().getName()));
             }
-            // Check if any existing polymorphic model clashes with the creational commands of the new model.
+            // Check if any existing polymorphic metamodel clashes with the creational commands of the new metamodel.
             for (EntityMetamodel<? extends E> existingMetamodel : polymorphicMetamodels) {
                 if (existingMetamodel.supportedCreationalCommands().stream()
                                      .anyMatch(metamodel.supportedCreationalCommands()::contains)) {
