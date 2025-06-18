@@ -59,7 +59,7 @@ import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
+import static org.axonframework.eventhandling.EventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -222,7 +222,7 @@ class TrackingEventProcessorTest_MultiThreaded {
 
         testSubject.start();
 
-        eventBus.publish(createEvents(10));
+        eventBus.publish(createDomainEvents(10));
 
         await("Start").atMost(Duration.ofSeconds(1))
                       .pollDelay(Duration.ofMillis(50))
@@ -284,7 +284,7 @@ class TrackingEventProcessorTest_MultiThreaded {
         }).when(mockHandler).handleSync(any(), any());
 
         testSubject.start();
-        eventBus.publish(createEvents(4));
+        eventBus.publish(createDomainEvents(4));
 
         assertTrue(
                 countDownLatch.await(5, SECONDS),
@@ -303,7 +303,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             return null;
         }).when(mockHandler).handleSync(any(), any());
         testSubject.start();
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
         assertTrue(countDownLatch.await(5, SECONDS), "Expected Handler to have received 2 published events");
         acknowledgeByThread.assertEventsAckedByMultipleThreads();
         assertEquals(2, acknowledgeByThread.eventCount());
@@ -332,7 +332,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             }
         });
         testSubject.start();
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
         assertTrue(countDownLatch.await(5, SECONDS), "Expected Unit of Work to have reached clean up phase");
         verify(tokenStore, atLeastOnce()).storeToken(any(), any(), anyInt());
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
@@ -342,7 +342,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     @Test
     void multiThreadContinueFromPreviousToken() throws Exception {
         tokenStore = spy(new InMemoryTokenStore());
-        eventBus.publish(createEvents(10));
+        eventBus.publish(createDomainEvents(10));
         //noinspection resource
         TrackedEventMessage<?> firstEvent = eventBus.openStream(null).nextAvailable();
         tokenStore.storeToken(firstEvent.trackingToken(), testSubject.getName(), 0);
@@ -371,7 +371,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     void multiThreadContinueAfterPause() throws Exception {
         final AcknowledgeByThread acknowledgeByThread = new AcknowledgeByThread();
 
-        final List<DomainEventMessage<?>> events = createEvents(4);
+        final List<DomainEventMessage<?>> events = createDomainEvents(4);
 
         CountDownLatch countDownLatch = new CountDownLatch(2);
         doAnswer(invocation -> {
@@ -439,7 +439,7 @@ class TrackingEventProcessorTest_MultiThreaded {
         eventBus = spy(eventBus);
 
         tokenStore = new InMemoryTokenStore();
-        eventBus.publish(createEvents(5));
+        eventBus.publish(createDomainEvents(5));
         when(eventBus.openStream(any())).thenThrow(new MockException()).thenCallRealMethod();
 
         final AcknowledgeByThread acknowledgeByThread = new AcknowledgeByThread();
@@ -466,7 +466,7 @@ class TrackingEventProcessorTest_MultiThreaded {
 
     @Test
     void multiThreadTokensAreStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
-        List<? extends EventMessage<?>> events = createEvents(2);
+        List<? extends EventMessage<?>> events = createDomainEvents(2);
         CountDownLatch countDownLatch = new CountDownLatch(2);
         //noinspection Duplicates,resource
         testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {

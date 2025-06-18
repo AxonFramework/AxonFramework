@@ -25,7 +25,6 @@ import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.utils.EventTestUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.HashSet;
