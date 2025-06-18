@@ -67,7 +67,7 @@ public abstract class AssertUtils {
      * @param <R>    The result of the given {@code future}.
      * @return The result from the given {@code future}.
      */
-    public static <R> R awaitSuccessfullCompletion(@Nonnull CompletableFuture<R> future) {
+    public static <R> R awaitSuccessfulCompletion(@Nonnull CompletableFuture<R> future) {
         await().atMost(Duration.ofMillis(500))
                .pollDelay(Duration.ofMillis(25))
                .untilAsserted(() -> assertFalse(
