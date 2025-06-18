@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.utils.AssertUtils.awaitExceptionalCompletion;
-import static org.axonframework.utils.AssertUtils.awaitSuccessfullCompletion;
+import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -94,7 +94,7 @@ class DefaultEventStoreTransactionTest {
 
                    consistencyMarker.set(transaction.appendPosition());
                });
-            awaitSuccessfullCompletion(uow.execute());
+            awaitSuccessfulCompletion(uow.execute());
 
             // then
             assertNull(beforeCommitEvents.get().first().asCompletableFuture().join());
@@ -130,7 +130,7 @@ class DefaultEventStoreTransactionTest {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                    afterCommitEvents.set(transaction.source(sourcingCondition));
                });
-            awaitSuccessfullCompletion(uow.execute());
+            awaitSuccessfulCompletion(uow.execute());
 
             // then: before commit - no events should be visible
             StepVerifier.create(beforeCommitEvents.get().asFlux())
@@ -178,7 +178,7 @@ class DefaultEventStoreTransactionTest {
                                       Tag tagToCommitOn) {
 
             var uow = new UnitOfWork();
-            awaitSuccessfullCompletion(uow.executeWithResult(context -> {
+            awaitSuccessfulCompletion(uow.executeWithResult(context -> {
                 // Transaction which will result in even being appended for non-existent tag
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context,
                                                                                     m -> Set.of(tagToCommitOn));
@@ -212,7 +212,7 @@ class DefaultEventStoreTransactionTest {
                 transaction.onAppend(onAppendCallback2::add);
                 transaction.appendEvent(event1);
             });
-            awaitSuccessfullCompletion(uow.execute());
+            awaitSuccessfulCompletion(uow.execute());
 
             // then
             assertEquals(1, onAppendCallback1.size());
@@ -238,7 +238,7 @@ class DefaultEventStoreTransactionTest {
             });
 
             // then
-            assertThrows(RuntimeException.class, () -> awaitSuccessfullCompletion(uow.execute()));
+            assertThrows(RuntimeException.class, () -> awaitSuccessfulCompletion(uow.execute()));
             assertTrue(callbackInvoked.get());
         }
     }
@@ -255,7 +255,7 @@ class DefaultEventStoreTransactionTest {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 result.set(transaction.appendPosition());
             });
-            awaitSuccessfullCompletion(uow.execute());
+            awaitSuccessfulCompletion(uow.execute());
 
             // then
             assertEquals(ConsistencyMarker.ORIGIN, result.get());
@@ -276,7 +276,7 @@ class DefaultEventStoreTransactionTest {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 result.set(transaction.appendPosition());
             });
-            awaitSuccessfullCompletion(uow.execute());
+            awaitSuccessfulCompletion(uow.execute());
 
             // then
             assertEquals(
@@ -316,7 +316,7 @@ class DefaultEventStoreTransactionTest {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 eventsAfterRollback.set(transaction.source(sourcingCondition));
             });
-            awaitSuccessfullCompletion(verificationUow.execute());
+            awaitSuccessfulCompletion(verificationUow.execute());
 
             StepVerifier.create(eventsAfterRollback.get().asFlux())
                         .verifyComplete();
