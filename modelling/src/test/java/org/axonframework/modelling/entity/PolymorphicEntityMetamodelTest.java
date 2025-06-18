@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-class PolymorphicEntityModelTest {
+class PolymorphicEntityMetamodelTest {
 
     public static final QualifiedName SUPER_TYPE_INSTANCE_COMMAND = new QualifiedName("SuperTypeInstanceCommand");
     public static final QualifiedName CONCRETE_ONE_INSTANCE_COMMAND = new QualifiedName("ConcreteOneInstanceCommand");
@@ -55,46 +55,50 @@ class PolymorphicEntityModelTest {
     public static final QualifiedName CONCRETE_ONE_EVENT = new QualifiedName("ConcreteOneEvent");
     public static final QualifiedName CONCRETE_TWO_EVENT = new QualifiedName("ConcreteTwoEvent");
 
-    private final EntityModel<ConcreteTestEntityOne> concreteTestEntityOneEntityModel = Mockito.mock(EntityModel.class);
-    private final EntityModel<ConcreteTestEntityTwo> concreteTestEntityTwoEntityModel = Mockito.mock(EntityModel.class);
+    private final EntityMetamodel<ConcreteTestEntityOne> concreteTestEntityOneEntityMetamodel = Mockito.mock(
+            EntityMetamodel.class);
+    private final EntityMetamodel<ConcreteTestEntityTwo> concreteTestEntityTwoEntityMetamodel = Mockito.mock(
+            EntityMetamodel.class);
     private final EntityCommandHandler<AbstractTestEntity> entityInstanceCommandHandler = Mockito.mock(
             EntityCommandHandler.class);
     private final CommandHandler entityCreationalCommandHandler = Mockito.mock(CommandHandler.class);
     private final EntityEvolver<AbstractTestEntity> entityEvolver = Mockito.mock(EntityEvolver.class);
 
-    private EntityModel<AbstractTestEntity> polymorphicModel;
+    private EntityMetamodel<AbstractTestEntity> polymorphicMetamodel;
 
     @BeforeEach
     public void setup() {
-        when(concreteTestEntityOneEntityModel.entityType()).thenReturn(ConcreteTestEntityOne.class);
-        when(concreteTestEntityTwoEntityModel.entityType()).thenReturn(ConcreteTestEntityTwo.class);
+        when(concreteTestEntityOneEntityMetamodel.entityType()).thenReturn(ConcreteTestEntityOne.class);
+        when(concreteTestEntityTwoEntityMetamodel.entityType()).thenReturn(ConcreteTestEntityTwo.class);
 
         // Set entity model responses
-        when(concreteTestEntityOneEntityModel.handleInstance(any(), any(), any())).thenReturn(
+        when(concreteTestEntityOneEntityMetamodel.handleInstance(any(), any(), any())).thenReturn(
                 MessageStream.just(new GenericCommandResultMessage<>(new MessageType("ConcreteOneResult"),
                                                                      "concrete-one")));
-        when(concreteTestEntityOneEntityModel.handleCreate(any(), any())).thenReturn(
+        when(concreteTestEntityOneEntityMetamodel.handleCreate(any(), any())).thenReturn(
                 MessageStream.just(new GenericCommandResultMessage<>(new MessageType("ConcreteOneResult"),
                                                                      "concrete-one-create")));
-        when(concreteTestEntityTwoEntityModel.handleInstance(any(), any(), any())).thenReturn(
+        when(concreteTestEntityTwoEntityMetamodel.handleInstance(any(), any(), any())).thenReturn(
                 MessageStream.just(new GenericCommandResultMessage<>(new MessageType("ConcreteTwoResult"),
                                                                      "concrete-two")));
-        when(concreteTestEntityTwoEntityModel.handleCreate(any(), any())).thenReturn(
+        when(concreteTestEntityTwoEntityMetamodel.handleCreate(any(), any())).thenReturn(
                 MessageStream.just(new GenericCommandResultMessage<>(new MessageType("ConcreteTwoResult"),
                                                                      "concrete-two-create")));
 
         // Set supported commands properly
-        when(concreteTestEntityOneEntityModel.supportedCreationalCommands()).thenReturn(Set.of(
+        when(concreteTestEntityOneEntityMetamodel.supportedCreationalCommands()).thenReturn(Set.of(
                 CONCRETE_ONE_CREATIONAL_COMMAND));
-        when(concreteTestEntityOneEntityModel.supportedInstanceCommands()).thenReturn(Set.of(CONCRETE_ONE_INSTANCE_COMMAND));
-        when(concreteTestEntityOneEntityModel.supportedCommands()).thenReturn(Set.of(
+        when(concreteTestEntityOneEntityMetamodel.supportedInstanceCommands()).thenReturn(Set.of(
+                CONCRETE_ONE_INSTANCE_COMMAND));
+        when(concreteTestEntityOneEntityMetamodel.supportedCommands()).thenReturn(Set.of(
                 CONCRETE_ONE_CREATIONAL_COMMAND,
                 CONCRETE_ONE_INSTANCE_COMMAND
         ));
-        when(concreteTestEntityTwoEntityModel.supportedCreationalCommands()).thenReturn(Set.of(
+        when(concreteTestEntityTwoEntityMetamodel.supportedCreationalCommands()).thenReturn(Set.of(
                 CONCRETE_TWO_CREATIONAL_COMMAND));
-        when(concreteTestEntityTwoEntityModel.supportedInstanceCommands()).thenReturn(Set.of(CONCRETE_TWO_INSTANCE_COMMAND));
-        when(concreteTestEntityTwoEntityModel.supportedCommands()).thenReturn(Set.of(
+        when(concreteTestEntityTwoEntityMetamodel.supportedInstanceCommands()).thenReturn(Set.of(
+                CONCRETE_TWO_INSTANCE_COMMAND));
+        when(concreteTestEntityTwoEntityMetamodel.supportedCommands()).thenReturn(Set.of(
                 CONCRETE_TWO_CREATIONAL_COMMAND,
                 CONCRETE_TWO_INSTANCE_COMMAND
         ));
@@ -109,10 +113,10 @@ class PolymorphicEntityModelTest {
         when(entityEvolver.evolve(any(), any(), any())).thenAnswer(answ -> answ.getArgument(0));
 
 
-        this.polymorphicModel = PolymorphicEntityModel
+        this.polymorphicMetamodel = PolymorphicEntityMetamodel
                 .forSuperType(AbstractTestEntity.class)
-                .addConcreteType(concreteTestEntityOneEntityModel)
-                .addConcreteType(concreteTestEntityTwoEntityModel)
+                .addConcreteType(concreteTestEntityOneEntityMetamodel)
+                .addConcreteType(concreteTestEntityTwoEntityMetamodel)
                 .entityEvolver(entityEvolver)
                 .instanceCommandHandler(SUPER_TYPE_INSTANCE_COMMAND, entityInstanceCommandHandler)
                 .creationalCommandHandler(SUPER_TYPE_CREATIONAL_COMMAND, entityCreationalCommandHandler)
@@ -126,15 +130,15 @@ class PolymorphicEntityModelTest {
 
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
-        MessageStream<CommandResultMessage<?>> result = polymorphicModel.handleInstance(commandMessage,
-                                                                                        entity,
-                                                                                        context);
+        MessageStream<CommandResultMessage<?>> result = polymorphicMetamodel.handleInstance(commandMessage,
+                                                                                            entity,
+                                                                                            context);
 
         assertEquals("concrete-one", result.first().asCompletableFuture().join().message().getPayload());
-        verify(concreteTestEntityOneEntityModel, times(1)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityOneEntityModel, times(0)).handleCreate(eq(commandMessage), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(0)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(1)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
         verify(entityInstanceCommandHandler, times(0)).handle(eq(commandMessage), any(), eq(context));
         verify(entityCreationalCommandHandler, times(0)).handle(eq(commandMessage), eq(context));
     }
@@ -145,13 +149,13 @@ class PolymorphicEntityModelTest {
                                                                        "concrete-one-creational");
 
         ProcessingContext context = new StubProcessingContext();
-        MessageStream<CommandResultMessage<?>> result = polymorphicModel.handleCreate(commandMessage, context);
+        MessageStream<CommandResultMessage<?>> result = polymorphicMetamodel.handleCreate(commandMessage, context);
 
         assertEquals("concrete-one-create", result.first().asCompletableFuture().join().message().getPayload());
-        verify(concreteTestEntityOneEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityOneEntityModel, times(1)).handleCreate(eq(commandMessage), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(0)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(1)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
         verify(entityInstanceCommandHandler, times(0)).handle(eq(commandMessage), any(), eq(context));
         verify(entityCreationalCommandHandler, times(0)).handle(eq(commandMessage), eq(context));
     }
@@ -164,15 +168,15 @@ class PolymorphicEntityModelTest {
 
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         ConcreteTestEntityTwo entity = new ConcreteTestEntityTwo();
-        MessageStream<CommandResultMessage<?>> result = polymorphicModel.handleInstance(commandMessage,
-                                                                                        entity,
-                                                                                        context);
+        MessageStream<CommandResultMessage<?>> result = polymorphicMetamodel.handleInstance(commandMessage,
+                                                                                            entity,
+                                                                                            context);
 
         assertEquals("concrete-two", result.first().asCompletableFuture().join().message().getPayload());
-        verify(concreteTestEntityOneEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityOneEntityModel, times(0)).handleCreate(eq(commandMessage), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(1)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(0)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(1)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
         verify(entityInstanceCommandHandler, times(0)).handle(eq(commandMessage), any(), eq(context));
         verify(entityCreationalCommandHandler, times(0)).handle(eq(commandMessage), eq(context));
     }
@@ -183,13 +187,13 @@ class PolymorphicEntityModelTest {
                                                                        "concrete-two-creational");
 
         ProcessingContext context = new StubProcessingContext();
-        MessageStream<CommandResultMessage<?>> result = polymorphicModel.handleCreate(commandMessage, context);
+        MessageStream<CommandResultMessage<?>> result = polymorphicMetamodel.handleCreate(commandMessage, context);
 
         assertEquals("concrete-two-create", result.first().asCompletableFuture().join().message().getPayload());
-        verify(concreteTestEntityOneEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityOneEntityModel, times(0)).handleCreate(eq(commandMessage), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(1)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(1)).handleCreate(eq(commandMessage), eq(context));
         verify(entityInstanceCommandHandler, times(0)).handle(eq(commandMessage), any(), eq(context));
         verify(entityCreationalCommandHandler, times(0)).handle(eq(commandMessage), eq(context));
     }
@@ -201,16 +205,16 @@ class PolymorphicEntityModelTest {
 
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
-        MessageStream<CommandResultMessage<?>> result = polymorphicModel.handleInstance(commandMessage,
-                                                                                        entity,
-                                                                                        context);
+        MessageStream<CommandResultMessage<?>> result = polymorphicMetamodel.handleInstance(commandMessage,
+                                                                                            entity,
+                                                                                            context);
 
         assertEquals("super-type", result.first().asCompletableFuture().join().message().getPayload());
         verify(entityInstanceCommandHandler).handle(eq(commandMessage), same(entity), eq(context));
-        verify(concreteTestEntityOneEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityOneEntityModel, times(0)).handleCreate(eq(commandMessage), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(0)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
         verify(entityInstanceCommandHandler, times(1)).handle(eq(commandMessage), any(), eq(context));
         verify(entityCreationalCommandHandler, times(0)).handle(eq(commandMessage), eq(context));
     }
@@ -221,14 +225,14 @@ class PolymorphicEntityModelTest {
                                                                        "super-type");
 
         ProcessingContext context = new StubProcessingContext();
-        MessageStream<CommandResultMessage<?>> result = polymorphicModel.handleCreate(commandMessage, context);
+        MessageStream<CommandResultMessage<?>> result = polymorphicMetamodel.handleCreate(commandMessage, context);
 
         assertEquals("super-type-create", result.first().asCompletableFuture().join().message().getPayload());
         verify(entityCreationalCommandHandler).handle(eq(commandMessage), eq(context));
-        verify(concreteTestEntityOneEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityOneEntityModel, times(0)).handleCreate(eq(commandMessage), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(0)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
         verify(entityInstanceCommandHandler, times(0)).handle(eq(commandMessage), any(), eq(context));
         verify(entityCreationalCommandHandler, times(1)).handle(eq(commandMessage), eq(context));
     }
@@ -240,14 +244,14 @@ class PolymorphicEntityModelTest {
 
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         ConcreteTestEntityTwo entity = new ConcreteTestEntityTwo();
-        MessageStream<CommandResultMessage<?>> result = polymorphicModel.handleInstance(commandMessage,
-                                                                                        entity,
-                                                                                        context);
+        MessageStream<CommandResultMessage<?>> result = polymorphicMetamodel.handleInstance(commandMessage,
+                                                                                            entity,
+                                                                                            context);
 
         assertEquals("super-type", result.first().asCompletableFuture().join().message().getPayload());
         verify(entityInstanceCommandHandler).handle(eq(commandMessage), same(entity), eq(context));
-        verify(concreteTestEntityOneEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
-        verify(concreteTestEntityTwoEntityModel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
+        verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
     }
 
     @Test
@@ -257,10 +261,11 @@ class PolymorphicEntityModelTest {
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
 
-        MessageStream.Single<CommandResultMessage<?>> commandResultMessageSingle = polymorphicModel.handleInstance(
+        MessageStream.Single<CommandResultMessage<?>> commandResultMessageSingle = polymorphicMetamodel.handleInstance(
                 commandMessage, entity, context
         );
-        MessageStreamTestUtils.assertCompletedExceptionally(commandResultMessageSingle, WrongPolymorphicEntityTypeException.class);
+        MessageStreamTestUtils.assertCompletedExceptionally(commandResultMessageSingle,
+                                                            WrongPolymorphicEntityTypeException.class);
     }
 
     @Test
@@ -269,12 +274,14 @@ class PolymorphicEntityModelTest {
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
 
-        polymorphicModel.evolve(entity, eventMessage, context);
+        polymorphicMetamodel.evolve(entity, eventMessage, context);
 
-        InOrder inOrder = inOrder(entityEvolver, concreteTestEntityTwoEntityModel, concreteTestEntityOneEntityModel);
+        InOrder inOrder = inOrder(entityEvolver,
+                                  concreteTestEntityTwoEntityMetamodel,
+                                  concreteTestEntityOneEntityMetamodel);
         inOrder.verify(entityEvolver).evolve(eq(entity), eq(eventMessage), eq(context));
-        inOrder.verify(concreteTestEntityOneEntityModel).evolve(eq(entity), eq(eventMessage), eq(context));
-        inOrder.verify(concreteTestEntityTwoEntityModel, times(0)).evolve(any(), any(), any());
+        inOrder.verify(concreteTestEntityOneEntityMetamodel).evolve(eq(entity), eq(eventMessage), eq(context));
+        inOrder.verify(concreteTestEntityTwoEntityMetamodel, times(0)).evolve(any(), any(), any());
     }
 
     @Test
@@ -283,44 +290,60 @@ class PolymorphicEntityModelTest {
         ConcreteTestEntityTwo entity = new ConcreteTestEntityTwo();
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
 
-        polymorphicModel.evolve(entity, eventMessage, context);
+        polymorphicMetamodel.evolve(entity, eventMessage, context);
 
-        InOrder inOrder = inOrder(entityEvolver, concreteTestEntityOneEntityModel, concreteTestEntityTwoEntityModel);
+        InOrder inOrder = inOrder(entityEvolver,
+                                  concreteTestEntityOneEntityMetamodel,
+                                  concreteTestEntityTwoEntityMetamodel);
         inOrder.verify(entityEvolver).evolve(eq(entity), eq(eventMessage), eq(context));
-        inOrder.verify(concreteTestEntityTwoEntityModel).evolve(eq(entity), eq(eventMessage), eq(context));
-        inOrder.verify(concreteTestEntityOneEntityModel, times(0)).evolve(any(), any(), any());
+        inOrder.verify(concreteTestEntityTwoEntityMetamodel).evolve(eq(entity), eq(eventMessage), eq(context));
+        inOrder.verify(concreteTestEntityOneEntityMetamodel, times(0)).evolve(any(), any(), any());
     }
 
     @Test
     void superTypeEvolverCanBeUsedToMorphTheConcreteType() {
-        reset(entityEvolver, concreteTestEntityOneEntityModel, concreteTestEntityTwoEntityModel);
-        when(entityEvolver.evolve(argThat(c -> c instanceof ConcreteTestEntityOne), any(), any())).thenReturn(new ConcreteTestEntityTwo());
-        when(concreteTestEntityOneEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(concreteTestEntityTwoEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        reset(entityEvolver,
+              concreteTestEntityOneEntityMetamodel,
+              concreteTestEntityTwoEntityMetamodel);
+        when(entityEvolver.evolve(argThat(c -> c instanceof ConcreteTestEntityOne),
+                                  any(),
+                                  any())).thenReturn(new ConcreteTestEntityTwo());
+        when(concreteTestEntityOneEntityMetamodel.evolve(any(),
+                                                         any(),
+                                                         any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(concreteTestEntityTwoEntityMetamodel.evolve(any(),
+                                                         any(),
+                                                         any())).thenAnswer(invocation -> invocation.getArgument(0));
         EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(SUPER_TYPE_EVENT), "event");
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
-        AbstractTestEntity result = polymorphicModel.evolve(entity, eventMessage, context);
+        AbstractTestEntity result = polymorphicMetamodel.evolve(entity, eventMessage, context);
         assertInstanceOf(ConcreteTestEntityTwo.class, result);
     }
 
 
     @Test
     void concreteTypeEvolverCanBeUsedToMorphTheConcreteType() {
-        reset(entityEvolver, concreteTestEntityOneEntityModel, concreteTestEntityTwoEntityModel);
+        reset(entityEvolver,
+              concreteTestEntityOneEntityMetamodel,
+              concreteTestEntityTwoEntityMetamodel);
         when(entityEvolver.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(concreteTestEntityOneEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> new ConcreteTestEntityTwo());
-        when(concreteTestEntityTwoEntityModel.evolve(any(), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(concreteTestEntityOneEntityMetamodel.evolve(any(),
+                                                         any(),
+                                                         any())).thenAnswer(invocation -> new ConcreteTestEntityTwo());
+        when(concreteTestEntityTwoEntityMetamodel.evolve(any(),
+                                                         any(),
+                                                         any())).thenAnswer(invocation -> invocation.getArgument(0));
         EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(SUPER_TYPE_EVENT), "event");
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
-        AbstractTestEntity result = polymorphicModel.evolve(entity, eventMessage, context);
+        AbstractTestEntity result = polymorphicMetamodel.evolve(entity, eventMessage, context);
         assertInstanceOf(ConcreteTestEntityTwo.class, result);
     }
 
     @Test
     void returnsSuperTypeAsEntityType() {
-        assertEquals(AbstractTestEntity.class, polymorphicModel.entityType());
+        assertEquals(AbstractTestEntity.class, polymorphicMetamodel.entityType());
     }
 
     @Test
@@ -333,17 +356,17 @@ class PolymorphicEntityModelTest {
                 CONCRETE_TWO_INSTANCE_COMMAND,
                 CONCRETE_ONE_INSTANCE_COMMAND
         );
-        assertEquals(expectedCommands, polymorphicModel.supportedCommands());
+        assertEquals(expectedCommands, polymorphicMetamodel.supportedCommands());
     }
 
     @Test
     void correctlyDescribesComponent() {
         MockComponentDescriptor descriptor = new MockComponentDescriptor();
-        polymorphicModel.describeTo(descriptor);
+        polymorphicMetamodel.describeTo(descriptor);
 
         assertEquals(AbstractTestEntity.class, descriptor.getProperty("entityType"));
-        EntityModel<AbstractTestEntity> superTypeModel = descriptor.getProperty("superTypeModel");
-        superTypeModel.describeTo(descriptor);
+        EntityMetamodel<AbstractTestEntity> superTypeMetamodel = descriptor.getProperty("superTypeMetamodel");
+        superTypeMetamodel.describeTo(descriptor);
 
         assertEquals(entityEvolver, descriptor.getProperty("entityEvolver"));
         assertEquals(Map.of(
@@ -351,9 +374,9 @@ class PolymorphicEntityModelTest {
         ), descriptor.getProperty("commandHandlers"));
 
         assertEquals(Map.of(
-                ConcreteTestEntityOne.class, concreteTestEntityOneEntityModel,
-                ConcreteTestEntityTwo.class, concreteTestEntityTwoEntityModel
-        ), descriptor.getProperty("polymorphicModels"));
+                ConcreteTestEntityOne.class, concreteTestEntityOneEntityMetamodel,
+                ConcreteTestEntityTwo.class, concreteTestEntityTwoEntityMetamodel
+        ), descriptor.getProperty("polymorphicMetamodels"));
     }
 
     @Nested
@@ -362,34 +385,34 @@ class PolymorphicEntityModelTest {
 
         @Test
         void cannotAddConcreteTypeWithSameEntityType() {
-            PolymorphicEntityModelBuilder<AbstractTestEntity> builder = PolymorphicEntityModel
+            PolymorphicEntityMetamodelBuilder<AbstractTestEntity> builder = PolymorphicEntityMetamodel
                     .forSuperType(AbstractTestEntity.class)
-                    .addConcreteType(concreteTestEntityOneEntityModel)
-                    .addConcreteType(concreteTestEntityTwoEntityModel);
+                    .addConcreteType(concreteTestEntityOneEntityMetamodel)
+                    .addConcreteType(concreteTestEntityTwoEntityMetamodel);
 
             assertThrows(IllegalArgumentException.class, () -> {
-                builder.addConcreteType(concreteTestEntityOneEntityModel);
+                builder.addConcreteType(concreteTestEntityOneEntityMetamodel);
             });
         }
 
         @Test
         void cannotAddConcreteTypeWithConflictingCreationalCommandHandlerOfOther() {
-            when(concreteTestEntityOneEntityModel.supportedCreationalCommands()).thenReturn(Set.of(
+            when(concreteTestEntityOneEntityMetamodel.supportedCreationalCommands()).thenReturn(Set.of(
                     CONCRETE_ONE_CREATIONAL_COMMAND, CONCRETE_TWO_CREATIONAL_COMMAND));
-            when(concreteTestEntityTwoEntityModel.supportedCreationalCommands()).thenReturn(Set.of(
+            when(concreteTestEntityTwoEntityMetamodel.supportedCreationalCommands()).thenReturn(Set.of(
                     CONCRETE_TWO_CREATIONAL_COMMAND));
-            PolymorphicEntityModelBuilder<AbstractTestEntity> builder = PolymorphicEntityModel
+            PolymorphicEntityMetamodelBuilder<AbstractTestEntity> builder = PolymorphicEntityMetamodel
                     .forSuperType(AbstractTestEntity.class)
-                    .addConcreteType(concreteTestEntityOneEntityModel);
+                    .addConcreteType(concreteTestEntityOneEntityMetamodel);
 
             assertThrows(IllegalArgumentException.class, () -> {
-                builder.addConcreteType(concreteTestEntityTwoEntityModel);
+                builder.addConcreteType(concreteTestEntityTwoEntityMetamodel);
             });
         }
 
         @Test
         void canNotAddNullChildEntityModel() {
-            PolymorphicEntityModelBuilder<AbstractTestEntity> builder = PolymorphicEntityModel.forSuperType(
+            PolymorphicEntityMetamodelBuilder<AbstractTestEntity> builder = PolymorphicEntityMetamodel.forSuperType(
                     AbstractTestEntity.class);
 
             assertThrows(NullPointerException.class, () -> {
