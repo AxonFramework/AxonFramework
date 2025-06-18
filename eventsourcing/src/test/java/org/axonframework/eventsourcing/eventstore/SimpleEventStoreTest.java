@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.eventhandling.EventTestUtils.eventMessage;
-import static org.axonframework.utils.AssertUtils.awaitSuccessfullCompletion;
+import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -247,7 +247,7 @@ class SimpleEventStoreTest {
                .runOnInvocation(context -> verifyNoInteractions(mockStorageEngine))
                .runOnCommit(context -> verify(mockStorageEngine).appendEvents(any(), anyList()));
 
-            awaitSuccessfullCompletion(uow.execute());
+            awaitSuccessfulCompletion(uow.execute());
         }
 
         @Test
@@ -257,7 +257,7 @@ class SimpleEventStoreTest {
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
 
             CompletableFuture<Void> result = testSubject.publish(null, eventMessage(0));
-            awaitSuccessfullCompletion(result);
+            awaitSuccessfulCompletion(result);
         }
     }
 
