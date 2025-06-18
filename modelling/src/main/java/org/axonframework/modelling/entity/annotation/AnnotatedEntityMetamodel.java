@@ -284,8 +284,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
         if (payloadTypes.containsKey(qualifiedName)) {
             return payloadTypes.get(qualifiedName);
         }
-        for (AnnotatedEntityMetamodel<?> concreteType : concreteMetamodels) {
-            Class<?> payloadType = concreteType.getExpectedRepresentation(qualifiedName);
+        for (AnnotatedEntityMetamodel<?> concreteMetamodel : concreteMetamodels) {
+            Class<?> payloadType = concreteMetamodel.getExpectedRepresentation(qualifiedName);
             if (payloadType != null) {
                 return payloadType;
             }
