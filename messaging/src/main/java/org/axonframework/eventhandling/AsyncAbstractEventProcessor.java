@@ -114,7 +114,7 @@ public abstract class AsyncAbstractEventProcessor implements EventProcessor {
         try {
             // TODO #3098 - Support sequencing within Segments!
             var eventMessageQualifiedName = eventMessage.type().qualifiedName();
-            var canHandle = eventHandlingComponent.supportedEvents().contains(eventMessageQualifiedName);
+            var canHandle = eventHandlingComponent.isSupported(eventMessageQualifiedName);
             return canHandle; // && eventHandlerInvoker.canHandle(eventMessage, context, segment);
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
@@ -125,7 +125,7 @@ public abstract class AsyncAbstractEventProcessor implements EventProcessor {
     protected boolean canHandleType(MessageType messageType) {
         try {
             var eventMessageQualifiedName = messageType.qualifiedName();
-            return eventHandlingComponent.supportedEvents().contains(eventMessageQualifiedName);
+            return eventHandlingComponent.isSupported(eventMessageQualifiedName);
         } catch (Exception e) {
             return false;
         }

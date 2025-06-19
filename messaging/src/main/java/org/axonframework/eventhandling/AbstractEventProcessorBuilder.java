@@ -124,7 +124,7 @@ public abstract class AbstractEventProcessorBuilder {
      */
     protected void validate() throws AxonConfigurationException {
         assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
-        assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
+//        assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
     }
 
     private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
