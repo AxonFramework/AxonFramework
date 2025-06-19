@@ -16,12 +16,11 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
-import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
@@ -29,6 +28,7 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Comp
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateCustomer;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateEmployee;
 import org.axonframework.integrationtests.testsuite.administration.commands.GiveRaise;
+import org.axonframework.integrationtests.testsuite.administration.commands.PersonCommand;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.events.CustomerCreated;
 import org.axonframework.integrationtests.testsuite.administration.events.EmployeeCreated;
@@ -41,10 +41,10 @@ import org.axonframework.integrationtests.testsuite.administration.state.immutab
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
-import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
+import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
-import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 
@@ -55,8 +55,8 @@ import static java.lang.String.format;
  */
 public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
-    @Override
-    CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
+    EntityMetamodel<ImmutablePerson> buildEntityMetamodel(Configuration configuration,
+                                                          EntityMetamodelBuilder<ImmutablePerson> builder) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
 
         // Task is the list-based child-metamodel of Employee
@@ -152,8 +152,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                           }))
                 .build();
 
-        // Person is the polymorphic entity type
-        EntityMetamodel<ImmutablePerson> personMetamodel = EntityMetamodel
+        return EntityMetamodel
                 .forPolymorphicEntityType(ImmutablePerson.class)
                 .addConcreteType(employeeMetamodel)
                 .addConcreteType(customerMetamodel)
@@ -166,12 +165,15 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                             return MessageStream.empty().cast();
                                         })
                 .build();
+    }
 
-        EventSourcingRepository<PersonIdentifier, ImmutablePerson> repository = new EventSourcingRepository<>(
-                PersonIdentifier.class,
-                ImmutablePerson.class,
-                configuration.getComponent(EventStore.class),
-                EventSourcedEntityFactory.fromEventMessage((identifier, eventMessage) -> {
+
+    @Override
+    Module getModule() {
+        EventSourcedEntityModule<PersonIdentifier, ImmutablePerson> personEntityModule = EventSourcedEntityModule
+                .declarative(PersonIdentifier.class, ImmutablePerson.class)
+                .messagingModel(this::buildEntityMetamodel)
+                .entityFactory(c -> EventSourcedEntityFactory.fromEventMessage((identifier, eventMessage) -> {
                     if (eventMessage.getPayload() instanceof EmployeeCreated employeeCreated) {
                         return new ImmutableEmployee(employeeCreated);
                     }
@@ -180,15 +182,20 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                     }
                     throw new IllegalArgumentException(
                             format("Unknown event type: %s", eventMessage.getPayloadType().getName()));
-                }),
-                (s, ctx) -> EventCriteria.havingTags("Person", s.key()),
-                personMetamodel
-        );
-
-        return new EntityCommandHandlingComponent<>(
-                repository,
-                personMetamodel,
-                new AnnotationBasedEntityIdResolver<>()
-        );
+                }))
+                .criteriaResolver(c -> (s, ctx) -> EventCriteria.havingTags("Person", s.key()))
+                .entityIdResolver(config -> (message, context) -> {
+                    if(message.getPayload() instanceof PersonCommand personCommand) {
+                        return personCommand.identifier();
+                    }
+                    throw new IllegalArgumentException(
+                            format("Unknown command type: %s", message.getPayloadType().getName()));
+                });
+        return StatefulCommandHandlingModule
+                .named("ImmutableBuilderEntityModelAdministrationTest")
+                .entities()
+                .entity(personEntityModule)
+                .commandHandlers()
+                .build();
     }
 }

@@ -16,24 +16,12 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
-import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.annotation.reflection.AnnotationBasedEventSourcedEntityFactory;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.configuration.Module;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
-import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableCustomer;
-import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableEmployee;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutablePerson;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
-import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
+import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
-import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
-
-import java.util.Set;
 
 /**
  * Runs the administration test suite using as many reflection components of the {@link EntityMetamodel} and
@@ -42,31 +30,11 @@ import java.util.Set;
 public class MutableReflectionEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
     @Override
-    CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
-        EntityMetamodel<MutablePerson> personMetamodel = AnnotatedEntityMetamodel.forPolymorphicType(
-                MutablePerson.class,
-                Set.of(MutableEmployee.class, MutableCustomer.class),
-                configuration.getComponent(ParameterResolverFactory.class),
-                configuration.getComponent(MessageTypeResolver.class)
-        );
-
-        EventSourcingRepository<PersonIdentifier, MutablePerson> repository = new EventSourcingRepository<>(
-                PersonIdentifier.class,
-                MutablePerson.class,
-                configuration.getComponent(EventStore.class),
-                new AnnotationBasedEventSourcedEntityFactory<>(MutablePerson.class,
-                                                               PersonIdentifier.class,
-                                                               Set.of(MutableEmployee.class, MutableCustomer.class),
-                                                               configuration.getComponent(ParameterResolverFactory.class),
-                                                               configuration.getComponent(MessageTypeResolver.class)),
-                (s, ctx) -> EventCriteria.havingTags("Person", s.key()),
-                personMetamodel
-        );
-
-        return new EntityCommandHandlingComponent<>(
-                repository,
-                personMetamodel,
-                new AnnotationBasedEntityIdResolver<>()
-        );
+    Module getModule() {
+        return StatefulCommandHandlingModule.named("MutableReflectionEntityModelAdministrationTest")
+                                            .entities()
+                                            .entity(EventSourcedEntityModule.annotated(PersonIdentifier.class,
+                                                                                       MutablePerson.class))
+                                            .build();
     }
 }

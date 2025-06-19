@@ -28,6 +28,7 @@ import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -54,7 +55,23 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
     public static ModellingConfigurer create() {
-        return new ModellingConfigurer(MessagingConfigurer.create());
+        return enhance(MessagingConfigurer.create());
+    }
+
+    /**
+     * Creates a ModellingConfigurer that enhances an existing {@code MessagingConfigurer}. This method is useful when
+     * applying multiple specialized Configurers to configure a single application.
+     *
+     * @param messagingConfigurer The {@code MessagingConfigurer} to enhance with configuration of messaging
+     *                            components.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     * @see #create()
+     */
+    public static ModellingConfigurer enhance(@Nonnull MessagingConfigurer messagingConfigurer) {
+        return new ModellingConfigurer(messagingConfigurer)
+                .componentRegistry(cr -> cr
+                        .registerEnhancer(new ModellingConfigurationDefaults())
+                );
     }
 
     /**
@@ -66,6 +83,7 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * @param delegate The delegate {@code MessagingConfigurer} the {@code ModellingConfigurer} is based on.
      */
     public ModellingConfigurer(@Nonnull MessagingConfigurer delegate) {
+        Objects.requireNonNull(delegate, "The delegate MessagingConfigurer may not be null");
         this.delegate = delegate;
     }
 

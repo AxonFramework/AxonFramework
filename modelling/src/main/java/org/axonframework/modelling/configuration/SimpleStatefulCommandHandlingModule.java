@@ -19,10 +19,10 @@ package org.axonframework.modelling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandlingComponent;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
@@ -31,7 +31,6 @@ import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
-import org.axonframework.modelling.repository.Repository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,9 +38,10 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
+import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
 
 /**
- * Default implementation of the {@link StatefulCommandHandlingModule}. Registers the
+ * Simple implementation of the {@link StatefulCommandHandlingModule}. Registers the
  * {@link HierarchicalStateManagerConfigurationEnhancer} enhancer to the module so that message handlers get access to
  * entities via defining parameters, such as entitiy classes with {@link InjectEntity} or the {@link StateManager}
  * itself.
@@ -52,8 +52,8 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class DefaultStatefulCommandHandlingModule
-        extends BaseModule<DefaultStatefulCommandHandlingModule>
+class SimpleStatefulCommandHandlingModule
+        extends BaseModule<SimpleStatefulCommandHandlingModule>
         implements StatefulCommandHandlingModule,
         StatefulCommandHandlingModule.SetupPhase,
         StatefulCommandHandlingModule.CommandHandlerPhase,
@@ -61,15 +61,15 @@ class DefaultStatefulCommandHandlingModule
 
     private final String moduleName;
     private final String statefulCommandHandlingComponentName;
-    private final Map<String, EntityBuilder<?, ?>> entityBuilders;
+    private final Map<String, EntityModule<?, ?>> entityModules;
     private final Map<QualifiedName, ComponentBuilder<StatefulCommandHandler>> handlerBuilders;
     private final List<ComponentBuilder<CommandHandlingComponent>> handlingComponentBuilders;
 
-    DefaultStatefulCommandHandlingModule(@Nonnull String moduleName) {
+    SimpleStatefulCommandHandlingModule(@Nonnull String moduleName) {
         super(moduleName);
         this.moduleName = requireNonNull(moduleName, "The module name cannot be null.");
         this.statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
-        this.entityBuilders = new HashMap<>();
+        this.entityModules = new HashMap<>();
         this.handlerBuilders = new HashMap<>();
         this.handlingComponentBuilders = new ArrayList<>();
     }
@@ -103,64 +103,52 @@ class DefaultStatefulCommandHandlingModule
     }
 
     @Override
-    public <I, E> EntityPhase entity(@Nonnull EntityBuilder<I, E> entityBuilder) {
-        requireNonNull(entityBuilder, "The entity builder cannot be null.");
-        entityBuilders.put(entityBuilder.entityName(), entityBuilder);
+    public <I, E> EntityPhase entity(@Nonnull EntityModule<I, E> entityModule) {
+        requireNonNull(entityModule, "The entity module cannot be null.");
+        entityModules.put(entityModule.entityName(), entityModule);
         return this;
     }
 
     @Override
     public StatefulCommandHandlingModule build() {
-        registerRepositories();
-        componentRegistry(cr -> cr.registerComponent(StateManager.class, this::stateManagerFactory));
-        registerCommandHandlers();
+        registerStateManager();
+        registerStatefulCommandHandlingComponent();
+        registerEntityModules();
         return this;
     }
 
-    private void registerRepositories() {
-        entityBuilders.forEach((name, entityBuilder) -> componentRegistry(
-                cr -> cr.registerComponent(Repository.class, name, entityBuilder.repository())
-        ));
+    private void registerEntityModules() {
+        componentRegistry(cr -> {
+            entityModules.values().forEach(cr::registerModule);
+        });
     }
 
-    private SimpleStateManager stateManagerFactory(Configuration config) {
-        SimpleStateManager.Builder managerBuilder = SimpleStateManager.builder("StateManager[" + moduleName + "]");
-        for (String repositoryName : entityBuilders.keySet()) {
-            //noinspection unchecked
-            managerBuilder.register(config.getComponent(Repository.class, repositoryName));
-        }
-        return managerBuilder.build();
+    private void registerStateManager() {
+        componentRegistry(cr -> cr.registerComponent(StateManager.class, config ->
+                SimpleStateManager.named("StateManager[" + moduleName + "]")));
     }
 
-    private void registerCommandHandlers() {
-        componentRegistry(cr -> cr.registerComponent(
-                StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName,
-                c -> {
+    private void registerStatefulCommandHandlingComponent() {
+        componentRegistry(cr -> cr.registerComponent(getStatefulCommandHandlingComponentComponentDefinition()));
+    }
+
+    private ComponentDefinition<StatefulCommandHandlingComponent> getStatefulCommandHandlingComponentComponentDefinition() {
+        return ofTypeAndName(StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName)
+                .withBuilder(c -> {
                     StatefulCommandHandlingComponent statefulCommandHandler = StatefulCommandHandlingComponent.create(
                             statefulCommandHandlingComponentName,
                             c.getComponent(StateManager.class)
                     );
+                    handlingComponentBuilders.forEach(handlingComponent -> statefulCommandHandler.subscribe(
+                            handlingComponent.build(c)));
                     handlerBuilders.forEach((key, value) -> statefulCommandHandler.subscribe(key, value.build(c)));
-                    handlingComponentBuilders.forEach(
-                            handlingComponent -> statefulCommandHandler.subscribe(handlingComponent.build(c))
-                    );
                     return statefulCommandHandler;
-                }
-        ));
-    }
-
-    @Override
-    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        lifecycleRegistry.onStart(
-                Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
-                (c) -> {
-                    c.getComponent(CommandBus.class)
-                     .subscribe(c.getComponent(
-                             StatefulCommandHandlingComponent.class,
-                             statefulCommandHandlingComponentName
-                     ));
-                }
-        );
-        return super.build(parent, lifecycleRegistry);
+                })
+                .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (configuration, component) -> {
+                    configuration.getComponent(CommandBus.class)
+                                 .subscribe(configuration.getComponent(StatefulCommandHandlingComponent.class,
+                                                                       statefulCommandHandlingComponentName));
+                    return FutureUtils.emptyCompletedFuture();
+                });
     }
 }

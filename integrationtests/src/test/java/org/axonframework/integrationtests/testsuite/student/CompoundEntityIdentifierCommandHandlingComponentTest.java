@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
@@ -30,10 +30,12 @@ import org.axonframework.integrationtests.testsuite.student.events.MentorAssigne
 import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignment;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.SimpleEntityEvolvingComponent;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.junit.jupiter.api.*;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,16 +49,30 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
 
     @Override
     protected void registerAdditionalEntities(StatefulCommandHandlingModule.EntityPhase entityConfigurer) {
-        EventSourcedEntityBuilder<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentSlice =
-                EventSourcedEntityBuilder.entity(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
-                                         .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(StudentMentorAssignment::new))
-                                         .criteriaResolver(c -> (id, ctx) -> EventCriteria.either(
-                                                 EventCriteria.havingTags(new Tag("Student", id.menteeId())),
-                                                 EventCriteria.havingTags(new Tag("Student", id.mentorId()))
-                                                              .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
-                                         ))
-                                         .eventSourcingHandler(MentorAssignedToStudentEvent.class,
-                                                               StudentMentorAssignment::handle);
+        EventSourcedEntityModule<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentSlice =
+                EventSourcedEntityModule
+                        .declarative(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
+                        .messagingModel((c, model) -> model
+                                .entityEvolver(
+                                        new SimpleEntityEvolvingComponent<>(
+                                                Map.of(
+                                                        new QualifiedName(MentorAssignedToStudentEvent.class),
+                                                        (entity, event, context) -> {
+                                                            entity.handle((MentorAssignedToStudentEvent) event.getPayload());
+                                                            return entity;
+                                                        }
+                                                )
+                                        )
+                                )
+                                .build()
+                        )
+                        .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(StudentMentorAssignment::new))
+                        .criteriaResolver(c -> (id, ctx) -> EventCriteria.either(
+                                EventCriteria.havingTags(new Tag("Student", id.menteeId())),
+                                EventCriteria.havingTags(new Tag("Student", id.mentorId()))
+                                             .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
+                        ))
+                        .build();
 
         entityConfigurer.entity(mentorAssignmentSlice);
     }
@@ -89,7 +105,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                         throw new IllegalArgumentException("Mentee already has a mentor");
                     }
                     eventAppender.append(new MentorAssignedToStudentEvent(payload.mentorId(),
-                                                                     payload.menteeId()));
+                                                                          payload.menteeId()));
                     return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
                 }
         ));

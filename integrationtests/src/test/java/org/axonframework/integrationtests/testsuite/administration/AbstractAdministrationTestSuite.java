@@ -16,10 +16,8 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.Module;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
@@ -29,11 +27,11 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Crea
 import org.axonframework.integrationtests.testsuite.administration.commands.GiveRaise;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
+import java.util.Arrays;
 import java.util.concurrent.CompletionException;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Test suite for verifying polymorphic behavior of entities. Can be implemented by different test classes that verify
@@ -53,14 +51,16 @@ public abstract class AbstractAdministrationTestSuite {
             "homer@the-simpsons.io"
     );
 
-    private CommandHandlingComponent component;
     private CommandGateway commandGateway;
 
-    abstract CommandHandlingComponent getCommandHandlingComponent(Configuration configuration);
+    abstract Module getModule();
 
     @BeforeEach
     void setUp() {
-        doSetupFor(AbstractAdministrationTestSuite.this::getCommandHandlingComponent);
+        var configuration = EventSourcingConfigurer.create()
+                               .componentRegistry(cr -> cr.registerModule(getModule()))
+                               .start();
+        commandGateway = configuration.getComponent(CommandGateway.class);
     }
 
     @Test
@@ -146,7 +146,8 @@ public abstract class AbstractAdministrationTestSuite {
         try {
             runnable.run();
         } catch (CompletionException e) {
-            Assertions.assertTrue(e.getCause().getMessage().toLowerCase().contains(expectedMessage.toLowerCase()), () -> "Expected message to contain: " + expectedMessage + ", but got: " + e.getCause().getMessage());
+            Assertions.assertTrue(e.getCause().getMessage().toLowerCase().contains(expectedMessage.toLowerCase()), () -> "Expected message to contain: " + expectedMessage + ", but got: " + e.getCause().getMessage() + "\n" + Arrays.stream(
+                    e.getCause().getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n")));
             return;
         } catch (Exception e) {
             Assertions.fail("Expected CompletionException, but got: " + e.getClass().getSimpleName());
@@ -156,18 +157,6 @@ public abstract class AbstractAdministrationTestSuite {
 
     private void sendCommand(Object command) {
         commandGateway.send(command, null).getResultMessage().join();
-    }
-
-    private void doSetupFor(Function<Configuration, CommandHandlingComponent> commandHandlingComponentFactory) {
-        EventSourcingConfigurer.create()
-                               .lifecycleRegistry(lr -> {
-                                   lr.onStart(0, c -> {
-                                       component = commandHandlingComponentFactory.apply(c);
-                                       c.getComponent(CommandBus.class).subscribe(component);
-                                       commandGateway = c.getComponent(CommandGateway.class);
-                                   });
-                               })
-                               .start();
     }
 }
 

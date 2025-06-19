@@ -18,8 +18,8 @@ package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.Repository;
 import org.axonframework.modelling.repository.ManagedEntity;
+import org.axonframework.modelling.repository.Repository;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -30,6 +30,8 @@ import java.util.concurrent.CompletableFuture;
  * {@link StateManager} that can load an entity from two delegates, giving preference to the child delegate and then the
  * parent. This is useful to encapsulate a set of repositories that are only relevant in a specific context, such as a
  * specific {@link org.axonframework.configuration.Module}.
+ * <p>
+ * Any registrations of {@link Repository} will be done on the child {@link StateManager}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -55,6 +57,13 @@ public class HierarchicalStateManager implements StateManager {
      */
     public static HierarchicalStateManager create(@Nonnull StateManager parent, @Nonnull StateManager child) {
         return new HierarchicalStateManager(parent, child);
+    }
+
+    @Override
+    public <I, T> StateManager register(@Nonnull Repository<I, T> repository) {
+        Objects.requireNonNull(repository, "The repository must not be null.");
+        child.register(repository);
+        return this;
     }
 
     @Override
@@ -96,16 +105,18 @@ public class HierarchicalStateManager implements StateManager {
     }
 
     /**
-     * Returns the parent {@link StateManager} of this {@link HierarchicalStateManager}.
-     * @return The parent {@link StateManager} of this {@link HierarchicalStateManager}.
+     * Returns the parent {@link StateManager} of this {@code HierarchicalStateManager}.
+     *
+     * @return The parent {@link StateManager} of this {@code HierarchicalStateManager}.
      */
     public StateManager getParent() {
         return parent;
     }
 
     /**
-     * Returns the child {@link StateManager} of this {@link HierarchicalStateManager}.
-     * @return The child {@link StateManager} of this {@link HierarchicalStateManager}.
+     * Returns the child {@link StateManager} of this {@code HierarchicalStateManager}.
+     *
+     * @return The child {@link StateManager} of this {@code HierarchicalStateManager}.
      */
     public StateManager getChild() {
         return child;

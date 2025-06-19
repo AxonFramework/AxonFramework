@@ -23,4 +23,6 @@ public record CreateCustomer(
         @TargetEntityId
         PersonIdentifier identifier,
         String emailAddress
-) {}
+)  implements PersonCommand {
+
+}

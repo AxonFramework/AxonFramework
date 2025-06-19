@@ -14,19 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.administration.common;
+package org.axonframework.integrationtests.testsuite.administration.commands;
 
+import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 
-import jakarta.annotation.Nonnull;
-
-public record PersonIdentifier(
-        PersonType type,
-        String key
-) {
-
-    @Nonnull
-    @Override
-    public String toString() {
-        return key;
-    }
+public interface PersonCommand {
+    PersonIdentifier identifier();
 }

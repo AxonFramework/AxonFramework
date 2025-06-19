@@ -27,7 +27,6 @@ import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.StatefulCommandHandler;
-import org.axonframework.modelling.repository.Repository;
 
 import java.util.function.Consumer;
 
@@ -37,11 +36,13 @@ import static java.util.Objects.requireNonNull;
  * A {@link Module} and {@link ModuleBuilder} implementation providing operation to construct a stateful command
  * handling application module.
  * <p>
- * The {@code StatefulCommandHandlingModule} follows a builder paradigm, wherein several {@link EntityBuilder entities}
- * and {@link StatefulCommandHandler StatefulCommandHandlers} can be registered in either order.
+ * The {@code StatefulCommandHandlingModule} follows a builder paradigm, wherein several
+ * {@link EntityModule entity modules} and {@link StatefulCommandHandler StatefulCommandHandlers} can be registered in
+ * either order. Entities defined in the registered entity modules will be available in the
+ * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
  * <p>
  * To initiate entity registration, you should move into the entity registration phase by invoking
- * {@link SetupPhase#entities()}. To register command handlers a similar registration phase switch should be made, by
+ * {@link SetupPhase#entities()}. To register command handlers, a similar registration phase switch should be made, by
  * invoking {@link SetupPhase#commandHandlers()}.
  * <p>
  * Here's an example of how to register two stateful command handler lambdas, one state-based entity with a repository
@@ -49,11 +50,11 @@ import static java.util.Objects.requireNonNull;
  * <pre>
  * StatefulCommandHandlingModule.named("my-module")
  *                              .entities()
- *                              .entity(StateBasedEntityBuilder.entity(CourseId.class, Course.class)
- *                                                             .repository(config -> ...))
- *                              .entity(StateBasedEntityBuilder.entity(StudentId.class, Student.class)
- *                                                             .loader(config -> ...)
- *                                                             .persister(config -> ...))
+ *                              .entity(StateBasedEntityModule.declarative(CourseId.class, Course.class)
+ *                                                            .repository(config -> ...))
+ *                              .entity(StateBasedEntityModule.declarative(StudentId.class, Student.class)
+ *                                                            .loader(config -> ...)
+ *                                                            .persister(config -> ...))
  *                              .commandHandlers()
  *                              .commandHandler(new QualifiedName(RenameCourseCommand.class),
  *                                              (cmd, course, context) -> { ...command handling logic... })
@@ -70,9 +71,7 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface StatefulCommandHandlingModule extends
-        Module,
-        ModuleBuilder<StatefulCommandHandlingModule> {
+public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<StatefulCommandHandlingModule> {
 
     /**
      * Starts a {@code StatefulCommandHandlingModule} module with the given {@code moduleName}.
@@ -81,7 +80,7 @@ public interface StatefulCommandHandlingModule extends
      * @return The setup phase of this module, for a fluent API.
      */
     static SetupPhase named(@Nonnull String moduleName) {
-        return new DefaultStatefulCommandHandlingModule(moduleName);
+        return new SimpleStatefulCommandHandlingModule(moduleName);
     }
 
     /**
@@ -256,25 +255,21 @@ public interface StatefulCommandHandlingModule extends
     }
 
     /**
-     * The entity phase of the stateful command handling module, providing the {@link #entity(EntityBuilder)} operation
-     * to register {@link EntityBuilder entity builders}.
+     * The entity phase of the stateful command handling module, where {@link EntityModule entity modules} can be
+     * registered. The entities defined in the registered modules will be available in the
+     * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
      */
     interface EntityPhase extends SetupPhase, ModuleBuilder<StatefulCommandHandlingModule> {
 
         /**
-         * Registers the given {@code entityBuilder} with this module.
-         * <p>
-         * The {@link EntityBuilder#repository()} from the {@code entityBuilder} will be registered with the
-         * {@link org.axonframework.configuration.ApplicationConfigurer} this module is part of. To retrieve the
-         * resulting {@link Repository}, use the {@code Repository} and {@link EntityBuilder#entityName()} on the
-         * {@link Configuration#getComponent(Class, String)} method respectively.
+         * Registers the given {@code entityModule} with this module. This will make the entity available in the
+         * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
          *
-         * @param entityBuilder The entity builder, returning the {@link EntityBuilder#repository()} to register with
-         *                      this module.
-         * @param <I>           The type of identifier used to identify the entity that's being built.
-         * @param <E>           The type of the entity being built.
+         * @param entityModule The entity module to register with this module.
+         * @param <I>          The type of identifier used to identify the entity that's being built.
+         * @param <E>          The type of the entity being built.
          * @return The entity phase of this module, for a fluent API.
          */
-        <I, E> EntityPhase entity(@Nonnull EntityBuilder<I, E> entityBuilder);
+        <I, E> EntityPhase entity(@Nonnull EntityModule<I, E> entityModule);
     }
 }
