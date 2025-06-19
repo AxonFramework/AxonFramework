@@ -64,6 +64,8 @@ public interface StateManager {
      * @param <ID>       The type of id.
      * @param <T>        The type of state.
      * @return This {@code StateManager} for fluent interfacing.
+     * @throws RepositoryAlreadyRegisteredException if a repository with the same entity type and id type is already
+     *                                              registered.
      */
     default <ID, T> StateManager register(@Nonnull Class<ID> idType,
                                           @Nonnull Class<T> entityType,

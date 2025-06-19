@@ -228,7 +228,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     }
 
     @Override
-    public ApplicationConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
+    public EventSourcingConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
         delegate.lifecycleRegistry(lifecycleRegistrar);
         return this;
     }

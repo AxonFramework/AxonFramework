@@ -123,11 +123,11 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
          * messaging metamodel for the event-sourced entity being built. This metamodel is used to evolve the entity and
          * handle commands for the entity (if applicable).
          *
-         * @param entityFactory A {@link EntityMetamodelConfigurationBuilder} constructing the {@link EntityMetamodel}
-         *                      for the event-sourced entity.
+         * @param metamodelFactory A {@link EntityMetamodelConfigurationBuilder} constructing the
+         *                         {@link EntityMetamodel} for the event-sourced entity.
          * @return The {@link EntityFactoryPhase} phase of this builder, for a fluent API.
          */
-        EntityFactoryPhase<ID, E> messagingModel(@Nonnull EntityMetamodelConfigurationBuilder<E> entityFactory);
+        EntityFactoryPhase<ID, E> messagingModel(@Nonnull EntityMetamodelConfigurationBuilder<E> metamodelFactory);
     }
 
     /**
