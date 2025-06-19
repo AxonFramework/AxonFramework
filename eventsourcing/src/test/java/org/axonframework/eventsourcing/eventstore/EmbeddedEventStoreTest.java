@@ -50,8 +50,8 @@ import java.util.stream.Stream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvent;
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvents;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;

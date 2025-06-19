@@ -54,7 +54,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventhandling.EventTestUtils.*;
+import static org.axonframework.eventhandling.DomainEventTestUtils.*;
 import static org.axonframework.eventsourcing.utils.TestSerializer.xStreamSerializer;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

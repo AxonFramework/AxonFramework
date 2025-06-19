@@ -95,7 +95,7 @@ import static java.util.Collections.emptySortedSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.eventhandling.EventTestUtils.*;
+import static org.axonframework.eventhandling.DomainEventTestUtils.*;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertUntil;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;

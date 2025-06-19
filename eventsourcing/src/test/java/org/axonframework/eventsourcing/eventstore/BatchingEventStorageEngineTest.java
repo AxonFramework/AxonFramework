@@ -25,8 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.axonframework.eventhandling.EventTestUtils.AGGREGATE;
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

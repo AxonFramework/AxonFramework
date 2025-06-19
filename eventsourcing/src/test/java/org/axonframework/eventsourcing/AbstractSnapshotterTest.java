@@ -41,8 +41,8 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvent;
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvents;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

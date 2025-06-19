@@ -35,7 +35,7 @@ import java.util.Optional;
 import static java.util.Collections.singletonMap;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventhandling.EventTestUtils.*;
+import static org.axonframework.eventhandling.DomainEventTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

@@ -32,7 +32,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvent;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

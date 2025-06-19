@@ -31,8 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvent;
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvents;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

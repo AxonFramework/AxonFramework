@@ -25,8 +25,8 @@ import org.mockito.*;
 import java.util.Collections;
 import java.util.List;
 
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvent;
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvents;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

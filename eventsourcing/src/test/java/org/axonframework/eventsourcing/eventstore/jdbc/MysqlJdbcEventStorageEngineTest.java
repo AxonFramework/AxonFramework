@@ -29,7 +29,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvent;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

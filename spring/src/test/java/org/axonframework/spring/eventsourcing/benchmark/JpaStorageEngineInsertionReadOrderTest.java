@@ -55,8 +55,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
-import static org.axonframework.eventhandling.EventTestUtils.AGGREGATE;
-import static org.axonframework.eventhandling.EventTestUtils.createDomainEvent;
+import static org.axonframework.eventhandling.DomainEventTestUtils.AGGREGATE;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
