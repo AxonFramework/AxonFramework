@@ -26,7 +26,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class for {@link SegmentMatcher}.
@@ -35,22 +34,13 @@ import static org.mockito.Mockito.*;
  */
 class SegmentMatcherTest {
 
-    private static final String TEST_AGGREGATE_ID = "aggregateId";
-    private SequencingPolicy<EventMessage<?>> sequencingPolicy;
-    private SegmentMatcher testSubject;
-
-    @BeforeEach
-    void setUp() {
-        sequencingPolicy = mock(SequencingPolicy.class);
-        testSubject = new SegmentMatcher(sequencingPolicy);
-    }
-
     @Test
     void matchesReturnsTrueWhenSegmentMatchesEventBasedOnSequenceIdentifier() {
         // given
+        SequencingPolicy<EventMessage<?>> sequencingPolicy = message -> "sample-identifier";
+        SegmentMatcher testSubject = new SegmentMatcher(sequencingPolicy);
         EventMessage<?> testMessage = EventTestUtils.asEventMessage("test-payload");
         Segment segment = new Segment(0, 0); // Root segment matches everything
-        when(sequencingPolicy.getSequenceIdentifierFor(testMessage)).thenReturn(TEST_AGGREGATE_ID);
 
         // when
         boolean result = testSubject.matches(segment, testMessage);
@@ -62,12 +52,17 @@ class SegmentMatcherTest {
     @Test
     void usesEventMessageIdentifierAsSequenceIdentifierWhenPolicyReturnsNull() {
         // given
+        SequencingPolicy<EventMessage<?>> sequencingPolicy = message -> null;
+        SegmentMatcher testSubject = new SegmentMatcher(sequencingPolicy);
         String messageId = UUID.randomUUID().toString();
         MessageType messageType = new MessageType(new QualifiedName(String.class));
         EventMessage<?> testMessage = EventTestUtils.asEventMessage(
-                new GenericEventMessage<>(messageId, messageType, "test-payload", MetaData.emptyInstance(), Instant.now()));
+                new GenericEventMessage<>(messageId,
+                                          messageType,
+                                          "test-payload",
+                                          MetaData.emptyInstance(),
+                                          Instant.now()));
         Segment segment = Segment.ROOT_SEGMENT; // Matches everything
-        when(sequencingPolicy.getSequenceIdentifierFor(testMessage)).thenReturn(null);
 
         // when
         boolean result = testSubject.matches(segment, testMessage);
@@ -78,10 +73,30 @@ class SegmentMatcherTest {
 
     @Test
     void getSequencingPolicyReturnsConfiguredPolicy() {
+        // given
+        SequencingPolicy<EventMessage<?>> sequencingPolicy = message -> "sample-identifier";
+        SegmentMatcher testSubject = new SegmentMatcher(sequencingPolicy);
+
         // when
         SequencingPolicy<? super EventMessage<?>> result = testSubject.getSequencingPolicy();
 
         // then
         assertThat(result).isSameAs(sequencingPolicy);
+    }
+
+    @Test
+    void matchesReturnsFalseWhenSegmentDoesNotMatchEventBasedOnSequenceIdentifier() {
+        // given
+        Segment segmentEven = new Segment(1, 1); // Will match events with odd hash
+        String sequenceId = "even"; // "even" has a hash code of 3021508, which is even
+        SequencingPolicy<EventMessage<?>> evenSequencingPolicy = message -> sequenceId;
+        SegmentMatcher testSubject = new SegmentMatcher(evenSequencingPolicy);
+        EventMessage<?> oddMessage = EventTestUtils.asEventMessage("test-payload");
+
+        // when
+        boolean result = testSubject.matches(segmentEven, oddMessage);
+
+        // then
+        assertThat(result).isFalse();
     }
 }
