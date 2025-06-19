@@ -108,8 +108,9 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     /**
      * Indicates whether the processor can/should handle the given {@code eventMessage} for the given {@code segment}.
      * <p>
-     * This implementation will check if the event is supported by the {@link EventHandlingComponent} and if the
-     * segment matches the event.
+     * If the event handling component implements {@link SegmentAwareEventHandlingComponent}, this implementation will
+     * delegate the decision to that component. Otherwise, it will check if the event type is supported by the component
+     * and if the segment matches the event based on the default sequencing policy.
      *
      * @param eventMessage The message for which to identify if the processor can handle it
      * @param segment      The segment for which the event should be processed
@@ -120,6 +121,12 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected boolean canHandle(EventMessage<?> eventMessage, @Nonnull ProcessingContext context, Segment segment)
             throws Exception {
         try {
+            if (eventHandlingComponent instanceof SegmentAwareEventHandlingComponent) {
+                return ((SegmentAwareEventHandlingComponent) eventHandlingComponent)
+                        .canHandleInSegment(eventMessage, context, segment);
+            }
+
+            // Default implementation for non-SegmentAwareEventHandlingComponent
             QualifiedName eventName = QualifiedName.fromMessage(eventMessage);
             boolean canHandle = eventHandlingComponent.supportedEvents().contains(eventName);
             if (!canHandle) {
@@ -139,7 +146,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * Returns the sequence identifier for the given event message. The default implementation
      * returns the message identifier, which effectively means each event is in its own sequence.
      * <p>
-     * Implementations may override this method to control event sequencing behavior.
+     * This method is only used when the event handling component doesn't implement {@link SegmentAwareEventHandlingComponent}.
+     * For segment-aware components, the sequence identifier is determined by the component itself.
      *
      * @param eventMessage The message to get the sequence identifier for
      * @return The sequence identifier for this message
