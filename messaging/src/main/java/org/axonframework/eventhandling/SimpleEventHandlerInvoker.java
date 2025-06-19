@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
@@ -29,15 +31,11 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Implementation of an {@link EventHandlerInvoker} that forwards events to a list of registered
@@ -50,7 +48,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     private final List<EventMessageHandler> eventHandlingComponents;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
-    private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
+    private final SegmentMatcher segmentMatcher;
 
     /**
      * Instantiate a {@link SimpleEventHandlerInvoker} based on the fields contained in the {@link Builder}.
@@ -69,7 +67,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                                              : builder.wrapEventMessageHandler(handler)
                                      )
                                      .collect(Collectors.toCollection(ArrayList::new));
-        this.sequencingPolicy = builder.sequencingPolicy;
+        this.segmentMatcher = new SegmentMatcher(builder.sequencingPolicy);
         this.listenerInvocationErrorHandler = builder.listenerInvocationErrorHandler;
     }
 
@@ -119,12 +117,12 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         invokeHandlers(message, context);
     }
 
-    protected boolean sequencingPolicyMatchesSegment(EventMessage<?> message, Segment segment) {
-        return segment.matches(Objects.hashCode(sequenceIdentifier(message)));
+    protected boolean sequencingPolicyMatchesSegment(@Nonnull EventMessage<?> message, @Nonnull Segment segment) {
+        return segmentMatcher.matches(segment, message);
     }
 
     protected Object sequenceIdentifier(EventMessage<?> event) {
-        return getOrDefault(sequencingPolicy.getSequenceIdentifierFor(event), event::getIdentifier);
+        return segmentMatcher.sequenceIdentifier(event);
     }
 
     protected void invokeHandlers(EventMessage<?> message, ProcessingContext context) throws Exception {
@@ -141,7 +139,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     public boolean canHandle(@Nonnull EventMessage<?> eventMessage,
                              @Nonnull ProcessingContext context,
                              @Nonnull Segment segment) {
-        return hasHandler(eventMessage, context) && sequencingPolicyMatchesSegment(eventMessage, segment);
+        return hasHandler(eventMessage, context) && segmentMatcher.matches(segment, eventMessage);
     }
 
     @Override
@@ -190,7 +188,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      * @return the {@link SequencingPolicy} as configured for this {@link EventHandlerInvoker}
      */
     public SequencingPolicy<? super EventMessage<?>> getSequencingPolicy() {
-        return sequencingPolicy;
+        return segmentMatcher.getSequencingPolicy();
     }
 
     /**
