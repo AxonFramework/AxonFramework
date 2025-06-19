@@ -22,6 +22,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -44,8 +45,8 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * Abstract implementation of an {@link EventProcessor}. Before processing of a batch of messages this implementation
  * creates a Unit of Work to process the batch.
  * <p>
- * Actual handling of events is deferred to an {@link EventHandlerInvoker}. Before each message is handled by the
- * invoker this event processor creates an interceptor chain containing all registered
+ * Actual handling of events is deferred to an {@link EventHandlingComponent}. Before each message is handled by the
+ * component this event processor creates an interceptor chain containing all registered
  * {@link MessageHandlerInterceptor interceptors}.
  * <p>
  * Implementations are in charge of providing the events that need to be processed. Once these events are obtained they
@@ -59,7 +60,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
 
     private final String name;
-    private final EventHandlerInvoker eventHandlerInvoker;
+    private final EventHandlingComponent eventHandlingComponent;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
@@ -68,7 +69,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     /**
      * Instantiate a {@link AbstractEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker} and {@link ErrorHandler} are not
+     * Will assert that the Event Processor {@code name}, {@link EventHandlingComponent} and {@link ErrorHandler} are not
      * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractEventProcessor} instance
@@ -76,7 +77,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected AbstractEventProcessor(Builder builder) {
         builder.validate();
         this.name = builder.name;
-        this.eventHandlerInvoker = builder.eventHandlerInvoker;
+        this.eventHandlingComponent = builder.eventHandlingComponent;
         this.errorHandler = builder.errorHandler;
         this.messageMonitor = builder.messageMonitor;
         this.spanFactory = builder.spanFactory;
@@ -107,7 +108,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     /**
      * Indicates whether the processor can/should handle the given {@code eventMessage} for the given {@code segment}.
      * <p>
-     * This implementation will delegate the decision to the {@link EventHandlerInvoker}.
+     * This implementation will check if the event is supported by the {@link EventHandlingComponent} and if the
+     * segment matches the event.
      *
      * @param eventMessage The message for which to identify if the processor can handle it
      * @param segment      The segment for which the event should be processed
@@ -118,19 +120,32 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected boolean canHandle(EventMessage<?> eventMessage, @Nonnull ProcessingContext context, Segment segment)
             throws Exception {
         try {
-            return eventHandlerInvoker.canHandle(eventMessage, context, segment);
+            QualifiedName eventName = QualifiedName.fromMessage(eventMessage);
+            boolean canHandle = eventHandlingComponent.supportedEvents().contains(eventName);
+            if (!canHandle) {
+                return false;
+            }
+
+            // Check if the event should be processed in this segment based on sequencing
+            Object sequenceIdentifier = getSequenceIdentifier(eventMessage);
+            return segment.matches(Objects.hashCode(sequenceIdentifier));
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
             return false;
         }
     }
 
-    protected boolean canHandleType(Class<?> payloadType) {
-        try {
-            return eventHandlerInvoker.canHandleType(payloadType);
-        } catch (Exception e) {
-            return false;
-        }
+    /**
+     * Returns the sequence identifier for the given event message. The default implementation
+     * returns the message identifier, which effectively means each event is in its own sequence.
+     * <p>
+     * Implementations may override this method to control event sequencing behavior.
+     *
+     * @param eventMessage The message to get the sequence identifier for
+     * @return The sequence identifier for this message
+     */
+    protected Object getSequenceIdentifier(EventMessage<?> eventMessage) {
+        return eventMessage.getIdentifier();
     }
 
     /**
@@ -194,7 +209,9 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     ) throws Exception {
         try {
             for (Segment processingSegment : processingSegments) {
-                eventHandlerInvoker.handle(message, processingContext, processingSegment);
+                // Create a new processing context with the segment information
+                ProcessingContext contextWithSegment = Segment.addToContext(processingContext, processingSegment);
+                eventHandlingComponent.handle(message, contextWithSegment);
             }
             monitorCallback.reportSuccess();
             return MessageStream.empty();
@@ -229,13 +246,25 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     /**
-     * Returns the invoker assigned to this processor. The invoker is responsible for invoking the correct handler
+     * Returns the component assigned to this processor. The component is responsible for invoking the correct handler
      * methods for any given message.
      *
-     * @return the invoker assigned to this processor
+     * @return the component assigned to this processor
      */
-    public EventHandlerInvoker eventHandlerInvoker() {
-        return eventHandlerInvoker;
+    public EventHandlingComponent eventHandlingComponent() {
+        return eventHandlingComponent;
+    }
+
+    /**
+     * Notifies the handling component that a segment has been released.
+     * If the component implements SegmentAwareEventHandlingComponent, notify it about the segment release.
+     *
+     * @param segment The segment that was released
+     */
+    public void segmentReleased(Segment segment) {
+        if (eventHandlingComponent instanceof SegmentAwareEventHandlingComponent) {
+            ((SegmentAwareEventHandlingComponent) eventHandlingComponent).segmentReleased(segment);
+        }
     }
 
     /**
@@ -257,12 +286,12 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults
      * to a {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
      * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name}
-     * and {@link EventHandlerInvoker} are <b>hard requirements</b> and as such should be provided.
+     * and {@link EventHandlingComponent} are <b>hard requirements</b> and as such should be provided.
      */
     public abstract static class Builder {
 
         protected String name;
-        private EventHandlerInvoker eventHandlerInvoker;
+        private EventHandlingComponent eventHandlingComponent;
         private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
@@ -282,16 +311,27 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }
 
         /**
-         * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
+         * Sets the {@link EventHandlingComponent} which will handle all the individual {@link EventMessage}s.
          *
-         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
-         *                            {@link EventMessage}s
+         * @param eventHandlingComponent the {@link EventHandlingComponent} which will handle all the individual
+         *                               {@link EventMessage}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
-            assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
-            this.eventHandlerInvoker = eventHandlerInvoker;
+        public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
+            assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
+            this.eventHandlingComponent = eventHandlingComponent;
             return this;
+        }
+
+        /**
+         * @deprecated Use {@link #eventHandlingComponent(EventHandlingComponent)} instead.
+         */
+        @Deprecated
+        public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
+            if (eventHandlerInvoker instanceof EventHandlingComponent) {
+                return eventHandlingComponent((EventHandlingComponent) eventHandlerInvoker);
+            }
+            throw new IllegalArgumentException("EventHandlerInvoker is deprecated. Use EventHandlingComponent instead.");
         }
 
         /**
@@ -344,7 +384,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
          */
         protected void validate() throws AxonConfigurationException {
             assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
-            assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
+            assertNonNull(eventHandlingComponent, "The EventHandlingComponent is a hard requirement and should be provided");
         }
 
         private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
