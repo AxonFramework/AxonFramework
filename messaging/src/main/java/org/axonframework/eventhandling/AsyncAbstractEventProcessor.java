@@ -111,20 +111,22 @@ public abstract class AsyncAbstractEventProcessor implements EventProcessor {
      */
     protected boolean canHandle(EventMessage<?> eventMessage, @Nonnull ProcessingContext context, Segment segment)
             throws Exception {
-        try {
-            return eventHandlerInvoker.canHandle(eventMessage, context, segment);
-        } catch (Exception e) {
-            errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
-            return false;
-        }
+//        try {
+//            return eventHandlerInvoker.canHandle(eventMessage, context, segment);
+//        } catch (Exception e) {
+//            errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
+//            return false;
+//        }
+        return false;
     }
 
     protected boolean canHandleType(Class<?> payloadType) {
-        try {
-            return eventHandlerInvoker.canHandleType(payloadType);
-        } catch (Exception e) {
-            return false;
-        }
+//        try {
+//            return eventHandlerInvoker.canHandleType(payloadType);
+//        } catch (Exception e) {
+//            return false;
+//        }
+        return false;
     }
 
     /**
@@ -188,7 +190,7 @@ public abstract class AsyncAbstractEventProcessor implements EventProcessor {
     ) throws Exception {
         try {
             for (Segment processingSegment : processingSegments) {
-                eventHandlerInvoker.handle(message, processingContext, processingSegment);
+//                eventHandlerInvoker.handle(message, processingContext, processingSegment);
             }
             monitorCallback.reportSuccess();
             return MessageStream.empty();
@@ -229,7 +231,7 @@ public abstract class AsyncAbstractEventProcessor implements EventProcessor {
      * @return the invoker assigned to this processor
      */
     public EventHandlerInvoker eventHandlerInvoker() {
-        return eventHandlerInvoker;
+        return null;//eventHandlerInvoker;
     }
 
     /**
