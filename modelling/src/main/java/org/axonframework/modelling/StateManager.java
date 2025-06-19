@@ -32,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
  * Entities are {@link #register(Repository) registered} by their type in combination with their id. The combination of
  * {@link Repository#entityType() entity type} and {@link Repository#idType() id type} of all repositories must be
  * unique and unambiguous. This means you cannot register a repository if another conflicting repository already exists.
- * If you do, a {@link ConflictingRepositoryAlreadyRegisteredException} will be thrown. Note that superclasses and
- * subclasses of each other are considered conflicting.
+ * If you do, a {@link RepositoryAlreadyRegisteredException} will be thrown. Note that superclasses and subclasses of
+ * each other are considered conflicting.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -43,32 +43,32 @@ public interface StateManager {
     /**
      * Registers an {@link Repository} for use with this {@code StateManager}. The combination of
      * {@link Repository#entityType()} and {@link Repository#idType()} must be unique for all registered repositories.
-     * If a repository with the same combination is already registered, a
-     * {@link ConflictingRepositoryAlreadyRegisteredException} is thrown.
      *
      * @param repository The {@link Repository} to use for loading state.
-     * @param <I>        The type of id.
+     * @param <ID>       The type of id.
      * @param <T>        The type of the entity.
      * @return This {@code StateManager} for fluent interfacing.
+     * @throws RepositoryAlreadyRegisteredException if a repository with the same entity type and id type is already
+     *                                              registered.
      */
-    <I, T> StateManager register(Repository<I, T> repository);
+    <ID, T> StateManager register(@Nonnull Repository<ID, T> repository);
 
     /**
-     * Registers a load and save function for state type {@code T} with id of type {@code I}. Creates a
+     * Registers a load and save function for state type {@code T} with id of type {@code ID}. Creates a
      * {@link SimpleRepository} for the given type with the given load and save functions.
      *
      * @param idType     The type of the identifier.
      * @param entityType The type of the state.
      * @param loader     The function to load state.
      * @param persister  The function to persist state.
-     * @param <I>        The type of id.
+     * @param <ID>       The type of id.
      * @param <T>        The type of state.
      * @return This {@code StateManager} for fluent interfacing.
      */
-    default <I, T> StateManager register(Class<I> idType,
-                                         Class<T> entityType,
-                                         SimpleRepositoryEntityLoader<I, T> loader,
-                                         SimpleRepositoryEntityPersister<I, T> persister
+    default <ID, T> StateManager register(@Nonnull Class<ID> idType,
+                                          @Nonnull Class<T> entityType,
+                                          @Nonnull SimpleRepositoryEntityLoader<ID, T> loader,
+                                          @Nonnull SimpleRepositoryEntityPersister<ID, T> persister
     ) {
         return register(new SimpleRepository<>(idType, entityType, loader, persister));
     }
@@ -103,13 +103,13 @@ public interface StateManager {
      * @param type    The type of state to retrieve.
      * @param id      The id of the state to retrieve.
      * @param context The {@link ProcessingContext context} to load the entity in.
-     * @param <I>     The type of the identifier of the entity.
+     * @param <ID>    The type of the identifier of the entity.
      * @param <T>     The type of the entity.
      * @return a {@link CompletableFuture} which resolves to the entity instance.
      */
-    <I, T> CompletableFuture<ManagedEntity<I, T>> loadManagedEntity(
+    <ID, T> CompletableFuture<ManagedEntity<ID, T>> loadManagedEntity(
             @Nonnull Class<T> type,
-            @Nonnull I id,
+            @Nonnull ID id,
             @Nonnull ProcessingContext context);
 
     /**
@@ -132,11 +132,11 @@ public interface StateManager {
      * Returns the {@link Repository} for the given {@code type}. Returns {@code null} if no repository is registered
      * for the given type and id.
      *
-     * @param <I>        The type of the identifier of the entity.
+     * @param <ID>        The type of the identifier of the entity.
      * @param <T>        The type of the entity.
      * @param entityType The type of the entity.
      * @param idType     The type of the identifier of the entity.
      * @return The {@link Repository} for the given {@code idType} and {@code entityType}.
      */
-    <I, T> Repository<I, T> repository(@Nonnull Class<T> entityType, @Nonnull Class<I> idType);
+    <ID, T> Repository<ID, T> repository(@Nonnull Class<T> entityType, @Nonnull Class<ID> idType);
 }

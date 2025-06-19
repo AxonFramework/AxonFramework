@@ -30,8 +30,8 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
 import org.axonframework.modelling.command.EntityIdResolver;
-import org.axonframework.modelling.entity.EntityModel;
-import org.axonframework.modelling.entity.annotation.AnnotatedEntityModel;
+import org.axonframework.modelling.configuration.EntityMetamodelConfigurationBuilder;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -74,29 +74,32 @@ class AnnotatedEventSourcedEntityModule<I, E>
         componentRegistry(cr -> cr.registerModule(
                 EventSourcedEntityModule
                         .declarative(idType, entityType)
-                        .entityModel(getEntityModelComponentBuilder(concreteTypes))
+                        .messagingModel(getMessagingModelFactory(entityType, concreteTypes))
                         .entityFactory(entityFactory(annotationAttributes, concreteTypes))
                         .criteriaResolver(criteriaResolver(annotationAttributes))
                         .entityIdResolver(entityIdResolver(annotationAttributes)))
         );
+
     }
 
-    private ComponentBuilder<EntityModel<E>> getEntityModelComponentBuilder(Set<Class<? extends E>> concreteTypes) {
-        return c -> {
-            if (!concreteTypes.isEmpty()) {
-                return AnnotatedEntityModel.forPolymorphicType(
-                        entityType,
-                        concreteTypes,
-                        c.getComponent(ParameterResolverFactory.class),
-                        c.getComponent(MessageTypeResolver.class)
-                );
-            }
-            return AnnotatedEntityModel.forConcreteType(
+    private EntityMetamodelConfigurationBuilder<E> getMessagingModelFactory(
+            Class<E> entityType,
+            Set<Class<? extends E>> concreteTypes
+    ) {
+        if (!concreteTypes.isEmpty()) {
+            return (c, b) -> AnnotatedEntityMetamodel.forPolymorphicType(
                     entityType,
+                    concreteTypes,
                     c.getComponent(ParameterResolverFactory.class),
                     c.getComponent(MessageTypeResolver.class)
             );
-        };
+        }
+
+        return (c, b) -> AnnotatedEntityMetamodel.forConcreteType(
+                entityType,
+                c.getComponent(ParameterResolverFactory.class),
+                c.getComponent(MessageTypeResolver.class)
+        );
     }
 
     @SuppressWarnings("unchecked")

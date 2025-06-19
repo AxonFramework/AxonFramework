@@ -82,8 +82,8 @@ import java.lang.annotation.Target;
  *     <li>The {@link EventSourcedEntityFactory} is used to create a new instance of the entity by the {@link EventSourcingRepository}.</li>
  *     <li>Existing events for the entity are used to {@link org.axonframework.modelling.EntityEvolver evolve} the entity.</li>
  *     <li>The command is called on the entity in case of a
- *     {@link org.axonframework.modelling.entity.EntityModelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handler},
- *     or on the {@link org.axonframework.modelling.entity.EntityModelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command handler}
+ *     {@link org.axonframework.modelling.entity.EntityMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handler},
+ *     or on the {@link org.axonframework.modelling.entity.EntityMetamodelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command handler}
  *     if it did not exist.
  *     </li>
  * </ol>
@@ -126,7 +126,7 @@ public @interface EventSourcedEntity {
      * should be specified here. Classes that are not specified here will not be scanned.
      *
      * @return The concrete types of the entity that should be considered when building the
-     * {@link org.axonframework.modelling.entity.EntityModel}.
+     * {@link org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel}.
      */
     Class<?>[] concreteTypes() default {};
 

@@ -33,7 +33,7 @@ import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
-import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -84,12 +84,12 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     void registerStatefulCommandHandlingModuleAddsAModuleConfiguration() {
         EventSourcedEntityModule<String, Object> testEntityBuilder =
                 EventSourcedEntityModule.declarative(String.class, Object.class)
-                                        .entityModel(c -> EntityModel.forEntityType(Object.class)
-                                                                     .entityEvolver((entity, event, context) -> entity)
-                                                                     .build())
+                                        .messagingModel((c, b) -> EntityMetamodel.forEntityType(Object.class)
+                                                                                 .entityEvolver((entity, event, context) -> entity)
+                                                                                 .build())
                                         .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(id -> null))
                                         .criteriaResolver(c -> (event, ctx) -> EventCriteria.havingAnyTag())
-                                        .withoutCommandHandling();
+                                        .build();
         ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
                 StatefulCommandHandlingModule.named("test")
                                              .entities(entityPhase -> entityPhase.entity(testEntityBuilder))

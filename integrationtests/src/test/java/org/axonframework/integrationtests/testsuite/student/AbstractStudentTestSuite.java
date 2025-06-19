@@ -37,7 +37,6 @@ import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
-import org.axonframework.modelling.entity.EntityModel;
 import org.junit.jupiter.api.*;
 
 import java.util.function.Consumer;
@@ -69,20 +68,20 @@ public abstract class AbstractStudentTestSuite {
     void setUp() {
         studentEntity = EventSourcedEntityModule
                 .declarative(String.class, Student.class)
-                .entityModel(c -> EntityModel.forEntityType(Student.class)
-                                             .entityEvolver(studentEvolver(c))
-                                             .build())
+                .messagingModel((c, b) -> b
+                        .entityEvolver(studentEvolver(c))
+                        .build())
                 .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(Student::new))
                 .criteriaResolver(this::studentCriteriaResolver)
-                .withoutCommandHandling();
+                .build();
         courseEntity = EventSourcedEntityModule
                 .declarative(String.class, Course.class)
-                .entityModel(c -> EntityModel.forEntityType(Course.class)
-                                             .entityEvolver(courseEvolver(c))
-                                             .build())
+                .messagingModel((c, b) -> b
+                        .entityEvolver(courseEvolver(c))
+                        .build())
                 .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(Course::new))
                 .criteriaResolver(this::courseCriteriaResolver)
-                .withoutCommandHandling();
+                .build();
 
         statefulCommandHandlingModule = StatefulCommandHandlingModule.named("student-course-module")
                                                                      .entities()

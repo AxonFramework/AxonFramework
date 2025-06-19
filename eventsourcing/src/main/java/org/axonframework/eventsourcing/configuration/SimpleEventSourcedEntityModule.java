@@ -19,8 +19,8 @@ package org.axonframework.eventsourcing.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.TypeReference;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
@@ -33,85 +33,77 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.configuration.EntityMetamodelConfigurationBuilder;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
-import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.repository.Repository;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Basis implementation of the {@link EventSourcedEntityModule}.
+ * Simple implementation of the {@link EventSourcedEntityModule}.
  *
- * @param <I> The type of identifier used to identify the event-sourced entity that's being built.
- * @param <E> The type of the event-sourced entity being built.
+ * @param <ID> The type of identifier used to identify the event-sourced entity that's being built.
+ * @param <E>  The type of the event-sourced entity being built.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SimpleEventSourcedEntityModule<I, E>
-        extends BaseModule<SimpleEventSourcedEntityModule<I, E>>
+class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSourcedEntityModule<ID, E>>
         implements
-        EventSourcedEntityModule<I, E>,
-        EventSourcedEntityModule.EntityModelPhase<I, E>,
-        EventSourcedEntityModule.EntityFactoryPhase<I, E>,
-        EventSourcedEntityModule.CriteriaResolverPhase<I, E>,
-        EventSourcedEntityModule.EntityIdResolverPhase<I, E> {
+        EventSourcedEntityModule<ID, E>,
+        EventSourcedEntityModule.MessagingModelPhase<ID, E>,
+        EventSourcedEntityModule.EntityFactoryPhase<ID, E>,
+        EventSourcedEntityModule.CriteriaResolverPhase<ID, E>,
+        EventSourcedEntityModule.EntityIdResolverPhase<ID, E> {
 
-    private final Class<I> idType;
+    private final Class<ID> idType;
     private final Class<E> entityType;
-    private ComponentBuilder<EventSourcedEntityFactory<I, E>> entityFactory;
-    private ComponentBuilder<CriteriaResolver<I>> criteriaResolver;
-    private ComponentBuilder<EntityModel<E>> entityModel;
-    private ComponentBuilder<EntityIdResolver<I>> entityIdResolver;
 
-    SimpleEventSourcedEntityModule(@Nonnull Class<I> idType,
+    private ComponentBuilder<EventSourcedEntityFactory<ID, E>> entityFactory;
+    private ComponentBuilder<CriteriaResolver<ID>> criteriaResolver;
+    private ComponentBuilder<EntityMetamodel<E>> entityModel;
+    private ComponentBuilder<EntityIdResolver<ID>> entityIdResolver;
+
+    SimpleEventSourcedEntityModule(@Nonnull Class<ID> idType,
                                    @Nonnull Class<E> entityType) {
         super("SimpleEventSourcedEntityModule<%s, %s>".formatted(idType.getSimpleName(), entityType.getSimpleName()));
         this.idType = requireNonNull(idType, "The identifier type cannot be null.");
         this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
     }
 
+    @Override
+    public EntityFactoryPhase<ID, E> messagingModel(
+            @Nonnull EntityMetamodelConfigurationBuilder<E> metamodelFactory) {
+        requireNonNull(metamodelFactory, "The metamodelFactory cannot be null.");
+        this.entityModel = c -> metamodelFactory.build(c, EntityMetamodel.forEntityType(entityType));
+        return this;
+    }
 
     @Override
-    public CriteriaResolverPhase<I, E> entityFactory(
-            @Nonnull ComponentBuilder<EventSourcedEntityFactory<I, E>> entityFactory
+    public CriteriaResolverPhase<ID, E> entityFactory(
+            @Nonnull ComponentBuilder<EventSourcedEntityFactory<ID, E>> entityFactory
     ) {
         this.entityFactory = requireNonNull(entityFactory, "The entity factory cannot be null.");
         return this;
     }
 
     @Override
-    public EntityIdResolverPhase<I, E> criteriaResolver(
-            @Nonnull ComponentBuilder<CriteriaResolver<I>> criteriaResolver
+    public EntityIdResolverPhase<ID, E> criteriaResolver(
+            @Nonnull ComponentBuilder<CriteriaResolver<ID>> criteriaResolver
     ) {
         this.criteriaResolver = requireNonNull(criteriaResolver, "The criteria resolver cannot be null.");
         return this;
     }
 
     @Override
-    public EntityFactoryPhase<I, E> entityModel(@Nonnull ComponentBuilder<EntityModel<E>> entityFactory) {
-        this.entityModel = requireNonNull(entityFactory, "The entity model cannot be null.");
-        return this;
-    }
-
-    @Override
-    public EventSourcedEntityModule<I, E> entityIdResolver(
-            @Nonnull ComponentBuilder<EntityIdResolver<I>> entityIdResolver) {
+    public EventSourcedEntityModule<ID, E> entityIdResolver(
+            @Nonnull ComponentBuilder<EntityIdResolver<ID>> entityIdResolver) {
         this.entityIdResolver = requireNonNull(entityIdResolver, "The entity ID resolver cannot be null.");
         return this;
     }
 
     @Override
-    public EventSourcedEntityModule<I, E> withoutCommandHandling() {
-        return this;
-    }
-
-    @Override
-    public String entityName() {
-        return entityType.getSimpleName() + "#" + idType.getSimpleName();
-    }
-
-    @Override
-    public Class<I> idType() {
+    public Class<ID> idType() {
         return idType;
     }
 
@@ -128,11 +120,9 @@ class SimpleEventSourcedEntityModule<I, E>
     }
 
     private void validate() {
-        BuilderUtils.assertNonNull(entityFactory,
-                                   "The EntityFactory must be provided to module [%s].".formatted(name()));
-        BuilderUtils.assertNonNull(criteriaResolver,
-                                   "The CriteriaResolver must be provided to module [%s].".formatted(name()));
-        BuilderUtils.assertNonNull(entityModel, "The EntityModel must be provided to module [%s].".formatted(name()));
+        requireNonNull(entityFactory, "The EntityFactory must be provided to module [%s].".formatted(name()));
+        requireNonNull(criteriaResolver, "The CriteriaResolver must be provided to module [%s].".formatted(name()));
+        requireNonNull(entityModel, "The EntityModel must be provided to module [%s].".formatted(name()));
     }
 
     private void registerComponents() {
@@ -142,40 +132,41 @@ class SimpleEventSourcedEntityModule<I, E>
             cr.registerComponent(entityModel());
             cr.registerComponent(repository());
 
-            if(entityIdResolver != null) {
+            if (entityIdResolver != null) {
                 cr.registerComponent(idResolver());
                 cr.registerComponent(commandHandlingComponent());
             }
         });
     }
 
-    private ComponentDefinition<EntityModel<E>> entityModel() {
-        return ComponentDefinition.ofTypeAndName(
-                (ComponentDefinition.TypeReference<EntityModel<E>>) () -> EntityModel.class,
-                entityName()
-        ).withBuilder(entityModel);
+    private ComponentDefinition<EntityMetamodel<E>> entityModel() {
+        TypeReference<EntityMetamodel<E>> type = new TypeReference<>() {
+        };
+        return ComponentDefinition.ofTypeAndName(type, entityName())
+                                  .withBuilder(entityModel);
     }
 
-    private ComponentDefinition<EntityIdResolver<I>> idResolver() {
-        return ComponentDefinition.ofTypeAndName(
-                (ComponentDefinition.TypeReference<EntityIdResolver<I>>) () -> EntityIdResolver.class,
-                entityName()
-        ).withBuilder(entityIdResolver);
+    private ComponentDefinition<EntityIdResolver<ID>> idResolver() {
+        TypeReference<EntityIdResolver<ID>> type = new TypeReference<>() {
+        };
+        return ComponentDefinition.ofTypeAndName(type, entityName())
+                                  .withBuilder(entityIdResolver);
     }
 
-    private ComponentDefinition<Repository<I, E>> repository() {
+    private ComponentDefinition<Repository<ID, E>> repository() {
+        TypeReference<Repository<ID, E>> type = new TypeReference<>() {
+        };
         return ComponentDefinition
-                .ofTypeAndName((ComponentDefinition.TypeReference<Repository<I, E>>) () -> Repository.class,
-                               entityName())
+                .ofTypeAndName(type, entityName())
                 .withBuilder(config -> {
                     //noinspection unchecked
-                    return new EventSourcingRepository<I, E>(
+                    return new EventSourcingRepository<ID, E>(
                             idType,
                             entityType,
                             config.getComponent(EventStore.class),
                             config.getComponent(EventSourcedEntityFactory.class, entityName()),
                             config.getComponent(CriteriaResolver.class, entityName()),
-                            config.getComponent(EntityModel.class, entityName())
+                            config.getComponent(EntityMetamodel.class, entityName())
                     );
                 })
                 .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
@@ -190,9 +181,9 @@ class SimpleEventSourcedEntityModule<I, E>
         //noinspection unchecked
         return ComponentDefinition
                 .ofTypeAndName(CommandHandlingComponent.class, entityName())
-                .withBuilder(c -> new EntityCommandHandlingComponent<I, E>(
+                .withBuilder(c -> new EntityCommandHandlingComponent<ID, E>(
                         c.getComponent(Repository.class, entityName()),
-                        c.getComponent(EntityModel.class, entityName()),
+                        c.getComponent(EntityMetamodel.class, entityName()),
                         c.getComponent(EntityIdResolver.class, entityName())
                 ))
                 .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
@@ -203,17 +194,25 @@ class SimpleEventSourcedEntityModule<I, E>
                 );
     }
 
-    private ComponentDefinition<EventSourcedEntityFactory<I, E>> entityFactory() {
+    private ComponentDefinition<EventSourcedEntityFactory<ID, E>> entityFactory() {
+        TypeReference<EventSourcedEntityFactory<ID, E>> type = new TypeReference<>() {
+        };
+
         return ComponentDefinition
-                .ofTypeAndName((ComponentDefinition.TypeReference<EventSourcedEntityFactory<I, E>>) () -> EventSourcedEntityFactory.class,
-                               entityName())
+                .ofTypeAndName(type, entityName())
                 .withBuilder(entityFactory);
     }
 
-    private ComponentDefinition<CriteriaResolver<I>> criteriaResolver() {
+    private ComponentDefinition<CriteriaResolver<ID>> criteriaResolver() {
+        TypeReference<CriteriaResolver<ID>> type = new TypeReference<>() {
+        };
         return ComponentDefinition
-                .ofTypeAndName((ComponentDefinition.TypeReference<CriteriaResolver<I>>) () -> CriteriaResolver.class,
-                               entityName())
+                .ofTypeAndName(type, entityName())
                 .withBuilder(criteriaResolver);
+    }
+
+    @Override
+    public EventSourcedEntityModule<ID, E> build() {
+        return this;
     }
 }

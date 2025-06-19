@@ -24,8 +24,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
 
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -118,14 +118,15 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
     }
 
     @Override
-    public <I, T> StateManager register(Repository<I, T> repository) {
+    public <I, T> StateManager register(@Nonnull Repository<I, T> repository) {
+        Objects.requireNonNull(repository, "The repository must not be null.");
         Optional<Repository<?, ?>> registeredRepository = repositories
                 .stream()
                 .filter(r -> match(r, repository))
                 .findFirst();
 
         if (registeredRepository.isPresent()) {
-            throw new ConflictingRepositoryAlreadyRegisteredException(repository, registeredRepository.get());
+            throw new RepositoryAlreadyRegisteredException(repository, registeredRepository.get());
         }
 
         repositories.add(repository);

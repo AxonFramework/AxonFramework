@@ -41,9 +41,9 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
-import org.axonframework.modelling.entity.EntityModel;
-import org.axonframework.modelling.entity.SimpleEntityModel;
+import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 
@@ -54,7 +54,9 @@ import static java.lang.String.format;
  */
 public class MutableBuilderEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
-    EntityMetamodel<MutablePerson> buildEntityModel(Configuration configuration) {
+
+    EntityMetamodel<MutablePerson> buildEntityMetamodel(Configuration configuration,
+                                                        EntityMetamodelBuilder<MutablePerson> builder) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
 
         // Task is the list-based child-model of Employee
@@ -167,7 +169,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
     Module getModule() {
         EventSourcedEntityModule<PersonIdentifier, MutablePerson> personEntityModule = EventSourcedEntityModule
                 .declarative(PersonIdentifier.class, MutablePerson.class)
-                .entityModel(this::buildEntityModel)
+                .messagingModel(this::buildEntityMetamodel)
                 .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(id -> {
                     if (id.type() == PersonType.EMPLOYEE) {
                         return new MutableEmployee();

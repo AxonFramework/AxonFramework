@@ -20,7 +20,7 @@ import org.axonframework.configuration.Module;
 import org.axonframework.modelling.repository.Repository;
 
 /**
- * {@link Module} that builds an entity of type {@code E} with an identifier of type {@code I}. This entity is then
+ * {@link Module} that builds an entity of type {@code E} with an identifier of type {@code ID}. This entity is then
  * registered to the nearest parent {@link org.axonframework.modelling.StateManager} with the created
  * {@link Repository}.
  * <p>
@@ -28,13 +28,13 @@ import org.axonframework.modelling.repository.Repository;
  * one module, and each module should only be registered once. As such, make sure to register it on the right level of
  * your module hierarchy.
  *
- * @param <I> The type of the entity's identifier.
- * @param <E> The type of the entity.
+ * @param <ID> The type of the entity's identifier.
+ * @param <E>  The type of the entity.
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public interface EntityModule<I, E> extends Module {
+public interface EntityModule<ID, E> extends Module {
 
     /**
      * The name of the entity, typically a concatenation of the entity type's {@link Class#getSimpleName() simple name}
@@ -54,7 +54,7 @@ public interface EntityModule<I, E> extends Module {
      *
      * @return The type of the entity's identifier.
      */
-    Class<I> idType();
+    Class<ID> idType();
 
     /**
      * Returns the type of the entity.

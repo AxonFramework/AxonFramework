@@ -50,7 +50,7 @@ import static org.mockito.Mockito.*;
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  */
-class AnnotatedEventSourcedEntityBuilderTest {
+class AnnotatedEventSourcedEntityModuleTest {
 
     private Configuration parentConfiguration;
     private StubLifecycleRegistry lifecycleRegistry;

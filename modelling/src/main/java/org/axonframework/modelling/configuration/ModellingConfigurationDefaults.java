@@ -17,26 +17,11 @@
 package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.gateway.DefaultEventGateway;
-import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 
 import java.util.Objects;
 
@@ -53,10 +38,6 @@ import java.util.Objects;
  */
 class ModellingConfigurationDefaults implements ConfigurationEnhancer {
 
-    private static StateManager defaultStateManager(Configuration configuration) {
-        return SimpleStateManager.named("ModelingConfigurationStateManager");
-    }
-
     @Override
     public int order() {
         return Integer.MAX_VALUE;
@@ -66,15 +47,8 @@ class ModellingConfigurationDefaults implements ConfigurationEnhancer {
     public void enhance(@Nonnull ComponentRegistry registry) {
         Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.");
 
-        registerIfNotPresent(registry, StateManager.class,
-                             ModellingConfigurationDefaults::defaultStateManager);
-    }
-
-    private <C> void registerIfNotPresent(ComponentRegistry registry,
-                                          Class<C> type,
-                                          ComponentBuilder<C> builder) {
-        if (!registry.hasComponent(type)) {
-            registry.registerComponent(type, builder);
-        }
+        registry.registerIfNotPresent(ComponentDefinition
+                                              .ofType(StateManager.class)
+                                              .withBuilder(c -> SimpleStateManager.named("DefaultStateManager")));
     }
 }

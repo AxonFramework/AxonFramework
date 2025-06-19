@@ -41,7 +41,7 @@ import static java.util.Objects.requireNonNull;
 import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
 
 /**
- * Default implementation of the {@link StatefulCommandHandlingModule}. Registers the
+ * Simple implementation of the {@link StatefulCommandHandlingModule}. Registers the
  * {@link HierarchicalStateManagerConfigurationEnhancer} enhancer to the module so that message handlers get access to
  * entities via defining parameters, such as entitiy classes with {@link InjectEntity} or the {@link StateManager}
  * itself.
@@ -52,8 +52,8 @@ import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class DefaultStatefulCommandHandlingModule
-        extends BaseModule<DefaultStatefulCommandHandlingModule>
+class SimpleStatefulCommandHandlingModule
+        extends BaseModule<SimpleStatefulCommandHandlingModule>
         implements StatefulCommandHandlingModule,
         StatefulCommandHandlingModule.SetupPhase,
         StatefulCommandHandlingModule.CommandHandlerPhase,
@@ -65,7 +65,7 @@ class DefaultStatefulCommandHandlingModule
     private final Map<QualifiedName, ComponentBuilder<StatefulCommandHandler>> handlerBuilders;
     private final List<ComponentBuilder<CommandHandlingComponent>> handlingComponentBuilders;
 
-    DefaultStatefulCommandHandlingModule(@Nonnull String moduleName) {
+    SimpleStatefulCommandHandlingModule(@Nonnull String moduleName) {
         super(moduleName);
         this.moduleName = requireNonNull(moduleName, "The module name cannot be null.");
         this.statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
@@ -104,7 +104,7 @@ class DefaultStatefulCommandHandlingModule
 
     @Override
     public <I, E> EntityPhase entity(@Nonnull EntityModule<I, E> entityModule) {
-        requireNonNull(entityModule, "The entity builder cannot be null.");
+        requireNonNull(entityModule, "The entity module cannot be null.");
         entityModules.put(entityModule.entityName(), entityModule);
         return this;
     }

@@ -20,8 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Component;
-import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -37,6 +37,7 @@ import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -80,7 +81,23 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @return A {@code EventSourcingConfigurer} instance for further configuring.
      */
     public static EventSourcingConfigurer create() {
-        return new EventSourcingConfigurer(ModellingConfigurer.create());
+        return enhance(ModellingConfigurer.create());
+    }
+
+    /**
+     * Creates a EventSourcingConfigurer that enhances an existing {@code ModellingConfigurer}. This method is useful
+     * when applying multiple specialized Configurers to configure a single application.
+     *
+     * @param modellingConfigurer The {@code ModellingConfigurer} to enhance with configuration of modelling
+     *                            components.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     * @see #create()
+     */
+    public static EventSourcingConfigurer enhance(@Nonnull ModellingConfigurer modellingConfigurer) {
+        return new EventSourcingConfigurer(modellingConfigurer)
+                .componentRegistry(cr -> cr
+                        .registerEnhancer(new EventSourcingConfigurationDefaults())
+                );
     }
 
     /**
@@ -92,7 +109,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @param delegate The delegate {@code ModellingConfigurer} the {@code EventSourcingConfigurer} is based on.
      */
     public EventSourcingConfigurer(@Nonnull ModellingConfigurer delegate) {
-        delegate.componentRegistry(cr -> cr.registerEnhancer(new EventSourcingConfigurationDefaults()));
+        Objects.requireNonNull(delegate, "The delegate ModellingConfigurer may not be null.");
         this.delegate = delegate;
     }
 
@@ -205,13 +222,15 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     }
 
     @Override
-    public ApplicationConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
-        return delegate.componentRegistry(componentRegistrar);
+    public EventSourcingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+        delegate.componentRegistry(componentRegistrar);
+        return this;
     }
 
     @Override
     public ApplicationConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
-        return delegate.lifecycleRegistry(lifecycleRegistrar);
+        delegate.lifecycleRegistry(lifecycleRegistrar);
+        return this;
     }
 
     @Override

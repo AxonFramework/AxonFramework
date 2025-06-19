@@ -71,9 +71,7 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface StatefulCommandHandlingModule extends
-        Module,
-        ModuleBuilder<StatefulCommandHandlingModule> {
+public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<StatefulCommandHandlingModule> {
 
     /**
      * Starts a {@code StatefulCommandHandlingModule} module with the given {@code moduleName}.
@@ -82,7 +80,7 @@ public interface StatefulCommandHandlingModule extends
      * @return The setup phase of this module, for a fluent API.
      */
     static SetupPhase named(@Nonnull String moduleName) {
-        return new DefaultStatefulCommandHandlingModule(moduleName);
+        return new SimpleStatefulCommandHandlingModule(moduleName);
     }
 
     /**

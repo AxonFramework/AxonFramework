@@ -33,7 +33,6 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.SimpleEntityEvolvingComponent;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
-import org.axonframework.modelling.entity.EntityModel;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
@@ -53,8 +52,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
         EventSourcedEntityModule<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentSlice =
                 EventSourcedEntityModule
                         .declarative(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
-                        .entityModel(c -> EntityModel
-                                .forEntityType(StudentMentorAssignment.class)
+                        .messagingModel((c, model) -> model
                                 .entityEvolver(
                                         new SimpleEntityEvolvingComponent<>(
                                                 Map.of(
@@ -74,7 +72,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                 EventCriteria.havingTags(new Tag("Student", id.mentorId()))
                                              .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
                         ))
-                        .withoutCommandHandling();
+                        .build();
 
         entityConfigurer.entity(mentorAssignmentSlice);
     }

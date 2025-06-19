@@ -33,8 +33,8 @@ public interface EntityIdResolverDefinition {
     /**
      * Creates an {@link EntityIdResolver} for the given entity type and identifier type.
      *
-     * @param entityType    the type of the entity for which the resolver is created.
-     * @param idType        the type of the identifier for which the resolver is created.
+     * @param entityType    The type of the entity for which the resolver is created.
+     * @param idType        The type of the identifier for which the resolver is created.
      * @param configuration The configuration of the application, providing access to the components available.
      * @param <E>           The type of the entity for which the resolver is created.
      * @param <ID>          The type of the identifier for which the resolver is created.

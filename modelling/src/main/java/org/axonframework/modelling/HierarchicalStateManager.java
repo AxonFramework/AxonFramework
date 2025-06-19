@@ -60,7 +60,8 @@ public class HierarchicalStateManager implements StateManager {
     }
 
     @Override
-    public <I, T> StateManager register(Repository<I, T> repository) {
+    public <I, T> StateManager register(@Nonnull Repository<I, T> repository) {
+        Objects.requireNonNull(repository, "The repository must not be null.");
         child.register(repository);
         return this;
     }

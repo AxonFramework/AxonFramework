@@ -17,8 +17,10 @@
 package org.axonframework.integrationtests.testsuite.administration;
 
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
@@ -42,8 +44,7 @@ import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
-import org.axonframework.configuration.Module;
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 
@@ -54,7 +55,8 @@ import static java.lang.String.format;
  */
 public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
-    EntityMetamodel<ImmutablePerson> buildEntityMetamodel(Configuration configuration) {
+    EntityMetamodel<ImmutablePerson> buildEntityMetamodel(Configuration configuration,
+                                                          EntityMetamodelBuilder<ImmutablePerson> builder) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
 
         // Task is the list-based child-metamodel of Employee
@@ -170,7 +172,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
     Module getModule() {
         EventSourcedEntityModule<PersonIdentifier, ImmutablePerson> personEntityModule = EventSourcedEntityModule
                 .declarative(PersonIdentifier.class, ImmutablePerson.class)
-                .entityModel(this::buildEntityMetamodel)
+                .messagingModel(this::buildEntityMetamodel)
                 .entityFactory(c -> EventSourcedEntityFactory.fromEventMessage((identifier, eventMessage) -> {
                     if (eventMessage.getPayload() instanceof EmployeeCreated employeeCreated) {
                         return new ImmutableEmployee(employeeCreated);

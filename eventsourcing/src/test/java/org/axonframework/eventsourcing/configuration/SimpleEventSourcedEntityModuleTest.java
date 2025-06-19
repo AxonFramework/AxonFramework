@@ -28,7 +28,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
-import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -47,7 +47,7 @@ class SimpleEventSourcedEntityModuleTest {
 
     private EventSourcedEntityFactory<CourseId, Course> testEntityFactory;
     private CriteriaResolver<CourseId> testCriteriaResolver;
-    private EntityModel<Course> testEntityModel;
+    private EntityMetamodel<Course> testEntityModel;
     private EntityIdResolver<CourseId> testEntityIdResolver;
     private AtomicBoolean constructedEntityModel;
     private AtomicBoolean constructedEntityFactory;
@@ -61,20 +61,21 @@ class SimpleEventSourcedEntityModuleTest {
         testEntityFactory = EventSourcedEntityFactory.fromIdentifier(Course::new);
         testCriteriaResolver = (event, context) -> EventCriteria.havingAnyTag();
         testEntityIdResolver = (message, context) -> new CourseId();
-        testEntityModel = EntityModel.forEntityType(Course.class)
-                                     .entityEvolver((entity, event, context) -> entity)
-                                     .instanceCommandHandler(new QualifiedName("instance"),
-                                                             (command, entity, context) -> MessageStream.empty().cast())
-                                     .creationalCommandHandler(new QualifiedName("creational"),
-                                                               (command, context) -> MessageStream.empty().cast())
-                                     .build();
+        testEntityModel = EntityMetamodel.forEntityType(Course.class)
+                                         .entityEvolver((entity, event, context) -> entity)
+                                         .instanceCommandHandler(new QualifiedName("instance"),
+                                                                 (command, entity, context) -> MessageStream.empty()
+                                                                                                            .cast())
+                                         .creationalCommandHandler(new QualifiedName("creational"),
+                                                                   (command, context) -> MessageStream.empty().cast())
+                                         .build();
         constructedEntityFactory = new AtomicBoolean(false);
         constructedCriteriaResolver = new AtomicBoolean(false);
         constructedEntityModel = new AtomicBoolean(false);
         constructedEntityIdResolver = new AtomicBoolean(false);
 
         testSubject = EventSourcedEntityModule.declarative(CourseId.class, Course.class)
-                                              .entityModel(c -> {
+                                              .messagingModel((c, b) -> {
                                                   constructedEntityModel.set(true);
                                                   return testEntityModel;
                                               })
@@ -109,7 +110,7 @@ class SimpleEventSourcedEntityModuleTest {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
                      () -> EventSourcedEntityModule.declarative(CourseId.class, Course.class)
-                                                   .entityModel(null));
+                                                   .messagingModel(null));
     }
 
     @Test
@@ -117,7 +118,7 @@ class SimpleEventSourcedEntityModuleTest {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
                      () -> EventSourcedEntityModule.declarative(CourseId.class, Course.class)
-                                                   .entityModel(c -> testEntityModel)
+                                                   .messagingModel((c, b) -> testEntityModel)
                                                    .entityFactory(null));
     }
 
@@ -127,7 +128,7 @@ class SimpleEventSourcedEntityModuleTest {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
                      () -> EventSourcedEntityModule.declarative(CourseId.class, Course.class)
-                                                   .entityModel(c -> testEntityModel)
+                                                   .messagingModel((c, m) -> testEntityModel)
                                                    .entityFactory(c -> testEntityFactory)
                                                    .criteriaResolver(null));
     }
@@ -137,9 +138,9 @@ class SimpleEventSourcedEntityModuleTest {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
                      () -> EventSourcedEntityModule.declarative(CourseId.class, Course.class)
-                                                   .entityModel(c -> testEntityModel)
-                                                    .entityFactory(c -> testEntityFactory)
-                                                    .criteriaResolver(c -> testCriteriaResolver)
+                                                   .messagingModel((c, b) -> testEntityModel)
+                                                   .entityFactory(c -> testEntityFactory)
+                                                   .criteriaResolver(c -> testCriteriaResolver)
                                                    .entityIdResolver(null));
     }
 

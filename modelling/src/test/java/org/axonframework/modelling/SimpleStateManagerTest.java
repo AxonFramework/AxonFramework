@@ -64,7 +64,7 @@ class SimpleStateManagerTest {
                                                  .register(repository);
 
         // when & then
-        assertThrows(ConflictingRepositoryAlreadyRegisteredException.class, () -> builder.register(repository));
+        assertThrows(RepositoryAlreadyRegisteredException.class, () -> builder.register(repository));
     }
 
     @Test
@@ -290,7 +290,7 @@ class SimpleStateManagerTest {
             StateManager builder = SimpleStateManager.named("test").register(repository);
 
             // when & then
-            assertThrows(ConflictingRepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));
+            assertThrows(RepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));
         }
 
 
@@ -315,7 +315,7 @@ class SimpleStateManagerTest {
                                                      .register(repository);
 
             // when & then
-            assertThrows(ConflictingRepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));
+            assertThrows(RepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));
         }
 
         @Test
@@ -373,7 +373,7 @@ class SimpleStateManagerTest {
                                                      .register(repository);
 
             // when & then
-            assertThrows(ConflictingRepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));
+            assertThrows(RepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));
         }
 
 
@@ -398,7 +398,7 @@ class SimpleStateManagerTest {
                                                      .register(repository);
 
             // when & then
-            assertThrows(ConflictingRepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));
+            assertThrows(RepositoryAlreadyRegisteredException.class, () -> builder.register(repository2));
         }
     }
 

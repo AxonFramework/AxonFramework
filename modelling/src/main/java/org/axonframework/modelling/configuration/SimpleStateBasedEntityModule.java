@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.TypeReference;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
@@ -32,7 +33,7 @@ import org.axonframework.modelling.SimpleRepositoryEntityPersister;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
-import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.repository.Repository;
 
 import static java.util.Objects.requireNonNull;
@@ -40,53 +41,69 @@ import static java.util.Objects.requireNonNull;
 /**
  * Basis implementation of the {@link StateBasedEntityModule}.
  *
- * @param <I> The type of identifier used to identify the state-based entity that's being built.
- * @param <E> The type of the state-based entity being built.
+ * @param <ID> The type of identifier used to identify the state-based entity that's being built.
+ * @param <E>  The type of the state-based entity being built.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SimpleStateBasedEntityModule<I, E>
-        extends BaseModule<SimpleStateBasedEntityModule<I, E>> implements
-        StateBasedEntityModule<I, E>,
-        StateBasedEntityModule.RepositoryPhase<I, E>,
-        StateBasedEntityModule.PersisterPhase<I, E>,
-        StateBasedEntityModule.EntityModelPhase<I, E>,
-        StateBasedEntityModule.EntityIdResolverPhase<I, E> {
+class SimpleStateBasedEntityModule<ID, E>
+        extends BaseModule<SimpleStateBasedEntityModule<ID, E>> implements
+        StateBasedEntityModule<ID, E>,
+        StateBasedEntityModule.RepositoryPhase<ID, E>,
+        StateBasedEntityModule.PersisterPhase<ID, E>,
+        StateBasedEntityModule.MessagingMetamodelPhase<ID, E>,
+        StateBasedEntityModule.EntityIdResolverPhase<ID, E> {
 
-    private final Class<I> idType;
+    private final Class<ID> idType;
     private final Class<E> entityType;
-    private ComponentBuilder<SimpleRepositoryEntityLoader<I, E>> loader;
-    private ComponentBuilder<SimpleRepositoryEntityPersister<I, E>> persister;
-    private ComponentBuilder<Repository<I, E>> repository;
-    private ComponentBuilder<EntityModel<E>> entityModel;
-    private ComponentBuilder<EntityIdResolver<I>> entityIdResolver;
+    private ComponentBuilder<SimpleRepositoryEntityLoader<ID, E>> loader;
+    private ComponentBuilder<SimpleRepositoryEntityPersister<ID, E>> persister;
+    private ComponentBuilder<Repository<ID, E>> repository;
+    private ComponentBuilder<EntityMetamodel<E>> entityModel;
+    private ComponentBuilder<EntityIdResolver<ID>> entityIdResolver;
 
-    SimpleStateBasedEntityModule(@Nonnull Class<I> idType,
+    SimpleStateBasedEntityModule(@Nonnull Class<ID> idType,
                                  @Nonnull Class<E> entityType) {
-        super("DefaultStateBasedEntityModule<%s, %s>".formatted(idType.getSimpleName(), entityType.getSimpleName()));
+        super("SimpleStateBasedEntityModule<%s, %s>".formatted(idType.getSimpleName(), entityType.getSimpleName()));
         this.idType = requireNonNull(idType, "The identifier type cannot be null.");
         this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
     }
 
     @Override
-    public EntityModelPhase<I, E> persister(
-            @Nonnull ComponentBuilder<SimpleRepositoryEntityPersister<I, E>> persister
+    public MessagingMetamodelPhase<ID, E> persister(
+            @Nonnull ComponentBuilder<SimpleRepositoryEntityPersister<ID, E>> persister
     ) {
         this.persister = requireNonNull(persister, "The repository persister builder cannot be null.");
         return this;
     }
 
     @Override
-    public PersisterPhase<I, E> loader(@Nonnull ComponentBuilder<SimpleRepositoryEntityLoader<I, E>> loader) {
+    public PersisterPhase<ID, E> loader(@Nonnull ComponentBuilder<SimpleRepositoryEntityLoader<ID, E>> loader) {
         this.loader = requireNonNull(loader, "The repository loader builder cannot be null.");
         return this;
     }
 
     @Override
-    public EntityModelPhase<I, E> repository(
-            @Nonnull ComponentBuilder<Repository<I, E>> repository
+    public MessagingMetamodelPhase<ID, E> repository(
+            @Nonnull ComponentBuilder<Repository<ID, E>> repository
     ) {
         this.repository = requireNonNull(repository, "The repository builder cannot be null.");
+        return this;
+    }
+
+
+    @Override
+    public EntityIdResolverPhase<ID, E> messagingModel(
+            @Nonnull EntityMetamodelConfigurationBuilder<E> metamodelFactory) {
+        requireNonNull(metamodelFactory, "The metamodelFactory cannot be null.");
+        this.entityModel = c -> metamodelFactory.build(c, EntityMetamodel.forEntityType(entityType));
+        return this;
+    }
+
+    @Override
+    public StateBasedEntityModule<ID, E> entityIdResolver(
+            @Nonnull ComponentBuilder<EntityIdResolver<ID>> entityIdResolver) {
+        this.entityIdResolver = requireNonNull(entityIdResolver, "The EntityIdResolver builder cannot be null.");
         return this;
     }
 
@@ -96,7 +113,7 @@ class SimpleStateBasedEntityModule<I, E>
     }
 
     @Override
-    public Class<I> idType() {
+    public Class<ID> idType() {
         return idType;
     }
 
@@ -118,17 +135,17 @@ class SimpleStateBasedEntityModule<I, E>
             requireNonNull(loader, "The repository loader builder must be provided if no repository is given.");
             requireNonNull(persister, "The repository persister builder must be provided if no repository is given.");
         }
-        if(entityModel != null) {
-            requireNonNull(entityIdResolver, "The entity ID resolver builder must be provided if an EntityModel is given.");
+        if (entityModel != null) {
+            requireNonNull(entityIdResolver,
+                           "The entity ID resolver builder must be provided if an EntityModel is given.");
         }
     }
 
     private void registerRepository() {
         componentRegistry(cr -> cr.registerComponent(
                 ComponentDefinition
-                        .ofTypeAndName(
-                                (ComponentDefinition.TypeReference<Repository<I, E>>) () -> Repository.class,
-                                entityName()
+                        .ofTypeAndName(new TypeReference<Repository<ID, E>>() {
+                                       }, entityName()
                         )
                         .withBuilder(c -> {
                             if (repository != null) {
@@ -154,17 +171,15 @@ class SimpleStateBasedEntityModule<I, E>
         }
         componentRegistry(cr -> cr.registerComponent(
                 ComponentDefinition
-                        .ofTypeAndName(
-                                (ComponentDefinition.TypeReference<EntityModel<E>>) () -> EntityModel.class,
-                                entityName()
+                        .ofTypeAndName(new TypeReference<EntityMetamodel<E>>() {
+                                       }, entityName()
                         )
                         .withBuilder(entityModel)));
 
         componentRegistry(cr -> cr.registerComponent(
                 ComponentDefinition
-                        .ofTypeAndName(
-                                (ComponentDefinition.TypeReference<EntityIdResolver<I>>) () -> EntityIdResolver.class,
-                                entityName()
+                        .ofTypeAndName(new TypeReference<EntityIdResolver<ID>>() {
+                                       }, entityName()
                         )
                         .withBuilder(entityIdResolver)));
 
@@ -172,9 +187,9 @@ class SimpleStateBasedEntityModule<I, E>
         componentRegistry(cr -> cr.registerComponent(
                 ComponentDefinition
                         .ofTypeAndName(CommandHandlingComponent.class, entityName())
-                        .withBuilder(c -> new EntityCommandHandlingComponent<I, E>(
+                        .withBuilder(c -> new EntityCommandHandlingComponent<ID, E>(
                                 c.getComponent(Repository.class, entityName()),
-                                c.getComponent(EntityModel.class, entityName()),
+                                c.getComponent(EntityMetamodel.class, entityName()),
                                 c.getComponent(EntityIdResolver.class, entityName())))
                         .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (config, component) -> {
                             config.getComponent(CommandBus.class).subscribe(component);
@@ -184,20 +199,7 @@ class SimpleStateBasedEntityModule<I, E>
     }
 
     @Override
-    public EntityIdResolverPhase<I, E> modeled(@Nonnull ComponentBuilder<EntityModel<E>> entityFactory) {
-        this.entityModel = requireNonNull(entityFactory, "The EntityModel builder cannot be null.");
-        return this;
-    }
-
-    @Override
-    public StateBasedEntityModule<I, E> withoutModel() {
-        return this;
-    }
-
-    @Override
-    public StateBasedEntityModule<I, E> entityIdResolver(
-            @Nonnull ComponentBuilder<EntityIdResolver<I>> entityIdResolver) {
-        this.entityIdResolver = requireNonNull(entityIdResolver, "The EntityIdResolver builder cannot be null.");
+    public StateBasedEntityModule<ID, E> build() {
         return this;
     }
 }

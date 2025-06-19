@@ -26,7 +26,6 @@ import org.axonframework.modelling.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.SimpleRepositoryEntityPersister;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
-import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -58,7 +57,7 @@ class StateBasedEntityModuleTest {
         constructedLoader = new AtomicBoolean(false);
         constructedPersister = new AtomicBoolean(false);
 
-        testSubject = baseModule().withoutModel();
+        testSubject = baseModule().build();
     }
 
     @Test
@@ -100,7 +99,7 @@ class StateBasedEntityModuleTest {
 
     @Test
     void entityNameCombinesIdentifierAndEntityTypeNames() {
-        baseModule().withoutModel();
+        baseModule().build();
         String expectedEntityName = "Course#CourseId";
 
         assertEquals(expectedEntityName, testSubject.entityName());
@@ -159,19 +158,19 @@ class StateBasedEntityModuleTest {
 
     private StateBasedEntityModule<CourseId, Course> stateBasedModuleWithoutModel() {
         return baseModule()
-                .withoutModel();
+                .build();
     }
 
     private StateBasedEntityModule<CourseId, Course> stateBasedModuleWithModel() {
         return baseModule()
-                .modeled(c -> EntityModel.forEntityType(Course.class)
-                                         .instanceCommandHandler(new QualifiedName("myQualifiedName"),
+                .messagingModel((config, builder) -> builder
+                        .instanceCommandHandler(new QualifiedName("myQualifiedName"),
                                                                  (c1, command, ctx) -> MessageStream.empty().cast())
-                                         .build())
+                        .build())
                 .entityIdResolver(c -> (message, context) -> new CourseId());
     }
 
-    private StateBasedEntityModule.EntityModelPhase<CourseId, Course> baseModule() {
+    private StateBasedEntityModule.MessagingMetamodelPhase<CourseId, Course> baseModule() {
         return StateBasedEntityModule
                 .declarative(CourseId.class, Course.class)
                 .loader(c -> {

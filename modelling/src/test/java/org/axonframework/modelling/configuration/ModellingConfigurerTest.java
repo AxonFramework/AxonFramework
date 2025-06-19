@@ -45,7 +45,7 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                 StateBasedEntityModule.declarative(String.class, Object.class)
                                       .loader(c -> (id, context) -> null)
                                       .persister(c -> (id, entity, context) -> null)
-                                      .withoutModel();
+                                      .build();
         ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
                 StatefulCommandHandlingModule.named("test")
                                              .entities(entityPhase -> entityPhase.entity(testEntityBuilder))

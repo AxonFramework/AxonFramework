@@ -18,14 +18,14 @@ package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.modelling.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.SimpleRepositoryEntityPersister;
 import org.axonframework.modelling.command.EntityIdResolver;
-import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.repository.Repository;
 
 /**
- * An expansion on the {@link EntityBuilder}, specifically for state-based entities.
+ * An expansion on the {@link EntityModule}, specifically for state-based entities.
  * <p>
  * Invoke the {@code static} {@link #declarative(Class, Class)} operation to start the builder flow for a state-based
  * entity.
@@ -33,31 +33,28 @@ import org.axonframework.modelling.repository.Repository;
  * Provides operations to either (1) register a {@link RepositoryPhase#loader(ComponentBuilder) entity loader} and
  * {@link PersisterPhase#persister(ComponentBuilder) entity persister}, or (2) a
  * {@link RepositoryPhase#repository(ComponentBuilder) repository} performing both the loading and persisting task.
- * <p>
- * The separate methods of this builder ensure that the bare minimum required to provide the {@link #entityName()} and
- * {@link #repository()} are present at the end.
  *
- * @param <I> The type of identifier used to identify the state-based entity that's being built.
- * @param <E> The type of the state-based entity being built.
+ * @param <ID> The type of identifier used to identify the state-based entity that's being built.
+ * @param <E>  The type of the state-based entity being built.
  * @author Allard Buijze
  * @author Mateusz Nowak
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface StateBasedEntityModule<I, E> extends EntityModule<I, E> {
+public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
 
     /**
      * Starts the builder for a state-based entity with the given {@code entityType} and {@code idType}.
      *
      * @param idType     The type of identifier used to identify the state-based entity that's being built.
      * @param entityType The type of the state-based entity being built.
-     * @param <I>        The type of identifier used to identify the state-based entity that's being built.
+     * @param <ID>       The type of identifier used to identify the state-based entity that's being built.
      * @param <E>        The type of the state-based entity being built.
      * @return The repository phase of this builder, for a fluent API.
      */
-    static <I, E> RepositoryPhase<I, E> declarative(@Nonnull Class<I> idType,
-                                                    @Nonnull Class<E> entityType) {
+    static <ID, E> RepositoryPhase<ID, E> declarative(@Nonnull Class<ID> idType,
+                                                      @Nonnull Class<E> entityType) {
         return new SimpleStateBasedEntityModule<>(idType, entityType);
     }
 
@@ -69,10 +66,10 @@ public interface StateBasedEntityModule<I, E> extends EntityModule<I, E> {
      * of an {@link PersisterPhase#persister(ComponentBuilder) entity persister}. The second option allows for providing
      * a {@link #repository(ComponentBuilder) repository} right away.
      *
-     * @param <I> The type of identifier used to identify the state-based entity that's being built.
-     * @param <E> The type of the state-based entity being built.
+     * @param <ID> The type of identifier used to identify the state-based entity that's being built.
+     * @param <E>  The type of the state-based entity being built.
      */
-    interface RepositoryPhase<I, E> {
+    interface RepositoryPhase<ID, E> {
 
         /**
          * Registers the given {@code loader} as a factory method for the state-based entity being built.
@@ -80,7 +77,7 @@ public interface StateBasedEntityModule<I, E> extends EntityModule<I, E> {
          * @param loader A factory method constructing a {@link SimpleRepositoryEntityLoader}.
          * @return The "persister" phase of this builder, for a fluent API.
          */
-        PersisterPhase<I, E> loader(@Nonnull ComponentBuilder<SimpleRepositoryEntityLoader<I, E>> loader);
+        PersisterPhase<ID, E> loader(@Nonnull ComponentBuilder<SimpleRepositoryEntityLoader<ID, E>> loader);
 
         /**
          * Registers the given {@code repository} as a factory method for the state-based entity being built.
@@ -88,7 +85,7 @@ public interface StateBasedEntityModule<I, E> extends EntityModule<I, E> {
          * @param repository A factory method constructing a {@link Repository}.
          * @return The parent {@link StateBasedEntityModule}, signaling the end of configuring a state-based entity.
          */
-        EntityModelPhase<I, E> repository(@Nonnull ComponentBuilder<Repository<I, E>> repository);
+        MessagingMetamodelPhase<ID, E> repository(@Nonnull ComponentBuilder<Repository<ID, E>> repository);
     }
 
     /**
@@ -96,10 +93,10 @@ public interface StateBasedEntityModule<I, E> extends EntityModule<I, E> {
      * <p>
      * Enforce providing the {@link #persister(ComponentBuilder)} for the state-based entity that's being built.
      *
-     * @param <I> The type of identifier used to identify the state-based entity that's being built.
-     * @param <E> The type of the state-based entity being built.
+     * @param <ID> The type of identifier used to identify the state-based entity that's being built.
+     * @param <E>  The type of the state-based entity being built.
      */
-    interface PersisterPhase<I, E> {
+    interface PersisterPhase<ID, E> {
 
         /**
          * Registers the given {@code persister} as a factory method for the state-based entity being built.
@@ -107,23 +104,52 @@ public interface StateBasedEntityModule<I, E> extends EntityModule<I, E> {
          * @param persister A factory method constructing a {@link SimpleRepositoryEntityPersister}.
          * @return The parent {@link StateBasedEntityModule}, signaling the end of configuring a state-based entity.
          */
-        EntityModelPhase<I, E> persister(
-                @Nonnull ComponentBuilder<SimpleRepositoryEntityPersister<I, E>> persister
+        MessagingMetamodelPhase<ID, E> persister(
+                @Nonnull ComponentBuilder<SimpleRepositoryEntityPersister<ID, E>> persister
         );
     }
 
-    interface EntityModelPhase<I, E> {
+    /**
+     * The "messaging metamodel" phase of the state-based entity builder.
+     * <p>
+     * Users can provide a {@link #messagingModel(EntityMetamodelConfigurationBuilder) messaging metamodel} so the
+     * entity can handle messages, such as commands and events, based on the entity's metamodel. This is optional, and
+     * users can choose to skip this by calling {@link ModuleBuilder#build()}.
+     *
+     * @param <ID> The type of identifier used to identify the state-based entity that's being built.
+     * @param <E>  The type of the state-based entity being built.
+     */
+    interface MessagingMetamodelPhase<ID, E> extends ModuleBuilder<StateBasedEntityModule<ID, E>> {
 
-        EntityIdResolverPhase<I, E> modeled(
-                @Nonnull ComponentBuilder<EntityModel<E>> entityFactory
+        /**
+         * Registers the given {@code metamodelFactory} to build the entity's metamodel.
+         * <p>
+         * This method allows for configuring the entity's metamodel, which is used to handle messages such as commands
+         * and events. This is optional, and users can choose to skip this by calling {@link ModuleBuilder#build()}.
+         *
+         * @param metamodelFactory A factory method constructing an {@link EntityMetamodelConfigurationBuilder}.
+         * @return The next phase of this builder, allowing for configuring the entity's ID resolver.
+         */
+        EntityIdResolverPhase<ID, E> messagingModel(
+                @Nonnull EntityMetamodelConfigurationBuilder<E> metamodelFactory
         );
-
-        StateBasedEntityModule<I, E> withoutModel();
     }
 
-    interface EntityIdResolverPhase<I, E> {
-        StateBasedEntityModule<I, E> entityIdResolver(
-                @Nonnull ComponentBuilder<EntityIdResolver<I>> entityIdResolver
+    /**
+     * The "entity ID resolver" phase of the state-based entity builder.
+     * <p>
+     * Allows for providing an {@link EntityIdResolver} to resolve the entity's ID based on the command payload.
+     * Required for any command handlers in the {@link org.axonframework.modelling.entity.EntityMetamodel}. This is
+     * optional, and users can choose to skip this by calling {@link ModuleBuilder#build()}. Any command handlers will
+     * not be subscribed to the {@link org.axonframework.commandhandling.CommandBus} in that case.
+     *
+     * @param <ID> The type of identifier used to identify the state-based entity that's being built.
+     * @param <E>  The type of the state-based entity being built.
+     */
+    interface EntityIdResolverPhase<ID, E> extends ModuleBuilder<StateBasedEntityModule<ID, E>> {
+
+        StateBasedEntityModule<ID, E> entityIdResolver(
+                @Nonnull ComponentBuilder<EntityIdResolver<ID>> entityIdResolver
         );
     }
 }

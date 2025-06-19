@@ -28,6 +28,7 @@ import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -82,6 +83,7 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * @param delegate The delegate {@code MessagingConfigurer} the {@code ModellingConfigurer} is based on.
      */
     public ModellingConfigurer(@Nonnull MessagingConfigurer delegate) {
+        Objects.requireNonNull(delegate, "The delegate MessagingConfigurer may not be null");
         this.delegate = delegate;
     }
 
