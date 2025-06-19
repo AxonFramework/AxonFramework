@@ -25,11 +25,9 @@ import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventstreaming.TrackingTokenSource;
-import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
@@ -97,7 +95,7 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * @author Christophe Bouhier
  * @since 3.0
  */
-public class TrackingEventProcessor extends LegacyAbstractEventProcessor implements StreamingEventProcessor, Lifecycle {
+public class TrackingEventProcessor extends LegacyAbstractEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
 
@@ -179,14 +177,6 @@ public class TrackingEventProcessor extends LegacyAbstractEventProcessor impleme
 
     private Instant now() {
         return GenericEventMessage.clock.instant();
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
-        if (autoStart) {
-            handle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
-        }
-        handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdownAsync);
     }
 
     /**
