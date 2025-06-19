@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -29,10 +30,9 @@ import org.junit.jupiter.api.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import jakarta.annotation.Nonnull;
 
-import static org.axonframework.utils.EventTestUtils.createEvent;
-import static org.axonframework.utils.EventTestUtils.createEvents;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -40,7 +40,7 @@ class AbstractEventProcessorTest {
 
     @Test
     void expectCallbackForAllMessages() throws Exception {
-        List<DomainEventMessage<?>> events = createEvents(2);
+        List<DomainEventMessage<?>> events = createDomainEvents(2);
         Set<DomainEventMessage<?>> pending = new HashSet<>(events);
         MessageMonitor<EventMessage<?>> messageMonitor = (message) -> new MessageMonitor.MonitorCallback() {
             @Override
@@ -79,7 +79,7 @@ class AbstractEventProcessorTest {
             public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
                                  @Nonnull ProcessingContext context,
                                  @Nonnull InterceptorChain interceptorChain) throws Exception {
-                unitOfWork.transformMessage(m -> createEvent());
+                unitOfWork.transformMessage(m -> createDomainEvent());
                 return interceptorChain.proceedSync(context);
             }
 
@@ -87,7 +87,7 @@ class AbstractEventProcessorTest {
             public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
                     @Nonnull M message, @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain<M, R> interceptorChain) {
-                var event = createEvent();
+                var event = createDomainEvent();
                 //noinspection unchecked
                 return interceptorChain.proceed((M) event, context);
             }

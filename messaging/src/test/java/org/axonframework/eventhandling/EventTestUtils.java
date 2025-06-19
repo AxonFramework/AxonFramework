@@ -17,9 +17,17 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MetaData;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Test utilities when dealing with events.
@@ -29,8 +37,28 @@ import org.axonframework.messaging.MessageType;
  */
 public abstract class EventTestUtils {
 
+    private static final MessageType TYPE = new MessageType("event");
+    public static final String PAYLOAD = "payload";
+    public static final String AGGREGATE = "aggregate";
+    private static final String AGGREGATE_TYPE = "aggregateType";
+    private static final MetaData METADATA = MetaData.emptyInstance();
+
     private EventTestUtils() {
         // Utility class
+    }
+
+    /**
+     * Constructs a {@link List} of {@link EventMessage EventMessages} with a size equalling the given {@code number}.
+     * <p>
+     * The {@link EventMessage#getPayload() payload} of the events equals it's position within the sequence.
+     *
+     * @param number The number of events to construct.
+     * @return A {@link List} of {@link EventMessage EventMessages} with a size equalling the given {@code number}.
+     */
+    public static List<EventMessage<?>> createEvents(int number) {
+        return IntStream.range(0, number)
+                        .mapToObj(EventTestUtils::createEvent)
+                        .collect(Collectors.toList());
     }
 
     /**
@@ -39,8 +67,8 @@ public abstract class EventTestUtils {
      * @param seq The payload for the message to construct.
      * @return An {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() payload}.
      */
-    public static EventMessage<?> eventMessage(int seq) {
-        return EventTestUtils.asEventMessage("Event[" + seq + "]");
+    public static EventMessage<?> createEvent(int seq) {
+        return EventTestUtils.asEventMessage(seq);
     }
 
     /**

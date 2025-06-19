@@ -29,7 +29,6 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
-import org.axonframework.integrationtests.utils.EventTestUtils;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
@@ -37,6 +36,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -85,7 +85,7 @@ class SubscribingEventProcessorTest {
         testSubject.shutDown();
         testSubject.start();
 
-        eventBus.publish(EventTestUtils.createEvents(2));
+        eventBus.publish(createDomainEvents(2));
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
     }
 
@@ -99,7 +99,7 @@ class SubscribingEventProcessorTest {
 
         testSubject.start();
 
-        List<DomainEventMessage<?>> events = EventTestUtils.createEvents(2);
+        List<DomainEventMessage<?>> events = createDomainEvents(2);
         eventBus.publish(events);
         events.forEach(e -> spanFactory.verifySpanCompleted("EventProcessor.process", e));
     }
@@ -107,7 +107,7 @@ class SubscribingEventProcessorTest {
     @Test
     void startTransactionManager() throws Exception {
         testSubject.start();
-        eventBus.publish(EventTestUtils.createEvents(1));
+        eventBus.publish(createDomainEvents(1));
 
         assertTrue(transactionManager.started, "Expected Transaction to be started");
     }

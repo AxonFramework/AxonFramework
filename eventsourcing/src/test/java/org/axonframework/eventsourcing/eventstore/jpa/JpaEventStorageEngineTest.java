@@ -54,7 +54,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
+import static org.axonframework.eventhandling.DomainEventTestUtils.*;
 import static org.axonframework.eventsourcing.utils.TestSerializer.xStreamSerializer;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -99,14 +99,14 @@ class JpaEventStorageEngineTest
 
     @Test
     void storeAndLoadEventsFromDatastore() {
-        testSubject.appendEvents(createEvents(2));
+        testSubject.appendEvents(createDomainEvents(2));
         entityManager.clear();
         assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
     }
 
     @Test
     void loadLastSequenceNumber() {
-        testSubject.appendEvents(createEvents(2));
+        testSubject.appendEvents(createDomainEvents(2));
         entityManager.clear();
         assertEquals(1L, (long) testSubject.lastSequenceNumberFor(AGGREGATE).orElse(-1L));
         assertFalse(testSubject.lastSequenceNumberFor(UUID.randomUUID().toString()).isPresent());
@@ -118,18 +118,18 @@ class JpaEventStorageEngineTest
 
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-1), createEvent(0));
+        testSubject.appendEvents(createDomainEvent(-1), createDomainEvent(0));
 
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-2), createEvent(1));
+        testSubject.appendEvents(createDomainEvent(-2), createDomainEvent(1));
 
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-3), createEvent(2));
+        testSubject.appendEvents(createDomainEvent(-3), createDomainEvent(2));
 
         GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant(), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-4), createEvent(3));
+        testSubject.appendEvents(createDomainEvent(-4), createDomainEvent(3));
 
         entityManager.clear();
         entityManager.createQuery("DELETE FROM DomainEventEntry dee WHERE dee.sequenceNumber < 0").executeUpdate();
@@ -146,13 +146,13 @@ class JpaEventStorageEngineTest
         testSubject.setGapTimeout(50001);
         Instant now = Clock.systemUTC().instant();
         GenericEventMessage.clock = Clock.fixed(now.minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-1), createEvent("aggregateId", 0));
+        testSubject.appendEvents(createDomainEvent(-1), createDomainEvent("aggregateId", 0));
         GenericEventMessage.clock = Clock.fixed(now.minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-2), createEvent("aggregateId", 1));
+        testSubject.appendEvents(createDomainEvent(-2), createDomainEvent("aggregateId", 1));
         GenericEventMessage.clock = Clock.fixed(now.minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-3), createEvent("aggregateId", 2));
+        testSubject.appendEvents(createDomainEvent(-3), createDomainEvent("aggregateId", 2));
         GenericEventMessage.clock = Clock.fixed(now, Clock.systemUTC().getZone());
-        testSubject.appendEvents(createEvent(-4), createEvent("aggregateId", 3));
+        testSubject.appendEvents(createDomainEvent(-4), createDomainEvent("aggregateId", 3));
 
         entityManager.clear();
         entityManager.createQuery(
@@ -191,7 +191,7 @@ class JpaEventStorageEngineTest
 
     @Test
     void unknownSerializedTypeCausesException() {
-        testSubject.appendEvents(createEvent());
+        testSubject.appendEvents(createDomainEvent());
         entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
                 .executeUpdate();
         DomainEventMessage<?> actual = testSubject.readEvents(AGGREGATE).peek();
@@ -234,8 +234,8 @@ class JpaEventStorageEngineTest
             }
         };
 
-        testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"));
-        testSubject.storeSnapshot(createEvent(AGGREGATE, 1, "Snapshot1"));
+        testSubject.appendEvents(createDomainEvent(AGGREGATE, 1, "Payload1"));
+        testSubject.storeSnapshot(createDomainEvent(AGGREGATE, 1, "Snapshot1"));
 
         entityManager.flush();
         entityManager.clear();
@@ -254,12 +254,12 @@ class JpaEventStorageEngineTest
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
         LegacyEmbeddedEventStore testEventStore = LegacyEmbeddedEventStore.builder().storageEngine(testSubject).build();
 
-        testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"), createEvent(AGGREGATE, 2, "Payload2"));
+        testSubject.appendEvents(createDomainEvent(AGGREGATE, 1, "Payload1"), createDomainEvent(AGGREGATE, 2, "Payload2"));
         // Update events which will be part of the first batch to an unknown payload type
         entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
                 .executeUpdate();
-        testSubject.appendEvents(createEvent(AGGREGATE, 3, expectedPayloadOne),
-                createEvent(AGGREGATE, 4, expectedPayloadTwo));
+        testSubject.appendEvents(createDomainEvent(AGGREGATE, 3, expectedPayloadOne),
+                createDomainEvent(AGGREGATE, 4, expectedPayloadTwo));
 
         List<String> eventStorageEngineResult = testSubject.readEvents(null, false)
                 .filter(m -> m.getPayload() instanceof String)
@@ -279,7 +279,7 @@ class JpaEventStorageEngineTest
 
     @Test
     void appendEventsIsPerformedInATransaction() {
-        testSubject.appendEvents(createEvents(2));
+        testSubject.appendEvents(createDomainEvents(2));
 
         verify(transactionManager).executeInTransaction(any());
     }

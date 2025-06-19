@@ -95,10 +95,10 @@ import static java.util.Collections.emptySortedSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.awaitility.Awaitility.await;
+import static org.axonframework.eventhandling.DomainEventTestUtils.*;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertUntil;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
-import static org.axonframework.integrationtests.utils.EventTestUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -289,10 +289,10 @@ class TrackingEventProcessorTest {
 
         initProcessor(builder -> builder.messageSource(sequenceEventBus));
 
-        historic.appendEvents(createEvent(AGGREGATE, 1L, "message1"), createEvent(AGGREGATE, 2L, "message2"));
+        historic.appendEvents(createDomainEvent(AGGREGATE, 1L, "message1"), createDomainEvent(AGGREGATE, 2L, "message2"));
         // to make sure tracking tokens match, we need to offset the InMemoryEventStorageEngine
-        active.appendEvents(createEvent(AGGREGATE, 3L, "message3"), createEvent(AGGREGATE, 4L, "message4"),
-                            createEvent(AGGREGATE, 5L, "message5"));
+        active.appendEvents(createDomainEvent(AGGREGATE, 3L, "message3"), createDomainEvent(AGGREGATE, 4L, "message4"),
+                            createDomainEvent(AGGREGATE, 5L, "message5"));
 
         int expectedEventCount = 5;
 
@@ -329,7 +329,7 @@ class TrackingEventProcessorTest {
         testSubject.start();
         // Give it a bit of time to start
         Thread.sleep(200);
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
     }
 
@@ -350,7 +350,7 @@ class TrackingEventProcessorTest {
         testSubject.start();
         // Give it a bit of time to start
         Thread.sleep(200);
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
         spanFactory.verifySpanCompleted("StreamingEventProcessor.process");
         spanFactory.verifySpanCompleted("StreamingEventProcessor.batch");
@@ -367,7 +367,7 @@ class TrackingEventProcessorTest {
         when(mockEventBus.firstToken()).thenCallRealMethod();
         TrackingToken trackingToken = new GlobalSequenceTrackingToken(0);
         List<TrackedEventMessage<?>> events =
-                createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
+                createDomainEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
         when(mockEventBus.openStream(null)).thenReturn(trackingEventStreamOf(events.iterator(), skipped::add));
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -396,7 +396,7 @@ class TrackingEventProcessorTest {
         int segmentId = 0;
 
         testSubject.start();
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
 
         assertWithin(2, TimeUnit.SECONDS, () -> {
             EventTrackerStatus status = testSubject.processingStatus().get(segmentId);
@@ -434,7 +434,7 @@ class TrackingEventProcessorTest {
         testSubject.start();
         // Give it a bit of time to start
         Thread.sleep(200);
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
         assertEquals(1, counterAtHandle.get());
     }
@@ -468,7 +468,7 @@ class TrackingEventProcessorTest {
 
         testSubject.start();
 
-        eventBus.publish(createEvent());
+        eventBus.publish(createDomainEvent());
 
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received published event");
         assertTrue(testSubject.isRunning());
@@ -482,7 +482,7 @@ class TrackingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
 
-        eventBus.publish(createEvent());
+        eventBus.publish(createDomainEvent());
         testSubject.start();
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
         verify(tokenStore).storeToken(any(), eq(testSubject.getName()), eq(0));
@@ -491,7 +491,7 @@ class TrackingEventProcessorTest {
 
     @Test
     void segmentReleasedIsInvokedOnInvokerWhenSegmentIsReleased() {
-        eventBus.publish(createEvent());
+        eventBus.publish(createDomainEvent());
         testSubject.start();
         await().atMost(Duration.ofSeconds(5)).untilAsserted(
                 () -> verify(tokenStore).storeToken(any(), eq(testSubject.getName()), eq(0))
@@ -518,7 +518,7 @@ class TrackingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
         testSubject.start();
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
         assertTrue(
                 countDownLatch.await(5, TimeUnit.SECONDS),
                 "Expected Unit of Work to have reached clean up phase for 2 messages"
@@ -557,7 +557,7 @@ class TrackingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
         testSubject.start();
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
         assertTrue(
                 countDownLatch.await(5, TimeUnit.SECONDS),
                 "Expected Unit of Work to have reached clean up phase for 2 messages"
@@ -598,7 +598,7 @@ class TrackingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
         testSubject.start();
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
         assertTrue(
                 countDownLatch.await(5, TimeUnit.SECONDS),
                 "Expected Unit of Work to have reached clean up phase for 2 messages"
@@ -655,7 +655,7 @@ class TrackingEventProcessorTest {
 
         testSubject.start();
 
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
         assertTrue(
                 countDownLatch.await(5, TimeUnit.SECONDS),
                 "Expected Unit of Work to have reached clean up phase for 2 messages"
@@ -699,7 +699,7 @@ class TrackingEventProcessorTest {
         testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
         testSubject.start();
 
-        eventBus.publish(createEvent());
+        eventBus.publish(createDomainEvent());
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
         assertThat(
                 tokenStore.fetchToken(testSubject.getName(), 0),
@@ -713,7 +713,7 @@ class TrackingEventProcessorTest {
     @Test
     void continueFromPreviousToken() throws Exception {
         tokenStore = new InMemoryTokenStore();
-        eventBus.publish(createEvents(10));
+        eventBus.publish(createDomainEvents(10));
         //noinspection resource
         TrackedEventMessage<?> firstEvent = eventBus.openStream(null).nextAvailable();
         tokenStore.storeToken(firstEvent.trackingToken(), testSubject.getName(), 0);
@@ -753,7 +753,7 @@ class TrackingEventProcessorTest {
         }).when(mockHandler).handleSync(any(), any());
         testSubject.start();
 
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
 
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected 2 invocations on Event Handler by now");
         assertEquals(2, acknowledgedEvents.size());
@@ -772,7 +772,7 @@ class TrackingEventProcessorTest {
             return null;
         }).when(mockHandler).handleSync(any(), any());
 
-        eventBus.publish(createEvents(2));
+        eventBus.publish(createDomainEvents(2));
 
         assertEquals(2, countDownLatch2.getCount());
 
@@ -788,7 +788,7 @@ class TrackingEventProcessorTest {
         eventBus = spy(eventBus);
 
         tokenStore = new InMemoryTokenStore();
-        eventBus.publish(createEvents(5));
+        eventBus.publish(createDomainEvents(5));
         when(eventBus.openStream(any())).thenThrow(new MockException()).thenCallRealMethod();
 
         List<EventMessage<?>> acknowledgedEvents = new ArrayList<>();
@@ -821,7 +821,7 @@ class TrackingEventProcessorTest {
         eventBus = spy(eventBus);
 
         tokenStore = new InMemoryTokenStore();
-        eventBus.publish(createEvents(5));
+        eventBus.publish(createDomainEvents(5));
         AtomicBoolean fail = new AtomicBoolean(true);
         when(eventBus.openStream(any())).then(invocationOnMock -> {
             if (fail.get()) {
@@ -864,7 +864,7 @@ class TrackingEventProcessorTest {
 
     @Test
     void firstTokenIsStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
-        List<? extends EventMessage<?>> events = createEvents(2);
+        List<? extends EventMessage<?>> events = createDomainEvents(2);
         CountDownLatch countDownLatch = new CountDownLatch(2);
         //noinspection resource
         testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
@@ -914,7 +914,7 @@ class TrackingEventProcessorTest {
         eventBus = mock(LegacyEmbeddedEventStore.class);
         TrackingToken trackingToken = new GlobalSequenceTrackingToken(0);
         List<TrackedEventMessage<?>> events =
-                createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
+                createDomainEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
         when(eventBus.openStream(null)).thenReturn(trackingEventStreamOf(events.iterator()));
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -990,7 +990,7 @@ class TrackingEventProcessorTest {
         awaitProcessorStarted();
 
         int numberOfEvents = 4;
-        eventBus.publish(createEvents(numberOfEvents));
+        eventBus.publish(createDomainEvents(numberOfEvents));
         await("Handle Events - Initial").pollDelay(Duration.ofMillis(50))
                                         .atMost(Duration.ofMillis(4000))
                                         .untilAsserted(() -> assertEquals(
@@ -1021,7 +1021,7 @@ class TrackingEventProcessorTest {
         assertTrue(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent());
 
         long resetPositionAtReplay = testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong();
-        eventBus.publish(createEvents(1));
+        eventBus.publish(createDomainEvents(1));
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
                 testSubject.processingStatus().get(segmentId).isReplaying()
@@ -1055,7 +1055,7 @@ class TrackingEventProcessorTest {
             return null;
         }).when(mockHandler).handleSync(any(), any());
 
-        eventBus.publish(createEvents(4));
+        eventBus.publish(createDomainEvents(4));
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
 
@@ -1087,7 +1087,7 @@ class TrackingEventProcessorTest {
         awaitProcessorStarted();
 
         int numberOfEvents = 4;
-        eventBus.publish(createEvents(numberOfEvents));
+        eventBus.publish(createDomainEvents(numberOfEvents));
         await("Handle Events")
                 .atMost(Duration.ofSeconds(5))
                 .pollDelay(Duration.ofMillis(50))
@@ -1107,7 +1107,7 @@ class TrackingEventProcessorTest {
         assertTrue(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent());
 
         long resetPositionAtReplay = testSubject.processingStatus().get(segmentId).getResetPosition().getAsLong();
-        eventBus.publish(createEvents(1));
+        eventBus.publish(createDomainEvents(1));
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
                 testSubject.processingStatus().get(segmentId).isReplaying()
@@ -1170,7 +1170,7 @@ class TrackingEventProcessorTest {
             return null;
         }).when(mockHandler).handleSync(any(), any());
 
-        eventBus.publish(createEvents(4));
+        eventBus.publish(createDomainEvents(4));
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(2, handled.size()));
         testSubject.shutDown();
@@ -1184,7 +1184,7 @@ class TrackingEventProcessorTest {
         assertTrue(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent());
 
         long resetPositionAtReplay = testSubject.processingStatus().get(segmentId).getResetPosition().getAsLong();
-        eventBus.publish(createEvents(1));
+        eventBus.publish(createDomainEvents(1));
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
                 testSubject.processingStatus().get(segmentId).isReplaying()
@@ -1223,7 +1223,7 @@ class TrackingEventProcessorTest {
         awaitProcessorStarted();
 
         int numberOfEvents = 4;
-        eventBus.publish(createEvents(numberOfEvents));
+        eventBus.publish(createDomainEvents(numberOfEvents));
         await("Handle Events").pollDelay(Duration.ofMillis(50))
                               .atMost(Duration.ofMillis(2500))
                               .untilAsserted(() -> assertEquals(
@@ -1335,7 +1335,7 @@ class TrackingEventProcessorTest {
             return null;
         }).when(mockHandler).handleSync(any(), any());
 
-        eventBus.publish(createEvents(4));
+        eventBus.publish(createDomainEvents(4));
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, count.get()));
         testSubject.shutDown();
@@ -1510,7 +1510,7 @@ class TrackingEventProcessorTest {
         List<EventMessage<?>> events = new ArrayList<>();
         int segmentId = 0;
         for (int i = 0; i < 10; i++) {
-            events.add(createEvent(UUID.randomUUID().toString(), 0));
+            events.add(createDomainEvent(UUID.randomUUID().toString(), 0));
         }
         when(mockHandler.handleSync(any(), any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
         eventBus.publish(events);
@@ -1659,7 +1659,7 @@ class TrackingEventProcessorTest {
             return null;
         });
         for (int i = 0; i < 10; i++) {
-            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
+            eventBus.publish(createDomainEvent(UUID.randomUUID().toString(), 0));
         }
         testSubject.start();
         while (testSubject.processingStatus().size() < 2
@@ -1697,7 +1697,7 @@ class TrackingEventProcessorTest {
     void replayDuringIncompleteMerge() throws Exception {
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         List<EventMessage<?>> initialEvents = IntStream.range(0, 10)
-                                                       .mapToObj(i -> createEvent(UUID.randomUUID().toString(), 0))
+                                                       .mapToObj(i -> createDomainEvent(UUID.randomUUID().toString(), 0))
                                                        .collect(toList());
         Duration pollDelay = Duration.ofMillis(25);
         int segmentIdZero = 0;
@@ -1847,7 +1847,7 @@ class TrackingEventProcessorTest {
                 builder -> builder.eventHandlerInvoker(eventHandlerInvoker)
         );
 
-        eventBus.publish(createEvents(1));
+        eventBus.publish(createDomainEvents(1));
         testSubject.start();
 
         assertWithin(2, TimeUnit.SECONDS, () -> assertTrue(testSubject.isError()));
@@ -2146,7 +2146,7 @@ class TrackingEventProcessorTest {
         testSubject.start();
         awaitProcessorStarted();
         // ensure some events have been handled by the TEP
-        eventBus.publish(createEvents(numberOfEvents));
+        eventBus.publish(createDomainEvents(numberOfEvents));
         await("Handled Events")
                 .atMost(Duration.ofSeconds(2))
                 .pollDelay(Duration.ofMillis(50))
@@ -2197,7 +2197,7 @@ class TrackingEventProcessorTest {
 
         testSubject.start();
 
-        eventBus.publish(createEvents(1));
+        eventBus.publish(createDomainEvents(1));
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
         assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(2)));
@@ -2243,9 +2243,9 @@ class TrackingEventProcessorTest {
         CountDownLatch countDownLatch = new CountDownLatch(3);
         //noinspection resource
         testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(countDownLatch::countDown));
-        eventBus.publish(createEvent(0));
-        eventBus.publish(createEvent(1));
-        eventBus.publish(createEvent(2));
+        eventBus.publish(createDomainEvent(0));
+        eventBus.publish(createDomainEvent(1));
+        eventBus.publish(createDomainEvent(2));
 
         testSubject.start();
 
@@ -2262,7 +2262,7 @@ class TrackingEventProcessorTest {
         testSubject.registerHandlerInterceptor(eventHandlerInterceptorCleanup(started::countDown,
                                                                               finished::countDown));
 
-        eventBus.publish(createEvent(0));
+        eventBus.publish(createDomainEvent(0));
 
         doAnswer(i -> i.callRealMethod()).when(tokenStore).storeToken(any(), anyString(), anyInt());
         doAnswer(i -> i.callRealMethod()).when(tokenStore).initializeTokenSegments(anyString(), anyInt(), any());
@@ -2271,7 +2271,7 @@ class TrackingEventProcessorTest {
 
         started.await();
 
-        eventBus.publish(createEvent(2));
+        eventBus.publish(createDomainEvent(2));
 
         assertTrue(finished.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
         TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
@@ -2353,7 +2353,7 @@ class TrackingEventProcessorTest {
 
     private void publishEvents(int nrOfEvents) {
         for (int i = 0; i < nrOfEvents; i++) {
-            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
+            eventBus.publish(createDomainEvent(UUID.randomUUID().toString(), 0));
         }
     }
 
@@ -2366,7 +2366,7 @@ class TrackingEventProcessorTest {
             eventMessages = new LinkedList<>();
             for (Long seq : tokens) {
                 lastToken = lastToken.advanceTo(seq, 1000);
-                eventMessages.add(new GenericTrackedEventMessage<>(lastToken, createEvent(seq)));
+                eventMessages.add(new GenericTrackedEventMessage<>(lastToken, createDomainEvent(seq)));
             }
         }
 

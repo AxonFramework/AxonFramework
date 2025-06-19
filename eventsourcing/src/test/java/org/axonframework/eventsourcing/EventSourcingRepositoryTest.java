@@ -16,9 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
@@ -40,6 +38,7 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
+import static org.axonframework.eventhandling.EventTestUtils.createEvent;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -48,7 +47,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Allard Buijze
  */
-class   EventSourcingRepositoryTest {
+class EventSourcingRepositoryTest {
 
     private static final Set<Tag> TEST_TAGS = Set.of(new Tag("aggregateId", "id"));
     private static final EventCriteria TEST_CRITERIA = EventCriteria.havingTags("aggregateId", "id");
@@ -84,7 +83,7 @@ class   EventSourcingRepositoryTest {
     @Test
     void loadEventSourcedEntity() {
         ProcessingContext processingContext = new StubProcessingContext();
-        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
+        doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
 
@@ -128,7 +127,7 @@ class   EventSourcingRepositoryTest {
     void assigningEntityToOtherProcessingContextInExactFormat() throws Exception {
         ProcessingContext processingContext = new StubProcessingContext();
         ProcessingContext processingContext2 = new StubProcessingContext();
-        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
+        doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
 
@@ -143,7 +142,7 @@ class   EventSourcingRepositoryTest {
     void assigningEntityToOtherProcessingContextInOtherFormat() throws Exception {
         ProcessingContext processingContext = new StubProcessingContext();
         ProcessingContext processingContext2 = new StubProcessingContext();
-        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
+        doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
 
@@ -173,7 +172,7 @@ class   EventSourcingRepositoryTest {
     @Test
     void updateLoadedEventSourcedEntity() {
         ProcessingContext processingContext = new StubProcessingContext();
-        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
+        doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
 
@@ -197,7 +196,7 @@ class   EventSourcingRepositoryTest {
     @Test
     void loadOrCreateShouldLoadWhenEventsAreReturned() {
         ProcessingContext processingContext = new StubProcessingContext();
-        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
+        doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
 
@@ -231,7 +230,7 @@ class   EventSourcingRepositoryTest {
         factory = (id, event, ctx) -> {
             return null; // Simulating a null entity creation
         };
-        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0))))
+        doReturn(MessageStream.fromStream(Stream.of(createEvent(0))))
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
 
@@ -283,10 +282,5 @@ class   EventSourcingRepositoryTest {
 
     private static boolean conditionPredicate(SourcingCondition condition) {
         return condition.matches(new QualifiedName("ignored"), TEST_TAGS);
-    }
-
-    // TODO - Discuss: Perfect candidate to move to a commons test utils module?
-    private static DomainEventMessage<?> domainEvent(int seq) {
-        return new GenericDomainEventMessage<>("test", "id", seq, new MessageType("event"), seq);
     }
 }
