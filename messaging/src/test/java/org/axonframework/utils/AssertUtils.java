@@ -70,8 +70,8 @@ public abstract class AssertUtils {
     public static <R> R awaitSuccessfulCompletion(@Nonnull CompletableFuture<R> future) {
         await().atMost(Duration.ofMillis(500))
                .pollDelay(Duration.ofMillis(25))
-               .untilAsserted(() -> assertFalse(
-                       future.isCompletedExceptionally(),
+               .untilAsserted(() -> assertTrue(
+                       future.isDone() && !future.isCompletedExceptionally(),
                        () -> future.exceptionNow().toString()
                ));
         return future.join();
@@ -89,7 +89,7 @@ public abstract class AssertUtils {
         await().atMost(Duration.ofMillis(500))
                .pollDelay(Duration.ofMillis(25))
                .untilAsserted(() -> assertTrue(
-                       future.isCompletedExceptionally(),
+                       future.isDone() && future.isCompletedExceptionally(),
                        "Expected exception but none occurred"
                ));
         return future.join();
