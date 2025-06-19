@@ -37,7 +37,9 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author Allard Buijze
  * @since 4.6.0
+ * @deprecated In favor of the {@link SpringAxonApplication}.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class SpringAxonConfiguration implements FactoryBean<LegacyConfiguration>, SmartLifecycle {
 
     /**

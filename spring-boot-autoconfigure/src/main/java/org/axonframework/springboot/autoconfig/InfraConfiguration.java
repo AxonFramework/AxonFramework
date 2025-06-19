@@ -58,7 +58,7 @@ import java.util.List;
 @AutoConfiguration
 @ConditionalOnClass(SpringConfigurer.class)
 @AutoConfigureAfter({
-        AxonAutoConfiguration.class,
+        LegacyAxonAutoConfiguration.class,
         JpaAutoConfiguration.class,
         JpaEventStoreAutoConfiguration.class,
         NoOpTransactionAutoConfiguration.class,

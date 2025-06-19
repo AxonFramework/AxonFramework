@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration
-@AutoConfigureBefore(AxonAutoConfiguration.class)
+@AutoConfigureBefore(LegacyAxonAutoConfiguration.class)
 @ConditionalOnClass(name = {"com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper"})
 @EnableConfigurationProperties(value = SerializerProperties.class)
 public class CBORMapperAutoConfiguration {

@@ -22,7 +22,6 @@ import org.axonframework.spring.serialization.avro.AvroSchemaPackages;
 import org.axonframework.spring.serialization.avro.ClasspathAvroSchemaLoader;
 import org.axonframework.spring.serialization.avro.SpecificRecordBaseClasspathAvroSchemaLoader;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -48,7 +47,7 @@ import java.util.stream.Collectors;
  * @since 4.11.0
  */
 @AutoConfiguration
-@AutoConfigureBefore(AxonAutoConfiguration.class)
+@AutoConfigureBefore(LegacyAxonAutoConfiguration.class)
 @ConditionalOnClass(name = {"org.apache.avro.message.SchemaStore"})
 public class AvroSerializerAutoConfiguration {
 

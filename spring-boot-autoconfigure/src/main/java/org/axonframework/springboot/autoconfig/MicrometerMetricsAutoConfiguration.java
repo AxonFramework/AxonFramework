@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import org.springframework.context.annotation.Bean;
         "org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration",
         "org.springframework.boot.actuate.autoconfigure.metrics.export.simple.SimpleMetricsExportAutoConfiguration"
 })
-@AutoConfigureBefore({AxonAutoConfiguration.class, MetricsAutoConfiguration.class})
+@AutoConfigureBefore({LegacyAxonAutoConfiguration.class, MetricsAutoConfiguration.class})
 @ConditionalOnClass(name = {
         "io.micrometer.core.instrument.MeterRegistry",
         "org.axonframework.micrometer.GlobalMetricRegistry"
