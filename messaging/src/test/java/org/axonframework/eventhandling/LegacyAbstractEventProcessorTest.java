@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -29,14 +30,13 @@ import org.junit.jupiter.api.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.utils.EventTestUtils.createEvent;
 import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class AbstractEventProcessorTest {
+class LegacyAbstractEventProcessorTest {
 
     @Test
     void expectCallbackForAllMessages() throws Exception {
@@ -98,7 +98,7 @@ class AbstractEventProcessorTest {
         assertTrue(pending.isEmpty(), "Not all events were presented to monitor");
     }
 
-    private static class TestEventProcessor extends AbstractEventProcessor {
+    private static class TestEventProcessor extends LegacyAbstractEventProcessor {
 
         private TestEventProcessor(Builder builder) {
             super(builder);
@@ -130,7 +130,7 @@ class AbstractEventProcessorTest {
             processInUnitOfWork(eventMessages, new UnitOfWork());
         }
 
-        private static class Builder extends AbstractEventProcessor.Builder {
+        private static class Builder extends AbstractEventProcessorBuilder {
 
             public Builder() {
                 super();

@@ -21,6 +21,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
@@ -42,7 +44,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Rene de Waele
  * @since 3.0
  */
-public class SubscribingEventProcessor extends AbstractEventProcessor {
+public class SubscribingEventProcessor extends LegacyAbstractEventProcessor implements Lifecycle {
 
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
@@ -51,13 +53,13 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     private volatile Registration eventBusRegistration;
 
     /**
-     * Instantiate a {@code SubscribingEventProcessor} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link SubscribingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker} and
      * {@link SubscribableMessageSource} are not {@code null}, and will throw an {@link AxonConfigurationException} if
      * any of them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@code SubscribingEventProcessor} instance
+     * @param builder the {@link Builder} used to instantiate a {@link SubscribingEventProcessor} instance
      */
     protected SubscribingEventProcessor(Builder builder) {
         super(builder);
@@ -67,7 +69,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@code SubscribingEventProcessor}.
+     * Instantiate a Builder to be able to create a {@link SubscribingEventProcessor}.
      * <p>
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a
@@ -77,10 +79,16 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      * {@code name}, {@link EventHandlerInvoker} and {@link SubscribableMessageSource} are <b>hard requirements</b> and
      * as such should be provided.
      *
-     * @return a Builder to be able to create a {@code SubscribingEventProcessor}
+     * @return a Builder to be able to create a {@link SubscribingEventProcessor}
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
+        handle.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, this::start);
+        handle.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, this::shutDown);
     }
 
     /**
@@ -162,7 +170,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      * {@link NoTransactionManager#INSTANCE}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
      * {@link SubscribableMessageSource} are <b>hard requirements</b> and as such should be provided.
      */
-    public static class Builder extends AbstractEventProcessor.Builder {
+    public static class Builder extends AbstractEventProcessorBuilder {
 
         private SubscribableMessageSource<? extends EventMessage<?>> messageSource;
         private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;

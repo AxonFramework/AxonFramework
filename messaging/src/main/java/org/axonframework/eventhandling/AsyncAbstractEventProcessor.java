@@ -25,22 +25,16 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.SpanFactory;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertThat;
-
 /**
+ * TODO: New one, this will be changed to composition!
  * Abstract implementation of an {@link EventProcessor}. Before processing of a batch of messages this implementation
  * creates a Unit of Work to process the batch.
  * <p>
@@ -54,32 +48,32 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @author Rene de Waele
  * @since 3.0
  */
-public abstract class AbstractEventProcessor implements EventProcessor {
+public abstract class AsyncAbstractEventProcessor implements EventProcessor {
 
     private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
 
     private final String name;
-    private final EventHandlerInvoker eventHandlerInvoker;
+    private final EventHandlingComponent eventHandlerInvoker;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
     protected final EventProcessorSpanFactory spanFactory;
 
     /**
-     * Instantiate a {@link AbstractEventProcessor} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link AsyncAbstractEventProcessor} based on the fields contained in the {@link AbstractEventProcessorBuilder}.
      * <p>
      * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker} and {@link ErrorHandler} are not
      * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link AbstractEventProcessor} instance
+     * @param builder the {@link AbstractEventProcessorBuilder} used to instantiate a {@link AsyncAbstractEventProcessor} instance
      */
-    protected AbstractEventProcessor(Builder builder) {
+    protected AsyncAbstractEventProcessor(AbstractEventProcessorBuilder builder) {
         builder.validate();
         this.name = builder.name;
-        this.eventHandlerInvoker = builder.eventHandlerInvoker;
-        this.errorHandler = builder.errorHandler;
-        this.messageMonitor = builder.messageMonitor;
-        this.spanFactory = builder.spanFactory;
+        this.eventHandlerInvoker = null; //builder.eventHandlerInvoker();
+        this.errorHandler = builder.errorHandler();
+        this.messageMonitor = builder.messageMonitor();
+        this.spanFactory = builder.spanFactory();
     }
 
     @Override
@@ -249,106 +243,5 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      */
     protected void reportIgnored(EventMessage<?> eventMessage) {
         messageMonitor.onMessageIngested(eventMessage).reportIgnored();
-    }
-
-    /**
-     * Abstract Builder class to instantiate a {@link AbstractEventProcessor}.
-     * <p>
-     * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults
-     * to a {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
-     * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name}
-     * and {@link EventHandlerInvoker} are <b>hard requirements</b> and as such should be provided.
-     */
-    public abstract static class Builder {
-
-        protected String name;
-        private EventHandlerInvoker eventHandlerInvoker;
-        private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
-        private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-        private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
-                                                                                        .spanFactory(NoOpSpanFactory.INSTANCE)
-                                                                                        .build();
-
-        /**
-         * Sets the {@code name} of this {@link EventProcessor} implementation.
-         *
-         * @param name a {@link String} defining this {@link EventProcessor} implementation
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder name(@Nonnull String name) {
-            assertEventProcessorName(name, "The EventProcessor name may not be null or empty");
-            this.name = name;
-            return this;
-        }
-
-        /**
-         * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
-         *
-         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
-         *                            {@link EventMessage}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
-            assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
-            this.eventHandlerInvoker = eventHandlerInvoker;
-            return this;
-        }
-
-        /**
-         * Sets the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during processing.
-         * Defaults to a {@link PropagatingErrorHandler}.
-         *
-         * @param errorHandler the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during
-         *                     processing
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder errorHandler(@Nonnull ErrorHandler errorHandler) {
-            assertNonNull(errorHandler, "ErrorHandler may not be null");
-            this.errorHandler = errorHandler;
-            return this;
-        }
-
-        /**
-         * Sets the {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're processed. Defaults
-         * to a {@link NoOpMessageMonitor}.
-         *
-         * @param messageMonitor a {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're
-         *                       processed
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
-            assertNonNull(messageMonitor, "MessageMonitor may not be null");
-            this.messageMonitor = messageMonitor;
-            return this;
-        }
-
-        /**
-         * Sets the {@link EventProcessorSpanFactory} implementation to use for providing tracing capabilities. Defaults
-         * to a {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides
-         * no tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = spanFactory;
-            return this;
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() throws AxonConfigurationException {
-            assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
-            assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
-        }
-
-        private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
-            assertThat(eventProcessorName, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
-        }
     }
 }

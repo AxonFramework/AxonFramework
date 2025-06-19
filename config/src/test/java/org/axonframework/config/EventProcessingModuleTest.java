@@ -22,7 +22,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -33,6 +32,7 @@ import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.LegacyAbstractEventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
@@ -334,20 +334,20 @@ class EventProcessingModuleTest {
                   .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
         LegacyConfiguration config = configurer.start();
 
-        Optional<AbstractEventProcessor> defaultProcessorOptional =
-                config.eventProcessingConfiguration().eventProcessor("default", AbstractEventProcessor.class);
+        Optional<LegacyAbstractEventProcessor> defaultProcessorOptional =
+                config.eventProcessingConfiguration().eventProcessor("default", LegacyAbstractEventProcessor.class);
         assertTrue(defaultProcessorOptional.isPresent());
-        AbstractEventProcessor defaultProcessor = defaultProcessorOptional.get();
+        LegacyAbstractEventProcessor defaultProcessor = defaultProcessorOptional.get();
 
-        Optional<AbstractEventProcessor> specialProcessorOptional =
-                config.eventProcessingConfiguration().eventProcessor("special", AbstractEventProcessor.class);
+        Optional<LegacyAbstractEventProcessor> specialProcessorOptional =
+                config.eventProcessingConfiguration().eventProcessor("special", LegacyAbstractEventProcessor.class);
         assertTrue(specialProcessorOptional.isPresent());
-        AbstractEventProcessor specialProcessor = specialProcessorOptional.get();
+        LegacyAbstractEventProcessor specialProcessor = specialProcessorOptional.get();
 
         MultiEventHandlerInvoker defaultInvoker =
-                getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), defaultProcessor);
+                getFieldValue(LegacyAbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), defaultProcessor);
         MultiEventHandlerInvoker specialInvoker =
-                getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), specialProcessor);
+                getFieldValue(LegacyAbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), specialProcessor);
 
         assertEquals(sequentialPolicy,
                      ((SimpleEventHandlerInvoker) defaultInvoker.delegates().getFirst()).getSequencingPolicy());
@@ -1013,11 +1013,11 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testName, result.getName());
-        assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
+        assertEquals(PropagatingErrorHandler.INSTANCE, getField(LegacyAbstractEventProcessor.class, "errorHandler", result));
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertInstanceOf(SimpleUnitOfWorkFactory.class, getField("unitOfWorkFactory", result));
         assertEquals(config.getComponent(EventProcessorSpanFactory.class),
-                     getField(AbstractEventProcessor.class, "spanFactory", result));
+                     getField(LegacyAbstractEventProcessor.class, "spanFactory", result));
     }
 
     @Test
@@ -1040,7 +1040,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testName, result.getName());
-        assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
+        assertEquals(PropagatingErrorHandler.INSTANCE, getField(LegacyAbstractEventProcessor.class, "errorHandler", result));
 //        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertInstanceOf(SimpleUnitOfWorkFactory.class, getField("unitOfWorkFactory", result));
@@ -1320,7 +1320,7 @@ class EventProcessingModuleTest {
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
         EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+                getField(LegacyAbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1367,7 +1367,7 @@ class EventProcessingModuleTest {
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
         EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+                getField(LegacyAbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1415,7 +1415,7 @@ class EventProcessingModuleTest {
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
         EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+                getField(LegacyAbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1457,7 +1457,7 @@ class EventProcessingModuleTest {
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
         EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+                getField(LegacyAbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1562,7 +1562,7 @@ class EventProcessingModuleTest {
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
         EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+                getField(LegacyAbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);

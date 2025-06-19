@@ -19,14 +19,14 @@ package org.axonframework.springboot;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.AbstractEventProcessor;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.LegacyAbstractEventProcessor;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
@@ -85,7 +85,7 @@ class EventProcessorConfigurationTest {
                     SequencingPolicy<? super EventMessage<?>> expectedPolicy = context.getBean(SequencingPolicy.class);
 
                     MultiEventHandlerInvoker invoker = (MultiEventHandlerInvoker) ensureAccessible(
-                            AbstractEventProcessor.class.getDeclaredMethod("eventHandlerInvoker")
+                            LegacyAbstractEventProcessor.class.getDeclaredMethod("eventHandlerInvoker")
                     ).invoke(eventProcessor);
                     SimpleEventHandlerInvoker simpleEventHandlerInvoker =
                             (SimpleEventHandlerInvoker) invoker.delegates().get(0);
@@ -201,7 +201,7 @@ class EventProcessorConfigurationTest {
                             "first");
                     assertTrue(eventProcessor.isPresent());
                     EventHandlerInvoker eventHandlerInvoker = ReflectionUtils.getFieldValue(
-                            AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), eventProcessor.get()
+                            LegacyAbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), eventProcessor.get()
                     );
                     assertNotNull(eventHandlerInvoker);
                     List<EventHandlerInvoker> delegates = ReflectionUtils.getFieldValue(

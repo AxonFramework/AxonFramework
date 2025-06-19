@@ -21,7 +21,9 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.AbstractEventProcessor;
+import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.eventhandling.AbstractEventProcessorBuilder;
+import org.axonframework.eventhandling.AsyncAbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
@@ -38,6 +40,8 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
+import org.axonframework.lifecycle.Lifecycle;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -86,7 +90,8 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class PooledStreamingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor {
+public class PooledStreamingEventProcessor extends AsyncAbstractEventProcessor
+        implements StreamingEventProcessor, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -107,7 +112,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
 
     /**
-     * Instantiate a {@code PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert the following for their presence prior to constructing this processor:
      * <ul>
@@ -121,7 +126,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      * </ul>
      * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
      *
-     * @param builder the {@link Builder} used to instantiate a {@code PooledStreamingEventProcessor} instance
+     * @param builder the {@link Builder} used to instantiate a {@link PooledStreamingEventProcessor} instance
      */
     protected PooledStreamingEventProcessor(PooledStreamingEventProcessor.Builder builder) {
         super(builder);
@@ -161,7 +166,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@code PooledStreamingEventProcessor}.
+     * Instantiate a Builder to be able to create a {@link PooledStreamingEventProcessor}.
      * <p>
      * Upon initialization of this builder, the following fields are defaulted:
      * <ul>
@@ -187,10 +192,16 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      *
-     * @return a Builder to be able to create a {@code PooledStreamingEventProcessor}
+     * @return a Builder to be able to create a {@link PooledStreamingEventProcessor}
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
+        handle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
+        handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdownAsync);
     }
 
     @Override
@@ -437,7 +448,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      */
-    public static class Builder extends AbstractEventProcessor.Builder {
+    public static class Builder extends AbstractEventProcessorBuilder {
 
         private StreamableEventSource<? extends EventMessage<?>> eventSource;
         private TokenStore tokenStore;
