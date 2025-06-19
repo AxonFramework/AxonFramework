@@ -22,6 +22,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -53,12 +54,11 @@ public abstract class AsyncAbstractEventProcessor implements EventProcessor {
     private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
 
     private final String name;
-    private final EventHandlingComponent eventHandlerInvoker;
+    private final EventHandlingComponent eventHandlingComponent;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
     protected final EventProcessorSpanFactory spanFactory;
-
     /**
      * Instantiate a {@link AsyncAbstractEventProcessor} based on the fields contained in the {@link AbstractEventProcessorBuilder}.
      * <p>
@@ -70,7 +70,7 @@ public abstract class AsyncAbstractEventProcessor implements EventProcessor {
     protected AsyncAbstractEventProcessor(AbstractEventProcessorBuilder builder) {
         builder.validate();
         this.name = builder.name;
-        this.eventHandlerInvoker = null; //builder.eventHandlerInvoker();
+        this.eventHandlingComponent = builder.eventHandlingComponent();
         this.errorHandler = builder.errorHandler();
         this.messageMonitor = builder.messageMonitor();
         this.spanFactory = builder.spanFactory();
@@ -111,22 +111,24 @@ public abstract class AsyncAbstractEventProcessor implements EventProcessor {
      */
     protected boolean canHandle(EventMessage<?> eventMessage, @Nonnull ProcessingContext context, Segment segment)
             throws Exception {
-//        try {
-//            return eventHandlerInvoker.canHandle(eventMessage, context, segment);
-//        } catch (Exception e) {
-//            errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
-//            return false;
-//        }
-        return false;
+        try {
+            // TODO #3098 - Support sequencing within Segments!
+            var eventMessageQualifiedName = eventMessage.type().qualifiedName();
+            var canHandle = eventHandlingComponent.supportedEvents().contains(eventMessageQualifiedName);
+            return canHandle; // && eventHandlerInvoker.canHandle(eventMessage, context, segment);
+        } catch (Exception e) {
+            errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
+            return false;
+        }
     }
 
-    protected boolean canHandleType(Class<?> payloadType) {
-//        try {
-//            return eventHandlerInvoker.canHandleType(payloadType);
-//        } catch (Exception e) {
-//            return false;
-//        }
-        return false;
+    protected boolean canHandleType(MessageType messageType) {
+        try {
+            var eventMessageQualifiedName = messageType.qualifiedName();
+            return eventHandlingComponent.supportedEvents().contains(eventMessageQualifiedName);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -189,9 +191,11 @@ public abstract class AsyncAbstractEventProcessor implements EventProcessor {
                                               MessageMonitor.MonitorCallback monitorCallback
     ) throws Exception {
         try {
-            for (Segment processingSegment : processingSegments) {
+            // TODO #3098 - Support sequencing within Segments!
+//            for (Segment processingSegment : processingSegments) {
 //                eventHandlerInvoker.handle(message, processingContext, processingSegment);
-            }
+//            }
+            eventHandlingComponent.handle(message, processingContext);
             monitorCallback.reportSuccess();
             return MessageStream.empty();
         } catch (Exception exception) {
@@ -222,16 +226,6 @@ public abstract class AsyncAbstractEventProcessor implements EventProcessor {
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
-    }
-
-    /**
-     * Returns the invoker assigned to this processor. The invoker is responsible for invoking the correct handler
-     * methods for any given message.
-     *
-     * @return the invoker assigned to this processor
-     */
-    public EventHandlerInvoker eventHandlerInvoker() {
-        return null;//eventHandlerInvoker;
     }
 
     /**

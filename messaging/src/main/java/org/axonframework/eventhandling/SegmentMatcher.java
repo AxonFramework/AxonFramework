@@ -39,7 +39,7 @@ public class SegmentMatcher {
      * Initialize a SegmentMatcher with the given {@code sequencingPolicy}. The sequencing policy is used to extract
      * the sequence identifier from messages, which is then used to match against segments.
      *
-     * @param sequencingPolicy the policy defining the sequence identifiers to use for segment matching
+     * @param sequencingPolicy The policy defining the sequence identifiers to use for segment matching.
      */
     public SegmentMatcher(SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
         this.sequencingPolicy = sequencingPolicy;
@@ -49,9 +49,9 @@ public class SegmentMatcher {
      * Checks whether the given {@code segment} matches the given {@code message}, based on the configured
      * sequencing policy.
      *
-     * @param segment the segment to match against
-     * @param message the message to check
-     * @return {@code true} if the message matches the segment, {@code false} otherwise
+     * @param segment The segment to match against.
+     * @param message The message to check.
+     * @return {@code true} if the message matches the segment, {@code false} otherwise.
      */
     public boolean matches(Segment segment, EventMessage<?> message) {
         return segment.matches(Objects.hashCode(sequenceIdentifier(message)));
@@ -61,8 +61,8 @@ public class SegmentMatcher {
      * Returns the sequence identifier for the given {@code event}, as defined by the configured sequencing policy.
      * If the policy returns {@code null}, the event's identifier is used as a fallback.
      *
-     * @param event the event to get the sequence identifier for
-     * @return the sequence identifier for the event, never {@code null}
+     * @param event The event to get the sequence identifier for.
+     * @return The sequence identifier for the event, never {@code null}.
      */
     public Object sequenceIdentifier(EventMessage<?> event) {
         return getOrDefault(sequencingPolicy.getSequenceIdentifierFor(event), event::getIdentifier);
@@ -71,7 +71,7 @@ public class SegmentMatcher {
     /**
      * Returns the {@link SequencingPolicy} used by this matcher.
      *
-     * @return the sequencing policy used to determine sequence identifiers
+     * @return The sequencing policy used to determine sequence identifiers.
      */
     public SequencingPolicy<? super EventMessage<?>> getSequencingPolicy() {
         return sequencingPolicy;
