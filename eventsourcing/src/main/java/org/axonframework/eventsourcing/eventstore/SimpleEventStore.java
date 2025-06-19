@@ -17,6 +17,8 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
@@ -25,27 +27,28 @@ import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Simple implementation of the {@link EventStore} and {@link StreamableEventSource} fixed for a <b>single</b>
- * {@code context}.
- * <p>
- * Invocations of this event store that provide a different {@code context} than is used during construction of this
- * event store will fail with an {@link IllegalArgumentException}.
+ * Simple implementation of the {@link EventStore} and {@link StreamableEventSource}.
  *
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
- * @since 3.0
+ * @since 3.0.0
  */
 public class SimpleEventStore implements EventStore, StreamableEventSource<EventMessage<?>> {
 
     private final EventStorageEngine eventStorageEngine;
     private final TagResolver tagResolver;
+    private final UnitOfWorkFactory unitOfWorkFactory;
+
     private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey;
 
     /**
@@ -63,6 +66,8 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
                             @Nonnull TagResolver tagResolver) {
         this.eventStorageEngine = eventStorageEngine;
         this.tagResolver = tagResolver;
+        this.unitOfWorkFactory = new SimpleUnitOfWorkFactory();
+
         this.eventStoreTransactionKey = ResourceKey.withLabel("eventStoreTransaction");
     }
 
@@ -75,22 +80,26 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
     }
 
     @Override
-    public void publish(@Nonnull ProcessingContext processingContext,
-                        @Nonnull List<EventMessage<?>> events) {
-        EventStoreTransaction transaction = transaction(processingContext);
-        for (EventMessage<?> event : events) {
-            transaction.appendEvent(event);
+    public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                           @Nonnull List<EventMessage<?>> events) {
+        if (context == null) {
+            UnitOfWork unitOfWork = unitOfWorkFactory.create();
+            unitOfWork.runOnPostInvocation(c -> appendToTransaction(c, events));
+            return unitOfWork.execute();
+        } else {
+            // Return a completed future since we have an active context.
+            // The user will wait within the context's lifecycle anyhow.
+            appendToTransaction(context, events);
+            return FutureUtils.emptyCompletedFuture();
         }
     }
 
-    @Override
-    public CompletableFuture<Void> publish(@Nonnull List<EventMessage<?>> events) {
-        throw new UnsupportedOperationException(
-                """
-                        Publishing events with the SimpleEventStore requires a ProcessingContext at all times.
-                        Or, use an EventStoreTransaction as provided by the SimpleEventStore instead.
-                        """
-        );
+    private void appendToTransaction(ProcessingContext context,
+                                     List<EventMessage<?>> events) {
+        EventStoreTransaction transaction = transaction(context);
+        for (EventMessage<?> event : events) {
+            transaction.appendEvent(event);
+        }
     }
 
     @Override

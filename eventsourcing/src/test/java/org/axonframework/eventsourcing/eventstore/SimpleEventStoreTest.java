@@ -43,6 +43,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.axonframework.eventhandling.EventTestUtils.eventMessage;
+import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -223,6 +225,42 @@ class SimpleEventStoreTest {
         }
     }
 
+    @Nested
+    class Publish {
+
+        @Test
+        void publishUsesTheGivenContextToInvokeTheTransactionInCompletingTheReturnedFutureImmediately() {
+            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+
+            EventMessage<?> testEventZero = eventMessage(0);
+            EventMessage<?> testEventOne = eventMessage(1);
+
+            UnitOfWork uow = new UnitOfWork();
+            uow.onPreInvocation(context -> {
+                   CompletableFuture<Void> result = testSubject.publish(context, testEventZero, testEventOne);
+                   assertTrue(result.isDone());
+                   assertFalse(result.isCompletedExceptionally());
+                   return result;
+               })
+               .runOnInvocation(context -> verifyNoInteractions(mockStorageEngine))
+               .runOnCommit(context -> verify(mockStorageEngine).appendEvents(any(), anyList()));
+
+            awaitSuccessfulCompletion(uow.execute());
+        }
+
+        @Test
+        void publishConstructsNewUnitOfWorkToInvokeTheTransactionIn() {
+            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+
+            CompletableFuture<Void> result = testSubject.publish(null, eventMessage(0));
+            awaitSuccessfulCompletion(result);
+        }
+    }
+
     @Test
     void describeToDescribesPropertiesForEventStorageEngineAndTheContext() {
         // given
@@ -238,7 +276,7 @@ class SimpleEventStoreTest {
     private static @Nonnull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
         return MessageStream.fromStream(
                 IntStream.range(0, messageCount).boxed(),
-                SimpleEventStoreTest::eventMessage,
+                EventTestUtils::eventMessage,
                 i -> ConsistencyMarker.addToContext(Context.empty(), new GlobalIndexConsistencyMarker(i))
         );
     }
@@ -256,10 +294,5 @@ class SimpleEventStoreTest {
             assertionFailedError.addSuppressed(e);
             throw assertionFailedError;
         }
-    }
-
-    // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?
-    private static EventMessage<?> eventMessage(int seq) {
-        return EventTestUtils.asEventMessage("Event[" + seq + "]");
     }
 }

@@ -21,6 +21,12 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 
+/**
+ * Test utilities when dealing with events.
+ *
+ * @author Mateusz Nowak
+ * @author Steven van Beelen
+ */
 public abstract class EventTestUtils {
 
     private EventTestUtils() {
@@ -28,14 +34,26 @@ public abstract class EventTestUtils {
     }
 
     /**
-     * Returns the given event as an EventMessage. If {@code event} already implements EventMessage, it is returned
-     * as-is. If it is a Message, a new EventMessage will be created using the payload and meta data of the given
-     * message. Otherwise, the given {@code event} is wrapped into a GenericEventMessage as its payload.
+     * Constructs an {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() payload}.
      *
-     * @param event the event to wrap as EventMessage
-     * @param <P>   The generic type of the expected payload of the resulting object
-     * @return an EventMessage containing given {@code event} as payload, or {@code event} if it already implements
-     * EventMessage.
+     * @param seq The payload for the message to construct.
+     * @return An {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() payload}.
+     */
+    public static EventMessage<?> eventMessage(int seq) {
+        return EventTestUtils.asEventMessage("Event[" + seq + "]");
+    }
+
+    /**
+     * Returns the given {@code event} wrapped in an {@link EventMessage}.
+     * <p>
+     * If {@code event} already implements {@code EventMessage}, it is returned as-is. If it is a {@link Message}, a new
+     * {@code EventMessage} will be created using the payload and metadata of the given message. Otherwise, the given
+     * {@code event} is wrapped into a {@link GenericEventMessage} as its payload.
+     *
+     * @param event The event to wrap as {@link EventMessage}.
+     * @param <P>   The generic type of the expected payload of the resulting object.
+     * @return An {@link EventMessage} containing given {@code event} as payload, or {@code event} if it already
+     * implements {@code EventMessage}.
      */
     @SuppressWarnings("unchecked")
     public static <P> EventMessage<P> asEventMessage(@Nonnull Object event) {

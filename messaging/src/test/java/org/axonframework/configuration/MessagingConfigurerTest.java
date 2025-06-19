@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -129,7 +130,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void registerEventSinkOverridesDefault() {
-        EventSink expected = (events) -> null;
+        EventSink expected = (context, events) -> FutureUtils.emptyCompletedFuture();
 
         Configuration result = testSubject.registerEventSink(c -> expected)
                                           .build();

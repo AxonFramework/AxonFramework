@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -31,30 +30,16 @@ import java.util.List;
  * {@link EventStoreTransaction#source(SourcingCondition) event source} models from the underlying storage solution.
  * <p>
  * As an implementation of the {@link EventSink}, this {@code EventStore} will initiate a
- * {@link #transaction(ProcessingContext)} when {@link #publish(ProcessingContext, List)} is triggered to append
- * events.
+ * {@link #transaction(ProcessingContext)} when {@link #publish(ProcessingContext, List)} is triggered to append events.
+ * When a {@code null ProcessingContext} is given on {@link #publish(ProcessingContext, List)}, the implementation
+ * should decide to construct a context itself or fail outright.
  *
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
- * @since 0.1
+ * @since 0.1.0
  */
 public interface EventStore extends EventSink, DescribableComponent {
-
-    @Override
-    default void publish(@Nonnull ProcessingContext processingContext,
-                         EventMessage<?>... events) {
-        this.publish(processingContext, Arrays.asList(events));
-    }
-
-    @Override
-    default void publish(@Nonnull ProcessingContext processingContext,
-                         @Nonnull List<EventMessage<?>> events) {
-        EventStoreTransaction transaction = transaction(processingContext);
-        for (EventMessage<?> event : events) {
-            transaction.appendEvent(event);
-        }
-    }
 
     /**
      * Retrieves the {@link EventStoreTransaction transaction for appending events} for the given
