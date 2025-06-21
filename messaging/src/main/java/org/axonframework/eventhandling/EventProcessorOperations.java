@@ -54,7 +54,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @author Rene de Waele
  * @since 3.0
  */
-public abstract class AbstractEventProcessor implements EventProcessor {
+public class EventProcessorOperations {
 
     private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
 
@@ -66,14 +66,14 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected final EventProcessorSpanFactory spanFactory;
 
     /**
-     * Instantiate a {@link AbstractEventProcessor} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link EventProcessorOperations} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker} and {@link ErrorHandler} are not
      * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link AbstractEventProcessor} instance
+     * @param builder the {@link Builder} used to instantiate a {@link EventProcessorOperations} instance
      */
-    protected AbstractEventProcessor(Builder builder) {
+    protected EventProcessorOperations(Builder builder) {
         builder.validate();
         this.name = builder.name;
         this.eventHandlerInvoker = builder.eventHandlerInvoker;
@@ -82,24 +82,20 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         this.spanFactory = builder.spanFactory;
     }
 
-    @Override
     public String getName() {
         return name;
     }
 
-    @Override
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
         interceptors.add(interceptor);
         return () -> interceptors.remove(interceptor);
     }
 
-    @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
         return Collections.unmodifiableList(interceptors);
     }
 
-    @Override
     public String toString() {
         return getName();
     }
@@ -252,20 +248,20 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     /**
-     * Abstract Builder class to instantiate a {@link AbstractEventProcessor}.
+     * Builder class to instantiate a {@link EventProcessorOperations}.
      * <p>
      * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults
      * to a {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
      * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name}
      * and {@link EventHandlerInvoker} are <b>hard requirements</b> and as such should be provided.
      */
-    public abstract static class Builder {
+    public static class Builder {
 
         protected String name;
-        protected EventHandlerInvoker eventHandlerInvoker;
-        protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
-        protected MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-        protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
+        private EventHandlerInvoker eventHandlerInvoker;
+        private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
+        private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+        private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
                                                                                         .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                         .build();
 
@@ -349,6 +345,15 @@ public abstract class AbstractEventProcessor implements EventProcessor {
 
         private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
             assertThat(eventProcessorName, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
+        }
+
+        /**
+         * Initializes a {@link EventProcessorOperations} as specified through this Builder.
+         *
+         * @return a {@link EventProcessorOperations} as specified through this Builder
+         */
+        public EventProcessorOperations build() {
+            return new EventProcessorOperations(this);
         }
     }
 }
