@@ -22,6 +22,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
@@ -42,11 +43,12 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Rene de Waele
  * @since 3.0
  */
-public class SubscribingEventProcessor extends AbstractEventProcessor {
+public class SubscribingEventProcessor implements EventProcessor {
 
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
     private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
+    private final EventProcessorOperations eventProcessorOperations;
 
     private volatile Registration eventBusRegistration;
 
@@ -60,10 +62,16 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      * @param builder the {@link Builder} used to instantiate a {@code SubscribingEventProcessor} instance
      */
     protected SubscribingEventProcessor(Builder builder) {
-        super(builder);
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
+        this.eventProcessorOperations = new EventProcessorOperations.Builder()
+                .name(builder.name)
+                .eventHandlerInvoker(builder.eventHandlerInvoker)
+                .errorHandler(builder.errorHandler)
+                .spanFactory(builder.spanFactory)
+                .messageMonitor(builder.messageMonitor)
+                .build();
     }
 
     /**
@@ -81,6 +89,16 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public String getName() {
+        return eventProcessorOperations.getName();
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        return eventProcessorOperations.getHandlerInterceptors();
     }
 
     /**
@@ -120,7 +138,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
             var unitOfWork = transactionalUnitOfWorkFactory.create();
-            processInUnitOfWork(eventMessages, unitOfWork);
+            eventProcessorOperations.processInUnitOfWork(eventMessages, unitOfWork);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -149,6 +167,12 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      */
     public SubscribableMessageSource<? extends EventMessage<?>> getMessageSource() {
         return messageSource;
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
+        return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
     }
 
     /**
