@@ -350,5 +350,25 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
             assertThat(eventProcessorName, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
         }
+
+        public String name() {
+            return name;
+        }
+
+        public EventHandlerInvoker eventHandlerInvoker() {
+            return eventHandlerInvoker;
+        }
+
+        public ErrorHandler errorHandler() {
+            return errorHandler;
+        }
+
+        public MessageMonitor<? super EventMessage<?>> messageMonitor() {
+            return messageMonitor;
+        }
+
+        public EventProcessorSpanFactory spanFactory() {
+            return spanFactory;
+        }
     }
 }

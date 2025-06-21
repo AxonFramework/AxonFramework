@@ -64,6 +64,7 @@ public class EventProcessorOperations {
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
     protected final EventProcessorSpanFactory spanFactory;
+    private final boolean streamingProcessor;
 
     /**
      * Instantiate a {@link EventProcessorOperations} based on the fields contained in the {@link Builder}.
@@ -80,6 +81,7 @@ public class EventProcessorOperations {
         this.errorHandler = builder.errorHandler;
         this.messageMonitor = builder.messageMonitor;
         this.spanFactory = builder.spanFactory;
+        this.streamingProcessor = builder.streamingProcessor;
     }
 
     public String getName() {
@@ -111,7 +113,7 @@ public class EventProcessorOperations {
      * @throws Exception if the {@code errorHandler} throws an Exception back on the
      *                   {@link ErrorHandler#handleError(ErrorContext)} call
      */
-    protected boolean canHandle(EventMessage<?> eventMessage, @Nonnull ProcessingContext context, Segment segment)
+    public boolean canHandle(EventMessage<?> eventMessage, @Nonnull ProcessingContext context, Segment segment)
             throws Exception {
         try {
             return eventHandlerInvoker.canHandle(eventMessage, context, segment);
@@ -121,7 +123,7 @@ public class EventProcessorOperations {
         }
     }
 
-    protected boolean canHandleType(Class<?> payloadType) {
+    public boolean canHandleType(Class<?> payloadType) {
         try {
             return eventHandlerInvoker.canHandleType(payloadType);
         } catch (Exception e) {
@@ -153,15 +155,15 @@ public class EventProcessorOperations {
      * @param processingSegments The segments for which the events should be processed in this unit of work
      * @throws Exception when an exception occurred during processing of the batch
      */
-    protected CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                                          UnitOfWork unitOfWork,
-                                                          Collection<Segment> processingSegments) throws Exception {
+    public CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
+                                                       UnitOfWork unitOfWork,
+                                                       Collection<Segment> processingSegments) throws Exception {
         unitOfWork.onInvocation(processingContext -> {
             CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
 
             for (EventMessage<?> message : eventMessages) {
                 result = result.thenCompose(v -> spanFactory
-                        .createProcessEventSpan(this instanceof StreamingEventProcessor, message)
+                        .createProcessEventSpan(streamingProcessor, message)
                         .runSupplierAsync(() -> processMessage(processingSegments, processingContext, message))
                 );
             }
@@ -169,7 +171,7 @@ public class EventProcessorOperations {
             return result;
         });
 
-        return spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages)
+        return spanFactory.createBatchSpan(streamingProcessor, eventMessages)
                           .runSupplierAsync(() -> unitOfWork.execute().exceptionally(e -> {
                               try {
                                   var cause = e instanceof CompletionException ? e.getCause() : e;
@@ -243,7 +245,7 @@ public class EventProcessorOperations {
      *
      * @param eventMessage the message that has been ignored.
      */
-    protected void reportIgnored(EventMessage<?> eventMessage) {
+    public void reportIgnored(EventMessage<?> eventMessage) {
         messageMonitor.onMessageIngested(eventMessage).reportIgnored();
     }
 
@@ -264,6 +266,7 @@ public class EventProcessorOperations {
         private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
                                                                                         .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                         .build();
+        private boolean streamingProcessor = false;
 
         /**
          * Sets the {@code name} of this {@link EventProcessor} implementation.
@@ -329,6 +332,11 @@ public class EventProcessorOperations {
         public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
+            return this;
+        }
+
+        public Builder streamingProcessor(boolean streamingProcessor) {
+            this.streamingProcessor = streamingProcessor;
             return this;
         }
 

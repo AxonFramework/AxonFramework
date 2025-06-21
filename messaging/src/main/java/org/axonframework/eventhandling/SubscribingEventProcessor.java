@@ -62,15 +62,16 @@ public class SubscribingEventProcessor implements EventProcessor {
      * @param builder the {@link Builder} used to instantiate a {@code SubscribingEventProcessor} instance
      */
     protected SubscribingEventProcessor(Builder builder) {
+        builder.validate();
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
         this.eventProcessorOperations = new EventProcessorOperations.Builder()
-                .name(builder.name)
-                .eventHandlerInvoker(builder.eventHandlerInvoker)
-                .errorHandler(builder.errorHandler)
-                .spanFactory(builder.spanFactory)
-                .messageMonitor(builder.messageMonitor)
+                .name(builder.name())
+                .eventHandlerInvoker(builder.eventHandlerInvoker())
+                .errorHandler(builder.errorHandler())
+                .spanFactory(builder.spanFactory())
+                .messageMonitor(builder.messageMonitor())
                 .build();
     }
 

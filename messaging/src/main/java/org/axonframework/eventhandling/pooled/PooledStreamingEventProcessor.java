@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.pooled;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.AbstractEventProcessor;
@@ -26,6 +27,7 @@ import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorOperations;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -38,6 +40,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -50,6 +53,7 @@ import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,10 +90,11 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class PooledStreamingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor {
+public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+    private final EventProcessorOperations eventProcessorOperations;
     private final String name;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final TokenStore tokenStore;
@@ -123,8 +128,16 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *
      * @param builder the {@link Builder} used to instantiate a {@code PooledStreamingEventProcessor} instance
      */
-    protected PooledStreamingEventProcessor(PooledStreamingEventProcessor.Builder builder) {
-        super(builder);
+    protected PooledStreamingEventProcessor(Builder builder) {
+        builder.validate();
+        this.eventProcessorOperations = new EventProcessorOperations.Builder()
+                .name(builder.name())
+                .eventHandlerInvoker(builder.eventHandlerInvoker())
+                .errorHandler(builder.errorHandler())
+                .spanFactory(builder.spanFactory())
+                .messageMonitor(builder.messageMonitor())
+                .streamingProcessor(true)
+                .build();
         this.name = builder.name();
         this.eventSource = builder.eventSource;
         this.tokenStore = builder.tokenStore;
@@ -146,8 +159,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .unitOfWorkFactory(unitOfWorkFactory)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
-                                      .eventFilter(event -> canHandleType(event.getPayloadType()))
-                                      .onMessageIgnored(this::reportIgnored)
+                                      .eventFilter(event -> eventProcessorOperations.canHandleType(event.getPayloadType()))
+                                      .onMessageIgnored(eventProcessorOperations::reportIgnored)
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
                                       .claimExtensionThreshold(claimExtensionThreshold)
@@ -156,7 +169,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
-                                      .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment))
+                                      .segmentReleasedAction(segment -> eventProcessorOperations.eventHandlerInvoker().segmentReleased(segment))
                                       .build();
     }
 
@@ -191,6 +204,16 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public String getName() {
+        return eventProcessorOperations.getName();
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        return eventProcessorOperations.getHandlerInterceptors();
     }
 
     @Override
@@ -279,7 +302,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
     @Override
     public boolean supportsReset() {
-        return eventHandlerInvoker().supportsReset();
+        return eventProcessorOperations.eventHandlerInvoker().supportsReset();
     }
 
     @Override
@@ -326,7 +349,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                            .mapToObj(segment -> tokenStore.fetchToken(getName(), segment))
                                            .toArray(TrackingToken[]::new);
             // Perform the reset on the EventHandlerInvoker
-            eventHandlerInvoker().performReset(resetContext, null);
+            eventProcessorOperations.eventHandlerInvoker().performReset(resetContext, null);
             // Update all tokens towards ReplayTokens
             IntStream.range(0, tokens.length)
                      .forEach(i -> tokenStore.storeToken(
@@ -357,7 +380,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (eventMessages, unitOfWork, processingSegments) -> processInUnitOfWork(
+        WorkPackage.BatchProcessor batchProcessor = (eventMessages, unitOfWork, processingSegments) -> eventProcessorOperations.processInUnitOfWork(
                 eventMessages,
                 unitOfWork,
                 processingSegments
@@ -367,7 +390,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                           .tokenStore(tokenStore)
                           .unitOfWorkFactory(unitOfWorkFactory)
                           .executorService(workerExecutor)
-                          .eventFilter(this::canHandle)
+                          .eventFilter(eventProcessorOperations::canHandle)
                           .batchProcessor(batchProcessor)
                           .segment(segment)
                           .initialToken(initialToken)
@@ -406,6 +429,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      */
     private void statusUpdater(int segmentId, UnaryOperator<TrackerStatus> segmentUpdater) {
         processingStatus.computeIfPresent(segmentId, (s, ts) -> segmentUpdater.apply(ts));
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
+        return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
     }
 
     /**
@@ -774,5 +803,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         public String name() {
             return name;
         }
+
     }
 }
