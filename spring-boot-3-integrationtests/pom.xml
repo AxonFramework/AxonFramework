@@ -39,7 +39,7 @@
         <!-- Database -->
         <mysql-connector-java.version>9.3.0</mysql-connector-java.version>
         <!-- Scheduling -->
-        <jobrunr.version>7.5.1</jobrunr.version>
+        <jobrunr.version>7.5.2</jobrunr.version>
         <!-- Build / Plugin -->
         <jacoco-maven.version>0.8.13</jacoco-maven.version>
         <maven-compiler.version>3.14.0</maven-compiler.version>
