@@ -66,7 +66,7 @@
         <junit.jupiter.version>5.13.1</junit.jupiter.version>
         <mockk.version>1.12.4</mockk.version>
         <!-- Build -->
-        <central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
+        <central-publishing-maven-plugin.version>0.8.0</central-publishing-maven-plugin.version>
         <dokka.version>2.0.0</dokka.version>
         <jacoco-maven.version>0.8.13</jacoco-maven.version>
         <maven-assembly.version>3.7.1</maven-assembly.version>
