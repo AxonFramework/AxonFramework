@@ -16,6 +16,9 @@
 
 package org.axonframework.usage.configuration;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +30,7 @@ import java.util.Objects;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public class HierachicalUsagePropertyProvider implements UsagePropertyProvider {
 
     private final List<UsagePropertyProvider> providers;
@@ -38,7 +42,8 @@ public class HierachicalUsagePropertyProvider implements UsagePropertyProvider {
      *
      * @param providers The list of {@link UsagePropertyProvider} instances to combine.
      */
-    public HierachicalUsagePropertyProvider(List<UsagePropertyProvider> providers) {
+    public HierachicalUsagePropertyProvider(@Nonnull List<UsagePropertyProvider> providers) {
+        Objects.requireNonNull(providers, "The providers may not be null.");
         this.providers = providers.stream()
                                   .sorted(Comparator.comparingInt(UsagePropertyProvider::priority).reversed())
                                   .toList();

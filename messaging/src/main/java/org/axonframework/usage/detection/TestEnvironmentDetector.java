@@ -16,6 +16,8 @@
 
 package org.axonframework.usage.detection;
 
+import org.axonframework.common.annotation.Internal;
+
 import java.util.Arrays;
 
 /**
@@ -25,6 +27,7 @@ import java.util.Arrays;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public class TestEnvironmentDetector {
 
     /**

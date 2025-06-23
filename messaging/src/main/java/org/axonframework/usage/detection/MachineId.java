@@ -16,6 +16,7 @@
 
 package org.axonframework.usage.detection;
 
+import org.axonframework.common.annotation.Internal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +33,7 @@ import java.util.UUID;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public class MachineId {
     private static final Logger logger = LoggerFactory.getLogger(MachineId.class);
     private static final String MACHINE_ID_PATH = "/.axoniq/.machine-id";

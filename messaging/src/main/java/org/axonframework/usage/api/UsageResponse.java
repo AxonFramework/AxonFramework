@@ -16,6 +16,10 @@
 
 package org.axonframework.usage.api;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +35,7 @@ import java.util.List;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public record UsageResponse(
         Integer checkInterval,
         List<UsageResponseVersionUpgrade> upgrades,
@@ -39,12 +44,27 @@ public record UsageResponse(
 
     /**
      * Parses the response body from the anonymous usage reporter into a {@code UsageResponse} object. The body is
-     * expected to be in a specific format where each line contains a key-value pair.
+     * expected to be in a specific format where each line contains a key-value pair. The expected keys are:
+     * <ul>
+     *     <li>cd - Check interval in seconds</li>
+     *     <li>vul - Vulnerability information in the format:
+     *            groupId:artifactId:fixVersion:severity:moreInformationUrl</li>
+     *     <li>upd - Update information in the format: groupId:artifactId:latestVersion</li>
+     * </ul>
      *
-     * @param body the response body as a string.
+     * An example of the expected format:
+     * <pre>
+     * cd=86400
+     * vul=org.axonframework:axon-serialization:1.0.0:HIGH:"https://example.com/vulnerability"
+     * upd=org.axonframework:axon-messaging:5.0.1
+     * </pre>
+     *
+     *
+     * @param body The response body as a string.
      * @return A {@code UsageResponse} object containing the parsed data.
      */
-    public static UsageResponse fromRequest(String body) {
+    @Nonnull
+    public static UsageResponse fromRequest(@Nullable String body) {
         int checkInterval = 86400; // Default to 24 hours, in case request didn't work
         List<UsageResponseVersionUpgrade> upgrades = new ArrayList<>();
         List<UsageResponseVulnerability> vulnerabilities = new ArrayList<>();
@@ -81,7 +101,7 @@ public record UsageResponse(
 
     private static void parseUpdate(String val, List<UsageResponseVulnerability> vulnerabilities,
                                     List<UsageResponseVersionUpgrade> upgrades) {
-        // Format: upd=groupId:artifactId:latestVersion:"releaseNotesUrl"
+        // Format: upd=groupId:artifactId:latestVersion
         String[] parts = parseIntoParts(val);
         if (parts.length == 3) {
             String groupId = parts[0];
@@ -94,6 +114,7 @@ public record UsageResponse(
     }
 
     private static void parseVulnerability(String val, List<UsageResponseVulnerability> vulnerabilities) {
+        // Format: vul=groupId:artifactId:fixVersion:severity:moreInformationUrl
         String[] parts = parseIntoParts(val);
         if (parts.length == 5) {
             String groupId = parts[0];

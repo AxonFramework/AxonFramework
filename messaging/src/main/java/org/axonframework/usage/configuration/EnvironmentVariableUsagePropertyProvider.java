@@ -19,39 +19,32 @@ package org.axonframework.usage.configuration;
 import org.axonframework.common.annotation.Internal;
 
 /**
- * Default implementation of the {@link UsagePropertyProvider} interface. This implementation provides default values
- * for the properties used in the Axon Framework usage API. It is used when no other provider has a value.
- * <p>
- * As there is no dependent state and holds default values, this class is implemented as a singleton. Retrieve the
- * instance using {@link #INSTANCE}.
+ * A {@link UsagePropertyProvider} implementation that reads the usage properties from the
+ * environment variables. The priority is half of max integer value, meaning it will be overridden by
+ * the command-line properties provider.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
 @Internal
-public class DefaultUsagePropertyProvider implements UsagePropertyProvider {
-
-    /**
-     * Singleton instance of the {@link DefaultUsagePropertyProvider}.
-     */
-    public static DefaultUsagePropertyProvider INSTANCE = new DefaultUsagePropertyProvider();
+public class EnvironmentVariableUsagePropertyProvider implements UsagePropertyProvider {
 
     @Override
     public Boolean getDisabled() {
-        return false;
+        String property = System.getenv("AXONIQ_UPDATE_CHECKER_DISABLED");
+        if (property != null) {
+            return Boolean.parseBoolean(property);
+        }
+        return null;
     }
 
     @Override
     public String getUrl() {
-        return "https://telemetry.axoniq.io/framework";
+        return System.getenv("AXONIQ_UPDATE_CHECKER_URL");
     }
 
     @Override
     public int priority() {
-        return Integer.MIN_VALUE;
-    }
-
-    private DefaultUsagePropertyProvider() {
-        // Private constructor to prevent instantiation
+        return Integer.MAX_VALUE / 2;
     }
 }

@@ -17,6 +17,7 @@
 package org.axonframework.usage;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.usage.api.LibraryVersion;
 import org.axonframework.usage.api.UsageRequest;
 import org.axonframework.usage.api.UsageResponse;
@@ -25,8 +26,6 @@ import org.axonframework.usage.configuration.UsagePropertyProvider;
 import org.axonframework.usage.detection.AxonVersionDetector;
 import org.axonframework.usage.detection.KotlinVersion;
 import org.axonframework.usage.detection.MachineId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -34,6 +33,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.UUID;
+
+import static org.axonframework.usage.UpdateChecker.logger;
 
 /**
  * This task reports anonymous usage data to AxonIQ's telemetry endpoint. In return, it receives information about
@@ -52,9 +53,8 @@ import java.util.UUID;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public class UpdateCheckTask implements Runnable {
-
-    private static final Logger logger = LoggerFactory.getLogger(UpdateCheckTask.class);
     private final HttpClient client;
     private final UsagePropertyProvider userProperties;
     private int errorRetryBackoffFactor = 1;

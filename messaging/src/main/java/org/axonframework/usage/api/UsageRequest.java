@@ -16,15 +16,30 @@
 
 package org.axonframework.usage.api;
 
+import org.axonframework.common.annotation.Internal;
+
 import java.util.List;
 
 /**
  * Represents a request for usage data, including machine and instance identifiers, operating system details, JVM
  * information, Kotlin version, and a list of library versions.
  *
+ * @param machineId  The unique identifier for the machine. This is a UUID that is generated and stored in the user's
+ *                   home directory.
+ * @param instanceId The unique identifier for the instance of the application. This is a UUID that is generated for
+ *                   each JVM instance.
+ * @param osName     The name of the operating system (e.g., "Linux", "Windows").
+ * @param osVersion  The version of the operating system (e.g., "6.11.0-26-generic").
+ * @param osArch     The architecture of the operating system (e.g., "amd64", "x86_64").
+ * @param jvmVersion The version of the Java Virtual Machine (JVM) (e.g., "17.0.2").
+ * @param jvmVendor  The vendor of the JVM (e.g., "AdoptOpenJDK", "Oracle").
+ * @param kotlinVersion The version of Kotlin used in the application, or "none" if Kotlin is not used.
+ * @param libraries  A list of library versions used in the application, each represented by a {@link LibraryVersion}
+ *                   object containing the group ID, artifact ID, and version of the library.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public record UsageRequest(
         String machineId,
         String instanceId,

@@ -16,9 +16,9 @@
 
 package org.axonframework.usage;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.usage.detection.TestEnvironmentDetector;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -37,10 +37,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Explicitly setting the property to {@code disabled=false} in a method of higher precedence will ignore the lower precedence disabled.
  *
  * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
+@Internal
 public class UpdateChecker {
 
-    private final Logger logger = LoggerFactory.getLogger(UpdateChecker.class);
+    public static Logger logger = org.slf4j.LoggerFactory.getLogger("UpdateChecker");
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     /**

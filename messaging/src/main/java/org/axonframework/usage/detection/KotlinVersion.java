@@ -16,6 +16,8 @@
 
 package org.axonframework.usage.detection;
 
+import org.axonframework.common.annotation.Internal;
+
 /**
  * Utility class to retrieve the current Kotlin version at runtime. It attempts to access the `kotlin.KotlinVersion`
  * class and invoke its `getCurrent` method. If the class or method is not found, it returns "none".
@@ -23,6 +25,7 @@ package org.axonframework.usage.detection;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public class KotlinVersion {
 
     private static String KOTLIN_VERSION = null;

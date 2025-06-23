@@ -16,6 +16,7 @@
 
 package org.axonframework.usage.detection;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.usage.api.LibraryVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,7 @@ import java.util.jar.JarFile;
  *
  * @author Mitchell Herrijgers
  */
+@Internal
 public final class AxonVersionDetector {
 
     private static final Logger logger = LoggerFactory.getLogger(AxonVersionDetector.class);
@@ -113,6 +115,8 @@ public final class AxonVersionDetector {
     }
 
     private static List<LibraryVersion> extractVersionFromJar(URL url) throws IOException {
+        // The URL format for JAR files is typically "file:/path/to/jarfile.jar!/META-INF/maven/...".
+        // We need to extract the path to the JAR file, so we remove the "file:" prefix and everything after the "!" character.
         String jarFilePath = url.getPath().substring(5, url.getPath().indexOf("!"));
         try (JarFile jarFile = new JarFile(new File(jarFilePath))) {
             return jarFile.stream()

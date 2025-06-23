@@ -16,6 +16,7 @@
 
 package org.axonframework.usage.configuration;
 
+import org.axonframework.common.annotation.Internal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +35,7 @@ import java.util.Properties;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(PropertyFileUsagePropertyProvider.class);

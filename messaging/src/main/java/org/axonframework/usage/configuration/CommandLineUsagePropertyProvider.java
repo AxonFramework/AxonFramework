@@ -16,10 +16,16 @@
 
 package org.axonframework.usage.configuration;
 
+import org.axonframework.common.annotation.Internal;
+
 /**
  * A {@link UsagePropertyProvider} implementation that reads the usage properties from the command line system
  * properties. This is the highest priority provider, meaning any defined property will override the others.
+ *
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
+@Internal
 public class CommandLineUsagePropertyProvider implements UsagePropertyProvider {
 
     @Override

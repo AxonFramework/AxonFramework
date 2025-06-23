@@ -16,13 +16,19 @@
 
 package org.axonframework.usage.api;
 
+import org.axonframework.common.annotation.Internal;
+
 /**
  * Represents a library version with its group ID, artifact ID, and version. This record is used to encapsulate the
  * details of a library version in the Axon Framework usage API.
  *
+ * @param groupId    The group ID of the library.
+ * @param artifactId The artifact ID of the library.
+ * @param version    The version of the library.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public record LibraryVersion(
         String groupId,
         String artifactId,

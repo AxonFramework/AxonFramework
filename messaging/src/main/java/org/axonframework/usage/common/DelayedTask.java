@@ -17,6 +17,7 @@
 package org.axonframework.usage.common;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 
 import java.util.Objects;
 
@@ -32,6 +33,7 @@ import java.util.Objects;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public class DelayedTask {
 
     private boolean started = false;
@@ -44,7 +46,7 @@ public class DelayedTask {
             throw new IllegalArgumentException("Delay must be non-negative.");
         }
         Objects.requireNonNull(runnable, "The runnable must not be null.");
-        Thread.ofVirtual().start(() -> {
+        Thread.ofVirtual().name("AxonIQ").start(() -> {
             try {
                 Thread.sleep(delay);
                 started = true;
@@ -66,7 +68,7 @@ public class DelayedTask {
      * @return A new instance of {@code DelayedTask} that will run the given {@code runnable} after the specified
      * {@code delay}.
      */
-    public static DelayedTask of(Runnable runnable, long delay) {
+    public static DelayedTask of(@Nonnull Runnable runnable, long delay) {
         return new DelayedTask(runnable, delay);
     }
 

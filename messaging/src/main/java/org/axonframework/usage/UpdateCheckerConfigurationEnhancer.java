@@ -17,6 +17,7 @@
 package org.axonframework.usage;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.lifecycle.Phase;
@@ -33,6 +34,7 @@ import static org.axonframework.configuration.ComponentDefinition.ofType;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer {
     private final static AtomicBoolean initialized = new AtomicBoolean(false);
 

@@ -16,6 +16,8 @@
 
 package org.axonframework.usage.configuration;
 
+import org.axonframework.common.annotation.Internal;
+
 import java.util.List;
 
 /**
@@ -27,7 +29,9 @@ import java.util.List;
  * command line, property file, and default providers.
  *
  * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
+@Internal
 public interface UsagePropertyProvider {
 
     /**
@@ -62,6 +66,7 @@ public interface UsagePropertyProvider {
         return new HierachicalUsagePropertyProvider(
                 List.of(
                         new CommandLineUsagePropertyProvider(),
+                        new EnvironmentVariableUsagePropertyProvider(),
                         new PropertyFileUsagePropertyProvider(),
                         DefaultUsagePropertyProvider.INSTANCE
                 )

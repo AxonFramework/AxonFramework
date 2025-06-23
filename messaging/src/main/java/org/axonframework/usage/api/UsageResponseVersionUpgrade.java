@@ -16,6 +16,8 @@
 
 package org.axonframework.usage.api;
 
+import org.axonframework.common.annotation.Internal;
+
 /**
  * Represents an upgrade suggestion for a specific library version in the Axon Framework usage API.
  *
@@ -25,6 +27,7 @@ package org.axonframework.usage.api;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public record UsageResponseVersionUpgrade(
         String groupId,
         String artifactId,
