@@ -19,10 +19,22 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.eventsourcing.Snapshotter;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.TagResolver;
+import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.spring.config.SpringAxonApplication;
 import org.axonframework.spring.config.SpringComponentRegistry;
 import org.axonframework.spring.config.SpringLifecycleRegistry;
@@ -61,7 +73,7 @@ public class AxonAutoConfigurationTest {
     }
 
     @Test
-    void expectedBaseAxonBeansAreAutomaticallyConfigured() {
+    void expectedAxonConfigurationBeansAreAutomaticallyConfigured() {
         testContext.run(context -> {
             assertThat(context).hasBean("springComponentRegistry");
             assertThat(context).hasBean("springLifecycleRegistry");
@@ -71,7 +83,7 @@ public class AxonAutoConfigurationTest {
     }
 
     @Test
-    void expectedBaseAxonBeansCanAllBeCustomized() {
+    void expectedAxonConfigurationBeansCanAllBeCustomized() {
         testContext.withUserConfiguration(CustomContext.class).run(context -> {
             assertThat(context).hasBean("customComponentRegistry");
             assertThat(context).hasBean("customLifecycleRegistry");
@@ -120,6 +132,39 @@ public class AxonAutoConfigurationTest {
 //            await().atMost(Duration.ofSeconds(5))
 //                   .pollDelay(Duration.ofMillis(25))
 //                   .until(shutdownHandlerInvoked::get);
+        });
+    }
+
+    @Test
+    void defaultAxonMessagingComponentsArePresent() {
+        testContext.run(context -> {
+            assertThat(context).hasSingleBean(MessageTypeResolver.class);
+            assertThat(context).hasSingleBean(CommandGateway.class);
+            assertThat(context).hasSingleBean(CommandBus.class);
+            assertThat(context).hasSingleBean(EventGateway.class);
+            assertThat(context).hasSingleBean(EventSink.class);
+            assertThat(context).hasSingleBean(EventBus.class);
+            assertThat(context).hasSingleBean(QueryGateway.class);
+            assertThat(context).hasSingleBean(QueryBus.class);
+            assertThat(context).hasSingleBean(QueryUpdateEmitter.class);
+        });
+    }
+
+    @Test
+    void defaultAxonModellingComponentsArePresent() {
+        testContext.run(context -> {
+            // todo
+        });
+    }
+
+    @Test
+    void defaultAxonEventSourcingComponentsArePresent() {
+        testContext.run(context -> {
+            assertThat(context).hasSingleBean(TagResolver.class);
+            assertThat(context).hasSingleBean(EventStorageEngine.class);
+            assertThat(context).hasSingleBean(EventStore.class);
+            assertThat(context).hasSingleBean(EventSink.class);
+            assertThat(context).hasSingleBean(Snapshotter.class);
         });
     }
 
