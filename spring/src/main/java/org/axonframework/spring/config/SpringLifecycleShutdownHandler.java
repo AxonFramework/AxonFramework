@@ -66,7 +66,7 @@ public class SpringLifecycleShutdownHandler implements SmartLifecycle {
 
     @Override
     public void stop() {
-        if (running.get()) {
+        if (!running.get()) {
             return;
         }
 
@@ -86,7 +86,7 @@ public class SpringLifecycleShutdownHandler implements SmartLifecycle {
 
     @Override
     public void stop(@Nonnull Runnable callback) {
-        if (running.get()) {
+        if (!running.get()) {
             return;
         }
 
