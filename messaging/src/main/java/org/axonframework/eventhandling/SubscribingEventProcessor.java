@@ -187,7 +187,7 @@ public class SubscribingEventProcessor implements EventProcessor {
      * {@link NoTransactionManager#INSTANCE}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
      * {@link SubscribableMessageSource} are <b>hard requirements</b> and as such should be provided.
      */
-    public static class Builder extends AbstractEventProcessor.Builder {
+    public static class Builder extends EventProcessorBuilder {
 
         private SubscribableMessageSource<? extends EventMessage<?>> messageSource;
         private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;

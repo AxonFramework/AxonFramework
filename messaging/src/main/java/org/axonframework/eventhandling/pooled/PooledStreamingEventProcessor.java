@@ -22,11 +22,11 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorBuilder;
 import org.axonframework.eventhandling.EventProcessorOperations;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
@@ -466,7 +466,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      */
-    public static class Builder extends AbstractEventProcessor.Builder {
+    public static class Builder extends EventProcessorBuilder {
 
         private StreamableEventSource<? extends EventMessage<?>> eventSource;
         private TokenStore tokenStore;

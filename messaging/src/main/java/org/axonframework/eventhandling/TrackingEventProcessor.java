@@ -978,7 +978,7 @@ public class TrackingEventProcessor implements StreamingEventProcessor {
      * are
      * <b>hard requirements</b> and as such should be provided.
      */
-    public static class Builder extends AbstractEventProcessor.Builder {
+    public static class Builder extends EventProcessorBuilder {
 
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
