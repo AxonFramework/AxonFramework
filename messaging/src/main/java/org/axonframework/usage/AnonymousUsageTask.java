@@ -153,11 +153,10 @@ public class AnonymousUsageTask implements Runnable {
         }
 
         usageResponse.upgrades().forEach(upgrade -> {
-            logger.info(" - Group: {}, Artifact: {}, Latest Version: {}, Release Notes: {}",
+            logger.info(" - Group: {}, Artifact: {}, Latest Version: {}",
                         upgrade.groupId(),
                         upgrade.artifactId(),
-                        upgrade.latestVersion(),
-                        upgrade.releaseNotesUrl()
+                        upgrade.latestVersion()
             );
         });
     }

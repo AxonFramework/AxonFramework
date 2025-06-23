@@ -40,15 +40,12 @@ class UsageResponseTest {
         assertEquals("org.axonframework", response.upgrades().get(0).groupId());
         assertEquals("axon-messaging", response.upgrades().get(0).artifactId());
         assertEquals("5.0.1", response.upgrades().get(0).latestVersion());
-        assertEquals("https://github.com/AxonFramework/axon-framework/releases/tag/v5.0.1", response.upgrades().get(0).releaseNotesUrl());
         assertEquals("org.axonframework", response.upgrades().get(1).groupId());
         assertEquals("axon-modelling", response.upgrades().get(1).artifactId());
         assertEquals("5.0.1", response.upgrades().get(1).latestVersion());
-        assertEquals("https://github.com/AxonFramework/axon-framework/releases/tag/v5.0.1", response.upgrades().get(1).releaseNotesUrl());
         assertEquals("io.axoniq.console", response.upgrades().get(2).groupId());
         assertEquals("console-framework-client-spring-boot-starter", response.upgrades().get(2).artifactId());
         assertEquals("2.1.0", response.upgrades().get(2).latestVersion());
-        assertEquals("https://github.com/AxonIQ/console-framework-client/releases/tag/v2.1.0", response.upgrades().get(2).releaseNotesUrl());
 
         assertEquals(2, response.vulnerabilities().size());
         assertEquals("org.axonframework", response.vulnerabilities().get(0).groupId());

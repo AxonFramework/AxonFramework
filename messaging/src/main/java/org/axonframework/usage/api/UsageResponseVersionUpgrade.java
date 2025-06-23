@@ -22,15 +22,13 @@ package org.axonframework.usage.api;
  * @param groupId         The group ID of the library.
  * @param artifactId      The artifact ID of the library.
  * @param latestVersion   The latest version of the library available for upgrade.
- * @param releaseNotesUrl The URL to the release notes for the latest version.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
 public record UsageResponseVersionUpgrade(
         String groupId,
         String artifactId,
-        String latestVersion,
-        String releaseNotesUrl
+        String latestVersion
 ) {
 
 }

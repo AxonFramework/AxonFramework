@@ -83,13 +83,12 @@ public record UsageResponse(
                                     List<UsageResponseVersionUpgrade> upgrades) {
         // Format: upd=groupId:artifactId:latestVersion:"releaseNotesUrl"
         String[] parts = parseIntoParts(val);
-        if (parts.length == 4) {
+        if (parts.length == 3) {
             String groupId = parts[0];
             String artifactId = parts[1];
             String latestVersion = parts[2];
-            String releaseNotesUrl = parts[3];
             upgrades.add(new UsageResponseVersionUpgrade(
-                    groupId, artifactId, latestVersion, releaseNotesUrl
+                    groupId, artifactId, latestVersion
             ));
         }
     }
