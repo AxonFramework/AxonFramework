@@ -63,8 +63,8 @@ public class AxonAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(value = SpringAxonApplication.class, search = SearchStrategy.CURRENT)
     @ConditionalOnMissingBean
+    @ConditionalOnBean(value = SpringAxonApplication.class, search = SearchStrategy.CURRENT)
     AxonConfiguration axonApplicationConfiguration(SpringAxonApplication axonApplication) {
         return axonApplication.build();
     }
@@ -72,7 +72,7 @@ public class AxonAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
     @ConditionalOnBean(value = AxonConfiguration.class, search = SearchStrategy.ALL)
-    Configuration axonConfiguration(SpringComponentRegistry registry) {
-        return registry.configuration();
+    Configuration axonConfiguration(SpringComponentRegistry springComponentRegistry) {
+        return springComponentRegistry.configuration();
     }
 }
