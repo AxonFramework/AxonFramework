@@ -36,6 +36,9 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
  * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name} and
  * {@link EventHandlerInvoker} are <b>hard requirements</b> and as such should be provided.
+ *
+ * @author Rene de Waele
+ * @since 3.0
  */
 public abstract class EventProcessorBuilder {
 
@@ -129,22 +132,47 @@ public abstract class EventProcessorBuilder {
         assertThat(eventProcessorName, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
     }
 
+    /**
+     * Returns the name of this {@link EventProcessor} implementation.
+     *
+     * @return The {@link String} defining this {@link EventProcessor} implementation's name.
+     */
     public String name() {
         return name;
     }
 
+    /**
+     * Returns the {@link EventHandlerInvoker} which handles all the individual {@link EventMessage}s.
+     *
+     * @return The {@link EventHandlerInvoker} for this {@link EventProcessor} implementation.
+     */
     public EventHandlerInvoker eventHandlerInvoker() {
         return eventHandlerInvoker;
     }
 
+    /**
+     * Returns the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during processing.
+     *
+     * @return The {@link ErrorHandler} for this {@link EventProcessor} implementation.
+     */
     public ErrorHandler errorHandler() {
         return errorHandler;
     }
 
+    /**
+     * Returns the {@link MessageMonitor} used to monitor {@link EventMessage}s before and after they're processed.
+     *
+     * @return The {@link MessageMonitor} for this {@link EventProcessor} implementation.
+     */
     public MessageMonitor<? super EventMessage<?>> messageMonitor() {
         return messageMonitor;
     }
 
+    /**
+     * Returns the {@link EventProcessorSpanFactory} implementation used for providing tracing capabilities.
+     *
+     * @return The {@link EventProcessorSpanFactory} for this {@link EventProcessor} implementation.
+     */
     public EventProcessorSpanFactory spanFactory() {
         return spanFactory;
     }
