@@ -57,11 +57,7 @@ public class UpdateChecker {
             logger.debug("Axon Framework Anonymous Usage Reporting already started");
             return;
         }
-        logger.info(
-                "Axon Framework Anonymous Usage Analytics and Update Checker started. This will report anonymous usage data to AxonIQ, "
-                        + "and receive information about available upgrades and vulnerabilities in the Axon libraries used. ");
-        logger.info("You can opt-out of this by setting the environment variable AXONIQ_UPDATE_CHECKER_DISABLED=true, "
-                            + "or by running the JVM with -Daxoniq.update-checker.disabled=true, or by creating the file $HOME/.axoniq/update-checker.properties with content disabled=true");
+        logger.info("Your AxonIQ libraries will be checked for updates periodically. See https://go.axoniq.io/update-check for more information.");
         UpdateCheckTask.start();
     }
 }

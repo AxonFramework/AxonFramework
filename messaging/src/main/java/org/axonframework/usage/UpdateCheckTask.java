@@ -131,32 +131,31 @@ public class UpdateCheckTask implements Runnable {
     private void logUpgradesIfAny(UsageRequest requestBody, UsageResponse usageResponse) {
         boolean hasUpgrades = !usageResponse.upgrades().isEmpty();
         boolean hasVulnerabilities = !usageResponse.vulnerabilities().isEmpty();
-        if (!hasUpgrades && !hasVulnerabilities) {
-            return;
-        }
         if (hasVulnerabilities) {
             logger.error("AxonIQ has found the following vulnerabilities in your Axon libraries:");
-            usageResponse.vulnerabilities().forEach(vulnerability -> {
-                logger.error(" - Severity: {}, Group: {}, Artifact: {}, Fix Version: {}, Description: {}",
-                             vulnerability.severity(),
-                             vulnerability.groupId(),
-                             vulnerability.artifactId(),
-                             vulnerability.fixVersion(),
-                             vulnerability.description()
-                );
-            });
+            logVulnerabilities(usageResponse);
 
             if (hasUpgrades) {
                 logger.info("Additionally, AxonIQ has found an upgrade(s) for your Axon libraries:");
             }
+        } else if(hasUpgrades) {
+            logger.info("AxonIQ has found the following dependency upgrade(s):");
+            logUpgrades(requestBody, usageResponse);
         } else {
-            logger.info("AxonIQ has found an upgrade(s) for your Axon libraries:");
+            logger.info("All your AxonIQ libraries are up-to-date, no upgrades or vulnerabilities found.");
         }
+    }
 
+    private static void logUpgrades(UsageRequest requestBody, UsageResponse usageResponse) {
         int longestNameLength = usageResponse.upgrades().stream()
-                .mapToInt(upgrade -> upgrade.groupId().length() + upgrade.artifactId().length() + 1)
-                .max()
-                .orElse(0);
+                                             .mapToInt(upgrade -> upgrade.groupId().length() + upgrade.artifactId().length() + 1)
+                                             .max()
+                                             .orElse(0);
+
+        int longestVersionLength =requestBody.libraries().stream()
+                                                .mapToInt(lib -> lib.version().length())
+                                                .max()
+                                                .orElse(0);
         usageResponse.upgrades().forEach(upgrade -> {
             String currentVersion = requestBody.libraries().stream()
                                                .filter(v -> v.artifactId().equals(upgrade.artifactId()) && v.groupId()
@@ -164,12 +163,25 @@ public class UpdateCheckTask implements Runnable {
                                                .findFirst()
                                                .map(LibraryVersion::version)
                                                .orElse("unknown");
-            logger.info("{}:{} {} {} -> {}",
+            logger.info("{}:{} {} {}{} -> {}",
                         upgrade.groupId(),
                         upgrade.artifactId(),
                         longestNameLength > 0 ? ".".repeat((longestNameLength - upgrade.groupId().length() - upgrade.artifactId().length() - 1) + 2) : "",
+                        longestVersionLength > 0 ? " ".repeat(longestVersionLength - currentVersion.length()) : "",
                         currentVersion,
                         upgrade.latestVersion()
+            );
+        });
+    }
+
+    private static void logVulnerabilities(UsageResponse usageResponse) {
+        usageResponse.vulnerabilities().forEach(vulnerability -> {
+            logger.error(" - Severity: {}, Group: {}, Artifact: {}, Fix Version: {}, Description: {}",
+                         vulnerability.severity(),
+                         vulnerability.groupId(),
+                         vulnerability.artifactId(),
+                         vulnerability.fixVersion(),
+                         vulnerability.description()
             );
         });
     }
