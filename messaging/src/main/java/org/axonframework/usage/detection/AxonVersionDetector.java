@@ -54,10 +54,8 @@ public final class AxonVersionDetector {
 
     private static final Logger logger = LoggerFactory.getLogger(AxonVersionDetector.class);
     private static final List<String> GROUP_IDS = List.of(
-            "org.axonframework",
-            "org.axonframework.extensions",
-            "io.axoniq",
-            "io.axoniq.console"
+            "org/axonframework",
+            "io/axoniq"
     );
 
     private AxonVersionDetector() {
@@ -85,7 +83,7 @@ public final class AxonVersionDetector {
         for (String groupId : GROUP_IDS) {
             try {
                 Enumeration<URL> resources = Thread.currentThread().getContextClassLoader()
-                                                   .getResources("META-INF/maven/" + groupId);
+                                                   .getResources("META-INF/maven/");
                 while (resources.hasMoreElements()) {
                     urlsToCheck.add(resources.nextElement());
                 }
@@ -95,6 +93,10 @@ public final class AxonVersionDetector {
         }
         for (URL url : urlsToCheck) {
             try {
+                String filePath = url.getFile();
+                if (GROUP_IDS.stream().noneMatch(filePath::contains)) {
+                    continue; // Skip URLs that do not match the AxonIQ group IDs
+                }
                 if (url.getProtocol().equals("jar")) {
                     foundVersions.addAll(extractVersionFromJar(url));
                 } else if (url.getProtocol().equals("file")) {
