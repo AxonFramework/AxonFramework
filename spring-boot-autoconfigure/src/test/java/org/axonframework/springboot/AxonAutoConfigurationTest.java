@@ -75,7 +75,6 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
@@ -147,21 +146,6 @@ class AxonAutoConfigurationTest {
         assertTrue(actual.getMessage().contains("gatewayOne"));
         assertTrue(actual.getMessage().contains("gatewayTwo"));
     }
-
-    // TODO #3075
-    // Left this block of code on purpose, as it served a rather important purpose for lifecycle management in combination with Spring
-    // This should be brought over correctly!
-//    @Test
-//    void beansImplementingLifecycleHaveTheirHandlersRegistered() {
-//        ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-//                .withUserConfiguration(Context.class)
-//                .withBean("lifecycletest", CustomLifecycleBean.class, CustomLifecycleBean::new)
-//                .withPropertyValues("axon.axonserver.enabled=false");
-//
-//        applicationContextRunner.run(context -> {
-//            assertTrue(context.getBean("lifecycletest", CustomLifecycleBean.class).isInvoked());
-//        });
-//    }
 
     @Test
     void ambiguousPrimaryComponentsThrowExceptionWhenRequestedFromConfiguration() {
@@ -324,21 +308,4 @@ class AxonAutoConfigurationTest {
     public static class CustomResource {
 
     }
-
-    // TODO #3075
-    // Left this block of code on purpose, as it served a rather important purpose for lifecycle management in combination with Spring
-    // This should be brought over correctly!
-//    private class CustomLifecycleBean implements Lifecycle {
-//
-//        private boolean invoked;
-//
-//        @Override
-//        public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-//            this.invoked = true;
-//        }
-//
-//        public boolean isInvoked() {
-//            return invoked;
-//        }
-//    }
 }

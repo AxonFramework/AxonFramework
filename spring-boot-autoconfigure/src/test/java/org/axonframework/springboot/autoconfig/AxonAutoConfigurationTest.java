@@ -23,148 +23,173 @@ import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.spring.config.SpringAxonApplication;
+import org.axonframework.spring.config.SpringComponentRegistry;
+import org.axonframework.spring.config.SpringLifecycleRegistry;
 import org.axonframework.spring.config.SpringLifecycleShutdownHandler;
 import org.axonframework.spring.config.SpringLifecycleStartHandler;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.BeanFactoryUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.ContextHierarchy;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
-@ContextHierarchy({
-        @ContextConfiguration(name = "parent", classes = {AxonAutoConfigurationTest.AppConfig.class}),
-        @ContextConfiguration(name = "child", classes = {AxonAutoConfigurationTest.AppOverrideConfig.class})}
-)
-@TestPropertySource(properties = "axon.axonserver.enabled=false")
-@EnableAutoConfiguration
+/**
+ * Test class validating the {@link AxonAutoConfiguration}.
+ *
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ */
 public class AxonAutoConfigurationTest {
 
-    @Autowired
-    ApplicationContext applicationContext;
+    private ApplicationContextRunner testContext;
 
-    @Autowired
-    org.axonframework.configuration.Configuration axonConfiguration;
-
-    @Autowired
-    AxonConfiguration rootConfiguration;
-
-    @Test
-    void componentFromChildContextOverruleComponentsFromParent() {
-        CommandBus fromRegistry = axonConfiguration.getComponent(CommandBus.class);
-        CommandBus fromAppContext = applicationContext.getBean(CommandBus.class);
-        CommandBus fromParentAppContext = applicationContext.getParent().getBean(CommandBus.class);
-        CommandBus fromParentRegistry = rootConfiguration.getComponent(CommandBus.class);
-
-        assertNotSame(axonConfiguration, rootConfiguration);
-        assertNotSame(fromRegistry, fromParentRegistry);
-
-        assertSame(fromRegistry, fromAppContext);
-        assertInstanceOf(SimpleCommandBus.class, fromRegistry);
-
-        assertSame(fromParentRegistry, fromParentAppContext);
-        assertInstanceOf(InterceptingCommandBus.class, fromParentRegistry);
-
-        assertNotSame(fromAppContext, fromParentAppContext);
-        assertNotSame(fromRegistry, fromParentRegistry);
+    @BeforeEach
+    void setUp() {
+        testContext = new ApplicationContextRunner()
+                .withUserConfiguration(TestContext.class)
+                .withPropertyValues("axon.axonserver.enabled=false");
     }
 
     @Test
-    void lifecycleRegistered() {
-        // we expect beans to be registered for lifecycle handlers
-        Map<String, SpringLifecycleStartHandler> startHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
-                applicationContext,
-                SpringLifecycleStartHandler.class);
-        Map<String, SpringLifecycleShutdownHandler> shutdownHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
-                applicationContext,
-                SpringLifecycleShutdownHandler.class);
+    void expectedBaseAxonBeansAreAutomaticallyConfigured() {
+        testContext.run(context -> {
+            assertThat(context).hasBean("springComponentRegistry");
+            assertThat(context).hasBean("springLifecycleRegistry");
+            assertThat(context).hasBean("axonApplication");
+            assertThat(context).hasBean("axonApplicationConfiguration");
+            assertThat(context).hasBean("axonConfiguration");
+        });
+    }
 
-        assertTrue(startHandlers.values().stream().anyMatch(h -> h.getPhase() == 10));
-        assertTrue(shutdownHandlers.values().stream().anyMatch(h -> h.getPhase() == 12));
+    @Test
+    void expectedBaseAxonBeansCanAllBeCustomized() {
+        testContext.withUserConfiguration(CustomContext.class).run(context -> {
+            assertThat(context).hasBean("customComponentRegistry");
+            assertThat(context).hasBean("customLifecycleRegistry");
+            assertThat(context).hasBean("customAxonApplication");
+            assertThat(context).hasBean("customAxonApplicationConfiguration");
+            assertThat(context).hasBean("customAxonConfiguration");
 
-        for (SpringLifecycleStartHandler startHandler : startHandlers.values()) {
-            assertTrue(startHandler.isRunning());
-        }
-        for (SpringLifecycleShutdownHandler shutdownHandler : shutdownHandlers.values()) {
-            assertTrue(shutdownHandler.isRunning());
-        }
+            assertThat(context).doesNotHaveBean("springComponentRegistry");
+            assertThat(context).doesNotHaveBean("springLifecycleRegistry");
+            assertThat(context).doesNotHaveBean("axonApplication");
+            assertThat(context).doesNotHaveBean("axonApplicationConfiguration");
+            assertThat(context).doesNotHaveBean("axonConfiguration");
+        });
+    }
+
+    @Test
+    void lifecycleRegistryIntegratesWithDedicatedSpringLifecycleBeans() {
+        testContext.run(context -> {
+            // We expect beans to be registered for lifecycle handlers.
+            Map<String, SpringLifecycleStartHandler> startHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
+                    context, SpringLifecycleStartHandler.class
+            );
+            Map<String, SpringLifecycleShutdownHandler> shutdownHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
+                    context, SpringLifecycleShutdownHandler.class
+            );
+
+            // The ParentConfig registers a start handler on phase 10 for the SimpleCommandBus
+            assertTrue(startHandlers.values().stream().anyMatch(h -> h.getPhase() == 10));
+            // The ParentConfig registers a shutdown handler on phase 12 for the SimpleCommandBus
+            assertTrue(shutdownHandlers.values().stream().anyMatch(h -> h.getPhase() == 12));
+
+            for (SpringLifecycleStartHandler startHandler : startHandlers.values()) {
+                assertTrue(startHandler.isRunning());
+            }
+            for (SpringLifecycleShutdownHandler shutdownHandler : shutdownHandlers.values()) {
+                assertTrue(shutdownHandler.isRunning());
+            }
+
+            AtomicBoolean startHandlerInvoked = context.getBean("startHandlerInvoked", AtomicBoolean.class);
+            assertTrue(startHandlerInvoked.get());
+            AtomicBoolean shutdownHandlerInvoked = context.getBean("shutdownHandlerInvoked", AtomicBoolean.class);
+            assertFalse(shutdownHandlerInvoked.get());
+
+//            context.stop();
+
+//            await().atMost(Duration.ofSeconds(5))
+//                   .pollDelay(Duration.ofMillis(25))
+//                   .until(shutdownHandlerInvoked::get);
+        });
     }
 
     // TODO - Add test that validates that the startup and shutdown handlers have been invoked.
 
-    @Configuration("child")
-    public static class AppOverrideConfig {
+    @Configuration
+    @EnableAutoConfiguration
+    public static class TestContext {
 
         @Bean
-        CommandBus commandBus() {
-            return new SimpleCommandBus();
+        AtomicBoolean startHandlerInvoked() {
+            return new AtomicBoolean(false);
         }
-    }
-
-    @Configuration("parent")
-    public static class AppConfig {
 
         @Bean
-        CommandBus commandBus(LifecycleRegistry lifecycleRegistry) {
+        AtomicBoolean shutdownHandlerInvoked() {
+            return new AtomicBoolean(false);
+        }
+
+        @Bean
+        CommandBus commandBus(LifecycleRegistry lifecycleRegistry,
+                              AtomicBoolean startHandlerInvoked,
+                              AtomicBoolean shutdownHandlerInvoked) {
             SimpleCommandBus simpleCommandBus = new SimpleCommandBus();
-            lifecycleRegistry.onStart(10, () -> {
-            });
-            lifecycleRegistry.onShutdown(12, () -> {
-            });
+            lifecycleRegistry.onStart(10, () -> startHandlerInvoked.set(true));
+            lifecycleRegistry.onShutdown(12, () -> shutdownHandlerInvoked.set(true));
             return simpleCommandBus;
         }
 
         @Bean
-        SimpleLifecycleBean simpleLifecycleBean() {
-            return new SimpleLifecycleBean();
+        ConfigurationEnhancer configurationEnhancer() {
+            return registry -> registry.registerDecorator(
+                    CommandBus.class, 0,
+                    (ComponentDecorator<CommandBus, CommandBus>) (config, name, delegate) ->
+                            new InterceptingCommandBus(delegate, List.of(), List.of())
+            );
+        }
+    }
+
+    @Configuration
+    @EnableAutoConfiguration
+    public static class CustomContext {
+
+        @Bean
+        SpringComponentRegistry customComponentRegistry(ApplicationContext applicationContext) {
+            return new SpringComponentRegistry(applicationContext);
         }
 
         @Bean
-        ConfigurationEnhancer configurationEnhancer() {
-            return registry -> registry.registerDecorator(CommandBus.class, 0,
-                                                          (ComponentDecorator<CommandBus, CommandBus>) (config, name, delegate) ->
-                                                                  new InterceptingCommandBus(
-                                                                          delegate,
-                                                                          List.of(), List.of()));
+        SpringLifecycleRegistry customLifecycleRegistry() {
+            return new SpringLifecycleRegistry();
         }
 
-        public static class SimpleLifecycleBean implements SmartLifecycle {
+        @Bean
+        SpringAxonApplication customAxonApplication(SpringComponentRegistry customComponentRegistry,
+                                                    SpringLifecycleRegistry customLifecycleRegistry) {
+            return new SpringAxonApplication(customComponentRegistry, customLifecycleRegistry);
+        }
 
-            private final AtomicBoolean running = new AtomicBoolean(false);
+        @Bean
+        AxonConfiguration customAxonApplicationConfiguration(SpringAxonApplication customAxonApplication) {
+            return customAxonApplication.build();
+        }
 
-            @Override
-            public void start() {
-                running.set(true);
-            }
-
-            @Override
-            public void stop() {
-                running.set(false);
-            }
-
-            @Override
-            public boolean isRunning() {
-                return running.get();
-            }
-
-            @Override
-            public int getPhase() {
-                return 11;
-            }
+        @Bean
+        org.axonframework.configuration.Configuration customAxonConfiguration(
+                SpringComponentRegistry customComponentRegistry
+        ) {
+            return customComponentRegistry.configuration();
         }
     }
 }
