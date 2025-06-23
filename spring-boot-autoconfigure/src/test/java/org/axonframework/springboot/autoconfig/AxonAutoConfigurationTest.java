@@ -151,13 +151,6 @@ public class AxonAutoConfigurationTest {
     }
 
     @Test
-    void defaultAxonModellingComponentsArePresent() {
-        testContext.run(context -> {
-            // todo
-        });
-    }
-
-    @Test
     void defaultAxonEventSourcingComponentsArePresent() {
         testContext.run(context -> {
             assertThat(context).hasSingleBean(TagResolver.class);
