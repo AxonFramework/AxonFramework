@@ -361,7 +361,7 @@ public class TrackingEventProcessor implements StreamingEventProcessor {
             joinAndUnwrap(
                     unitOfWork.executeWithResult(context -> {
                         tokenStore.releaseClaim(getName(), segment.getSegmentId());
-                        eventProcessorOperations.eventHandlerInvoker().segmentReleased(segment);
+                        eventHandlerInvoker().segmentReleased(segment);
                         return emptyCompletedFuture();
                     })
             );
@@ -723,7 +723,7 @@ public class TrackingEventProcessor implements StreamingEventProcessor {
                 tokens[i] = tokenStore.fetchToken(getName(), segments[i]);
             }
             // we now have all tokens, hurray
-            eventProcessorOperations.eventHandlerInvoker().performReset(resetContext, processingContext);
+            eventHandlerInvoker().performReset(resetContext, processingContext);
 
             for (int i = 0; i < tokens.length; i++) {
                 tokenStore.storeToken(ReplayToken.createReplayToken(tokens[i], startPosition, resetContext),
@@ -735,9 +735,13 @@ public class TrackingEventProcessor implements StreamingEventProcessor {
         joinAndUnwrap(future);
     }
 
+    private EventHandlerInvoker eventHandlerInvoker() {
+        return eventProcessorOperations.eventHandlerInvoker();
+    }
+
     @Override
     public boolean supportsReset() {
-        return eventProcessorOperations.eventHandlerInvoker().supportsReset();
+        return eventHandlerInvoker().supportsReset();
     }
 
     @Override

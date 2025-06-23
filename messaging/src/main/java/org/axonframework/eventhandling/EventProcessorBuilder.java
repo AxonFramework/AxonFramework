@@ -30,7 +30,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
- * Abstract Builder class to instantiate a {@link AbstractEventProcessor}.
+ * Abstract Builder class to instantiate an {@link EventProcessor} implementation.
  * <p>
  * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
  * {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to

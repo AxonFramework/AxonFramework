@@ -169,7 +169,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
-                                      .segmentReleasedAction(segment -> eventProcessorOperations.eventHandlerInvoker().segmentReleased(segment))
+                                      .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment))
                                       .build();
     }
 
@@ -214,6 +214,10 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
         return eventProcessorOperations.handlerInterceptors();
+    }
+
+    private EventHandlerInvoker eventHandlerInvoker() {
+        return eventProcessorOperations.eventHandlerInvoker();
     }
 
     @Override
@@ -302,7 +306,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public boolean supportsReset() {
-        return eventProcessorOperations.eventHandlerInvoker().supportsReset();
+        return eventHandlerInvoker().supportsReset();
     }
 
     @Override
@@ -349,7 +353,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                            .mapToObj(segment -> tokenStore.fetchToken(getName(), segment))
                                            .toArray(TrackingToken[]::new);
             // Perform the reset on the EventHandlerInvoker
-            eventProcessorOperations.eventHandlerInvoker().performReset(resetContext, null);
+            eventHandlerInvoker().performReset(resetContext, null);
             // Update all tokens towards ReplayTokens
             IntStream.range(0, tokens.length)
                      .forEach(i -> tokenStore.storeToken(
