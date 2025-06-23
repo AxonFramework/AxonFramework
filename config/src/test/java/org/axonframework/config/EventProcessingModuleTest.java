@@ -1568,9 +1568,8 @@ class EventProcessingModuleTest {
         assertTrue(optionalProcessor.isPresent());
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
-        EventHandlerInvoker resultInvoker = (EventHandlerInvoker) ensureAccessible(
-                resultProcessor.getClass().getDeclaredMethod("eventHandlerInvoker")
-        ).invoke(resultProcessor);
+        EventProcessorOperations operations = getField("eventProcessorOperations", resultProcessor);
+        EventHandlerInvoker resultInvoker = getField("eventHandlerInvoker", operations);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
