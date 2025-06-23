@@ -70,7 +70,10 @@ public final class AxonVersionDetector {
      */
     public static List<LibraryVersion> safeDetectAxonModules() {
         try {
-            return detectAxonModules();
+            return detectAxonModules()
+                    .stream()
+                    .distinct()
+                    .toList();
         } catch (Exception e) {
             logger.error("Failed to detect Axon Framework modules", e);
             return List.of();

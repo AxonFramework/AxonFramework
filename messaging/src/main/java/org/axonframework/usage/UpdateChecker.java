@@ -23,9 +23,9 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Anonymous usage reporter that starts the reporting task to send anonymous usage data to AxonIQ. The task does not
- * only report usage data, but also checks for library version upgrades and vulnerabilities. This class is intended to
- * be used in production environments, and it skips reporting in test environments.
+ * Update checker that starts the reporting task to send anonymous usage data to AxonIQ. Based on this data, the
+ * application is checked for library version upgrades and vulnerabilities. This class is intended to be used in
+ * production environments, and it skips reporting in testsuite environments whenever it detects it.
  * <p>
  * There are two ways to disable the anonymous usage reporting:
  * <ol>
@@ -38,9 +38,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author Mitchell Herrijgers
  */
-public class AnonymousUsageReporter {
+public class UpdateChecker {
 
-    private final Logger logger = LoggerFactory.getLogger(AnonymousUsageReporter.class);
+    private final Logger logger = LoggerFactory.getLogger(UpdateChecker.class);
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     /**
@@ -61,7 +61,7 @@ public class AnonymousUsageReporter {
                 "Axon Framework Anonymous Usage Analytics and Update Checker started. This will report anonymous usage data to AxonIQ, "
                         + "and receive information about available upgrades and vulnerabilities in the Axon libraries used. ");
         logger.info("You can opt-out of this by setting the environment variable AXONIQ_UPDATE_CHECKER_DISABLED=true, "
-                        + "or by running the JVM with -Daxoniq.update-checker.disabled=true, or by creating the file $HOME/.axoniq/update-checker.properties with content disabled=true");
-        AnonymousUsageTask.start();
+                            + "or by running the JVM with -Daxoniq.update-checker.disabled=true, or by creating the file $HOME/.axoniq/update-checker.properties with content disabled=true");
+        UpdateCheckTask.start();
     }
 }

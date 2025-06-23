@@ -26,24 +26,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.axonframework.configuration.ComponentDefinition.ofType;
 
 /**
- * A {@link ConfigurationEnhancer} that registers the {@link AnonymousUsageReporter} component.
+ * A {@link ConfigurationEnhancer} that registers the {@link UpdateChecker} component.
  * This component is responsible for reporting anonymous usage data to the AxonIQ servers.
  * It is registered during the external connections phase of the lifecycle.
- *
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class AnonymousUsageReporterConfigurationEnhancer implements ConfigurationEnhancer {
+public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer {
     private final static AtomicBoolean initialized = new AtomicBoolean(false);
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
         if (initialized.compareAndSet(false, true)) {
             componentRegistry.registerComponent(
-                    ofType(AnonymousUsageReporter.class)
-                            .withBuilder(c -> new AnonymousUsageReporter())
-                            .onStart(Phase.EXTERNAL_CONNECTIONS, AnonymousUsageReporter::start)
+                    ofType(UpdateChecker.class)
+                            .withBuilder(c -> new UpdateChecker())
+                            .onStart(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::start)
             );
         }
     }

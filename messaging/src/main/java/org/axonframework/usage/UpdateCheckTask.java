@@ -17,6 +17,7 @@
 package org.axonframework.usage;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.usage.api.LibraryVersion;
 import org.axonframework.usage.api.UsageRequest;
 import org.axonframework.usage.api.UsageResponse;
 import org.axonframework.usage.common.DelayedTask;
@@ -45,15 +46,15 @@ import java.util.UUID;
  * increased with each failed attempt, up to a maximum of 60 seconds. The first request is sent as a POST request,
  * subsequent requests are sent as PUT requests.
  * <p>
- * The task will not run if the user has opted out of anonymous usage reporting. See {@link AnonymousUsageReporter} for
+ * The task will not run if the user has opted out of anonymous usage reporting. See {@link UpdateChecker} for
  * more details on how the opt-out is determined.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class AnonymousUsageTask implements Runnable {
+public class UpdateCheckTask implements Runnable {
 
-    private static final Logger logger = LoggerFactory.getLogger(AnonymousUsageTask.class);
+    private static final Logger logger = LoggerFactory.getLogger(UpdateCheckTask.class);
     private final HttpClient client;
     private final UsagePropertyProvider userProperties;
     private int errorRetryBackoffFactor = 1;
@@ -70,13 +71,13 @@ public class AnonymousUsageTask implements Runnable {
                 logger.info("Anonymous usage reporting is opted out by the user. Skipping task initialization.");
                 return;
             }
-            DelayedTask.of(new AnonymousUsageTask(userProperties), 1000);
+            DelayedTask.of(new UpdateCheckTask(userProperties), 1000);
         } catch (Exception e) {
             logger.warn("Failed to start Anonymous Usage Collector task.", e);
         }
     }
 
-    private AnonymousUsageTask(UsagePropertyProvider userProperties) {
+    private UpdateCheckTask(UsagePropertyProvider userProperties) {
         this.userProperties = userProperties;
         this.client = HttpClient.newBuilder()
                                 .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -114,7 +115,7 @@ public class AnonymousUsageTask implements Runnable {
             }
             logger.debug("Successfully reported anonymous usage data, response: {}", response.body());
             UsageResponse usageResponse = UsageResponse.fromRequest(response.body());
-            logUpgradesIfAny(usageResponse);
+            logUpgradesIfAny(requestBody, usageResponse);
 
             logger.debug("Next check interval: {} seconds", usageResponse.checkInterval());
             DelayedTask.of(this, usageResponse.checkInterval() * 1000);
@@ -127,7 +128,7 @@ public class AnonymousUsageTask implements Runnable {
         }
     }
 
-    private void logUpgradesIfAny(UsageResponse usageResponse) {
+    private void logUpgradesIfAny(UsageRequest requestBody, UsageResponse usageResponse) {
         boolean hasUpgrades = !usageResponse.upgrades().isEmpty();
         boolean hasVulnerabilities = !usageResponse.vulnerabilities().isEmpty();
         if (!hasUpgrades && !hasVulnerabilities) {
@@ -152,10 +153,22 @@ public class AnonymousUsageTask implements Runnable {
             logger.info("AxonIQ has found an upgrade(s) for your Axon libraries:");
         }
 
+        int longestNameLength = usageResponse.upgrades().stream()
+                .mapToInt(upgrade -> upgrade.groupId().length() + upgrade.artifactId().length() + 1)
+                .max()
+                .orElse(0);
         usageResponse.upgrades().forEach(upgrade -> {
-            logger.info(" - Group: {}, Artifact: {}, Latest Version: {}",
+            String currentVersion = requestBody.libraries().stream()
+                                               .filter(v -> v.artifactId().equals(upgrade.artifactId()) && v.groupId()
+                                                                                                            .equals(upgrade.groupId()))
+                                               .findFirst()
+                                               .map(LibraryVersion::version)
+                                               .orElse("unknown");
+            logger.info("{}:{} {} {} -> {}",
                         upgrade.groupId(),
                         upgrade.artifactId(),
+                        longestNameLength > 0 ? ".".repeat((longestNameLength - upgrade.groupId().length() - upgrade.artifactId().length() - 1) + 2) : "",
+                        currentVersion,
                         upgrade.latestVersion()
             );
         });
