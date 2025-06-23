@@ -43,10 +43,8 @@ public class KotlinVersion {
         try {
             Class<?> versionClass = Class.forName("kotlin.KotlinVersion");
             return versionClass.getDeclaredMethod("getCurrent").invoke(null).toString();
-        } catch (ClassNotFoundException e) {
-            return "none";
         } catch (Exception e) {
-            return e.getMessage();
+            return "none";
         }
     }
 }
