@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -34,7 +33,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -117,23 +115,8 @@ public class HierarchicalSpringContextTest {
     public static class ParentContext {
 
         @Bean
-        AtomicBoolean startHandlerInvoked() {
-            return new AtomicBoolean(false);
-        }
-
-        @Bean
-        AtomicBoolean shutdownHandlerInvoked() {
-            return new AtomicBoolean(false);
-        }
-
-        @Bean
-        CommandBus commandBus(LifecycleRegistry lifecycleRegistry,
-                              AtomicBoolean startHandlerInvoked,
-                              AtomicBoolean shutdownHandlerInvoked) {
-            SimpleCommandBus simpleCommandBus = new SimpleCommandBus();
-            lifecycleRegistry.onStart(10, () -> startHandlerInvoked.set(true));
-            lifecycleRegistry.onShutdown(12, () -> shutdownHandlerInvoked.set(true));
-            return simpleCommandBus;
+        CommandBus commandBus() {
+            return new SimpleCommandBus();
         }
 
         @Bean
