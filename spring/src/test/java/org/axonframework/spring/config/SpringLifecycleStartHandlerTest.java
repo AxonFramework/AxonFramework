@@ -19,22 +19,21 @@ package org.axonframework.spring.config;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link SpringLifecycleShutdownHandler}.
+ * Test class validating the {@link SpringLifecycleStartHandler}.
  *
- * @author Allard Buijze
+ * @author Steven van Beelen
  */
-class SpringLifecycleShutdownHandlerTest {
+class SpringLifecycleStartHandlerTest {
 
     private Supplier<CompletableFuture<?>> action;
 
-    private SpringLifecycleShutdownHandler testSubject;
+    private SpringLifecycleStartHandler testSubject;
 
     @BeforeEach
     void setUp() {
@@ -43,7 +42,7 @@ class SpringLifecycleShutdownHandlerTest {
         doReturn(CompletableFuture.completedFuture(null)).when(action)
                                                          .get();
 
-        testSubject = new SpringLifecycleShutdownHandler(42, action);
+        testSubject = new SpringLifecycleStartHandler(42, action);
     }
 
     @Test
@@ -54,30 +53,18 @@ class SpringLifecycleShutdownHandlerTest {
     @Test
     void isRunningReflectsCorrectState() {
         assertFalse(testSubject.isRunning());
+
         testSubject.start();
         assertTrue(testSubject.isRunning());
+
         testSubject.stop();
         assertFalse(testSubject.isRunning());
     }
 
     @Test
-    void actionIsInvokedOnShutdown() {
-        testSubject.stop();
-        verify(action).get();
-    }
-
-    @Test
-    void callbackInvokedOnAsyncShutdown() {
-        CompletableFuture<Object> future = new CompletableFuture<>();
-        doReturn(future).when(action).get();
-
-        AtomicBoolean callbackInvoked = new AtomicBoolean(false);
-        testSubject.stop(() -> callbackInvoked.set(true));
+    void actionIsInvokedOnStart() {
+        testSubject.start();
 
         verify(action).get();
-        assertFalse(callbackInvoked.get());
-
-        future.complete(null);
-        assertTrue(callbackInvoked.get());
     }
 }

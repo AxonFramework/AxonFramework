@@ -66,10 +66,6 @@ public class SpringLifecycleShutdownHandler implements SmartLifecycle {
 
     @Override
     public void stop() {
-        if (!running.get()) {
-            return;
-        }
-
         try {
             task.get()
                 .whenComplete((result, throwable) -> running.set(false))
@@ -86,10 +82,6 @@ public class SpringLifecycleShutdownHandler implements SmartLifecycle {
 
     @Override
     public void stop(@Nonnull Runnable callback) {
-        if (!running.get()) {
-            return;
-        }
-
         task.get()
             .whenComplete((result, throwable) -> {
                 if (throwable != null) {
@@ -97,8 +89,7 @@ public class SpringLifecycleShutdownHandler implements SmartLifecycle {
                 }
                 running.set(false);
                 callback.run();
-            })
-            .whenComplete((result, throwable) -> callback.run());
+            });
     }
 
     @Override

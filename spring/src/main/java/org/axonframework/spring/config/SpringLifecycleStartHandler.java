@@ -56,10 +56,6 @@ public class SpringLifecycleStartHandler implements SmartLifecycle {
 
     @Override
     public void start() {
-        if (running.get()) {
-            return;
-        }
-
         try {
             task.get()
                 .whenComplete((result, throwable) -> running.set(true))
