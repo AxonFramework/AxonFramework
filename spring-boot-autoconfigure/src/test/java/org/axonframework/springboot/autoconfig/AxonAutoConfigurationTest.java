@@ -67,7 +67,6 @@ public class AxonAutoConfigurationTest {
             assertThat(context).hasBean("springLifecycleRegistry");
             assertThat(context).hasBean("axonApplication");
             assertThat(context).hasBean("axonApplicationConfiguration");
-            assertThat(context).hasBean("axonConfiguration");
         });
     }
 
@@ -123,8 +122,6 @@ public class AxonAutoConfigurationTest {
 //                   .until(shutdownHandlerInvoked::get);
         });
     }
-
-    // TODO - Add test that validates that the startup and shutdown handlers have been invoked.
 
     @Configuration
     @EnableAutoConfiguration

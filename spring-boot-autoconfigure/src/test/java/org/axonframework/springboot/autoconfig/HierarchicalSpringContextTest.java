@@ -63,6 +63,18 @@ public class HierarchicalSpringContextTest {
     }
 
     @Test
+    void expectedBaseAxonBeansAreExpandedWithConfigurationBean() {
+        testContext.run(context -> {
+            assertThat(context).hasBean("springComponentRegistry");
+            assertThat(context).hasBean("springLifecycleRegistry");
+            assertThat(context).hasBean("axonApplication");
+            assertThat(context).hasBean("axonApplicationConfiguration");
+            // This bean is new compared to a non-hierarchical Spring Application Context.
+            assertThat(context).hasBean("axonConfiguration");
+        });
+    }
+
+    @Test
     void childContextComponentsOverruleParentContextComponents() {
         testContext.run(context -> {
             org.axonframework.configuration.Configuration axonConfiguration =

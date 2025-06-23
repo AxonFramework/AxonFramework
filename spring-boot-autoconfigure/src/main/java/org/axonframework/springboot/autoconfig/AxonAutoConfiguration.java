@@ -69,6 +69,9 @@ public class AxonAutoConfiguration {
         return axonApplication.build();
     }
 
+    /**
+     * This bean is <b>only</b> created when a hierarchical Spring Application Context is being used.
+     */
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
     @ConditionalOnBean(value = AxonConfiguration.class, search = SearchStrategy.ALL)
