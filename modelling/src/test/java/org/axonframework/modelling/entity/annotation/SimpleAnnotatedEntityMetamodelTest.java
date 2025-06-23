@@ -24,8 +24,9 @@ import org.junit.jupiter.api.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests the {@link AnnotatedEntityModel} through the {@link TodoItem} domain model. This domain model has been designed
- * to touch as few aspects of the {@link AnnotatedEntityModel} as possible, so the least extensive testcase is covered.
+ * Tests the {@link AnnotatedEntityMetamodel} through the {@link TodoItem} domain model. This domain model has
+ * been designed to touch as few aspects of the {@link AnnotatedEntityMetamodel} as possible, so the least
+ * extensive testcase is covered.
  * <p>
  * Note that the domain might not be feature-complete or realistic. In addition, while the model is not event-sourced
  * but state-sourced, it does apply events that are then applied to the model state. This is done to ensure that the
@@ -34,11 +35,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Mitchell Herrijgers
  */
-class SimpleAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTest<TodoItem> {
+class SimpleAnnotatedEntityMetamodelTest extends AbstractAnnotatedEntityMetamodelTest<TodoItem> {
 
     @Override
-    protected AnnotatedEntityModel<TodoItem> getModel() {
-        return AnnotatedEntityModel.forConcreteType(
+    protected AnnotatedEntityMetamodel<TodoItem> getMetamodel() {
+        return AnnotatedEntityMetamodel.forConcreteType(
                 TodoItem.class,
                 parameterResolverFactory,
                 messageTypeResolver
@@ -48,27 +49,27 @@ class SimpleAnnotatedEntityModelTest extends AbstractAnnotatedEntityModelTest<To
     @Test
     void canCreateTodoItem() {
         // Given no existing model state, i.e. no-arg constructor
-        modelState = new TodoItem();
+        entityState = new TodoItem();
 
         // When
         dispatchInstanceCommand(new CreateTodoItem("af-5", "Create the best ES-framework ever!"));
 
         // Then
-        assertThat(modelState.getDescription()).isEqualTo("Create the best ES-framework ever!");
-        assertThat(modelState.getId()).isEqualTo("af-5");
-        assertThat(modelState.isCompleted()).isFalse();
+        assertThat(entityState.getDescription()).isEqualTo("Create the best ES-framework ever!");
+        assertThat(entityState.getId()).isEqualTo("af-5");
+        assertThat(entityState.isCompleted()).isFalse();
     }
 
     @Test
     void canFinishTodoItem() {
         // Given a model state with an existing item
-        modelState = new TodoItem();
+        entityState = new TodoItem();
         dispatchInstanceCommand(new CreateTodoItem("af-5", "Create the best ES-framework ever!"));
 
         // When
         dispatchInstanceCommand(new FinishTodoItem("af-5"));
 
         // Then
-        assertThat(modelState.isCompleted()).isTrue();
+        assertThat(entityState.isCompleted()).isTrue();
     }
 }

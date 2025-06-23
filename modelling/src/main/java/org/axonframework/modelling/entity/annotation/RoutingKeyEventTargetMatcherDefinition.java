@@ -45,7 +45,7 @@ public class RoutingKeyEventTargetMatcherDefinition implements EventTargetMatche
 
     @Nonnull
     @Override
-    public <E> EventTargetMatcher<E> createChildEntityMatcher(@Nonnull AnnotatedEntityModel<E> entity,
+    public <E> EventTargetMatcher<E> createChildEntityMatcher(@Nonnull AnnotatedEntityMetamodel<E> entity,
                                                               @Nonnull Member member) {
         Optional<String> messageRoutingField = RoutingKeyUtils.getMessageRoutingKey((AnnotatedElement) member);
         Optional<String> entityRoutingField = RoutingKeyUtils.getEntityRoutingKey(entity.entityType());

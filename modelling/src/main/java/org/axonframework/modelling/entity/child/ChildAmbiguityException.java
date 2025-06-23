@@ -22,9 +22,9 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * Exception indicating that multiple child entities of a parent entity are able to handle the same command. This
- * happens if multiple {@link EntityChildModel#supportedCommands()} contain the same
+ * happens if multiple {@link EntityChildMetamodel#supportedCommands()} contain the same
  * {@link org.axonframework.messaging.QualifiedName}, as well as both child entities returning true for
- * {@link EntityChildModel#canHandle(CommandMessage, Object, ProcessingContext)}, indicating that they have an active
+ * {@link EntityChildMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}, indicating that they have an active
  * child entity that can handle the command.
  * <p>
  * When this happens, make sure the {@link CommandTargetResolver} is configured correctly to resolve the child entity

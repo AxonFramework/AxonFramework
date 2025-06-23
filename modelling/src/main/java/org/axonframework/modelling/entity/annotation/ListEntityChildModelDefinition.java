@@ -19,12 +19,12 @@ package org.axonframework.modelling.entity.annotation;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
-import org.axonframework.modelling.entity.child.EntityChildModel;
+import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
-import org.axonframework.modelling.entity.child.ListEntityChildModel;
+import org.axonframework.modelling.entity.child.ListEntityChildMetamodel;
 
 import java.lang.reflect.Member;
 import java.util.List;
@@ -33,9 +33,9 @@ import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
 
 /**
- * {@link EntityChildModelDefinition} for creating {@link EntityChildModel} instances for child entities that are
- * represented as a {@link List}. It resolves the child type from the member's generic type and creates a
- * {@link ListEntityChildModel} accordingly.
+ * {@link EntityChildModelDefinition} for creating {@link EntityChildMetamodel} instances for child entities
+ * that are represented as a {@link List}. It resolves the child type from the member's generic type and creates a
+ * {@link ListEntityChildMetamodel} accordingly.
  * <p>
  * Before version 5.0.0, this class was known as the
  * {@code org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityCollectionDefinition}. The
@@ -60,15 +60,15 @@ public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefi
 
     @Nonnull
     @Override
-    protected <C, P> EntityChildModel<C, P> doCreate(
+    protected <C, P> EntityChildMetamodel<C, P> doCreate(
             @Nonnull Class<P> parentClass,
-            @Nonnull EntityModel<C> childModel,
+            @Nonnull EntityMetamodel<C> entityMetamodel,
             @Nonnull String fieldName,
             @Nonnull EventTargetMatcher<C> eventTargetMatcher,
             @Nonnull CommandTargetResolver<C> commandTargetResolver) {
 
-        return ListEntityChildModel
-                .forEntityModel(parentClass, childModel)
+        return ListEntityChildMetamodel
+                .forEntityModel(parentClass, entityMetamodel)
                 .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(parentClass, fieldName))
                 .commandTargetResolver(commandTargetResolver)
                 .eventTargetMatcher(eventTargetMatcher)

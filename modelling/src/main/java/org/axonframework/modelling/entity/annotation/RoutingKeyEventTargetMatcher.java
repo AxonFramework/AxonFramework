@@ -28,10 +28,10 @@ import org.axonframework.modelling.entity.child.EventTargetMatcher;
  * Note: This class was known as {code org.axonframework.modelling.command.ForwardMatchingInstances} before version
  * 5.0.0.
  *
+ * @param <E> The type of the child entity this matcher matches against.
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
  * @since 3.1
- * @param <E> The type of the child entity this matcher matches against.
  */
 public class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
 
@@ -43,17 +43,17 @@ public class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
      * {@code entityRoutingProperty} and the routing key of the event message is determined by the
      * {@code messageRoutingProperty}.
      *
-     * @param entity                 The {@link AnnotatedEntityModel} of the entity to match against.
+     * @param metamodel              The {@link AnnotatedEntityMetamodel} of the entity to match against.
      * @param entityRoutingProperty  The routing key property of the entity, which is used to match against the
      *                               message.
      * @param messageRoutingProperty The routing key property of the message, which is used to match against the
      *                               entity.
      */
-    public RoutingKeyEventTargetMatcher(@Nonnull AnnotatedEntityModel<E> entity,
+    public RoutingKeyEventTargetMatcher(@Nonnull AnnotatedEntityMetamodel<E> metamodel,
                                         @Nonnull String entityRoutingProperty,
                                         @Nonnull String messageRoutingProperty) {
         this.routingKeyEntityMatcher = new AnnotatedEntityModelRoutingKeyMatcher<>(
-                entity,
+                metamodel,
                 entityRoutingProperty, messageRoutingProperty
         );
     }

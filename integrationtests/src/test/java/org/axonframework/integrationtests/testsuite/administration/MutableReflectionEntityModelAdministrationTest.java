@@ -30,21 +30,20 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
-import org.axonframework.modelling.entity.EntityModel;
-import org.axonframework.modelling.entity.SimpleEntityModel;
-import org.axonframework.modelling.entity.annotation.AnnotatedEntityModel;
+import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 
 import java.util.Set;
 
 /**
- * Runs the administration test suite using as much reflection components of the {@link SimpleEntityModel} and related
- * classes as possible. As reflection-based components are added, this test may change to use more of them.
+ * Runs the administration test suite using as many reflection components of the {@link EntityMetamodel} and
+ * related classes as possible. As reflection-based components are added, this test may change to use more of them.
  */
 public class MutableReflectionEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
     @Override
     CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
-        EntityModel<MutablePerson> personModel = AnnotatedEntityModel.forPolymorphicType(
+        EntityMetamodel<MutablePerson> personMetamodel = AnnotatedEntityMetamodel.forPolymorphicType(
                 MutablePerson.class,
                 Set.of(MutableEmployee.class, MutableCustomer.class),
                 configuration.getComponent(ParameterResolverFactory.class),
@@ -61,12 +60,12 @@ public class MutableReflectionEntityModelAdministrationTest extends AbstractAdmi
                                                                configuration.getComponent(ParameterResolverFactory.class),
                                                                configuration.getComponent(MessageTypeResolver.class)),
                 (s, ctx) -> EventCriteria.havingTags("Person", s.key()),
-                personModel
+                personMetamodel
         );
 
         return new EntityCommandHandlingComponent<>(
                 repository,
-                personModel,
+                personMetamodel,
                 new AnnotationBasedEntityIdResolver<>()
         );
     }

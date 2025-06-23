@@ -29,7 +29,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
-import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.mock.RecordingChildEntity;
 import org.axonframework.modelling.entity.child.mock.RecordingEntity;
 import org.axonframework.modelling.entity.child.mock.RecordingParentEntity;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class ListEntityChildModelTest {
+class ListEntityChildMetamodelTest {
 
     private static final QualifiedName COMMAND = new QualifiedName("Command");
     private static final QualifiedName EVENT = new QualifiedName("Event");
@@ -52,12 +52,12 @@ class ListEntityChildModelTest {
     private static final String EVENT_MATCHING_ID = "42";
     private static final String EVENT_SKIPPING_ID = "456";
 
-    private final EntityModel<RecordingChildEntity> childEntityEntityModel = mock(EntityModel.class);
+    private final EntityMetamodel<RecordingChildEntity> childEntityMetamodel = mock(EntityMetamodel.class);
     private final ChildEntityFieldDefinition<RecordingParentEntity, List<RecordingChildEntity>> childEntityFieldDefinition = mock(
             ChildEntityFieldDefinition.class);
 
-    private final ListEntityChildModel<RecordingChildEntity, RecordingParentEntity> testSubject = ListEntityChildModel
-            .forEntityModel(RecordingParentEntity.class, childEntityEntityModel)
+    private final ListEntityChildMetamodel<RecordingChildEntity, RecordingParentEntity> testSubject = ListEntityChildMetamodel
+            .forEntityModel(RecordingParentEntity.class, childEntityMetamodel)
             .childEntityFieldDefinition(childEntityFieldDefinition)
             .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
                                                                                   .filter(c -> c.getId().contains(COMMAND_MATCHING_ID))
@@ -78,7 +78,7 @@ class ListEntityChildModelTest {
 
         @BeforeEach
         void setUp() {
-            when(childEntityEntityModel.handleInstance(any(), any(), any())).thenAnswer(answ -> {
+            when(childEntityMetamodel.handleInstance(any(), any(), any())).thenAnswer(answ -> {
                 RecordingChildEntity child = answ.getArgument(1);
                 return MessageStream.just(new GenericCommandResultMessage<>(
                         new MessageType(String.class),
@@ -99,8 +99,8 @@ class ListEntityChildModelTest {
             assertEquals("1337-result", result.asCompletableFuture().join().message().getPayload());
 
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityEntityModel).handleInstance(commandMessage, entityToBeFound, context);
-            verify(childEntityEntityModel, times(0)).handleInstance(commandMessage, entityToBeSkipped, context);
+            verify(childEntityMetamodel).handleInstance(commandMessage, entityToBeFound, context);
+            verify(childEntityMetamodel, times(0)).handleInstance(commandMessage, entityToBeSkipped, context);
         }
 
         @Test
@@ -131,21 +131,21 @@ class ListEntityChildModelTest {
 
     @Test
     void supportedCommandsIsSameAsChildEntity() {
-        when(childEntityEntityModel.supportedCommands()).thenReturn(Set.of(COMMAND));
+        when(childEntityMetamodel.supportedCommands()).thenReturn(Set.of(COMMAND));
 
         assertEquals(Set.of(COMMAND), testSubject.supportedCommands());
     }
 
     @Test
     void entityTypeIsSameAsChildEntity() {
-        when(childEntityEntityModel.entityType()).thenReturn(RecordingChildEntity.class);
+        when(childEntityMetamodel.entityType()).thenReturn(RecordingChildEntity.class);
 
         assertEquals(RecordingChildEntity.class, testSubject.entityType());
     }
 
     @Test
     void returnsEntityModel() {
-        assertEquals(childEntityEntityModel, testSubject.entityModel());
+        assertEquals(childEntityMetamodel, testSubject.entityMetamodel());
     }
 
     @Nested
@@ -157,7 +157,7 @@ class ListEntityChildModelTest {
 
         @BeforeEach
         void setUp() {
-            when(childEntityEntityModel.evolve(any(), any(), any())).thenAnswer(answ -> {
+            when(childEntityMetamodel.evolve(any(), any(), any())).thenAnswer(answ -> {
                 RecordingChildEntity child = answ.getArgument(0);
                 EventMessage<String> event = answ.getArgument(1);
                 return child.evolve("child evolve: " + event.getPayload());
@@ -196,7 +196,7 @@ class ListEntityChildModelTest {
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
             verify(childEntityFieldDefinition).evolveParentBasedOnChildInput(
                     eq(parentEntity), argThat(a -> a.getFirst().getEvolves().contains("child evolve: myPayload")));
-            verify(childEntityEntityModel).evolve(childEntity, event, context);
+            verify(childEntityMetamodel).evolve(childEntity, event, context);
         }
 
         @Test
@@ -213,10 +213,10 @@ class ListEntityChildModelTest {
             assertEquals("parent evolve: [[child evolve: myPayload],[],[child evolve: myPayload],[]]",
                          result.getEvolves().getFirst());
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityEntityModel).evolve(matchingEntityOne, event, context);
-            verify(childEntityEntityModel).evolve(matchingEntityTwo, event, context);
-            verify(childEntityEntityModel, times(0)).evolve(nonMatchingEntity1, event, context);
-            verify(childEntityEntityModel, times(0)).evolve(nonMatchingEntity2, event, context);
+            verify(childEntityMetamodel).evolve(matchingEntityOne, event, context);
+            verify(childEntityMetamodel).evolve(matchingEntityTwo, event, context);
+            verify(childEntityMetamodel, times(0)).evolve(nonMatchingEntity1, event, context);
+            verify(childEntityMetamodel, times(0)).evolve(nonMatchingEntity2, event, context);
         }
 
         @Test
@@ -225,8 +225,8 @@ class ListEntityChildModelTest {
             when(childEntityFieldDefinition.getChildValue(any())).thenReturn(List.of(childEntity));
 
             // Reset the standard evolve, to evolve to null
-            reset(childEntityEntityModel);
-            when(childEntityEntityModel.evolve(any(), any(), any())).thenAnswer(answ -> null);
+            reset(childEntityMetamodel);
+            when(childEntityMetamodel.evolve(any(), any(), any())).thenAnswer(answ -> null);
 
             RecordingParentEntity result = testSubject.evolve(parentEntity, event, context);
 
@@ -234,7 +234,7 @@ class ListEntityChildModelTest {
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
             verify(childEntityFieldDefinition).evolveParentBasedOnChildInput(
                     eq(parentEntity), argThat(List::isEmpty));
-            verify(childEntityEntityModel).evolve(childEntity, event, context);
+            verify(childEntityMetamodel).evolve(childEntity, event, context);
         }
     }
 
@@ -245,43 +245,46 @@ class ListEntityChildModelTest {
 
         @Test
         void canNotCompleteBuilderWithoutFieldDefinition() {
-            var builder = ListEntityChildModel.forEntityModel(RecordingParentEntity.class, childEntityEntityModel)
-                    .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
+            var builder = ListEntityChildMetamodel.forEntityModel(RecordingParentEntity.class,
+                                                                  childEntityMetamodel)
+                                                  .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
                                                                                           .filter(c -> c.getId().contains(COMMAND_MATCHING_ID))
                                                                                           .findFirst()
                                                                                           .orElse(null))
-                    .eventTargetMatcher((o, eventMessage, ctx) -> o.getId().contains(EVENT_MATCHING_ID));
+                                                  .eventTargetMatcher((o, eventMessage, ctx) -> o.getId().contains(EVENT_MATCHING_ID));
             assertThrows(NullPointerException.class, builder::build);
         }
 
         @Test
         void canNotStartBuilderWithNullParentEntityClass() {
             assertThrows(NullPointerException.class,
-                         () -> ListEntityChildModel.forEntityModel(null, childEntityEntityModel));
+                         () -> ListEntityChildMetamodel.forEntityModel(null, childEntityMetamodel));
         }
 
         @Test
         void canNotStartBuilderWithNullEntityModel() {
             assertThrows(NullPointerException.class,
-                         () -> ListEntityChildModel.forEntityModel(RecordingParentEntity.class, null));
+                         () -> ListEntityChildMetamodel.forEntityModel(RecordingParentEntity.class, null));
         }
 
         @Test
         void canNotCompleteBuilderWithoutCommandTargetResolver() {
-            var builder = ListEntityChildModel.forEntityModel(RecordingParentEntity.class, childEntityEntityModel)
-                    .eventTargetMatcher((o, eventMessage, ctx) -> true)
-                    .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
+            var builder = ListEntityChildMetamodel.forEntityModel(RecordingParentEntity.class,
+                                                                  childEntityMetamodel)
+                                                  .eventTargetMatcher((o, eventMessage, ctx) -> true)
+                                                  .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
             assertThrows(AxonConfigurationException.class, builder::build);
         }
 
         @Test
         void canNotCompleteBuilderWithoutEventTargetMatcher() {
-            var builder = ListEntityChildModel.forEntityModel(RecordingParentEntity.class, childEntityEntityModel)
-                    .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
+            var builder = ListEntityChildMetamodel.forEntityModel(RecordingParentEntity.class,
+                                                                  childEntityMetamodel)
+                                                  .commandTargetResolver((candidates, commandMessage, ctx) -> candidates.stream()
                                                                                           .filter(c -> c.getId().contains(COMMAND_MATCHING_ID))
                                                                                           .findFirst()
                                                                                           .orElse(null))
-                    .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
+                                                  .childEntityFieldDefinition(mock(ChildEntityFieldDefinition.class));
             assertThrows(AxonConfigurationException.class, builder::build);
         }
     }
