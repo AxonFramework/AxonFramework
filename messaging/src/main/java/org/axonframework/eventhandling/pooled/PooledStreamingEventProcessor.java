@@ -208,12 +208,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public String getName() {
-        return eventProcessorOperations.getName();
+        return eventProcessorOperations.name();
     }
 
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-        return eventProcessorOperations.getHandlerInterceptors();
+        return eventProcessorOperations.handlerInterceptors();
     }
 
     @Override

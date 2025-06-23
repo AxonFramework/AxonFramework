@@ -41,15 +41,14 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
- * Abstract implementation of an {@link EventProcessor}. Before processing of a batch of messages this implementation
- * creates a Unit of Work to process the batch.
+ * Support class containing common {@link EventProcessor} functionality.
+ * <p>
+ * The {@link EventProcessor} implementations are in charge of providing the events that need to be processed. Once these events are obtained they
+ * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Collection)} for processing.
  * <p>
  * Actual handling of events is deferred to an {@link EventHandlerInvoker}. Before each message is handled by the
  * invoker this event processor creates an interceptor chain containing all registered
  * {@link MessageHandlerInterceptor interceptors}.
- * <p>
- * Implementations are in charge of providing the events that need to be processed. Once these events are obtained they
- * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Collection)} for processing.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -84,7 +83,14 @@ public class EventProcessorOperations {
         this.streamingProcessor = builder.streamingProcessor;
     }
 
-    public String getName() {
+    /**
+     * Returns the name of the event processor. This name is used to detect distributed instances of the
+     * same event processor. Multiple instances referring to the same logical event processor (on different JVM's)
+     * must have the same name.
+     *
+     * @return the name of this event processor
+     */
+    public String name() {
         return name;
     }
 
@@ -94,12 +100,18 @@ public class EventProcessorOperations {
         return () -> interceptors.remove(interceptor);
     }
 
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+    /**
+     * Return the list of already registered {@link MessageHandlerInterceptor}s for the event processor.
+     * To register a new interceptor use {@link EventProcessor#registerHandlerInterceptor(MessageHandlerInterceptor)}
+     *
+     * @return The list of registered interceptors of the event processor.
+     */
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> handlerInterceptors() {
         return Collections.unmodifiableList(interceptors);
     }
 
     public String toString() {
-        return getName();
+        return name();
     }
 
     /**
@@ -118,7 +130,7 @@ public class EventProcessorOperations {
         try {
             return eventHandlerInvoker.canHandle(eventMessage, context, segment);
         } catch (Exception e) {
-            errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
+            errorHandler.handleError(new ErrorContext(name(), e, Collections.singletonList(eventMessage)));
             return false;
         }
     }
@@ -175,7 +187,7 @@ public class EventProcessorOperations {
                           .runSupplierAsync(() -> unitOfWork.execute().exceptionally(e -> {
                               try {
                                   var cause = e instanceof CompletionException ? e.getCause() : e;
-                                  errorHandler.handleError(new ErrorContext(getName(), cause, eventMessages));
+                                  errorHandler.handleError(new ErrorContext(name(), cause, eventMessages));
                               } catch (RuntimeException ex) {
                                   throw ex;
                               } catch (Exception ex) {
@@ -269,9 +281,9 @@ public class EventProcessorOperations {
         private boolean streamingProcessor = false;
 
         /**
-         * Sets the {@code name} of this {@link EventProcessor} implementation.
+         * Sets the {@code name} of the {@link EventProcessor} implementation.
          *
-         * @param name a {@link String} defining this {@link EventProcessor} implementation
+         * @param name a {@link String} defining the {@link EventProcessor} implementation
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder name(@Nonnull String name) {
@@ -335,6 +347,11 @@ public class EventProcessorOperations {
             return this;
         }
 
+        /**
+         * Sets whether the {@link EventProcessor} is a streaming processor.
+         * @param streamingProcessor - Weather the {@link EventProcessor} is a streaming processor.
+         * @return The current Builder instance, for fluent interfacing.
+         */
         public Builder streamingProcessor(boolean streamingProcessor) {
             this.streamingProcessor = streamingProcessor;
             return this;
