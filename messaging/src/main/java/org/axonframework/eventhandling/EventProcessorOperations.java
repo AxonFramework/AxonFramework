@@ -53,7 +53,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @author Rene de Waele
  * @since 3.0
  */
-public class EventProcessorOperations {
+public final class EventProcessorOperations {
 
     private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
 
@@ -62,7 +62,7 @@ public class EventProcessorOperations {
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
-    protected final EventProcessorSpanFactory spanFactory;
+    private final EventProcessorSpanFactory spanFactory;
     private final boolean streamingProcessor;
 
     /**
@@ -73,7 +73,7 @@ public class EventProcessorOperations {
      *
      * @param builder the {@link Builder} used to instantiate a {@link EventProcessorOperations} instance
      */
-    protected EventProcessorOperations(Builder builder) {
+    public EventProcessorOperations(Builder builder) {
         builder.validate();
         this.name = builder.name;
         this.eventHandlerInvoker = builder.eventHandlerInvoker;
@@ -152,7 +152,7 @@ public class EventProcessorOperations {
      * @param unitOfWork    The Unit of Work that has been prepared to process the messages
      * @throws Exception when an exception occurred during processing of the batch
      */
-    protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
+    public void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                              UnitOfWork unitOfWork) throws Exception {
         processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT).join();
     }
@@ -269,9 +269,9 @@ public class EventProcessorOperations {
      * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name}
      * and {@link EventHandlerInvoker} are <b>hard requirements</b> and as such should be provided.
      */
-    public static class Builder {
+    public final static class Builder {
 
-        protected String name;
+        private String name;
         private EventHandlerInvoker eventHandlerInvoker;
         private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
@@ -363,7 +363,7 @@ public class EventProcessorOperations {
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications
          */
-        protected void validate() throws AxonConfigurationException {
+        private void validate() throws AxonConfigurationException {
             assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
             assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
         }
