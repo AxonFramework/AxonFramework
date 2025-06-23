@@ -24,7 +24,7 @@ public class CommandLineUsagePropertyProvider implements UsagePropertyProvider {
 
     @Override
     public Boolean getDisabled() {
-        String property = System.getProperty("axoniq.usage.enabled", null);
+        String property = System.getProperty("axoniq.update-checker.disabled", null);
         if(property != null) {
             return Boolean.parseBoolean(property);
         }

@@ -37,7 +37,7 @@ import java.util.Properties;
 public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(PropertyFileUsagePropertyProvider.class);
-    private static final String AXONIQ_PROPERTIES_PATH = "/.axoniq/data-collection.properties";
+    private static final String AXONIQ_PROPERTIES_PATH = "/.axoniq/update-checker.properties";
 
     private Boolean optOut;
     private String telemetryEndpoint;

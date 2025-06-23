@@ -29,9 +29,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>
  * There are two ways to disable the anonymous usage reporting:
  * <ol>
- *     <li>Set the environment variable {@code AXONIQ_USAGE_DISABLED=true}.</li>
- *     <li>Run the JVM with {@code -Daxoniq.usage.disabled=true}.</li>
- *     <li>Create the file {@code $HOME/.axoniq/data-collection.properties} with content {@code disabled=true}</li>
+ *     <li>Set the environment variable {@code AXONIQ_UPDATE_CHECKER_DISABLED=true}.</li>
+ *     <li>Run the JVM with {@code -Daxoniq.update-checker.disabled=true}.</li>
+ *     <li>Create the file {@code $HOME/.axoniq/update-checker.properties} with content {@code disabled=true}</li>
  * </ol>
  * These methods are listed in order of precedence, meaning that if the environment variable is set, it will take precedence over the JVM property and the file.
  * Explicitly setting the property to {@code disabled=false} in a method of higher precedence will ignore the lower precedence disabled.
