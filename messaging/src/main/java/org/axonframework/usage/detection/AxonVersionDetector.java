@@ -50,6 +50,7 @@ import java.util.jar.JarFile;
  * This class is not intended to be instantiated, and all methods are static.
  *
  * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
 @Internal
 public final class AxonVersionDetector {
@@ -148,7 +149,7 @@ public final class AxonVersionDetector {
         File file = new File(url.toURI());
         List<LibraryVersion> foundVersions = new LinkedList<>();
         if (file.isDirectory()) {
-            List<File> filesToCheck = scanDirectoryRecursivelyForPomProperties(file);
+            List<File> filesToCheck = scanDirectoryForPomProperties(file);
             for (File pomFile : filesToCheck) {
                 try {
                     Properties mavenProps = new Properties();
@@ -167,20 +168,20 @@ public final class AxonVersionDetector {
         return foundVersions;
     }
 
-    private static List<File> scanDirectoryRecursivelyForPomProperties(File dir) {
+    private static List<File> scanDirectoryForPomProperties(File dir) {
         List<File> files = new LinkedList<>();
-        scanDirectoryRecursivelyForPomProperties(dir, files);
+        scanRecursivelyForPomProperties(dir, files);
         return files;
     }
 
-    private static void scanDirectoryRecursivelyForPomProperties(File dir, List<File> files) {
+    private static void scanRecursivelyForPomProperties(File dir, List<File> files) {
         File[] children = dir.listFiles();
         if (children == null) {
             return;
         }
         for (File child : children) {
             if (child.isDirectory()) {
-                scanDirectoryRecursivelyForPomProperties(child, files);
+                scanRecursivelyForPomProperties(child, files);
             } else if (child.getName().equals("pom.properties")) {
                 files.add(child);
             }
