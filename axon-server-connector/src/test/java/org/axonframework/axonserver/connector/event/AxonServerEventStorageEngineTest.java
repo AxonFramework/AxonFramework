@@ -24,8 +24,10 @@ import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
+import org.testcontainers.images.ImagePullPolicy;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
 import java.util.Map;
@@ -43,8 +45,7 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
     private static final String CONTEXT = "default";
 
     @Container
-    private static final AxonServerContainer container =
-            new AxonServerContainer("axoniq/axonserver:2025.1.0-SNAPSHOT").withDevMode(true);
+    private static final AxonServerContainer container = new AxonServerContainer().withDevMode(true);
 
     private static AxonServerConnection connection;
 
