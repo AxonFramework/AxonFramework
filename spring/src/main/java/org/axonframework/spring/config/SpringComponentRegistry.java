@@ -71,10 +71,6 @@ import java.util.function.Supplier;
  * available. The {@link BeanFactory} that's set through
  * {@link BeanFactoryPostProcessor#postProcessBeanFactory(ConfigurableListableBeanFactory)} is also used to
  * {@link #hasComponent(Class, String) validate if th is registery has a certain component}.
- * <p>
- * By being a {@code InitializingBean}, this {@code ComponentRegistry} will timely invoke the
- * {@link ConfigurationEnhancer#enhance(ComponentRegistry) enhance method} on all
- * {@link #registerEnhancer(ConfigurationEnhancer) registered Configuration Enhancers}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -84,8 +80,7 @@ import java.util.function.Supplier;
 public class SpringComponentRegistry implements
         BeanPostProcessor,
         BeanFactoryPostProcessor,
-        ComponentRegistry,
-        InitializingBean {
+        ComponentRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -203,7 +198,6 @@ public class SpringComponentRegistry implements
 
     @Override
     public ComponentRegistry disableEnhancerScanning() {
-        // TODO 3075 - Team: Should this be an option for Spring environments? Should it only disable the ServiceLoader or also application context beans?
         this.enhancerScanning = true;
         return this;
     }
@@ -261,11 +255,6 @@ public class SpringComponentRegistry implements
         this.beanFactory = beanFactory;
     }
 
-    @Override
-    public void afterPropertiesSet() {
-        enhancers.forEach(enhancer -> enhancer.enhance(this));
-    }
-
     /**
      * Accessor method for the {@link SpringAxonApplication} to access this registry's {@link Configuration}.
      *
@@ -299,18 +288,12 @@ public class SpringComponentRegistry implements
     }
 
     private void scanForConfigurationEnhancers() {
-        ServiceLoader<ConfigurationEnhancer> enhancerLoader = ServiceLoader.load(
-                ConfigurationEnhancer.class, getClass().getClassLoader()
-        );
+        ServiceLoader<ConfigurationEnhancer> enhancerLoader =
+                ServiceLoader.load(ConfigurationEnhancer.class, getClass().getClassLoader());
         enhancerLoader.stream()
                       .map(ServiceLoader.Provider::get)
                       .filter(enhancer -> !disabledEnhancers.contains(enhancer.getClass()))
                       .forEach(this::registerEnhancer);
-        beanFactory.getBeansOfType(ConfigurationEnhancer.class)
-                   .values()
-                   .stream()
-                   .filter(enhancer -> !disabledEnhancers.contains(enhancer.getClass()))
-                   .forEach(this::registerEnhancer);
     }
 
     /**
