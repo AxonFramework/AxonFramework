@@ -135,6 +135,10 @@ public class AxonAutoConfigurationTest {
         });
     }
 
+    /**
+     * All validated beans originate from the {@code org.axonframework.configuration.MessagingConfigurationDefaults}
+     * that's set on the {@link org.axonframework.configuration.MessagingConfigurer}.
+     */
     @Test
     void defaultAxonMessagingComponentsArePresent() {
         testContext.run(context -> {
@@ -150,6 +154,11 @@ public class AxonAutoConfigurationTest {
         });
     }
 
+    /**
+     * All validated beans originate from the
+     * {@code org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults} that's set on the
+     * {@link org.axonframework.eventsourcing.configuration.EventSourcingConfigurer}.
+     */
     @Test
     void defaultAxonEventSourcingComponentsArePresent() {
         testContext.run(context -> {
