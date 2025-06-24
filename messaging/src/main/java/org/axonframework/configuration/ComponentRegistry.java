@@ -230,7 +230,9 @@ public interface ComponentRegistry extends DescribableComponent {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     default <C> ComponentRegistry registerIfNotPresent(@Nonnull ComponentDefinition<C> definition) {
-        return hasComponent(definition.type(), definition.name()) ? this : registerComponent(definition);
+        return definition.name() == null
+                ? hasComponent(definition.type()) ? this : registerComponent(definition)
+                : hasComponent(definition.type(), definition.name()) ? this : registerComponent(definition);
     }
 
     /**
