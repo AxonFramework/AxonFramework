@@ -70,7 +70,10 @@ public class AxonAutoConfiguration {
     }
 
     /**
-     * This bean is <b>only</b> created when a hierarchical Spring Application Context is being used.
+     * This bean is <b>only</b> created when a hierarchical Spring Application Context is being used. Only then will
+     * there be a parent Application Context with a bean of type {@link AxonConfiguration}. Furthermore, only then do we
+     * need another {@link Configuration} instance in the child Application Context, to be able to access Axon's
+     * components.
      */
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)

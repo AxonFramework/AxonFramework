@@ -110,9 +110,9 @@ public class AxonAutoConfigurationTest {
                     context, SpringLifecycleShutdownHandler.class
             );
 
-            // The ParentConfig registers a start handler on phase 10 for the SimpleCommandBus
+            // The TestContext registers a start handler on phase 10 for the SimpleCommandBus
             assertTrue(startHandlers.values().stream().anyMatch(h -> h.getPhase() == 10));
-            // The ParentConfig registers a shutdown handler on phase 12 for the SimpleCommandBus
+            // The TestContext registers a shutdown handler on phase 12 for the SimpleCommandBus
             assertTrue(shutdownHandlers.values().stream().anyMatch(h -> h.getPhase() == 12));
 
             for (SpringLifecycleStartHandler startHandler : startHandlers.values()) {
@@ -127,11 +127,11 @@ public class AxonAutoConfigurationTest {
             AtomicBoolean shutdownHandlerInvoked = context.getBean("shutdownHandlerInvoked", AtomicBoolean.class);
             assertFalse(shutdownHandlerInvoked.get());
 
-//            context.stop();
-
-//            await().atMost(Duration.ofSeconds(5))
-//                   .pollDelay(Duration.ofMillis(25))
-//                   .until(shutdownHandlerInvoked::get);
+            // TODO await response if we can even test this
+            // context.stop();
+            // await().atMost(Duration.ofSeconds(5))
+            //        .pollDelay(Duration.ofMillis(25))
+            //        .until(shutdownHandlerInvoked::get);
         });
     }
 
@@ -218,13 +218,6 @@ public class AxonAutoConfigurationTest {
         @Bean
         AxonConfiguration customAxonApplicationConfiguration(SpringAxonApplication customAxonApplication) {
             return customAxonApplication.build();
-        }
-
-        @Bean
-        org.axonframework.configuration.Configuration customAxonConfiguration(
-                SpringComponentRegistry customComponentRegistry
-        ) {
-            return customComponentRegistry.configuration();
         }
     }
 }

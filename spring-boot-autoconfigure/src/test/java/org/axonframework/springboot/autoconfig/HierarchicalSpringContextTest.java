@@ -67,7 +67,7 @@ public class HierarchicalSpringContextTest {
             assertThat(context).hasBean("springLifecycleRegistry");
             assertThat(context).hasBean("axonApplication");
             assertThat(context).hasBean("axonApplicationConfiguration");
-            // This bean is new compared to a non-hierarchical Spring Application Context.
+            // The axonConfiguration bean is only created in a hierarchical Spring Application Context.
             assertThat(context).hasBean("axonConfiguration");
         });
     }
