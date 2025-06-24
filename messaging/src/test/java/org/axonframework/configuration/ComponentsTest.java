@@ -16,6 +16,10 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.InterceptingCommandBus;
+import org.axonframework.commandhandling.retry.RetryingCommandBus;
+import org.axonframework.commandhandling.tracing.TracingCommandBus;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
 import org.axonframework.utils.MockException;
@@ -160,6 +164,27 @@ class ComponentsTest {
 
         assertTrue(testSubject.contains(IDENTIFIER));
         assertFalse(testSubject.contains(unknownIdentifier));
+    }
+
+    @Test
+    void containsMatchesWithAssignableFromTypesWhenNoNameIsGiven() {
+        // given...
+        Identifier<InterceptingCommandBus> idOne = new Identifier<>(InterceptingCommandBus.class, null);
+        InterceptingCommandBus mockOne = mock(InterceptingCommandBus.class);
+        testSubject.put(new InstantiatedComponentDefinition<>(idOne, mockOne));
+
+        Identifier<RetryingCommandBus> idTwo = new Identifier<>(RetryingCommandBus.class, null);
+        RetryingCommandBus mockTwo = mock(RetryingCommandBus.class);
+        testSubject.put(new InstantiatedComponentDefinition<>(idTwo, mockTwo));
+
+        // when/then...
+        // exact type match succeeds...
+        assertTrue(testSubject.contains(new Identifier<>(InterceptingCommandBus.class, null)));
+        assertTrue(testSubject.contains(new Identifier<>(RetryingCommandBus.class, null)));
+        // assignable from type match succeeds...
+        assertTrue(testSubject.contains(new Identifier<>(CommandBus.class, null)));
+        // non-existent type match fails...
+        assertFalse(testSubject.contains(new Identifier<>(TracingCommandBus.class, null)));
     }
 
     @Test
