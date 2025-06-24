@@ -134,7 +134,7 @@ class InfraConfigurationTest {
      * provide them in a sorted fashion.
      */
     @Test
-    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since Event Processors aren't started")
+    @Disabled("TODO #3495 - Reintroduce with new Spring configuration - Faulty since Event Processors aren't started ")
     void eventHandlingComponentsAreRegisteredAccordingToOrderAnnotation() {
         testApplicationContext.withUserConfiguration(EventHandlerOrderingContext.class).run(context -> {
             // Validate existence of Event Processor "test"
