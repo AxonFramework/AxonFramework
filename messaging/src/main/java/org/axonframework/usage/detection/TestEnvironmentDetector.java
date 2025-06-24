@@ -31,12 +31,18 @@ import java.util.Arrays;
 public class TestEnvironmentDetector {
 
     /**
+     * System property to force the usage reporter to assume it's not a test environment.
+     * This is useful for testing purposes, where you want to skip the detection logic.
+     */
+    public static final String AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT = "axoniq.usage.force-test-environment";
+
+    /**
      * Checks whether the current environment is a test environment.
      *
      * @return {@code true} if the current environment is a test environment, {@code false} otherwise
      */
     public static boolean isTestEnvironment() {
-        if(System.getProperty("axoniq.usage.force-test-environment", "false").equals("true")) {
+        if(System.getProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT, "false").equals("true")) {
             return false; // Skip detection if explicitly configured
         }
         return Arrays.stream(Thread.currentThread().getStackTrace())
