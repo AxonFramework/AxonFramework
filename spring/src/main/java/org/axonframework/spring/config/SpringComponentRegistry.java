@@ -19,6 +19,7 @@ package org.axonframework.spring.config;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component;
@@ -43,10 +44,15 @@ import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.core.ResolvableType;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -275,12 +281,10 @@ public class SpringComponentRegistry implements
             scanForConfigurationEnhancers();
         }
         invokeEnhancers();
-        // TODO #3075 - Iterate over all components to register their instances in the app context
+        registerComponentsWithApplicationContext();
         // TODO #3075 - Detect all Module implementations
 
         /*
-        decorateComponents();
-        Configuration config = new LocalConfiguration(optionalParent);
         buildModules(config, lifecycleRegistry);
         initializeComponents(config, lifecycleRegistry);
         registerFactoryShutdownHandlers(lifecycleRegistry);
@@ -307,6 +311,25 @@ public class SpringComponentRegistry implements
                  .distinct()
                  .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
                  .forEach(enhancer -> enhancer.enhance(this));
+    }
+
+    private void registerComponentsWithApplicationContext() {
+        components.postProcessComponents(component -> {
+            String name = ObjectUtils.getOrDefault(component.identifier().name(),
+                                                   () -> component.identifier().type().getName());
+            if (beanFactory.containsBeanDefinition(name)) {
+                logger.info("Component with name [{}] is already available. Skipping registration.", name);
+                return;
+            }
+
+            AbstractBeanDefinition definition =
+                    BeanDefinitionBuilder.rootBeanDefinition(
+                                                 ResolvableType.forRawClass(component.identifier().type()),
+                                                 () -> component.resolve(configuration)
+                                         )
+                                         .getBeanDefinition();
+            ((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(name, definition);
+        });
     }
 
     private class SpringConfiguration implements Configuration {
