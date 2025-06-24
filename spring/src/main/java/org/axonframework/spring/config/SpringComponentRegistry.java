@@ -46,7 +46,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -148,23 +148,20 @@ public class SpringComponentRegistry implements
 
     @Override
     public boolean hasComponent(@Nonnull Class<?> type) {
-        // TODO #3075 check with Allard: Wouldn't this get the bean eagerly, while hasComponent is invoked in our ConfigurationEnhancer, thus before some beans are present?
         // Checks both the local Components as the BeanFactory,
         //  since the ConfigurationEnhancers act before component registration with the Application Context.
         return components.contains(new Component.Identifier<>(type, null))
-                || beanFactory.getBeanProvider(type).getIfUnique() != null;
+                || beanFactory.getBeanNamesForType(type).length > 0;
     }
 
     @Override
     public boolean hasComponent(@Nonnull Class<?> type,
                                 @Nullable String name) {
         Assert.notNull(name, () -> "Spring does not allow the use of null names for components.");
-        // TODO #3075 check with Allard: Wouldn't this get the bean eagerly, while hasComponent is invoked in our ConfigurationEnhancer, thus before some beans are present?
         // Checks both the local Components as the BeanFactory,
         //  since the ConfigurationEnhancers act before component registration with the Application Context.
-        //noinspection DataFlowIssue
         return components.contains(new Component.Identifier<>(type, name)) ||
-                beanFactory.containsBean(name) && type.isInstance(beanFactory.getBean(name));
+                Arrays.stream(beanFactory.getBeanNamesForType(type)).toList().contains(name);
     }
 
     @Override
