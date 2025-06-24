@@ -17,6 +17,7 @@
 package org.axonframework.messaging.configuration.reflection;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
@@ -27,6 +28,14 @@ import java.util.function.Function;
 
 /**
  * Utility class that provides methods to register a {@link ParameterResolverFactory} to the {@link ComponentRegistry}.
+ * <p>
+ * Ensures that the {@code ComponentRegistry} at all times has <b>one</b> {@code ParameterResolverFactory} component.
+ * Subsequent invocations of
+ * {@link #registerToComponentRegistry(ComponentRegistry, Function)}/{@link
+ * #registerToComponentRegistry(ComponentRegistry, int, Function)} will
+ * {@link ComponentRegistry#registerDecorator(Class, String, int, ComponentDecorator) decorate} the existing
+ * {@code ParameterResolverFactory} and given {@code ParameterResolverFactory} into a
+ * {@link MultiParameterResolverFactory}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
