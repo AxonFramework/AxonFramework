@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 
 package org.axonframework.common;
+
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -40,7 +43,7 @@ public abstract class ObjectUtils {
      * @param <T>             the type of value to return
      * @return {@code instance} if not {@code null}, otherwise the value provided by {@code defaultProvider}
      */
-    public static <T> T getOrDefault(T instance, Supplier<T> defaultProvider) {
+    public static <T> T getOrDefault(@Nullable T instance, @Nonnull Supplier<T> defaultProvider) {
         if (instance == null) {
             return defaultProvider.get();
         }
