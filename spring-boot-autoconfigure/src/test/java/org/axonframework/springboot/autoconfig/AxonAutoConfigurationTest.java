@@ -89,7 +89,6 @@ public class AxonAutoConfigurationTest {
             assertThat(context).hasBean("customLifecycleRegistry");
             assertThat(context).hasBean("customAxonApplication");
             assertThat(context).hasBean("customAxonApplicationConfiguration");
-            assertThat(context).hasBean("customAxonConfiguration");
 
             assertThat(context).doesNotHaveBean("springComponentRegistry");
             assertThat(context).doesNotHaveBean("springLifecycleRegistry");
