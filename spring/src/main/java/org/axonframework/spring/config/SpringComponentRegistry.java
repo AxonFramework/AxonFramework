@@ -26,6 +26,7 @@ import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.ComponentOverrideException;
 import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.Components;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.DecoratorDefinition;
@@ -88,7 +89,7 @@ public class SpringComponentRegistry implements
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final Map<Component.Identifier<?>, Component<?>> components = new ConcurrentHashMap<>();
+    private final Components components = new Components();
     private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decorators = new CopyOnWriteArrayList<>();
     private final List<ConfigurationEnhancer> enhancers = new CopyOnWriteArrayList<>();
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
@@ -125,11 +126,11 @@ public class SpringComponentRegistry implements
         // We need to buffer these components, because they may depend on components that aren't
         // registered yet. We will register these in the application context just-in-time.
         Component<? extends C> component = creator.createComponent();
-        if (components.containsKey(component.identifier())) {
+        if (components.contains(component.identifier())) {
             throw new ComponentOverrideException(creator.type(), creator.name());
         }
 
-        components.put(component.identifier(), component);
+        components.put(component);
         return this;
     }
 
@@ -150,7 +151,7 @@ public class SpringComponentRegistry implements
         // TODO #3075 check with Allard: Wouldn't this get the bean eagerly, while hasComponent is invoked in our ConfigurationEnhancer, thus before some beans are present?
         // Checks both the local Components as the BeanFactory,
         //  since the ConfigurationEnhancers act before component registration with the Application Context.
-        return components.containsKey(new Component.Identifier<>(type, null))
+        return components.contains(new Component.Identifier<>(type, null))
                 || beanFactory.getBeanProvider(type).getIfUnique() != null;
     }
 
@@ -162,7 +163,7 @@ public class SpringComponentRegistry implements
         // Checks both the local Components as the BeanFactory,
         //  since the ConfigurationEnhancers act before component registration with the Application Context.
         //noinspection DataFlowIssue
-        return components.containsKey(new Component.Identifier<>(type, name)) ||
+        return components.contains(new Component.Identifier<>(type, name)) ||
                 beanFactory.containsBean(name) && type.isInstance(beanFactory.getBean(name));
     }
 
