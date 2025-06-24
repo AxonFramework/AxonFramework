@@ -67,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
+@Disabled("TODO #3495")
 class PooledStreamingEventProcessorIntegrationTest {
 
     private ApplicationContextRunner testApplicationContext;

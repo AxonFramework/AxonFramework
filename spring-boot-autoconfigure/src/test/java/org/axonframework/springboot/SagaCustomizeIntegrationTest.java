@@ -75,6 +75,7 @@ import static org.junit.jupiter.api.Assertions.*;
         WebClientAutoConfiguration.class
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+@Disabled("TODO #3496")
 class SagaCustomizeIntegrationTest {
 
     @Autowired

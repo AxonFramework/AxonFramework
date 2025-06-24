@@ -42,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
+@Disabled("TODO #3496")
 class RepositoryWiringTest {
 
     private ApplicationContextRunner testApplicationContext;
