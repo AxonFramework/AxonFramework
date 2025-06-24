@@ -39,14 +39,13 @@ public class TestEnvironmentDetector {
         if(System.getProperty("axoniq.usage.force-test-environment", "false").equals("true")) {
             return false; // Skip detection if explicitly configured
         }
-        return Arrays.stream(new Throwable().getStackTrace())
+        return Arrays.stream(Thread.currentThread().getStackTrace())
                 .anyMatch(TestEnvironmentDetector::isTestClass);
     }
 
     private static boolean isTestClass(StackTraceElement stackTraceElement) {
         String className = stackTraceElement.getClassName();
         return className.startsWith("org.junit") // JUnit 4, JUnit Vintage
-                || className.startsWith("org.junit.jupiter") // JUnit 5 (Jupiter)
                 || className.startsWith("org.testng") // TestNG
                 || className.startsWith("org.spockframework") // Spock
                 || className.startsWith("org.mockito") // Mockito
@@ -71,8 +70,6 @@ public class TestEnvironmentDetector {
                 || className.startsWith("fitnesse.") // FitNesse
                 || className.startsWith("org.concordion") // Concordion
                 || className.startsWith("com.consol.citrus") // Citrus
-                || className.startsWith("org.junit.platform") // JUnit Platform
-                || className.startsWith("org.junitpioneer") // JUnit Pioneer
                 || className.startsWith("org.pitest") // PIT Mutation Testing
                 || className.startsWith("org.testcontainers") // Testcontainers
                 || className.startsWith("org.robolectric") // Robolectric
@@ -85,7 +82,6 @@ public class TestEnvironmentDetector {
                 || className.startsWith("com.codeborne.selenide") // Selenide
                 || className.startsWith("org.openqa.selenium") // Selenium
                 || className.startsWith("junitparams") // JUnitParams
-                || className.startsWith("org.junit.experimental.theories") // JUnit Theories
                 || className.startsWith("org.testfx") // TestFX
                 || className.startsWith("com.intellij") // IntelliJ IDEA runner
                 || className.startsWith("org.gradle.api.internal.tasks.testing"); // Gradle test runner
