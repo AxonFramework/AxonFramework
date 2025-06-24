@@ -40,8 +40,6 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 
-import java.util.Objects;
-
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link MessagingConfigurer}.
  * <p>
