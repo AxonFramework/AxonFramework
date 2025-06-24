@@ -45,12 +45,15 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 /**
@@ -91,10 +94,12 @@ public class SpringComponentRegistry implements
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
 
-    private final List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new CopyOnWriteArrayList<>();
-
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final Configuration configuration = new SpringConfiguration();
     private final Map<String, Configuration> moduleConfigurations = new ConcurrentHashMap<>();
+
+    private boolean enhancerScanning = true;
+    private final List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new CopyOnWriteArrayList<>();
 
     private ConfigurableListableBeanFactory beanFactory;
 
@@ -194,7 +199,9 @@ public class SpringComponentRegistry implements
 
     @Override
     public ComponentRegistry disableEnhancerScanning() {
-        return disableEnhancer(ConfigurationEnhancer.class);
+        // TODO 3075 - Team: Should this be an option for Spring environments? Should it only disable the ServiceLoader or also application context beans?
+        this.enhancerScanning = true;
+        return this;
     }
 
     @Override
@@ -205,6 +212,7 @@ public class SpringComponentRegistry implements
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("initialized", initialized.get());
         descriptor.describeProperty("components", components);
         descriptor.describeProperty("decorators", decorators);
         descriptor.describeProperty("configurerEnhancers", enhancers);
@@ -263,15 +271,56 @@ public class SpringComponentRegistry implements
         return configuration;
     }
 
-    public void initialize() {
-        enhancers.forEach(eh -> {
-            if (!disabledEnhancers.isEmpty()
-                    && disabledEnhancers.stream().noneMatch(de -> de.isInstance(eh))) {
-                eh.enhance(this);
-            }
-        });
+    /**
+     * Initializes the {@link ConfigurationEnhancer ConfigurationEnhancers} and retrieves all {@link Module Modules}.
+     */
+    void initialize() {
+        if (initialized.getAndSet(true)) {
+            throw new IllegalStateException("Component registry has already been initialized.");
+        }
+        if (enhancerScanning) {
+            scanForConfigurationEnhancers();
+        }
+        invokeEnhancers();
         // TODO #3075 - Iterate over all components to register their instances in the app context
         // TODO #3075 - Detect all Module implementations
+
+        /*
+
+        decorateComponents();
+        Configuration config = new LocalConfiguration(optionalParent);
+        buildModules(config, lifecycleRegistry);
+        initializeComponents(config, lifecycleRegistry);
+        registerFactoryShutdownHandlers(lifecycleRegistry);
+        * */
+    }
+
+    private void scanForConfigurationEnhancers() {
+        ServiceLoader<ConfigurationEnhancer> enhancerLoader = ServiceLoader.load(
+                ConfigurationEnhancer.class, getClass().getClassLoader()
+        );
+        enhancerLoader.stream()
+                      .map(ServiceLoader.Provider::get)
+                      .filter(enhancer -> !disabledEnhancers.contains(enhancer.getClass()))
+                      .forEach(this::registerEnhancer);
+        beanFactory.getBeansOfType(ConfigurationEnhancer.class)
+                   .values()
+                   .stream()
+                   .filter(enhancer -> !disabledEnhancers.contains(enhancer.getClass()))
+                   .forEach(this::registerEnhancer);
+    }
+
+    /**
+     * Invoke all the {@link #registerEnhancer(ConfigurationEnhancer) registered}
+     * {@link ConfigurationEnhancer enhancers} on this {@code ComponentRegistry} implementation in their
+     * {@link ConfigurationEnhancer#order()}. This will ensure all sensible default components and decorators are in
+     * place from these enhancers.
+     */
+    private void invokeEnhancers() {
+        enhancers.stream()
+                 .distinct()
+                 .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
+                 .forEach(enhancer -> enhancer.enhance(this));
     }
 
     private class SpringConfiguration implements Configuration {
