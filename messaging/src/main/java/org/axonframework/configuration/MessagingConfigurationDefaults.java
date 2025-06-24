@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
@@ -58,7 +59,8 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class MessagingConfigurationDefaults implements ConfigurationEnhancer {
+@Internal
+public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     @Override
     public int order() {
