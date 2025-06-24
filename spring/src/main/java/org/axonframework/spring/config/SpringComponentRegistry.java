@@ -148,7 +148,10 @@ public class SpringComponentRegistry implements
     @Override
     public boolean hasComponent(@Nonnull Class<?> type) {
         // TODO #3075 check with Allard: Wouldn't this get the bean eagerly, while hasComponent is invoked in our ConfigurationEnhancer, thus before some beans are present?
-        return beanFactory.getBeanProvider(type).getIfUnique() != null;
+        // Checks both the local Components as the BeanFactory,
+        //  since the ConfigurationEnhancers act before component registration with the Application Context.
+        return components.containsKey(new Component.Identifier<>(type, null))
+                || beanFactory.getBeanProvider(type).getIfUnique() != null;
     }
 
     @Override
@@ -156,8 +159,11 @@ public class SpringComponentRegistry implements
                                 @Nullable String name) {
         Assert.notNull(name, () -> "Spring does not allow the use of null names for components.");
         // TODO #3075 check with Allard: Wouldn't this get the bean eagerly, while hasComponent is invoked in our ConfigurationEnhancer, thus before some beans are present?
+        // Checks both the local Components as the BeanFactory,
+        //  since the ConfigurationEnhancers act before component registration with the Application Context.
         //noinspection DataFlowIssue
-        return beanFactory.containsBean(name) && type.isInstance(beanFactory.getBean(name));
+        return components.containsKey(new Component.Identifier<>(type, name)) ||
+                beanFactory.containsBean(name) && type.isInstance(beanFactory.getBean(name));
     }
 
     @Override
@@ -286,7 +292,6 @@ public class SpringComponentRegistry implements
         // TODO #3075 - Detect all Module implementations
 
         /*
-
         decorateComponents();
         Configuration config = new LocalConfiguration(optionalParent);
         buildModules(config, lifecycleRegistry);
