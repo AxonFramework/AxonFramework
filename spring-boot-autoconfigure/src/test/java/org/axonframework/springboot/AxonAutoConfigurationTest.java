@@ -83,52 +83,6 @@ import static org.mockito.Mockito.*;
 class AxonAutoConfigurationTest {
 
     @Test
-    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since Event Processors aren't started")
-    void contextInitialization() {
-        new ApplicationContextRunner()
-                .withUserConfiguration(AxonAutoConfigurationTest.Context.class)
-                .withPropertyValues("axon.axonserver.enabled=false")
-                .run(applicationContext -> {
-                    assertNotNull(applicationContext);
-                    assertNotNull(applicationContext.getBean(LegacyConfigurer.class));
-                    assertNotNull(applicationContext.getBean(Snapshotter.class));
-
-                    assertNotNull(applicationContext.getBean(CommandBus.class));
-                    assertNotNull(applicationContext.getBean(EventBus.class));
-                    assertNotNull(applicationContext.getBean(QueryBus.class));
-                    assertNotNull(applicationContext.getBean(LegacyEventStore.class));
-                    assertNotNull(applicationContext.getBean(CommandGateway.class));
-                    assertNotNull(applicationContext.getBean(EventGateway.class));
-                    assertNotNull(applicationContext.getBean(Serializer.class));
-                    assertNotNull(applicationContext.getBean(SpanFactory.class));
-                    assertEquals(MultiParameterResolverFactory.class,
-                                 applicationContext.getBean(ParameterResolverFactory.class).getClass());
-                    assertEquals(1, applicationContext.getBeansOfType(LegacyEventStorageEngine.class).size());
-                    assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());
-                    assertNotNull(applicationContext.getBean(Context.MySaga.class));
-                    assertNotNull(applicationContext.getBean(Context.MyAggregate.class));
-                    assertNotNull(applicationContext.getBean(LegacyRepository.class));
-                    assertNotNull(applicationContext.getBean(AggregateFactory.class));
-                    assertNotNull(applicationContext.getBean(EventProcessingConfiguration.class));
-
-                    assertEquals(2,
-                                 applicationContext.getBean(LegacyConfiguration.class)
-                                                   .correlationDataProviders().size());
-
-                    Context.SomeComponent someComponent = applicationContext.getBean(Context.SomeComponent.class);
-                    assertEquals(0, someComponent.invocations.size());
-                    applicationContext.getBean(EventBus.class).publish(asEventMessage("testing"));
-                    assertEquals(1, someComponent.invocations.size());
-
-                    assertTrue(applicationContext.getBean(Serializer.class) instanceof XStreamSerializer);
-                    assertSame(applicationContext.getBean("eventSerializer"),
-                               applicationContext.getBean("messageSerializer"));
-                    assertSame(applicationContext.getBean("serializer"),
-                               applicationContext.getBean("messageSerializer"));
-                });
-    }
-
-    @Test
     void ambiguousComponentsThrowExceptionWhenRequestedFromConfiguration() {
         ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
