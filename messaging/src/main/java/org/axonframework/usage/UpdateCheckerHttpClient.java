@@ -23,6 +23,7 @@ import org.axonframework.usage.configuration.UsagePropertyProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -69,15 +70,20 @@ public class UpdateCheckerHttpClient {
      * failed.
      */
     public Optional<UpdateCheckResponse> sendRequest(UpdateCheckRequest updateCheckRequest, boolean firstRequest) {
-        String url = userProperties.getUrl() + "?" + updateCheckRequest.toQueryString(firstRequest);
-        HttpRequest.Builder baseRequestBuilder = HttpRequest.newBuilder()
-                                                            .uri(URI.create(url))
-                                                            .timeout(Duration.ofSeconds(5))
-                                                            .headers("User-Agent", updateCheckRequest.toUserAgent());
+        String url = userProperties.getUrl() + "?" + updateCheckRequest.toQueryString();
 
         try {
             logger.info("Reporting anonymous usage data to AxonIQ servers at: {}", url);
-            HttpRequest request  = baseRequestBuilder.GET().build();
+            HttpRequest request = HttpRequest
+                    .newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(5))
+                    .headers("User-Agent", updateCheckRequest.toUserAgent())
+                    .headers("X-Machine-Id", updateCheckRequest.machineId())
+                    .headers("X-Instance-Id", updateCheckRequest.instanceId())
+                    .headers("X-Uptime", String.valueOf(ManagementFactory.getRuntimeMXBean().getUptime()))
+                    .headers("X-First-Run", firstRequest ? "true" : "false")
+                    .GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {

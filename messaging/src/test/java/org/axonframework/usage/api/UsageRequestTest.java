@@ -42,11 +42,9 @@ class UpdateCheckRequestTest {
                 )
         );
 
-        String queryString = request.toQueryString(false);
+        String queryString = request.toQueryString();
 
         // Verify that all parameters are present and properly encoded
-        assertTrue(queryString.contains("mid=machine-1234"));
-        assertTrue(queryString.contains("iid=instance-5678"));
         assertTrue(queryString.contains("osn=Linux"));
         assertTrue(queryString.contains("osv=6.11.0-26-generic"));
         assertTrue(queryString.contains("osa=amd64"));
@@ -55,7 +53,6 @@ class UpdateCheckRequestTest {
         assertTrue(queryString.contains("ktv=1.8.22"));
         assertTrue(queryString.contains("lib=org.axonframework%3Aaxon-core%3A5.0.0"));
         assertTrue(queryString.contains("lib=org.example%3Aexample-lib%3A1.2.3"));
-        assertTrue(queryString.contains("up="));
     }
 
     @Test
@@ -74,11 +71,9 @@ class UpdateCheckRequestTest {
                 )
         );
 
-        String queryString = request.toQueryString(true);
+        String queryString = request.toQueryString();
 
         // Verify special characters are encoded
-        assertTrue(queryString.contains("mid=machine+1234"));      // Space becomes +
-        assertTrue(queryString.contains("iid=instance%3D5678"));   // = becomes %3D
         assertTrue(queryString.contains("osn=Windows+10"));        // Space becomes +
         assertTrue(queryString.contains("jvr=17.0.2%2B8"));        // + becomes %2B
         assertTrue(queryString.contains("jvn=Oracle+Corporation+%26+Co")); // & becomes %26

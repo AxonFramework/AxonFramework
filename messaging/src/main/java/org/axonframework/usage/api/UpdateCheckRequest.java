@@ -60,22 +60,15 @@ public record UpdateCheckRequest(
      * All values are properly URL encoded.
      *
      * @return The query string representation of the usage request.
-     * @param firstRequest Indicates whether this is the first request for usage data. If true, it will append "fr=1" to
-     *                     the query string, otherwise "fr=0".
      */
-    public String toQueryString(boolean firstRequest) {
+    public String toQueryString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("mid=").append(encode(machineId))
-          .append("&iid=").append(encode(instanceId))
-          .append("&osn=").append(encode(osName))
+        sb.append("&osn=").append(encode(osName))
           .append("&osv=").append(encode(osVersion))
           .append("&osa=").append(encode(osArch))
           .append("&jvr=").append(encode(jvmVersion))
           .append("&jvn=").append(encode(jvmVendor))
-          .append("&ktv=").append(encode(kotlinVersion))
-          .append("&version=").append(encode(getAxonBaseVersion()))
-          .append("&fr=").append(firstRequest ? "1" : "0")
-          .append("&up=").append(encode(String.valueOf(ManagementFactory.getRuntimeMXBean().getUptime())));
+          .append("&ktv=").append(encode(kotlinVersion));
         for (Artifact library : libraries) {
             String stringLib = library.groupId() + ':' + library.artifactId() + ':' + library.version();
             sb.append("&lib=").append(encode(stringLib));
