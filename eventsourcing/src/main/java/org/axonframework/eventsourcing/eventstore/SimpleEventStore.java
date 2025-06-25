@@ -27,12 +27,11 @@ import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -47,7 +46,6 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
 
     private final EventStorageEngine eventStorageEngine;
     private final TagResolver tagResolver;
-    private final UnitOfWorkFactory unitOfWorkFactory;
 
     private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey;
 
@@ -66,7 +64,6 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
                             @Nonnull TagResolver tagResolver) {
         this.eventStorageEngine = eventStorageEngine;
         this.tagResolver = tagResolver;
-        this.unitOfWorkFactory = new SimpleUnitOfWorkFactory();
 
         this.eventStoreTransactionKey = ResourceKey.withLabel("eventStoreTransaction");
     }
@@ -83,9 +80,14 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                            @Nonnull List<EventMessage<?>> events) {
         if (context == null) {
-            UnitOfWork unitOfWork = unitOfWorkFactory.create();
-            unitOfWork.runOnPostInvocation(c -> appendToTransaction(c, events));
-            return unitOfWork.execute();
+            AppendCondition none = AppendCondition.none();
+            List<TaggedEventMessage<?>> taggedEvents = new ArrayList<>();
+            for (EventMessage<?> event : events) {
+                taggedEvents.add(new GenericTaggedEventMessage<>(event, Set.of()));
+            }
+            return eventStorageEngine.appendEvents(none, taggedEvents)
+                                     .thenApply(EventStorageEngine.AppendTransaction::commit)
+                                     .thenApply(marker -> null);
         } else {
             // Return a completed future since we have an active context.
             // The user will wait within the context's lifecycle anyhow.
