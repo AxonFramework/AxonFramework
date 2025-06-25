@@ -53,7 +53,6 @@ import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import jakarta.annotation.Nonnull;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -126,7 +125,7 @@ class InterceptorConfigurationTest {
     @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since Event Processors aren't started")
     public void eventHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
-            context.getBean("eventGateway", EventGateway.class).publish("foo");
+            context.getBean("eventGateway", EventGateway.class).publish(null, "foo");
 
             // Wait for all the event handlers to had their chance.
             CountDownLatch eventHandlerInterceptorInvocations = context.getBean("eventHandlerInterceptorInvocations",
@@ -182,7 +181,7 @@ class InterceptorConfigurationTest {
     // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
     public void eventDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
-            context.getBean("eventGateway", EventGateway.class).publish("foo");
+            context.getBean("eventGateway", EventGateway.class).publish(null, "foo");
             //noinspection unchecked
             Queue<String> commandDispatchingInterceptingOutcome =
                     context.getBean("commandDispatchingInterceptingOutcome", Queue.class);

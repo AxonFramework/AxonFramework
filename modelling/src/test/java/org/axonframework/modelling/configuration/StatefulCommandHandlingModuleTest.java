@@ -16,7 +16,11 @@
 
 package org.axonframework.modelling.configuration;
 
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlingComponent;
+import org.axonframework.common.infra.MockComponentDescriptor;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.MessageStream;
@@ -28,6 +32,7 @@ import org.axonframework.modelling.repository.Repository;
 import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -59,33 +64,47 @@ class StatefulCommandHandlingModuleTest {
     }
 
     @Test
-    void buildRegisteredRepositoryStateManagerAndStatefulCommandHandlingComponent() {
-        StateBasedEntityBuilder<String, String> entityBuilder =
-                StateBasedEntityBuilder.entity(String.class, String.class)
-                                       .loader(c -> (id, context) -> CompletableFuture.completedFuture("instance"))
-                                       .persister(c -> (id, entity, context) -> CompletableFuture.completedFuture(null));
-        String statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[test-subject]";
+    void buildRegistersEntityToStateManagerOfThisModuleAndRegistersCommandHandlers() {
+        StateBasedEntityModule<String, String> entityModule =
+                StateBasedEntityModule.declarative(String.class, String.class)
+                                      .loader(c -> (id, context) -> CompletableFuture.completedFuture("instance"))
+                                      .persister(c -> (id, entity, context) -> CompletableFuture.completedFuture(null))
+                                      .messagingModel((c, b) -> b
+                                              .instanceCommandHandler(
+                                                      new QualifiedName(String.class),
+                                                      (cmd, state, context) -> MessageStream.just(null))
+                                              .build())
+                                      .entityIdResolver(config -> (message, context) -> "1");
 
-        Configuration resultConfig = setupPhase.entities()
-                                               .entity(entityBuilder)
-                                               .commandHandlers()
-                                               .build()
-                                               .build(ModellingConfigurer.create().build(),
-                                                      new StubLifecycleRegistry());
+        StubLifecycleRegistry lifecycleRegistry = new StubLifecycleRegistry();
+        AxonConfiguration configuration = ModellingConfigurer
+                .create()
+                .componentRegistry(cr -> {
+                    cr.registerModule(setupPhase
+                                              .entities()
+                                              .entity(entityModule)
+                                              .commandHandlers()
+                                              .commandHandler(new QualifiedName(Integer.class),
+                                                              (command, state, context) -> MessageStream.just(null))
+                                              .build());
+                })
+                .start();
 
-        //noinspection rawtypes
-        Optional<Repository> optionalRepository =
-                resultConfig.getOptionalComponent(Repository.class, entityBuilder.entityName());
-        assertTrue(optionalRepository.isPresent());
+        Configuration resultConfig = configuration.getModuleConfiguration("test-subject").orElseThrow();
 
-        Optional<StateManager> optionalStateManager =
-                resultConfig.getOptionalComponent(StateManager.class);
+        Optional<StateManager> optionalStateManager = resultConfig.getOptionalComponent(StateManager.class);
         assertTrue(optionalStateManager.isPresent());
 
-        Optional<StatefulCommandHandlingComponent> optionalHandlingComponent = resultConfig.getOptionalComponent(
-                StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName
-        );
-        assertTrue(optionalHandlingComponent.isPresent());
+        assertNotNull(optionalStateManager.get().repository(String.class, String.class));
+        assertNotNull(resultConfig.getModuleConfiguration("SimpleStateBasedEntityModule<String, String>").orElseThrow()
+                                   .getComponent(Repository.class, "String#String"));
+
+        MockComponentDescriptor descriptor = new MockComponentDescriptor();
+        resultConfig.getComponent(CommandBus.class).describeTo(descriptor);
+
+        Map<QualifiedName, CommandHandlingComponent> subscriptions = descriptor.getProperty("subscriptions");
+        assertTrue(subscriptions.containsKey(new QualifiedName(Integer.class)));
+        assertTrue(subscriptions.containsKey(new QualifiedName(String.class)));
     }
 
     @Test

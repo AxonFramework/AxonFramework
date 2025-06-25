@@ -17,8 +17,8 @@
 package org.axonframework.modelling.configuration;
 
 import org.axonframework.configuration.ApplicationConfigurerTestSuite;
-import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
@@ -41,10 +41,11 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
 
     @Test
     void registerStatefulCommandHandlingModuleAddsAModuleConfiguration() {
-        StateBasedEntityBuilder<String, Object> testEntityBuilder =
-                StateBasedEntityBuilder.entity(String.class, Object.class)
-                                       .loader(c -> (id, context) -> null)
-                                       .persister(c -> (id, entity, context) -> null);
+        StateBasedEntityModule<String, Object> testEntityBuilder =
+                StateBasedEntityModule.declarative(String.class, Object.class)
+                                      .loader(c -> (id, context) -> null)
+                                      .persister(c -> (id, entity, context) -> null)
+                                      .build();
         ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
                 StatefulCommandHandlingModule.named("test")
                                              .entities(entityPhase -> entityPhase.entity(testEntityBuilder))

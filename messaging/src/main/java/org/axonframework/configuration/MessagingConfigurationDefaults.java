@@ -107,7 +107,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     // TODO #3392 - Replace for actual EventSink implementation.
     private static EventSink defaultEventSink(Configuration config) {
         EventBus eventBus = config.getComponent(EventBus.class);
-        return (events) -> {
+        return (context, events) -> {
             eventBus.publish(events);
             return FutureUtils.emptyCompletedFuture();
         };

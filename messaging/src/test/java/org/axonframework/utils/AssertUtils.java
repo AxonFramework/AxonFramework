@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,17 @@
 
 package org.axonframework.utils;
 
+import jakarta.annotation.Nonnull;
+
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
- * Utility class for special assertions
+ * Utility class for special assertions.
  */
 public abstract class AssertUtils {
 
@@ -50,5 +57,41 @@ public abstract class AssertUtils {
             }
             now = System.currentTimeMillis();
         } while (true);
+    }
+
+    /**
+     * Assertion utility using {@link org.awaitility.Awaitility}, awaiting the successful completion of the given
+     * {@code future} for 500ms at poll intervals of 25ms.
+     *
+     * @param future The completable future to await with {@link org.awaitility.Awaitility}.
+     * @param <R>    The result of the given {@code future}.
+     * @return The result from the given {@code future}.
+     */
+    public static <R> R awaitSuccessfulCompletion(@Nonnull CompletableFuture<R> future) {
+        await().atMost(Duration.ofMillis(500))
+               .pollDelay(Duration.ofMillis(25))
+               .untilAsserted(() -> assertTrue(
+                       future.isDone() && !future.isCompletedExceptionally(),
+                       () -> future.exceptionNow().toString()
+               ));
+        return future.join();
+    }
+
+    /**
+     * Assertion utility using {@link org.awaitility.Awaitility}, awaiting the exceptional completion  of the given
+     * {@code future} for 500ms at poll intervals of 25ms.
+     *
+     * @param future The completable future to await with {@link org.awaitility.Awaitility}.
+     * @param <R>    The result of the given {@code future}.
+     * @return The result from the given {@code future}.
+     */
+    public static <R> R awaitExceptionalCompletion(@Nonnull CompletableFuture<R> future) {
+        await().atMost(Duration.ofMillis(500))
+               .pollDelay(Duration.ofMillis(25))
+               .untilAsserted(() -> assertTrue(
+                       future.isDone() && future.isCompletedExceptionally(),
+                       "Expected exception but none occurred"
+               ));
+        return future.join();
     }
 }

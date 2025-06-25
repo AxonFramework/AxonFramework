@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
 
 /**
  * @author Rene de Waele
@@ -171,7 +171,7 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected EventMessage<?>[] createEvents(String aggregateId, int startSequenceNumber, int count) {
         return IntStream.range(startSequenceNumber, startSequenceNumber + count)
-                        .mapToObj(sequenceNumber -> createEvent(aggregateId, sequenceNumber))
+                        .mapToObj(sequenceNumber -> createDomainEvent(aggregateId, sequenceNumber))
                         .peek(event -> serializer().ifPresent(serializer -> {
                             event.serializePayload(serializer, byte[].class);
                             event.serializeMetaData(serializer, byte[].class);

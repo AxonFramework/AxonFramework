@@ -29,8 +29,8 @@ class HierarchicalStateManagerTest {
 
     @Test
     void resolvesEntityFromChildIfExistsInBoth() {
-        SimpleStateManager parent = createStringSimpleStateManager("parent");
-        SimpleStateManager child = createStringSimpleStateManager("child");
+        StateManager parent = createStringSimpleStateManager("parent");
+        StateManager child = createStringSimpleStateManager("child");
 
         HierarchicalStateManager stateManager = HierarchicalStateManager.create(parent, child);
 
@@ -39,8 +39,8 @@ class HierarchicalStateManagerTest {
 
     @Test
     void resolvesEntityFromParentIfDoesNotExistInChild() {
-        SimpleStateManager parent = createStringSimpleStateManager("parent");
-        SimpleStateManager child = SimpleStateManager.builder("child").build();
+        StateManager parent = createStringSimpleStateManager("parent");
+        StateManager child = SimpleStateManager.named("child");
 
         HierarchicalStateManager stateManager = HierarchicalStateManager.create(parent, child);
 
@@ -49,8 +49,8 @@ class HierarchicalStateManagerTest {
 
     @Test
     void resolvesEntityFromChildIfDoesNotExistInParent() {
-        SimpleStateManager parent = SimpleStateManager.builder("parent").build();
-        SimpleStateManager child = createStringSimpleStateManager("child");
+        StateManager parent = SimpleStateManager.named("parent");
+        StateManager child = createStringSimpleStateManager("child");
 
         HierarchicalStateManager stateManager = HierarchicalStateManager.create(parent, child);
 
@@ -59,8 +59,8 @@ class HierarchicalStateManagerTest {
 
     @Test
     void throwsExceptionIfExistsInNeither() {
-        SimpleStateManager parent = SimpleStateManager.builder("parent").build();
-        SimpleStateManager child = SimpleStateManager.builder("child").build();
+        StateManager parent = SimpleStateManager.named("parent");
+        StateManager child = SimpleStateManager.named("child");
 
         HierarchicalStateManager stateManager = HierarchicalStateManager.create(parent, child);
 
@@ -72,14 +72,12 @@ class HierarchicalStateManagerTest {
 
     @Test
     void combinesTypesOfBothChildAndParentInRepositoriesMethods() {
-        SimpleStateManager parent = SimpleStateManager.builder("parent")
-                                                      .register(createMockForTypes(String.class, Integer.class))
-                                                      .register(createMockForTypes(Integer.class, Integer.class))
-                                                      .build();
-        SimpleStateManager child = SimpleStateManager.builder("child")
-                                                     .register(createMockForTypes(Boolean.class, Integer.class))
-                                                     .register(createMockForTypes(String.class, Boolean.class))
-                                                     .build();
+        StateManager parent = SimpleStateManager.named("parent")
+                                                .register(createMockForTypes(String.class, Integer.class))
+                                                .register(createMockForTypes(Integer.class, Integer.class));
+        StateManager child = SimpleStateManager.named("child")
+                                               .register(createMockForTypes(Boolean.class, Integer.class))
+                                               .register(createMockForTypes(String.class, Boolean.class));
 
         HierarchicalStateManager stateManager = HierarchicalStateManager.create(parent, child);
 
@@ -118,14 +116,13 @@ class HierarchicalStateManagerTest {
                     .join();
     }
 
-    private static SimpleStateManager createStringSimpleStateManager(String value) {
-        return SimpleStateManager.builder(value)
+    private static StateManager createStringSimpleStateManager(String value) {
+        return SimpleStateManager.named(value)
                                  .register(String.class,
                                            String.class,
                                            (id, ctx) -> CompletableFuture.completedFuture(value),
                                            (id, state, ctx) -> {
                                                return FutureUtils.emptyCompletedFuture();
-                                           })
-                                 .build();
+                                           });
     }
 }

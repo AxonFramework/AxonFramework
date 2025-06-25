@@ -17,16 +17,16 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.Collections;
 import java.util.List;
 
-import static org.axonframework.utils.EventTestUtils.createEvent;
-import static org.axonframework.utils.EventTestUtils.createEvents;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -55,7 +55,7 @@ class SimpleEventHandlerInvokerTest {
 
     @Test
     void singleEventPublication() throws Exception {
-        EventMessage<?> event = createEvent();
+        EventMessage<?> event = createDomainEvent();
 
         ProcessingContext context = StubProcessingContext.forMessage(event);
         testSubject.handle(event, context, Segment.ROOT_SEGMENT);
@@ -68,7 +68,7 @@ class SimpleEventHandlerInvokerTest {
 
     @Test
     void repeatedEventPublication() throws Exception {
-        List<? extends EventMessage<?>> events = createEvents(2);
+        List<? extends EventMessage<?>> events = createDomainEvents(2);
 
         for (EventMessage<?> event : events) {
             testSubject.handle(event, StubProcessingContext.forMessage(event), Segment.ROOT_SEGMENT);

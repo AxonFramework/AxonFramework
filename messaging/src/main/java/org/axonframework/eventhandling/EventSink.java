@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Arrays;
@@ -29,9 +30,8 @@ import java.util.function.Function;
  * <p>
  * When a {@link ProcessingContext} is provided, the publication is typically staged in the
  * {@link ProcessingContext#onPostInvocation(Function) post invocation} phase of the {@code ProcessingContext}. As a
- * consequence, the result of publication will be made apparent in the {@code ProcessingContext}. When using
- * {@link #publish(EventMessage[])} instead, the result of publication is carried in the resulting
- * {@link CompletableFuture}.
+ * consequence, the result of publication will be made apparent in the {@code ProcessingContext}. When providing no
+ * {@code ProcessingContext}, the result of publication is carried in the resulting {@link CompletableFuture}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -40,50 +40,42 @@ import java.util.function.Function;
 public interface EventSink {
 
     /**
-     * Publishes the given {@code events} as part of a phase on the given {@code processingContext} in this event sink.
+     * Publishes the given {@code events} within the given {@code context}, when present.
      * <p>
-     * Typically, the {@link ProcessingContext#onPostInvocation(Function) post invocation} phase is used for this
-     * purpose. As a consequence, the result of publication will be made apparent in the {@code ProcessingContext}.
-     *
-     * @param processingContext The {@link ProcessingContext} to attach the publication step into.
-     * @param events            The {@link EventMessage events} to publish in this sink.
-     */
-    default void publish(@Nonnull ProcessingContext processingContext,
-                         EventMessage<?>... events) {
-        publish(processingContext, Arrays.asList(events));
-    }
-
-    /**
-     * Publishes the given {@code events} as part of a phase on the given {@code processingContext} in this event sink.
+     * When present, the {@link ProcessingContext#onPostInvocation(Function) post invocation} phase is used to publish
+     * the {@code events}. As a consequence, the resulting {@link CompletableFuture} completes when the {@code events}
+     * are staged in that phase.
      * <p>
-     * Typically, the {@link ProcessingContext#onPostInvocation(Function) post invocation} phase is used for this
-     * purpose. As a consequence, the result of publication will be made apparent in the {@code ProcessingContext}.
+     * When no {@link ProcessingContext} is provided, implementers of this interface may choose to create a
+     * {@code ProcessingContext} when necessary.
      *
-     * @param processingContext The {@link ProcessingContext} to attach the publication step into.
-     * @param events            The {@link EventMessage events} to publish in this sink.
+     * @param context The processing context, if any, to publish the given {@code events} in.
+     * @param events  The {@link EventMessage events} to publish in this sink.
+     * @return A {@link CompletableFuture} of {@link Void}. When this completes and a non-null {@code context} was
+     * given, this means the {@code events} have been successfully staged. When a null {@code context} was provided,
+     * successful completion of this future means the {@code events} where published.
      */
-    default void publish(@Nonnull ProcessingContext processingContext,
-                         @Nonnull List<EventMessage<?>> events) {
-        processingContext.onPostInvocation(c -> publish(events));
+    default CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                            EventMessage<?>... events) {
+        return publish(context, Arrays.asList(events));
     }
 
     /**
-     * Publishes the given {@code events} in this event sink.
+     * Publishes the given {@code events} within the given {@code context}, when present.
+     * <p>
+     * When present, the {@link ProcessingContext#onPostInvocation(Function) post invocation} phase is used to publish
+     * the {@code events}. As a consequence, the resulting {@link CompletableFuture} completes when the {@code events}
+     * are staged in that phase.
+     * <p>
+     * When no {@link ProcessingContext} is provided, implementers of this interface may choose to create a
+     * {@code ProcessingContext} when necessary.
      *
+     * @param context The processing context, if any, to publish the given {@code events} in.
      * @param events  The {@link EventMessage events} to publish in this sink.
-     * @return A {@link CompletableFuture} of {@link Void}. Publication succeeded when the returned
-     * {@code CompletableFuture} completes successfully.
+     * @return A {@link CompletableFuture} of {@link Void}. When this completes and a non-null {@code context} was
+     * given, this means the {@code events} have been successfully staged. When a null {@code context} was provided,
+     * successful completion of this future means the {@code events} where published.
      */
-    default CompletableFuture<Void> publish(EventMessage<?>... events) {
-        return publish(Arrays.asList(events));
-    }
-
-    /**
-     * Publishes the given {@code events} in this event sink.
-     *
-     * @param events  The {@link EventMessage events} to publish in this sink.
-     * @return A {@link CompletableFuture} of {@link Void}. Publication succeeded when the returned
-     * {@code CompletableFuture} completes successfully.
-     */
-    CompletableFuture<Void> publish(@Nonnull List<EventMessage<?>> events);
+    CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                    @Nonnull List<EventMessage<?>> events);
 }

@@ -30,79 +30,87 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefin
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.repository.Repository;
+import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link AnnotatedEventSourcedEntityBuilder}.
+ * Test class validating the {@link AnnotatedEventSourcedEntityModule}.
  *
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  */
-class AnnotatedEventSourcedEntityBuilderTest {
+class AnnotatedEventSourcedEntityModuleTest {
 
     private Configuration parentConfiguration;
+    private StubLifecycleRegistry lifecycleRegistry;
 
     @BeforeEach
     void setUp() {
         parentConfiguration = EventSourcingConfigurer.create().build();
+        lifecycleRegistry = new StubLifecycleRegistry();
     }
 
     @Test
     void annotatedEntityThrowsNullPointerExceptionForNullIdentifierType() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> EventSourcedEntityBuilder.annotatedEntity(null, Course.class));
+        assertThrows(NullPointerException.class, () -> EventSourcedEntityModule.annotated(null, Course.class));
     }
 
     @Test
     void annotatedEntityThrowsNullPointerExceptionForNullEntityType() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> EventSourcedEntityBuilder.annotatedEntity(CourseId.class, null));
+        assertThrows(NullPointerException.class, () -> EventSourcedEntityModule.annotated(CourseId.class, null));
     }
 
     @Test
     void annotatedEntityThrowsIllegalArgumentExceptionForNotAnnotatedEntity() {
         assertThrows(IllegalArgumentException.class,
-                     () -> EventSourcedEntityBuilder.annotatedEntity(CourseId.class, CourseId.class));
+                     () -> EventSourcedEntityModule.annotated(CourseId.class, CourseId.class));
     }
 
     @Test
     void entityNameCombinesIdentifierAndEntityTypeNames() {
         String expectedEntityName = "Course#CourseId";
 
-        EventSourcedEntityBuilder<CourseId, Course> testSubject =
-                EventSourcedEntityBuilder.annotatedEntity(CourseId.class, Course.class);
+        EventSourcedEntityModule<CourseId, Course> testSubject =
+                EventSourcedEntityModule.annotated(CourseId.class, Course.class);
 
         assertEquals(expectedEntityName, testSubject.entityName());
     }
 
     @Test
     void repositoryConstructsEventSourcingRepositoryForEntityFactory() {
-        EventSourcedEntityBuilder<CourseId, Course> testSubject =
-                EventSourcedEntityBuilder.annotatedEntity(CourseId.class, Course.class);
+        EventSourcedEntityModule.annotated(CourseId.class, Course.class)
+                                .build(parentConfiguration, lifecycleRegistry);
+        lifecycleRegistry.start(parentConfiguration);
 
-        Repository<CourseId, Course> result = testSubject.repository()
-                                                         .build(parentConfiguration);
+        StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
+        Repository<CourseId, Course> result = stateManager.repository(Course.class, CourseId.class);
 
         assertInstanceOf(EventSourcingRepository.class, result);
     }
 
     @Test
     void customCriteriaResolverIsPresentOnResultingEventSourcingRepository() {
+        EventSourcedEntityModule.annotated(CourseId.class, CustomCriteriaResolverCourse.class)
+                                .build(parentConfiguration, lifecycleRegistry);
+        lifecycleRegistry.start(parentConfiguration);
         ComponentDescriptor componentDescriptor = mock(ComponentDescriptor.class);
-        EventSourcedEntityBuilder<CourseId, CustomCriteriaResolverCourse> testSubject =
-                EventSourcedEntityBuilder.annotatedEntity(CourseId.class, CustomCriteriaResolverCourse.class);
 
-        Repository<CourseId, CustomCriteriaResolverCourse> result = testSubject.repository()
-                                                                               .build(parentConfiguration);
+        StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
+        Repository<CourseId, CustomCriteriaResolverCourse> result = stateManager.repository(CustomCriteriaResolverCourse.class,
+                                                                                            CourseId.class);
 
         assertInstanceOf(EventSourcingRepository.class, result);
         result.describeTo(componentDescriptor);
@@ -112,11 +120,13 @@ class AnnotatedEventSourcedEntityBuilderTest {
     @Test
     void customEntityFactoryIsPresentOnResultingEventSourcingRepository() {
         ComponentDescriptor componentDescriptor = mock(ComponentDescriptor.class);
-        EventSourcedEntityBuilder<CourseId, CustomEntityFactoryCourse> testSubject =
-                EventSourcedEntityBuilder.annotatedEntity(CourseId.class, CustomEntityFactoryCourse.class);
+        EventSourcedEntityModule.annotated(CourseId.class, CustomEntityFactoryCourse.class)
+                                .build(parentConfiguration, lifecycleRegistry);
+        lifecycleRegistry.start(parentConfiguration);
 
-        Repository<CourseId, CustomEntityFactoryCourse> result = testSubject.repository()
-                                                                            .build(parentConfiguration);
+        StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
+        Repository<CourseId, CustomEntityFactoryCourse> result = stateManager.repository(CustomEntityFactoryCourse.class,
+                                                                                         CourseId.class);
 
         assertInstanceOf(EventSourcingRepository.class, result);
         result.describeTo(componentDescriptor);
@@ -125,10 +135,12 @@ class AnnotatedEventSourcedEntityBuilderTest {
 
     @Test
     void metaAnnotatedEventSourcedEntityConstructsAnEventSourcingRepository() {
-        Repository<CourseId, MetaAnnotatedCourse> result =
-                EventSourcedEntityBuilder.annotatedEntity(CourseId.class, MetaAnnotatedCourse.class)
-                                         .repository()
-                                         .build(parentConfiguration);
+        StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
+        EventSourcedEntityModule.annotated(CourseId.class, MetaAnnotatedCourse.class)
+                                .build(parentConfiguration, lifecycleRegistry);
+        lifecycleRegistry.start(parentConfiguration);
+        Repository<CourseId, MetaAnnotatedCourse> result = stateManager.repository(MetaAnnotatedCourse.class,
+                                                                                   CourseId.class);
 
         assertInstanceOf(EventSourcingRepository.class, result);
     }
@@ -186,6 +198,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
         @Override
         public EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> createFactory(
                 @Nonnull Class<CustomEntityFactoryCourse> entityType,
+                @Nonnull Set<Class<? extends CustomEntityFactoryCourse>> entitySubTypes,
                 @Nonnull Class<CourseId> idType,
                 @Nonnull Configuration configuration
         ) {

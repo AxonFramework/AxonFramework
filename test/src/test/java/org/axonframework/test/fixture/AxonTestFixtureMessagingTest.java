@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -185,8 +186,8 @@ class AxonTestFixtureMessagingTest {
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"), Map.of("sample", "metaValue"))
                    .then()
                    .success()
-                   .resultMessageSatisfies(c -> assertEquals(c.getPayload(),
-                                                             new CommandResult("Result name-1", "metaValue")));
+                   .resultMessageSatisfies(c -> assertEquals(new CommandResult("Result name-1", "metaValue"),
+                                                             c.getPayload()));
         }
 
         @Test
@@ -213,9 +214,9 @@ class AxonTestFixtureMessagingTest {
         void givenEventWhenCommandThenExpectEvents() {
             var configurer = MessagingConfigurer.create();
             var studentEvents = new ArrayList<>();
-            configurer.registerEventSink(c -> (events) -> {
+            configurer.registerEventSink(c -> (context, events) -> {
                 studentEvents.addAll(events);
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             });
             configurer.registerCommandBus(
                     c -> new SimpleCommandBus()
@@ -392,12 +393,12 @@ class AxonTestFixtureMessagingTest {
             var configurer = MessagingConfigurer.create();
             AtomicBoolean eventHandled = new AtomicBoolean(false);
             registerChangeStudentNameHandlerReturnsSingle(configurer);
-            configurer.registerEventSink(c -> (events) -> {
+            configurer.registerEventSink(c -> (context, events) -> {
                 if (!eventHandled.getAndSet(true)) {
                     var commandGateway = c.getComponent(CommandGateway.class);
                     commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
                 }
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             });
 
             var fixture = AxonTestFixture.with(configurer);
@@ -413,12 +414,12 @@ class AxonTestFixtureMessagingTest {
             var configurer = MessagingConfigurer.create();
             AtomicBoolean eventHandled = new AtomicBoolean(false);
             registerChangeStudentNameHandlerReturnsSingle(configurer);
-            configurer.registerEventSink(c -> (events) -> {
+            configurer.registerEventSink(c -> (context, events) -> {
                 if (!eventHandled.getAndSet(true)) {
                     var commandGateway = c.getComponent(CommandGateway.class);
                     commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
                 }
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             });
 
             var fixture = AxonTestFixture.with(configurer);
@@ -438,8 +439,9 @@ class AxonTestFixtureMessagingTest {
         @Test
         void whenEventHandlerFailsThenException() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerEventSink(c -> (events) -> CompletableFuture.failedFuture(new RuntimeException(
-                    "Simulated failure")));
+            configurer.registerEventSink(
+                    c -> (context, events) -> CompletableFuture.failedFuture(new RuntimeException("Simulated failure"))
+            );
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -453,7 +455,7 @@ class AxonTestFixtureMessagingTest {
         @Test
         void whenEventHandlerDoesNotFailThenSuccess() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerEventSink(c -> (events) -> CompletableFuture.completedFuture(null));
+            configurer.registerEventSink(c -> (context, events) -> FutureUtils.emptyCompletedFuture());
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -467,7 +469,7 @@ class AxonTestFixtureMessagingTest {
         @Test
         void whenEventsHandlerDoesNotFailThenSuccess() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerEventSink(c -> (events) -> CompletableFuture.completedFuture(null));
+            configurer.registerEventSink(c -> (context, events) -> FutureUtils.emptyCompletedFuture());
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -488,8 +490,9 @@ class AxonTestFixtureMessagingTest {
             @Test
             void ifExpectSuccessButException() {
                 var configurer = MessagingConfigurer.create();
-                configurer.registerEventSink(c -> (events) -> CompletableFuture.failedFuture(new RuntimeException(
-                        "Simulated failure")));
+                configurer.registerEventSink(c -> (context, events) -> CompletableFuture.failedFuture(
+                        new RuntimeException("Simulated failure")
+                ));
 
                 var fixture = AxonTestFixture.with(configurer);
 
@@ -505,7 +508,7 @@ class AxonTestFixtureMessagingTest {
             @Test
             void ifExpectExceptionButSuccess() {
                 var configurer = MessagingConfigurer.create();
-                configurer.registerEventSink(c -> (events) -> CompletableFuture.completedFuture(null));
+                configurer.registerEventSink(c -> (context, events) -> FutureUtils.emptyCompletedFuture());
 
                 var fixture = AxonTestFixture.with(configurer);
 
@@ -523,8 +526,9 @@ class AxonTestFixtureMessagingTest {
             @Test
             void whenEventHandlerFailsThenException() {
                 var configurer = MessagingConfigurer.create();
-                configurer.registerEventSink(c -> (events) -> CompletableFuture.failedFuture(new IllegalStateException(
-                        "Simulated failure")));
+                configurer.registerEventSink(c -> (context, events) -> CompletableFuture.failedFuture(
+                        new IllegalStateException("Simulated failure")
+                ));
 
                 var fixture = AxonTestFixture.with(configurer);
 

@@ -43,6 +43,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.axonframework.eventhandling.EventTestUtils.createEvent;
+import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -147,7 +149,7 @@ class SimpleEventStoreTest {
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
             var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
-                transaction.appendEvent(eventMessage(0));
+                transaction.appendEvent(createEvent(0));
                 return completedFuture(transaction);
             });
             var newAppendPosition = result.get(5, TimeUnit.SECONDS).appendPosition();
@@ -170,7 +172,7 @@ class SimpleEventStoreTest {
             var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
                 doConsumeAll(transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag())));
-                transaction.appendEvent(eventMessage(0));
+                transaction.appendEvent(createEvent(0));
                 return completedFuture(transaction);
             });
 
@@ -210,7 +212,7 @@ class SimpleEventStoreTest {
                 var secondStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
                 var thirdStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
                 doConsumeAll(firstStream, secondStream, thirdStream);
-                transaction.appendEvent(eventMessage(0));
+                transaction.appendEvent(createEvent(0));
                 return completedFuture(transaction);
             });
             var newAppendPosition = result.get(5, TimeUnit.SECONDS).appendPosition();
@@ -220,6 +222,42 @@ class SimpleEventStoreTest {
                                                                  .equals(new GlobalIndexConsistencyMarker(
                                                                          Math.min(Math.min(size1, size2), size3) - 1))),
                                                    anyList());
+        }
+    }
+
+    @Nested
+    class Publish {
+
+        @Test
+        void publishUsesTheGivenContextToInvokeTheTransactionInCompletingTheReturnedFutureImmediately() {
+            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+
+            EventMessage<?> testEventZero = createEvent(0);
+            EventMessage<?> testEventOne = createEvent(1);
+
+            UnitOfWork uow = new UnitOfWork();
+            uow.onPreInvocation(context -> {
+                   CompletableFuture<Void> result = testSubject.publish(context, testEventZero, testEventOne);
+                   assertTrue(result.isDone());
+                   assertFalse(result.isCompletedExceptionally());
+                   return result;
+               })
+               .runOnInvocation(context -> verifyNoInteractions(mockStorageEngine))
+               .runOnCommit(context -> verify(mockStorageEngine).appendEvents(any(), anyList()));
+
+            awaitSuccessfulCompletion(uow.execute());
+        }
+
+        @Test
+        void publishConstructsNewUnitOfWorkToInvokeTheTransactionIn() {
+            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+
+            CompletableFuture<Void> result = testSubject.publish(null, createEvent(0));
+            awaitSuccessfulCompletion(result);
         }
     }
 
@@ -238,7 +276,7 @@ class SimpleEventStoreTest {
     private static @Nonnull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
         return MessageStream.fromStream(
                 IntStream.range(0, messageCount).boxed(),
-                SimpleEventStoreTest::eventMessage,
+                EventTestUtils::createEvent,
                 i -> ConsistencyMarker.addToContext(Context.empty(), new GlobalIndexConsistencyMarker(i))
         );
     }
@@ -256,10 +294,5 @@ class SimpleEventStoreTest {
             assertionFailedError.addSuppressed(e);
             throw assertionFailedError;
         }
-    }
-
-    // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?
-    private static EventMessage<?> eventMessage(int seq) {
-        return EventTestUtils.asEventMessage("Event[" + seq + "]");
     }
 }
