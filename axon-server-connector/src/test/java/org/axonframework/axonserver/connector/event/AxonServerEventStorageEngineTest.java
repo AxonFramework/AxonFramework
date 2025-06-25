@@ -24,10 +24,8 @@ import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
-import org.testcontainers.images.ImagePullPolicy;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
 import java.util.Map;
