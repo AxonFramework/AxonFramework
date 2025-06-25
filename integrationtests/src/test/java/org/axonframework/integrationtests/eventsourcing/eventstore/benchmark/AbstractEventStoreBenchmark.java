@@ -22,10 +22,12 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
+import org.axonframework.eventstreaming.LegacyStreamableEventSource;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.Serializer;
@@ -95,12 +97,16 @@ public abstract class AbstractEventStoreBenchmark {
                                                  }
 
                                          ).build();
-        this.eventProcessor = TrackingEventProcessor.builder()
+        this.eventProcessor = PooledStreamingEventProcessor.builder()
                                                     .name("benchmark")
                                                     .eventHandlerInvoker(eventHandlerInvoker)
-                                                    .messageSource(eventStore)
+                                                    .eventSource(new LegacyStreamableEventSource<>(eventStore))
                                                     .tokenStore(new InMemoryTokenStore())
                                                     .transactionManager(NoTransactionManager.INSTANCE)
+                                                    .coordinatorExecutor(Executors.newSingleThreadScheduledExecutor(
+                                                            new AxonThreadFactory("benchmark-coordinator")))
+                                                    .workerExecutor(Executors.newScheduledThreadPool(2,
+                                                            new AxonThreadFactory("benchmark-worker")))
                                                     .build();
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }
