@@ -187,7 +187,7 @@ class InfraConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since MessageHandlerRegistrar isn't started")
+    @Disabled("TODO #3498")
     void configurerModuleRegisteredHandlerEnhancersAreIncluded() {
         testApplicationContext.withUserConfiguration(HandlerEnhancerConfigurerModuleContext.class).run(context -> {
             assertThat(context).hasBean("handlerInvoked")

@@ -61,7 +61,7 @@ public class AxonHandlerConfigurationTest {
     private CommandGateway commandGateway;
 
     @Test
-    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since MessageHandlerRegistrar isn't started")
+    @Disabled("TODO #3498")
     void messageRoutedToCorrectMethod() throws Exception {
         assertEquals("Command: info", commandGateway.sendAndWait("info", String.class));
         assertEquals("Query: info", queryGateway.query("info", String.class).get());
