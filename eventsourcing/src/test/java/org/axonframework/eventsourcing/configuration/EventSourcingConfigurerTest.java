@@ -53,6 +53,11 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
         return testSubject == null ? EventSourcingConfigurer.create() : testSubject;
     }
 
+    @Override
+    public boolean supportsOverriding() {
+        return true;
+    }
+
     @Test
     void defaultComponents() {
         Configuration result = testSubject.build();

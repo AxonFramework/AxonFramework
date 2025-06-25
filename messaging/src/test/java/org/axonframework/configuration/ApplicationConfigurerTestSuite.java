@@ -72,6 +72,13 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
      */
     public abstract C createConfigurer();
 
+    /**
+     * Boolean stating whether the {@link ApplicationConfigurer} under test supports {@link Component} overriding.
+     *
+     * @return {@code true} when {@link Component Components} can be overridden, {@code false} otherwise.
+     */
+    public abstract boolean supportsOverriding();
+
     protected static class TestComponent {
 
         private final String state;
@@ -320,6 +327,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void registeringComponentsForTheSameTypeReplacesThePreviousComponentBuilder() {
+            Assumptions.assumeTrue(supportsOverriding(), "Ignore test since Component overriding is not supported.");
+
             TestComponent testComponent = new TestComponent("replaced-component");
             TestComponent expectedComponent = new TestComponent("the-winner");
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent)
@@ -333,6 +342,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void registeringComponentsForTheSameTypeAndNameReplacesThePreviousComponentBuilder() {
+            Assumptions.assumeTrue(supportsOverriding(), "Ignore test since Component overriding is not supported.");
+
             TestComponent testComponent = new TestComponent("replaced-component");
             TestComponent expectedComponent = new TestComponent("the-winner");
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, "name", c -> testComponent)
@@ -784,6 +795,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void registeredEnhancersCanReplaceComponents() {
+            Assumptions.assumeTrue(supportsOverriding(), "Ignore test since Component overriding is not supported.");
+
             TestComponent expected = new TestComponent("replacement");
 
             testSubject.componentRegistry(

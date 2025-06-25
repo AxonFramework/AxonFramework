@@ -39,6 +39,11 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
         return testSubject == null ? ModellingConfigurer.create() : testSubject;
     }
 
+    @Override
+    public boolean supportsOverriding() {
+        return true;
+    }
+
     @Test
     void registerStatefulCommandHandlingModuleAddsAModuleConfiguration() {
         StateBasedEntityModule<String, Object> testEntityBuilder =
