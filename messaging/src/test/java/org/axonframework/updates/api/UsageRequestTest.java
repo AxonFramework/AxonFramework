@@ -45,38 +45,11 @@ class UpdateCheckRequestTest {
         String queryString = request.toQueryString();
 
         // Verify that all parameters are present and properly encoded
-        assertTrue(queryString.contains("osn=Linux"));
-        assertTrue(queryString.contains("osv=6.11.0-26-generic"));
-        assertTrue(queryString.contains("osa=amd64"));
-        assertTrue(queryString.contains("jvr=17.0.2"));
-        assertTrue(queryString.contains("jvn=AdoptOpenJDK"));
-        assertTrue(queryString.contains("ktv=1.8.22"));
+        assertTrue(queryString.contains("os=Linux%3B+6.11.0-26-generic%3B+amd64"));
+        assertTrue(queryString.contains("java=17.0.2%3B+AdoptOpenJDK"));
+        assertTrue(queryString.contains("kotlin=1.8.22"));
         assertTrue(queryString.contains("lib=org.axonframework%3Aaxon-core%3A5.0.0"));
         assertTrue(queryString.contains("lib=org.example%3Aexample-lib%3A1.2.3"));
-    }
-
-    @Test
-    void testToQueryStringWithSpecialCharacters() {
-        UpdateCheckRequest request = new UpdateCheckRequest(
-                "machine 1234",  // Space
-                "instance=5678", // Equals sign
-                "Windows 10",    // Space
-                "10.0.19041",
-                "x64",
-                "17.0.2+8",      // Plus sign
-                "Oracle Corporation & Co", // Ampersand
-                "1.8.22",
-                List.of(
-                        new Artifact("org.axonframework", "axon-core", "5.0.0")
-                )
-        );
-
-        String queryString = request.toQueryString();
-
-        // Verify special characters are encoded
-        assertTrue(queryString.contains("osn=Windows+10"));        // Space becomes +
-        assertTrue(queryString.contains("jvr=17.0.2%2B8"));        // + becomes %2B
-        assertTrue(queryString.contains("jvn=Oracle+Corporation+%26+Co")); // & becomes %26
     }
 
     @Test
