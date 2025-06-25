@@ -276,6 +276,7 @@ public class SpringComponentRegistry implements
      * <ol>
      *     <li>Look for additional {@link ConfigurationEnhancer ConfigurationEnhancers} and {@link #registerEnhancer(ConfigurationEnhancer) registers} them.</li>
      *     <li>Invoke {@link ConfigurationEnhancer#enhance(ComponentRegistry)} on all registered enhancers.</li>
+     *     <li>Decorate all registered {@code Components} by invoking all {@link #registerDecorator(DecoratorDefinition) registered decorators}.</li>
      *     <li>Registers <b>all</b> {@link Component Components} with the Application Context.</li>
      *     <li>Looks for any {@link Module Modules} and {@link #registerModule(Module) registers} them.</li>
      *     <li>Builds all registered {@code Modules} so that they become available to {@link Configuration#getModuleConfigurations()}.</li>
@@ -289,6 +290,7 @@ public class SpringComponentRegistry implements
         }
         scanForConfigurationEnhancers();
         invokeEnhancers();
+        decorateComponents();
         registerComponentsWithApplicationContext();
         scanForModules();
         buildModules(lifecycleRegistry);
@@ -334,6 +336,22 @@ public class SpringComponentRegistry implements
         for (ConfigurationEnhancer enhancer : distinctAndOrderedEnhancers) {
             if (!disabledEnhancers.contains(enhancer.getClass())) {
                 enhancer.enhance(this);
+            }
+        }
+    }
+
+    /**
+     * Decorate all components that have been {@link #registerComponent(ComponentDefinition) registered directly} or
+     * registered through a {@link ConfigurationEnhancer}.
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void decorateComponents() {
+        decorators.sort(Comparator.comparingInt(DecoratorDefinition.CompletedDecoratorDefinition::order));
+        for (DecoratorDefinition.CompletedDecoratorDefinition decorator : decorators) {
+            for (Component.Identifier id : components.identifiers()) {
+                if (decorator.matches(id)) {
+                    components.replace(id, decorator::decorate);
+                }
             }
         }
     }
