@@ -195,13 +195,25 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     /**
      * Invoke all the {@link #registerEnhancer(ConfigurationEnhancer) registered}
      * {@link ConfigurationEnhancer enhancers} on this {@code ComponentRegistry} implementation in their
-     * {@link ConfigurationEnhancer#order()}. This will ensure all sensible default components and decorators are in
-     * place from these enhancers.
+     * {@link ConfigurationEnhancer#order()}.
+     * <p>
+     * This will ensure all sensible default components and decorators are in place from these enhancers.
+     * <p>
+     * The disabledEnhancers filter is invoked in a for-loop instead of as a Stream operation, as a
+     * {@code ConfigurationEnhancer} can add more enhancers that should be disabled. By making the filter part of the
+     * stream operation, that update is lost.
      */
     private void invokeEnhancers() {
-        enhancers.stream()
-                 .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
-                 .forEach(enhancer -> enhancer.enhance(this));
+        List<ConfigurationEnhancer>
+                distinctAndOrderedEnhancers = enhancers.stream()
+                                                       .distinct()
+                                                       .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
+                                                       .toList();
+        for (ConfigurationEnhancer enhancer : distinctAndOrderedEnhancers) {
+            if (!disabledEnhancers.contains(enhancer.getClass())) {
+                enhancer.enhance(this);
+            }
+        }
     }
 
     /**

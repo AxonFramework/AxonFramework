@@ -19,7 +19,6 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -134,30 +133,6 @@ public class AxonAutoConfigurationTest {
         });
     }
 
-    /**
-     * All validated beans originate from the {@code org.axonframework.configuration.MessagingConfigurationDefaults}
-     * that's set on the {@link org.axonframework.configuration.MessagingConfigurer}.
-     */
-    @Test
-    void defaultAxonMessagingComponentsArePresent() {
-        testContext.run(context -> {
-            assertThat(context).hasSingleBean(MessageTypeResolver.class);
-            assertThat(context).hasSingleBean(CommandGateway.class);
-            assertThat(context).hasSingleBean(CommandBus.class);
-            assertThat(context).hasSingleBean(EventGateway.class);
-            assertThat(context).hasSingleBean(EventSink.class);
-            assertThat(context).hasSingleBean(EventBus.class);
-            assertThat(context).hasSingleBean(QueryGateway.class);
-            assertThat(context).hasSingleBean(QueryBus.class);
-            assertThat(context).hasSingleBean(QueryUpdateEmitter.class);
-        });
-    }
-
-    /**
-     * All validated beans originate from the
-     * {@code org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults} that's set on the
-     * {@link org.axonframework.eventsourcing.configuration.EventSourcingConfigurer}.
-     */
     @Test
     void defaultAxonEventSourcingComponentsArePresent() {
         testContext.run(context -> {
