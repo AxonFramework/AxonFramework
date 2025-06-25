@@ -394,6 +394,42 @@ public void streamingEvents(
 }
 ```
 
+## Event Processors
+
+### TrackingEventProcessor Removal
+
+Axon Framework 5 introduces a significant change in the event processing architecture with the **removal of 
+`TrackingEventProcessor`** and the elevation of `PooledStreamingEventProcessor` as the default and recommended 
+streaming event processor.
+
+The `TrackingEventProcessor` and its associated `TrackingEventProcessorConfiguration` have been **completely removed** 
+from Axon Framework 5. This decision was made for several strategic reasons:
+- Supporting two similar event processing implementations created unnecessary complexity and 
+   development overhead, preventing the team from focusing on advancing the more modern solution.
+- The decision allows the Axon team to concentrate their engineering efforts on polishing 
+   and optimizing `PooledStreamingEventProcessor` rather than maintaining legacy code.
+
+The shift from `TrackingEventProcessor` to `PooledStreamingEventProcessor` introduces one important behavioral change:
+
+**Segment Processing Coordination:**
+- **TrackingEventProcessor**: Segments ran independently at their own pace
+- **PooledStreamingEventProcessor**: Segments are coordinated and process **as fast as the slowest segment**
+
+**Why This Change is Actually Better:**
+- **Discourages Bad Practices**: Slow segments indicate performance issues that should be addressed
+- **Encourages Optimization**: Forces developers to optimize event handlers properly  
+- **⚖Better System Health**: Prevents cascading problems from uneven IO resource utilization
+
+### Impact Assessment
+
+This change primarily affects users who:
+- Directly configured `TrackingEventProcessor` instances
+- Used `tracking` mode in the Spring Boot configuration for event processors
+- Relied on segment-independent processing speeds
+
+Most users leveraging Axon's default configurations will experience this as a **performance improvement** with minimal 
+migration effort required.
+
 ## ApplicationConfigurer and Configuration
 
 The configuration API of Axon Framework has seen a big adjustment. You can essentially say it has been turned upside
@@ -1242,6 +1278,8 @@ This section contains five tables:
 | org.axonframework.config.LifecycleHandlerInspector                                       | [Lifecycle management](#component-lifecycle-management) is now only done lazy, eliminating the need for concrete component scanning.           |
 | org.axonframework.lifecycle.StartHandler                                                 | [Lifecycle management](#component-lifecycle-management) is now only done lazy, eliminating the need for concrete component scanning.           |
 | org.axonframework.lifecycle.ShutdownHandler                                              | [Lifecycle management](#component-lifecycle-management) is now only done lazy, eliminating the need for concrete component scanning.           |
+| org.axonframework.eventhandling.TrackingEventProcessor                                   | Removed in favor of `PooledStreamingEventProcessor` (see [Event Processors](#event-processors)).                                               |
+| org.axonframework.eventhandling.TrackingEventProcessorConfiguration                      | Removed along with `TrackingEventProcessor` (see [Event Processors](#event-processors)).                                                       |
 
 ### Marked for removal Classes
 
@@ -1345,7 +1383,7 @@ This section contains four subsections, called:
 | `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                          | Fully replaced by start and shutdown handler registration.                                  |
 | `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                      | Each Configurer now has get optional operation replacing this functionality.                |
 | `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                     | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation.    |
-| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Leftover behavior to support aggregate validation on subsequent invocations.                |
+| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Version-based loading is no longer supported due to limited use by the community.           |
 | `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)`    | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`.        |
 | `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String)`                           | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).        | 
 | `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String, long)`                     | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).        | 
@@ -1366,6 +1404,8 @@ This section contains four subsections, called:
 | `org.axonframework.modelling.command.LockAwareAggregate#version()`                                   | Version-based loading is no longer supported due to limited use by the community.           |
 | `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#startScheduler(boolean)`  | [Lifecycle management](#component-lifecycle-management) has become a configuration concern. |
 | `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#stopScheduler(boolean)`   | [Lifecycle management](#component-lifecycle-management) has become a configuration concern. |
+| `org.axonframework.config.EventProcessingConfigurer#registerTrackingEventProcessor`                 | Removed along with `TrackingEventProcessor`. Use `registerPooledStreamingEventProcessor` instead. |
+| `org.axonframework.config.EventProcessingConfigurer#registerTrackingEventProcessorConfiguration`    | Removed along with `TrackingEventProcessorConfiguration`. Use `registerPooledStreamingEventProcessorConfiguration` instead. |
 
 ### Changed Method return types
 
