@@ -22,6 +22,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.ExceptionUtils;
 import org.axonframework.common.ProcessUtils;
+import org.axonframework.common.Registration;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -29,6 +30,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -95,10 +97,11 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * @author Christophe Bouhier
  * @since 3.0
  */
-public class TrackingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor {
+public class TrackingEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
 
+    private final EventProcessorOperations eventProcessorOperations;
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
     private final Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenBuilder;
@@ -135,7 +138,15 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * @param builder the {@link Builder} used to instantiate a {@code TrackingEventProcessor} instance
      */
     protected TrackingEventProcessor(Builder builder) {
-        super(builder);
+        builder.validate();
+        this.eventProcessorOperations = new EventProcessorOperations.Builder()
+                .name(builder.name())
+                .eventHandlerInvoker(builder.eventHandlerInvoker())
+                .errorHandler(builder.errorHandler())
+                .spanFactory(builder.spanFactory())
+                .messageMonitor(builder.messageMonitor())
+                .streamingProcessor(true)
+                .build();
         TrackingEventProcessorConfiguration config = builder.trackingEventProcessorConfiguration;
         this.tokenClaimInterval = config.getTokenClaimInterval();
         this.eventAvailabilityTimeout = config.getEventAvailabilityTimeout();
@@ -175,6 +186,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private Instant now() {
         return GenericEventMessage.clock.instant();
+    }
+
+    @Override
+    public String getName() {
+        return eventProcessorOperations.name();
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        return eventProcessorOperations.handlerInterceptors();
     }
 
     /**
@@ -471,7 +492,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
             var unitOfWork = unitOfWorkFactory.create();
             instructTokenClaim(segment, unitOfWork, finalLastToken);
-            processInUnitOfWork(batch, unitOfWork, processingSegments).join();
+            eventProcessorOperations.processInUnitOfWork(batch, unitOfWork, processingSegments).join();
 
             TrackerStatus previousStatus = activeSegments.get(segment.getSegmentId());
             TrackerStatus updatedStatus =
@@ -517,10 +538,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private void ignoreEvent(BlockingStream<TrackedEventMessage<?>> eventStream,
                              TrackedEventMessage<?> trackedEventMessage) {
-        if (!canHandleType(trackedEventMessage.getPayloadType())) {
+        if (!eventProcessorOperations.canHandleType(trackedEventMessage.getPayloadType())) {
             eventStream.skipMessagesWithPayloadTypeOf(trackedEventMessage);
         }
-        reportIgnored(trackedEventMessage);
+        eventProcessorOperations.reportIgnored(trackedEventMessage);
     }
 
     /**
@@ -550,7 +571,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     protected boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Collection<Segment> segments)
             throws Exception {
         for (Segment segment : segments) {
-            if (canHandle(eventMessage, context, segment)) {
+            if (eventProcessorOperations.canHandle(eventMessage, context, segment)) {
                 return true;
             }
         }
@@ -712,6 +733,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             return emptyCompletedFuture();
         });
         joinAndUnwrap(future);
+    }
+
+    private EventHandlerInvoker eventHandlerInvoker() {
+        return eventProcessorOperations.eventHandlerInvoker();
     }
 
     @Override
@@ -901,6 +926,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         }
     }
 
+    @Override
+    public Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
+        return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
+    }
+
     /**
      * Enum representing the possible states of the Processor
      */
@@ -951,7 +982,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * are
      * <b>hard requirements</b> and as such should be provided.
      */
-    public static class Builder extends AbstractEventProcessor.Builder {
+    public static class Builder extends EventProcessorBuilder {
 
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
