@@ -73,7 +73,7 @@ public class UpdateCheckerHttpClient {
         String url = userProperties.getUrl() + "?" + updateCheckRequest.toQueryString();
 
         try {
-            logger.info("Reporting anonymous usage data to AxonIQ servers at: {}", url);
+            logger.debug("Reporting anonymous usage data to AxonIQ servers at: {}", url);
             HttpRequest request = HttpRequest
                     .newBuilder()
                     .uri(URI.create(url))
@@ -87,7 +87,7 @@ public class UpdateCheckerHttpClient {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
-                logger.debug("Failed to report anonymous usage data, received status code: {}", response.statusCode());
+                logger.info("Failed to report anonymous usage data, received status code: {}", response.statusCode());
                 return Optional.empty();
             }
             logger.debug("Reported anonymous usage data successfully, received response: {}", response.body());
