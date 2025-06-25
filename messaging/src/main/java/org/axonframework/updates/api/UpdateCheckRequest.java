@@ -62,12 +62,9 @@ public record UpdateCheckRequest(
      */
     public String toQueryString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("&osn=").append(encode(osName))
-          .append("&osv=").append(encode(osVersion))
-          .append("&osa=").append(encode(osArch))
-          .append("&jvr=").append(encode(jvmVersion))
-          .append("&jvn=").append(encode(jvmVendor))
-          .append("&ktv=").append(encode(kotlinVersion));
+        sb.append("&os=").append(encode(osName + "; " + osVersion + "; " + osArch))
+          .append("&java=").append(encode(jvmVersion + "; " + jvmVendor))
+          .append("&kotlin=").append(encode(kotlinVersion));
         for (Artifact library : libraries) {
             String stringLib = library.groupId() + ':' + library.artifactId() + ':' + library.version();
             sb.append("&lib=").append(encode(stringLib));
