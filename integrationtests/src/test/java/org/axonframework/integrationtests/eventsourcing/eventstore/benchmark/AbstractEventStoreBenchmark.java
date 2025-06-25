@@ -46,6 +46,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -66,6 +67,8 @@ public abstract class AbstractEventStoreBenchmark {
     private final LegacyEventStorageEngine storageEngine;
     private final int threadCount, batchSize, batchCount;
     private final ExecutorService executorService;
+    private final ScheduledExecutorService coordinatorExecutor;
+    private final ScheduledExecutorService workerExecutor;
     private final CountDownLatch remainingEvents;
     private final Set<String> readEvents = new HashSet<>();
 
@@ -82,6 +85,12 @@ public abstract class AbstractEventStoreBenchmark {
         this.batchSize = batchSize;
         this.batchCount = batchCount;
         this.remainingEvents = new CountDownLatch(getTotalEventCount());
+
+        // Create executors that we can manage lifecycle for
+        this.coordinatorExecutor = Executors.newSingleThreadScheduledExecutor(
+                new AxonThreadFactory("benchmark-coordinator"));
+        this.workerExecutor = Executors.newScheduledThreadPool(2,
+                new AxonThreadFactory("benchmark-worker"));
 
         SimpleEventHandlerInvoker eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
@@ -103,10 +112,8 @@ public abstract class AbstractEventStoreBenchmark {
                                                     .eventSource(new LegacyStreamableEventSource<>(eventStore))
                                                     .tokenStore(new InMemoryTokenStore())
                                                     .transactionManager(NoTransactionManager.INSTANCE)
-                                                    .coordinatorExecutor(Executors.newSingleThreadScheduledExecutor(
-                                                            new AxonThreadFactory("benchmark-coordinator")))
-                                                    .workerExecutor(Executors.newScheduledThreadPool(2,
-                                                            new AxonThreadFactory("benchmark-worker")))
+                                                    .coordinatorExecutor(coordinatorExecutor)
+                                                    .workerExecutor(workerExecutor)
                                                     .build();
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }
@@ -157,6 +164,8 @@ public abstract class AbstractEventStoreBenchmark {
         executorService.shutdown();
         eventProcessor.shutDown();
         eventStore.shutDown();
+        coordinatorExecutor.shutdown();
+        workerExecutor.shutdown();
     }
 
     protected List<Callable<Object>> createStorageJobs(int threadCount, int batchSize, int batchCount) {
