@@ -69,4 +69,9 @@ public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer
                     );
         }
     }
+
+    @Override
+    public int order() {
+        return Integer.MAX_VALUE; // Ensure this runs last so users can override components such as the UpdateCheckerReporter
+    }
 }
