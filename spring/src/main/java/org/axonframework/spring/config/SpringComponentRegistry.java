@@ -272,15 +272,20 @@ public class SpringComponentRegistry implements
     }
 
     /**
-     * Initializes the {@link ConfigurationEnhancer ConfigurationEnhancers} and retrieves all {@link Module Modules}.
+     * This method does the following steps in order:
+     * <ol>
+     *     <li>Look for additional {@link ConfigurationEnhancer ConfigurationEnhancers} and {@link #registerEnhancer(ConfigurationEnhancer) registers} them.</li>
+     *     <li>Invoke {@link ConfigurationEnhancer#enhance(ComponentRegistry)} on all registered enhancers.</li>
+     *     <li>Registers <b>all</b> {@link Component Components} with the Application Context.</li>
+     *     <li>Looks for any {@link Module Modules} and {@link #registerModule(Module) registers} them.</li>
+     *     <li>Builds all registered {@code Modules} so that they become available to {@link Configuration#getModuleConfigurations()}.</li>
+     * </ol>
      */
     void initialize(LifecycleRegistry lifecycleRegistry) {
         if (initialized.getAndSet(true)) {
             throw new IllegalStateException("Component registry has already been initialized.");
         }
-        if (enhancerScanning) {
-            scanForConfigurationEnhancers();
-        }
+        scanForConfigurationEnhancers();
         invokeEnhancers();
         registerComponentsWithApplicationContext();
         scanForModules();
@@ -292,7 +297,16 @@ public class SpringComponentRegistry implements
         * */
     }
 
+    /**
+     * Scans for additional {@link ConfigurationEnhancer ConfigurationEnhancers} through means of a
+     * {@link ServiceLoader}.
+     * <p>
+     * If {@link #disabledEnhancers disabled}, no {@code ServiceLoader} will be invoked.
+     */
     private void scanForConfigurationEnhancers() {
+        if (!enhancerScanning) {
+            return;
+        }
         ServiceLoader<ConfigurationEnhancer> enhancerLoader =
                 ServiceLoader.load(ConfigurationEnhancer.class, getClass().getClassLoader());
         enhancerLoader.stream()
@@ -325,6 +339,20 @@ public class SpringComponentRegistry implements
         }
     }
 
+    /**
+     * Registers all {@link Component Components} that are present in the {@link Components} collection with the Spring
+     * Application Context.
+     * <p>
+     * Each {@code Component} becomes a
+     * {@link BeanDefinitionBuilder#rootBeanDefinition(ResolvableType, Supplier) root bean definition}, as that allows
+     * us to use the {@link ResolvableType}. This is mandatory as we can otherwise not invoke the
+     * {@link Component#resolve(Configuration)} operations as the factory method for the bean (Spring otherwise assumes
+     * the given {@link Class} has the factory method named {@code "resolve"}).
+     * <p>
+     * The registration of {@code Components} should occur <b>after</b> all
+     * {@link ConfigurationEnhancer ConfigurationEnhancers} have enhanced the configuration. By doing so, we ensure that
+     * any defaults or overrides are present in the Application Context too.
+     */
     private void registerComponentsWithApplicationContext() {
         components.postProcessComponents(component -> {
             String name = ObjectUtils.getOrDefault(component.identifier().name(),
@@ -344,6 +372,11 @@ public class SpringComponentRegistry implements
         });
     }
 
+    /**
+     * Look for all beans of type {@link Module} in the {@link ConfigurableListableBeanFactory} set by the
+     * {@link #postProcessBeanFactory(ConfigurableListableBeanFactory)} method and
+     * {@link #registerModule(Module) registers} them.
+     */
     private void scanForModules() {
         beanFactory.getBeansOfType(Module.class)
                    .forEach((beanName, module) -> registerModule(module));
