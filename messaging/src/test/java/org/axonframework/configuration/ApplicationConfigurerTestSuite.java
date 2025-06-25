@@ -590,7 +590,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                (c, name, delegate) -> new TestComponent(delegate.state + "1"))
             );
 
-            TestComponent result = testSubject.build().getComponent(SpecificTestComponent.class);
+            TestComponent result = testSubject.build().getComponent(TestComponent.class);
 
             assertEquals(expectedState, result.state());
         }
@@ -606,7 +606,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                (c, name, delegate) -> new TestComponent(delegate.state + "1"))
             );
 
-            TestComponent result = testSubject.build().getComponent(SpecificTestComponent.class, testName);
+            TestComponent result = testSubject.build().getComponent(TestComponent.class, testName);
 
             assertEquals(expectedState, result.state());
         }
