@@ -63,6 +63,10 @@ Major API Changes
   The former typically represents an infrastructure component (e.g. the `CommandBus`) whereas modules are themselves
   configurers for a specific module of an application. For an exhaustive list of all the operations that have been
   removed, moved, or altered, see the [Configurer and Configuration](#applicationconfigurer-and-configuration) section.
+* Event Processors have undergone a significant change with the removal of `TrackingEventProcessor` and 
+  `TrackingEventProcessorConfiguration`. The `PooledStreamingEventProcessor` is now the default and recommended 
+  streaming event processor, providing enhanced performance and better resource utilization. See the 
+  [Event Processors](#event-processors) section for more details on this transition.
 * The Test Fixtures have been replaced by an approach that, instead of an Aggregate or Saga class, take in an
   `ApplicationConfigurer` instance. In doing so, test fixtures reflect the actual application configuration. This
   resolves the predicament that you need to configure your application twice (for production and testing), making the
