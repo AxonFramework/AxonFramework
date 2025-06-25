@@ -212,7 +212,7 @@ class EventProcessingModuleTest {
                                        .configureEventBus(c -> SimpleEventBus.builder().build())
                                        .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
                                                                 .registerEventHandler(c -> new TrackingEventHandler())
-                                                                .registerTrackingEventProcessor("tracking"));
+                                                                .registerPooledStreamingEventProcessor("pooled"));
 
         assertThrows(LifecycleHandlerInvocationException.class, configurer::start);
     }
@@ -537,33 +537,6 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void trackingProcessorsUsesConfiguredDefaultStreamableMessageSource() {
-        configurer.eventProcessing().configureDefaultStreamableMessageSource(c -> eventStoreOne);
-        configurer.eventProcessing().usingTrackingEventProcessors();
-        configurer.registerEventHandler(c -> new TrackingEventHandler());
-
-        LegacyConfiguration config = configurer.start();
-        Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
-                                                           .eventProcessor("tracking", TrackingEventProcessor.class);
-        assertTrue(processor.isPresent());
-        assertEquals(eventStoreOne, processor.get().getMessageSource());
-    }
-
-    @Test
-    void trackingProcessorsUsesSpecificSource() {
-        configurer.eventProcessing()
-                  .configureDefaultStreamableMessageSource(c -> eventStoreOne)
-                  .registerTrackingEventProcessor("tracking", c -> eventStoreTwo)
-                  .registerEventHandler(c -> new TrackingEventHandler());
-
-        LegacyConfiguration config = configurer.start();
-        Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
-                                                           .eventProcessor("tracking", TrackingEventProcessor.class);
-        assertTrue(processor.isPresent());
-        assertEquals(eventStoreTwo, processor.get().getMessageSource());
-    }
-
-    @Test
     void subscribingProcessorsUsesConfiguredDefaultSubscribableMessageSource() {
         configurer.eventProcessing().configureDefaultSubscribableMessageSource(c -> eventStoreOne);
         configurer.eventProcessing().usingSubscribingEventProcessors();
@@ -628,200 +601,6 @@ class EventProcessingModuleTest {
     void packageOfObject() {
         String expectedPackageName = EventProcessingModule.class.getPackage().getName();
         assertEquals(expectedPackageName, EventProcessingModule.packageOfObject(this));
-    }
-
-    @Test
-    void defaultTrackingEventProcessingConfiguration() throws NoSuchFieldException {
-        Object someHandler = new Object();
-        TrackingEventProcessorConfiguration testTepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(4);
-        configurer.eventProcessing()
-                  .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .byDefaultAssignTo("default")
-                  .registerEventHandler(config -> someHandler)
-                  .registerEventHandler(config -> new TrackingEventHandler())
-                  .registerTrackingEventProcessorConfiguration(config -> testTepConfig);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTrackingTep =
-                config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
-        assertTrue(resultTrackingTep.isPresent());
-        TrackingEventProcessor trackingTep = resultTrackingTep.get();
-        int trackingTepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), trackingTep);
-        assertEquals(4, trackingTepSegmentsSize);
-
-        Optional<TrackingEventProcessor> resultDefaultTep =
-                config.eventProcessingConfiguration().eventProcessor("default", TrackingEventProcessor.class);
-        assertTrue(resultDefaultTep.isPresent());
-        TrackingEventProcessor defaultTep = resultDefaultTep.get();
-        int defaultTepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), defaultTep);
-        assertEquals(4, defaultTepSegmentsSize);
-    }
-
-    @Test
-    void customTrackingEventProcessingConfiguration() throws NoSuchFieldException {
-        Object someHandler = new Object();
-        TrackingEventProcessorConfiguration testTepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(4);
-        configurer.eventProcessing()
-                  .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .byDefaultAssignTo("default")
-                  .registerEventHandler(config -> someHandler)
-                  .registerEventHandler(config -> new TrackingEventHandler())
-                  .registerTrackingEventProcessorConfiguration("tracking", config -> testTepConfig);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTrackingTep =
-                config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
-        assertTrue(resultTrackingTep.isPresent());
-        TrackingEventProcessor trackingTep = resultTrackingTep.get();
-        int trackingTepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), trackingTep);
-        assertEquals(4, trackingTepSegmentsSize);
-
-        Optional<TrackingEventProcessor> resultDefaultTep =
-                config.eventProcessingConfiguration().eventProcessor("default", TrackingEventProcessor.class);
-        assertTrue(resultDefaultTep.isPresent());
-        TrackingEventProcessor defaultTep = resultDefaultTep.get();
-        int defaultTepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), defaultTep);
-        assertEquals(1, defaultTepSegmentsSize);
-    }
-
-    @Test
-    void sagaTrackingProcessorConstructionUsesDefaultSagaProcessorConfigIfNoCustomizationIsPresent()
-            throws NoSuchFieldException {
-        configurer.eventProcessing()
-                  .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .registerSaga(Object.class);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTep =
-                config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
-        assertTrue(resultTep.isPresent());
-        TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
-        assertEquals(1, tepSegmentsSize);
-
-        Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(eventStoreTwo);
-        verify(eventStoreTwo, times(0)).createTailToken();
-        // The default Saga Config starts the stream at the head
-        verify(eventStoreTwo).createHeadToken();
-    }
-
-    @Test
-    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomProcessor()
-            throws NoSuchFieldException {
-        configurer.eventProcessing()
-                  .assignProcessingGroup(someGroup -> "custom-processor")
-                  .registerTrackingEventProcessor("custom-processor", config -> eventStoreOne)
-                  .registerSaga(CustomSaga.class);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTep = config.eventProcessingConfiguration().eventProcessor(
-                "custom-processor", TrackingEventProcessor.class
-        );
-        assertTrue(resultTep.isPresent());
-        TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
-        assertEquals(1, tepSegmentsSize);
-
-        Function<TrackingTokenSource, CompletableFuture<TrackingToken>> tepInitialTokenBuilder =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        TrackingToken actualInitialToken = tepInitialTokenBuilder.apply(eventStoreTwo).join();
-        // In absence of the default Saga Config, the stream starts at the tail
-        assertEquals(0, actualInitialToken.position().orElse(-1));
-        // to create the default replay token, we need to retrieve the head token
-        verify(eventStoreTwo).createHeadToken();
-    }
-
-    @Test
-    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomTrackingProcessorBuilder()
-            throws NoSuchFieldException {
-        TrackingEventProcessorConfiguration testTepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(3);
-        configurer.eventProcessing()
-                  .registerTrackingEventProcessor("ObjectProcessor", config -> eventStoreOne, config -> testTepConfig)
-                  .registerSaga(Object.class);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTep =
-                config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
-        assertTrue(resultTep.isPresent());
-        TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
-        assertEquals(3, tepSegmentsSize);
-
-        Function<TrackingTokenSource, CompletableFuture<TrackingToken>> tepInitialTokenBuilder =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        TrackingToken initialToken = tepInitialTokenBuilder.apply(eventStoreTwo).join();
-        // In absence of the default Saga Config, the stream starts at the tail
-        assertEquals(0, initialToken.position().orElse(-1));
-        // to create the default replay token, we need to retrieve the head token
-        verify(eventStoreTwo).createHeadToken();
-    }
-
-    @Test
-    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomConfigInstance()
-            throws NoSuchFieldException {
-        TrackingEventProcessorConfiguration testTepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(4);
-        configurer.eventProcessing()
-                  .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .registerSaga(Object.class)
-                  .registerTrackingEventProcessorConfiguration("ObjectProcessor", config -> testTepConfig);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTep =
-                config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
-        assertTrue(resultTep.isPresent());
-        TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
-        assertEquals(4, tepSegmentsSize);
-
-        Function<TrackingTokenSource, CompletableFuture<TrackingToken>> tepInitialTokenBuilder =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        TrackingToken actualInitialToken = tepInitialTokenBuilder.apply(eventStoreTwo).join();
-        // In absence of the default Saga Config, the stream starts at the tail
-        assertEquals(0, actualInitialToken.position().orElse(-1));
-        // to create the default replay token, we need to retrieve the head token
-        verify(eventStoreTwo).createHeadToken();
-    }
-
-    @Test
-    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomDefaultConfig()
-            throws NoSuchFieldException {
-        TrackingEventProcessorConfiguration testTepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(4);
-        configurer.eventProcessing()
-                  .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .registerSaga(Object.class)
-                  .registerTrackingEventProcessorConfiguration(config -> testTepConfig);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTep =
-                config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
-        assertTrue(resultTep.isPresent());
-        TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
-        assertEquals(4, tepSegmentsSize);
-
-        Function<TrackingTokenSource, CompletableFuture<TrackingToken>> tepInitialTokenBuilder =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        TrackingToken actualInitialToken = tepInitialTokenBuilder.apply(eventStoreTwo).join();
-        // In absence of the default Saga Config, the stream starts at the tail
-        assertEquals(0, actualInitialToken.position().orElse(-1));
-        // to create the default replay token, we need to retrieve the head token
-        verify(eventStoreTwo).createHeadToken();
     }
 
     @Test
@@ -1621,7 +1400,7 @@ class EventProcessingModuleTest {
         configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine());
         configurer.eventProcessing()
                   .registerSubscribingEventProcessor("subscribing")
-                  .registerTrackingEventProcessor("tracking")
+                  .registerPooledStreamingEventProcessor("pooled")
                   .assignHandlerInstancesMatching(
                           "subscribing", eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class)
                   )

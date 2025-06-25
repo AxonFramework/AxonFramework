@@ -66,9 +66,7 @@ public class StreamingEventProcessorInfoMessage {
     }
 
     private static String defineMode(Class<? extends StreamingEventProcessor> streamingProcessorClass) {
-        if (streamingProcessorClass.isAssignableFrom(TrackingEventProcessor.class)) {
-            return "Tracking";
-        } else if (streamingProcessorClass.isAssignableFrom(PooledStreamingEventProcessor.class)) {
+        if (streamingProcessorClass.isAssignableFrom(PooledStreamingEventProcessor.class)) {
             return "Pooled Streaming";
         } else {
             return "Streaming";

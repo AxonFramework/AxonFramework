@@ -18,6 +18,7 @@ package org.axonframework.integrationtests.cache;
 
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.caching.Cache;
+import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.config.SagaConfigurer;
@@ -101,16 +102,16 @@ public abstract class CachingIntegrationTestSuite {
                                                                          .associationsCache(associationsCache)
                                                                          .build());
 
-        TrackingEventProcessorConfiguration tepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(4)
-                                                   .andEventAvailabilityTimeout(10, TimeUnit.MILLISECONDS);
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
+                EventProcessingConfigurer.PooledStreamingProcessorConfiguration.noOp();
+
         config = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
                                         .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                         .eventProcessing(
                                           procConfig -> procConfig
-                                                  .usingTrackingEventProcessors()
-                                                  .registerTrackingEventProcessorConfiguration(
-                                                          "CachedSagaProcessor", c -> tepConfig
+                                                  .usingPooledStreamingEventProcessors()
+                                                  .registerPooledStreamingEventProcessorConfiguration(
+                                                          "CachedSagaProcessor", psepConfig
                                                   )
                                                   .registerSaga(CachedSaga.class, sagaConfigurer)
                                   )
