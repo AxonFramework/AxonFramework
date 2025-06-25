@@ -64,6 +64,7 @@ public class UpdateChecker implements Runnable {
     private boolean firstRequest = true;
     private final AtomicBoolean started = new AtomicBoolean(false);
     private int errorRetryBackoffFactor = 1;
+    private DelayedTask delayedTask;
 
     /**
      * Creates a new instance of {@code UpdateCheckTask} with the given {@link UpdateCheckerHttpClient}.
@@ -100,7 +101,7 @@ public class UpdateChecker implements Runnable {
             logger.info(
                     "Your AxonIQ libraries will be checked for updates periodically. See https://go.axoniq.io/update-check for more information.");
 
-            DelayedTask.of(this, 1000);
+            delayedTask = DelayedTask.of(this, 1000);
         } catch (Exception e) {
             logger.warn("Failed to start the UpdateChecker task.", e);
         }
@@ -124,7 +125,7 @@ public class UpdateChecker implements Runnable {
 
             logger.debug("AxonIQ will check library updates and vulnerabilities again in {} seconds.",
                          updateCheckResponse);
-            DelayedTask.of(this, updateCheckResponse.checkInterval() * 1000);
+            delayedTask = DelayedTask.of(this, updateCheckResponse.checkInterval() * 1000);
             errorRetryBackoffFactor = 1; // Reset backoff factor on a successful report
             firstRequest = false;
         } catch (Exception e) {
@@ -140,13 +141,17 @@ public class UpdateChecker implements Runnable {
     public void stop() {
         if (started.compareAndSet(true, false)) {
             logger.info("Stopped the AxonIQ UpdateChecker. No further updates will be checked.");
+            if(this.delayedTask != null) {
+                delayedTask.cancel();
+                delayedTask = null;
+            }
         }
     }
 
     private void scheduleErrorRetry() {
         errorRetryBackoffFactor++;
         int nextInvocationTime = Math.min((int) ((Math.pow(2, errorRetryBackoffFactor)) * 1000), 60000);
-        DelayedTask.of(this, nextInvocationTime);
+        delayedTask = DelayedTask.of(this, nextInvocationTime);
     }
 
     @Nonnull

@@ -40,13 +40,14 @@ public class DelayedTask {
     private volatile boolean finished = false;
     private volatile boolean failed = false;
     private Exception failureCause = null;
+    private final Thread thread;
 
     private DelayedTask(@Nonnull Runnable runnable, long delay) {
         if (delay < 0) {
             throw new IllegalArgumentException("Delay must be non-negative.");
         }
         Objects.requireNonNull(runnable, "The runnable must not be null.");
-        Thread.ofVirtual().name("AxonIQ").start(() -> {
+        this.thread = Thread.ofVirtual().name("AxonIQ").start(() -> {
             try {
                 Thread.sleep(delay);
                 started = true;
@@ -106,5 +107,13 @@ public class DelayedTask {
      */
     public Exception getFailureCause() {
         return failureCause;
+    }
+
+    /**
+     * Cancels the task if it is still running. If the task has already started, it will not be interrupted.
+     * If the task is currently sleeping, it will be interrupted and will not run.
+     */
+    public void cancel() {
+        thread.interrupt();
     }
 }

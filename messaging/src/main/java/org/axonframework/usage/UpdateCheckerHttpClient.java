@@ -69,28 +69,19 @@ public class UpdateCheckerHttpClient {
      * failed.
      */
     public Optional<UpdateCheckResponse> sendRequest(UpdateCheckRequest updateCheckRequest, boolean firstRequest) {
-        String serializedRequest = updateCheckRequest.serialize();
+        String url = userProperties.getUrl() + "?" + updateCheckRequest.toQueryString(firstRequest);
         HttpRequest.Builder baseRequestBuilder = HttpRequest.newBuilder()
-                                                            .uri(URI.create(userProperties.getUrl()))
+                                                            .uri(URI.create(url))
                                                             .timeout(Duration.ofSeconds(5))
-                                                            .headers("Content-Type", "text/plain;charset=UTF-8");
-
-        HttpRequest request;
-        if (firstRequest) {
-            request = baseRequestBuilder
-                    .POST(HttpRequest.BodyPublishers.ofString(serializedRequest))
-                    .build();
-        } else {
-            request = baseRequestBuilder
-                    .PUT(HttpRequest.BodyPublishers.ofString(serializedRequest))
-                    .build();
-        }
+                                                            .headers("User-Agent", updateCheckRequest.toUserAgent());
 
         try {
+            logger.info("Reporting anonymous usage data to AxonIQ servers at: {}", url);
+            HttpRequest request  = baseRequestBuilder.GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
-                logger.debug("Failed to report anonymous usage data, received status code: {}", response.statusCode());
+                logger.info("Failed to report anonymous usage data, received status code: {}", response.statusCode());
                 return Optional.empty();
             }
             logger.debug("Reported anonymous usage data successfully, received response: {}", response.body());

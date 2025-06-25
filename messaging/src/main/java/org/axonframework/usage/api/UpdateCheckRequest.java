@@ -16,8 +16,12 @@
 
 package org.axonframework.usage.api;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 
+import java.lang.management.ManagementFactory;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -51,31 +55,58 @@ public record UpdateCheckRequest(
         String kotlinVersion,
         List<Artifact> libraries
 ) {
+    /**
+     * Converts the usage request into a query string format suitable for HTTP requests.
+     * All values are properly URL encoded.
+     *
+     * @return The query string representation of the usage request.
+     * @param firstRequest Indicates whether this is the first request for usage data. If true, it will append "fr=1" to
+     *                     the query string, otherwise "fr=0".
+     */
+    public String toQueryString(boolean firstRequest) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("mid=").append(encode(machineId))
+          .append("&iid=").append(encode(instanceId))
+          .append("&osn=").append(encode(osName))
+          .append("&osv=").append(encode(osVersion))
+          .append("&osa=").append(encode(osArch))
+          .append("&jvr=").append(encode(jvmVersion))
+          .append("&jvn=").append(encode(jvmVendor))
+          .append("&ktv=").append(encode(kotlinVersion))
+          .append("&version=").append(encode(getAxonBaseVersion()))
+          .append("&fr=").append(firstRequest ? "1" : "0")
+          .append("&up=").append(encode(String.valueOf(ManagementFactory.getRuntimeMXBean().getUptime())));
+        for (Artifact library : libraries) {
+            String stringLib = library.groupId() + ':' + library.artifactId() + ':' + library.version();
+            sb.append("&lib=").append(encode(stringLib));
+        }
+        return sb.toString();
+    }
+
+    private String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
 
     /**
-     * Serializes the usage request into a string format. Each field is represented as a key-value pair, with each pair
-     * on a new line. Library versions are serialized in the format "groupId:artifactId:version".
+     * Converts the usage request into a user agent string format.
      *
-     * @return The String representation of the usage request.
+     * @return The user agent string representation of the usage request.
      */
-    public String serialize() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("mid=").append(machineId).append("\n");
-        sb.append("iid=").append(instanceId).append("\n");
-        sb.append("osn=").append(osName).append("\n");
-        sb.append("osv=").append(osVersion).append("\n");
-        sb.append("osa=").append(osArch).append("\n");
-        sb.append("jvr=").append(jvmVersion).append("\n");
-        sb.append("jvn=").append(jvmVendor).append("\n");
-        sb.append("ktv=").append(kotlinVersion).append("\n");
+    public String toUserAgent() {
+        String axonBaseVersion = getAxonBaseVersion();
+        return String.format(
+                "AxonIQ UpdateChecker/%s (Java %s %s; %s; %s; %s)",
+                axonBaseVersion,
+                jvmVersion, jvmVendor, osName, osVersion, osArch
+        );
+    }
 
-        for (Artifact library : libraries) {
-            sb.append("lib=").append(library.groupId())
-              .append(':').append(library.artifactId())
-              .append(':').append(library.version())
-              .append("\n");
-        }
-
-        return sb.toString();
+    @Nonnull
+    private String getAxonBaseVersion() {
+        return libraries.stream()
+                        .filter(a -> a.groupId().equals("org.axonframework"))
+                        .filter(a -> a.artifactId().equals("axon-messaging"))
+                        .map(Artifact::version)
+                        .findFirst().orElse("5.0.0");
     }
 }
