@@ -19,32 +19,20 @@ package org.axonframework.usage.api;
 import org.axonframework.common.annotation.Internal;
 
 /**
- * Represents the severity of a vulnerability in a library used by the Axon Framework. This enum defines various
- * levels of severity that can be assigned to a vulnerability, ranging from unknown to critical.
+ * Represents a library version with its group ID, artifact ID, and version. This record is used to encapsulate the
+ * details of a library version in the Axon Framework usage API.
  *
+ * @param groupId    The group ID of the library.
+ * @param artifactId The artifact ID of the library.
+ * @param version    The version of the library.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
 @Internal
-public enum UsageResponseVulnerabilitySeverity {
-    /**
-     * The severity of the vulnerability is unknown.
-     */
-    UNKNOWN,
-    /**
-     * The vulnerability has a low severity.
-     */
-    LOW,
-    /**
-     * The vulnerability has a medium severity.
-     */
-    MEDIUM,
-    /**
-     * The vulnerability has a high severity.
-     */
-    HIGH,
-    /**
-     * The vulnerability has a critical severity.
-     */
-    CRITICAL
+public record Artifact(
+        String groupId,
+        String artifactId,
+        String version
+) {
+
 }

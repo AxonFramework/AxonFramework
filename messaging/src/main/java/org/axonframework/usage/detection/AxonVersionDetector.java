@@ -17,7 +17,7 @@
 package org.axonframework.usage.detection;
 
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.usage.api.LibraryVersion;
+import org.axonframework.usage.api.Artifact;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +71,7 @@ public final class AxonVersionDetector {
      *
      * @return A list of detected Axon Framework modules with their versions.
      */
-    public static List<LibraryVersion> safeDetectAxonModules() {
+    public static List<Artifact> safeDetectAxonModules() {
         try {
             return detectAxonModules()
                     .stream()
@@ -83,8 +83,8 @@ public final class AxonVersionDetector {
         }
     }
 
-    private static List<LibraryVersion> detectAxonModules() {
-        List<LibraryVersion> foundVersions = new LinkedList<>();
+    private static List<Artifact> detectAxonModules() {
+        List<Artifact> foundVersions = new LinkedList<>();
         List<URL> urlsToCheck = new LinkedList<>();
         for (String groupId : GROUP_IDS) {
             try {
@@ -100,7 +100,7 @@ public final class AxonVersionDetector {
         for (URL url : urlsToCheck) {
             try {
                 String filePath = url.getFile();
-                if (GROUP_IDS.stream().noneMatch(filePath::contains)) {
+                if (GROUP_IDS.stream().noneMatch(filePath::contains) && !filePath.contains("test-classes")) {
                     continue; // Skip URLs that do not match the AxonIQ group IDs
                 }
                 if (url.getProtocol().equals("jar")) {
@@ -115,7 +115,7 @@ public final class AxonVersionDetector {
         return foundVersions;
     }
 
-    private static List<LibraryVersion> extractVersionFromJar(URL url) throws IOException {
+    private static List<Artifact> extractVersionFromJar(URL url) throws IOException {
         // The URL format for JAR files is typically "file:/path/to/jarfile.jar!/META-INF/maven/...".
         // We need to extract the path to the JAR file, so we remove the "file:" prefix and everything after the "!" character.
         String jarFilePath = url.getPath().substring(5, url.getPath().indexOf("!"));
@@ -135,30 +135,25 @@ public final class AxonVersionDetector {
         }
     }
 
-    private static LibraryVersion mapToAxonVersion(InputStream inputStream) throws IOException {
+    private static Artifact mapToAxonVersion(InputStream inputStream) throws IOException {
         Properties mavenProps = new Properties();
         mavenProps.load(inputStream);
-        return new LibraryVersion(
+        return new Artifact(
                 mavenProps.getProperty("groupId"),
                 mavenProps.getProperty("artifactId"),
                 mavenProps.getProperty("version")
         );
     }
 
-    private static List<LibraryVersion> extractVersionFromDirectory(URL url) throws URISyntaxException, IOException {
+    private static List<Artifact> extractVersionFromDirectory(URL url) throws URISyntaxException, IOException {
         File file = new File(url.toURI());
-        List<LibraryVersion> foundVersions = new LinkedList<>();
+        List<Artifact> foundVersions = new LinkedList<>();
         if (file.isDirectory()) {
             List<File> filesToCheck = scanDirectoryForPomProperties(file);
             for (File pomFile : filesToCheck) {
                 try {
-                    Properties mavenProps = new Properties();
-                    mavenProps.load(Files.newInputStream(pomFile.toPath()));
-                    foundVersions.add(new LibraryVersion(
-                            mavenProps.getProperty("groupId"),
-                            mavenProps.getProperty("artifactId"),
-                            mavenProps.getProperty("version")
-                    ));
+                    Artifact version = mapToAxonVersion(Files.newInputStream(pomFile.toPath()));
+                    foundVersions.add(version);
                 } catch (Exception e) {
                     logger.debug("Unexpected error while processing pom.properties file: {}",
                                  pomFile.getAbsolutePath(), e);

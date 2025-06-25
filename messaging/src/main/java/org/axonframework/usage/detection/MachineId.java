@@ -37,27 +37,29 @@ import java.util.UUID;
 public class MachineId {
     private static final Logger logger = LoggerFactory.getLogger(MachineId.class);
     private static final String MACHINE_ID_PATH = "/.axoniq/.machine-id";
-    private static boolean initialized = false;
-    private static String machineId;
+
+    private String machineId;
+
+    /**
+     * Creates a new instance of {@code MachineId}.
+     */
+    public MachineId() {
+        this.initialize();
+    }
 
     /**
      * Returns the unique machine ID. If it has not been initialized yet, it will initialize it first.
      *
      * @return The unique machine ID.
      */
-    public static String get() {
-        if(!initialized) {
-            initialize();
-            initialized = true;
-        }
-
+    public String get() {
         return machineId;
     }
 
-    private static void initialize() {
+    private void initialize() {
         try {
             File file = getFile();
-            if(file.exists()) {
+            if (file.exists()) {
                 machineId = new String(Files.readAllBytes(file.toPath()));
                 return;
             }
@@ -72,11 +74,7 @@ public class MachineId {
         }
     }
 
-    private MachineId() {
-        // Not instantiable
-    }
-
-    private static File getFile() {
+    private File getFile() {
         String pwdDir = System.getProperty("user.home");
         String installationIdFilePath = pwdDir + MACHINE_ID_PATH;
         return new File(installationIdFilePath);

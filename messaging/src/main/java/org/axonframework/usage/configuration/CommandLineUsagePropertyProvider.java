@@ -28,10 +28,19 @@ import org.axonframework.common.annotation.Internal;
 @Internal
 public class CommandLineUsagePropertyProvider implements UsagePropertyProvider {
 
+    /**
+     * The system property key to check if the update checker is disabled.
+     */
+    public static final String DISABLED_KEY = "axoniq.update-checker.disabled";
+    /**
+     * The system property key to retrieve the URL for the usage collection endpoint.
+     */
+    public static final String URL_KEY = "axoniq.usage.url";
+
     @Override
     public Boolean getDisabled() {
-        String property = System.getProperty("axoniq.update-checker.disabled", null);
-        if(property != null) {
+        String property = System.getProperty(DISABLED_KEY, null);
+        if (property != null) {
             return Boolean.parseBoolean(property);
         }
         return null;
@@ -39,7 +48,7 @@ public class CommandLineUsagePropertyProvider implements UsagePropertyProvider {
 
     @Override
     public String getUrl() {
-        return System.getProperty("axoniq.usage.url", null);
+        return System.getProperty(URL_KEY, null);
     }
 
     @Override

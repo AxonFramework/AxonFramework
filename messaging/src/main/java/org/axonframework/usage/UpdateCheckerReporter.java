@@ -14,24 +14,25 @@
  * limitations under the License.
  */
 
-package org.axonframework.usage.api;
+package org.axonframework.usage;
 
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.usage.api.UpdateCheckRequest;
+import org.axonframework.usage.api.UpdateCheckResponse;
 
 /**
- * Represents an upgrade suggestion for a specific library version in the Axon Framework usage API.
+ * Interface for reporting the response of the update checker to the user. Implementations of this interface should
+ * handle how the response is communicated to the user.
  *
- * @param groupId         The group ID of the library.
- * @param artifactId      The artifact ID of the library.
- * @param latestVersion   The latest version of the library available for upgrade.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-@Internal
-public record UsageResponseVersionUpgrade(
-        String groupId,
-        String artifactId,
-        String latestVersion
-) {
+public interface UpdateCheckerReporter {
 
+    /**
+     * Reports the given {@code response} of the update checker to the user.
+     *
+     * @param request  The request that was made to the update checker.
+     * @param response The response to report.
+     */
+    void report(UpdateCheckRequest request, UpdateCheckResponse response);
 }

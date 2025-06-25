@@ -29,9 +29,39 @@ import org.axonframework.common.annotation.Internal;
 @Internal
 public class EnvironmentVariableUsagePropertyProvider implements UsagePropertyProvider {
 
+    /**
+     * The environment variable key to check if the update checker is disabled.
+     */
+    public static final String DISABLED_KEY = "AXONIQ_UPDATE_CHECKER_DISABLED";
+    /**
+     * The environment variable key to retrieve the URL for the usage collection endpoint.
+     */
+    public static final String URL_KEY = "AXONIQ_UPDATE_CHECKER_URL";
+
+    private final EnvironmentVariableSupplier envSupplier;
+
+    /**
+     * Creates a new {@code EnvironmentVariableUsagePropertyProvider} that reads properties from the system environment.
+     * This constructor uses {@link System#getenv()} as the default supplier for environment variables.
+     */
+    public EnvironmentVariableUsagePropertyProvider() {
+        this(System::getenv);
+    }
+
+    /**
+     * Creates a new {@code EnvironmentVariableUsagePropertyProvider} that reads properties from the provided
+     * {@link EnvironmentVariableSupplier}. This allows for custom implementations to provide environment variable
+     * values, which can be useful for testing or when the default {@link System#getenv()} is not suitable.
+     *
+     * @param envSupplier The supplier to use for retrieving environment variables.
+     */
+    public EnvironmentVariableUsagePropertyProvider(EnvironmentVariableSupplier envSupplier) {
+        this.envSupplier = envSupplier;
+    }
+
     @Override
     public Boolean getDisabled() {
-        String property = System.getenv("AXONIQ_UPDATE_CHECKER_DISABLED");
+        String property = envSupplier.get(DISABLED_KEY);
         if (property != null) {
             return Boolean.parseBoolean(property);
         }
@@ -40,11 +70,27 @@ public class EnvironmentVariableUsagePropertyProvider implements UsagePropertyPr
 
     @Override
     public String getUrl() {
-        return System.getenv("AXONIQ_UPDATE_CHECKER_URL");
+        return envSupplier.get(URL_KEY);
     }
 
     @Override
     public int priority() {
         return Integer.MAX_VALUE / 2;
+    }
+
+    /**
+     * A functional interface to supply environment variables. This allows for custom implementations to provide
+     * environment variable values, which can be useful for testing or when the default {@link System#getenv()} is not
+     * suitable.
+     */
+    @FunctionalInterface
+    public interface EnvironmentVariableSupplier {
+        /**
+         * Retrieves the value of the specified environment variable.
+         *
+         * @param key The name of the environment variable to retrieve.
+         * @return The value of the environment variable, or {@code null} if it is not set.
+         */
+        String get(String key);
     }
 }

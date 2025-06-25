@@ -34,13 +34,13 @@ import java.util.List;
  * @param jvmVersion The version of the Java Virtual Machine (JVM) (e.g., "17.0.2").
  * @param jvmVendor  The vendor of the JVM (e.g., "AdoptOpenJDK", "Oracle").
  * @param kotlinVersion The version of Kotlin used in the application, or "none" if Kotlin is not used.
- * @param libraries  A list of library versions used in the application, each represented by a {@link LibraryVersion}
+ * @param libraries  A list of library versions used in the application, each represented by a {@link Artifact}
  *                   object containing the group ID, artifact ID, and version of the library.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
 @Internal
-public record UsageRequest(
+public record UpdateCheckRequest(
         String machineId,
         String instanceId,
         String osName,
@@ -49,7 +49,7 @@ public record UsageRequest(
         String jvmVersion,
         String jvmVendor,
         String kotlinVersion,
-        List<LibraryVersion> libraries
+        List<Artifact> libraries
 ) {
 
     /**
@@ -69,7 +69,7 @@ public record UsageRequest(
         sb.append("jvn=").append(jvmVendor).append("\n");
         sb.append("ktv=").append(kotlinVersion).append("\n");
 
-        for (LibraryVersion library : libraries) {
+        for (Artifact library : libraries) {
             sb.append("lib=").append(library.groupId())
               .append(':').append(library.artifactId())
               .append(':').append(library.version())

@@ -36,9 +36,9 @@ import java.util.Objects;
 @Internal
 public class DelayedTask {
 
-    private boolean started = false;
-    private boolean finished = false;
-    private boolean failed = false;
+    private volatile boolean started = false;
+    private volatile boolean finished = false;
+    private volatile boolean failed = false;
     private Exception failureCause = null;
 
     private DelayedTask(@Nonnull Runnable runnable, long delay) {

@@ -36,10 +36,10 @@ import java.util.List;
  * @since 5.0.0
  */
 @Internal
-public record UsageResponse(
+public record UpdateCheckResponse(
         Integer checkInterval,
-        List<UsageResponseVersionUpgrade> upgrades,
-        List<UsageResponseVulnerability> vulnerabilities
+        List<ArtifactAvailableUpgrade> upgrades,
+        List<DetectedVulnerability> vulnerabilities
 ) {
 
     /**
@@ -64,12 +64,12 @@ public record UsageResponse(
      * @return A {@code UsageResponse} object containing the parsed data.
      */
     @Nonnull
-    public static UsageResponse fromRequest(@Nullable String body) {
+    public static UpdateCheckResponse fromRequest(@Nullable String body) {
         int checkInterval = 86400; // Default to 24 hours, in case request didn't work
-        List<UsageResponseVersionUpgrade> upgrades = new ArrayList<>();
-        List<UsageResponseVulnerability> vulnerabilities = new ArrayList<>();
+        List<ArtifactAvailableUpgrade> upgrades = new ArrayList<>();
+        List<DetectedVulnerability> vulnerabilities = new ArrayList<>();
         if (body == null || body.isBlank()) {
-            return new UsageResponse(null, List.of(), List.of());
+            return new UpdateCheckResponse(null, List.of(), List.of());
         }
         String[] lines = body.split("\\r?\\n");
         for (String line : lines) {
@@ -96,33 +96,33 @@ public record UsageResponse(
                     break;
             }
         }
-        return new UsageResponse(checkInterval, upgrades, vulnerabilities);
+        return new UpdateCheckResponse(checkInterval, upgrades, vulnerabilities);
     }
 
-    private static void parseUpdate(String val, List<UsageResponseVulnerability> vulnerabilities,
-                                    List<UsageResponseVersionUpgrade> upgrades) {
+    private static void parseUpdate(String val, List<DetectedVulnerability> vulnerabilities,
+                                    List<ArtifactAvailableUpgrade> upgrades) {
         // Format: upd=groupId:artifactId:latestVersion
         String[] parts = parseIntoParts(val);
         if (parts.length == 3) {
             String groupId = parts[0];
             String artifactId = parts[1];
             String latestVersion = parts[2];
-            upgrades.add(new UsageResponseVersionUpgrade(
+            upgrades.add(new ArtifactAvailableUpgrade(
                     groupId, artifactId, latestVersion
             ));
         }
     }
 
-    private static void parseVulnerability(String val, List<UsageResponseVulnerability> vulnerabilities) {
+    private static void parseVulnerability(String val, List<DetectedVulnerability> vulnerabilities) {
         // Format: vul=groupId:artifactId:fixVersion:severity:moreInformationUrl
         String[] parts = parseIntoParts(val);
         if (parts.length == 5) {
             String groupId = parts[0];
             String artifactId = parts[1];
             String fixVersion = parts[2];
-            UsageResponseVulnerabilitySeverity severity = parseVulnerability(parts[3]);
+            DetectedVulnerabilitySeverity severity = parseVulnerability(parts[3]);
             String moreInformationUrl = parts[4];
-            vulnerabilities.add(new UsageResponseVulnerability(
+            vulnerabilities.add(new DetectedVulnerability(
                     groupId, artifactId, severity, fixVersion, moreInformationUrl
             ));
         }
@@ -154,12 +154,12 @@ public record UsageResponse(
         return parts.toArray(new String[0]);
     }
 
-    private static UsageResponseVulnerabilitySeverity parseVulnerability(String value) {
-        UsageResponseVulnerabilitySeverity severity;
+    private static DetectedVulnerabilitySeverity parseVulnerability(String value) {
+        DetectedVulnerabilitySeverity severity;
         try {
-            severity = UsageResponseVulnerabilitySeverity.valueOf(value);
+            severity = DetectedVulnerabilitySeverity.valueOf(value);
         } catch (Exception e) {
-            severity = UsageResponseVulnerabilitySeverity.UNKNOWN;
+            severity = DetectedVulnerabilitySeverity.UNKNOWN;
         }
         return severity;
     }
