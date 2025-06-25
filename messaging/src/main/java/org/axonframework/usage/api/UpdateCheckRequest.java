@@ -21,7 +21,7 @@ import org.axonframework.common.annotation.Internal;
 import java.util.List;
 
 /**
- * Represents a request for usage data, including machine and instance identifiers, operating system details, JVM
+ * Represents an UpdateChecker request, including machine and instance identifiers, operating system details, JVM
  * information, Kotlin version, and a list of library versions.
  *
  * @param machineId  The unique identifier for the machine. This is a UUID that is generated and stored in the user's

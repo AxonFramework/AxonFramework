@@ -34,19 +34,17 @@ import java.util.Properties;
 import java.util.jar.JarFile;
 
 /**
- * Utility class to detect Axon Framework versions from the classpath. It scans for Maven POM properties files in the
- * classpath and extracts the Axon Framework module versions. If an error occurs during detection, it logs the error and
- * returns an empty list.
+ * Utility class to detect Axon Framework versions from the classpath. It scans for Maven's {@code pom.properties} files
+ * in the classpath and extracts the Axon Framework module versions. If an error occurs during detection, it logs the
+ * error and returns an empty list.
  * <p>
  * Will only detect Axon Framework modules that are part of the Axon Framework or AxonIQ ecosystem, as defined by the
  * group IDs:
  * <ul>
  *     <li>org.axonframework</li>
- *     <li>org.axonframework.extensions</li>
  *     <li>io.axoniq</li>
- *     <li>io.axoniq.console</li>
  * </ul>
- *
+ * <p>
  * This class is not intended to be instantiated, and all methods are static.
  *
  * @author Mitchell Herrijgers

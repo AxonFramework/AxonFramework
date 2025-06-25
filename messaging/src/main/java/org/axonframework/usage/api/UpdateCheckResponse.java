@@ -24,13 +24,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents the response from the anonymous usage reporter, containing information about version upgrades and
- * vulnerabilities found in the libraries used by the application.
+ * Represents the response from the UpdateChecker API, containing information about version upgrades and
+ * vulnerabilities found in the artifacts used by the application.
  *
  * @param checkInterval   The interval in seconds at which the usage data should be checked.
- * @param upgrades        A list of found version upgrades, each containing details about the library and its latest
+ * @param upgrades        A list of found version upgrades, each containing details about the artifact and its latest
  *                        version.
- * @param vulnerabilities A list of found vulnerabilities, each containing details about the library, its severity, fix
+ * @param vulnerabilities A list of found vulnerabilities, each containing details about the artifact, its severity, fix
  *                        version, and a URL for more information.
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -51,14 +51,13 @@ public record UpdateCheckResponse(
      *            groupId:artifactId:fixVersion:severity:moreInformationUrl</li>
      *     <li>upd - Update information in the format: groupId:artifactId:latestVersion</li>
      * </ul>
-     *
+     * <p>
      * An example of the expected format:
      * <pre>
      * cd=86400
      * vul=org.axonframework:axon-serialization:1.0.0:HIGH:"https://example.com/vulnerability"
      * upd=org.axonframework:axon-messaging:5.0.1
      * </pre>
-     *
      *
      * @param body The response body as a string.
      * @return A {@code UsageResponse} object containing the parsed data.
@@ -168,7 +167,7 @@ public record UpdateCheckResponse(
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException ignored) {
+            return 86400; // Default to 24 hours, in case request didn't work;
         }
-        return 86400; // Default to 24 hours, in case request didn't work;
     }
 }

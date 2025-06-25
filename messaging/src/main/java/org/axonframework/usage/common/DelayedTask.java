@@ -27,8 +27,8 @@ import java.util.Objects;
  * <p>
  * This has severely lower overhead than using a {@link java.util.concurrent.ScheduledExecutorService} or similar
  * constructs, as it does not require a thread pool or scheduling mechanism. It simply runs the task in a virtual thread
- * after the specified delay. The virtual thread is parked for the duration of the delay, which allows it to be
- * lightweight and efficient.
+ * after the specified delay. The virtual thread is parked for the duration of the delay, and is executed on a carrier
+ * thread when ready, which allows it to be lightweight and efficient.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
