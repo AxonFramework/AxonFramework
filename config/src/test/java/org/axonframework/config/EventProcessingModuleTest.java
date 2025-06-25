@@ -40,8 +40,6 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;

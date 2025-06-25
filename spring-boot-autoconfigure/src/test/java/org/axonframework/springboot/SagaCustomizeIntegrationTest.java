@@ -23,7 +23,6 @@ import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;

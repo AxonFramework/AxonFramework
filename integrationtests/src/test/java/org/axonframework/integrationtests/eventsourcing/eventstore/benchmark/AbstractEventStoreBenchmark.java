@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;

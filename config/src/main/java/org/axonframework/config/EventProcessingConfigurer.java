@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -26,7 +27,6 @@ import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
@@ -39,7 +39,6 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 
@@ -47,7 +46,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import jakarta.annotation.Nonnull;
 
 /**
  * Defines a contract for configuring event processing.
@@ -185,20 +183,6 @@ public interface EventProcessingConfigurer {
      */
     EventProcessingConfigurer registerTrackingEventProcessor(String name,
                                                              Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> source);
-
-    /**
-     * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name},
-     * {@code source} and {@code processorConfiguration} within this Configurer.
-     *
-     * @param name                   a {@link String} specifying the name of the
-     *                               {@link org.axonframework.eventhandling.TrackingEventProcessor} being registered
-     * @param source                 a {@link Function} that builds {@link StreamableMessageSource}
-     * @param processorConfiguration a {@link Function} that builds a {@link TrackingEventProcessorConfiguration}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerTrackingEventProcessor(String name,
-                                                             Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> source,
-                                                             Function<LegacyConfiguration, TrackingEventProcessorConfiguration> processorConfiguration);
 
     /**
      * Registers a factory that builds the default {@link EventProcessor}. This is the {@link EventProcessorBuilder} to
@@ -554,32 +538,6 @@ public interface EventProcessingConfigurer {
      */
     EventProcessingConfigurer registerDefaultTransactionManager(
             Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder
-    );
-
-    /**
-     * Register a {@link Function} that builds a {@link TrackingEventProcessorConfiguration} to be used by the
-     * {@link EventProcessor} corresponding to the given {@code name}.
-     *
-     * @param name                                       a {@link String} specifying the name of an
-     *                                                   {@link EventProcessor}
-     * @param trackingEventProcessorConfigurationBuilder a {@link Function} that builds a
-     *                                                   {@link TrackingEventProcessorConfiguration}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
-            String name,
-            Function<LegacyConfiguration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
-    );
-
-    /**
-     * Register a {@link Function} that builds a {@link TrackingEventProcessorConfiguration} to use as the default.
-     *
-     * @param trackingEventProcessorConfigurationBuilder a {@link Function} that builds a
-     *                                                   {@link TrackingEventProcessorConfiguration}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
-            Function<LegacyConfiguration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
     );
 
     /**

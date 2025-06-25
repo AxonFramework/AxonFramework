@@ -32,7 +32,6 @@ import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ResetHandler;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.tokenstore.TokenStore;

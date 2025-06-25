@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequencingPolicy;
