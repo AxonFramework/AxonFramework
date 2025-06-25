@@ -87,7 +87,7 @@ public class UpdateCheckerHttpClient {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
-                logger.info("Failed to report anonymous usage data, received status code: {}", response.statusCode());
+                logger.debug("Failed to report anonymous usage data, received status code: {}", response.statusCode());
                 return Optional.empty();
             }
             logger.debug("Reported anonymous usage data successfully, received response: {}", response.body());
