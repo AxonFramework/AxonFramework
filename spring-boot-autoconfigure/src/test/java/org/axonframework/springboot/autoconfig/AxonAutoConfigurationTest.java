@@ -19,11 +19,15 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.BaseModule;
+import org.axonframework.configuration.Component;
 import org.axonframework.configuration.ComponentDecorator;
+import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.configuration.InstantiatedComponentDefinition;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.Module;
 import org.axonframework.spring.config.SpringAxonApplication;
@@ -58,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class AxonAutoConfigurationTest {
 
     private static final String MODULE_SPECIFIC_STRING = "Some String That Is Only Present Here!";
+    private static final String FACTORY_SPECIFIC_STRING = "Some Factory Made String.";
 
     private ApplicationContextRunner testContext;
 
@@ -169,6 +174,25 @@ public class AxonAutoConfigurationTest {
         });
     }
 
+    @Test
+    void validateComponentFactoryBeanUsage() {
+        testContext.run(context -> {
+            assertThat(context).hasBean("testComponentFactory");
+
+            Map<String, SpringLifecycleShutdownHandler> shutdownHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
+                    context, SpringLifecycleShutdownHandler.class
+            );
+
+            // The testComponentFactory in the TestContext registers a shutdown handler on phase 9001.
+            assertTrue(shutdownHandlers.values().stream().anyMatch(h -> h.getPhase() == 9001));
+            for (SpringLifecycleShutdownHandler shutdownHandler : shutdownHandlers.values()) {
+                assertTrue(shutdownHandler.isRunning());
+            }
+
+            assertThat(context.getBean("moduleSpecificShutdownHandlerInvoked", AtomicBoolean.class)).isFalse();
+        });
+    }
+
     @Configuration
     @EnableAutoConfiguration
     public static class TestContext {
@@ -229,6 +253,41 @@ public class AxonAutoConfigurationTest {
                             Object.class, MODULE_SPECIFIC_STRING, c -> MODULE_SPECIFIC_STRING
                     ));
                     return super.build(parent, lifecycleRegistry);
+                }
+            };
+        }
+
+        @Bean
+        ComponentFactory<String> testComponentFactory() {
+            return new ComponentFactory<>() {
+                @Override
+                public void describeTo(@NotNull ComponentDescriptor descriptor) {
+                    // Not implemented as not important.
+                }
+
+                @NotNull
+                @Override
+                public Class<String> forType() {
+                    return String.class;
+                }
+
+                @NotNull
+                @Override
+                public Optional<Component<String>> construct(
+                        @NotNull String name,
+                        @NotNull org.axonframework.configuration.Configuration config
+                ) {
+                    return Optional.of(new InstantiatedComponentDefinition<>(
+                            new Component.Identifier<>(forType(), name),
+                            name + FACTORY_SPECIFIC_STRING
+                    ));
+                }
+
+                @Override
+                public void registerShutdownHandlers(@NotNull LifecycleRegistry registry) {
+                    registry.onShutdown(9001, () -> {
+                        // We cannot validate the invocation, but we can validate the constructed SmartLifecycle.
+                    });
                 }
             };
         }

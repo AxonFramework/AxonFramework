@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -190,7 +191,6 @@ public class SpringComponentRegistry implements
         if (logger.isDebugEnabled()) {
             logger.debug("Registering component factory [{}].", factory.getClass().getSimpleName());
         }
-        // TODO #3075 Steven: Use ComponentFactories correctly
         this.factories.add(factory);
         return this;
     }
@@ -279,6 +279,8 @@ public class SpringComponentRegistry implements
      *     <li>Registers <b>all</b> {@link Component Components} with the Application Context.</li>
      *     <li>Looks for any {@link Module Modules} and {@link #registerModule(Module) registers} them.</li>
      *     <li>Builds all registered {@code Modules} so that they become available to {@link Configuration#getModuleConfigurations()}.</li>
+     *     <li>Looks for any {@link ComponentFactory ComponentFactories} and {@link #registerFactory(ComponentFactory) registers} them.</li>
+     *     <li>{@link ComponentFactory#registerShutdownHandlers(LifecycleRegistry) Registers} all {@code ComponentFactory} shutdown handlers.</li>
      * </ol>
      */
     void initialize(LifecycleRegistry lifecycleRegistry) {
@@ -290,11 +292,8 @@ public class SpringComponentRegistry implements
         registerComponentsWithApplicationContext();
         scanForModules();
         buildModules(lifecycleRegistry);
-        /*
-
-        initializeComponents(config, lifecycleRegistry);
+        scanForComponentFactories();
         registerFactoryShutdownHandlers(lifecycleRegistry);
-        * */
     }
 
     /**
@@ -393,6 +392,28 @@ public class SpringComponentRegistry implements
             );
             moduleConfigurations.put(module.name(), builtModule);
         }
+    }
+
+    /**
+     * Look for all beans of type {@link ComponentFactory} in the {@link ConfigurableListableBeanFactory} set by the
+     * {@link #postProcessBeanFactory(ConfigurableListableBeanFactory)} method and
+     * {@link #registerFactory(ComponentFactory) registers} them.
+     */
+    private void scanForComponentFactories() {
+        //noinspection unchecked
+        beanFactory.getBeansOfType(ComponentFactory.class)
+                   .forEach((beanName, factory) -> registerFactory(factory));
+    }
+
+    /**
+     * Registers the shutdown handlers for all
+     * {@link #registerFactory(ComponentFactory) registered ComponentFactories}.
+     *
+     * @param lifecycleRegistry The registry where {@link ComponentFactory ComponentFactories} may register their
+     *                          shutdown operations.
+     */
+    private void registerFactoryShutdownHandlers(LifecycleRegistry lifecycleRegistry) {
+        factories.forEach(factory -> factory.registerShutdownHandlers(lifecycleRegistry));
     }
 
     private class SpringConfiguration implements Configuration {
