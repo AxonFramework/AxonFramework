@@ -34,8 +34,6 @@ import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
@@ -92,11 +90,6 @@ import static org.axonframework.config.EventProcessingConfigurer.PooledStreaming
 public class EventProcessingModule
         implements ModuleConfiguration, EventProcessingConfiguration, EventProcessingConfigurer {
 
-    private static final String CONFIGURED_DEFAULT_TEP_CONFIG = "___DEFAULT_TEP_CONFIG";
-    private static final TrackingEventProcessorConfiguration DEFAULT_TEP_CONFIG =
-            TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
-    private static final TrackingEventProcessorConfiguration DEFAULT_SAGA_TEP_CONFIG =
-            DEFAULT_TEP_CONFIG.andInitialTrackingToken(TrackingTokenSource::firstToken);
     private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
     private static final PooledStreamingProcessorConfiguration DEFAULT_SAGA_PSEP_CONFIG =
             (config, builder) -> builder.initialToken(TrackingTokenSource::firstToken);
@@ -132,7 +125,6 @@ public class EventProcessingModule
     protected final Map<String, Component<SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueues = new HashMap<>();
     protected final Map<String, Component<EnqueuePolicy<EventMessage<?>>>> deadLetterPolicies = new HashMap<>();
 
-    protected final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
     protected Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider = processingGroup -> null;
@@ -189,15 +181,6 @@ public class EventProcessingModule
                     () -> configuration,
                     "defaultSubscribableMessageSource",
                     LegacyConfiguration::eventBus
-            );
-    private final Component<TrackingEventProcessorConfiguration> defaultTepConfig =
-            new Component<>(
-                    () -> configuration,
-                    "trackingEventProcessorConfiguration",
-                    c -> c.getComponent(
-                            TrackingEventProcessorConfiguration.class,
-                            TrackingEventProcessorConfiguration::forSingleThreadedProcessing
-                    )
             );
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
@@ -361,10 +344,7 @@ public class EventProcessingModule
             SagaConfiguration<?> sagaConfig = sc.initialize(configuration);
             String processingGroup = selectProcessingGroupByType(sagaConfig.type());
             String processorName = processorNameForProcessingGroup(processingGroup);
-            // The Event Processor type is unknown as it is not build yet, so we check for both TEP or PSEP configs.
-            if (noTepCustomization(processorName)) {
-                registerTrackingEventProcessorConfiguration(processorName, config -> DEFAULT_SAGA_TEP_CONFIG);
-            }
+            // Configure default PSEP settings for sagas if no customization exists
             if (noPsepCustomization(processorName)) {
                 registerPooledStreamingEventProcessorConfiguration(processorName, DEFAULT_SAGA_PSEP_CONFIG);
             }
@@ -372,12 +352,6 @@ public class EventProcessingModule
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
                            .add(c -> sagaConfig.manager());
         });
-    }
-
-    private boolean noTepCustomization(String processorName) {
-        return !eventProcessorBuilders.containsKey(processorName)
-                && !tepConfigs.containsKey(processorName)
-                && !tepConfigs.containsKey(CONFIGURED_DEFAULT_TEP_CONFIG);
     }
 
     private boolean noPsepCustomization(String processorName) {
@@ -619,25 +593,6 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerTrackingEventProcessor(
-            String name,
-            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> source
-    ) {
-        return registerTrackingEventProcessor(name, source, c -> trackingEventProcessorConfig(name));
-    }
-
-    @Override
-    public EventProcessingConfigurer registerTrackingEventProcessor(String name,
-                                                                    Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> source,
-                                                                    Function<LegacyConfiguration, TrackingEventProcessorConfiguration> processorConfiguration) {
-        registerEventProcessor(
-                name,
-                (n, c, ehi) -> trackingEventProcessor(n, ehi, processorConfiguration.apply(c), source.apply(c))
-        );
-        return this;
-    }
-
-    @Override
     public EventProcessingConfigurer registerEventProcessorFactory(
             EventProcessorBuilder eventProcessorBuilder) {
         this.defaultEventProcessorBuilder = eventProcessorBuilder;
@@ -673,14 +628,6 @@ public class EventProcessingModule
     public EventProcessingConfigurer usingSubscribingEventProcessors() {
         this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) ->
                 subscribingEventProcessor(name, eventHandlerInvoker, defaultSubscribableSource.get());
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer usingTrackingEventProcessors() {
-        this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) -> trackingEventProcessor(
-                name, eventHandlerInvoker, trackingEventProcessorConfig(name), defaultStreamableSource.get()
-        );
         return this;
     }
 
@@ -814,27 +761,7 @@ public class EventProcessingModule
         return this;
     }
 
-    @Override
-    public EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
-            String name,
-            Function<LegacyConfiguration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
-    ) {
-        this.tepConfigs.put(name, new Component<>(() -> configuration,
-                                                  "trackingEventProcessorConfiguration",
-                                                  trackingEventProcessorConfigurationBuilder));
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
-            Function<LegacyConfiguration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
-    ) {
-        this.tepConfigs.put(CONFIGURED_DEFAULT_TEP_CONFIG,
-                            new Component<>(() -> configuration,
-                                            "trackingEventProcessorConfiguration",
-                                            trackingEventProcessorConfigurationBuilder));
-        return this;
-    }
+    // TrackingEventProcessorConfiguration methods removed - use PooledStreamingEventProcessor configuration instead
 
     @Override
     public EventProcessingConfigurer registerPooledStreamingEventProcessor(
@@ -916,22 +843,16 @@ public class EventProcessingModule
                                                  LegacyConfiguration conf,
                                                  EventHandlerInvoker eventHandlerInvoker) {
         if (conf.eventBus() instanceof StreamableMessageSource) {
-            return trackingEventProcessor(
+            return pooledStreamingEventProcessor(
                     name,
                     eventHandlerInvoker,
-                    trackingEventProcessorConfig(name),
-                    defaultStreamableSource.get()
+                    conf,
+                    defaultStreamableSource.get(),
+                    noOp()
             );
         } else {
             return subscribingEventProcessor(name, eventHandlerInvoker, defaultSubscribableSource.get());
         }
-    }
-
-    private TrackingEventProcessorConfiguration trackingEventProcessorConfig(String name) {
-        if (tepConfigs.containsKey(name)) {
-            return tepConfigs.get(name).get();
-        }
-        return tepConfigs.getOrDefault(CONFIGURED_DEFAULT_TEP_CONFIG, defaultTepConfig).get();
     }
 
     /**
@@ -957,31 +878,7 @@ public class EventProcessingModule
                                         .build();
     }
 
-    /**
-     * Default {@link TrackingEventProcessor} configuration based on this configure module.
-     *
-     * @param name                of the processor
-     * @param eventHandlerInvoker used by the processor for the event handling
-     * @param config              for the tracking event processor construction
-     * @param source              where to retrieve events from
-     * @return Default {@link TrackingEventProcessor} configuration based on this configure module.
-     */
-    protected EventProcessor trackingEventProcessor(String name,
-                                                    EventHandlerInvoker eventHandlerInvoker,
-                                                    TrackingEventProcessorConfiguration config,
-                                                    StreamableMessageSource<TrackedEventMessage<?>> source) {
-        return TrackingEventProcessor.builder()
-                                     .name(name)
-                                     .eventHandlerInvoker(eventHandlerInvoker)
-                                     .errorHandler(errorHandler(name))
-                                     .messageMonitor(messageMonitor(TrackingEventProcessor.class, name))
-                                     .messageSource(source)
-                                     .tokenStore(tokenStore(name))
-                                     .transactionManager(transactionManager(name))
-                                     .trackingEventProcessorConfiguration(config)
-                                     .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
-                                     .build();
-    }
+    // TrackingEventProcessor method removed - use PooledStreamingEventProcessor instead
 
     /**
      * Default {@link PooledStreamingEventProcessor} configuration based on this configure module.

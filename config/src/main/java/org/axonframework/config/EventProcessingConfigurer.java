@@ -117,35 +117,13 @@ public interface EventProcessingConfigurer {
                                                                      Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder);
 
     /**
-     * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name} within this
-     * Configurer.
-     *
-     * @param name a {@link String} specifying the name of the
-     *             {@link org.axonframework.eventhandling.TrackingEventProcessor} being registered
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    default EventProcessingConfigurer registerTrackingEventProcessor(String name) {
-        return registerTrackingEventProcessor(name, c -> {
-            EventBus eventBus = c.eventBus();
-            if (!(eventBus instanceof StreamableMessageSource)) {
-                throw new AxonConfigurationException(
-                        "Cannot create Tracking Event Processor with name '" + name + "'. " +
-                                "The available EventBus does not support tracking processors."
-                );
-            }
-            //noinspection unchecked
-            return (StreamableMessageSource) eventBus;
-        });
-    }
-
-    /**
-     * Configures which {@link StreamableMessageSource} to use for Tracking Event Processors if none was explicitly
+     * Configures which {@link StreamableMessageSource} to use for Event Processors if none was explicitly
      * provided. Defaults to the Event Bus (or Store) available in the Configuration.
      * <p>
      * Note that the configuration of a default source does <em>not</em> change how the decision is made to select the
      * type of processor. Unless explicitly specified using {@link #usingSubscribingEventProcessors()} or
-     * {@link #usingTrackingEventProcessors()}, the default is dependent on the type of Message Source the Event Bus
-     * provides. If the Event Bus supports Tracking Processors, that is the default, otherwise Subscribing Event
+     * {@link #usingPooledStreamingEventProcessors()}, the default is dependent on the type of Message Source the Event Bus
+     * provides. If the Event Bus supports Pooled Streaming Processors, that is the default, otherwise Subscribing Event
      * Processors are the default.
      *
      * @param defaultSource a Function that defines the Message source to use
@@ -156,13 +134,13 @@ public interface EventProcessingConfigurer {
     );
 
     /**
-     * Configures which {@link SubscribableMessageSource} to use for Subscribing Event Processors if none was explicitly
+     * Configures which {@link SubscribableMessageSource} to use for Event Processors if none was explicitly
      * provided. Defaults to the Event Bus (or Store) available in the Configuration.
      * <p>
      * Note that the configuration of a default source does <em>not</em> change how the decision is made to select the
      * type of processor. Unless explicitly specified using {@link #usingSubscribingEventProcessors()} or
-     * {@link #usingTrackingEventProcessors()}, the default is dependent on the type of Message Source the Event Bus
-     * provides. If the Event Bus supports Tracking Processors, that is the default, otherwise Subscribing Event
+     * {@link #usingPooledStreamingEventProcessors()}, the default is dependent on the type of Message Source the Event Bus
+     * provides. If the Event Bus supports Pooled Streaming Processors, that is the default, otherwise Subscribing Event
      * Processors are the default.
      *
      * @param defaultSource a Function that defines the Message source to use
@@ -171,18 +149,6 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer configureDefaultSubscribableMessageSource(
             Function<LegacyConfiguration, SubscribableMessageSource<EventMessage<?>>> defaultSource
     );
-
-    /**
-     * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name} and
-     * {@code source} within this Configurer.
-     *
-     * @param name   a {@link String} specifying the name of the
-     *               {@link org.axonframework.eventhandling.TrackingEventProcessor} being registered
-     * @param source a {@link Function} that builds a {@link StreamableMessageSource}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerTrackingEventProcessor(String name,
-                                                             Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> source);
 
     /**
      * Registers a factory that builds the default {@link EventProcessor}. This is the {@link EventProcessorBuilder} to
@@ -231,17 +197,6 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer usingSubscribingEventProcessors();
-
-    /**
-     * Defaults Event Processors builders to use {@link org.axonframework.eventhandling.TrackingEventProcessor}.
-     * <p>
-     * The default behavior depends on the EventBus available in the Configuration. If the Event Bus is a
-     * {@link StreamableMessageSource}, processors are Tracking by default. This method must be used to force the use of
-     * Tracking Processors, unless specifically overridden for individual processors.
-     *
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer usingTrackingEventProcessors();
 
     /**
      * Defaults Event Processors builders to use {@link PooledStreamingEventProcessor}.
