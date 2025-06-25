@@ -367,30 +367,14 @@ public class EventProcessingModule
     private boolean noPsepCustomization(String processorName) {
         return !eventProcessorBuilders.containsKey(processorName)
                 && !psepConfigs.containsKey(processorName)
-                && !directPsepConfigs.containsKey(processorName)
-                && !psepConfigs.containsKey(CONFIGURED_DEFAULT_PSEP_CONFIG)
-                && !directPsepConfigs.containsKey(CONFIGURED_DEFAULT_PSEP_CONFIG);
+                && !psepConfigs.containsKey(CONFIGURED_DEFAULT_PSEP_CONFIG);
     }
 
     private PooledStreamingProcessorConfiguration pooledStreamingProcessorConfig(String name) {
-        // Check direct configurations first
-        if (directPsepConfigs.containsKey(name)) {
-            return directPsepConfigs.get(name);
-        }
-        // Check component-based configurations
         if (psepConfigs.containsKey(name)) {
             return psepConfigs.get(name).get();
         }
-        // Check default direct configuration
-        if (directPsepConfigs.containsKey(CONFIGURED_DEFAULT_PSEP_CONFIG)) {
-            return directPsepConfigs.get(CONFIGURED_DEFAULT_PSEP_CONFIG);
-        }
-        // Check default component configuration
-        if (psepConfigs.containsKey(CONFIGURED_DEFAULT_PSEP_CONFIG)) {
-            return psepConfigs.get(CONFIGURED_DEFAULT_PSEP_CONFIG).get();
-        }
-        // Fall back to the default component
-        return defaultPsepConfig.get();
+        return psepConfigs.getOrDefault(CONFIGURED_DEFAULT_PSEP_CONFIG, defaultPsepConfig).get();
     }
 
     private EventProcessor buildEventProcessor(
