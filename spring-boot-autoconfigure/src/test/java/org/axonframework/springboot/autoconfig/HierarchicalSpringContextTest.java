@@ -37,7 +37,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating the {@link AxonAutoConfiguration}.
+ * Test class validating the hierarchical Spring Context support of the {@link AxonAutoConfiguration}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
