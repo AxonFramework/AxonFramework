@@ -40,9 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -285,7 +285,7 @@ public class SpringComponentRegistry implements
      */
     void initialize(LifecycleRegistry lifecycleRegistry) {
         if (initialized.getAndSet(true)) {
-            throw new IllegalStateException("Component registry has already been initialized.");
+            return;
         }
         scanForConfigurationEnhancers();
         invokeEnhancers();
@@ -421,7 +421,18 @@ public class SpringComponentRegistry implements
         @Nonnull
         @Override
         public <C> C getComponent(@Nonnull Class<C> type) {
-            return beanFactory.getBean(type);
+            try {
+                return beanFactory.getBean(type);
+            } catch (NoUniqueBeanDefinitionException e) {
+                // Let's try to find a bean with the exact name instead.
+                C bean = beanFactory.getBeansOfType(type)
+                                    .get(type.getName());
+                if (bean == null) {
+                    // We couldn't be smarter, let's propagate the NoUniqueBeanDefinitionException instead.
+                    throw e;
+                }
+                return bean;
+            }
         }
 
         @Nonnull
