@@ -32,6 +32,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.configuration.DuplicateModuleRegistrationException;
+import org.axonframework.configuration.HierarchicalConfiguration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.OverridePolicy;
@@ -273,7 +274,7 @@ public class SpringComponentRegistry implements
     /**
      * Initializes the {@link ConfigurationEnhancer ConfigurationEnhancers} and retrieves all {@link Module Modules}.
      */
-    void initialize() {
+    void initialize(LifecycleRegistry lifecycleRegistry) {
         if (initialized.getAndSet(true)) {
             throw new IllegalStateException("Component registry has already been initialized.");
         }
@@ -282,10 +283,10 @@ public class SpringComponentRegistry implements
         }
         invokeEnhancers();
         registerComponentsWithApplicationContext();
-        // TODO #3075 - Detect all Module implementations
-
+        scanForModules();
+        buildModules(lifecycleRegistry);
         /*
-        buildModules(config, lifecycleRegistry);
+
         initializeComponents(config, lifecycleRegistry);
         registerFactoryShutdownHandlers(lifecycleRegistry);
         * */
@@ -343,6 +344,24 @@ public class SpringComponentRegistry implements
         });
     }
 
+    private void scanForModules() {
+        beanFactory.getBeansOfType(Module.class)
+                   .forEach((beanName, module) -> registerModule(module));
+    }
+
+    /**
+     * Ensure all registered {@link Module Modules} are built too. Store their {@link Configuration} results for
+     * exposure on {@link Configuration#getModuleConfigurations()}.
+     */
+    private void buildModules(LifecycleRegistry lifecycleRegistry) {
+        for (Module module : modules.values()) {
+            Configuration builtModule = HierarchicalConfiguration.build(
+                    lifecycleRegistry, (childLifecycleRegistry) -> module.build(configuration, childLifecycleRegistry)
+            );
+            moduleConfigurations.put(module.name(), builtModule);
+        }
+    }
+
     private class SpringConfiguration implements Configuration {
 
         @Nonnull
@@ -386,14 +405,12 @@ public class SpringComponentRegistry implements
 
         @Override
         public List<Configuration> getModuleConfigurations() {
-            // TODO #3075 - Detect all Module implementations
-            return List.of();
+            return List.copyOf(moduleConfigurations.values());
         }
 
         @Override
         public Optional<Configuration> getModuleConfiguration(@Nonnull String name) {
-            // TODO #3075 - Detect all Module implementations
-            return Optional.empty();
+            return Optional.ofNullable(moduleConfigurations.get(name));
         }
 
         @Nullable

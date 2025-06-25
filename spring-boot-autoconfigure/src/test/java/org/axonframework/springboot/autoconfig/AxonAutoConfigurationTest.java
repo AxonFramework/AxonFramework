@@ -20,25 +20,18 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentDecorator;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.TagResolver;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.configuration.Module;
 import org.axonframework.spring.config.SpringAxonApplication;
 import org.axonframework.spring.config.SpringComponentRegistry;
 import org.axonframework.spring.config.SpringLifecycleRegistry;
 import org.axonframework.spring.config.SpringLifecycleShutdownHandler;
 import org.axonframework.spring.config.SpringLifecycleStartHandler;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -49,7 +42,9 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -61,6 +56,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Steven van Beelen
  */
 public class AxonAutoConfigurationTest {
+
+    private static final String MODULE_SPECIFIC_STRING = "Some String That Is Only Present Here!";
 
     private ApplicationContextRunner testContext;
 
@@ -120,10 +117,8 @@ public class AxonAutoConfigurationTest {
                 assertTrue(shutdownHandler.isRunning());
             }
 
-            AtomicBoolean startHandlerInvoked = context.getBean("startHandlerInvoked", AtomicBoolean.class);
-            assertTrue(startHandlerInvoked.get());
-            AtomicBoolean shutdownHandlerInvoked = context.getBean("shutdownHandlerInvoked", AtomicBoolean.class);
-            assertFalse(shutdownHandlerInvoked.get());
+            assertThat(context.getBean("startHandlerInvoked", AtomicBoolean.class)).isTrue();
+            assertThat(context.getBean("shutdownHandlerInvoked", AtomicBoolean.class)).isFalse();
 
             // TODO await response if we can even test this
             // context.stop();
@@ -134,13 +129,43 @@ public class AxonAutoConfigurationTest {
     }
 
     @Test
-    void defaultAxonEventSourcingComponentsArePresent() {
+    void validateModuleBeanCreationMethodAddsModuleToAxonConfiguration() {
         testContext.run(context -> {
-            assertThat(context).hasSingleBean(TagResolver.class);
-            assertThat(context).hasSingleBean(EventStorageEngine.class);
-            assertThat(context).hasSingleBean(EventStore.class);
-            assertThat(context).hasSingleBean(EventSink.class);
-            assertThat(context).hasSingleBean(Snapshotter.class);
+            assertThat(context).hasBean("testModule");
+
+            AxonConfiguration axonConfiguration = context.getBean(AxonConfiguration.class);
+            assertThat(axonConfiguration.getModuleConfigurations()).hasSize(1);
+            Optional<org.axonframework.configuration.Configuration> testModuleConfig =
+                    axonConfiguration.getModuleConfiguration("testModule");
+            assertThat(testModuleConfig).isNotEmpty();
+            // Validate if the MODULE_SPECIFIC_STRING, that is only registered by the TestModule internally,
+            //  is not in the Application Context.
+            assertThat(testModuleConfig.get().getComponent(Object.class, MODULE_SPECIFIC_STRING))
+                    .isEqualTo(MODULE_SPECIFIC_STRING);
+            assertThat(context).doesNotHaveBean(MODULE_SPECIFIC_STRING);
+
+            // We expect a Module-specific bean to be registered for both a start and shutdown handler.
+            Map<String, SpringLifecycleStartHandler> startHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
+                    context, SpringLifecycleStartHandler.class
+            );
+            Map<String, SpringLifecycleShutdownHandler> shutdownHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
+                    context, SpringLifecycleShutdownHandler.class
+            );
+
+            // The testModule in the TestContext registers a start handler on phase 1337.
+            assertTrue(startHandlers.values().stream().anyMatch(h -> h.getPhase() == 1337));
+            // The testModule in the TestContext registers a shutdown handler on phase 7331.
+            assertTrue(shutdownHandlers.values().stream().anyMatch(h -> h.getPhase() == 7331));
+
+            for (SpringLifecycleStartHandler startHandler : startHandlers.values()) {
+                assertTrue(startHandler.isRunning());
+            }
+            for (SpringLifecycleShutdownHandler shutdownHandler : shutdownHandlers.values()) {
+                assertTrue(shutdownHandler.isRunning());
+            }
+
+            assertThat(context.getBean("moduleSpecificStartHandlerInvoked", AtomicBoolean.class)).isTrue();
+            assertThat(context.getBean("moduleSpecificShutdownHandlerInvoked", AtomicBoolean.class)).isFalse();
         });
     }
 
@@ -155,6 +180,16 @@ public class AxonAutoConfigurationTest {
 
         @Bean
         AtomicBoolean shutdownHandlerInvoked() {
+            return new AtomicBoolean(false);
+        }
+
+        @Bean
+        AtomicBoolean moduleSpecificStartHandlerInvoked() {
+            return new AtomicBoolean(false);
+        }
+
+        @Bean
+        AtomicBoolean moduleSpecificShutdownHandlerInvoked() {
             return new AtomicBoolean(false);
         }
 
@@ -175,6 +210,27 @@ public class AxonAutoConfigurationTest {
                     (ComponentDecorator<CommandBus, CommandBus>) (config, name, delegate) ->
                             new InterceptingCommandBus(delegate, List.of(), List.of())
             );
+        }
+
+        @Bean
+        Module testModule(AtomicBoolean moduleSpecificStartHandlerInvoked,
+                          AtomicBoolean moduleSpecificShutdownHandlerInvoked) {
+            //noinspection rawtypes
+            return new BaseModule("testModule") {
+                @Override
+                public org.axonframework.configuration.Configuration build(
+                        @NotNull org.axonframework.configuration.Configuration parent,
+                        @NotNull LifecycleRegistry lifecycleRegistry
+                ) {
+                    lifecycleRegistry.onStart(1337, () -> moduleSpecificStartHandlerInvoked.set(true));
+                    lifecycleRegistry.onShutdown(7331, () -> moduleSpecificShutdownHandlerInvoked.set(true));
+                    //noinspection unchecked
+                    componentRegistry((Consumer<ComponentRegistry>) registry -> registry.registerComponent(
+                            Object.class, MODULE_SPECIFIC_STRING, c -> MODULE_SPECIFIC_STRING
+                    ));
+                    return super.build(parent, lifecycleRegistry);
+                }
+            };
         }
     }
 
