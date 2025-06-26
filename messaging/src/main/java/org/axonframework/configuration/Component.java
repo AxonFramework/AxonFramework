@@ -18,6 +18,7 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.Objects;
@@ -90,12 +91,24 @@ public interface Component<C> extends DescribableComponent {
     /**
      * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
      *
-     * @param type The type of the component this object identifies, typically an interface.
+     * @param type The type reference of the component this object identifies.
      * @param name The name of the component this object identifies, potentially {@code null} when unimportant. Will
      *             throw an {@link IllegalArgumentException} for an empty {@code name}.
      * @param <C>  The type of the component this object identifies, typically an interface.
      */
-    record Identifier<C>(@Nonnull Class<C> type, @Nullable String name) {
+    record Identifier<C>(@Nonnull TypeReference<C> type, @Nullable String name) {
+
+        /**
+         * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
+         *
+         * @param type The type of the component this object identifies, typically an interface.
+         * @param name The name of the component this object identifies, potentially {@code null} when unimportant. Will
+         *             throw an {@link IllegalArgumentException} for an empty {@code name}.
+         */
+        public Identifier(@Nonnull Class<C> type,
+                          @Nullable String name) {
+            this(TypeReference.fromType(type), name);
+        }
 
         /**
          * Compact constructor asserting whether the {@code type} and {@code name} are non-null and not empty.
@@ -132,12 +145,24 @@ public interface Component<C> extends DescribableComponent {
          * otherwise.
          */
         public boolean matchesType(@Nonnull Identifier<?> other) {
-            return type.isAssignableFrom(other.type());
+            return type.getTypeAsClass().isAssignableFrom(other.type().getTypeAsClass());
+        }
+
+        /**
+         * Returns the raw type of the {@link #type()}.
+         * <p>
+         * This means any generics present on the {@code type} are lost. When those are needed, be sure to use
+         * {@link #type()} instead.
+         *
+         * @return The raw type of the {@link #type()}.
+         */
+        public Class<C> rawType() {
+            return this.type.getTypeAsClass();
         }
 
         @Override
         public String toString() {
-            return type.getName() + ":" + name;
+            return type.getTypeAsClass().getName() + ":" + name;
         }
     }
 }

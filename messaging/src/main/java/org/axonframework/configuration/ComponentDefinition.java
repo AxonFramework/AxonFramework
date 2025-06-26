@@ -144,9 +144,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      */
     static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull TypeReference<C> type, @Nullable String name) {
         return new IncompleteComponentDefinition<>() {
-            private final Component.Identifier<C> identifier = new Component.Identifier<>(
-                    type.getTypeAsClass(), name
-            );
+            private final Component.Identifier<C> identifier = new Component.Identifier<>(type, name);
 
             @Override
             public ComponentDefinition<C> withInstance(@Nonnull C instance) {
@@ -245,20 +243,19 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
     }
 
     /**
-     * Returns the given type of this {@code ComponentDefinition}, set on {@link #ofType(Class)} or
-     * {@link #ofTypeAndName(Class, String)}.
+     * Returns the given {@link Component.Identifier#rawType() raw type} of this {@code ComponentDefinition}, set on
+     * {@link #ofType(Class)} or {@link #ofTypeAndName(Class, String)}.
      *
-     * @return The given type of this {@code ComponentDefinition}.
+     * @return The given {@link Component.Identifier#rawType() raw type} of this {@code ComponentDefinition}.
      */
-    Class<C> type();
+    Class<C> rawType();
 
     /**
      * Returns the given name of this {@code ComponentDefinition}, set on {@link #ofTypeAndName(Class, String)}.
-     * <p>
-     * Defaults to the {@link Class#getSimpleName()} of the {@link #type()} when not explicitely set.
      *
      * @return The given name of this {@code ComponentDefinition}.
      */
+    @Nullable
     String name();
 
     /**

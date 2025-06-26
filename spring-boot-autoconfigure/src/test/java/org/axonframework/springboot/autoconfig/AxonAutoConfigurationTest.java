@@ -19,11 +19,13 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.Component;
 import org.axonframework.configuration.ComponentDecorator;
+import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -208,6 +210,18 @@ public class AxonAutoConfigurationTest {
         });
     }
 
+    @Test
+    void configurationEnhancerRegisteredGenericComponentsAreCorrectlyRegisteredInApplicationContext() {
+        testContext.withUserConfiguration(GenericComponentRegistrationContext.class).run(context -> {
+            assertThat(context).hasBean("myDependentBean");
+            //noinspection unchecked
+            MyDependentBean<String, Long> myDependentBean = context.getBean("myDependentBean", MyDependentBean.class);
+
+            assertThat(myDependentBean.beanOne().field()).isEqualTo("helloWorld");
+            assertThat(myDependentBean.beanTwo().field()).isEqualTo(42L);
+        });
+    }
+
     @Configuration
     @EnableAutoConfiguration
     public static class TestContext {
@@ -361,5 +375,48 @@ public class AxonAutoConfigurationTest {
                 }
             };
         }
+    }
+
+    @Configuration
+    @EnableAutoConfiguration
+    public static class GenericComponentRegistrationContext {
+
+        @Bean
+        ConfigurationEnhancer genericComponentRegistrationEnhancer() {
+            return registry -> {
+                ComponentDefinition<MyGenericBean<String>> genericStringBeanDefinition =
+                        ComponentDefinition.ofTypeAndName(new TypeReference<MyGenericBean<String>>() {
+                                           }, "stringBean")
+                                           .withInstance(new MyGenericBean<>("helloWorld"));
+                registry.registerComponent(genericStringBeanDefinition);
+
+                ComponentDefinition<MyGenericBean<Integer>> genericIntegerBeanDefinition =
+                        ComponentDefinition.ofTypeAndName(new TypeReference<MyGenericBean<Integer>>() {
+                                           }, "intBean")
+                                           .withInstance(new MyGenericBean<>(1337));
+                registry.registerComponent(genericIntegerBeanDefinition);
+
+                ComponentDefinition<MyGenericBean<Long>> genericLongBeanDefinition =
+                        ComponentDefinition.ofTypeAndName(new TypeReference<MyGenericBean<Long>>() {
+                                           }, "longBean")
+                                           .withInstance(new MyGenericBean<>(42L));
+                registry.registerComponent(genericLongBeanDefinition);
+            };
+        }
+
+        @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+        @Bean
+        MyDependentBean<String, Long> myDependentBean(MyGenericBean<String> stringBean,
+                                                      MyGenericBean<Long> longBean) {
+            return new MyDependentBean<>(stringBean, longBean);
+        }
+    }
+
+    private record MyGenericBean<T>(T field) {
+
+    }
+
+    private record MyDependentBean<T, S>(MyGenericBean<T> beanOne, MyGenericBean<S> beanTwo) {
+
     }
 }

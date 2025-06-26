@@ -135,7 +135,7 @@ public class SpringComponentRegistry implements
         // registered yet. We will register these in the application context just-in-time.
         Component<? extends C> component = creator.createComponent();
         if (components.contains(component.identifier())) {
-            throw new ComponentOverrideException(creator.type(), creator.name());
+            throw new ComponentOverrideException(creator.rawType(), creator.name());
         }
 
         components.put(component);
@@ -401,7 +401,7 @@ public class SpringComponentRegistry implements
     private void registerLocalComponentsWithApplicationContext() {
         components.postProcessComponents(component -> {
             String name = Objects.requireNonNullElseGet(component.identifier().name(),
-                                                        () -> component.identifier().type().getName());
+                                                        () -> component.identifier().rawType().getName());
             if (beanFactory.containsBeanDefinition(name)) {
                 logger.info("Component with name [{}] is already available. Skipping registration.", name);
                 return;
@@ -409,7 +409,7 @@ public class SpringComponentRegistry implements
 
             AbstractBeanDefinition definition =
                     BeanDefinitionBuilder.rootBeanDefinition(
-                                                 ResolvableType.forRawClass(component.identifier().type()),
+                                                 ResolvableType.forType(component.identifier().type().getType()),
                                                  () -> component.resolve(configuration)
                                          )
                                          .getBeanDefinition();

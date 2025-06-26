@@ -223,7 +223,7 @@ public interface ComponentRegistry extends DescribableComponent {
 
     /**
      * Registers a {@link Component} based on the given {@code definition} only <b>if</b> there is none yet for the
-     * definition's {@link ComponentDefinition#type() type} and {@link ComponentDefinition#name() name} combination.
+     * definition's {@link ComponentDefinition#rawType() raw type} and {@link ComponentDefinition#name() name} combination.
      *
      * @param definition The definition of the component to register.
      * @param <C>        The declared type of the component.
@@ -231,8 +231,8 @@ public interface ComponentRegistry extends DescribableComponent {
      */
     default <C> ComponentRegistry registerIfNotPresent(@Nonnull ComponentDefinition<C> definition) {
         return definition.name() == null
-                ? hasComponent(definition.type()) ? this : registerComponent(definition)
-                : hasComponent(definition.type(), definition.name()) ? this : registerComponent(definition);
+                ? hasComponent(definition.rawType()) ? this : registerComponent(definition)
+                : hasComponent(definition.rawType(), definition.name()) ? this : registerComponent(definition);
     }
 
     /**
