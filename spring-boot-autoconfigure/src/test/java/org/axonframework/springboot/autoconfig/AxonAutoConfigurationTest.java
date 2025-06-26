@@ -27,6 +27,7 @@ import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.configuration.InstantiatedComponentDefinition;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.Module;
@@ -135,7 +136,7 @@ public class AxonAutoConfigurationTest {
 
     @Test
     void validateConfigurationEnhancersAreInvokedAndCanDecorateComponents() {
-        testContext.run(context -> {
+        testContext.withUserConfiguration(ConfigurationEnhancerContext.class).run(context -> {
             assertThat(context).hasBean("commandBus");
             assertThat(context).hasSingleBean(InterceptingCommandBus.class);
         });
@@ -143,7 +144,7 @@ public class AxonAutoConfigurationTest {
 
     @Test
     void validateModuleBeanCreationMethodAddsModuleToAxonConfiguration() {
-        testContext.run(context -> {
+        testContext.withUserConfiguration(ModuleContext.class).run(context -> {
             assertThat(context).hasBean("testModule");
 
             AxonConfiguration axonConfiguration = context.getBean(AxonConfiguration.class);
@@ -184,7 +185,7 @@ public class AxonAutoConfigurationTest {
 
     @Test
     void validateComponentFactoryBeanUsage() {
-        testContext.run(context -> {
+        testContext.withUserConfiguration(ComponentFactoryContext.class).run(context -> {
             assertThat(context).hasBean("testComponentFactory");
 
             Map<String, SpringLifecycleShutdownHandler> shutdownHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
@@ -196,8 +197,6 @@ public class AxonAutoConfigurationTest {
             for (SpringLifecycleShutdownHandler shutdownHandler : shutdownHandlers.values()) {
                 assertTrue(shutdownHandler.isRunning());
             }
-
-            assertThat(context.getBean("moduleSpecificShutdownHandlerInvoked", AtomicBoolean.class)).isFalse();
         });
     }
 
@@ -216,16 +215,6 @@ public class AxonAutoConfigurationTest {
         }
 
         @Bean
-        AtomicBoolean moduleSpecificStartHandlerInvoked() {
-            return new AtomicBoolean(false);
-        }
-
-        @Bean
-        AtomicBoolean moduleSpecificShutdownHandlerInvoked() {
-            return new AtomicBoolean(false);
-        }
-
-        @Bean
         CommandBus commandBus(LifecycleRegistry lifecycleRegistry,
                               AtomicBoolean startHandlerInvoked,
                               AtomicBoolean shutdownHandlerInvoked) {
@@ -234,6 +223,50 @@ public class AxonAutoConfigurationTest {
             lifecycleRegistry.onShutdown(12, () -> shutdownHandlerInvoked.set(true));
             return simpleCommandBus;
         }
+    }
+
+    @Configuration
+    @EnableAutoConfiguration
+    public static class CustomContext {
+
+        @Bean
+        SpringComponentRegistry customComponentRegistry(ApplicationContext applicationContext) {
+            return new SpringComponentRegistry(applicationContext);
+        }
+
+        @Bean
+        SpringLifecycleRegistry customLifecycleRegistry() {
+            return new SpringLifecycleRegistry();
+        }
+
+        @Bean
+        SpringAxonApplication customAxonApplication(SpringComponentRegistry customComponentRegistry,
+                                                    SpringLifecycleRegistry customLifecycleRegistry) {
+            return new SpringAxonApplication(customComponentRegistry, customLifecycleRegistry);
+        }
+
+        @Bean
+        AxonConfiguration customAxonApplicationConfiguration(SpringAxonApplication customAxonApplication) {
+            return customAxonApplication.build();
+        }
+    }
+
+    @Configuration
+    @EnableAutoConfiguration
+    public static class DecoratorDefinitionContext {
+
+        @Bean
+        DecoratorDefinition<CommandBus, InterceptingCommandBus> interceptingDecorator() {
+            return DecoratorDefinition.forType(CommandBus.class)
+                                      .with((config, name, delegate) ->
+                                                    new InterceptingCommandBus(delegate, List.of(), List.of()))
+                                      .order(0);
+        }
+    }
+
+    @Configuration
+    @EnableAutoConfiguration
+    public static class ConfigurationEnhancerContext {
 
         @Bean
         ConfigurationEnhancer configurationEnhancer() {
@@ -242,6 +275,21 @@ public class AxonAutoConfigurationTest {
                     (ComponentDecorator<CommandBus, CommandBus>) (config, name, delegate) ->
                             new InterceptingCommandBus(delegate, List.of(), List.of())
             );
+        }
+    }
+
+    @Configuration
+    @EnableAutoConfiguration
+    public static class ModuleContext {
+
+        @Bean
+        AtomicBoolean moduleSpecificStartHandlerInvoked() {
+            return new AtomicBoolean(false);
+        }
+
+        @Bean
+        AtomicBoolean moduleSpecificShutdownHandlerInvoked() {
+            return new AtomicBoolean(false);
         }
 
         @Bean
@@ -264,6 +312,11 @@ public class AxonAutoConfigurationTest {
                 }
             };
         }
+    }
+
+    @Configuration
+    @EnableAutoConfiguration
+    public static class ComponentFactoryContext {
 
         @Bean
         ComponentFactory<String> testComponentFactory() {
@@ -298,32 +351,6 @@ public class AxonAutoConfigurationTest {
                     });
                 }
             };
-        }
-    }
-
-    @Configuration
-    @EnableAutoConfiguration
-    public static class CustomContext {
-
-        @Bean
-        SpringComponentRegistry customComponentRegistry(ApplicationContext applicationContext) {
-            return new SpringComponentRegistry(applicationContext);
-        }
-
-        @Bean
-        SpringLifecycleRegistry customLifecycleRegistry() {
-            return new SpringLifecycleRegistry();
-        }
-
-        @Bean
-        SpringAxonApplication customAxonApplication(SpringComponentRegistry customComponentRegistry,
-                                                    SpringLifecycleRegistry customLifecycleRegistry) {
-            return new SpringAxonApplication(customComponentRegistry, customLifecycleRegistry);
-        }
-
-        @Bean
-        AxonConfiguration customAxonApplicationConfiguration(SpringAxonApplication customAxonApplication) {
-            return customAxonApplication.build();
         }
     }
 }
