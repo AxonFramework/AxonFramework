@@ -40,7 +40,7 @@ import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvok
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventstreaming.LegacyStreamableEventSource;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -908,7 +908,7 @@ public class EventProcessingModule
      * @param name                   of the processor
      * @param eventHandlerInvoker    used by the processor for the event handling
      * @param config                 main configuration providing access for Axon components
-     * @param messageSource          where to retrieve events from
+     * @param eventSource            where to retrieve events from
      * @param processorConfiguration for the pooled event processor construction
      * @return Default {@link PooledStreamingEventProcessor} configuration based on this configure module.
      */
@@ -916,7 +916,7 @@ public class EventProcessingModule
             String name,
             EventHandlerInvoker eventHandlerInvoker,
             LegacyConfiguration config,
-            StreamableMessageSource<TrackedEventMessage<?>> messageSource,
+            StreamableEventSource<TrackedEventMessage<?>> eventSource,
             PooledStreamingProcessorConfiguration processorConfiguration
     ) {
         PooledStreamingEventProcessor.Builder builder =
@@ -925,7 +925,7 @@ public class EventProcessingModule
                                              .eventHandlerInvoker(eventHandlerInvoker)
                                              .errorHandler(errorHandler(name))
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
-                                             .eventSource(new LegacyStreamableEventSource<>(messageSource))
+                                             .eventSource(eventSource)
                                              .tokenStore(tokenStore(name))
                                              .transactionManager(transactionManager(name))
                                              .coordinatorExecutor(processorName -> {
