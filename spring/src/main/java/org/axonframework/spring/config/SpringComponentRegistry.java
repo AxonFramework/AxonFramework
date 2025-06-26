@@ -122,6 +122,8 @@ public class SpringComponentRegistry implements
                                    @Nonnull SpringLifecycleRegistry lifecycleRegistry) {
         Objects.requireNonNull(listableBeanFactory, "The ListableBeanFactory may not be null.");
         this.enhancers.addAll(listableBeanFactory.getBeansOfType(ConfigurationEnhancer.class).values());
+        this.lifecycleRegistry =
+                Objects.requireNonNull(lifecycleRegistry, "The Lifecycle Registry may not be null.");
     }
 
     @Override
