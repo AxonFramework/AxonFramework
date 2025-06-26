@@ -23,7 +23,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test class validating the {@link FullConcurrencyPolicy}.
@@ -36,9 +36,9 @@ class FullConcurrencyPolicyTest {
     @Test
     void sequencingIdentifier() {
         FullConcurrencyPolicy testSubject = new FullConcurrencyPolicy();
-        assertNotNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
-        assertNotNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
-        assertNotNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
+        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()))).isPresent();
+        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()))).isPresent();
+        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()))).isPresent();
     }
 
     private DomainEventMessage<Object> newStubDomainEvent(Object aggregateIdentifier) {
