@@ -167,7 +167,9 @@ public class SpringComponentRegistry implements
     @Override
     public boolean hasComponent(@Nonnull Class<?> type,
                                 @Nullable String name) {
-        Assert.notNull(name, () -> "Spring does not allow the use of null names for components.");
+        if (name == null) {
+            return hasComponent(type);
+        }
         // Checks both the local Components as the BeanFactory,
         //  since the ConfigurationEnhancers act before component registration with the Application Context.
         return components.contains(new Component.Identifier<>(type, name)) ||
@@ -341,7 +343,7 @@ public class SpringComponentRegistry implements
      * <p>
      * This will ensure all sensible default components and decorators are in place from these enhancers.
      * <p>
-     * The disabledEnhancers filter is invoked in a for-loop instead of as a Stream operation, as a
+     * The disabled enhancers filter is invoked in a for-loop instead of as a Stream operation, as a
      * {@code ConfigurationEnhancer} can add more enhancers that should be disabled. By making the filter part of the
      * stream operation, that update is lost.
      */

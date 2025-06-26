@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -45,13 +44,11 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
  * @author Steven van Beelen
  * @since 5.0.0
  */
-@Internal
 public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
 
     @Override
     public int order() {
-        // TODO Have to lower the value, as the MessagingConfigurationDefaults currently takes over otherwise.
-        return Integer.MAX_VALUE - 1;
+        return Integer.MAX_VALUE - 10;
     }
 
     @Override

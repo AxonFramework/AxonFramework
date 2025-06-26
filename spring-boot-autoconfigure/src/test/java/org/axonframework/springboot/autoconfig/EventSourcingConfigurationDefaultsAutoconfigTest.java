@@ -19,6 +19,7 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -59,6 +60,7 @@ class EventSourcingConfigurationDefaultsAutoconfigTest {
             assertThat(context).hasSingleBean(EventStorageEngine.class);
             assertThat(context).hasBean(EventStorageEngine.class.getName());
             assertThat(context).hasSingleBean(EventStore.class);
+            assertThat(context).hasSingleBean(EventSink.class);
             assertThat(context).hasBean(EventStore.class.getName());
             assertThat(context).hasSingleBean(Snapshotter.class);
             assertThat(context).hasBean(Snapshotter.class.getName());
@@ -73,6 +75,7 @@ class EventSourcingConfigurationDefaultsAutoconfigTest {
             assertThat(context).hasSingleBean(EventStorageEngine.class);
             assertThat(context).hasBean("customEventStorageEngine");
             assertThat(context).hasSingleBean(EventStore.class);
+            assertThat(context).hasSingleBean(EventSink.class);
             assertThat(context).hasBean("customEventStore");
             assertThat(context).hasSingleBean(Snapshotter.class);
             assertThat(context).hasBean("customSnapshotter");
