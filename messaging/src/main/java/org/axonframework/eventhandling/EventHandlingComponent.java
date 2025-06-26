@@ -16,8 +16,10 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
 
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -47,5 +49,17 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      */
     default boolean isSupported(QualifiedName eventName) {
         return supportedEvents().contains(eventName);
+    }
+
+    /**
+     * Returns the sequence identifier for the given {@code event}. When two events have the same identifier (as defined
+     * by their equals method), they will be executed sequentially. A {@code Optional#empty()} value indicates that
+     * there are no sequencing requirements for the handling of this event.
+     *
+     * @param event The event for which to get the sequencing identifier.
+     * @return A sequence identifier for the given event.
+     */
+    default Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+        return Optional.empty();
     }
 }
