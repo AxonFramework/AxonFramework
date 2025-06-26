@@ -92,7 +92,7 @@ class PooledStreamingEventProcessorTest {
     private static final String PROCESSOR_NAME = "test";
 
     private PooledStreamingEventProcessor testSubject;
-    private EventHandlerInvoker stubEventHandler;
+    private EventHandlerInvoker stubEventHandler; // TODO: remove in TODO #3304 - Integrate event replay logic into Event Handling Component
     private EventHandlingComponent stubEventHandlingComponent;
     private AsyncInMemoryStreamableEventSource stubMessageSource;
     private InMemoryTokenStore tokenStore;
