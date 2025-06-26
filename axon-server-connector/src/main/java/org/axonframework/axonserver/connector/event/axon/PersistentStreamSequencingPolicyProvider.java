@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static java.lang.String.format;
@@ -95,7 +96,7 @@ public class PersistentStreamSequencingPolicyProvider
 
     @Override
     public SequencingPolicy<EventMessage<?>> apply(LegacyConfiguration configuration) {
-        return this::sequencingIdentifier;
+        return event -> Optional.ofNullable(sequencingIdentifier(event));
     }
 
     private Object sequencingIdentifier(EventMessage<?> event) {
