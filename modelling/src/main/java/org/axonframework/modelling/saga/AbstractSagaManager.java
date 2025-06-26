@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.saga;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
@@ -40,7 +41,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -247,6 +247,13 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     public boolean canResolve(ScopeDescriptor scopeDescription) {
         return scopeDescription instanceof SagaScopeDescriptor
                 && Objects.equals(sagaType.getSimpleName(), ((SagaScopeDescriptor) scopeDescription).getType());
+    }
+
+    @Override
+    public Set<Class<?>> supportedEventTypes() {
+        // Sagas support event types based on association values which are determined dynamically
+        // Return empty set as this information is not available statically
+        return Set.of();
     }
 
     /**

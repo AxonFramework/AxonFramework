@@ -16,13 +16,15 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import jakarta.annotation.Nonnull;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link EventHandlerInvoker} with capabilities to invoke several different invokers.
@@ -111,5 +113,12 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
         delegates.stream()
                  .filter(EventHandlerInvoker::supportsReset)
                  .forEach(eventHandlerInvoker -> eventHandlerInvoker.performReset(resetContext, processingContext));
+    }
+
+    @Override
+    public Set<Class<?>> supportedEventTypes() {
+        return delegates.stream()
+                        .flatMap(invoker -> invoker.supportedEventTypes().stream())
+                        .collect(Collectors.toSet());
     }
 }
