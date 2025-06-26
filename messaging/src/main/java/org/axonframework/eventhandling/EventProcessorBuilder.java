@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.apache.commons.lang3.NotImplementedException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -125,7 +126,7 @@ public abstract class EventProcessorBuilder {
      */
     protected void validate() throws AxonConfigurationException {
         assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
-        assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
+//        assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
     }
 
     private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
@@ -175,5 +176,9 @@ public abstract class EventProcessorBuilder {
      */
     public EventProcessorSpanFactory spanFactory() {
         return spanFactory;
+    }
+
+    public EventHandlingComponent eventHandlingComponent() {
+        throw new NotImplementedException("Not implemented in AbstractEventProcessorBuilder");
     }
 }

@@ -17,13 +17,14 @@
 package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Assert;
+import org.apache.commons.lang3.NotImplementedException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorBuilder;
@@ -33,6 +34,7 @@ import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
+import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
@@ -51,7 +53,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.stream.IntStream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -132,7 +132,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         builder.validate();
         this.eventProcessorOperations = new EventProcessorOperations.Builder()
                 .name(builder.name())
-                .eventHandlerInvoker(builder.eventHandlerInvoker())
+                .eventHandlingComponent(builder.eventHandlingComponent())
                 .errorHandler(builder.errorHandler())
                 .spanFactory(builder.spanFactory())
                 .messageMonitor(builder.messageMonitor())
@@ -159,7 +159,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .unitOfWorkFactory(unitOfWorkFactory)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
-                                      .eventFilter(event -> eventProcessorOperations.canHandleType(event.getPayloadType()))
+                                      .eventFilter(event -> eventProcessorOperations.canHandleType(event.type()))
                                       .onMessageIgnored(eventProcessorOperations::reportIgnored)
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
@@ -169,7 +169,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
-                                      .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment))
+                                      // .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment)) // TODO #3304 - Integrate event replay logic into Event Handling Component
                                       .build();
     }
 
@@ -306,7 +306,9 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public boolean supportsReset() {
-        return eventHandlerInvoker().supportsReset();
+        return false;
+        // TODO #3304 - Integrate event replay logic into Event Handling Component
+        //return eventHandlerInvoker().supportsReset();
     }
 
     @Override
@@ -341,30 +343,32 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public <R> void resetTokens(@Nonnull TrackingToken startPosition, R resetContext) {
-        Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
-        Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
-
-        var unitOfWork = unitOfWorkFactory.create();
-        var resetTokensFuture = unitOfWork.executeWithResult((processingContext) -> {
-            // Find all segments and fetch all tokens
-            int[] segments = tokenStore.fetchSegments(getName());
-            logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
-            TrackingToken[] tokens = Arrays.stream(segments)
-                                           .mapToObj(segment -> tokenStore.fetchToken(getName(), segment))
-                                           .toArray(TrackingToken[]::new);
-            // Perform the reset on the EventHandlerInvoker
-            eventHandlerInvoker().performReset(resetContext, null);
-            // Update all tokens towards ReplayTokens
-            IntStream.range(0, tokens.length)
-                     .forEach(i -> tokenStore.storeToken(
-                             ReplayToken.createReplayToken(tokens[i], startPosition, resetContext),
-                             getName(),
-                             segments[i]
-                     ));
-            logger.info("Processor [{}] successfully reset tokens for segments [{}].", name, segments);
-            return CompletableFuture.completedFuture(null);
-        });
-        joinAndUnwrap(resetTokensFuture);
+        // TODO #3304 - Integrate event replay logic into Event Handling Component
+        throw new ResetNotSupportedException("TODO #3304 - Integrate event replay logic into Event Handling Component");
+//        Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
+//        Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
+//
+//        var unitOfWork = unitOfWorkFactory.create();
+//        var resetTokensFuture = unitOfWork.executeWithResult((processingContext) -> {
+//            // Find all segments and fetch all tokens
+//            int[] segments = tokenStore.fetchSegments(getName());
+//            logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
+//            TrackingToken[] tokens = Arrays.stream(segments)
+//                                           .mapToObj(segment -> tokenStore.fetchToken(getName(), segment))
+//                                           .toArray(TrackingToken[]::new);
+//            // Perform the reset on the EventHandlerInvoker
+//            eventHandlerInvoker().performReset(resetContext, null);
+//            // Update all tokens towards ReplayTokens
+//            IntStream.range(0, tokens.length)
+//                     .forEach(i -> tokenStore.storeToken(
+//                             ReplayToken.createReplayToken(tokens[i], startPosition, resetContext),
+//                             getName(),
+//                             segments[i]
+//                     ));
+//            logger.info("Processor [{}] successfully reset tokens for segments [{}].", name, segments);
+//            return CompletableFuture.completedFuture(null);
+//        });
+//        joinAndUnwrap(resetTokensFuture);
     }
 
     /**
@@ -486,6 +490,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         private int batchSize = 1;
         private Clock clock = GenericEventMessage.clock;
         private boolean coordinatorExtendsClaims = false;
+        private EventHandlingComponent eventHandlingComponent;
 
         protected Builder() {
         }
@@ -496,10 +501,18 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             return this;
         }
 
+        public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
+            assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
+            this.eventHandlingComponent = eventHandlingComponent;
+            return this;
+        }
+
+        @Deprecated(since = "5.0.0", forRemoval = true)
         @Override
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
-            super.eventHandlerInvoker(eventHandlerInvoker);
-            return this;
+            throw new NotImplementedException(
+                    "The eventHandlerInvoker() method is no longer supported. Use eventHandlingComponent() instead."
+            );
         }
 
         @Override
@@ -808,5 +821,9 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             return name;
         }
 
+        @Override
+        public EventHandlingComponent eventHandlingComponent() {
+            return eventHandlingComponent;
+        }
     }
 }
