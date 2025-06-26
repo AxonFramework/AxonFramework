@@ -99,7 +99,7 @@ public class UpdateChecker implements Runnable {
                 return;
             }
             logger.info(
-                    "Your AxonIQ libraries will be checked for updates periodically. See https://go.axoniq.io/update-check for more information.");
+                    "Your AxonIQ libraries will be checked for updates periodically. See https://www.axoniq.io/update-check for more information.");
 
             delayedTask = DelayedTask.of(this, 1000);
         } catch (Exception e) {
