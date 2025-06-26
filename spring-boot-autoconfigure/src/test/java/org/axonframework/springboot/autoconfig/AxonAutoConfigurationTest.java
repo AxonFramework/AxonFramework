@@ -127,13 +127,12 @@ public class AxonAutoConfigurationTest {
             }
 
             assertThat(context.getBean("startHandlerInvoked", AtomicBoolean.class)).isTrue();
-            assertThat(context.getBean("shutdownHandlerInvoked", AtomicBoolean.class)).isFalse();
+            AtomicBoolean shutdownHandlerInvoked = context.getBean("shutdownHandlerInvoked", AtomicBoolean.class);
+            assertThat(shutdownHandlerInvoked).isFalse();
 
-            // TODO await response if we can even test this
-            // context.stop();
-            // await().atMost(Duration.ofSeconds(5))
-            //        .pollDelay(Duration.ofMillis(25))
-            //        .until(shutdownHandlerInvoked::get);
+            // Shutdown the Application Context to validate the shutdown handler is invoked.
+            context.stop();
+            assertThat(shutdownHandlerInvoked).isTrue();
         });
     }
 
@@ -190,7 +189,13 @@ public class AxonAutoConfigurationTest {
             }
 
             assertThat(context.getBean("moduleSpecificStartHandlerInvoked", AtomicBoolean.class)).isTrue();
-            assertThat(context.getBean("moduleSpecificShutdownHandlerInvoked", AtomicBoolean.class)).isFalse();
+            AtomicBoolean moduleSpecificShutdownHandlerInvoked =
+                    context.getBean("moduleSpecificShutdownHandlerInvoked", AtomicBoolean.class);
+            assertThat(moduleSpecificShutdownHandlerInvoked).isFalse();
+
+            // Shutdown the Application Context to validate the shutdown handler is invoked.
+            context.stop();
+            assertThat(moduleSpecificShutdownHandlerInvoked).isTrue();
         });
     }
 
@@ -208,6 +213,14 @@ public class AxonAutoConfigurationTest {
             for (SpringLifecycleShutdownHandler shutdownHandler : shutdownHandlers.values()) {
                 assertTrue(shutdownHandler.isRunning());
             }
+
+            AtomicBoolean factoryShutdownHandlerInvoked =
+                    context.getBean("factoryShutdownHandlerInvoked", AtomicBoolean.class);
+            assertThat(factoryShutdownHandlerInvoked).isFalse();
+
+            // Shutdown the Application Context to validate the shutdown handler is invoked.
+            context.stop();
+            assertThat(factoryShutdownHandlerInvoked).isTrue();
         });
     }
 
@@ -359,7 +372,12 @@ public class AxonAutoConfigurationTest {
     public static class ComponentFactoryContext {
 
         @Bean
-        ComponentFactory<String> testComponentFactory() {
+        AtomicBoolean factoryShutdownHandlerInvoked() {
+            return new AtomicBoolean(false);
+        }
+
+        @Bean
+        ComponentFactory<String> testComponentFactory(AtomicBoolean factoryShutdownHandlerInvoked) {
             return new ComponentFactory<>() {
                 @Override
                 public void describeTo(@NotNull ComponentDescriptor descriptor) {
@@ -386,9 +404,7 @@ public class AxonAutoConfigurationTest {
 
                 @Override
                 public void registerShutdownHandlers(@NotNull LifecycleRegistry registry) {
-                    registry.onShutdown(9001, () -> {
-                        // We cannot validate the invocation, but we can validate the constructed SmartLifecycle.
-                    });
+                    registry.onShutdown(9001, () -> factoryShutdownHandlerInvoked.set(true));
                 }
             };
         }
