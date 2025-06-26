@@ -231,6 +231,11 @@ public class SpringComponentRegistry implements
         descriptor.describeProperty("factories", factories);
     }
 
+    @Override
+    public void postProcessBeanFactory(@Nonnull ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        this.beanFactory = beanFactory;
+    }
+
     /**
      * Override from the {@link BeanPostProcessor} interface.
      * <p>
@@ -247,6 +252,8 @@ public class SpringComponentRegistry implements
     @Override
     public Object postProcessAfterInitialization(@Nonnull Object bean,
                                                  @Nonnull String beanName) throws BeansException {
+        ensureEnhancersAreProcessed();
+
         Component<?> springComponent = new SpringComponent<>(bean, beanName);
         Component.Identifier<?> componentId = new Component.Identifier<>(bean.getClass(), beanName);
 
@@ -261,11 +268,6 @@ public class SpringComponentRegistry implements
         }
 
         return springComponent.resolve(configuration);
-    }
-
-    @Override
-    public void postProcessBeanFactory(@Nonnull ConfigurableListableBeanFactory beanFactory) throws BeansException {
-        this.beanFactory = beanFactory;
     }
 
     /**
@@ -294,14 +296,27 @@ public class SpringComponentRegistry implements
         if (initialized.getAndSet(true)) {
             return;
         }
-        scanForConfigurationEnhancers();
-        invokeEnhancers();
+        ensureEnhancersAreProcessed();
         decorateComponents();
         registerComponentsWithApplicationContext();
         scanForModules();
         buildModules(lifecycleRegistry);
         scanForComponentFactories();
         registerFactoryShutdownHandlers(lifecycleRegistry);
+    }
+
+    /**
+     * Ensures that we have (1) searched for additional {@link ConfigurationEnhancer ConfigurationEnhancers} through the
+     * {@link ServiceLoader} (if not {@link #disableEnhancerScanning() disabled} and (2) that all enhancers have
+     * {@link ConfigurationEnhancer#enhance(ComponentRegistry) enhanced} {@code this ComponentRegistry} implementation.
+     * <p>
+     * Uses a gate to ensure this task is only done once.
+     */
+    private void ensureEnhancersAreProcessed() {
+        if (invokedEnhancers.isEmpty()) {
+            scanForConfigurationEnhancers();
+            invokeEnhancers();
+        }
     }
 
     /**
