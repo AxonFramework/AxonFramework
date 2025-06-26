@@ -64,6 +64,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private final List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new ArrayList<>();
     private final List<Class<? extends ConfigurationEnhancer>> invokedEnhancers = new ArrayList<>();
 
+    private Optional<Configuration> parentConfig = Optional.empty();
+
     @Override
     public <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> definition) {
         requireNonNull(definition, "The ComponentDefinition must not be null.");
@@ -104,7 +106,13 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     @Override
     public boolean hasComponent(@Nonnull Class<?> type,
                                 @Nullable String name) {
-        return components.contains(new Identifier<>(type, name));
+        return components.contains(new Identifier<>(type, name)) || parentConfigHasComponent(type, name);
+    }
+
+    private Boolean parentConfigHasComponent(Class<?> type, String name) {
+        return parentConfig.map(parent -> parent.getOptionalComponent(type, name)
+                                                .isPresent())
+                           .orElse(false);
     }
 
     @Override
@@ -168,6 +176,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         if (initialized.getAndSet(true)) {
             throw new IllegalStateException("Component registry has already been initialized.");
         }
+        this.parentConfig = Optional.ofNullable(optionalParent);
         if (enhancerScanning) {
             scanForConfigurationEnhancers();
         }
