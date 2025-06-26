@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package org.axonframework.eventhandling.async;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.eventhandling.EventMessage;
 
+import java.util.Optional;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -60,10 +61,10 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
     }
 
     @Override
-    public Object getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
         if (payloadClass.isAssignableFrom(eventMessage.getPayloadType())) {
             @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.getPayload();
-            return propertyExtractor.apply(castedPayload);
+            return Optional.ofNullable(propertyExtractor.apply(castedPayload));
         }
 
         return fallbackSequencingPolicy.getSequenceIdentifierFor(eventMessage);
@@ -191,7 +192,7 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
             }
 
             @Override
-            public Object getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
+            public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
                 throw new IllegalArgumentException(
                         "The event message payload is not of a supported type. "
                                 + "Either make sure that the processor only consumes supported events "

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling.async;
 
 import jakarta.annotation.Nonnull;
+
+import java.util.Optional;
 
 /**
  * Interface to a policy definition for concurrent processing, for example event handling.
@@ -42,11 +44,11 @@ public interface SequencingPolicy<T> {
 
     /**
      * Returns the sequence identifier for the given {@code event}. When two events have the same identifier (as defined
-     * by their equals method), they will be executed sequentially. A {@code null} value indicates that there are no
-     * sequencing requirements for the handling of this event.
+     * by their equals method), they will be executed sequentially. A {@code Optional#empty()} value indicates that
+     * there are no sequencing requirements for the handling of this event.
      *
-     * @param event the event for which to get the sequencing identifier
-     * @return a sequence identifier for the given event
+     * @param event The event for which to get the sequencing identifier.
+     * @return A sequence identifier for the given event.
      */
-    Object getSequenceIdentifierFor(@Nonnull T event);
+    Optional<Object> getSequenceIdentifierFor(@Nonnull T event);
 }

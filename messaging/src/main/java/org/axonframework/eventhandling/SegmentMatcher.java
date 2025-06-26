@@ -21,8 +21,6 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 
 import java.util.Objects;
 
-import static org.axonframework.common.ObjectUtils.getOrDefault;
-
 /**
  * Utility class that matches {@link EventMessage}s against a {@link Segment} based on a {@link SequencingPolicy}.
  * <p>
@@ -67,7 +65,7 @@ public class SegmentMatcher {
      * @return The sequence identifier for the event, never {@code null}.
      */
     public Object sequenceIdentifier(EventMessage<?> event) {
-        return getOrDefault(sequencingPolicy.getSequenceIdentifierFor(event), event::getIdentifier);
+        return sequencingPolicy.getSequenceIdentifierFor(event).orElseGet(event::getIdentifier);
     }
 
     /**

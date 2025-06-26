@@ -23,6 +23,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +38,7 @@ class SegmentMatcherTest {
     @Test
     void matchesReturnsTrueWhenSegmentMatchesEventBasedOnSequenceIdentifier() {
         // given
-        SequencingPolicy<EventMessage<?>> sequencingPolicy = message -> "sample-identifier";
+        SequencingPolicy<EventMessage<?>> sequencingPolicy = message -> Optional.of("sample-identifier");
         SegmentMatcher testSubject = new SegmentMatcher(sequencingPolicy);
         EventMessage<?> testMessage = EventTestUtils.asEventMessage("test-payload");
         Segment segment = new Segment(0, 0); // Root segment matches everything
@@ -74,7 +75,7 @@ class SegmentMatcherTest {
     @Test
     void getSequencingPolicyReturnsConfiguredPolicy() {
         // given
-        SequencingPolicy<EventMessage<?>> sequencingPolicy = message -> "sample-identifier";
+        SequencingPolicy<EventMessage<?>> sequencingPolicy = message -> Optional.of("sample-identifier");
         SegmentMatcher testSubject = new SegmentMatcher(sequencingPolicy);
 
         // when
@@ -89,7 +90,7 @@ class SegmentMatcherTest {
         // given
         Segment segmentEven = new Segment(1, 1); // Will match events with odd hash
         String sequenceId = "even"; // "even" has a hash code of 3021508, which is even
-        SequencingPolicy<EventMessage<?>> evenSequencingPolicy = message -> sequenceId;
+        SequencingPolicy<EventMessage<?>> evenSequencingPolicy = message -> Optional.of(sequenceId);
         SegmentMatcher testSubject = new SegmentMatcher(evenSequencingPolicy);
         EventMessage<?> oddMessage = EventTestUtils.asEventMessage("test-payload");
 
