@@ -486,6 +486,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         private int batchSize = 1;
         private Clock clock = GenericEventMessage.clock;
         private boolean coordinatorExtendsClaims = false;
+        private EventHandlingComponent eventHandlingComponent;
 
         protected Builder() {
         }
@@ -496,9 +497,9 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             return this;
         }
 
-        @Override
         public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
-            super.eventHandlingComponent(eventHandlingComponent);
+            assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
+            this.eventHandlingComponent = eventHandlingComponent;
             return this;
         }
 
