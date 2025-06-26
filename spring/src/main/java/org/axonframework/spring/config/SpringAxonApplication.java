@@ -80,7 +80,6 @@ public class SpringAxonApplication implements ApplicationConfigurer {
 
     @Override
     public AxonConfiguration build() {
-        componentRegistry.initialize(lifecycleRegistry);
         return new AxonConfiguration() {
             @Override
             public void start() {

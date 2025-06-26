@@ -91,9 +91,10 @@ public class SpringComponentRegistry implements
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+    private final SpringLifecycleRegistry lifecycleRegistry;
+
     private final Components components = new Components();
     private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decorators = new CopyOnWriteArrayList<>();
-    private final List<Integer> processedDecorators = new CopyOnWriteArrayList<>();
     private final List<ConfigurationEnhancer> enhancers = new CopyOnWriteArrayList<>();
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
@@ -113,10 +114,13 @@ public class SpringComponentRegistry implements
      * {@code listableBeanFactory} is used to discover all beans of type {@link ConfigurationEnhancer}.
      *
      * @param listableBeanFactory The bean factory used to discover all beans of type {@link ConfigurationEnhancer}.
+     * @param lifecycleRegistry   The {@link LifecycleRegistry} used to initializes
+     *                            {@link #registerModule(Module) registered modules}.
      */
     @Internal
-    public SpringComponentRegistry(@Nonnull ListableBeanFactory listableBeanFactory) {
-        Objects.requireNonNull(listableBeanFactory, "The listableBeanFactory may not be null.");
+    public SpringComponentRegistry(@Nonnull ListableBeanFactory listableBeanFactory,
+                                   @Nonnull SpringLifecycleRegistry lifecycleRegistry) {
+        Objects.requireNonNull(listableBeanFactory, "The ListableBeanFactory may not be null.");
         this.enhancers.addAll(listableBeanFactory.getBeansOfType(ConfigurationEnhancer.class).values());
     }
 
@@ -254,8 +258,7 @@ public class SpringComponentRegistry implements
     @Override
     public Object postProcessAfterInitialization(@Nonnull Object bean,
                                                  @Nonnull String beanName) throws BeansException {
-        ensureEnhancersAreProcessed();
-        ensureDecoratorsAreProcessed();
+        initialize();
 
         Component<?> springComponent = new SpringComponent<>(bean, beanName);
         Component.Identifier<?> componentId = new Component.Identifier<>(bean.getClass(), beanName);
@@ -287,6 +290,7 @@ public class SpringComponentRegistry implements
      * <ol>
      *     <li>Look for additional {@link ConfigurationEnhancer ConfigurationEnhancers} and {@link #registerEnhancer(ConfigurationEnhancer) registers} them.</li>
      *     <li>Invoke {@link ConfigurationEnhancer#enhance(ComponentRegistry)} on all registered enhancers.</li>
+     *     <li>Looks for any {@link DecoratorDefinition DecoratorDefinitions} and {@link #registerDecorator(DecoratorDefinition) registers} them.</li>
      *     <li>Decorate all registered {@code Components} by invoking all {@link #registerDecorator(DecoratorDefinition) registered decorators}.</li>
      *     <li>Registers <b>all</b> {@link Component Components} with the Application Context.</li>
      *     <li>Looks for any {@link Module Modules} and {@link #registerModule(Module) registers} them.</li>
@@ -295,31 +299,19 @@ public class SpringComponentRegistry implements
      *     <li>{@link ComponentFactory#registerShutdownHandlers(LifecycleRegistry) Registers} all {@code ComponentFactory} shutdown handlers.</li>
      * </ol>
      */
-    void initialize(LifecycleRegistry lifecycleRegistry) {
+    void initialize() {
         if (initialized.getAndSet(true)) {
             return;
         }
-        ensureEnhancersAreProcessed();
-        ensureDecoratorsAreProcessed();
-        registerComponentsWithApplicationContext();
+        scanForConfigurationEnhancers();
+        invokeEnhancers();
+        scanForDecoratorDefinitions();
+        decorateComponents();
+        registerLocalComponentsWithApplicationContext();
         scanForModules();
-        buildModules(lifecycleRegistry);
+        buildModules();
         scanForComponentFactories();
-        registerFactoryShutdownHandlers(lifecycleRegistry);
-    }
-
-    /**
-     * Ensures that we have (1) searched for additional {@link ConfigurationEnhancer ConfigurationEnhancers} through the
-     * {@link ServiceLoader} (if not {@link #disableEnhancerScanning() disabled} and (2) that all enhancers have
-     * {@link ConfigurationEnhancer#enhance(ComponentRegistry) enhanced} {@code this ComponentRegistry} implementation.
-     * <p>
-     * Uses a gate to ensure this task is only done once.
-     */
-    private void ensureEnhancersAreProcessed() {
-        if (invokedEnhancers.isEmpty()) {
-            scanForConfigurationEnhancers();
-            invokeEnhancers();
-        }
+        registerFactoryShutdownHandlers();
     }
 
     /**
@@ -366,26 +358,12 @@ public class SpringComponentRegistry implements
     }
 
     /**
-     * Ensures that we have (1) searched for additional {@link DecoratorDefinition DecoratorDefinitions} through the
-     * {@link ConfigurableListableBeanFactory} and (2) that all decorators have
-     * {@link org.axonframework.configuration.ComponentDecorator#decorate(Configuration, String, Object) decorated}
-     * {@code this ComponentRegistry's} {@link Component Components}.
-     * <p>
-     * Uses a gate to ensure this task is only done once.
-     */
-    private void ensureDecoratorsAreProcessed() {
-        if (processedDecorators.isEmpty()) {
-            scanForDecoratorDefinitions();
-            decorateComponents();
-        }
-    }
-
-    /**
      * Look for all beans of type {@link DecoratorDefinition} in the {@link ConfigurableListableBeanFactory} set by the
      * {@link #postProcessBeanFactory(ConfigurableListableBeanFactory)} method and
      * {@link #registerDecorator(DecoratorDefinition) registers} them.
      */
     private void scanForDecoratorDefinitions() {
+        //noinspection unchecked
         beanFactory.getBeansOfType(DecoratorDefinition.class)
                    .forEach((beanName, decorator) -> registerDecorator(decorator));
     }
@@ -401,7 +379,6 @@ public class SpringComponentRegistry implements
             for (Component.Identifier id : components.identifiers()) {
                 if (decorator.matches(id)) {
                     components.replace(id, decorator::decorate);
-                    processedDecorators.add(decorator.hashCode());
                 }
             }
         }
@@ -421,7 +398,7 @@ public class SpringComponentRegistry implements
      * {@link ConfigurationEnhancer ConfigurationEnhancers} have enhanced the configuration. By doing so, we ensure that
      * any defaults or overrides are present in the Application Context too.
      */
-    private void registerComponentsWithApplicationContext() {
+    private void registerLocalComponentsWithApplicationContext() {
         components.postProcessComponents(component -> {
             String name = Objects.requireNonNullElseGet(component.identifier().name(),
                                                         () -> component.identifier().type().getName());
@@ -454,7 +431,7 @@ public class SpringComponentRegistry implements
      * Ensure all registered {@link Module Modules} are built too. Store their {@link Configuration} results for
      * exposure on {@link Configuration#getModuleConfigurations()}.
      */
-    private void buildModules(LifecycleRegistry lifecycleRegistry) {
+    private void buildModules() {
         for (Module module : modules.values()) {
             Configuration builtModule = HierarchicalConfiguration.build(
                     lifecycleRegistry, (childLifecycleRegistry) -> module.build(configuration, childLifecycleRegistry)
@@ -477,11 +454,8 @@ public class SpringComponentRegistry implements
     /**
      * Registers the shutdown handlers for all
      * {@link #registerFactory(ComponentFactory) registered ComponentFactories}.
-     *
-     * @param lifecycleRegistry The registry where {@link ComponentFactory ComponentFactories} may register their
-     *                          shutdown operations.
      */
-    private void registerFactoryShutdownHandlers(LifecycleRegistry lifecycleRegistry) {
+    private void registerFactoryShutdownHandlers() {
         factories.forEach(factory -> factory.registerShutdownHandlers(lifecycleRegistry));
     }
 

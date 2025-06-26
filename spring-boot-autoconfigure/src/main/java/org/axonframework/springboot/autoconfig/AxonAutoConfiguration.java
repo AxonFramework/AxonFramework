@@ -55,8 +55,9 @@ public class AxonAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
-    SpringComponentRegistry springComponentRegistry(ApplicationContext applicationContext) {
-        return new SpringComponentRegistry(applicationContext);
+    SpringComponentRegistry springComponentRegistry(ApplicationContext applicationContext,
+                                                    SpringLifecycleRegistry springLifecycleRegistry) {
+        return new SpringComponentRegistry(applicationContext, springLifecycleRegistry);
     }
 
     /**

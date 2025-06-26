@@ -32,14 +32,21 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
  */
 class SpringAxonApplicationTest extends ApplicationConfigurerTestSuite<SpringAxonApplication> {
 
+    private SpringComponentRegistry componentRegistry;
+
     @Override
     public SpringAxonApplication createConfigurer() {
         ConfigurableListableBeanFactory beanFactory = new DefaultListableBeanFactory();
-        SpringComponentRegistry componentRegistry = new SpringComponentRegistry(beanFactory);
-        componentRegistry.postProcessBeanFactory(beanFactory);
         SpringLifecycleRegistry lifecycleRegistry = new SpringLifecycleRegistry();
         lifecycleRegistry.setBeanFactory(beanFactory);
+        componentRegistry = new SpringComponentRegistry(beanFactory, lifecycleRegistry);
+        componentRegistry.postProcessBeanFactory(beanFactory);
         return new SpringAxonApplication(componentRegistry, lifecycleRegistry);
+    }
+
+    @Override
+    protected void initialize(SpringAxonApplication testSubject) {
+        componentRegistry.postProcessAfterInitialization(new Object(), "something");
     }
 
     @Override

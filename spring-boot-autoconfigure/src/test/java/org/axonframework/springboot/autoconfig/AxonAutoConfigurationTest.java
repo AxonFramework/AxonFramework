@@ -238,8 +238,9 @@ public class AxonAutoConfigurationTest {
     public static class CustomContext {
 
         @Bean
-        SpringComponentRegistry customComponentRegistry(ApplicationContext applicationContext) {
-            return new SpringComponentRegistry(applicationContext);
+        SpringComponentRegistry customComponentRegistry(ApplicationContext applicationContext,
+                                                        SpringLifecycleRegistry lifecycleRegistry) {
+            return new SpringComponentRegistry(applicationContext, lifecycleRegistry);
         }
 
         @Bean
