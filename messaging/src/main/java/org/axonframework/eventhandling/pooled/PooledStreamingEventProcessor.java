@@ -80,7 +80,7 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * This approach utilizes two threads pools. One to retrieve the events to provide them to the work packages and another
  * to actual handle the events. Respectively, the coordinator thread pool and the work package thread pool. It is this
  * approach which allows for greater parallelization and processing speed than the
- * {@link org.axonframework.eventhandling.TrackingEventProcessor}.
+ * TrackingEventProcessor (removed in 5.0.0).
  * <p>
  * If no {@link TrackingToken}s are present for this processor, the {@code PooledStreamingEventProcessor} will
  * initialize them in a given segment count. By default, it will create {@code 16} segments, which can be configured

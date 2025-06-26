@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.tokenstore;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
@@ -24,8 +26,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 /**
  * Describes a component capable of storing and retrieving event tracking tokens. An {@link EventProcessor} that is
@@ -170,7 +170,7 @@ public interface TokenStore {
      * <p>
      * The caller must ensure not to use any streams opened based on the token for which the claim is released.
      *
-     * @param processorName The name of the process owning the token (e.g. a TrackingEventProcessor name)
+     * @param processorName The name of the process owning the token (e.g. a PooledStreamingEventProcessor name)
      * @param segment       the segment for which a token was obtained
      */
     void releaseClaim(@Nonnull String processorName, int segment);

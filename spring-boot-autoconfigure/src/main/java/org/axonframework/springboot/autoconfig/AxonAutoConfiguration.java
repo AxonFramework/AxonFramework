@@ -41,7 +41,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
@@ -359,17 +358,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                     resolveSequencingPolicy(applicationContext, settings);
             eventProcessingConfigurer.registerSequencingPolicy(name, sequencingPolicy);
 
-            if (settings.getMode() == EventProcessorProperties.Mode.TRACKING) {
-                TrackingEventProcessorConfiguration config = TrackingEventProcessorConfiguration
-                        .forParallelProcessing(settings.getThreadCount())
-                        .andBatchSize(settings.getBatchSize())
-                        .andInitialSegmentsCount(initialSegmentCount(settings, 1))
-                        .andTokenClaimInterval(settings.getTokenClaimInterval(),
-                                               settings.getTokenClaimIntervalTimeUnit());
-                Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource =
-                        resolveMessageSource(applicationContext, settings);
-                eventProcessingConfigurer.registerTrackingEventProcessor(name, messageSource, c -> config);
-            } else if (settings.getMode() == EventProcessorProperties.Mode.POOLED) {
+    if (settings.getMode() == EventProcessorProperties.Mode.POOLED) {
                 eventProcessingConfigurer.registerPooledStreamingEventProcessor(
                         name,
                         resolveMessageSource(applicationContext, settings),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.OptionalLong;
 
 /**
- * Interface describing the status of a {@link Segment} of a {@link TrackingEventProcessor}.
+ * Interface describing the status of a {@link Segment} of a {@link StreamingEventProcessor}.
  *
  * @author Allard Buijze
  * @since 3.2
@@ -49,11 +49,11 @@ public interface EventTrackerStatus {
      * Indicates whether this Segment is still replaying previously processed Events.
      * <p>
      * Note that this method will only recognize a replay if the tokens have been reset using {@link
-     * TrackingEventProcessor#resetTokens()}. Removing tokens directly from the underlying {@link TokenStore} will not
+     * StreamingEventProcessor#resetTokens()}. Removing tokens directly from the underlying {@link TokenStore} will not
      * be recognized as a replay.
      *
      * @return {@code true} if this segment is replaying historic events after a {@link
-     * TrackingEventProcessor#resetTokens() reset}, otherwise {@code false}
+     * StreamingEventProcessor#resetTokens() reset}, otherwise {@code false}
      */
     boolean isReplaying();
 
