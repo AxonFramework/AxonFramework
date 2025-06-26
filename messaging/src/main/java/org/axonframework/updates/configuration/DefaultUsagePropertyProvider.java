@@ -43,7 +43,7 @@ public class DefaultUsagePropertyProvider implements UsagePropertyProvider {
 
     @Override
     public String getUrl() {
-        return "https://telemetry.axoniq.io/framework";
+        return "https://get.axoniq.io/updates/framework";
     }
 
     @Override
