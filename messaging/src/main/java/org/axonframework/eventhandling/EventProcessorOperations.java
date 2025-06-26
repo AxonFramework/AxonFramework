@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -67,6 +69,7 @@ public final class EventProcessorOperations {
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
     private final EventProcessorSpanFactory spanFactory;
     private final boolean streamingProcessor;
+    private final SegmentMatcher segmentMatcher;
 
     /**
      * Instantiate a {@link EventProcessorOperations} based on the fields contained in the {@link Builder}.
@@ -84,6 +87,7 @@ public final class EventProcessorOperations {
         this.messageMonitor = builder.messageMonitor;
         this.spanFactory = builder.spanFactory;
         this.streamingProcessor = builder.streamingProcessor;
+        this.segmentMatcher = new SegmentMatcher(builder.sequencingPolicy);
     }
 
     /**
@@ -131,10 +135,9 @@ public final class EventProcessorOperations {
     public boolean canHandle(EventMessage<?> eventMessage, @Nonnull ProcessingContext context, Segment segment)
             throws Exception {
         try {
-            // TODO #3098 - Support sequencing within Segments!
             var eventMessageQualifiedName = eventMessage.type().qualifiedName();
-            var canHandle = eventHandlingComponent.isSupported(eventMessageQualifiedName);
-            return canHandle; // && eventHandlerInvoker.canHandle(eventMessage, context, segment);
+            var eventSupported = eventHandlingComponent.isSupported(eventMessageQualifiedName);
+            return eventSupported && segmentMatcher.matches(segment, eventMessage);
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(name(), e, Collections.singletonList(eventMessage)));
             return false;
@@ -210,11 +213,11 @@ public final class EventProcessorOperations {
                                                               MessageMonitor.MonitorCallback monitorCallback
     ) throws Exception {
         try {
-            // TODO #3098 - Support sequencing within Segments!
-//            for (Segment processingSegment : processingSegments) {
-//                eventHandlerInvoker.handle(message, processingContext, processingSegment);
-//            }
-            eventHandlingComponent.handle(message, processingContext);
+            for (Segment processingSegment : processingSegments) {
+                if (segmentMatcher.matches(processingSegment, message)) {
+                    eventHandlingComponent.handle(message, processingContext);
+                }
+            }
             monitorCallback.reportSuccess();
             return MessageStream.empty();
         } catch (Exception exception) {
@@ -288,6 +291,7 @@ public final class EventProcessorOperations {
                                                                                         .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                         .build();
         private boolean streamingProcessor = false;
+        private SequencingPolicy<? super EventMessage<?>> sequencingPolicy = SequentialPerAggregatePolicy.instance();
 
         /**
          * Sets the {@code name} of the {@link EventProcessor} implementation.
@@ -375,6 +379,23 @@ public final class EventProcessorOperations {
          */
         public Builder streamingProcessor(boolean streamingProcessor) {
             this.streamingProcessor = streamingProcessor;
+            return this;
+        }
+
+        /**
+         * Sets the {@link SequencingPolicy} in charge of deciding whether a given event should be handled (through
+         * {@link EventHandlerInvoker#handle(EventMessage, ProcessingContext, Segment)}) by the given {@link Segment}.
+         * Used when this {@link EventHandlerInvoker} is invoked for multiple Segments (i.e. using parallel processing).
+         * Defaults to a {@link SequentialPerAggregatePolicy},
+         *
+         * @param sequencingPolicy a {@link SequencingPolicy} in charge of deciding whether a given event should be
+         *                         handled by the given {@link Segment}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder sequencingPolicy(@Nonnull SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+            assertNonNull(sequencingPolicy, "The SequencingPolicy may not be null");
+            this.sequencingPolicy = sequencingPolicy;
+            //noinspection unchecked
             return this;
         }
 

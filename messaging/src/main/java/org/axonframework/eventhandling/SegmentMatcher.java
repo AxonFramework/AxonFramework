@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 
 import java.util.Objects;
@@ -31,6 +32,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Mateusz Nowak
  * @since 5.0
  */
+@Internal
 public class SegmentMatcher {
 
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
