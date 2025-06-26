@@ -372,8 +372,8 @@ public class SpringComponentRegistry implements
      */
     private void registerComponentsWithApplicationContext() {
         components.postProcessComponents(component -> {
-            String name = ObjectUtils.getOrDefault(component.identifier().name(),
-                                                   () -> component.identifier().type().getName());
+            String name = Objects.requireNonNullElseGet(component.identifier().name(),
+                                                        () -> component.identifier().type().getName());
             if (beanFactory.containsBeanDefinition(name)) {
                 logger.info("Component with name [{}] is already available. Skipping registration.", name);
                 return;

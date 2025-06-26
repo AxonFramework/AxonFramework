@@ -16,9 +16,6 @@
 
 package org.axonframework.common;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -43,7 +40,7 @@ public abstract class ObjectUtils {
      * @param <T>             the type of value to return
      * @return {@code instance} if not {@code null}, otherwise the value provided by {@code defaultProvider}
      */
-    public static <T> T getOrDefault(@Nullable T instance, @Nonnull Supplier<T> defaultProvider) {
+    public static <T> T getOrDefault(T instance, Supplier<T> defaultProvider) {
         if (instance == null) {
             return defaultProvider.get();
         }
@@ -98,8 +95,8 @@ public abstract class ObjectUtils {
     }
 
     /**
-     * Returns the type of the given {@code instance}, <em>if</em> it is not {@code null}. If it is {@code null}, {@link
-     * Void#getClass()} will be returned.
+     * Returns the type of the given {@code instance}, <em>if</em> it is not {@code null}. If it is {@code null},
+     * {@link Void#getClass()} will be returned.
      *
      * @param instance the object to return the type for
      * @param <T>      the generic type of the {@link Class} to return
@@ -114,8 +111,8 @@ public abstract class ObjectUtils {
     }
 
     /**
-     * Gets number of millis which are remaining of current deadline to be reached by {@link
-     * System#currentTimeMillis()}. If deadline is passed, 0 will be returned.
+     * Gets number of millis which are remaining of current deadline to be reached by
+     * {@link System#currentTimeMillis()}. If deadline is passed, 0 will be returned.
      *
      * @param deadline deadline to be met
      * @return number of millis to deadline
@@ -133,7 +130,6 @@ public abstract class ObjectUtils {
      *
      * @param supplier The supplier to provide the instance to return
      * @param <T>      The type of object supplied
-     *
      * @return a supplier that returns the same instance
      */
     public static <T> Supplier<T> sameInstanceSupplier(Supplier<T> supplier) {
