@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Interface for an event message handler that defers handling to one or more other handlers.
@@ -110,5 +111,15 @@ public interface EventHandlerInvoker {
      * @param segment the segment which was released.
      */
     default void segmentReleased(Segment segment) {
+    }
+
+    /**
+     * Returns the set of classes representing the types of events that this invoker can handle.
+     * This method is used to determine the supported events for migration to {@link EventHandlingComponent}.
+     *
+     * @return A set of classes representing the event types this invoker can handle.
+     */
+    default Set<Class<?>> supportedEventTypes() {
+        return Set.of();
     }
 }

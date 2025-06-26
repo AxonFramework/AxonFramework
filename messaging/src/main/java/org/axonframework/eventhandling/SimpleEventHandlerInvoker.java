@@ -31,6 +31,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -180,6 +181,15 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      */
     public ListenerInvocationErrorHandler getListenerInvocationErrorHandler() {
         return listenerInvocationErrorHandler;
+    }
+
+    @Override
+    public Set<Class<?>> supportedEventTypes() {
+        return eventHandlingComponents.stream()
+                .filter(handler -> handler instanceof AnnotationEventHandlerAdapter)
+                .map(handler -> (AnnotationEventHandlerAdapter) handler)
+                .flatMap(adapter -> adapter.supportedEventTypes().stream())
+                .collect(Collectors.toSet());
     }
 
     /**
