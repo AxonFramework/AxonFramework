@@ -86,7 +86,7 @@ class ComponentsTest {
     }
 
     @Test
-    void getThrowsIllegalArgumentExceptionWhenMultipleComponentsAreAssignableToGivenIdType() {
+    void getThrowsAmbiguousComponentMatchExceptionWhenMultipleComponentsAreAssignableToGivenIdType() {
         Component<String> stringTestComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
         Component<Integer> integerTestComponent =
                 new InstantiatedComponentDefinition<>(new Identifier<>(Integer.class, "id"), 42);
@@ -95,7 +95,7 @@ class ComponentsTest {
         testSubject.put(stringTestComponent);
         testSubject.put(integerTestComponent);
 
-        assertThrows(IllegalArgumentException.class, () -> testSubject.get(testId));
+        assertThrows(AmbiguousComponentMatchException.class, () -> testSubject.get(testId));
     }
 
     @Test
