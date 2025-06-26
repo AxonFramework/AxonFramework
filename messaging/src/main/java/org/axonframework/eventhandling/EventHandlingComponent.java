@@ -38,4 +38,14 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * @return All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
      */
     Set<QualifiedName> supportedEvents();
+
+    /**
+     * Checks whether the given {@code eventName} is supported by this component.
+     *
+     * @param eventName The name of the event to check for support.
+     * @return {@code true} if the given {@code eventName} is supported, {@code false} otherwise.
+     */
+    default boolean isSupported(QualifiedName eventName) {
+        return supportedEvents().contains(eventName);
+    }
 }

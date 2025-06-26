@@ -19,9 +19,11 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -53,12 +55,13 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @author Rene de Waele
  * @since 3.0
  */
+@Internal
 public final class EventProcessorOperations {
 
     private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
 
     private final String name;
-    private final EventHandlerInvoker eventHandlerInvoker;
+    private final EventHandlingComponent eventHandlingComponent;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
@@ -76,7 +79,7 @@ public final class EventProcessorOperations {
     public EventProcessorOperations(Builder builder) {
         builder.validate();
         this.name = builder.name;
-        this.eventHandlerInvoker = builder.eventHandlerInvoker;
+        this.eventHandlingComponent = builder.eventHandlingComponent;
         this.errorHandler = builder.errorHandler;
         this.messageMonitor = builder.messageMonitor;
         this.spanFactory = builder.spanFactory;
@@ -128,16 +131,20 @@ public final class EventProcessorOperations {
     public boolean canHandle(EventMessage<?> eventMessage, @Nonnull ProcessingContext context, Segment segment)
             throws Exception {
         try {
-            return eventHandlerInvoker.canHandle(eventMessage, context, segment);
+            // TODO #3098 - Support sequencing within Segments!
+            var eventMessageQualifiedName = eventMessage.type().qualifiedName();
+            var canHandle = eventHandlingComponent.isSupported(eventMessageQualifiedName);
+            return canHandle; // && eventHandlerInvoker.canHandle(eventMessage, context, segment);
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(name(), e, Collections.singletonList(eventMessage)));
             return false;
         }
     }
 
-    public boolean canHandleType(Class<?> payloadType) {
+    public boolean canHandleType(MessageType messageType) {
         try {
-            return eventHandlerInvoker.canHandleType(payloadType);
+            var eventMessageQualifiedName = messageType.qualifiedName();
+            return eventHandlingComponent.isSupported(eventMessageQualifiedName);
         } catch (Exception e) {
             return false;
         }
@@ -198,14 +205,16 @@ public final class EventProcessorOperations {
     }
 
     private MessageStream.Empty<?> processMessageInUnitOfWork(Collection<Segment> processingSegments,
-                                              EventMessage<?> message,
-                                              ProcessingContext processingContext,
-                                              MessageMonitor.MonitorCallback monitorCallback
+                                                              EventMessage<?> message,
+                                                              ProcessingContext processingContext,
+                                                              MessageMonitor.MonitorCallback monitorCallback
     ) throws Exception {
         try {
-            for (Segment processingSegment : processingSegments) {
-                eventHandlerInvoker.handle(message, processingContext, processingSegment);
-            }
+            // TODO #3098 - Support sequencing within Segments!
+//            for (Segment processingSegment : processingSegments) {
+//                eventHandlerInvoker.handle(message, processingContext, processingSegment);
+//            }
+            eventHandlingComponent.handle(message, processingContext);
             monitorCallback.reportSuccess();
             return MessageStream.empty();
         } catch (Exception exception) {
@@ -226,9 +235,9 @@ public final class EventProcessorOperations {
                             null,
                             interceptors,
                             (msg, ctx) -> processMessageInUnitOfWork(processingSegments,
-                                                                msg,
-                                                                ctx,
-                                                                monitorCallback));
+                                                                     msg,
+                                                                     ctx,
+                                                                     monitorCallback));
             return chain.proceed(message, processingContext)
                         .ignoreEntries()
                         .asCompletableFuture()
@@ -245,7 +254,17 @@ public final class EventProcessorOperations {
      * @return the invoker assigned to this processor
      */
     public EventHandlerInvoker eventHandlerInvoker() {
-        return eventHandlerInvoker;
+        return null;
+    }
+
+    /**
+     * Returns the invoker assigned to this processor. The invoker is responsible for invoking the correct handler
+     * methods for any given message.
+     *
+     * @return the invoker assigned to this processor
+     */
+    public EventHandlingComponent eventHandlingComponent() {
+        return eventHandlingComponent;
     }
 
     /**
@@ -272,7 +291,7 @@ public final class EventProcessorOperations {
     public final static class Builder {
 
         private String name;
-        private EventHandlerInvoker eventHandlerInvoker;
+        private EventHandlingComponent eventHandlingComponent;
         private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
@@ -301,7 +320,19 @@ public final class EventProcessorOperations {
          */
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
             assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
-            this.eventHandlerInvoker = eventHandlerInvoker;
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
+         *
+         * @param eventHandlingComponent the {@link EventHandlingComponent} which will handle all the individual
+         *                            {@link EventMessage}s
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
+            assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
+            this.eventHandlingComponent = eventHandlingComponent;
             return this;
         }
 
@@ -365,7 +396,7 @@ public final class EventProcessorOperations {
          */
         private void validate() throws AxonConfigurationException {
             assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
-            assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
+            assertNonNull(eventHandlingComponent, "The EventHandlerInvoker is a hard requirement and should be provided");
         }
 
         private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
