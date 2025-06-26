@@ -130,7 +130,7 @@ class EventProcessingModuleTest {
         AnnotatedBeanSubclass annotatedBeanSubclass = new AnnotatedBeanSubclass();
 
         configurer.eventProcessing()
-                  .registerEventProcessorFactory((name, config, eventHandlerInvoker) -> {
+                  .registerEventProcessorFactory((name, config, eventHandlingComponent) -> {
                       StubEventProcessor processor =
                               new StubEventProcessor(name, eventHandlerInvoker);
                       processors.put(name, processor);
@@ -161,7 +161,7 @@ class EventProcessingModuleTest {
         AnnotatedBeanSubclass annotatedBeanSubclass = new AnnotatedBeanSubclass();
 
         configurer.eventProcessing()
-                  .registerEventProcessorFactory((name, config, eventHandlerInvoker) -> {
+                  .registerEventProcessorFactory((name, config, eventHandlingComponent) -> {
                       StubEventProcessor processor =
                               new StubEventProcessor(name, eventHandlerInvoker);
                       processors.put(name, processor);

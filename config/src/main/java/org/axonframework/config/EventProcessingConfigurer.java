@@ -22,6 +22,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
@@ -670,14 +671,14 @@ public interface EventProcessingConfigurer {
          * Builds an {@link EventProcessor} with the given {@code name}, {@link LegacyConfiguration} and
          * {@link EventHandlerInvoker}.
          *
-         * @param name                a {@link String} specifying the name of the {@link EventProcessor} to create
-         * @param configuration       the global {@link LegacyConfiguration} the implementation may use to obtain
-         *                            dependencies
-         * @param eventHandlerInvoker the {@link EventHandlerInvoker} assigned to the {@link EventProcessor} to be
-         *                            created, used to invoke event handlers
+         * @param name                   a {@link String} specifying the name of the {@link EventProcessor} to create
+         * @param configuration          the global {@link LegacyConfiguration} the implementation may use to obtain
+         *                               dependencies
+         * @param eventHandlingComponent the {@link EventHandlerInvoker} assigned to the {@link EventProcessor} to be
+         *                               created, used to invoke event handlers
          * @return an {@link EventProcessor}
          */
-        EventProcessor build(String name, LegacyConfiguration configuration, EventHandlerInvoker eventHandlerInvoker);
+        EventProcessor build(String name, LegacyConfiguration configuration, EventHandlingComponent eventHandlingComponent);
     }
 
     /**

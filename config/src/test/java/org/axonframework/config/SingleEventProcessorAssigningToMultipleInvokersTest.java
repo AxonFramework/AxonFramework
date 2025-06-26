@@ -19,7 +19,7 @@ package org.axonframework.config;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -96,7 +96,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerSaga(Saga1.class)
                   .registerSaga(Saga2.class)
                   .registerSaga(Saga3.class)
-                  .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
+                  .registerEventProcessor("myProcessor", (name, conf, eventHandlingComponent) ->
                           SubscribingEventProcessor.builder()
                                                    .name(name)
                                                    .eventHandlerInvoker(eventHandlerInvoker)
@@ -123,7 +123,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
     void processorGroupAssignment() {
         LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
-                  .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
+                  .registerEventProcessor("myProcessor", (name, conf, eventHandlingComponent) ->
                           SubscribingEventProcessor.builder()
                                                    .name(name)
                                                    .eventHandlerInvoker(eventHandlerInvoker)
@@ -152,7 +152,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerSaga(Saga1.class)
                   .registerSaga(Saga2.class)
                   .registerSaga(Saga3.class)
-                  .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
+                  .registerEventProcessor("myProcessor", (name, conf, eventHandlingComponent) ->
                           SubscribingEventProcessor.builder()
                                                    .name(name)
                                                    .eventHandlerInvoker(eventHandlerInvoker)
