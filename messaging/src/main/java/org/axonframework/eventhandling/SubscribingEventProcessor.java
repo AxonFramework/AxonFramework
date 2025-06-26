@@ -68,7 +68,7 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
         this.eventProcessorOperations = new EventProcessorOperations.Builder()
                 .name(builder.name())
-                .eventHandlingComponent(builder.eventHandlingComponent())
+                .eventHandlerInvoker(builder.eventHandlerInvoker())
                 .errorHandler(builder.errorHandler())
                 .spanFactory(builder.spanFactory())
                 .messageMonitor(builder.messageMonitor())
@@ -206,12 +206,6 @@ public class SubscribingEventProcessor implements EventProcessor {
         @Override
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
             super.eventHandlerInvoker(eventHandlerInvoker);
-            return this;
-        }
-
-        @Override
-        public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
-            super.eventHandlingComponent(eventHandlingComponent);
             return this;
         }
 

@@ -45,7 +45,6 @@ public abstract class EventProcessorBuilder {
 
     protected String name;
     protected EventHandlerInvoker eventHandlerInvoker;
-    protected EventHandlingComponent eventHandlingComponent;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
     protected MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
@@ -74,18 +73,6 @@ public abstract class EventProcessorBuilder {
     public EventProcessorBuilder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
         assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
         this.eventHandlerInvoker = eventHandlerInvoker;
-        return this;
-    }
-
-    /**
-     * Sets the {@link EventHandlingComponent} which will handle all the individual {@link EventMessage}s.
-     *
-     * @param eventHandlingComponent the {@link EventHandlingComponent} which will handle the event processing
-     * @return the current Builder instance, for fluent interfacing
-     */
-    public EventProcessorBuilder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
-        assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
-        this.eventHandlingComponent = eventHandlingComponent;
         return this;
     }
 

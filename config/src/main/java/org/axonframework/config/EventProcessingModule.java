@@ -24,7 +24,6 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DirectEventProcessingStrategy;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
@@ -643,15 +642,15 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer usingSubscribingEventProcessors() {
-        this.defaultEventProcessorBuilder = (name, conf, eventHandlingComponent) ->
-                subscribingEventProcessor(name, eventHandlingComponent, defaultSubscribableSource.get());
+        this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) ->
+                subscribingEventProcessor(name, eventHandlerInvoker, defaultSubscribableSource.get());
         return this;
     }
 
     @Override
     public EventProcessingConfigurer usingPooledStreamingEventProcessors() {
-        this.defaultEventProcessorBuilder = (name, conf, eventHandlingComponent) -> pooledStreamingEventProcessor(
-                name, eventHandlingComponent, conf, defaultStreamableSource.get(), noOp()
+        this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) -> pooledStreamingEventProcessor(
+                name, eventHandlerInvoker, conf, defaultStreamableSource.get(), noOp()
         );
         return this;
     }
@@ -797,8 +796,8 @@ public class EventProcessingModule
             PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     ) {
         psepConfigs.put(name, new Component<>(() -> configuration,
-                                              "pooledStreamingProcessorConfiguration",
-                                              c -> pooledStreamingProcessorConfiguration));
+                                             "pooledStreamingProcessorConfiguration",
+                                             c -> pooledStreamingProcessorConfiguration));
         return this;
     }
 
@@ -845,9 +844,9 @@ public class EventProcessingModule
             PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     ) {
         this.psepConfigs.put(CONFIGURED_DEFAULT_PSEP_CONFIG,
-                             new Component<>(() -> configuration,
-                                             "pooledStreamingProcessorConfiguration",
-                                             c -> pooledStreamingProcessorConfiguration));
+                            new Component<>(() -> configuration,
+                                            "pooledStreamingProcessorConfiguration",
+                                            c -> pooledStreamingProcessorConfiguration));
         return this;
     }
 
@@ -861,17 +860,17 @@ public class EventProcessingModule
 
     private EventProcessor defaultEventProcessor(String name,
                                                  LegacyConfiguration conf,
-                                                 EventHandlingComponent eventHandlingComponent) {
+                                                 EventHandlerInvoker eventHandlerInvoker) {
         if (conf.eventBus() instanceof StreamableMessageSource) {
             return pooledStreamingEventProcessor(
                     name,
-                    eventHandlingComponent,
+                    eventHandlerInvoker,
                     conf,
                     defaultStreamableSource.get(),
                     pooledStreamingProcessorConfig(name)
             );
         } else {
-            return subscribingEventProcessor(name, eventHandlingComponent, defaultSubscribableSource.get());
+            return subscribingEventProcessor(name, eventHandlerInvoker, defaultSubscribableSource.get());
         }
     }
 
@@ -879,16 +878,16 @@ public class EventProcessingModule
      * Default {@link SubscribingEventProcessor} configuration based on this configure module.
      *
      * @param name                of the processor
-     * @param eventHandlingComponent used by the processor for the vent handling
+     * @param eventHandlerInvoker used by the processor for the vent handling
      * @param messageSource       where to retrieve events from
      * @return Default {@link SubscribingEventProcessor} configuration based on this configure module.
      */
     protected EventProcessor subscribingEventProcessor(String name,
-                                                       EventHandlingComponent eventHandlingComponent,
+                                                       EventHandlerInvoker eventHandlerInvoker,
                                                        SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
         return SubscribingEventProcessor.builder()
                                         .name(name)
-                                        .eventHandlingComponent(eventHandlingComponent)
+                                        .eventHandlerInvoker(eventHandlerInvoker)
                                         .errorHandler(errorHandler(name))
                                         .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
                                         .messageSource(messageSource)
@@ -902,7 +901,7 @@ public class EventProcessingModule
      * Default {@link PooledStreamingEventProcessor} configuration based on this configure module.
      *
      * @param name                   of the processor
-     * @param eventHandlingComponent used by the processor for the event handling
+     * @param eventHandlerInvoker    used by the processor for the event handling
      * @param config                 main configuration providing access for Axon components
      * @param messageSource          where to retrieve events from
      * @param processorConfiguration for the pooled event processor construction
@@ -910,7 +909,7 @@ public class EventProcessingModule
      */
     protected EventProcessor pooledStreamingEventProcessor(
             String name,
-            EventHandlingComponent eventHandlingComponent,
+            EventHandlerInvoker eventHandlerInvoker,
             LegacyConfiguration config,
             StreamableMessageSource<TrackedEventMessage<?>> messageSource,
             PooledStreamingProcessorConfiguration processorConfiguration
@@ -918,7 +917,7 @@ public class EventProcessingModule
         PooledStreamingEventProcessor.Builder builder =
                 PooledStreamingEventProcessor.builder()
                                              .name(name)
-                                             .eventHandlingComponent(eventHandlingComponent)
+                                             .eventHandlerInvoker(eventHandlerInvoker)
                                              .errorHandler(errorHandler(name))
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
                                              .eventSource(new LegacyStreamableEventSource<>(messageSource))
@@ -939,10 +938,10 @@ public class EventProcessingModule
                                              .spanFactory(config.getComponent(EventProcessorSpanFactory.class));
 
         return pooledStreamingProcessorConfig(CONFIGURED_DEFAULT_PSEP_CONFIG)
-                .andThen(pooledStreamingProcessorConfig(name))
-                .andThen(processorConfiguration)
-                .apply(config, builder)
-                .build();
+                          .andThen(pooledStreamingProcessorConfig(name))
+                          .andThen(processorConfiguration)
+                          .apply(config, builder)
+                          .build();
     }
 
     private ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {
@@ -1041,11 +1040,10 @@ public class EventProcessingModule
             SubscribableMessageSourceDefinitionBuilder defaultSource) {
         this.defaultEventProcessorBuilder = (name,
                                              conf,
-                                             eventHandlingComponent) -> subscribingEventProcessor(name,
-                                                                                                  eventHandlerInvoker,
-                                                                                                  defaultSource.build(
-                                                                                                                       name)
-                                                                                                               .create(conf));
+                                             eventHandlerInvoker) -> subscribingEventProcessor(name,
+                                                                                               eventHandlerInvoker,
+                                                                                               defaultSource.build(name)
+                                                                                                            .create(conf));
         return this;
     }
 }
