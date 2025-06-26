@@ -1315,7 +1315,6 @@ class PooledStreamingEventProcessorTest {
         }).when(stubEventHandlingComponent).handle(any(), any());
     }
 
-    // FIXME #3098 - I don't know why it doesn't work!!!!
     @Test
     void coordinatorExtendsClaimsEarlierForBusyWorkPackages() throws Exception {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
@@ -1326,7 +1325,8 @@ class PooledStreamingEventProcessorTest {
         doAnswer(invocation -> {
             // Waiting for the latch to simulate a slow/busy WorkPackage.
             isWaiting.set(true);
-            return handleLatch.await(5, TimeUnit.SECONDS);
+            handleLatch.await(5, TimeUnit.SECONDS);
+            return MessageStream.empty();
         }).when(stubEventHandlingComponent)
           .handle(any(), any());
 
@@ -1370,7 +1370,8 @@ class PooledStreamingEventProcessorTest {
         doAnswer(invocation -> {
             // Waiting for the latch to simulate a slow/busy WorkPackage.
             isWaiting.set(true);
-            return handleLatch.await(5, TimeUnit.SECONDS);
+            handleLatch.await(5, TimeUnit.SECONDS);
+            return MessageStream.empty();
         }).when(stubEventHandlingComponent)
           .handle(any(), any());
 
