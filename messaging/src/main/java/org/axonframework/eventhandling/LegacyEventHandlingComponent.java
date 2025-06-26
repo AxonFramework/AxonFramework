@@ -78,8 +78,7 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     @Override
     public boolean isSupported(QualifiedName eventName) {
         Set<QualifiedName> supportedEvents = supportedEvents();
-        // If no supported events are provided (legacy invokers), assume all events are supported
-        return supportedEvents.isEmpty() || supportedEvents.contains(eventName);
+        return supportedEvents.contains(eventName);
     }
 
     @Override
