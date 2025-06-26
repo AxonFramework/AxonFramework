@@ -77,7 +77,7 @@ public class UpdateCheckerHttpClient {
             HttpRequest request = HttpRequest
                     .newBuilder()
                     .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(5))
+                    .timeout(Duration.ofSeconds(10))
                     .headers("User-Agent", updateCheckRequest.toUserAgent())
                     .headers("X-Machine-Id", updateCheckRequest.machineId())
                     .headers("X-Instance-Id", updateCheckRequest.instanceId())
