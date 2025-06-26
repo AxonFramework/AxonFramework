@@ -186,9 +186,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     @Override
     public Set<Class<?>> supportedEventTypes() {
         return eventHandlingComponents.stream()
-                .filter(handler -> handler instanceof AnnotationEventHandlerAdapter)
-                .map(handler -> (AnnotationEventHandlerAdapter) handler)
-                .flatMap(adapter -> adapter.supportedEventTypes().stream())
+                .flatMap(handler -> handler.supportedEventTypes().stream())
                 .collect(Collectors.toSet());
     }
 
