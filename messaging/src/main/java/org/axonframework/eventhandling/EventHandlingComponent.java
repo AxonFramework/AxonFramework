@@ -59,7 +59,7 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * @param event The event for which to get the sequencing identifier.
      * @return A sequence identifier for the given event.
      */
-    default Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+    default Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
         return Optional.empty();
     }
 }
