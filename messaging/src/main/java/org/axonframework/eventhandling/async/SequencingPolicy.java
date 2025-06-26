@@ -40,6 +40,7 @@ import java.util.Optional;
  * @author Allard Buijze
  * @since 0.3
  */
+@FunctionalInterface
 public interface SequencingPolicy<T> {
 
     /**

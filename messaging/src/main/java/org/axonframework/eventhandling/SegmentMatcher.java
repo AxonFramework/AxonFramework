@@ -20,6 +20,8 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Utility class that matches {@link EventMessage}s against a {@link Segment} based on a {@link SequencingPolicy}.
@@ -33,21 +35,25 @@ import java.util.Objects;
 @Internal
 public class SegmentMatcher {
 
-    private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
+    private final Function<? super EventMessage<?>, Optional<Object>> sequenceIdentifierProvider;
 
     /**
-     * Initialize a SegmentMatcher with the given {@code sequencingPolicy}. The sequencing policy is used to extract
-     * the sequence identifier from messages, which is then used to match against segments.
+     * Initialize a SegmentMatcher with the given {@code sequencingPolicy}. The sequencing policy is used to extract the
+     * sequence identifier from messages, which is then used to match against segments.
      *
      * @param sequencingPolicy The policy defining the sequence identifiers to use for segment matching.
      */
     public SegmentMatcher(SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
-        this.sequencingPolicy = sequencingPolicy;
+        this.sequenceIdentifierProvider = sequencingPolicy::getSequenceIdentifierFor;
+    }
+
+    public SegmentMatcher(Function<? super EventMessage<?>, Optional<Object>> sequenceIdentifierProvider) {
+        this.sequenceIdentifierProvider = sequenceIdentifierProvider;
     }
 
     /**
-     * Checks whether the given {@code segment} matches the given {@code message}, based on the configured
-     * sequencing policy.
+     * Checks whether the given {@code segment} matches the given {@code message}, based on the configured sequencing
+     * policy.
      *
      * @param segment The segment to match against.
      * @param message The message to check.
@@ -58,22 +64,13 @@ public class SegmentMatcher {
     }
 
     /**
-     * Returns the sequence identifier for the given {@code event}, as defined by the configured sequencing policy.
-     * If the policy returns {@code null}, the event's identifier is used as a fallback.
+     * Returns the sequence identifier for the given {@code event}, as defined by the configured sequencing policy. If
+     * the policy returns {@code null}, the event's identifier is used as a fallback.
      *
      * @param event The event to get the sequence identifier for.
      * @return The sequence identifier for the event, never {@code null}.
      */
     public Object sequenceIdentifier(EventMessage<?> event) {
-        return sequencingPolicy.getSequenceIdentifierFor(event).orElseGet(event::getIdentifier);
-    }
-
-    /**
-     * Returns the {@link SequencingPolicy} used by this matcher.
-     *
-     * @return The sequencing policy used to determine sequence identifiers.
-     */
-    public SequencingPolicy<? super EventMessage<?>> getSequencingPolicy() {
-        return sequencingPolicy;
+        return sequenceIdentifierProvider.apply(event).orElseGet(event::getIdentifier);
     }
 }

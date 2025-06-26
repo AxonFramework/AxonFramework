@@ -37,9 +37,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -87,7 +89,9 @@ public final class EventProcessorOperations {
         this.messageMonitor = builder.messageMonitor;
         this.spanFactory = builder.spanFactory;
         this.streamingProcessor = builder.streamingProcessor;
-        this.segmentMatcher = new SegmentMatcher(builder.sequencingPolicy);
+        Function<? super EventMessage<?>, Optional<Object>> sequenceIdentifierProvider =
+                builder.eventHandlingComponent::sequenceIdentifierFor;
+        this.segmentMatcher = new SegmentMatcher(sequenceIdentifierProvider);
     }
 
     /**
@@ -248,16 +252,6 @@ public final class EventProcessorOperations {
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
-    }
-
-    /**
-     * Returns the invoker assigned to this processor. The invoker is responsible for invoking the correct handler
-     * methods for any given message.
-     *
-     * @return the invoker assigned to this processor
-     */
-    public EventHandlingComponent eventHandlingComponent() {
-        return eventHandlingComponent;
     }
 
     /**
