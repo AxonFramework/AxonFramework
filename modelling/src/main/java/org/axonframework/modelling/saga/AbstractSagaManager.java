@@ -251,9 +251,58 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
 
     @Override
     public Set<Class<?>> supportedEventTypes() {
-        // Sagas support event types based on association values which are determined dynamically
-        // Return empty set as this information is not available statically
-        return Set.of();
+        return extractSupportedEventTypes(sagaType);
+    }
+
+    /**
+     * Extracts the supported event types from the given saga class by inspecting methods annotated with
+     * {@link SagaEventHandler}.
+     *
+     * @param sagaClass The saga class to inspect for supported event types.
+     * @return A set of event types that the saga can handle.
+     */
+    private static Set<Class<?>> extractSupportedEventTypes(Class<?> sagaClass) {
+        Set<Class<?>> supportedTypes = new HashSet<>();
+        
+        // Inspect all methods in the saga class hierarchy
+        Class<?> currentClass = sagaClass;
+        while (currentClass != null && currentClass != Object.class) {
+            for (java.lang.reflect.Method method : currentClass.getDeclaredMethods()) {
+                SagaEventHandler annotation = method.getAnnotation(SagaEventHandler.class);
+                if (annotation != null) {
+                    Class<?> eventType = determineEventType(annotation, method);
+                    if (eventType != Object.class) {
+                        supportedTypes.add(eventType);
+                    }
+                }
+            }
+            currentClass = currentClass.getSuperclass();
+        }
+        
+        return supportedTypes;
+    }
+
+    /**
+     * Determines the event type for a saga event handler method.
+     *
+     * @param annotation The {@link SagaEventHandler} annotation on the method.
+     * @param method     The annotated method.
+     * @return The event type this handler can handle.
+     */
+    private static Class<?> determineEventType(SagaEventHandler annotation, java.lang.reflect.Method method) {
+        // If payloadType is explicitly specified and not Object.class, use it
+        if (annotation.payloadType() != Object.class) {
+            return annotation.payloadType();
+        }
+        
+        // Otherwise, use the first parameter type (if available)
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        if (parameterTypes.length > 0) {
+            return parameterTypes[0];
+        }
+        
+        // Fallback to Object.class if no parameters
+        return Object.class;
     }
 
     /**
