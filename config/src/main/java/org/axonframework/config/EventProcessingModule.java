@@ -126,7 +126,6 @@ public class EventProcessingModule
     protected final Map<String, Component<EnqueuePolicy<EventMessage<?>>>> deadLetterPolicies = new HashMap<>();
 
     protected final Map<String, Component<PooledStreamingProcessorConfiguration>> psepConfigs = new HashMap<>();
-    protected final Map<String, PooledStreamingProcessorConfiguration> directPsepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
     protected Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider = processingGroup -> null;
 
