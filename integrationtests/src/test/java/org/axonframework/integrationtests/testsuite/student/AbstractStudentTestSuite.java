@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
+import org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.AxonConfiguration;
@@ -110,6 +111,9 @@ public abstract class AbstractStudentTestSuite {
         AxonConfiguration configuration =
                 EventSourcingConfigurer.create()
                                        .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
+                                       .componentRegistry(cr -> cr.disableEnhancer(
+                                               ServerConnectorConfigurationEnhancer.class
+                                       ))
                                        .start();
         commandGateway = configuration.getComponent(CommandGateway.class);
 
