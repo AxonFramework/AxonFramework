@@ -253,16 +253,6 @@ public final class EventProcessorOperations {
      *
      * @return the invoker assigned to this processor
      */
-    public EventHandlerInvoker eventHandlerInvoker() {
-        return null;
-    }
-
-    /**
-     * Returns the invoker assigned to this processor. The invoker is responsible for invoking the correct handler
-     * methods for any given message.
-     *
-     * @return the invoker assigned to this processor
-     */
     public EventHandlingComponent eventHandlingComponent() {
         return eventHandlingComponent;
     }

@@ -216,10 +216,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         return eventProcessorOperations.handlerInterceptors();
     }
 
-    private EventHandlerInvoker eventHandlerInvoker() {
-        return eventProcessorOperations.eventHandlerInvoker();
-    }
-
     @Override
     public void start() {
         logger.info("Starting PooledStreamingEventProcessor [{}].", name);
