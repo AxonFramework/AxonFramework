@@ -368,7 +368,7 @@ class PooledStreamingEventProcessorTest {
                                                    .collect(Collectors.toList());
         mockEventHandlerInvoker();
         doThrow(new RuntimeException("Simulating worker failure"))
-                .doNothing()
+                .doReturn(MessageStream.empty())
                 .when(stubEventHandlingComponent)
                 .handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any());
 

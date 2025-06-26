@@ -33,7 +33,7 @@ import java.util.function.Function;
  * @since 5.0
  */
 @Internal
-public class SegmentMatcher {
+class SegmentMatcher {
 
     private final Function<? super EventMessage<?>, Optional<Object>> sequenceIdentifierProvider;
 
