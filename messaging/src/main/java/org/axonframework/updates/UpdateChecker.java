@@ -95,7 +95,7 @@ public class UpdateChecker implements Runnable {
             UsagePropertyProvider userProperties = UsagePropertyProvider.create();
             if (userProperties.getDisabled()) {
                 logger.info(
-                        "You have opted out of the AxonIQ UpdateChecker. No updates or vulnerabilities will be checked.");
+                        "You have opted out of the AxonIQ UpdateChecker. No updates or vulnerabilities will be checked. See https://www.axoniq.io/update-check for more information.");
                 return;
             }
             logger.info(
