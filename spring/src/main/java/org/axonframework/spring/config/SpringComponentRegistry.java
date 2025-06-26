@@ -19,7 +19,6 @@ package org.axonframework.spring.config;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
-import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component;
@@ -104,6 +103,7 @@ public class SpringComponentRegistry implements
 
     private boolean disableEnhancerScanning = false;
     private final List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new CopyOnWriteArrayList<>();
+    private final List<Class<? extends ConfigurationEnhancer>> invokedEnhancers = new CopyOnWriteArrayList<>();
 
     private ConfigurableListableBeanFactory beanFactory;
 
@@ -211,6 +211,12 @@ public class SpringComponentRegistry implements
 
     @Override
     public ComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass) {
+        if (invokedEnhancers.contains(enhancerClass)) {
+            logger.warn("Disabling Configuration Enhancer [{}] won't take effect as it has already been invoked. "
+                                + "We recommend to invoke disabling of this enhancer before it takes effect.",
+                        enhancerClass.getSimpleName());
+            return this;
+        }
         disabledEnhancers.add(enhancerClass);
         return this;
     }
@@ -336,6 +342,7 @@ public class SpringComponentRegistry implements
         for (ConfigurationEnhancer enhancer : distinctAndOrderedEnhancers) {
             if (!disabledEnhancers.contains(enhancer.getClass())) {
                 enhancer.enhance(this);
+                invokedEnhancers.add(enhancer.getClass());
             }
         }
     }

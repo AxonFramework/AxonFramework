@@ -62,6 +62,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private OverridePolicy overridePolicy = OverridePolicy.WARN;
     private boolean enhancerScanning = true;
     private final List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new ArrayList<>();
+    private final List<Class<? extends ConfigurationEnhancer>> invokedEnhancers = new ArrayList<>();
 
     @Override
     public <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> definition) {
@@ -212,6 +213,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         for (ConfigurationEnhancer enhancer : distinctAndOrderedEnhancers) {
             if (!disabledEnhancers.contains(enhancer.getClass())) {
                 enhancer.enhance(this);
+                invokedEnhancers.add(enhancer.getClass());
             }
         }
     }
@@ -258,6 +260,12 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public DefaultComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass) {
+        if (invokedEnhancers.contains(enhancerClass)) {
+            logger.warn("Disabling Configuration Enhancer [{}] won't take effect as it has already been invoked. "
+                                + "We recommend to invoke disabling of this enhancer before it takes effect.",
+                        enhancerClass.getSimpleName());
+            return this;
+        }
         this.disabledEnhancers.add(enhancerClass);
         return this;
     }
