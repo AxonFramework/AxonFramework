@@ -183,15 +183,6 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     /**
-     * Return the {@link SequencingPolicy} as configured for this {@link EventHandlerInvoker}.
-     *
-     * @return the {@link SequencingPolicy} as configured for this {@link EventHandlerInvoker}
-     */
-    public SequencingPolicy<? super EventMessage<?>> getSequencingPolicy() {
-        return segmentMatcher.getSequencingPolicy();
-    }
-
-    /**
      * Builder class to instantiate a {@link SimpleEventHandlerInvoker}.
      * <p>
      * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler} and the

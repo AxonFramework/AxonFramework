@@ -73,19 +73,6 @@ class SegmentMatcherTest {
     }
 
     @Test
-    void getSequencingPolicyReturnsConfiguredPolicy() {
-        // given
-        SequencingPolicy<EventMessage<?>> sequencingPolicy = message -> Optional.of("sample-identifier");
-        SegmentMatcher testSubject = new SegmentMatcher(sequencingPolicy);
-
-        // when
-        SequencingPolicy<? super EventMessage<?>> result = testSubject.getSequencingPolicy();
-
-        // then
-        assertThat(result).isSameAs(sequencingPolicy);
-    }
-
-    @Test
     void matchesReturnsFalseWhenSegmentDoesNotMatchEventBasedOnSequenceIdentifier() {
         // given
         Segment segmentEven = new Segment(1, 1); // Will match events with odd hash
