@@ -24,17 +24,12 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
@@ -45,20 +40,14 @@ import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventSt
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
-import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.saga.SagaEventHandler;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.axonframework.tracing.SpanFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,6 +69,7 @@ import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+// TODO validate if needed
 class AxonAutoConfigurationTest {
 
     @Test
