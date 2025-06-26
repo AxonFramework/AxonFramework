@@ -113,6 +113,7 @@ class PooledStreamingEventProcessorTest {
         setTestSubject(createTestSubject());
 
         when(stubEventHandlingComponent.isSupported(any())).thenReturn(true);
+        when(stubEventHandlingComponent.handle(any(), any())).thenReturn(MessageStream.empty());
     }
 
     private void setTestSubject(PooledStreamingEventProcessor testSubject) {
@@ -239,7 +240,7 @@ class PooledStreamingEventProcessorTest {
                     spanFactory.verifySpanActive("StreamingEventProcessor.batch");
                     spanFactory.verifySpanActive("StreamingEventProcessor.process", message);
                     countDownLatch.countDown();
-                    return null;
+                    return MessageStream.empty();
                 }
         ).when(stubEventHandlingComponent).handle(any(), any());
 
@@ -274,7 +275,7 @@ class PooledStreamingEventProcessorTest {
                         return null;
                     }
                     countDownLatch.countDown();
-                    return null;
+                    return MessageStream.empty();
                 }
         ).when(stubEventHandlingComponent).handle(any(), any());
 
@@ -1335,6 +1336,7 @@ class PooledStreamingEventProcessorTest {
         }).when(stubEventHandlingComponent).handle(any(), any());
     }
 
+    // FIXME #3098 - I don't know why it doesn't work!!!!
     @Test
     void coordinatorExtendsClaimsEarlierForBusyWorkPackages() throws Exception {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
