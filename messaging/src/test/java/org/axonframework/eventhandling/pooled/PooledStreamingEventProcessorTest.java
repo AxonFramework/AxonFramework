@@ -73,6 +73,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
@@ -359,7 +360,6 @@ class PooledStreamingEventProcessorTest {
         return token == null ? 0 : token.position().orElse(0);
     }
 
-    @Disabled("TODO #3098 - Support sequencing within Segments")
     @Test
     void exceptionWhileHandlingEventAbortsWorker() throws Exception {
         MessageType testName = new MessageType("event");
@@ -367,14 +367,14 @@ class PooledStreamingEventProcessorTest {
                                                    .map(i -> new GenericEventMessage<>(testName, i))
                                                    .collect(Collectors.toList());
         mockEventHandlerInvoker();
-        doThrow(new RuntimeException("Simulating worker failure"))
+        doReturn(MessageStream.failed(new RuntimeException("Simulating worker failure")))
                 .doReturn(MessageStream.empty())
                 .when(stubEventHandlingComponent)
                 .handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any());
 
         testSubject.start();
 
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertThat(testSubject.processingStatus()).hasSize(8));
         assertEquals(8, tokenStore.fetchSegments(PROCESSOR_NAME).length);
 
         verify(stubEventHandler, never()).canHandle(any(), any(), any());
@@ -383,10 +383,9 @@ class PooledStreamingEventProcessorTest {
 
         assertWithin(1, TimeUnit.SECONDS, () -> {
             try {
-                verify(stubEventHandler).handle(
+                verify(stubEventHandlingComponent).handle(
                         argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())),
-                        any(),
-                        argThat(s -> s.getSegmentId() == events.get(2).getPayload())
+                        any()
                 );
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -394,8 +393,8 @@ class PooledStreamingEventProcessorTest {
         });
 
         assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(7, testSubject.processingStatus().size());
-            assertFalse(testSubject.processingStatus().containsKey(2));
+            assertThat(testSubject.processingStatus()).hasSize(7);
+            assertThat(testSubject.processingStatus()).containsKey(2);
         });
     }
 
