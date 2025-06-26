@@ -77,7 +77,7 @@ import java.util.function.Supplier;
  * the {@link Configuration} resulting from this {@code ComponentRegistry} can retrieve <b>any</b> bean that's
  * available. The {@link BeanFactory} that's set through
  * {@link BeanFactoryPostProcessor#postProcessBeanFactory(ConfigurableListableBeanFactory)} is also used to
- * {@link #hasComponent(Class, String) validate if th is registery has a certain component}.
+ * {@link #hasComponent(Class, String) validate if this registery has a certain component}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
