@@ -38,15 +38,11 @@ public class SegmentMatcher {
     private final Function<? super EventMessage<?>, Optional<Object>> sequenceIdentifierProvider;
 
     /**
-     * Initialize a SegmentMatcher with the given {@code sequencingPolicy}. The sequencing policy is used to extract the
-     * sequence identifier from messages, which is then used to match against segments.
+     * Initialize a SegmentMatcher with the given {@code sequenceIdentifierProvider}. This function is used to extract
+     * the sequence identifier from messages, which is then used to match against segments.
      *
-     * @param sequencingPolicy The policy defining the sequence identifiers to use for segment matching.
+     * @param sequenceIdentifierProvider A function that provides the sequence identifier for a given event message.
      */
-    public SegmentMatcher(SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
-        this.sequenceIdentifierProvider = sequencingPolicy::getSequenceIdentifierFor;
-    }
-
     public SegmentMatcher(Function<? super EventMessage<?>, Optional<Object>> sequenceIdentifierProvider) {
         this.sequenceIdentifierProvider = sequenceIdentifierProvider;
     }

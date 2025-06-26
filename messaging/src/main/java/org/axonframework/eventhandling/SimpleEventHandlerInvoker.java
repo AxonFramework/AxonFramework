@@ -67,7 +67,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                                              : builder.wrapEventMessageHandler(handler)
                                      )
                                      .collect(Collectors.toCollection(ArrayList::new));
-        this.segmentMatcher = new SegmentMatcher(builder.sequencingPolicy);
+        this.segmentMatcher = new SegmentMatcher(builder.sequencingPolicy::getSequenceIdentifierFor);
         this.listenerInvocationErrorHandler = builder.listenerInvocationErrorHandler;
     }
 
