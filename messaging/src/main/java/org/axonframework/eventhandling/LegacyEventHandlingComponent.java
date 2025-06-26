@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyEventHandlingComponent implements EventHandlingComponent {
 
     private final EventHandlerInvoker eventHandlerInvoker;
