@@ -77,7 +77,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
      *
      * @return {@code true} when {@link Component Components} can be overridden, {@code false} otherwise.
      */
-    public abstract boolean supportsOverriding();
+    public boolean supportsOverriding() {
+        return true;
+    }
 
     /**
      * Boolean stating whether the {@link ApplicationConfigurer} under test supports the use of

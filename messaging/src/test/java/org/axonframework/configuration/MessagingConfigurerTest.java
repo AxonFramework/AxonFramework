@@ -53,11 +53,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         return testSubject == null ? MessagingConfigurer.create() : testSubject;
     }
 
-    @Override
-    public boolean supportsOverriding() {
-        return true;
-    }
-
     @Test
     void defaultComponents() {
         Configuration result = testSubject.build();

@@ -27,9 +27,4 @@ class DefaultAxonApplicationTest extends ApplicationConfigurerTestSuite<DefaultA
     public DefaultAxonApplication createConfigurer() {
         return new DefaultAxonApplication();
     }
-
-    @Override
-    public boolean supportsOverriding() {
-        return true;
-    }
 }
