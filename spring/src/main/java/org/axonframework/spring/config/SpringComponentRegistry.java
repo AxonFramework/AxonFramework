@@ -102,7 +102,7 @@ public class SpringComponentRegistry implements
     private final Configuration configuration = new SpringConfiguration();
     private final Map<String, Configuration> moduleConfigurations = new ConcurrentHashMap<>();
 
-    private boolean enhancerScanning = true;
+    private boolean disableEnhancerScanning = false;
     private final List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new CopyOnWriteArrayList<>();
 
     private ConfigurableListableBeanFactory beanFactory;
@@ -205,7 +205,7 @@ public class SpringComponentRegistry implements
 
     @Override
     public ComponentRegistry disableEnhancerScanning() {
-        this.enhancerScanning = true;
+        this.disableEnhancerScanning = true;
         return this;
     }
 
@@ -305,7 +305,7 @@ public class SpringComponentRegistry implements
      * If {@link #disabledEnhancers disabled}, no {@code ServiceLoader} will be invoked.
      */
     private void scanForConfigurationEnhancers() {
-        if (!enhancerScanning) {
+        if (disableEnhancerScanning) {
             return;
         }
         ServiceLoader<ConfigurationEnhancer> enhancerLoader =
