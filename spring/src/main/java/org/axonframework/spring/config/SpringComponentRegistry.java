@@ -198,7 +198,8 @@ public class SpringComponentRegistry implements
     @Override
     public ComponentRegistry setOverridePolicy(@Nonnull OverridePolicy overridePolicy) {
         if (overridePolicy != OverridePolicy.REJECT) {
-            throw new IllegalArgumentException("Only OverridePolicy.REJECT is allowed when using Spring.");
+            logger.warn("Enabling Component overriding on a Spring-based ComponentRegistry is not supported. "
+                                + "Please use Spring \"Bean Definition Overriding Property\" instead.");
         }
         return this;
     }
