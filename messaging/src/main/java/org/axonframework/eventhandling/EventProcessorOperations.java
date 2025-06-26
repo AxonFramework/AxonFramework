@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.async.SequencingPolicy;
@@ -215,7 +216,9 @@ public final class EventProcessorOperations {
         try {
             for (Segment processingSegment : processingSegments) {
                 if (segmentMatcher.matches(processingSegment, message)) {
-                    eventHandlingComponent.handle(message, processingContext);
+                    FutureUtils.joinAndUnwrap(
+                            eventHandlingComponent.handle(message, processingContext).asCompletableFuture()
+                    );
                 }
             }
             monitorCallback.reportSuccess();
