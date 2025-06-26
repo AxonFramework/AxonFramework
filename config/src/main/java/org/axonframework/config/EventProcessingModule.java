@@ -777,8 +777,6 @@ public class EventProcessingModule
         return this;
     }
 
-    // TrackingEventProcessorConfiguration methods removed - use PooledStreamingEventProcessor configuration instead
-
     @Override
     public EventProcessingConfigurer registerPooledStreamingEventProcessor(
             String name,
@@ -898,8 +896,6 @@ public class EventProcessingModule
                                         .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
                                         .build();
     }
-
-    // TrackingEventProcessor method removed - use PooledStreamingEventProcessor instead
 
     /**
      * Default {@link PooledStreamingEventProcessor} configuration based on this configure module.

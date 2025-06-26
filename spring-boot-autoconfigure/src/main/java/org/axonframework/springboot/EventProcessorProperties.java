@@ -202,7 +202,7 @@ public class EventProcessorProperties {
          * 5000 milliseconds.
          *
          * @param tokenClaimInterval the interval between attempts to claim tokens by a
-         *                           {@link org.axonframework.eventhandling.TrackingEventProcessor}.
+         *                           {@link org.axonframework.eventhandling.StreamingEventProcessor}.
          */
         public void setTokenClaimInterval(long tokenClaimInterval) {
             this.tokenClaimInterval = tokenClaimInterval;
@@ -246,8 +246,7 @@ public class EventProcessorProperties {
         /**
          * Sets the number of threads to use to process Events, when using a
          * {@link org.axonframework.eventhandling.StreamingEventProcessor} implementation. Defaults to the configured
-         * number of initial segments. If this field is not configured, the thread count defaults to 1 for a
-         * {@link org.axonframework.eventhandling.TrackingEventProcessor} and 4 for a
+         * number of initial segments. If this field is not configured, the thread count defaults to 4 for a
          * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
          * <p>
          * A provided {@code threadCount} < 0 will result in a number of threads equal to the configured number of
