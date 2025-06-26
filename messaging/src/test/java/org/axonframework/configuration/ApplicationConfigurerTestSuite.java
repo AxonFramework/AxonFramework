@@ -79,6 +79,16 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
      */
     public abstract boolean supportsOverriding();
 
+    /**
+     * Boolean stating whether the {@link ApplicationConfigurer} under test supports the use of
+     * {@link ComponentFactory ComponentFactories}.
+     *
+     * @return {@code true} when {@link ComponentFactory ComponentFactories} are supported, {@code false} otherwise.
+     */
+    public boolean supportsComponentFactories() {
+        return true;
+    }
+
     protected static class TestComponent {
 
         private final String state;
@@ -1061,6 +1071,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void factoryIsNotConsultedWhenComponentForTypeAndNameIsAlreadyPresent() {
+            Assumptions.assumeTrue(supportsComponentFactories(),
+                                   "Ignore test since ComponentFactories are not supported.");
+
             TestComponent expectedComponent = new TestComponent("state");
             TestComponent expectedNamedComponent = new TestComponent("named");
             TestComponentFactory testFactory = spy(new TestComponentFactory("constructed"));
@@ -1081,6 +1094,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void factoryIsConsultedOnceWhenThereIsNoComponentForTypeAndName() {
+            Assumptions.assumeTrue(supportsComponentFactories(),
+                                   "Ignore test since ComponentFactories are not supported.");
+
             String expectedState = "constructed";
             TestComponentFactory testFactory = spy(new TestComponentFactory(expectedState));
 
@@ -1099,6 +1115,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void factoryIsConsultedButMayReturnNothingWhenThereIsNoComponentForTypeAndName() {
+            Assumptions.assumeTrue(supportsComponentFactories(),
+                                   "Ignore test since ComponentFactories are not supported.");
+
             String expectedState = "constructed";
             TestComponentFactory testFactory = spy(new TestComponentFactory(expectedState, new AtomicBoolean(false)));
 
@@ -1115,6 +1134,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void getOrDefaultConsultsFactoryBeforeInvokingDefaultSupplier() {
+            Assumptions.assumeTrue(supportsComponentFactories(),
+                                   "Ignore test since ComponentFactories are not supported.");
+
             AtomicBoolean invoked = new AtomicBoolean(false);
             TestComponent expectedDefaultComponent = new TestComponent("default");
             String expectedFactoryState = "constructed";

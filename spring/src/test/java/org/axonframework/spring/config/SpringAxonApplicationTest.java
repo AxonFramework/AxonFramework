@@ -27,6 +27,8 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
  */
 class SpringAxonApplicationTest extends ApplicationConfigurerTestSuite<SpringAxonApplication> {
 
+    // TODO all lifecycle tests fail - check if we can make this work somehow.
+
     @Override
     public SpringAxonApplication createConfigurer() {
         ConfigurableListableBeanFactory beanFactory = new DefaultListableBeanFactory();
@@ -39,6 +41,11 @@ class SpringAxonApplicationTest extends ApplicationConfigurerTestSuite<SpringAxo
 
     @Override
     public boolean supportsOverriding() {
+        return false;
+    }
+
+    @Override
+    public boolean supportsComponentFactories() {
         return false;
     }
 }
