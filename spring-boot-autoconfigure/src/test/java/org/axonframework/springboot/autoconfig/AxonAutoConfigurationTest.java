@@ -135,6 +135,14 @@ public class AxonAutoConfigurationTest {
     }
 
     @Test
+    void validateDecoratorDefinitionsAreInvoked() {
+        testContext.withUserConfiguration(DecoratorDefinitionContext.class).run(context -> {
+            assertThat(context).hasBean("commandBus");
+            assertThat(context).hasSingleBean(InterceptingCommandBus.class);
+        });
+    }
+
+    @Test
     void validateConfigurationEnhancersAreInvokedAndCanDecorateComponents() {
         testContext.withUserConfiguration(ConfigurationEnhancerContext.class).run(context -> {
             assertThat(context).hasBean("commandBus");

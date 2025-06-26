@@ -93,6 +93,7 @@ public class SpringComponentRegistry implements
 
     private final Components components = new Components();
     private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decorators = new CopyOnWriteArrayList<>();
+    private final List<Integer> processedDecorators = new CopyOnWriteArrayList<>();
     private final List<ConfigurationEnhancer> enhancers = new CopyOnWriteArrayList<>();
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
@@ -254,6 +255,7 @@ public class SpringComponentRegistry implements
     public Object postProcessAfterInitialization(@Nonnull Object bean,
                                                  @Nonnull String beanName) throws BeansException {
         ensureEnhancersAreProcessed();
+        ensureDecoratorsAreProcessed();
 
         Component<?> springComponent = new SpringComponent<>(bean, beanName);
         Component.Identifier<?> componentId = new Component.Identifier<>(bean.getClass(), beanName);
@@ -298,7 +300,7 @@ public class SpringComponentRegistry implements
             return;
         }
         ensureEnhancersAreProcessed();
-        decorateComponents();
+        ensureDecoratorsAreProcessed();
         registerComponentsWithApplicationContext();
         scanForModules();
         buildModules(lifecycleRegistry);
@@ -364,6 +366,31 @@ public class SpringComponentRegistry implements
     }
 
     /**
+     * Ensures that we have (1) searched for additional {@link DecoratorDefinition DecoratorDefinitions} through the
+     * {@link ConfigurableListableBeanFactory} and (2) that all decorators have
+     * {@link org.axonframework.configuration.ComponentDecorator#decorate(Configuration, String, Object) decorated}
+     * {@code this ComponentRegistry's} {@link Component Components}.
+     * <p>
+     * Uses a gate to ensure this task is only done once.
+     */
+    private void ensureDecoratorsAreProcessed() {
+        if (processedDecorators.isEmpty()) {
+            scanForDecoratorDefinitions();
+            decorateComponents();
+        }
+    }
+
+    /**
+     * Look for all beans of type {@link DecoratorDefinition} in the {@link ConfigurableListableBeanFactory} set by the
+     * {@link #postProcessBeanFactory(ConfigurableListableBeanFactory)} method and
+     * {@link #registerDecorator(DecoratorDefinition) registers} them.
+     */
+    private void scanForDecoratorDefinitions() {
+        beanFactory.getBeansOfType(DecoratorDefinition.class)
+                   .forEach((beanName, decorator) -> registerDecorator(decorator));
+    }
+
+    /**
      * Decorate all components that have been {@link #registerComponent(ComponentDefinition) registered directly} or
      * registered through a {@link ConfigurationEnhancer}.
      */
@@ -374,6 +401,7 @@ public class SpringComponentRegistry implements
             for (Component.Identifier id : components.identifiers()) {
                 if (decorator.matches(id)) {
                     components.replace(id, decorator::decorate);
+                    processedDecorators.add(decorator.hashCode());
                 }
             }
         }
