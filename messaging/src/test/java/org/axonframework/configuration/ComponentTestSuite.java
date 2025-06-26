@@ -178,7 +178,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     @Test
     void identifierConstructorThrowsNullPointerExceptionForNullType() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new Identifier<>((Class<?) null, "id"));
+        assertThrows(NullPointerException.class, () -> new Identifier<>((Class<?>) null, "id"));
     }
 
     @Test
