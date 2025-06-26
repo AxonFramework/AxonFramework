@@ -91,6 +91,17 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         return true;
     }
 
+    /**
+     * Boolean stating whether the {@link ApplicationConfigurer} under test does its own lifecycle management through
+     * the {@link LifecycleRegistry}.
+     *
+     * @return {@code true} when the {@link ApplicationConfigurer} under test controls the lifecycle management through
+     * the {@link LifecycleRegistry}, {@code false} otherwise.
+     */
+    public boolean doesOwnLifecycleManagement() {
+        return true;
+    }
+
     protected static class TestComponent {
 
         private final String state;
@@ -1174,6 +1185,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void startLifecycleHandlersAreInvokedInAscendingPhaseOrder() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
@@ -1198,6 +1214,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void startLifecycleHandlerConfiguredThroughConfigurerAreInvokedInAscendingPhaseOrder() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
@@ -1225,6 +1246,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         @SuppressWarnings("java:S2925")
         void startLifecycleHandlersWillOnlyProceedToFollowingPhaseAfterCurrentPhaseIsFinalized()
                 throws InterruptedException {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             // Create a lock for the slow handler and lock it immediately, to spoof the handler's slow/long process
             ReentrantLock slowHandlerLock = new ReentrantLock();
             slowHandlerLock.lock();
@@ -1266,6 +1292,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void shutdownLifecycleHandlersAreInvokedInDescendingPhaseOrder() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
@@ -1291,6 +1322,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void shutdownLifecycleHandlersConfiguredThroughConfigurerAreInvokedInDescendingPhaseOrder() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
@@ -1319,6 +1355,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         @SuppressWarnings("java:S2925")
         void shutdownLifecycleHandlersWillOnlyProceedToFollowingPhaseAfterCurrentPhaseIsFinalized()
                 throws InterruptedException {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             // Create a lock for the slow handler and lock it immediately, to spoof the handler's slow/long process
             ReentrantLock slowHandlerLock = new ReentrantLock();
             slowHandlerLock.lock();
@@ -1365,6 +1406,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
          */
         @Test
         void outOfOrderAddedStartHandlerDuringShutdownIsNotCalledImmediately() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandlerAdder = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance addedPhaseOneStartHandler = spy(new LifecycleManagedInstance());
@@ -1395,6 +1441,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void failingStartLifecycleProceedsIntoShutdownOrderAtFailingPhase() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
@@ -1438,6 +1489,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void lifecycleHandlersProceedToFollowingPhaseWhenTheThreadIsInterrupted() throws InterruptedException {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             AtomicBoolean invoked = new AtomicBoolean(false);
 
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
@@ -1467,6 +1523,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         @Test
         @SuppressWarnings("java:S2925")
         void timeOutContinuesWithTheNextLifecyclePhase() throws InterruptedException {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             CountDownLatch handlerStarted = new CountDownLatch(1);
             AtomicBoolean handler1Invoked = new AtomicBoolean();
             AtomicBoolean handler2Invoked = new AtomicBoolean();
@@ -1495,6 +1556,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void factoryRegisteredShutdownHandlersAreInvoked() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             // given...
             AtomicBoolean shutdownInvoked = new AtomicBoolean(false);
             testSubject.componentRegistry(registry -> registry.registerFactory(new TestComponentFactory(

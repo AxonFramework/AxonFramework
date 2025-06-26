@@ -22,12 +22,15 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
 /**
  * Test suite implementation validating the {@link SpringAxonApplication}.
+ * <p>
+ * Overrides {@link #supportsOverriding()} to return {@code false}, since Spring does not allow bean overriding.
+ * <p>
+ * Overrides {@link #doesOwnLifecycleManagement()} to return {@code false}, since all lifecycle management is given to
+ * Spring instead of done manually.
  *
  * @author Steven van Beelen
  */
 class SpringAxonApplicationTest extends ApplicationConfigurerTestSuite<SpringAxonApplication> {
-
-    // TODO all lifecycle tests fail - check if we can make this work somehow.
 
     @Override
     public SpringAxonApplication createConfigurer() {
@@ -46,6 +49,11 @@ class SpringAxonApplicationTest extends ApplicationConfigurerTestSuite<SpringAxo
 
     @Override
     public boolean supportsComponentFactories() {
+        return false;
+    }
+
+    @Override
+    public boolean doesOwnLifecycleManagement() {
         return false;
     }
 }
