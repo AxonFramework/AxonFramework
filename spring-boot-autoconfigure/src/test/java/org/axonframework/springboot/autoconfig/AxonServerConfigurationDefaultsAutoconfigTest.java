@@ -16,20 +16,14 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.jetbrains.annotations.NotNull;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
+import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
+import org.axonframework.springboot.utils.GrpcServerStub;
+import org.axonframework.springboot.utils.TcpUtils;
 import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -52,54 +46,44 @@ class AxonServerConfigurationDefaultsAutoconfigTest {
     void setUp() {
         testContext = new ApplicationContextRunner()
                 .withUserConfiguration(TestContext.class)
-                .withPropertyValues("axon.axonserver.enabled=false");
+                .withPropertyValues("axon.axonserver.enabled=true");
+    }
+
+    @BeforeAll
+    static void beforeAll() {
+        System.setProperty("axon.axonserver.servers", GrpcServerStub.DEFAULT_HOST + ":" + TcpUtils.findFreePort());
+    }
+
+    @AfterAll
+    static void afterAll() {
+        System.clearProperty("axon.axonserver.servers");
     }
 
     @Test
-    void defaultAxonMessagingComponentsArePresent() {
+    void defaultAxonServerComponentsArePresent() {
         testContext.run(context -> {
-            assertThat(context).hasSingleBean(MessageTypeResolver.class);
-            assertThat(context).hasBean(MessageTypeResolver.class.getName());
-            assertThat(context).hasSingleBean(CommandGateway.class);
-            assertThat(context).hasBean(CommandGateway.class.getName());
-            assertThat(context).hasSingleBean(CommandBus.class);
-            assertThat(context).hasBean(CommandBus.class.getName());
-            assertThat(context).hasSingleBean(EventGateway.class);
-            assertThat(context).hasBean(EventGateway.class.getName());
-            assertThat(context).hasSingleBean(EventSink.class);
-            assertThat(context).hasBean(EventSink.class.getName());
-            assertThat(context).hasSingleBean(EventBus.class);
-            assertThat(context).hasBean(EventBus.class.getName());
-            assertThat(context).hasSingleBean(QueryGateway.class);
-            assertThat(context).hasBean(QueryGateway.class.getName());
-            assertThat(context).hasSingleBean(QueryBus.class);
-            assertThat(context).hasBean(QueryBus.class.getName());
-            assertThat(context).hasSingleBean(QueryUpdateEmitter.class);
-            assertThat(context).hasBean(QueryUpdateEmitter.class.getName());
+            assertThat(context).hasSingleBean(AxonServerConfiguration.class);
+            assertThat(context).hasBean(AxonServerConfiguration.class.getName());
+            assertThat(context).hasSingleBean(AxonServerConnectionManager.class);
+            assertThat(context).hasBean(AxonServerConnectionManager.class.getName());
+            assertThat(context).hasSingleBean(ManagedChannelCustomizer.class);
+            assertThat(context).hasBean(ManagedChannelCustomizer.class.getName());
+            assertThat(context).hasSingleBean(AxonServerEventStorageEngine.class);
+            assertThat(context).hasBean(AxonServerEventStorageEngine.class.getName());
         });
     }
 
     @Test
-    void overrideDefaultAxonMessagingComponents() {
+    void overrideDefaultAxonServerComponents() {
         testContext.withUserConfiguration(CustomContext.class).run(context -> {
-            assertThat(context).hasSingleBean(MessageTypeResolver.class);
-            assertThat(context).hasBean("customMessageTypeResolver");
-            assertThat(context).hasSingleBean(CommandGateway.class);
-            assertThat(context).hasBean("customCommandGateway");
-            assertThat(context).hasSingleBean(CommandBus.class);
-            assertThat(context).hasBean("customCommandBus");
-            assertThat(context).hasSingleBean(EventGateway.class);
-            assertThat(context).hasBean("customEventGateway");
-            assertThat(context).hasSingleBean(EventSink.class);
-            assertThat(context).hasBean("customEventSink");
-            assertThat(context).hasSingleBean(EventBus.class);
-            assertThat(context).hasBean("customEventBus");
-            assertThat(context).hasSingleBean(QueryGateway.class);
-            assertThat(context).hasBean("customQueryGateway");
-            assertThat(context).hasSingleBean(QueryBus.class);
-            assertThat(context).hasBean("customQueryBus");
-            assertThat(context).hasSingleBean(QueryUpdateEmitter.class);
-            assertThat(context).hasBean("customQueryUpdateEmitter");
+            assertThat(context).hasSingleBean(AxonServerConfiguration.class);
+            assertThat(context).hasBean("customAxonServerConfiguration");
+            assertThat(context).hasSingleBean(AxonServerConnectionManager.class);
+            assertThat(context).hasBean("customAxonServerConnectionManager");
+            assertThat(context).hasSingleBean(ManagedChannelCustomizer.class);
+            assertThat(context).hasBean("customManagedChannelCustomizer");
+            assertThat(context).hasSingleBean(AxonServerEventStorageEngine.class);
+            assertThat(context).hasBean("customAxonServerEventStorageEngine");
         });
     }
 
@@ -107,20 +91,9 @@ class AxonServerConfigurationDefaultsAutoconfigTest {
     @EnableAutoConfiguration
     public static class TestContext {
 
-        @Bean
-        public ConfigurationEnhancer disableEventSourcingConfigurationDefaults() {
-            return new ConfigurationEnhancer() {
-
-                @Override
-                public void enhance(@NotNull ComponentRegistry registry) {
-                    registry.disableEnhancer(EventSourcingConfigurationDefaults.class);
-                }
-
-                @Override
-                public int order() {
-                    return Integer.MIN_VALUE;
-                }
-            };
+        @Bean(initMethod = "start", destroyMethod = "shutdown")
+        public GrpcServerStub grpcServerStub(@Value("${axon.axonserver.servers}") String servers) {
+            return new GrpcServerStub(Integer.parseInt(servers.split(":")[1]));
         }
     }
 
@@ -129,48 +102,23 @@ class AxonServerConfigurationDefaultsAutoconfigTest {
     public static class CustomContext {
 
         @Bean
-        public MessageTypeResolver customMessageTypeResolver() {
-            return mock(MessageTypeResolver.class);
+        public AxonServerConfiguration customAxonServerConfiguration() {
+            return mock(AxonServerConfiguration.class);
         }
 
         @Bean
-        public CommandGateway customCommandGateway() {
-            return mock(CommandGateway.class);
+        public AxonServerConnectionManager customAxonServerConnectionManager() {
+            return mock(AxonServerConnectionManager.class);
         }
 
         @Bean
-        public CommandBus customCommandBus() {
-            return mock(CommandBus.class);
+        public ManagedChannelCustomizer customManagedChannelCustomizer() {
+            return mock(ManagedChannelCustomizer.class);
         }
 
         @Bean
-        public EventGateway customEventGateway() {
-            return mock(EventGateway.class);
-        }
-
-        @Bean
-        public EventSink customEventSink() {
-            return mock(EventSink.class);
-        }
-
-        @Bean
-        public EventBus customEventBus() {
-            return mock(EventBus.class);
-        }
-
-        @Bean
-        public QueryGateway customQueryGateway() {
-            return mock(QueryGateway.class);
-        }
-
-        @Bean
-        public QueryBus customQueryBus() {
-            return mock(QueryBus.class);
-        }
-
-        @Bean
-        public QueryUpdateEmitter customQueryUpdateEmitter() {
-            return mock(QueryUpdateEmitter.class);
+        public AxonServerEventStorageEngine customAxonServerEventStorageEngine() {
+            return mock(AxonServerEventStorageEngine.class);
         }
     }
 }
