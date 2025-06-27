@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -36,7 +37,7 @@ import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainE
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class AbstractEventProcessorTest {
+class EventProcessorOperationsTest {
 
     @Test
     void expectCallbackForAllMessages() throws Exception {
@@ -98,14 +99,34 @@ class AbstractEventProcessorTest {
         assertTrue(pending.isEmpty(), "Not all events were presented to monitor");
     }
 
-    private static class TestEventProcessor extends AbstractEventProcessor {
+    private static class TestEventProcessor implements EventProcessor {
+
+        private final EventProcessorOperations eventProcessorOperations;
 
         private TestEventProcessor(Builder builder) {
-            super(builder);
+            builder.validate();
+            this.eventProcessorOperations = new EventProcessorOperations.Builder()
+                    .name(builder.name())
+                    .eventHandlerInvoker(builder.eventHandlerInvoker())
+                    .errorHandler(builder.errorHandler())
+                    .spanFactory(builder.spanFactory())
+                    .messageMonitor(builder.messageMonitor())
+                    .streamingProcessor(true)
+                    .build();
         }
 
         private static Builder builder() {
             return new Builder();
+        }
+
+        @Override
+        public String getName() {
+            return eventProcessorOperations.name();
+        }
+
+        @Override
+        public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+            return eventProcessorOperations.handlerInterceptors();
         }
 
         @Override
@@ -127,10 +148,16 @@ class AbstractEventProcessorTest {
         }
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {
-            processInUnitOfWork(eventMessages, new UnitOfWork());
+            eventProcessorOperations.processInUnitOfWork(eventMessages, new UnitOfWork());
         }
 
-        private static class Builder extends AbstractEventProcessor.Builder {
+        @Override
+        public Registration registerHandlerInterceptor(
+                @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
+            return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
+        }
+
+        private static class Builder extends EventProcessorBuilder {
 
             public Builder() {
                 super();
