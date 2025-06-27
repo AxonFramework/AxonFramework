@@ -154,14 +154,12 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
 
     private void addEntityCreatorMethod(Method method) {
         if (!Modifier.isStatic(method.getModifiers())) {
-            throw new AxonConfigurationException("Method-based @EntityCreator must be static. Found method: %s".formatted(
-                    method));
+            throw new AxonConfigurationException("Method-based @EntityCreator must be static. Found method: %s".formatted(method));
+        } else if (!this.entityType.isAssignableFrom(method.getReturnType())) {
+            throw new AxonConfigurationException("Method-based @EntityCreator must return the entity type or a subtype. Found method: [%s]".formatted(method));
+        } else {
+            this.addEntityCreatorExecutable(method);
         }
-        if (!method.getReturnType().isAssignableFrom(entityType)) {
-            throw new AxonConfigurationException(
-                    "Method-based @EntityCreator must return the entity type or a subtype. Found method: [%s]".formatted(method));
-        }
-        addEntityCreatorExecutable(method);
     }
 
     private void addEntityCreatorExecutable(Executable executable) {
