@@ -411,7 +411,7 @@ public class SpringComponentRegistry implements
     private void registerLocalComponentsWithApplicationContext() {
         components.postProcessComponents(component -> {
             String name = Objects.requireNonNullElseGet(component.identifier().name(),
-                                                        () -> component.identifier().rawType().getName());
+                                                        () -> component.identifier().typeAsClass().getName());
             if (beanFactory.containsBeanDefinition(name)) {
                 logger.info("Component with name [{}] is already available. Skipping registration.", name);
                 return;

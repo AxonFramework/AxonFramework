@@ -149,14 +149,14 @@ public interface Component<C> extends DescribableComponent {
         }
 
         /**
-         * Returns the raw type of the {@link #type()}.
+         * Returns the {@link #type()} as a {@link Class}.
          * <p>
          * This means any generics present on the {@code type} are lost. When those are needed, be sure to use
          * {@link #type()} instead.
          *
-         * @return The raw type of the {@link #type()}.
+         * @return The {@link #type()} as a {@link Class}.
          */
-        public Class<C> rawType() {
+        public Class<C> typeAsClass() {
             return this.type.getTypeAsClass();
         }
 

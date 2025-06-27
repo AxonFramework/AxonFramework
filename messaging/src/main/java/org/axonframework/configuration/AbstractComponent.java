@@ -97,7 +97,7 @@ public abstract class AbstractComponent<C, A extends C>
 
     @Override
     public Class<C> rawType() {
-        return this.identifier.rawType();
+        return this.identifier.typeAsClass();
     }
 
     @Nullable

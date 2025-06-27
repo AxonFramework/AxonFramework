@@ -77,8 +77,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         Component<? extends C> component = creator.createComponent();
         Identifier<? extends C> id = component.identifier();
         logger.debug("Registering component [{}] of type [{}].", id.name(), id.type());
-        if (overridePolicy == OverridePolicy.REJECT && hasComponent(id.rawType(), id.name())) {
-            throw new ComponentOverrideException(id.rawType(), id.name());
+        if (overridePolicy == OverridePolicy.REJECT && hasComponent(id.typeAsClass(), id.name())) {
+            throw new ComponentOverrideException(id.typeAsClass(), id.name());
         }
 
         Component<? extends C> previous = components.put(component);

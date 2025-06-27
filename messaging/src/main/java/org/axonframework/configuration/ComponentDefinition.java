@@ -243,10 +243,10 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
     }
 
     /**
-     * Returns the given {@link Component.Identifier#rawType() raw type} of this {@code ComponentDefinition}, set on
-     * {@link #ofType(Class)} or {@link #ofTypeAndName(Class, String)}.
+     * Returns the given {@link Component.Identifier#typeAsClass() type as a Class} of this {@code ComponentDefinition},
+     * set on {@link #ofType(Class)} or {@link #ofTypeAndName(Class, String)}.
      *
-     * @return The given {@link Component.Identifier#rawType() raw type} of this {@code ComponentDefinition}.
+     * @return The given {@link Component.Identifier#typeAsClass() type as a Class} of this {@code ComponentDefinition}.
      */
     Class<C> rawType();
 

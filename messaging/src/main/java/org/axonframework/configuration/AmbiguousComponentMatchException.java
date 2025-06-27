@@ -35,7 +35,7 @@ public class AmbiguousComponentMatchException extends RuntimeException {
      */
     public <C> AmbiguousComponentMatchException(@Nonnull Component.Identifier<C> identifier) {
         super("No single instance found for type ["
-                      + identifier.rawType()
+                      + identifier.typeAsClass()
                       + "] and name ["
                       + identifier.name()
                       + "]. Please try a more specific type-name combination to retrieve components.");
