@@ -28,31 +28,33 @@ No additional configuration code is needed—the framework handles all the wirin
 
 == Running Axon Server with Docker
 
-To run Axon Server locally, we'll use Docker Compose.
+To run Axon Server locally, we'll use Docker Compose. To use the Axon Server with DCB support, you need to use Axon Server version `2025.1.0` or later.
 Create a `docker-compose.yml` file in your project root:
 
 [source,yaml]
 ./docker-compose.yml
 ----
-version: '3.8'
 services:
   axon-server:
-    image: axoniq/axonserver:latest-dev
-    hostname: axon-server
+    image: axoniq/axonserver:2025.1.0
     ports:
       - "8024:8024"
       - "8124:8124"
     environment:
-      - AXONIQ_AXONSERVER_DEVMODE_ENABLED=true
+      axoniq_axonserver_hostname: axon-server
+      axoniq_axonserver_autocluster_first: axon-server
+      axoniq_axonserver_autocluster_contexts: _admin
     volumes:
-      - axonserver-data:/axonserver/data
-      - axonserver-events:/axonserver/events
-      - axonserver-config:/axonserver/config
+      - data:/axonserver/data
+      - events:/axonserver/events
 
 volumes:
-  axonserver-data:
-  axonserver-events:
-  axonserver-config:
+  db:
+    driver: local
+  data:
+    driver: local
+  events:
+    driver: local
 ----
 
 Start Axon Server by running:
