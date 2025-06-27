@@ -246,7 +246,6 @@ public interface ComponentRegistry extends DescribableComponent {
      * The given {@code builder} function gets the {@link Configuration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
      * {@code type}.
-     *
      * <p>
      * The given {@code searchScope} is used to define if the search only checks the {@link SearchScope#CURRENT current}
      * registry, only checks all {@link SearchScope#ANCESTORS ancestors}, or checks {@link SearchScope#ALL both} the
