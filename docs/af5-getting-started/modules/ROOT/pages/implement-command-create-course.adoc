@@ -361,9 +361,14 @@ class CreateCourseCommandHandler {
     @EventSourcedEntity(tagKey = "courseId") // <1>
     static class State {
 
-        private boolean created = false; // <2>
+        private boolean created; // <2>
 
-        @EventSourcingHandler // <3>
+        @EntityCreator // <3>
+        private State() {
+            this.created = false;
+        }
+
+        @EventSourcingHandler // <4>
         public void evolve(CourseCreated event) {
             this.created = true;
         }
@@ -372,10 +377,10 @@ class CreateCourseCommandHandler {
     @CommandHandler
     void handle(
         CreateCourse command,
-        @InjectEntity(idProperty = "courseId") State state, // <4>
+        @InjectEntity(idProperty = "courseId") State state, // <5>
         EventAppender eventAppender
     ) {
-        if(state.created) { // <5>
+        if(state.created) { // <6>
             return;
         }
         var event = new CourseCreated(command.courseId(), command.name(), command.capacity());
@@ -393,11 +398,12 @@ Pay attention that `State` per feature/slice approach gives us a high level of e
 In this case, we need to know if the course was already created or not.
 While executing the command, we don't care about the name or other properties.
 In other words: you don't need to know who/how many students are subscribed to decide if the name can be changed.
-<3> The `@EventSourcingHandler` annotation indicates to Axon Framework that this method should be called while rehydrating the state of the entity.
+<3> The `@EntityCreator` annotation indicates to Axon Framework that this method should be called when the entity is created. It's the place when you can set up the initial state.
+<4> The `@EventSourcingHandler` annotation indicates to Axon Framework that this method should be called while rehydrating the state of the entity.
 Axon Framework will use the type of the annotated method argument to link this method to the specific type of event. Furthermore, the event type is used to query the `Event Store` just for those types.
-<4> The `@InjectEntity` annotation indicates to Axon Framework to inject the entity with the given identifier property which needs to be present in the processed command.
+<5> The `@InjectEntity` annotation indicates to Axon Framework to inject the entity with the given identifier property which needs to be present in the processed command.
 In this case, we want to inject the `State` entity with the `courseId` property.
-<5> The `if` statement checks if the course was already created.
+<6> The `if` statement checks if the course was already created.
 If it was, we don't need to do anything, so we just return from the method.
 To just ignore the command (do not publish events) is a choice. Thanks to that, the command can be safely retried.
 Alternatively, you may throw an exception or publish an event that notifies about the failure.
