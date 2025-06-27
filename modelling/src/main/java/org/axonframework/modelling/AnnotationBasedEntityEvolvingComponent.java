@@ -96,8 +96,8 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
     ) {
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.inspector = requireNonNull(inspector, "The Annotated Handler Inspector must not be null.");
-        this.converter = converter;
-        this.messageTypeResolver = messageTypeResolver;
+        this.converter = requireNonNull(converter, "The Converter must not be null.");
+        this.messageTypeResolver = requireNonNull(messageTypeResolver, "The Message Type Resolver must not be null.");
     }
 
     @Override
