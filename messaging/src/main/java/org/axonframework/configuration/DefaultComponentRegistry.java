@@ -105,14 +105,17 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public boolean hasComponent(@Nonnull Class<?> type,
-                                @Nullable String name) {
-        return components.contains(new Identifier<>(type, name)) || parentConfigHasComponent(type, name);
+                                @Nullable String name,
+                                @Nonnull SearchScope searchScope) {
+        return switch (searchScope) {
+            case ALL -> components.contains(new Identifier<>(type, name)) || parentHasComponent(type, name);
+            case CURRENT -> components.contains(new Identifier<>(type, name));
+            case ANCESTORS -> parentHasComponent(type, name);
+        };
     }
 
-    private Boolean parentConfigHasComponent(Class<?> type, String name) {
-        return parentConfig.map(parent -> parent.getOptionalComponent(type, name)
-                                                .isPresent())
-                           .orElse(false);
+    private Boolean parentHasComponent(Class<?> type, String name) {
+        return parentConfig.map(parent -> parent.hasComponent(type, name)).orElse(false);
     }
 
     @Override
@@ -364,6 +367,11 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         }
 
         private <C> Optional<Component<C>> fromFactory(Class<C> type, String name) {
+            if (name == null) {
+                // The ComponentFactory requires a non-null name at all times.
+                return Optional.empty();
+            }
+
             for (ComponentFactory<?> factory : factories) {
                 if (!type.isAssignableFrom(factory.forType())) {
                     continue;

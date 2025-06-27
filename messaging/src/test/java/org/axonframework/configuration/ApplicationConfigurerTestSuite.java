@@ -476,6 +476,49 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
+        void hasComponentForClassAndSearchScope() {
+            testSubject.componentRegistry(cr -> {
+                assertFalse(cr.hasComponent(TestComponent.class, SearchScope.CURRENT));
+                assertFalse(cr.hasComponent(TestComponent.class, SearchScope.ALL));
+                assertFalse(cr.hasComponent(TestComponent.class, SearchScope.ANCESTORS));
+            });
+
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT));
+
+            testSubject.componentRegistry(cr -> {
+                assertTrue(cr.hasComponent(TestComponent.class, SearchScope.CURRENT));
+                assertTrue(cr.hasComponent(TestComponent.class, SearchScope.ALL));
+                assertFalse(cr.hasComponent(TestComponent.class, SearchScope.ANCESTORS));
+            });
+        }
+
+        @Test
+        void hasComponentForClassAndSearchScopeInAncestorsOnly() {
+            testSubject.componentRegistry(parentCr -> {
+                assertFalse(parentCr.hasComponent(TestComponent.class, SearchScope.CURRENT));
+                assertFalse(parentCr.hasComponent(TestComponent.class, SearchScope.ALL));
+                assertFalse(parentCr.hasComponent(TestComponent.class, SearchScope.ANCESTORS));
+            });
+
+            testSubject.componentRegistry(
+                    parentCr -> parentCr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+            );
+
+            testSubject.componentRegistry(parentCr -> parentCr.registerModule(
+                    new TestModule("test-name").componentRegistry(
+                            childCr -> childCr.registerEnhancer(registry -> {
+                                assertFalse(registry.hasComponent(TestComponent.class, SearchScope.CURRENT));
+                                assertTrue(registry.hasComponent(TestComponent.class, SearchScope.ALL));
+                                assertTrue(registry.hasComponent(TestComponent.class, SearchScope.ANCESTORS));
+                            })
+                    )
+            ));
+
+            // Building the configuration triggers the ConfigurationEnhancer performing the has component checks.
+            buildConfiguration();
+        }
+
+        @Test
         void hasComponentForClassAndName() {
             testSubject.componentRegistry(cr -> assertFalse(cr.hasComponent(TestComponent.class, "some-name")));
 
@@ -484,6 +527,69 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                                      c -> TEST_COMPONENT));
 
             testSubject.componentRegistry(cr -> assertTrue(cr.hasComponent(TestComponent.class, "some-name")));
+        }
+
+        @Test
+        void hasComponentForClassNameAndSearchScope() {
+            testSubject.componentRegistry(parentCr -> {
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.CURRENT));
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.ALL));
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.ANCESTORS));
+            });
+
+            testSubject.componentRegistry(
+                    parentCr -> parentCr.registerComponent(TestComponent.class, "some-name", c -> TEST_COMPONENT)
+            );
+
+            testSubject.componentRegistry(parentCr -> parentCr.registerModule(
+                    new TestModule("test-name").componentRegistry(
+                            childCr -> childCr.registerEnhancer(registry -> {
+                                assertFalse(registry.hasComponent(TestComponent.class,
+                                                                  "some-name",
+                                                                  SearchScope.CURRENT));
+                                assertTrue(registry.hasComponent(TestComponent.class, "some-name", SearchScope.ALL));
+                                assertTrue(registry.hasComponent(TestComponent.class,
+                                                                 "some-name",
+                                                                 SearchScope.ANCESTORS
+                                ));
+                            })
+                    )
+            ));
+
+            // Building the configuration triggers the ConfigurationEnhancer performing the has component checks.
+            buildConfiguration();
+        }
+
+        @Test
+        void hasComponentForClassNameAndSearchScopeInAncestorsOnly() {
+            testSubject.componentRegistry(parentCr -> {
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.CURRENT));
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.ALL));
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.ANCESTORS));
+            });
+
+            testSubject.componentRegistry(
+                    parentCr -> parentCr.registerComponent(TestComponent.class, "some-name", c -> TEST_COMPONENT)
+            );
+
+            testSubject.componentRegistry(parentCr -> parentCr.registerModule(
+                    new TestModule("test-name").componentRegistry(
+                            childCr -> childCr.registerEnhancer(registry -> {
+                                assertFalse(registry.hasComponent(TestComponent.class,
+                                                                  "some-name",
+                                                                  SearchScope.CURRENT));
+                                assertTrue(registry.hasComponent(TestComponent.class,
+                                                                 "some-name",
+                                                                 SearchScope.ALL));
+                                assertTrue(registry.hasComponent(TestComponent.class,
+                                                                 "some-name",
+                                                                 SearchScope.ANCESTORS));
+                            })
+                    )
+            ));
+
+            // Building the configuration triggers the ConfigurationEnhancer performing the has component checks.
+            buildConfiguration();
         }
     }
 
@@ -1133,12 +1239,12 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             AxonConfiguration config = buildConfiguration();
 
-            TestComponent resultComponent = config.getComponent(TestComponent.class);
+            TestComponent resultComponent = config.getComponent(TestComponent.class, "first-instance");
             assertEquals(expectedState, resultComponent.state());
             // Second retrieval should return same object since first invocation should register the object.
-            assertSame(resultComponent, config.getComponent(TestComponent.class));
+            assertSame(resultComponent, config.getComponent(TestComponent.class, "first-instance"));
             verify(testFactory, times(1)).construct(any(), any());
-            assertNotSame(resultComponent, config.getComponent(TestComponent.class, "another-instance"));
+            assertNotSame(resultComponent, config.getComponent(TestComponent.class, "second-instance"));
             verify(testFactory, times(2)).construct(any(), any());
         }
 
@@ -1158,7 +1264,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertFalse(config.getOptionalComponent(TestComponent.class).isPresent());
             assertFalse(config.getOptionalComponent(TestComponent.class, "name").isPresent());
             assertFalse(config.getOptionalComponent(TestComponent.class, "name").isPresent());
-            verify(testFactory, times(4)).construct(any(), any());
+            // The ComponentFactory invocation is skipped when no name is given. Hence why we check for two invocations!
+            verify(testFactory, times(2)).construct(any(), any());
         }
 
         @Test

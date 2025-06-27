@@ -35,6 +35,7 @@ import org.axonframework.configuration.HierarchicalConfiguration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.OverridePolicy;
+import org.axonframework.configuration.SearchScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -157,23 +158,28 @@ public class SpringComponentRegistry implements
     }
 
     @Override
-    public boolean hasComponent(@Nonnull Class<?> type) {
+    public boolean hasComponent(@Nonnull Class<?> type,
+                                @Nullable String name,
+                                @Nonnull SearchScope searchScope) {
         // Checks both the local Components as the BeanFactory,
         //  since the ConfigurationEnhancers act before component registration with the Application Context.
-        return components.contains(new Component.Identifier<>(type, null))
-                || beanFactory.getBeanNamesForType(type).length > 0;
+        return switch (searchScope) {
+            case ALL -> components.contains(new Component.Identifier<>(type, name)) || contextHasComponent(type, name);
+            case CURRENT -> components.contains(new Component.Identifier<>(type, name));
+            case ANCESTORS -> contextHasComponent(type, name);
+        };
     }
 
-    @Override
-    public boolean hasComponent(@Nonnull Class<?> type,
-                                @Nullable String name) {
-        if (name == null) {
-            return hasComponent(type);
-        }
-        // Checks both the local Components as the BeanFactory,
-        //  since the ConfigurationEnhancers act before component registration with the Application Context.
-        return components.contains(new Component.Identifier<>(type, name)) ||
-                Arrays.stream(beanFactory.getBeanNamesForType(type)).toList().contains(name);
+    /**
+     * If the given {@code name} is {@code null}, we check if there is <b>a</b> bean for the given {@code type}.
+     * <p>
+     * If the given {@code name} is <b>not</b> {@code null}, we validate if there is a bean of the given {@code type}
+     * with that exact name.
+     */
+    private boolean contextHasComponent(Class<?> type, String name) {
+        return name != null
+                ? Arrays.stream(beanFactory.getBeanNamesForType(type)).toList().contains(name)
+                : beanFactory.getBeanNamesForType(type).length > 0;
     }
 
     @Override
@@ -499,9 +505,14 @@ public class SpringComponentRegistry implements
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nullable String name) {
+            // Spring requires a non-null name.
+            // Hence, whenever we register an (Axon) component, we need to default the name to the Class name.
+            // Thus, if the name is null, we default the name to the Class#getName().
+            String beanName = name != null ? name : type.getName();
+
             Map<String, C> beansOfType = beanFactory.getBeansOfType(type);
-            if (beansOfType.containsKey(name)) {
-                return Optional.of(beansOfType.get(name));
+            if (beansOfType.containsKey(beanName)) {
+                return Optional.of(beansOfType.get(beanName));
             } else {
                 return Optional.empty();
             }
