@@ -53,16 +53,6 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
     private final Converter converter;
     private final MessageTypeResolver messageTypeResolver;
 
-    // todo: remove!
-    public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType) {
-        this(entityType,
-             AnnotatedHandlerInspector.inspectType(entityType,
-                                                   ClasspathParameterResolverFactory.forClass(entityType),
-                                                   ClasspathHandlerDefinition.forClass(entityType)),
-             new PassThroughConverter(),
-             new ClassBasedMessageTypeResolver());
-    }
-
     /**
      * Initialize a new annotation-based {@link EntityEvolver}.
      *

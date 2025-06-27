@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.AxonConfiguration;
@@ -33,13 +33,20 @@ import org.axonframework.integrationtests.testsuite.student.events.StudentEnroll
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.serialization.Converter;
+import org.axonframework.test.server.AxonServerContainer;
+import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.io.IOException;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,18 +62,37 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  */
+@Testcontainers
 public abstract class AbstractStudentTestSuite {
 
     protected static final GenericCommandResultMessage<String> SUCCESSFUL_COMMAND_RESULT =
             new GenericCommandResultMessage<>(new MessageType("empty"), "successful");
+    private static final AxonServerContainer container = new AxonServerContainer()
+            .withAxonServerHostname("localhost")
+            .withDevMode(true);
     protected CommandGateway commandGateway;
     protected StateManager stateManager;
     private StatefulCommandHandlingModule.CommandHandlerPhase statefulCommandHandlingModule;
     private EventSourcedEntityModule<String, Course> courseEntity;
     private EventSourcedEntityModule<String, Student> studentEntity;
+    private AxonConfiguration startedConfiguration;
+
+    @BeforeAll
+    static void beforeAll() {
+        container.start();
+    }
+
+    @AfterAll
+    static void afterAll() {
+        container.stop();
+    }
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
+        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
+                                                           container.getHttpPort(),
+                                                           "default",
+                                                           AxonServerContainerUtils.DCB_CONTEXT);
         studentEntity = EventSourcedEntityModule
                 .declarative(String.class, Student.class)
                 .messagingModel((c, b) -> b
@@ -92,6 +118,13 @@ public abstract class AbstractStudentTestSuite {
                                                                      .commandHandlers();
     }
 
+    @AfterEach
+    void tearDown() {
+        if (startedConfiguration != null) {
+            startedConfiguration.shutdown();
+        }
+    }
+
     /**
      * Test suite implementations can invoke this method to register additional command handlers.
      *
@@ -108,16 +141,20 @@ public abstract class AbstractStudentTestSuite {
      * Starts the Axon Framework application.
      */
     protected void startApp() {
-        AxonConfiguration configuration =
-                EventSourcingConfigurer.create()
-                                       .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
-                                       .componentRegistry(cr -> cr.disableEnhancer(
-                                               ServerConnectorConfigurationEnhancer.class
-                                       ))
-                                       .start();
-        commandGateway = configuration.getComponent(CommandGateway.class);
+        AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
+        axonServerConfiguration.setServers(
+                container.getHost() + ":" + container.getGrpcPort()
+        );
+        startedConfiguration = EventSourcingConfigurer
+                .create()
+                .componentRegistry(cr -> {
+                    cr.registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration);
+                })
+                .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
+                .start();
+        commandGateway = startedConfiguration.getComponent(CommandGateway.class);
 
-        Configuration moduleConfig = configuration.getModuleConfigurations().getFirst();
+        Configuration moduleConfig = startedConfiguration.getModuleConfigurations().getFirst();
         stateManager = moduleConfig.getComponent(StateManager.class);
     }
 
@@ -137,8 +174,12 @@ public abstract class AbstractStudentTestSuite {
      */
     protected EntityEvolver<Course> courseEvolver(Configuration config) {
         return (course, event, context) -> {
-            if (event.getPayload() instanceof StudentEnrolledEvent e) {
-                course.handle(e);
+            if(event.type().name().equals(StudentEnrolledEvent.class.getName())) {
+                // Convert the payload to the expected type
+                Converter converter = config.getComponent(Converter.class);
+                StudentEnrolledEvent convert = converter.convert(event.getPayload(), StudentEnrolledEvent.class);
+                Objects.requireNonNull(convert, "The converted payload must not be null.");
+                course.handle(convert);
             }
             return course;
         };
@@ -165,7 +206,8 @@ public abstract class AbstractStudentTestSuite {
      * {@link AnnotationBasedEntityEvolvingComponent} to use the annotations placed.
      */
     protected EntityEvolver<Student> studentEvolver(Configuration config) {
-        return new AnnotationBasedEntityEvolvingComponent<>(Student.class);
+        return new AnnotationBasedEntityEvolvingComponent<>(Student.class, config.getComponent(Converter.class), config.getComponent(
+                MessageTypeResolver.class));
     }
 
     protected void changeStudentName(String studentId, String name) {
