@@ -102,7 +102,7 @@ When filing a feature or enhancement:
 The update checker is a new feature included in the upcoming Axon Framework 5, which ensures the security of the Axon
 Framework application and its modules and provides useful information to its maintainers.
 
-It does so, by retrieving available updates and known vulnerabilities for the Axon modules in use. Furthermore, to
+It does so by retrieving available updates and known vulnerabilities for the Axon modules in use. Furthermore, to
 detect updates and vulnerabilities, the checker collects anonymous data about your Axon Framework installation. This
 data is sent to AxonIQ and includes technical information about your environment.
 
