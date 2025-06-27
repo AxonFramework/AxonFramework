@@ -18,10 +18,8 @@
   ·
   <a href="https://github.com/AxonFramework/AxonFramework/issues">Feature / Bug Request</a>
 
+
 </p>
-
-
-
 
 # Axon Framework
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.axonframework/axon/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.axonframework/axon)
@@ -98,3 +96,16 @@ When filing a feature or enhancement:
 * If you have any thoughts on where to plug this into the framework, that would be very helpful too.
 * Lastly, we value contributions to the framework highly. 
   So please provide a Pull Request as well!
+
+## Update Checker and Anonymous Usage Data Collection
+
+The update checker is a new feature included in the upcoming Axon Framework 5, which ensures the security of the Axon
+Framework application and its modules and provides useful information to its maintainers.
+
+It does so by retrieving available updates and known vulnerabilities for the Axon modules in use. Furthermore, to
+detect updates and vulnerabilities, the checker collects anonymous data about your Axon Framework installation. This
+data is sent to AxonIQ and includes technical information about your environment.
+
+Please read [this page](https://docs.axoniq.io/axon-framework-update-checker/) of our documentation for more details on
+why we collect this information, what you get in return, how to opt out, and why this matters. Please check out
+our [Privacy Policy](https://www.axoniq.io/privacy-policy) for any privacy concerns.
