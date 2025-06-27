@@ -38,7 +38,7 @@ import static org.axonframework.configuration.ComponentDefinition.ofType;
 @Internal
 public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer {
 
-    private final static AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
