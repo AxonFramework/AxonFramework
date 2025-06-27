@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,9 @@ import java.util.TreeSet;
  *
  * @author Steven van Beelen
  * @since 4.7.0
+ * @deprecated In favor of an XML-based Jackson-specific {@link Converter} implementation.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public final class GapAwareTrackingTokenConverter extends CollectionConverter {
 
     private static final String GAP_AWARE_TRACKING_TOKEN =

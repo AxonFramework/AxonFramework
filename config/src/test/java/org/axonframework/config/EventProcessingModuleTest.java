@@ -22,7 +22,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -30,6 +29,7 @@ import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorOperations;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -75,6 +75,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -89,6 +90,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
@@ -320,7 +322,8 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void assignSequencingPolicy() throws NoSuchFieldException {
+    void assignSequencingPolicy()
+            throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Object mockHandler = new Object();
         Object specialHandler = new Object();
         SequentialPolicy sequentialPolicy = new SequentialPolicy();
@@ -334,20 +337,20 @@ class EventProcessingModuleTest {
                   .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
         LegacyConfiguration config = configurer.start();
 
-        Optional<AbstractEventProcessor> defaultProcessorOptional =
-                config.eventProcessingConfiguration().eventProcessor("default", AbstractEventProcessor.class);
+        Optional<EventProcessor> defaultProcessorOptional =
+                config.eventProcessingConfiguration().eventProcessor("default", EventProcessor.class);
         assertTrue(defaultProcessorOptional.isPresent());
-        AbstractEventProcessor defaultProcessor = defaultProcessorOptional.get();
+        EventProcessor defaultProcessor = defaultProcessorOptional.get();
 
-        Optional<AbstractEventProcessor> specialProcessorOptional =
-                config.eventProcessingConfiguration().eventProcessor("special", AbstractEventProcessor.class);
+        Optional<EventProcessor> specialProcessorOptional =
+                config.eventProcessingConfiguration().eventProcessor("special", EventProcessor.class);
         assertTrue(specialProcessorOptional.isPresent());
-        AbstractEventProcessor specialProcessor = specialProcessorOptional.get();
+        EventProcessor specialProcessor = specialProcessorOptional.get();
 
-        MultiEventHandlerInvoker defaultInvoker =
-                getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), defaultProcessor);
-        MultiEventHandlerInvoker specialInvoker =
-                getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), specialProcessor);
+        EventProcessorOperations defaultOperations = getField("eventProcessorOperations", defaultProcessor);
+        MultiEventHandlerInvoker defaultInvoker = (MultiEventHandlerInvoker) getField("eventHandlerInvoker", defaultOperations);
+        EventProcessorOperations specialOperations = getField("eventProcessorOperations", specialProcessor);
+        MultiEventHandlerInvoker specialInvoker = (MultiEventHandlerInvoker) getField("eventHandlerInvoker", specialOperations);
 
         assertEquals(sequentialPolicy,
                      ((SimpleEventHandlerInvoker) defaultInvoker.delegates().getFirst()).getSequencingPolicy());
@@ -1013,11 +1016,12 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testName, result.getName());
-        assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
+        EventProcessorOperations operations = getField("eventProcessorOperations", result);
+        assertEquals(PropagatingErrorHandler.INSTANCE, getField("errorHandler", operations));
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertInstanceOf(SimpleUnitOfWorkFactory.class, getField("unitOfWorkFactory", result));
         assertEquals(config.getComponent(EventProcessorSpanFactory.class),
-                     getField(AbstractEventProcessor.class, "spanFactory", result));
+                     getField("spanFactory", operations));
     }
 
     @Test
@@ -1040,7 +1044,8 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testName, result.getName());
-        assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
+        EventProcessorOperations operations = getField("eventProcessorOperations", result); 
+        assertEquals(PropagatingErrorHandler.INSTANCE, getField("errorHandler", operations));
 //        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertInstanceOf(SimpleUnitOfWorkFactory.class, getField("unitOfWorkFactory", result));
@@ -1292,7 +1297,7 @@ class EventProcessingModuleTest {
     @Test
     void registerDeadLetterQueueConstructsDeadLetteringEventHandlerInvoker(
             @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
-    ) throws NoSuchFieldException, IllegalAccessException {
+    ) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         String processingGroup = "pooled-streaming";
 
         configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
@@ -1319,8 +1324,9 @@ class EventProcessingModuleTest {
         assertTrue(optionalProcessor.isPresent());
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
-        EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        EventHandlerInvoker resultInvoker = (EventHandlerInvoker) ensureAccessible(
+                resultProcessor.getClass().getDeclaredMethod("eventHandlerInvoker")
+        ).invoke(resultProcessor);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1336,7 +1342,7 @@ class EventProcessingModuleTest {
 
     @Test
     void registerDefaultDeadLetterPolicyIsUsed(@Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue)
-            throws NoSuchFieldException, IllegalAccessException {
+            throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         String processingGroup = "pooled-streaming";
         EnqueuePolicy<EventMessage<?>> expectedPolicy = (letter, cause) -> Decisions.ignore();
 
@@ -1366,8 +1372,9 @@ class EventProcessingModuleTest {
         assertTrue(optionalProcessor.isPresent());
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
-        EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        EventHandlerInvoker resultInvoker = (EventHandlerInvoker) ensureAccessible(
+                resultProcessor.getClass().getDeclaredMethod("eventHandlerInvoker")
+        ).invoke(resultProcessor);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1414,8 +1421,8 @@ class EventProcessingModuleTest {
         assertTrue(optionalProcessor.isPresent());
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
-        EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        EventProcessorOperations operations = getField("eventProcessorOperations", resultProcessor);
+        EventHandlerInvoker resultInvoker = getField("eventHandlerInvoker", operations);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1456,8 +1463,8 @@ class EventProcessingModuleTest {
         assertTrue(optionalProcessor.isPresent());
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
-        EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        EventProcessorOperations operations = getField("eventProcessorOperations", resultProcessor);
+        EventHandlerInvoker resultInvoker = getField("eventHandlerInvoker", operations);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1534,7 +1541,7 @@ class EventProcessingModuleTest {
     @Test
     void registerDeadLetterQueueProviderConstructsDeadLetteringEventHandlerInvoker(
             @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
-    ) throws NoSuchFieldException, IllegalAccessException {
+    ) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         String processingGroup = "pooled-streaming";
 
         configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
@@ -1561,8 +1568,8 @@ class EventProcessingModuleTest {
         assertTrue(optionalProcessor.isPresent());
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
-        EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        EventProcessorOperations operations = getField("eventProcessorOperations", resultProcessor);
+        EventHandlerInvoker resultInvoker = getField("eventHandlerInvoker", operations);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.Converter;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -31,7 +32,9 @@ import java.util.Map;
  *
  * @author Allard Buijze
  * @since 2.4.2
+ * @deprecated in favor of a Jackson-specific {@link Converter} implementation.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
 
     @Override

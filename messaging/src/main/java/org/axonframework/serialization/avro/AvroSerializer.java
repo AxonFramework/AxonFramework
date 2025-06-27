@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,9 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @author Simon Zambrovski
  * @author Jan Galinski
  * @since 4.11.0
+ * @deprecated In favor of Avro-specific {@link Converter} implementation.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class AvroSerializer implements Serializer {
 
     private final RevisionResolver revisionResolver;

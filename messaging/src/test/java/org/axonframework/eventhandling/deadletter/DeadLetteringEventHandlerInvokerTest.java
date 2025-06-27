@@ -50,7 +50,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import static org.axonframework.utils.EventTestUtils.createEvent;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -61,7 +61,7 @@ import static org.mockito.Mockito.*;
  */
 class DeadLetteringEventHandlerInvokerTest {
 
-    private static final DomainEventMessage<String> TEST_EVENT = createEvent();
+    private static final DomainEventMessage<String> TEST_EVENT = createDomainEvent();
     private static final Object TEST_SEQUENCE_ID = TEST_EVENT.getAggregateIdentifier();
     private static final DeadLetter<EventMessage<?>> TEST_DEAD_LETTER =
             new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
@@ -189,9 +189,9 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        EventMessage<?> eventMessageOne = createEvent("foo", 2);
-        EventMessage<?> eventMessageTwo = createEvent("bar", 2);
-        EventMessage<?> eventMessageThree = createEvent("foo", 3);
+        EventMessage<?> eventMessageOne = createDomainEvent("foo", 2);
+        EventMessage<?> eventMessageTwo = createDomainEvent("bar", 2);
+        EventMessage<?> eventMessageThree = createDomainEvent("foo", 3);
 
         testSubject.handle(eventMessageOne, StubProcessingContext.forMessage(eventMessageOne), Segment.ROOT_SEGMENT);
         testSubject.handle(eventMessageTwo, StubProcessingContext.forMessage(eventMessageTwo), Segment.ROOT_SEGMENT);
@@ -216,8 +216,8 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        DomainEventMessage<?> eventMessageOne = createEvent("foo", 2);
-        DomainEventMessage<?> eventMessageTwo = createEvent("bar", 2);
+        DomainEventMessage<?> eventMessageOne = createDomainEvent("foo", 2);
+        DomainEventMessage<?> eventMessageTwo = createDomainEvent("bar", 2);
         DomainEventMessage<?> eventMessageThree = nextMessage(eventMessageOne);
 
         testSubject.handle(eventMessageOne, StubProcessingContext.forMessage(eventMessageOne), Segment.ROOT_SEGMENT);
@@ -596,6 +596,6 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     private static DomainEventMessage<?> nextMessage(DomainEventMessage<?> domainEventMessage) {
-        return createEvent(domainEventMessage.getAggregateIdentifier(), domainEventMessage.getSequenceNumber() + 1L);
+        return createDomainEvent(domainEventMessage.getAggregateIdentifier(), domainEventMessage.getSequenceNumber() + 1L);
     }
 }

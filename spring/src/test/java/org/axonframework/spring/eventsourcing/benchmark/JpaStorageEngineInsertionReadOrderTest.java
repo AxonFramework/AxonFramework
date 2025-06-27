@@ -28,7 +28,6 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.LegacyBatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
-import org.axonframework.eventsourcing.utils.EventStoreTestUtils;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -56,6 +55,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
+import static org.axonframework.eventhandling.DomainEventTestUtils.AGGREGATE;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -186,8 +187,8 @@ class JpaStorageEngineInsertionReadOrderTest {
                     final int s = j;
                     try {
                         txTemplate.execute(ts -> {
-                            testSubject.appendEvents(EventStoreTestUtils.createEvent(
-                                    EventStoreTestUtils.AGGREGATE,
+                            testSubject.appendEvents(createDomainEvent(
+                                    AGGREGATE,
                                     (long) threadIndex * eventsPerThread + s,
                                     "Thread" + threadIndex
                             ));

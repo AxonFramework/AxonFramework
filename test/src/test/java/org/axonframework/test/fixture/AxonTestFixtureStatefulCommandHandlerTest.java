@@ -250,9 +250,8 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                                                  (id, context) -> EventCriteria.havingTags("Student", id),
                                                                  new AnnotationBasedEntityEvolvingComponent<>(Student.class)
                                                          );
-                                                         return SimpleStateManager.builder("testfixture")
-                                                                                  .register(repository)
-                                                                                  .build();
+                                                         return SimpleStateManager.named("testfixture")
+                                                                                  .register(repository);
                                                      })
                                              .registerComponent(EventStore.class,
                                                                 c -> new SimpleEventStore(new InMemoryEventStorageEngine(),

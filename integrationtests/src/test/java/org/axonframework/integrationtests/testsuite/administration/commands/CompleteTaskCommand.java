@@ -23,6 +23,6 @@ public record CompleteTaskCommand(
         @TargetEntityId
         PersonIdentifier identifier,
         String taskId
-) {
+)  implements PersonCommand {
 
 }

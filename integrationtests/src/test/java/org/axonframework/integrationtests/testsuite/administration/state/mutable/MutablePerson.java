@@ -19,14 +19,25 @@ package org.axonframework.integrationtests.testsuite.administration.state.mutabl
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
 import org.axonframework.eventsourcing.annotation.reflection.InjectEntityId;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
 import org.axonframework.integrationtests.testsuite.administration.events.EmailAddressChanged;
+import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableCustomer;
+import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableEmployee;
 import org.axonframework.modelling.command.EntityId;
 
+@EventSourcedEntity(
+        concreteTypes = {
+                MutableEmployee.class,
+                MutableCustomer.class
+        }
+)
 public abstract class MutablePerson {
 
     @EntityId
@@ -58,5 +69,10 @@ public abstract class MutablePerson {
             return new MutableCustomer();
         }
         throw new IllegalArgumentException("Unknown type: " + id.type());
+    }
+
+    @EventCriteriaBuilder
+    static EventCriteria eventCriteria(PersonIdentifier identifier) {
+        return EventCriteria.havingTags("Person", identifier.key());
     }
 }

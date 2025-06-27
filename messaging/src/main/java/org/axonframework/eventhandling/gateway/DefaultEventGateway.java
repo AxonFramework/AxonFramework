@@ -17,10 +17,10 @@
 package org.axonframework.eventhandling.gateway;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
@@ -29,12 +29,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
- * Default implementation of the {@link EventGateway} interface. Events are published using the {@link EventSink} in a
- * new {@link UnitOfWork}.
+ * Default implementation of the {@link EventGateway} interface using the {@link EventSink} to publish events.
  *
  * @author Bert laverman
  * @author Mitchell Herrijgers
- * @since 4.1
+ * @since 4.1.0
  */
 public class DefaultEventGateway implements EventGateway {
 
@@ -49,28 +48,19 @@ public class DefaultEventGateway implements EventGateway {
      * @param eventSink           The {@link EventSink} to publish events to.
      * @param messageTypeResolver The {@link MessageTypeResolver} to resolve the type of the event.
      */
-    public DefaultEventGateway(@Nonnull EventSink eventSink, @Nonnull MessageTypeResolver messageTypeResolver) {
+    public DefaultEventGateway(@Nonnull EventSink eventSink,
+                               @Nonnull MessageTypeResolver messageTypeResolver) {
         this.eventSink = Objects.requireNonNull(eventSink, "EventSink may not be null");
         this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
     }
 
     @Override
-    public void publish(@Nonnull List<?> events) {
-        UnitOfWork unitOfWork = new UnitOfWork();
-        unitOfWork.onInvocation(context -> {
-            doPublish(events, context);
-            return CompletableFuture.completedFuture(null);
-        });
-        unitOfWork.execute().join();
-    }
-
-    private void doPublish(List<?> events, ProcessingContext context) {
-        Objects.requireNonNull(events, "Events may not be null");
-        Objects.requireNonNull(context, "Context may not be null");
-        List<EventMessage<?>> eventMessages = events
-                .stream()
-                .map(e -> EventPublishingUtils.asEventMessage(e, messageTypeResolver))
-                .collect(Collectors.toList());
-        this.eventSink.publish(context, eventMessages);
+    public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                           @Nonnull List<?> events) {
+        List<EventMessage<?>> eventMessages =
+                events.stream()
+                      .map(event -> EventPublishingUtils.asEventMessage(event, messageTypeResolver))
+                      .collect(Collectors.toList());
+        return eventSink.publish(context, eventMessages);
     }
 }

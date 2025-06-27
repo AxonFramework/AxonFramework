@@ -23,6 +23,7 @@ public record ChangeEmailAddress(
         @TargetEntityId
         PersonIdentifier identifier,
         String emailAddress
-) {
+)  implements PersonCommand {
 
 }
+

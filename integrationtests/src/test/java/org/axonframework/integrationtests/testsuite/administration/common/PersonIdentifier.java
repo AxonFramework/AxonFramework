@@ -17,9 +17,16 @@
 package org.axonframework.integrationtests.testsuite.administration.common;
 
 
+import jakarta.annotation.Nonnull;
+
 public record PersonIdentifier(
         PersonType type,
         String key
 ) {
 
+    @Nonnull
+    @Override
+    public String toString() {
+        return key;
+    }
 }

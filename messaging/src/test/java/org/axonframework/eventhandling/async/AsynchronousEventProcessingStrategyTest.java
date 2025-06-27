@@ -20,10 +20,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,8 +32,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
-import static org.axonframework.utils.EventTestUtils.createEvent;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -74,8 +72,8 @@ class AsynchronousEventProcessingStrategyTest {
 
         final List<EventMessage> ackedMessages = Collections.synchronizedList(new ArrayList<>());
 
-        EventMessage<?> event1 = createEvent(1);
-        EventMessage<?> event2 = createEvent(2);
+        EventMessage<?> event1 = createDomainEvent(1);
+        EventMessage<?> event2 = createDomainEvent(2);
 
         final Consumer<List<? extends EventMessage<?>>> processor = mock(Consumer.class);
         CountDownLatch latch = new CountDownLatch(2);
@@ -105,8 +103,8 @@ class AsynchronousEventProcessingStrategyTest {
 
     @Test
     void eventsScheduledForHandling() {
-        EventMessage<?> message1 = createEvent("aggregate1", 1);
-        EventMessage<?> message2 = createEvent("aggregate2", 1);
+        EventMessage<?> message1 = createDomainEvent("aggregate1", 1);
+        EventMessage<?> message2 = createDomainEvent("aggregate2", 1);
 
         testSubject.handle(Arrays.asList(message1, message2), mock(Consumer.class));
 
@@ -115,8 +113,8 @@ class AsynchronousEventProcessingStrategyTest {
 
     @Test
     void eventsScheduledForHandlingWhenSurroundingUnitOfWorkCommits() {
-        EventMessage<?> message1 = createEvent("aggregate1", 1);
-        EventMessage<?> message2 = createEvent("aggregate2", 1);
+        EventMessage<?> message1 = createDomainEvent("aggregate1", 1);
+        EventMessage<?> message2 = createDomainEvent("aggregate2", 1);
 
         LegacyUnitOfWork<EventMessage<?>> uow = LegacyDefaultUnitOfWork.startAndGet(message1);
         uow.onPrepareCommit(u -> verify(executor, never()).execute(isA(Runnable.class)));

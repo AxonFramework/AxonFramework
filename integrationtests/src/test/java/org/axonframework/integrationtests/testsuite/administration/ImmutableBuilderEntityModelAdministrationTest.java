@@ -16,12 +16,11 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
-import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
@@ -29,6 +28,7 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Comp
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateCustomer;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateEmployee;
 import org.axonframework.integrationtests.testsuite.administration.commands.GiveRaise;
+import org.axonframework.integrationtests.testsuite.administration.commands.PersonCommand;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.events.CustomerCreated;
 import org.axonframework.integrationtests.testsuite.administration.events.EmployeeCreated;
@@ -41,27 +41,26 @@ import org.axonframework.integrationtests.testsuite.administration.state.immutab
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
-import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
-import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
-import org.axonframework.modelling.entity.EntityModel;
-import org.axonframework.modelling.entity.PolymorphicEntityModel;
-import org.axonframework.modelling.entity.SimpleEntityModel;
+import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
-import org.axonframework.modelling.entity.child.EntityChildModel;
+import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 
 import static java.lang.String.format;
 
 /**
- * Runs the administration test suite using the builders of {@link SimpleEntityModel} and related classes.
+ * Runs the administration test suite using the builders of {@link EntityMetamodel} and related classes.
  */
 public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
-    @Override
-    CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
+    EntityMetamodel<ImmutablePerson> buildEntityMetamodel(Configuration configuration,
+                                                          EntityMetamodelBuilder<ImmutablePerson> builder) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
 
-        // Task is the list-based child-model of Employee
-        EntityModel<ImmutableTask> taskModel = SimpleEntityModel
+        // Task is the list-based child-metamodel of Employee
+        EntityMetamodel<ImmutableTask> taskMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(ImmutableTask.class)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableTask.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
@@ -73,8 +72,8 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                         })
                 .build();
 
-        // SalaryInformation is the singular child-model of Employee
-        EntityModel<ImmutableSalaryInformation> salaryInformationModel = SimpleEntityModel
+        // SalaryInformation is the singular child-metamodel of Employee
+        EntityMetamodel<ImmutableSalaryInformation> salaryInformationMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(ImmutableSalaryInformation.class)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableSalaryInformation.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
@@ -87,7 +86,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .build();
 
         // Employee is a concrete entity type
-        EntityModel<ImmutableEmployee> employeeModel = SimpleEntityModel
+        EntityMetamodel<ImmutableEmployee> employeeMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(ImmutableEmployee.class)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableEmployee.class))
                 .creationalCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
@@ -105,8 +104,8 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                             entity.handle((AssignTaskCommand) command.getPayload(), eventAppender);
                                             return MessageStream.empty().cast();
                                         }))
-                .addChild(EntityChildModel
-                                  .list(ImmutableEmployee.class, taskModel)
+                .addChild(EntityChildMetamodel
+                                  .list(ImmutableEmployee.class, taskMetamodel)
                                   .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterEvolver(
                                           ImmutableEmployee::getTaskList, ImmutableEmployee::evolveTaskList
                                   ))
@@ -129,8 +128,8 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                   .build()
 
                 )
-                .addChild(EntityChildModel
-                                  .single(ImmutableEmployee.class, salaryInformationModel)
+                .addChild(EntityChildMetamodel
+                                  .single(ImmutableEmployee.class, salaryInformationMetamodel)
                                   .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterEvolver(
                                           ImmutableEmployee::salaryInformation,
                                           ImmutableEmployee::evolveSalaryInformation
@@ -140,7 +139,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .build();
 
         // Customer is a concrete entity type
-        EntityModel<ImmutableCustomer> customerModel = SimpleEntityModel
+        EntityMetamodel<ImmutableCustomer> customerMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(ImmutableCustomer.class)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableCustomer.class))
                 .creationalCommandHandler(typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
@@ -153,11 +152,10 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                           }))
                 .build();
 
-        // Person is the polymorphic entity type
-        EntityModel<ImmutablePerson> personModel = PolymorphicEntityModel
-                .forSuperType(ImmutablePerson.class)
-                .addConcreteType(employeeModel)
-                .addConcreteType(customerModel)
+        return EntityMetamodel
+                .forPolymorphicEntityType(ImmutablePerson.class)
+                .addConcreteType(employeeMetamodel)
+                .addConcreteType(customerMetamodel)
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutablePerson.class))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
@@ -167,12 +165,15 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                             return MessageStream.empty().cast();
                                         })
                 .build();
+    }
 
-        EventSourcingRepository<PersonIdentifier, ImmutablePerson> repository = new EventSourcingRepository<>(
-                PersonIdentifier.class,
-                ImmutablePerson.class,
-                configuration.getComponent(EventStore.class),
-                EventSourcedEntityFactory.fromEventMessage((identifier, eventMessage) -> {
+
+    @Override
+    Module getModule() {
+        EventSourcedEntityModule<PersonIdentifier, ImmutablePerson> personEntityModule = EventSourcedEntityModule
+                .declarative(PersonIdentifier.class, ImmutablePerson.class)
+                .messagingModel(this::buildEntityMetamodel)
+                .entityFactory(c -> EventSourcedEntityFactory.fromEventMessage((identifier, eventMessage) -> {
                     if (eventMessage.getPayload() instanceof EmployeeCreated employeeCreated) {
                         return new ImmutableEmployee(employeeCreated);
                     }
@@ -181,15 +182,20 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                     }
                     throw new IllegalArgumentException(
                             format("Unknown event type: %s", eventMessage.getPayloadType().getName()));
-                }),
-                (s, ctx) -> EventCriteria.havingTags("Person", s.key()),
-                personModel
-        );
-
-        return new EntityCommandHandlingComponent<>(
-                repository,
-                personModel,
-                new AnnotationBasedEntityIdResolver<>()
-        );
+                }))
+                .criteriaResolver(c -> (s, ctx) -> EventCriteria.havingTags("Person", s.key()))
+                .entityIdResolver(config -> (message, context) -> {
+                    if(message.getPayload() instanceof PersonCommand personCommand) {
+                        return personCommand.identifier();
+                    }
+                    throw new IllegalArgumentException(
+                            format("Unknown command type: %s", message.getPayloadType().getName()));
+                });
+        return StatefulCommandHandlingModule
+                .named("ImmutableBuilderEntityModelAdministrationTest")
+                .entities()
+                .entity(personEntityModule)
+                .commandHandlers()
+                .build();
     }
 }

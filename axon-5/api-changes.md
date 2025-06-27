@@ -743,6 +743,7 @@ are already familiar with the changes, you can jump to the relevant section usin
 - [Entity constructors can take in the first event as a payload or `EventMessage`, allowing for non-nullable
   fields.](#entity-constructor-changes)
 - [Constructor command handlers are gone, and a creational command is a static method on the entity class.](#creational-command-handlers)
+- [Reflection-based entities have gained some new capabilities](#reflection-based-entities)
 
 ### Aggregates are now Entities
 
@@ -753,18 +754,44 @@ aggregates have been replaced with "entities."
 
 ### Declarative modeling first
 
-While aggregates only worked through reflection before, entities can be declaratively defined. You can start one
-by calling `EntityModel.forEntityType(entityType)` and declare command handlers, event handlers, and
-child entities.
+When handling messaging for an entity, the framework needs to know which commands and events can be handled
+by the entity and which child entities it has. This is what we call the 'EntityMetamodel.'
 
-The use of reflection is still possible. It will read the entity information in a way that is similar to Axon Framework
-4,
-but then constructs a declarative model. This means that the entity structure is defined and debuggable,
-and it means that less reflection is needed at runtime, which improves performance.
+While aggregates worked only through reflection before, with the Axon Framework 5' entities this can be declaratively
+defined.
+You can start defining a metamodel by calling `EntityMetamodel.forEntityType(entityType)` and declare command
+handlers, event handlers, and
+child entities. If you have a polymorphic entity, one that has multiple concrete types and extends one supertype,
+you can use `EntityMetamodel.forPolymorphicEntityType(entityType)` to define the entity metamodel.
+
+```java
+EntityMetamodel<ImmutableTask> metamodel = EntityMetamodel
+        .forEntityType(ImmutableTask.class)
+        .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableTask.class))
+        .instanceCommandHandler(commandQualifiedName, (command, entity, context) -> {
+            // Handle the command
+            return MessageStream.empty().cast();
+        })
+        .addChild(/* child entity definition */)
+        .build();
+```
+
+However, the use of reflection is still possible. The `AnnotatedEntityMetamodel` reads the entity information
+in a way that is similar to Axon Framework 4, and creates a delegate `EntityMetamodel` of the right type, with
+the right handlers. This means that the entity structure is clearly defined and debuggable,
+and less reflection is needed at runtime, which improves performance.
+
+```java
+EntityMetamodel<ImmutableTask> metamodel = AnnotatedEntityMetamodel.forConcreteType(
+        ImmutableTask.class,
+        configuration.getComponent(ParameterResolverFactory.class),
+        configuration.getComponent(MessageTypeResolver.class)
+);
+```
 
 ### Immutable entities
 
-Event-sourced entities can now be created in an immutable fashion, which was not possible before Axon Framework 5.
+Event-sourced entities can now be created in an immutable fashion, which wasn't possible before Axon Framework 5.
 This allows you to create entities out of Java records or Kotlin data classes:
 
 ```java
@@ -799,9 +826,14 @@ without mutating the original instance. This is particularly useful in functiona
 better immutability guarantees in your code. This works with both Java records and Kotlin data classes, as well as
 traditional classes.
 
-The first command is handled by a static method, responsible for verifying the command and creating the entity. Using the first event, the entity is created using the constructor defining the payload or `EventMessage`. Commands after this will be handled by methods on the instance of the entity.
+This is made possible because the first command is handled by a static method, not a constructor, and is responsible for
+verifying the command and creating the entity. These static methods
+are [creational command handler](#creational-command-handlers). Once the first event is published, the entity is
+created using the constructor defining the payload or `EventMessage`. Commands after this will be handled by methods on
+the instance of the entity.
 
-To evolve, or change the state, of an entity, `@EventSourcingHandlers` or `EntityEvolvers` can return a new instance of the entity based on an event. This entity will then be used for the next command or next event.
+To evolve, or change the state, of an entity, `@EventSourcingHandlers` or `EntityEvolvers` can return a new instance of
+the entity based on an event. This entity will then be used for the next command or next event.
 
 ### Entity Constructor changes
 
@@ -834,7 +866,7 @@ class MyPreFiveClass {
 
 As you can see, the `lateinit var` makes the `id` field non-nullable, but it can throw if not set when accessed.
 In addition, you can never make it a `val`, so it remains mutable.
-Java had similar limitations, but it was simply not visible as it is in Kotlin:
+Java had similar limitations, but it was simply not as visible as it is in Kotlin:
 
 ```java
 public class MyPreFiveClass {
@@ -871,7 +903,7 @@ data class MyEntity(
     val id: String,
     val name: String
 ) {
-    @EntityFactory
+    @EntityCreator
     constructor(event: MyEntityCreatedEvent) : this(
         id = event.id,
         name = event.name
@@ -879,8 +911,8 @@ data class MyEntity(
 
     companion object {
         @CommandHandler
-        fun create(command: CreateMyEntityCommand) {
-            apply(MyEntityCreatedEvent(command.id, command.name))
+        fun create(command: CreateMyEntityCommand, appender: EventAppender) {
+            EventAppender.append(MyEntityCreatedEvent(command.id, command.name))
         }
     }
 }
@@ -895,7 +927,7 @@ public class MyEntity {
     private final String id;
     private final String name;
 
-    @EntityFactory
+    @EntityCreator
     public MyEntity(MyEntityCreatedEvent event) {
         this.id = event.getId();
         this.name = event.getName();
@@ -918,7 +950,7 @@ The way Event-Sourced entities are constructed is defined by the `EventSourcedEn
 3. **Event Message**: The entity is constructed using a constructor that takes the first event message as a payload. Use
    `EventSourcedEntityFactory.fromEventMessage(...)` to use this.
 4. **Reflection**: Use the `AnnotationBasedEventSourcedEntityFactory` to construct the entity using reflection, marking
-   constructors (or static methods) with the `@EntityFactory` annotation. This is the default behavior in Axon Framework
+   constructors (or static methods) with the `@EntityCreator` annotation. This is the default behavior in Axon Framework.
 
 ### Creational Command Handlers
 
@@ -942,7 +974,7 @@ public class MyEntity {
     @AggregateIdentifier
     private String id;
 
-    @EntityFactory
+    @EntityCreator
     public MyEntity(MyEntityCreatedEvent event) {
         this.id = event.getId();
         // Other initialization logic...
@@ -963,9 +995,79 @@ public class MyEntity {
 }
 ```
 
+### Reflection-based entities
+
+While very similar to the reflection-based aggregates from AF4, reflection-based entities have gained some new capabilities.
+
+First, it is now possible to define two or more children of the same type. 
+Note that the `@EntityMember#commandTargetResolver` must resolve to only one value over all children.
+
+```java
+public abstract class Project {
+
+    @EntityMember
+    private List<Developer> otherDevelopers = new ArrayList<>();
+
+    @EntityMember
+    private List<Milestone> features = new ArrayList<>();
+}
+```
+
+Second, the `@EntityMember#commandTargetResolver` can now be customized. 
+By creating your own definition, you can route the command target using something else than the `@RoutingKey`.
+
+```java
+public class Project {
+
+    @EntityMember(commandTargetResolver = AwesomeCommandTargetDefinition.class)
+    private List<Milestone> features = new ArrayList<>();
+
+    private static class AwesomeCommandTargetDefinition implements CommandTargetResolverDefinition {
+
+        @Nonnull
+        @Override
+        public <E> CommandTargetResolver<E> createCommandTargetResolver(@Nonnull AnnotatedEntityModel<E> entity,
+                                                                        @Nonnull Member member) {
+            return (candidates, message, context) -> {
+                return candidates.stream().filter(d -> d.isAwesome()).findFirst().orElse(null);
+            };
+        }
+    }
+}
+```
+
+Third, in Axon Framework 4, the default was to forward events to all entities by default. In Axon Framework 5, this
+has changed to only forward events to entities that match the routing key. You can always customize this behavior
+by providing a custom `@EntityMember#eventRoutingResolver`:
+
+```java
+public abstract class Project {
+
+    @EntityMember(eventTargetMatcher = CustomEventTargetMatcher.class)
+    private List<Milestone> features = new ArrayList<>();
+
+    private static class CustomEventTargetMatcher implements EventTargetMatcherDefinition {
+
+        @Nonnull
+        @Override
+        public <E> EventTargetMatcher<E> createEventRoutingResolver(@Nonnull AnnotatedEntityModel<E> entity,
+                                                                    @Nonnull Member member) {
+            return (entity, message, ctx) -> {
+                return entity.isMostImportantMilestone();
+            };
+        }
+    }
+}
+```
+
+Fourth, `@EntityMember` can now be used on fields with a simple type, or a `List`. Other types of collections can
+currently not be used.
+This is due to a limitation of the immutability of child entities that we now support. We might support this in the
+future, but for now, we recommend using a `List` or a simple type.
+
 ### Exception mapping
 
-With the change from Aggregate to Entity, we have also changed some of the exceptions. If you depends on these
+With the change from Aggregate to Entity, we've also changed some exceptions. If you depends on these
 exceptions, you will need to change your code. The following table shows the changes:
 
 | Old Exception                                                          | New Exception                                                     |
@@ -1079,27 +1181,32 @@ This section contains five tables:
 
 ### Moved or Renamed Classes
 
-| Axon 4                                                                 | Axon 5                                                                      | Module change?                 |
-|------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------------------|
-| org.axonframework.common.caching.EhCache3Adapter                       | org.axonframework.common.caching.EhCacheAdapter                             | No                             |
-| org.axonframework.eventsourcing.MultiStreamableMessageSource           | org.axonframework.eventhandling.MultiStreamableMessageSource                | No                             |
-| org.axonframework.eventhandling.EventBus                               | org.axonframework.eventhandling.EventSink                                   | No                             |
-| org.axonframework.commandhandling.CommandHandler                       | org.axonframework.commandhandling.annotation.CommandHandler                 | No                             |
-| org.axonframework.eventhandling.EventHandler                           | org.axonframework.eventhandling.annotation.EventHandler                     | No                             |
-| org.axonframework.queryhandling.QueryHandler                           | org.axonframework.queryhandling.annotation.QueryHandler                     | No                             |
-| org.axonframework.config.Configuration                                 | org.axonframework.configuration.Configuration                               | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.Component                                     | org.axonframework.configuration.Component                                   | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ConfigurerModule                              | org.axonframework.configuration.ConfigurationEnhancer                       | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ModuleConfiguration                           | org.axonframework.configuration.Module                                      | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleHandler                              | org.axonframework.configuration.LifecycleHandler                            | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleOperations                           | org.axonframework.configuration.LifecycleRegistry                           | Yes. Moved to `axon-messaging` |
-| org.axonframework.commandhandling.CommandCallback                      | org.axonframework.commandhandling.gateway.CommandResult                     | No                             |
-| org.axonframework.commandhandling.callbacks.FutureCallback             | org.axonframework.commandhandling.gateway.FutureCommandResult               | No                             |
-| org.axonframework.modelling.command.Repository                         | org.axonframework.modelling.repository.Repository                           | No                             |
-| org.axonframework.modelling.command.CommandTargetResolver              | org.axonframework.modelling.command.EntityIdResolver                        | No                             |
-| org.axonframework.modelling.command.ForwardingMode                     | org.axonframework.modelling.command.entity.child.EventTargetMatcher         | No                             |
-| org.axonframework.axonserver.connector.ServerConnectorConfigurerModule | org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer | No                             |
-| org.axonframework.serialization.CannotConvertBetweenTypesException     | org.axonframework.serialization.ConversionException                         | No                             |
+| Axon 4                                                                                                 | Axon 5                                                                           | Module change?                 |
+|--------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|--------------------------------|
+| org.axonframework.common.caching.EhCache3Adapter                                                       | org.axonframework.common.caching.EhCacheAdapter                                  | No                             |
+| org.axonframework.eventsourcing.MultiStreamableMessageSource                                           | org.axonframework.eventhandling.MultiStreamableMessageSource                     | No                             |
+| org.axonframework.eventhandling.EventBus                                                               | org.axonframework.eventhandling.EventSink                                        | No                             |
+| org.axonframework.commandhandling.CommandHandler                                                       | org.axonframework.commandhandling.annotation.CommandHandler                      | No                             |
+| org.axonframework.eventhandling.EventHandler                                                           | org.axonframework.eventhandling.annotation.EventHandler                          | No                             |
+| org.axonframework.queryhandling.QueryHandler                                                           | org.axonframework.queryhandling.annotation.QueryHandler                          | No                             |
+| org.axonframework.config.Configuration                                                                 | org.axonframework.configuration.Configuration                                    | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.Component                                                                     | org.axonframework.configuration.Component                                        | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ConfigurerModule                                                              | org.axonframework.configuration.ConfigurationEnhancer                            | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ModuleConfiguration                                                           | org.axonframework.configuration.Module                                           | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleHandler                                                              | org.axonframework.configuration.LifecycleHandler                                 | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleOperations                                                           | org.axonframework.configuration.LifecycleRegistry                                | Yes. Moved to `axon-messaging` |
+| org.axonframework.commandhandling.CommandCallback                                                      | org.axonframework.commandhandling.gateway.CommandResult                          | No                             |
+| org.axonframework.commandhandling.callbacks.FutureCallback                                             | org.axonframework.commandhandling.gateway.FutureCommandResult                    | No                             |
+| org.axonframework.modelling.command.Repository                                                         | org.axonframework.modelling.repository.Repository                                | No                             |
+| org.axonframework.modelling.command.CommandTargetResolver                                              | org.axonframework.modelling.command.EntityIdResolver                             | No                             |
+| org.axonframework.modelling.command.ForwardingMode                                                     | org.axonframework.modelling.command.entity.child.EventTargetMatcher              | No                             |
+| org.axonframework.modelling.command.AggregateMember                                                    | org.axonframework.modelling.entity.annotation.EntityMember                       | No                             |
+| org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory                      | org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel           | No                             |
+| org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityCollectionDefinition | org.axonframework.modelling.entity.annotation.ListEntityModelDefinition          | No                             |
+| org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityDefinition           | org.axonframework.modelling.entity.annotation.SingleEntityChildModelDefinition   | No                             |
+| org.axonframework.modelling.command.inspection.AbstractChildEntityDefinition                           | org.axonframework.modelling.entity.annotation.AbstractEntityChildModelDefinition | No                             |
+| org.axonframework.axonserver.connector.ServerConnectorConfigurerModule                                 | org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer      | No                             |
+| org.axonframework.serialization.CannotConvertBetweenTypesException                                     | org.axonframework.serialization.ConversionException                              | No                             |
 
 ### Removed Classes
 
@@ -1187,39 +1294,41 @@ This section contains four subsections, called:
 
 ### Moved, Renamed, or parameter adjusted Methods
 
-| Constructor / Method                                                                                                          | To where                                                                                                               |
-|-------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
-| `Configurer#configureCommandBus`                                                                                              | `MessagingConfigurer#registerCommandBus`                                                                               | 
-| `Configurer#configureEventBus`                                                                                                | `MessagingConfigurer#registerEventSink`                                                                                | 
-| `Configurer#configureQueryBus`                                                                                                | `MessagingConfigurer#registerQueryBus`                                                                                 | 
-| `Configurer#configureQueryUpdateEmitter`                                                                                      | `MessagingConfigurer#registerQueryUpdateEmitter`                                                                       | 
-| `ConfigurerModule#configureModule`                                                                                            | `ConfigurationEnhancer#enhance`                                                                                        | 
-| `ConfigurerModule#configureLifecyclePhaseTimeout`                                                                             | `LifecycleRegistry#registerLifecyclePhaseTimeout`                                                                      | 
-| `Configurer#registerComponent(Function<Configuration, ? extends C>)`                                                          | `ComponentRegistry#registerComponent(ComponentBuilder<C>)`                                                             | 
-| `Configurer#registerModule(ModuleConfiguration)`                                                                              | `ComponentRegistry#registerComponent(Module)`                                                                          | 
-| `StreamableMessageSource#openStream(TrackingToken)`                                                                           | `StreamableEventSource#open(SourcingCondition)`                                                                        | 
-| `StreamableMessageSource#createTailToken()`                                                                                   | `StreamableEventSource#firstToken()`                                                                                   | 
-| `StreamableMessageSource#createHeadToken()`                                                                                   | `StreamableEventSource#latestToken()`                                                                                  | 
-| `StreamableMessageSource#createTokenAt(Instant)`                                                                              | `StreamableEventSource#tokenAt(Instant)`                                                                               | 
-| `Repository#newInstance(Callable<T>)`                                                                                         | `Repository#persist(ID, T, ProcessingContext)`                                                                         | 
-| `Repository#load(String)`                                                                                                     | `Repository#load(ID, ProcessingContext)`                                                                               | 
-| `Repository#loadOrCreate(String, Callable<T>)`                                                                                | `Repository#loadOrCreate(ID, ProcessingContext)`                                                                       | 
-| `EventStore#readEvents(String)`                                                                                               | `EventStoreTransaction#source(SourcingCondition)`                                                                      | 
-| `EventStorageEngine#readEvents(EventMessage<?>...)`                                                                           | `EventStorageEngine#appendEvents(AppendCondition, TaggedEventMessage...)`                                              | 
-| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`                                                            | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`                                        | 
-| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`                                                            | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`                                        | 
-| `EventStorageEngine#readEvents(String)`                                                                                       | `EventStorageEngine#source(SourcingCondition)`                                                                         | 
-| `EventStorageEngine#readEvents(String, long)`                                                                                 | `EventStorageEngine#source(SourcingCondition)`                                                                         | 
-| `EventStorageEngine#readEvents(TrackingToken, boolean)`                                                                       | `EventStorageEngine#stream(StreamingCondition)`                                                                        | 
-| `EventStorageEngine#createTailToken()`                                                                                        | `EventStorageEngine#firstToken()`                                                                                      | 
-| `EventStorageEngine#createHeadToken()`                                                                                        | `EventStorageEngine#latestToken()`                                                                                     | 
-| `EventStorageEngine#createTokenAt(Instant)`                                                                                   | `EventStorageEngine#tokenAt(Instant)`                                                                                  | 
-| `StreamingEventProcessor#resetTokens(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>)`               | `StreamingEventProcessor#resetTokens(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>)`                 |
+| Constructor / Method                                                                                                            | To where                                                                                                               |
+|---------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| `Configurer#configureCommandBus`                                                                                                | `MessagingConfigurer#registerCommandBus`                                                                               | 
+| `Configurer#configureEventBus`                                                                                                  | `MessagingConfigurer#registerEventSink`                                                                                | 
+| `Configurer#configureQueryBus`                                                                                                  | `MessagingConfigurer#registerQueryBus`                                                                                 | 
+| `Configurer#configureQueryUpdateEmitter`                                                                                        | `MessagingConfigurer#registerQueryUpdateEmitter`                                                                       | 
+| `ConfigurerModule#configureModule`                                                                                              | `ConfigurationEnhancer#enhance`                                                                                        | 
+| `ConfigurerModule#configureLifecyclePhaseTimeout`                                                                               | `LifecycleRegistry#registerLifecyclePhaseTimeout`                                                                      | 
+| `Configurer#registerComponent(Function<Configuration, ? extends C>)`                                                            | `ComponentRegistry#registerComponent(ComponentBuilder<C>)`                                                             | 
+| `Configurer#registerModule(ModuleConfiguration)`                                                                                | `ComponentRegistry#registerComponent(Module)`                                                                          | 
+| `StreamableMessageSource#openStream(TrackingToken)`                                                                             | `StreamableEventSource#open(SourcingCondition)`                                                                        | 
+| `StreamableMessageSource#createTailToken()`                                                                                     | `StreamableEventSource#firstToken()`                                                                                   | 
+| `StreamableMessageSource#createHeadToken()`                                                                                     | `StreamableEventSource#latestToken()`                                                                                  | 
+| `StreamableMessageSource#createTokenAt(Instant)`                                                                                | `StreamableEventSource#tokenAt(Instant)`                                                                               | 
+| `Repository#newInstance(Callable<T>)`                                                                                           | `Repository#persist(ID, T, ProcessingContext)`                                                                         | 
+| `Repository#load(String)`                                                                                                       | `Repository#load(ID, ProcessingContext)`                                                                               | 
+| `Repository#loadOrCreate(String, Callable<T>)`                                                                                  | `Repository#loadOrCreate(ID, ProcessingContext)`                                                                       | 
+| `EventStore#readEvents(String)`                                                                                                 | `EventStoreTransaction#source(SourcingCondition)`                                                                      | 
+| `EventStorageEngine#readEvents(EventMessage<?>...)`                                                                             | `EventStorageEngine#appendEvents(AppendCondition, TaggedEventMessage...)`                                              | 
+| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`                                                              | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`                                        | 
+| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`                                                              | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)`                                        | 
+| `EventStorageEngine#readEvents(String)`                                                                                         | `EventStorageEngine#source(SourcingCondition)`                                                                         | 
+| `EventStorageEngine#readEvents(String, long)`                                                                                   | `EventStorageEngine#source(SourcingCondition)`                                                                         | 
+| `EventStorageEngine#readEvents(TrackingToken, boolean)`                                                                         | `EventStorageEngine#stream(StreamingCondition)`                                                                        | 
+| `EventStorageEngine#createTailToken()`                                                                                          | `EventStorageEngine#firstToken()`                                                                                      | 
+| `EventStorageEngine#createHeadToken()`                                                                                          | `EventStorageEngine#latestToken()`                                                                                     | 
+| `EventStorageEngine#createTokenAt(Instant)`                                                                                     | `EventStorageEngine#tokenAt(Instant)`                                                                                  | 
+| `StreamingEventProcessor#resetTokens(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>)`                 | `StreamingEventProcessor#resetTokens(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>)`                 |
 | `StreamingEventProcessor#resetTokens(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>, R resetContext)` | `StreamingEventProcessor#resetTokens(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>, R resetContext)` |
-| `PooledStreamingEventProcessor.Builder#initialToken(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>)` | `PooledStreamingEventProcessor.Builder#initialToken(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>)`  |
-| `PooledStreamingEventProcessor.Builder#messageSource(StreamableMessageSource<TrackedEventMessage<?>>)`                        | `PooledStreamingEventProcessor.Builder#eventSource(StreamableEventSource<? extends EventMessage<?>>)`                  |
-| `Converter#convert(Object, Class<T>)`                                                                                         | `Converter.#convert(S, Class<T>)`                                                                                      |
-| `Converter#convert(Object, Class<?>, Class<T>)`                                                                               | `Converter.#convert(S, Class<S>, Class<T>)`                                                                            |
+| `PooledStreamingEventProcessor.Builder#initialToken(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken>)`  | `PooledStreamingEventProcessor.Builder#initialToken(Function<TrackingTokenSource, CompletableFuture<TrackingToken>>)`  |
+| `PooledStreamingEventProcessor.Builder#messageSource(StreamableMessageSource<TrackedEventMessage<?>>)`                          | `PooledStreamingEventProcessor.Builder#eventSource(StreamableEventSource<? extends EventMessage<?>>)`                  |
+| `Converter#convert(Object, Class<T>)`                                                                                           | `Converter.#convert(S, Class<T>)`                                                                                      |
+| `Converter#convert(Object, Class<?>, Class<T>)`                                                                                 | `Converter.#convert(S, Class<S>, Class<T>)`                                                                            |
+| `EventGateway#publish(Object...)`                                                                                               | `EventGateway#publish(ProcessingContext, Object...)`                                                                   |
+| `EventGateway#publish(List<?>)`                                                                                                 | `EventGateway#publish(ProcessingContext, List<?>)`                                                                     |
 
 ### Removed Methods and Constructors
 
@@ -1256,7 +1365,9 @@ This section contains four subsections, called:
 
 ### Changed Method return types
 
-| Method                                         | Before                           | After            |
-|------------------------------------------------|----------------------------------|------------------|
-| `CorrelationDataProvider#correlationDataFor()` | `Map<String, String>`            | `Map<String, ?>` | 
-| `CommandTargetResolver#resolveTarget`          | `VersionedAggregateIdentifier`   | `String`         |
+| Method                                         | Before                         | After                     |
+|------------------------------------------------|--------------------------------|---------------------------|
+| `CorrelationDataProvider#correlationDataFor()` | `Map<String, String>`          | `Map<String, ?>`          | 
+| `CommandTargetResolver#resolveTarget`          | `VersionedAggregateIdentifier` | `String`                  |
+| `EventGateway#publish(Object...)`              | `void`                         | `CompletableFuture<Void>` |
+| `EventGateway#publish(List<?>)`                | `void`                         | `CompletableFuture<Void>` |

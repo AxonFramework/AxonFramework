@@ -54,34 +54,53 @@ class DefaultEventGatewayTest {
     }
 
     @Test
-    void publishSingleEventPublishesWithContext() {
+    void publishWithoutContext() {
         // Given
         //noinspection unchecked
         ArgumentCaptor<List<EventMessage<?>>> eventCaptor = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<ProcessingContext> contextCaptor = ArgumentCaptor.forClass(ProcessingContext.class);
 
         // When
-        testSubject.publish("Event1");
+        testSubject.publish(null, "Event1");
 
         // Then
         verify(mockEventSink).publish(contextCaptor.capture(), eventCaptor.capture());
         List<EventMessage<?>> result = eventCaptor.getValue();
         assertEquals("Event1", result.getFirst().getPayload());
         assertEquals("java.lang.String", result.getFirst().type().qualifiedName().name());
-        assertTrue(contextCaptor.getValue().isCommitted());
+        assertNull(contextCaptor.getValue());
+    }
+
+    @Test
+    void publishWithContext() {
+        // Given
+        //noinspection unchecked
+        ArgumentCaptor<List<EventMessage<?>>> eventCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<ProcessingContext> contextCaptor = ArgumentCaptor.forClass(ProcessingContext.class);
+        ProcessingContext testContext = mock(ProcessingContext.class);
+
+        // When
+        testSubject.publish(testContext, "Event1");
+
+        // Then
+        verify(mockEventSink).publish(contextCaptor.capture(), eventCaptor.capture());
+        List<EventMessage<?>> result = eventCaptor.getValue();
+        assertEquals("Event1", result.getFirst().getPayload());
+        assertEquals("java.lang.String", result.getFirst().type().qualifiedName().name());
+        assertEquals(testContext, contextCaptor.getValue());
     }
 
     @Test
     void publishMultipleEvents() {
-        //Given
+        // given
         //noinspection unchecked
         ArgumentCaptor<List<EventMessage<?>>> eventsCaptor = ArgumentCaptor.forClass(List.class);
 
-        //When
-        testSubject.publish("Event2", "Event3");
+        // when
+        testSubject.publish(null, "Event2", "Event3");
 
-        //Then
-        verify(mockEventSink).publish(any(ProcessingContext.class), eventsCaptor.capture());
+        // then
+        verify(mockEventSink).publish(isNull(), eventsCaptor.capture());
         List<EventMessage<?>> result = eventsCaptor.getValue();
         assertEquals(2, result.size());
         assertEquals("Event2", result.get(0).getPayload());
@@ -91,17 +110,20 @@ class DefaultEventGatewayTest {
     }
 
     @Test
-    void publishMessage() {
-        // when
+    void publishEventMessage() {
+        // given
         var payload = new TestPayload(UUID.randomUUID().toString());
-        var message = new GenericEventMessage<>(new MessageType("TestPayload"), payload)
+        var eventMessage = new GenericEventMessage<>(new MessageType("TestPayload"), payload)
                 .withMetaData(MetaData.with("key", "value"));
-        testSubject.publish(message);
+
+        // when
+        testSubject.publish(null, eventMessage);
 
         // then
         verify(mockEventSink).publish(
-                any(ProcessingContext.class),
-                argThat((List<EventMessage<?>> msgs) -> msgs.size() == 1 && msgs.getFirst().equals(message)));
+                isNull(),
+                argThat((List<EventMessage<?>> events) -> events.size() == 1 && events.getFirst().equals(eventMessage))
+        );
     }
 
     private record TestPayload(String value) {

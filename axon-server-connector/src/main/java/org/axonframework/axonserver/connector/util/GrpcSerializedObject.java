@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package org.axonframework.axonserver.connector.util;
 
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
 
 /**
  * Wrapper that allows clients to access a gRPC {@link io.axoniq.axonserver.grpc.SerializedObject} message as a {@link
@@ -25,7 +27,9 @@ import org.axonframework.serialization.SerializedType;
  *
  * @author Sara Pellegrini
  * @since 4.0
+ * @deprecated By shifting from the {@link Serializer} to the {@link Converter}, this class becomes obsolete.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class GrpcSerializedObject implements SerializedObject<byte[]> {
 
     private final io.axoniq.axonserver.grpc.SerializedObject payload;

@@ -71,6 +71,10 @@ public class StubLifecycleRegistry  implements LifecycleRegistry {
         return new HashMap<>(shutdownHandlers);
     }
 
+    /**
+     * Executes all start handlers in the order of their phase.
+     * @param configuration the configuration to pass to the lifecycle handlers.
+     */
     public void start(Configuration configuration) {
         getStartHandlers()
                 .entrySet()
@@ -83,6 +87,11 @@ public class StubLifecycleRegistry  implements LifecycleRegistry {
                 });
     }
 
+  
+    /**
+     * Executes all stop handlers in the order of their phase.
+     * @param configuration the configuration to pass to the lifecycle handlers.
+     */
     public void shutdown(Configuration configuration) {
         getShutdownHandlers()
                 .entrySet()

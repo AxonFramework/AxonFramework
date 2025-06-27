@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -124,7 +125,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -242,9 +242,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                        new Component<>(config, "repositorySpanFactory", this::defaultRepositorySpanFactory));
         components.put(EventProcessorSpanFactory.class,
                        new Component<>(config, "eventProcessorSpanFactory", this::defaultEventProcessorSpanFactory));
-        components.put(EventSink.class, new Component<>(config, "eventSink", this::defaultEventSink));
-        components.put(MessageTypeResolver.class,
-                       new Component<>(config, "messageTypeResolver", this::defaultMessageTypeResolver));
         registerModule(new AxonIQConsoleModule());
     }
 
@@ -758,32 +755,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                                                                                             aggregateConfigurations))
                                                .build();
                 });
-    }
-
-    /**
-     * Provides the default {@link EventSink} implementation, which delegates publishing to the {@link EventBus} in the
-     * given {@code configuration}. Subclasses may override this method to provide their own default.
-     *
-     * @param configuration The configuration based on which the component is initialized.
-     * @return The default EventSink to use.
-     */
-    protected EventSink defaultEventSink(LegacyConfiguration configuration) {
-        EventBus eventBus = configuration.getComponent(EventBus.class);
-        return events -> {
-            eventBus.publish(events);
-            return CompletableFuture.completedFuture(null);
-        };
-    }
-
-    /**
-     * Provides the default {@link MessageTypeResolver} implementation, which is a {@link ClassBasedMessageTypeResolver}
-     * by default. Subclasses may override this method to provide their own default.
-     *
-     * @param configuration The configuration based on which the component is initialized.
-     * @return The default MessageTypeResolver to use.
-     */
-    private MessageTypeResolver defaultMessageTypeResolver(LegacyConfiguration configuration) {
-        return new ClassBasedMessageTypeResolver();
     }
 
     /**

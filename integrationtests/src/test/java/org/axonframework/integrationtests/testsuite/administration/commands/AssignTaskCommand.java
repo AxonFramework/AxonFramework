@@ -24,6 +24,6 @@ public record AssignTaskCommand(
         PersonIdentifier identifier,
         String id,
         String description
-) {
+) implements PersonCommand {
 
 }

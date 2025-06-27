@@ -189,11 +189,9 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     private AggregateSource aggregateSourceForCriterion(SourcingCondition condition, EventCriterion criterion) {
         AtomicReference<AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
         String aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
-        // axonserver uses 0 to denote the end of a stream, so if 0 is provided, we use 1. For infinity, we use 0.
-        long end = condition.end() == Long.MAX_VALUE ? 0 : condition.end() + 1;
         AggregateEventStream aggregateStream =
                 connection.eventChannel()
-                          .openAggregateStream(aggregateIdentifier, condition.start(), end);
+                          .openAggregateStream(aggregateIdentifier, condition.start());
 
         MessageStream<EventMessage<?>> source =
                 MessageStream.fromStream(aggregateStream.asStream(),
