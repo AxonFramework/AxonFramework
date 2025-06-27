@@ -351,6 +351,77 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
     }
 
     @Nested
+    class SubtypeReturnTypes {
+
+        @Test
+        void allowsFactoryMethodReturningSubtype() {
+            // This should not throw an exception - the factory method returns a subtype of the entity
+            assertDoesNotThrow(() -> {
+                new AnnotationBasedEventSourcedEntityFactory<>(
+                        BaseEntity.class,
+                        String.class,
+                        Collections.singleton(SubEntity.class),
+                        parameterResolverFactory,
+                        messageTypeResolver
+                );
+            });
+        }
+
+        @Test
+        void allowsFactoryMethodReturningExactType() {
+            // This should not throw an exception - the factory method returns the exact entity type
+            assertDoesNotThrow(() -> {
+                new AnnotationBasedEventSourcedEntityFactory<>(
+                        ConcreteEntity.class,
+                        String.class,
+                        parameterResolverFactory,
+                        messageTypeResolver
+                );
+            });
+        }
+
+        public static abstract class BaseEntity {
+            protected final String id;
+
+            protected BaseEntity(String id) {
+                this.id = id;
+            }
+
+            public String getId() {
+                return id;
+            }
+        }
+
+        public static class SubEntity extends BaseEntity {
+            public SubEntity(String id) {
+                super(id);
+            }
+
+            @EntityCreator
+            public static SubEntity createSub(@InjectEntityId String id) {
+                return new SubEntity(id);
+            }
+        }
+
+        public static class ConcreteEntity {
+            private final String id;
+
+            public ConcreteEntity(String id) {
+                this.id = id;
+            }
+
+            @EntityCreator
+            public static ConcreteEntity create(@InjectEntityId String id) {
+                return new ConcreteEntity(id);
+            }
+
+            public String getId() {
+                return id;
+            }
+        }
+    }
+
+    @Nested
     class InvalidConfigurations {
 
         @Test
