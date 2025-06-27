@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
@@ -34,6 +35,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
+import org.axonframework.serialization.Converter;
 import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
 import org.axonframework.test.fixture.sampledomain.Student;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
@@ -248,7 +250,9 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                                                  c.getComponent(EventStore.class),
                                                                  EventSourcedEntityFactory.fromIdentifier(Student::new),
                                                                  (id, context) -> EventCriteria.havingTags("Student", id),
-                                                                 new AnnotationBasedEntityEvolvingComponent<>(Student.class)
+                                                                 new AnnotationBasedEntityEvolvingComponent<>(Student.class, c.getComponent(
+                                                                         Converter.class), c.getComponent(
+                                                                         MessageTypeResolver.class))
                                                          );
                                                          return SimpleStateManager.named("testfixture")
                                                                                   .register(repository);
