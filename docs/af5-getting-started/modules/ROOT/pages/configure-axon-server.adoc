@@ -2,7 +2,7 @@
 
 While the in-memory Event Store is perfect for getting started and understanding the concepts, real applications need persistent storage.
 This is where Axon Server comes into play!
-Axon Server is the purpose-built event store for Axon Framework applications, and with Axon Framework 5, it fully supports the Dynamic Consistency Boundary (DCB) concept that change the wayt you think about event sourcing.
+Axon Server is the purpose-built event store, and along with Axon Framework 5, it fully supports the Dynamic Consistency Boundary (DCB) concept that changes the way you think about event sourcing and even how you model your business domain.
 
 The best part?
 Connecting your application to Axon Server is incredibly simple—it's designed to work out of the box with minimal configuration.
@@ -28,7 +28,8 @@ No additional configuration code is needed—the framework handles all the wirin
 
 == Running Axon Server with Docker
 
-To run Axon Server locally, we'll use Docker Compose. To use the Axon Server with DCB support, you need to use Axon Server version `2025.1.0` or later.
+To run Axon Server locally, we'll use Docker Compose.
+To use the Axon Server with DCB support, you need to use Axon Server version `2025.1.0` or later.
 Create a `docker-compose.yml` file in your project root:
 
 [source,yaml]
@@ -121,6 +122,7 @@ public class UniversityAxonApplication {
     // ...existing code...
 }
 ----
+
 <1> Define the context name that matches what you created in Axon Server UI
 <2> Override the default `AxonServerConfiguration` component registration
 <3> Set the context to use our DCB-enabled context
@@ -149,6 +151,7 @@ void beforeEach() {
     fixture = AxonTestFixture.with(application.configurer()); // <1>
 }
 ----
+
 <1> The fixture automatically detects and uses Axon Server when the connector is present
 
 == Exploring events in Axon Server UI
@@ -177,16 +180,13 @@ For example, a `StudentSubscribedToCourse` event will show both `studentId` and 
 The search capabilities make it easy to trace the event history for specific business entities or understand the sequence of events that led to a particular system state.
 This is invaluable for debugging, auditing, and understanding the behavior of your event-sourced application.
 
-
 == Switching between Event Store implementations
 
 Sometimes you might want to switch back to the in-memory Event Store for development or testing purposes.
 To do that, you may use configuration properties as shown in the link:https://github.com/AxonIQ/university-demo/[Axon University Demo repository on GitHub,role=external,window=_blank].
 
 This flexibility allows you to:
-* Use in-memory storage for fast unit tests
-* Use Axon Server for integration tests and production
-* Switch between implementations without code changes
+* Use in-memory storage for fast unit tests * Use Axon Server for integration tests and production * Switch between implementations without code changes
 
 == What's next?
 
@@ -203,5 +203,6 @@ The beauty of Axon Framework's approach is that your code remains completely unc
 Thank you for completing this tutorial!
 We hope you've found value in exploring these new APIs and are excited about the upcoming Axon Framework 5 release.
 You now have a unique opportunity to shape the framework's future and transform application development practices across the industry.
-If you'd like to do so, please share your feedback with us. You can do it on link:https://discuss.axoniq.io/t/feedback-template/6034[AxonIQ Discuss] or connect directly with our Framework team on LinkedIn.
+If you'd like to do so, please share your feedback with us.
+You can do it on link:https://discuss.axoniq.io/t/feedback-template/6034[AxonIQ Discuss] or connect directly with our Framework team on LinkedIn.
 Your perspectives are invaluable to us, and we're eager to engage in meaningful discussions about your ideas and experiences.
