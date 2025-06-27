@@ -17,7 +17,6 @@ package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.queryhandling.QueryBus;
@@ -50,7 +49,7 @@ import java.util.Optional;
 @AutoConfiguration
 @ConditionalOnClass(SpringConfigurer.class)
 @AutoConfigureAfter({
-        AxonAutoConfiguration.class,
+        LegacyAxonAutoConfiguration.class,
         JpaAutoConfiguration.class,
         JpaEventStoreAutoConfiguration.class,
         NoOpTransactionAutoConfiguration.class,

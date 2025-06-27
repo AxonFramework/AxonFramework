@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
+import org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.Module;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
@@ -58,8 +59,11 @@ public abstract class AbstractAdministrationTestSuite {
     @BeforeEach
     void setUp() {
         var configuration = EventSourcingConfigurer.create()
-                               .componentRegistry(cr -> cr.registerModule(getModule()))
-                               .start();
+                                                   .componentRegistry(cr -> cr.registerModule(getModule()))
+                                                   .componentRegistry(cr -> cr.disableEnhancer(
+                                                           ServerConnectorConfigurationEnhancer.class
+                                                   ))
+                                                   .start();
         commandGateway = configuration.getComponent(CommandGateway.class);
     }
 
@@ -125,7 +129,7 @@ public abstract class AbstractAdministrationTestSuite {
 
         for (int i = 0; i < 3; i++) {
             sendCommand(new AssignTaskCommand(CREATE_EMPLOYEE_1_COMMAND.identifier(),
-                                                      "task-" + i,
+                                              "task-" + i,
                                               "Task " + i));
         }
 
@@ -146,8 +150,12 @@ public abstract class AbstractAdministrationTestSuite {
         try {
             runnable.run();
         } catch (CompletionException e) {
-            Assertions.assertTrue(e.getCause().getMessage().toLowerCase().contains(expectedMessage.toLowerCase()), () -> "Expected message to contain: " + expectedMessage + ", but got: " + e.getCause().getMessage() + "\n" + Arrays.stream(
-                    e.getCause().getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n")));
+            Assertions.assertTrue(e.getCause().getMessage().toLowerCase().contains(expectedMessage.toLowerCase()),
+                                  () -> "Expected message to contain: " + expectedMessage + ", but got: " + e.getCause()
+                                                                                                             .getMessage()
+                                          + "\n" + Arrays.stream(
+                                                                 e.getCause().getStackTrace()).map(StackTraceElement::toString)
+                                                         .collect(Collectors.joining("\n")));
             return;
         } catch (Exception e) {
             Assertions.fail("Expected CompletionException, but got: " + e.getClass().getSimpleName());

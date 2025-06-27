@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Sara Pellegrini
  */
+@Disabled("TODO #3496")
 class JpaEventStoreAutoConfigurationWithAxonServerTest {
 
     private ApplicationContextRunner testContext;

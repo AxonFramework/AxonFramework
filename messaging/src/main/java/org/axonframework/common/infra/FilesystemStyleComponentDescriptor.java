@@ -181,7 +181,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     ) {
         var descriptor = new FilesystemStyleComponentDescriptor(componentPaths, itemPath);
         var type = component instanceof Component<?>
-                ? ((Component<?>) component).identifier().type().getName()
+                ? ((Component<?>) component).identifier().typeAsClass().getName()
                 : component.getClass().getName();
         descriptor.describeProperty("_ref", System.identityHashCode(component));
         descriptor.describeProperty("_type", type);

@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Objects;
 
 /**
  * Represents a reference to a type of component, allowing for generic types to be specified without casting errors.
@@ -40,6 +41,22 @@ public abstract class TypeReference<E> {
         } else {
             this.type = ((ParameterizedType) superClass).getActualTypeArguments()[0];
         }
+    }
+
+    private TypeReference(@Nonnull Type type) {
+        this.type = Objects.requireNonNull(type, "The given type may not be null.");
+    }
+
+    /**
+     * Constructs a {@code TypeReference} for the given {@code type}.
+     *
+     * @param type The type of the {@code TypeReference} under construction.
+     * @param <C>  The type this {@code TypeReference} reflects.
+     * @return A new {@code TypeReference} instance of the given {@code type}.
+     */
+    public static <C> TypeReference<C> fromType(@Nonnull Class<C> type) {
+        return new TypeReference<>(type) {
+        };
     }
 
     /**
@@ -68,5 +85,19 @@ public abstract class TypeReference<E> {
      */
     public Type getType() {
         return type;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        TypeReference<?> that = (TypeReference<?>) o;
+        return Objects.equals(type, that.type);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(type);
     }
 }
