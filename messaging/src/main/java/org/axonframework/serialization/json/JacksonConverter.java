@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
  *
  * @author Mateusz Nowak
  * @since 5.0.0
+ * TODO #3102 - Validate this Converter as part of #3102
  */
 public final class JacksonConverter implements Converter {
 

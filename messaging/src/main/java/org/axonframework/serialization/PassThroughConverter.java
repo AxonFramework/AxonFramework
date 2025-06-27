@@ -25,6 +25,7 @@ import jakarta.annotation.Nullable;
  *
  * @author Mateusz Nowak
  * @since 5.0.0
+ * TODO #3102 - Validate this Converter as part of #3102
  */
 public final class PassThroughConverter implements Converter {
 

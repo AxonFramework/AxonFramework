@@ -92,7 +92,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // Employee is a concrete entity type
         EntityMetamodel<MutableEmployee> employeeMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableEmployee.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableEmployee.class, configuration.getComponent(Converter.class), typeResolver))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableEmployee.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
                                         ((command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -145,7 +145,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // Customer is a concrete entity type
         EntityMetamodel<MutableCustomer> customerMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableCustomer.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableCustomer.class, configuration.getComponent(Converter.class), typeResolver))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableCustomer.class, converter, typeResolver))
                 .instanceCommandHandler(
                         typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
                         ((command, entity, context) -> {
@@ -160,7 +160,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .forPolymorphicEntityType(MutablePerson.class)
                 .addConcreteType(employeeMetamodel)
                 .addConcreteType(customerMetamodel)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutablePerson.class, configuration.getComponent(Converter.class), typeResolver))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutablePerson.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,

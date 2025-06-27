@@ -22,7 +22,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.child.ChildAmbiguityException;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
-import org.axonframework.serialization.Converter;
 
 import java.util.List;
 
