@@ -162,7 +162,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                     "Method-based @EntityCreator must return the entity type or a subtype. Found method: [%s]".formatted(
                             method));
         }
-        this.addEntityCreatorExecutable(method);
+        addEntityCreatorExecutable(method);
     }
 
     private void addEntityCreatorExecutable(Executable executable) {
