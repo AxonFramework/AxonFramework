@@ -141,7 +141,7 @@ One of the great benefits of Axon Framework's design (thanks to the new configur
 When you run your `AxonTestFixture` tests with the Axon Server connector dependency present, the fixture will automatically use your Axon Server configuration.
 This means your tests now run against the same Event Store technology as production.
 
-Your existing test code doesn't need any changes:
+Your existing test code doesn't need any changes, but just keep in mind that you should use random IDs, because the Axon Server events won't be purged automatically between test runs.
 
 [source,java]
 ----
@@ -152,7 +152,15 @@ void beforeEach() {
 }
 ----
 
-<1> The fixture automatically detects and uses Axon Server when the connector is present
+<1> The fixture automatically detects and uses Axon Server when the connector is present.
+
+[NOTE]
+====
+If you have the `axon-server-connector` on the classpath, and you'd like to run your tests against the in-memory Event Store instead, you should disable the `ConfigurationEnhancer` that automatically registers the `AxonServerEventStorageEnginer` with:
+
+[source,java]
+configurer.componentRegistry(r -> r.disableEnhancer(ServerConnectorConfigurationEnhancer.class));
+====
 
 == Exploring events in Axon Server UI
 
@@ -166,13 +174,13 @@ image::AxonServer_DCBEvents_Search.png[]
 
 The Event Store Search interface provides several powerful capabilities:
 
-* **Event Browsing**: View all events stored in your Event Store in chronological order
-* **Event Details**: See the complete event payload, including all properties and their values
-* **Tag Visualization**: Each event displays its associated tags in the rightmost column, making it easy to see which business entities each event relates to
-* **Tag Filtering**: Use the search functionality to filter events by specific tags (e.g., `courseId` or `studentId`)
-* **Event Type Filtering**: Filter events by their type to focus on specific kinds of domain events
-* **Time-based Filtering**: Search for events within specific time ranges
-* **Context Selection**: Switch between different contexts to explore events from different parts of your application
+* **Event Browsing**: View all events stored in your Event Store in chronological order.
+* **Event Details**: See the complete event payload, including all properties and their values.
+* **Tag Visualization**: Each event displays its associated tags in the rightmost column, making it easy to see which business entities each event relates to.
+* **Tag Filtering**: Use the search functionality to filter events by specific tags (e.g., `courseId` or `studentId`).
+* **Event Type Filtering**: Filter events by their type to focus on specific kinds of domain events.
+* **Time-based Filtering**: Search for events within specific time ranges.
+* **Context Selection**: Switch between different contexts to explore events from different parts of your application.
 
 This interface is particularly valuable when working with Dynamic Consistency Boundaries, as you can easily see how events are tagged with multiple business entity identifiers.
 For example, a `StudentSubscribedToCourse` event will show both `studentId` and `courseId` tags, demonstrating how a single event can be associated with multiple business concepts.
@@ -186,7 +194,10 @@ Sometimes you might want to switch back to the in-memory Event Store for develop
 To do that, you may use configuration properties as shown in the link:https://github.com/AxonIQ/university-demo/[Axon University Demo repository on GitHub,role=external,window=_blank].
 
 This flexibility allows you to:
-* Use in-memory storage for fast unit tests * Use Axon Server for integration tests and production * Switch between implementations without code changes
+
+* Use in-memory storage for fast unit tests.
+* Use Axon Server for integration tests and production.
+* Switch between implementations without code changes.
 
 == What's next?
 
