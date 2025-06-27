@@ -593,11 +593,3 @@ public class UniversityAxonApplication {
 
 Now what's better for a developer than seeing the green bar flash in your IDE after running the tests?
 Let's do it! Remember to mark the slice as completed in the Event Modeling diagram if you use this approach.
-
-== Your opinion matters!
-
-Thank you for completing this tutorial!
-We hope you've found value in exploring these new APIs and are excited about the upcoming Axon Framework 5 release.
-You now have a unique opportunity to shape the framework's future and transform application development practices across the industry.
-If you'd like to do so, please share your feedback with us. You can do it on link:https://discuss.axoniq.io/t/feedback-template/6034[AxonIQ Discuss] or connect directly with our Framework team on LinkedIn.
-Your perspectives are invaluable to us, and we're eager to engage in meaningful discussions about your ideas and experiences.
