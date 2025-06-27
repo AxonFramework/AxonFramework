@@ -424,13 +424,14 @@ public class CreateCourseConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityModule
-                .annotated(CourseId.class, CreateCourseCommandHandler.State.class);  // <1>
+                .annotated(CourseId.class, CreateCourseCommandHandler.State.class); // <1>
 
         var commandHandlingModule = StatefulCommandHandlingModule.named("CreateCourse")
                 .entities()
                 .entity(stateEntity)  // <2>
                 .commandHandlers()
                 .annotatedCommandHandlingComponent(c -> new CreateCourseCommandHandler());
+
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 

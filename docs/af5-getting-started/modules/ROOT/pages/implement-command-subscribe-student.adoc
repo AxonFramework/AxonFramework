@@ -113,7 +113,8 @@ class SubscribeStudentToCourseTest {
 
     @BeforeEach
     void beforeEach() {
-        fixture = AxonTestFixture.with(UniversityAxonApplication.configurer());
+        var application = new UniversityAxonApplication();
+        fixture = AxonTestFixture.with(application.configurer());
     }
 
     @Test
@@ -305,6 +306,10 @@ class SubscribeStudentToCourseCommandHandler {
 
         private StudentId studentId;
 
+        @EntityCreator
+        public State() {
+        }
+
         @EventSourcingHandler
         void evolve(StudentEnrolledInFaculty event) {
             this.studentId = event.studentId();
@@ -370,6 +375,10 @@ class SubscribeStudentToCourseCommandHandler {
         private StudentId studentId;
         private int noOfCoursesStudentSubscribed = 0;
         private boolean alreadySubscribed = false;
+
+        @EntityCreator
+        public State() {
+        }
 
         // other handlers added previously omitted for brevity
 
@@ -538,7 +547,7 @@ To do so, let's create a new class `SubscribeStudentToCourseConfiguration` with 
 package io.axoniq.demo.university.faculty.write.subscribestudent;
 
 import org.axonframework.configuration.NewConfiguration;
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
@@ -548,7 +557,7 @@ import java.util.List;
 public class SubscribeStudentConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
-        var stateEntity = EventSourcedEntityBuilder
+        var stateEntity = EventSourcedEntityModule
                 .annotatedEntity(SubscriptionId.class, SubscribeStudentToCourseCommandHandler.State.class);
         var commandHandlingModule = StatefulCommandHandlingModule
                 .named("SubscribeStudentToCourse")
