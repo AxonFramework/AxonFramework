@@ -51,7 +51,7 @@ public final class JacksonConverter implements Converter {
      * The default mapper does not register any custom serializers or deserializers.
      */
     public JacksonConverter() {
-        this(new ObjectMapper());
+        this(new ObjectMapper().findAndRegisterModules());
     }
 
     /**
