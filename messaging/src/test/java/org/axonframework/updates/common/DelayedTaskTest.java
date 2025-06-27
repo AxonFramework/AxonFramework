@@ -18,20 +18,29 @@ package org.axonframework.updates.common;
 
 import org.junit.jupiter.api.*;
 
+import java.time.Duration;
+
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link DelayedTask}.
+ *
+ * @author Mitchell Herrijgers
+ */
 class DelayedTaskTest {
 
     @Test
-    void taskExecutesAfterDelay() throws InterruptedException {
+    void taskExecutesAfterDelay() {
         long delay = 200;
         long start = System.currentTimeMillis();
         final boolean[] ran = {false};
         DelayedTask task = DelayedTask.of(() -> ran[0] = true, delay);
-        // Wait for the task to finish
-        while (!task.isFinished()) {
-            Thread.sleep(10);
-        }
+
+        await("Await finished Delayed Task").pollDelay(Duration.ofMillis(10))
+                                            .atMost(Duration.ofMillis(500))
+                                            .until(task::isFinished);
+
         long elapsed = System.currentTimeMillis() - start;
         assertTrue(elapsed >= delay, "Task should execute after at least the specified delay");
         assertTrue(ran[0], "Task should have run");
@@ -42,7 +51,7 @@ class DelayedTaskTest {
     }
 
     @Test
-    void taskFailureSetsFailedFlagAndCause() throws InterruptedException {
+    void taskFailureSetsFailedFlagAndCause() {
         long delay = 100;
         RuntimeException expected = new RuntimeException("fail");
         // The array is to avoid 'variable not initialized' compiler error
@@ -53,9 +62,11 @@ class DelayedTaskTest {
             assertFalse(task[0].isFinished(), "Task should not be finished while executing");
             throw expected;
         }, delay);
-        while (!task[0].isFinished()) {
-            Thread.sleep(10);
-        }
+
+        await("Await finished Delayed Task").pollDelay(Duration.ofMillis(10))
+                                            .atMost(Duration.ofMillis(500))
+                                            .until(task[0]::isFinished);
+
         assertTrue(task[0].isStarted(), "Task should be marked as started");
         assertTrue(task[0].isFinished(), "Task should be marked as finished");
         assertTrue(task[0].isFailed(), "Task should be marked as failed");
@@ -63,12 +74,14 @@ class DelayedTaskTest {
     }
 
     @Test
-    void taskWithZeroDelayRunsImmediately() throws InterruptedException {
+    void taskWithZeroDelayRunsImmediately() {
         final boolean[] ran = {false};
         DelayedTask task = DelayedTask.of(() -> ran[0] = true, 0);
-        while (!task.isFinished()) {
-            Thread.sleep(5);
-        }
+
+        await("Await finished Delayed Task").pollDelay(Duration.ofMillis(5))
+                                            .atMost(Duration.ofMillis(500))
+                                            .until(task::isFinished);
+
         assertTrue(ran[0], "Task should have run with zero delay");
         assertTrue(task.isStarted(), "Task should be marked as started");
         assertTrue(task.isFinished(), "Task should be marked as finished");
