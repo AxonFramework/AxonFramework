@@ -18,13 +18,17 @@ package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.PassThroughConverter;
 
 import java.util.Objects;
 import java.util.Set;
@@ -46,30 +50,44 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
 
     private final Class<E> entityType;
     private final AnnotatedHandlerInspector<E> inspector;
+    private final Converter converter;
+    private final MessageTypeResolver messageTypeResolver;
 
     /**
      * Initialize a new annotation-based {@link EntityEvolver}.
      *
-     * @param entityType The type of entity this instance will handle state changes for.
+     * @param entityType          The type of entity this instance will handle state changes for.
+     * @param converter           The converter to use for converting event payloads to the handler's expected type.
+     * @param messageTypeResolver The resolver to use for resolving the event message type.
      */
-    public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType) {
+    public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType,
+                                                  @Nonnull Converter converter,
+                                                  @Nonnull MessageTypeResolver messageTypeResolver) {
         this(entityType,
              AnnotatedHandlerInspector.inspectType(entityType,
                                                    ClasspathParameterResolverFactory.forClass(entityType),
-                                                   ClasspathHandlerDefinition.forClass(entityType)));
+                                                   ClasspathHandlerDefinition.forClass(entityType)),
+             converter,
+             messageTypeResolver);
     }
 
     /**
      * Initialize a new annotation-based {@link EntityEvolver}.
      *
-     * @param entityType The type of entity this instance will handle state changes for.
-     * @param inspector  The inspector to use to find the annotated handlers on the entity.
+     * @param entityType          The type of entity this instance will handle state changes for.
+     * @param inspector           The inspector to use to find the annotated handlers on the entity.
+     * @param converter           The converter to use for converting event payloads to the handler's expected type.
+     * @param messageTypeResolver The resolver to use for resolving the event message type.
      */
     public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType,
-                                                  @Nonnull AnnotatedHandlerInspector<E> inspector
+                                                  @Nonnull AnnotatedHandlerInspector<E> inspector,
+                                                  @Nonnull Converter converter,
+                                                  @Nonnull MessageTypeResolver messageTypeResolver
     ) {
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.inspector = requireNonNull(inspector, "The Annotated Handler Inspector must not be null.");
+        this.converter = requireNonNull(converter, "The Converter must not be null.");
+        this.messageTypeResolver = requireNonNull(messageTypeResolver, "The Message Type Resolver must not be null.");
     }
 
     @Override
@@ -78,15 +96,28 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
                     @Nonnull ProcessingContext context) {
         try {
             var listenerType = entity.getClass();
-            var handler = inspector.getHandlers(listenerType)
-                                   .filter(h -> h.canHandle(event, context))
-                                   .findFirst();
-            if (handler.isPresent()) {
+
+            var eventTypeName = event.type().name();
+            var handlers = inspector.getHandlers(listenerType)
+                                    .filter(h -> messageTypeResolver.resolveOrThrow(h.payloadType())
+                                                                    .name().equals(eventTypeName))
+                                    .toList();
+
+            E evolvedEntity = entity;
+            for (var handler : handlers) {
+                var convertedEvent = event.withConvertedPayload(p -> converter.convert(p, handler.payloadType()));
+                if (!handler.canHandle(convertedEvent, context)) {
+                    continue;
+                }
                 var interceptor = inspector.chainedInterceptor(listenerType);
-                var result = interceptor.handle(event, context, entity, handler.get());
-                return entityFromStreamResultOrUpdatedExisting(result.first().asCompletableFuture().join(), entity);
+                var result = interceptor.handle(convertedEvent, context, entity, handler)
+                                        .first()
+                                        .asCompletableFuture()
+                                        .join();
+                evolvedEntity = entityFromStreamResultOrUpdatedExisting(result, entity);
             }
-            return entity;
+
+            return evolvedEntity;
         } catch (Exception e) {
             throw new StateEvolvingException(
                     "Failed to apply event [" + event.type() + "] in order to evolve [" + entity.getClass() + "] state",

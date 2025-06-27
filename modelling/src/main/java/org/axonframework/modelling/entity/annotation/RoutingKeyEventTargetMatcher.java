@@ -54,8 +54,8 @@ public class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
                                         @Nonnull String messageRoutingProperty) {
         this.routingKeyEntityMatcher = new AnnotatedEntityModelRoutingKeyMatcher<>(
                 metamodel,
-                entityRoutingProperty, messageRoutingProperty
-        );
+                entityRoutingProperty,
+                messageRoutingProperty);
     }
 
 

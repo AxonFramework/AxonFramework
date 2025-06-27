@@ -23,6 +23,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.serialization.Converter;
 
 import java.util.Set;
 
@@ -53,7 +54,8 @@ public class AnnotationBasedEventSourcedEntityFactoryDefinition
                 idType,
                 entitySubTypes,
                 configuration.getComponent(ParameterResolverFactory.class),
-                configuration.getComponent(MessageTypeResolver.class)
+                configuration.getComponent(MessageTypeResolver.class),
+                configuration.getComponent(Converter.class)
         );
     }
 }

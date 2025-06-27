@@ -34,7 +34,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
-import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.ExecutionException;

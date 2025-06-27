@@ -27,6 +27,8 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -49,6 +51,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
     @Mock
     private EventMessage<?> eventMessage;
 
+    private Converter converter = new PassThroughConverter();
+
 
     @BeforeEach
     void setUp() {
@@ -66,7 +70,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     EventMessageTestEntity.class,
                     String.class,
                     parameterResolverFactory,
-                    messageTypeResolver
+                    messageTypeResolver,
+                    converter
             );
         }
 
@@ -125,7 +130,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     PayloadTypeSpecificTestEntity.class,
                     String.class,
                     parameterResolverFactory,
-                    messageTypeResolver
+                    messageTypeResolver,
+                    converter
             );
         }
 
@@ -188,7 +194,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     PayloadSpecificTestEntity.class,
                     String.class,
                     parameterResolverFactory,
-                    messageTypeResolver
+                    messageTypeResolver,
+                    converter
             );
         }
 
@@ -239,7 +246,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     FactoryMethodsTestEntity.class,
                     String.class,
                     parameterResolverFactory,
-                    messageTypeResolver
+                    messageTypeResolver,
+                    converter
             );
         }
 
@@ -298,7 +306,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     MostSpecificHandlerEntity.class,
                     String.class,
                     parameterResolverFactory,
-                    messageTypeResolver
+                    messageTypeResolver,
+                    converter
             );
 
             when(eventMessage.getMetaData()).thenReturn(MetaData.from(Collections.singletonMap("blabla", "blabla")));
@@ -312,7 +321,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     MostSpecificHandlerEntity.class,
                     String.class,
                     parameterResolverFactory,
-                    messageTypeResolver
+                    messageTypeResolver,
+                    converter
             );
 
             when(eventMessage.getMetaData()).thenReturn(MetaData.emptyInstance());
@@ -326,7 +336,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     MostSpecificHandlerEntity.class,
                     String.class,
                     parameterResolverFactory,
-                    messageTypeResolver
+                    messageTypeResolver,
+                    converter
             );
 
             var entity = factory.create("test-id", null, new StubProcessingContext());
@@ -432,7 +443,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                         String.class,
                         Collections.singleton(InvalidEntityNonStaticMethod.class),
                         parameterResolverFactory,
-                        messageTypeResolver
+                        messageTypeResolver,
+                        converter
                 );
             });
             assertTrue(exception.getMessage().contains("Method-based @EntityCreator must be static"));
@@ -446,7 +458,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                         String.class,
                         Collections.singleton(InvalidEntityReturnType.class),
                         parameterResolverFactory,
-                        messageTypeResolver
+                        messageTypeResolver,
+                        converter
                 );
             });
             assertTrue(exception.getMessage()
@@ -461,7 +474,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                         String.class,
                         Collections.singleton(NoAnnotatedMethodsEntity.class),
                         parameterResolverFactory,
-                        messageTypeResolver
+                        messageTypeResolver,
+                        converter
                 );
             });
             assertTrue(exception.getMessage().contains(

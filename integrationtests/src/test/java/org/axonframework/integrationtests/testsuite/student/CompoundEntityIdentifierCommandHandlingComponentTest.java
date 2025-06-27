@@ -33,6 +33,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.SimpleEntityEvolvingComponent;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
@@ -58,7 +59,10 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                                 Map.of(
                                                         new QualifiedName(MentorAssignedToStudentEvent.class),
                                                         (entity, event, context) -> {
-                                                            entity.handle((MentorAssignedToStudentEvent) event.getPayload());
+                                                            Converter converter = c.getComponent(Converter.class);
+                                                            MentorAssignedToStudentEvent payload = converter.convert(event.getPayload(),
+                                                                                                                     MentorAssignedToStudentEvent.class);
+                                                            entity.handle(payload);
                                                             return entity;
                                                         }
                                                 )
