@@ -177,7 +177,7 @@ The Event Store Search interface provides several powerful capabilities:
 * **Event Browsing**: View all events stored in your Event Store in chronological order.
 * **Event Details**: See the complete event payload, including all properties and their values.
 * **Tag Visualization**: Each event displays its associated tags in the rightmost column, making it easy to see which business entities each event relates to.
-* **Tag Filtering**: Use the search functionality to filter events by specific tags (e.g., `courseId` or `studentId`).
+* **Tag Filtering**: Use the search functionality to filter events by specific tags (for example, `courseId` or `studentId`).
 * **Event Type Filtering**: Filter events by their type to focus on specific kinds of domain events.
 * **Time-based Filtering**: Search for events within specific time ranges.
 * **Context Selection**: Switch between different contexts to explore events from different parts of your application.
@@ -188,7 +188,7 @@ For example, a `StudentSubscribedToCourse` event will show both `studentId` and 
 The search capabilities make it easy to trace the event history for specific business entities or understand the sequence of events that led to a particular system state.
 This is invaluable for debugging, auditing, and understanding the behavior of your event-sourced application.
 
-== Switching between Event Store implementations
+== Switching between event store implementations
 
 Sometimes you might want to switch back to the in-memory Event Store for development or testing purposes.
 To do that, you may use configuration properties as shown in the link:https://github.com/AxonIQ/university-demo/[Axon University Demo repository on GitHub,role=external,window=_blank].
