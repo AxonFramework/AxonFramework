@@ -4,24 +4,36 @@ import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.shared.ids.CourseId;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.serialization.Converter;
 
 public class CreateCoursePlainConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
-        var stateEntity = EventSourcedEntityBuilder
-                .entity(CourseId.class, CreateCourseCommandHandler.State.class)
-                .entityFactory(c -> (type, id) -> CreateCourseCommandHandler.State.initial())
-                .criteriaResolver(c -> id -> EventCriteria
+        var stateEntity = EventSourcedEntityModule
+                .declarative(CourseId.class, CreateCourseCommandHandler.State.class)
+                .messagingModel((c, model) ->
+                        model.entityEvolver(
+                                (entity, event, context) ->
+                                        entity.evolve(
+                                                event.withConvertedPayload(
+                                                        p -> c.getComponent(Converter.class).convert(p, CourseCreated.class)
+                                                ).getPayload()
+                                        )
+                        ).build()
+                )
+                .entityFactory(c -> EventSourcedEntityFactory.fromNoArgument(CreateCourseCommandHandler.State::initial))
+                .criteriaResolver(c -> (id, ctx) -> EventCriteria
                         .havingTags(Tag.of(FacultyTags.COURSE_ID, id.toString()))
                         .andBeingOneOfTypes(CourseCreated.class.getName())
-                ).eventSourcingHandler(CourseCreated.class, CreateCourseCommandHandler.State::evolve);
+                ).build();
 
         var commandHandlingModule = StatefulCommandHandlingModule
                 .named("CreateCoursePlain")

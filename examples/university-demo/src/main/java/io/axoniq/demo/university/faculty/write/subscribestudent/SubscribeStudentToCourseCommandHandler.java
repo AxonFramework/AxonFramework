@@ -13,8 +13,9 @@ import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.modelling.annotation.InjectEntity;
 
 import java.util.List;
@@ -90,9 +91,13 @@ class SubscribeStudentToCourseCommandHandler {
         private int noOfCoursesStudentSubscribed = 0;
         private boolean alreadySubscribed = false;
 
+        @EntityCreator
+        public State() {
+        }
+
         @EventSourcingHandler
         void evolve(CourseCreated event) {
-            this.courseId =event.courseId();
+            this.courseId = event.courseId();
             this.courseCapacity = event.capacity();
         }
 
