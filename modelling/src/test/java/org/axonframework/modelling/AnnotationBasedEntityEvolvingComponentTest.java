@@ -28,7 +28,8 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.PassThroughConverter;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -45,8 +46,13 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotationBasedEntityEvolvingComponentTest {
 
+    private static final Converter converter = new JacksonConverter();
+    private static final ClassBasedMessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
     private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolvingComponent<>(
-            TestState.class, new PassThroughConverter(), new ClassBasedMessageTypeResolver());
+            TestState.class,
+            converter,
+            messageTypeResolver
+    );
 
     @Nested
     class BasicEventHandling {
@@ -166,7 +172,9 @@ class AnnotationBasedEntityEvolvingComponentTest {
         @Test
         void doNotHandleNotDeclaredEventType() {
             // given
-            var eventSourcedComponent = new AnnotationBasedEntityEvolvingComponent<>(HandlingJustStringState.class);
+            var eventSourcedComponent = new AnnotationBasedEntityEvolvingComponent<>(HandlingJustStringState.class,
+                                                                                     converter,
+                                                                                     messageTypeResolver);
             var state = new HandlingJustStringState();
             var event = domainEvent(0);
 
@@ -212,7 +220,9 @@ class AnnotationBasedEntityEvolvingComponentTest {
         }
 
         private static final EntityEvolver<RecordState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolvingComponent<>(
-                RecordState.class);
+                RecordState.class,
+                converter, messageTypeResolver
+        );
 
         @Test
         void doNotMutateGivenStateIfRecord() {
@@ -247,7 +257,9 @@ class AnnotationBasedEntityEvolvingComponentTest {
         @Test
         void throwsStateEvolvingExceptionOnExceptionInsideEventHandler() {
             // given
-            var testSubject = new AnnotationBasedEntityEvolvingComponent<>(ErrorThrowingState.class);
+            var testSubject = new AnnotationBasedEntityEvolvingComponent<>(ErrorThrowingState.class,
+                                                                           converter,
+                                                                           messageTypeResolver);
             var state = new ErrorThrowingState();
             var event = domainEvent(0);
 
@@ -255,7 +267,7 @@ class AnnotationBasedEntityEvolvingComponentTest {
             var exception = assertThrows(StateEvolvingException.class,
                                          () -> testSubject.evolve(state, event, StubProcessingContext.forMessage(event)));
             assertEquals(
-                    "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.modelling.AnnotationBasedEntityEvolvingComponentTest$ErrorThrowingState] state",
+                    "Failed to apply event [java.lang.Integer#0.0.1] in order to evolve [class org.axonframework.modelling.AnnotationBasedEntityEvolvingComponentTest$ErrorThrowingState] state",
                     exception.getMessage()
             );
             assertInstanceOf(RuntimeException.class, exception.getCause());
@@ -284,7 +296,7 @@ class AnnotationBasedEntityEvolvingComponentTest {
                 "test",
                 "id",
                 seq,
-                new MessageType("event"),
+                new MessageType(Integer.class),
                 seq, sampleMetaData == null ? MetaData.emptyInstance() : MetaData.with("sampleKey", sampleMetaData)
         );
     }
