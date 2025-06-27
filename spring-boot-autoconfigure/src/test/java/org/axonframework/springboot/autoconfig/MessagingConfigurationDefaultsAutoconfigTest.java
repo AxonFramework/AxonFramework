@@ -66,6 +66,8 @@ class MessagingConfigurationDefaultsAutoconfigTest {
             assertThat(context).hasBean(CommandBus.class.getName());
             assertThat(context).hasSingleBean(EventGateway.class);
             assertThat(context).hasBean(EventGateway.class.getName());
+            assertThat(context).hasSingleBean(EventSink.class);
+            assertThat(context).hasBean(EventSink.class.getName());
             assertThat(context).hasSingleBean(QueryGateway.class);
             assertThat(context).hasBean(QueryGateway.class.getName());
             assertThat(context).hasSingleBean(QueryBus.class);
@@ -86,6 +88,10 @@ class MessagingConfigurationDefaultsAutoconfigTest {
             assertThat(context).hasBean("customCommandBus");
             assertThat(context).hasSingleBean(EventGateway.class);
             assertThat(context).hasBean("customEventGateway");
+            assertThat(context).hasSingleBean(EventSink.class);
+            assertThat(context).hasBean("customEventSink");
+            assertThat(context).hasSingleBean(EventBus.class);
+            assertThat(context).hasBean("customEventBus");
             assertThat(context).hasSingleBean(QueryGateway.class);
             assertThat(context).hasBean("customQueryGateway");
             assertThat(context).hasSingleBean(QueryBus.class);
@@ -98,11 +104,6 @@ class MessagingConfigurationDefaultsAutoconfigTest {
     @Configuration
     @EnableAutoConfiguration
     public static class TestContext {
-
-        @Bean
-        public EventSink eventSink() {
-            return mock(EventSink.class);
-        }
 
         @Bean
         public ConfigurationEnhancer disableEventSourcingConfigurationDefaults() {
@@ -143,6 +144,16 @@ class MessagingConfigurationDefaultsAutoconfigTest {
         @Bean
         public EventGateway customEventGateway() {
             return mock(EventGateway.class);
+        }
+
+        @Bean
+        public EventSink customEventSink() {
+            return mock(EventSink.class);
+        }
+
+        @Bean
+        public EventBus customEventBus() {
+            return mock(EventBus.class);
         }
 
         @Bean
