@@ -154,12 +154,15 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
 
     private void addEntityCreatorMethod(Method method) {
         if (!Modifier.isStatic(method.getModifiers())) {
-            throw new AxonConfigurationException("Method-based @EntityCreator must be static. Found method: %s".formatted(method));
-        } else if (!this.entityType.isAssignableFrom(method.getReturnType())) {
-            throw new AxonConfigurationException("Method-based @EntityCreator must return the entity type or a subtype. Found method: [%s]".formatted(method));
-        } else {
-            this.addEntityCreatorExecutable(method);
+            throw new AxonConfigurationException("Method-based @EntityCreator must be static. Found method: %s".formatted(
+                    method));
         }
+        if (!this.entityType.isAssignableFrom(method.getReturnType())) {
+            throw new AxonConfigurationException(
+                    "Method-based @EntityCreator must return the entity type or a subtype. Found method: [%s]".formatted(
+                            method));
+        }
+        this.addEntityCreatorExecutable(method);
     }
 
     private void addEntityCreatorExecutable(Executable executable) {
@@ -181,7 +184,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             Class<?> parameterType = executable.getParameterTypes()[i];
 
             // Check the parameter type for the ID type and assign our special IdTypeParameterResolver
-            if(AnnotationUtils.isAnnotationPresent(executable.getParameters()[i], InjectEntityId.class)) {
+            if (AnnotationUtils.isAnnotationPresent(executable.getParameters()[i], InjectEntityId.class)) {
                 if (concreteIdType != null && !concreteIdType.isAssignableFrom(parameterType)) {
                     throw new AxonConfigurationException(
                             "The @InjectEntityId annotation can only be used on a single parameter of type [%s] or a subtype. Found [%s] on parameter %d of method [%s]"
@@ -249,8 +252,9 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             compatibleCreators = getMethodsCompatibleWithIdAndNoMessage(id);
         }
         if (compatibleCreators.isEmpty()) {
-            StringBuilder message = new StringBuilder("No suitable @EntityCreator found for id: [%s] and event message [%s]. Candidates were:"
-                                                              .formatted(id, eventMessage));
+            StringBuilder message = new StringBuilder(
+                    "No suitable @EntityCreator found for id: [%s] and event message [%s]. Candidates were:"
+                            .formatted(id, eventMessage));
             creators.forEach(creator -> message.append("\n - ").append(creator));
             throw new AxonConfigurationException(message.toString());
         }
@@ -261,13 +265,17 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         if (matchingCreators.isEmpty()) {
             // Create a message explaining which parameters cuold not be resolved of which candidate.
             StringBuilder message = new StringBuilder(
-                    "No @EntityCreator matched for entity id: [%s] and event message [%s]. Candidates were:\n".formatted(id, eventMessage));
+                    "No @EntityCreator matched for entity id: [%s] and event message [%s]. Candidates were:\n".formatted(
+                            id,
+                            eventMessage));
             for (ScannedEntityCreator compatibleCreator : compatibleCreators) {
                 List<Integer> unresolvableParameterIndices = compatibleCreator
                         .getUnresolvableParameterIndices(context);
-                message.append(" - [%s] could not resolve parameters indices: %s\n".formatted(compatibleCreator, unresolvableParameterIndices));
+                message.append(" - [%s] could not resolve parameters indices: %s\n".formatted(compatibleCreator,
+                                                                                              unresolvableParameterIndices));
             }
-            message.append("\n\nPlease ensure that the parameters can be resolved by the ParameterResolverFactory implementations on the classpath.");
+            message.append(
+                    "\n\nPlease ensure that the parameters can be resolved by the ParameterResolverFactory implementations on the classpath.");
             throw new AxonConfigurationException(message.toString());
         }
         return matchingCreators.stream()
