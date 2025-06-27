@@ -40,6 +40,7 @@ import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.PolymorphicEntityMetamodel;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
+import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,6 +90,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     private final EntityMetamodel<E> delegateMetamodel;
     private final ParameterResolverFactory parameterResolverFactory;
     private final MessageTypeResolver messageTypeResolver;
+    private final Converter converter;
     private final Map<QualifiedName, Class<?>> payloadTypes = new HashMap<>();
     private final List<AnnotatedEntityMetamodel<?>> concreteMetamodels = new LinkedList<>();
     private final List<AnnotatedEntityMetamodel<?>> childMetamodels = new LinkedList<>();
@@ -109,13 +111,15 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     public static <E> AnnotatedEntityMetamodel<E> forConcreteType(
             @Nonnull Class<E> entityType,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull MessageTypeResolver messageTypeResolver
-    ) {
+            @Nonnull MessageTypeResolver messageTypeResolver,
+            @Nonnull Converter converter
+            ) {
         return new AnnotatedEntityMetamodel<>(entityType,
                                               Set.of(),
                                               parameterResolverFactory,
                                               messageTypeResolver,
-                                              List.of());
+                                              List.of(),
+                                              converter);
     }
 
     /**
@@ -136,7 +140,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
             @Nonnull Class<E> entityType,
             @Nonnull Set<Class<? extends E>> concreteTypes,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull MessageTypeResolver messageTypeResolver
+            @Nonnull MessageTypeResolver messageTypeResolver,
+            @Nonnull Converter converter
     ) {
         requireNonNull(concreteTypes, "The concreteTypes may not be null.");
         Assert.isTrue(!concreteTypes.isEmpty(),
@@ -145,7 +150,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                                               concreteTypes,
                                               parameterResolverFactory,
                                               messageTypeResolver,
-                                              List.of());
+                                              List.of(),
+                                              converter);
     }
 
     /**
@@ -168,13 +174,15 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
             @Nonnull Set<Class<? extends E>> concreteTypes,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
             @Nonnull MessageTypeResolver messageTypeResolver,
-            @Nonnull List<QualifiedName> commandsToSkip
+            @Nonnull List<QualifiedName> commandsToSkip,
+            @Nonnull Converter converter
     ) {
         this.commandsToSkip = requireNonNull(commandsToSkip, "The commandsToSkip may not be null.");
         this.entityType = requireNonNull(entityType, "The entityType may not be null.");
         this.parameterResolverFactory = requireNonNull(parameterResolverFactory,
                                                        "The parameterResolverFactory may not be null.");
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The messageTypeResolver may not be null.");
+        this.converter = converter;
         requireNonNull(concreteTypes, "The concreteTypes may not be null.");
         if (!concreteTypes.isEmpty()) {
             this.delegateMetamodel = initializePolymorphicMetamodel(entityType, concreteTypes);
@@ -186,7 +194,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     private EntityMetamodel<E> initializeConcreteModel(Class<E> entityType) {
         EntityMetamodelBuilder<E> builder = EntityMetamodel.forEntityType(entityType);
         AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory);
-        builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType, inspected));
+        builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType, inspected, converter, messageTypeResolver));
         initializeDetectedHandlers(builder, inspected);
         initializeChildren(builder);
         return builder.build();
@@ -196,14 +204,14 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                                                               Set<Class<? extends E>> concreteTypes) {
         AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory);
         var builder = PolymorphicEntityMetamodel.forSuperType(entityType);
-        builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType, inspected));
+        builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType, inspected, converter, messageTypeResolver));
         initializeChildren(builder);
         // Commands that are present on the parent entity should not be registered again on the concrete
         // types. So we tell concrete types to skip these commands.
         LinkedList<QualifiedName> registeredCommands = initializeDetectedHandlers(builder, inspected);
         concreteTypes.forEach(concreteType -> {
             AnnotatedEntityMetamodel<? extends E> createdConcreteEntityModel = new AnnotatedEntityMetamodel<>(
-                    concreteType, Set.of(), parameterResolverFactory, messageTypeResolver, registeredCommands
+                    concreteType, Set.of(), parameterResolverFactory, messageTypeResolver, registeredCommands, converter
             );
             concreteMetamodels.add(createdConcreteEntityModel);
             builder.addConcreteType(createdConcreteEntityModel);
@@ -376,7 +384,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                                               Set.of(),
                                               parameterResolverFactory,
                                               messageTypeResolver,
-                                              List.of());
+                                              List.of(),
+                                              converter);
     }
 
     @Override

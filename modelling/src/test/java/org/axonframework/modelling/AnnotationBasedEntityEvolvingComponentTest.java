@@ -22,11 +22,13 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SequenceNumber;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -44,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AnnotationBasedEntityEvolvingComponentTest {
 
     private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolvingComponent<>(
-            TestState.class);
+            TestState.class, new PassThroughConverter(), new ClassBasedMessageTypeResolver());
 
     @Nested
     class BasicEventHandling {

@@ -39,6 +39,7 @@ import org.axonframework.modelling.entity.domain.development.events.MarketeerAss
 import org.axonframework.modelling.entity.domain.development.events.MarketeerHubspotUsernameChanged;
 import org.axonframework.modelling.entity.domain.development.events.ProjectCreatedEvent;
 import org.axonframework.modelling.entity.domain.development.events.ProjectRenamedEvent;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -67,7 +68,8 @@ class PolymorphicAnnotatedEntityMetamodelTest extends AbstractAnnotatedEntityMet
                 Project.class,
                 Set.of(InternalProject.class, OpenSourceProject.class),
                 parameterResolverFactory,
-                messageTypeResolver
+                messageTypeResolver,
+                new PassThroughConverter()
         );
     }
 

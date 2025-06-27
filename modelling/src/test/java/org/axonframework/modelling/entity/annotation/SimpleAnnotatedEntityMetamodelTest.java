@@ -19,6 +19,7 @@ package org.axonframework.modelling.entity.annotation;
 import org.axonframework.modelling.entity.domain.todo.TodoItem;
 import org.axonframework.modelling.entity.domain.todo.commands.CreateTodoItem;
 import org.axonframework.modelling.entity.domain.todo.commands.FinishTodoItem;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,7 +43,8 @@ class SimpleAnnotatedEntityMetamodelTest extends AbstractAnnotatedEntityMetamode
         return AnnotatedEntityMetamodel.forConcreteType(
                 TodoItem.class,
                 parameterResolverFactory,
-                messageTypeResolver
+                messageTypeResolver,
+                new PassThroughConverter()
         );
     }
 
