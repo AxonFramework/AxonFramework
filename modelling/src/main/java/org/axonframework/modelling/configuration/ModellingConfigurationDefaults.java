@@ -36,7 +36,7 @@ import java.util.Objects;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-class ModellingConfigurationDefaults implements ConfigurationEnhancer {
+public class ModellingConfigurationDefaults implements ConfigurationEnhancer {
 
     @Override
     public int order() {
