@@ -25,8 +25,10 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -68,6 +70,13 @@ class MessagingConfigurationDefaultsTest {
     @Test
     void enhanceSetsExpectedDefaultsInAbsenceOfTheseComponents() {
         ApplicationConfigurer configurer = new DefaultAxonApplication();
+        configurer.componentRegistry(cr -> cr.registerComponent(EventSink.class, c -> {
+            EventBus eventBus = SimpleEventBus.builder().build();
+            return (context, events) -> {
+                eventBus.publish(events);
+                return FutureUtils.emptyCompletedFuture();
+            };
+        }));
         configurer.componentRegistry(cr -> testSubject.enhance(cr));
         Configuration resultConfig = configurer.build();
 
