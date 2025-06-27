@@ -5,12 +5,12 @@ import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.faculty.write.createcourseplain.CreateCourse;
 import io.axoniq.demo.university.faculty.write.renamecourse.RenameCourse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.infra.FilesystemStyleComponentDescriptor;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,6 +25,7 @@ public class UniversityAxonApplication {
         var configuration = startApplication(configProps);
         printApplicationConfiguration(configuration);
         executeSampleCommands(configuration);
+        configuration.shutdown();
     }
 
     private static AxonConfiguration startApplication(ConfigurationProperties configProps) {
@@ -51,7 +52,7 @@ public class UniversityAxonApplication {
                 return axonServerConfig;
             }));
         } else {
-            configurer = configurer.registerEventStorageEngine(c -> new InMemoryEventStorageEngine());
+            configurer.componentRegistry(r -> r.disableEnhancer(ServerConnectorConfigurationEnhancer.class));
         }
         configurer = FacultyModuleConfiguration.configure(configurer);
         return configurer;
