@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector;
+package org.axonframework.serialization.json;
 
 import org.junit.jupiter.api.*;
 

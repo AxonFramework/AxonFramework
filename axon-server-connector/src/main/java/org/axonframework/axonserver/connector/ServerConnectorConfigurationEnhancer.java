@@ -24,6 +24,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.json.JacksonConverter;
 
 import javax.annotation.Nonnull;
 

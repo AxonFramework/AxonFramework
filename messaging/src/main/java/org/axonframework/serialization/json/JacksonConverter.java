@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector;
+package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
