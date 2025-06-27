@@ -7,6 +7,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
 import org.axonframework.modelling.annotation.InjectEntity;
 
 import java.util.List;
@@ -38,6 +39,10 @@ class ChangeCourseCapacityCommandHandler {
 
         private boolean created = false;
         private int capacity;
+
+        @EntityCreator
+        public State() {
+        }
 
         @EventSourcingHandler
         void evolve(CourseCreated event) {

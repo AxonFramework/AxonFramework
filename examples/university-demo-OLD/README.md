@@ -1,13 +1,42 @@
 # Axon Framework 5 - Getting Started Sample Application
-Axon version: 5.0.0-M1
+Axon version: 5.0.0-M2
 
 ## Getting Started Guide
 [Getting Started with Axon Framework 5](https://docs.axoniq.io/axon-framework-5-getting-started/) - there you will find a step-by-step introduction to the implementation showing how to move from Event Modeling to Vertical Slice Architecture (based on Dynamic Consistency Boundary) implementation.
 
 ## Event Store implementation
 
-Now only the in-memory implementation of the Event Store is supported, but this still allows you try out the new Command handling API. 
-The in-memory Event Store supports the [DCB (Dynamic Consistency Boundary) concept](https://www.youtube.com/watch?v=IgigmuHHchI).
+### InMemory
+
+The in-memory Event Store supports the [DCB (Dynamic Consistency Boundary) concept](https://www.youtube.com/watch?v=IgigmuHHchI), but it is not persistent, so it is not suitable for production use.
+It's good for testing and development purposes.
+
+### Axon Server (DCB support)
+
+#### Docker container
+
+To run the app with Axon Server, you need to have an instance of Axon Server running. You can run it using Docker:
+
+```bash
+docker compose up
+```
+
+#### Axon Server Context
+
+Then you need to open the Axon Server UI at [http://localhost:8024](http://localhost:8024) and create a new context named `university`.
+What is essential, you need also check the `DCB context (beta)` checkbox in the `General` settings tab.
+![AxonServer_DCBContext_Creation.png](docs/images/AxonServer_DCBContext_Creation.png)
+
+If you did not create the context, the command execution will fail with the following error:
+```
+org.axonframework.commandhandling.CommandExecutionException: Exception while handling command
+Caused by: java.util.concurrent.ExecutionException: io.grpc.StatusRuntimeException: UNAVAILABLE
+```
+
+#### The app configuration
+
+The application is configured to use Axon Server as the Event Store by default. 
+If you want to use the in-memory Event Store, you can change the configuration in the `application.properties`.
 
 # Domain: The Axon University
 

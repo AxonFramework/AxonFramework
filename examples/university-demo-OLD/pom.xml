@@ -10,7 +10,7 @@
 
     <properties>
         <assertj.version>3.27.3</assertj.version>
-        <axon.version>5.0.0-M1</axon.version>
+        <axon.version>5.0.0-M2</axon.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit.version>5.12.1</junit.version>
         <log4j.version>2.24.3</log4j.version>
@@ -36,6 +36,14 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
+            <version>${axon.version}</version>
+        </dependency>
+
+        <!-- Event Store Dependencies -->
+
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-server-connector</artifactId>
             <version>${axon.version}</version>
         </dependency>
 
@@ -100,6 +108,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <argLine>-Daxon.axonserver.suppressDownloadMessage=true</argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>

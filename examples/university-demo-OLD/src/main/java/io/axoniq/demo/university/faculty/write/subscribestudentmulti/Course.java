@@ -8,6 +8,7 @@ import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,10 @@ class Course {
     private CourseId id;
     private int capacity = 0;
     private final List<StudentId> studentsSubscribed = new ArrayList<>();
+
+    @EntityCreator
+    public Course() {
+    }
 
     @EventSourcingHandler
     void evolve(CourseCreated event) {

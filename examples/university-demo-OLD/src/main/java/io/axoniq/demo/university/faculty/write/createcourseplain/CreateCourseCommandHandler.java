@@ -15,6 +15,7 @@ import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 class CreateCourseCommandHandler implements StatefulCommandHandler {
 
@@ -28,18 +29,18 @@ class CreateCourseCommandHandler implements StatefulCommandHandler {
 
     @Override
     @Nonnull
-    public MessageStream.Single<? extends CommandResultMessage<?>> handle(
+    public MessageStream.Single<CommandResultMessage<?>> handle(
             @Nonnull CommandMessage<?> command,
             @Nonnull StateManager state,
             @Nonnull ProcessingContext context
     ) {
         var eventAppender = EventAppender.forContext(context, eventSink, messageTypeResolver);
         var payload = (CreateCourse) command.getPayload();
-        var decideFuture = state
+        CompletableFuture<CommandResultMessage<?>> decideFuture = state
                 .loadEntity(State.class, payload.courseId(), context)
                 .thenApply(entity -> decide(payload, entity))
                 .thenAccept(eventAppender::append)
-                .thenApply(r -> new GenericCommandResultMessage<>(messageTypeResolver.resolve(CommandResult.class),
+                .thenApply(r -> new GenericCommandResultMessage<>(messageTypeResolver.resolveOrThrow(CommandResult.class),
                                                                   new CommandResult(payload.courseId().toString())));
         return MessageStream.fromFuture(decideFuture);
     }
