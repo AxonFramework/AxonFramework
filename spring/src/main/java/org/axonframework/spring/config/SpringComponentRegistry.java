@@ -505,14 +505,14 @@ public class SpringComponentRegistry implements
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nullable String name) {
-            // Spring requires a non-null name.
-            // Hence, whenever we register an (Axon) component, we need to default the name to the Class name.
-            // Thus, if the name is null, we default the name to the Class#getName().
-            String beanName = name != null ? name : type.getName();
+            // Spring requires a non-null name, so we divert to the name-less method if name equals null.
+            if (name == null) {
+                return getOptionalComponent(type);
+            }
 
             Map<String, C> beansOfType = beanFactory.getBeansOfType(type);
-            if (beansOfType.containsKey(beanName)) {
-                return Optional.of(beansOfType.get(beanName));
+            if (beansOfType.containsKey(name)) {
+                return Optional.of(beansOfType.get(name));
             } else {
                 return Optional.empty();
             }
