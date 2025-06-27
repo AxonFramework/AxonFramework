@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.testsuite.administration.state.immutable;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
@@ -27,6 +28,7 @@ import org.axonframework.integrationtests.testsuite.administration.common.Person
 import org.axonframework.integrationtests.testsuite.administration.events.EmailAddressChanged;
 import org.axonframework.integrationtests.testsuite.administration.events.EmployeeCreated;
 import org.axonframework.integrationtests.testsuite.administration.events.TaskAssigned;
+import org.axonframework.serialization.Converter;
 
 import java.util.ArrayList;
 import java.util.List;

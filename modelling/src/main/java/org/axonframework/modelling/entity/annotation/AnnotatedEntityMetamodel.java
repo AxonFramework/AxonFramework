@@ -448,4 +448,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     public Class<E> entityType() {
         return entityType;
     }
+
+    public Converter converter() {
+        return converter;
+    }
 }

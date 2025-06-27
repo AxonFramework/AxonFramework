@@ -16,8 +16,10 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Module;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
@@ -28,8 +30,12 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Crea
 import org.axonframework.integrationtests.testsuite.administration.commands.GiveRaise;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
+import org.axonframework.test.server.AxonServerContainer;
+import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -51,20 +57,53 @@ public abstract class AbstractAdministrationTestSuite {
             new PersonIdentifier(PersonType.CUSTOMER, "shomer"),
             "homer@the-simpsons.io"
     );
+    private static final AxonServerContainer container = new AxonServerContainer()
+            .withAxonServerHostname("localhost")
+            .withDevMode(true);
 
     private CommandGateway commandGateway;
+    private AxonConfiguration startedConfiguration;
 
     abstract Module getModule();
 
+
+    @BeforeAll
+    static void beforeAll() {
+        container.start();
+    }
+
+    @AfterAll
+    static void afterAll() {
+        container.stop();
+    }
+
     @BeforeEach
-    void setUp() {
-        var configuration = EventSourcingConfigurer.create()
-                                                   .componentRegistry(cr -> cr.registerModule(getModule()))
-                                                   .componentRegistry(cr -> cr.disableEnhancer(
-                                                           ServerConnectorConfigurationEnhancer.class
-                                                   ))
-                                                   .start();
-        commandGateway = configuration.getComponent(CommandGateway.class);
+    void setUp() throws IOException {
+        AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
+        axonServerConfiguration.setServers(
+                container.getHost() + ":" + container.getGrpcPort()
+        );
+        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
+                                                           container.getHttpPort(),
+                                                           "default",
+                                                           AxonServerContainerUtils.DCB_CONTEXT);
+        LoggerFactory.getLogger(ServerConnectorConfigurationEnhancer.class)
+                      .info("Using Axon Server at http://localhost:{}", container.getHttpPort());
+        startedConfiguration = EventSourcingConfigurer.create()
+                                                      .componentRegistry(cr -> {
+                                                          cr.registerComponent(AxonServerConfiguration.class,
+                                                                               c -> axonServerConfiguration);
+                                                      })
+                                                      .componentRegistry(cr -> cr.registerModule(getModule()))
+                                                      .start();
+        commandGateway = startedConfiguration.getComponent(CommandGateway.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (startedConfiguration != null) {
+            startedConfiguration.shutdown();
+        }
     }
 
     @Test
