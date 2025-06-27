@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
 import org.junit.jupiter.api.*;
@@ -169,9 +170,15 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     }
 
     @Test
+    void identifierConstructorThrowsNullPointerExceptionForNullTypeReference() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> new Identifier<>((TypeReference<?>) null, "id"));
+    }
+
+    @Test
     void identifierConstructorThrowsNullPointerExceptionForNullType() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new Identifier<>(null, "id"));
+        assertThrows(NullPointerException.class, () -> new Identifier<>((Class<?>) null, "id"));
     }
 
     @Test

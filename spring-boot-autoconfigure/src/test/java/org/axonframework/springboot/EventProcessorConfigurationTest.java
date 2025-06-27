@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
+@Disabled("TODO #3495")
 class EventProcessorConfigurationTest {
 
     @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible

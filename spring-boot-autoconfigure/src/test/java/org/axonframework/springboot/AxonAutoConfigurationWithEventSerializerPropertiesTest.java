@@ -62,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.*;
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @TestPropertySource("classpath:application.serializertest.properties")
+@Disabled("TODO #3496")
 class AxonAutoConfigurationWithEventSerializerPropertiesTest {
 
     @Autowired

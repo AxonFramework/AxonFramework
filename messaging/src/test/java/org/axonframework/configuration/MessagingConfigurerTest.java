@@ -48,6 +48,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingConfigurer> {
 
+    @Override
+    public MessagingConfigurer createConfigurer() {
+        return testSubject == null ? MessagingConfigurer.create() : testSubject;
+    }
+
     @Test
     void defaultComponents() {
         Configuration result = testSubject.build();
@@ -167,11 +172,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                            .getComponent(TestComponent.class);
 
         assertEquals(tc, result);
-    }
-
-    @Override
-    public MessagingConfigurer createConfigurer() {
-        return MessagingConfigurer.create();
     }
 
     private static class TestComponent {
