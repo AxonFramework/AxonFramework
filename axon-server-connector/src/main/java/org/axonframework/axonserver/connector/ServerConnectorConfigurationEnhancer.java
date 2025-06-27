@@ -44,7 +44,7 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-        registry.registerIfNotPresent(Converter.class, c -> new TestConverter())
+        registry.registerIfNotPresent(Converter.class, c -> new JacksonConverter())
                 .registerIfNotPresent(AxonServerConfiguration.class, c -> new AxonServerConfiguration())
                 .registerIfNotPresent(connectionManagerDefinition())
                 .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity())
