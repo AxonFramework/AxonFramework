@@ -48,31 +48,39 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
 
     private final Class<E> entityType;
     private final AnnotatedHandlerInspector<E> inspector;
-    private Converter converter;
-    private MessageTypeResolver messageTypeResolver;
+    private final Converter converter;
+    private final MessageTypeResolver messageTypeResolver;
 
     /**
      * Initialize a new annotation-based {@link EntityEvolver}.
      *
-     * @param entityType The type of entity this instance will handle state changes for.
+     * @param entityType          The type of entity this instance will handle state changes for.
+     * @param converter           The converter to use for converting event payloads to the handler's expected type.
+     * @param messageTypeResolver The resolver to use for resolving the event message type.
      */
-    public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType) {
+    public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType,
+                                                  @Nonnull Converter converter,
+                                                  @Nonnull MessageTypeResolver messageTypeResolver) {
         this(entityType,
              AnnotatedHandlerInspector.inspectType(entityType,
                                                    ClasspathParameterResolverFactory.forClass(entityType),
-                                                   ClasspathHandlerDefinition.forClass(entityType)));
+                                                   ClasspathHandlerDefinition.forClass(entityType)),
+             converter,
+             messageTypeResolver);
     }
 
     /**
      * Initialize a new annotation-based {@link EntityEvolver}.
      *
-     * @param entityType The type of entity this instance will handle state changes for.
-     * @param inspector  The inspector to use to find the annotated handlers on the entity.
+     * @param entityType          The type of entity this instance will handle state changes for.
+     * @param inspector           The inspector to use to find the annotated handlers on the entity.
+     * @param converter           The converter to use for converting event payloads to the handler's expected type.
+     * @param messageTypeResolver The resolver to use for resolving the event message type.
      */
     public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType,
                                                   @Nonnull AnnotatedHandlerInspector<E> inspector,
-                                                  Converter converter,
-                                                  MessageTypeResolver messageTypeResolver
+                                                  @Nonnull Converter converter,
+                                                  @Nonnull MessageTypeResolver messageTypeResolver
     ) {
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.inspector = requireNonNull(inspector, "The Annotated Handler Inspector must not be null.");
@@ -87,24 +95,27 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
         try {
             var listenerType = entity.getClass();
 
+            var eventTypeName = event.type().name();
             var handlers = inspector.getHandlers(listenerType)
-                                    .filter(h -> messageTypeResolver.resolveOrThrow(h.payloadType()).name()
-                                                                    .equals(event.type().name()))
+                                    .filter(h -> messageTypeResolver.resolveOrThrow(h.payloadType())
+                                                                    .name().equals(eventTypeName))
                                     .toList();
 
-            E currentEntityState = entity;
+            E evolvedEntity = entity;
             for (var handler : handlers) {
                 var convertedEvent = event.withConvertedPayload(p -> converter.convert(p, handler.payloadType()));
                 if (!handler.canHandle(convertedEvent, context)) {
                     continue;
                 }
                 var interceptor = inspector.chainedInterceptor(listenerType);
-                var result = interceptor.handle(convertedEvent, context, entity, handler);
-                currentEntityState = entityFromStreamResultOrUpdatedExisting(result.first().asCompletableFuture()
-                                                                                   .join(), entity);
+                var result = interceptor.handle(convertedEvent, context, entity, handler)
+                                        .first()
+                                        .asCompletableFuture()
+                                        .join();
+                evolvedEntity = entityFromStreamResultOrUpdatedExisting(result, entity);
             }
 
-            return currentEntityState;
+            return evolvedEntity;
         } catch (Exception e) {
             throw new StateEvolvingException(
                     "Failed to apply event [" + event.type() + "] in order to evolve [" + entity.getClass() + "] state",
