@@ -23,8 +23,6 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.updates.configuration.UsagePropertyProvider;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static org.axonframework.configuration.ComponentDefinition.ofType;
 
 /**
@@ -38,40 +36,31 @@ import static org.axonframework.configuration.ComponentDefinition.ofType;
 @Internal
 public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer {
 
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
-
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
-        if (initialized.compareAndSet(false, true)) {
-            componentRegistry
-                    .registerIfNotPresent(
-                            ofType(UsagePropertyProvider.class)
-                                    .withBuilder(c -> UsagePropertyProvider.create())
-                    )
-                    .registerIfNotPresent(
-                            ofType(UpdateCheckerHttpClient.class)
-                                    .withBuilder(c -> {
-                                        UsagePropertyProvider propertyProvider = c.getComponent(UsagePropertyProvider.class);
-                                        return new UpdateCheckerHttpClient(propertyProvider);
-                                    }))
-                    .registerIfNotPresent(
-                            ofType(UpdateCheckerReporter.class)
-                                    .withBuilder(c -> new LoggingUpdateCheckerReporter())
-                    )
-                    .registerIfNotPresent(
-                            ofType(UpdateChecker.class)
-                                    .withBuilder(c -> new UpdateChecker(
-                                            c.getComponent(UpdateCheckerHttpClient.class),
-                                            c.getComponent(UpdateCheckerReporter.class)
-                                    ))
-                                    .onStart(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::start)
-                                    .onShutdown(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::stop)
-                    );
-        }
+        componentRegistry.registerIfNotPresent(ofType(UsagePropertyProvider.class)
+                                                       .withBuilder(c -> UsagePropertyProvider.create()))
+                         .registerIfNotPresent(ofType(UpdateCheckerHttpClient.class)
+                                                       .withBuilder(c -> {
+                                                           UsagePropertyProvider propertyProvider = c.getComponent(
+                                                                   UsagePropertyProvider.class);
+                                                           return new UpdateCheckerHttpClient(propertyProvider);
+                                                       }))
+                         .registerIfNotPresent(ofType(UpdateCheckerReporter.class)
+                                                       .withBuilder(c -> new LoggingUpdateCheckerReporter())
+                         )
+                         .registerIfNotPresent(ofType(UpdateChecker.class)
+                                                       .withBuilder(c -> new UpdateChecker(
+                                                               c.getComponent(UpdateCheckerHttpClient.class),
+                                                               c.getComponent(UpdateCheckerReporter.class)
+                                                       ))
+                                                       .onStart(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::start)
+                                                       .onShutdown(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::stop));
     }
 
     @Override
     public int order() {
-        return Integer.MAX_VALUE; // Ensure this runs last so users can override components such as the UpdateCheckerReporter
+        // Ensure this runs last so users can override components such as the UpdateCheckerReporter
+        return Integer.MAX_VALUE;
     }
 }
