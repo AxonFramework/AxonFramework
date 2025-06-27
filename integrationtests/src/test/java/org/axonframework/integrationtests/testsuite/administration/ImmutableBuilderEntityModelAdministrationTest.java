@@ -38,6 +38,7 @@ import org.axonframework.integrationtests.testsuite.administration.state.immutab
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutablePerson;
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableSalaryInformation;
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableTask;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
@@ -47,6 +48,7 @@ import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
+import org.axonframework.serialization.PassThroughConverter;
 
 import static java.lang.String.format;
 
@@ -62,7 +64,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
         // Task is the list-based child-metamodel of Employee
         EntityMetamodel<ImmutableTask> taskMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(ImmutableTask.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableTask.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableTask.class, new PassThroughConverter(), new ClassBasedMessageTypeResolver()))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -75,7 +77,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
         // SalaryInformation is the singular child-metamodel of Employee
         EntityMetamodel<ImmutableSalaryInformation> salaryInformationMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(ImmutableSalaryInformation.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableSalaryInformation.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableSalaryInformation.class, new PassThroughConverter(), new ClassBasedMessageTypeResolver()))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -88,7 +90,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
         // Employee is a concrete entity type
         EntityMetamodel<ImmutableEmployee> employeeMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(ImmutableEmployee.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableEmployee.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableEmployee.class, new PassThroughConverter(), new ClassBasedMessageTypeResolver()))
                 .creationalCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
                                           ((command, context) -> {
                                               EventAppender eventAppender = EventAppender.forContext(context,
@@ -141,7 +143,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
         // Customer is a concrete entity type
         EntityMetamodel<ImmutableCustomer> customerMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(ImmutableCustomer.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableCustomer.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableCustomer.class, new PassThroughConverter(), new ClassBasedMessageTypeResolver()))
                 .creationalCommandHandler(typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
                                           ((command, context) -> {
                                               EventAppender eventAppender = EventAppender.forContext(context,
@@ -156,7 +158,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .forPolymorphicEntityType(ImmutablePerson.class)
                 .addConcreteType(employeeMetamodel)
                 .addConcreteType(customerMetamodel)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutablePerson.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutablePerson.class, new PassThroughConverter(), new ClassBasedMessageTypeResolver()))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
