@@ -4,7 +4,7 @@
 = Introduction
 
 Welcome to the Axon Framework 5 Getting Started Guide!
-This tutorial is based on the version `5.0.0-M1`, the first Milestone release of Axon Framework 5.
+This tutorial is based on the version `5.0.0-M2`, the second Milestone release of Axon Framework 5.
 While this version is not yet production-ready or feature-complete, it does show a lot of new interesting features coming in Axon Framework 5.
 
 Building a new application from scratch can be daunting, especially when learning a new framework.
@@ -31,6 +31,7 @@ this tutorial will help you understand these new concepts through practical exam
 == About this tutorial
 This tutorial will guide you through creating a "Axon University Registration Application" using Axon Framework 5.
 We will implement features using Vertical Slice Architecture using "Test First" approach.
+You will also see the DCB in action along with persisting the events in the Axon Server 2025.
 
 You can either:
 

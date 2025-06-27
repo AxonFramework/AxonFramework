@@ -132,7 +132,8 @@ class CreateCourseTest {
 
     @BeforeEach // <1>
     void beforeEach() {
-        fixture = AxonTestFixture.with(UniversityAxonApplication.configurer()); // <2>
+        var application = new UniversityAxonApplication();
+        fixture = AxonTestFixture.with(application.configurer()); // <2>
     }
 
 }
@@ -140,7 +141,7 @@ class CreateCourseTest {
 
 <.> The `@BeforeEach` marks this method to be called before any test is executed in our test class.
 Adding the code to create the `AxonTestFixture` here will ensure that we have a fresh fixture for each test case, and thus we make our different tests independent.
-<.> This line creates a new `AxonTestFixture` based on our configurer. The configuration will be build and started from configurer by the fixture itself.
+<.> This line creates a new `AxonTestFixture` based on our configurer. The configuration will be built and started from the configurer by the fixture itself.
 
 === Testing the command
 
@@ -169,7 +170,8 @@ import java.util.UUID;class CreateCourseTest {
 
     @BeforeEach
     void beforeEach() {
-        fixture = AxonTestFixture.with(UniversityAxonApplication.configurer());
+        var application = new UniversityAxonApplication();
+        fixture = AxonTestFixture.with(application.configurer());
     }
 
     @Test
