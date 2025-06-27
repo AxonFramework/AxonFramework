@@ -83,12 +83,6 @@
             <artifactId>gson</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.axoniq.console</groupId>
-            <artifactId>console-framework-client-spring-boot-starter</artifactId>
-            <version>1.9.2</version>
-            <scope>test</scope>
-        </dependency>
 
         <!-- Query Handling -->
         <dependency>
