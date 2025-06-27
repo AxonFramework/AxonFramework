@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link DefaultComponentRegistry}.
- *asdfasdf
+ *
  * @author Allard Buijze
  */
 class DefaultComponentRegistryTest {
