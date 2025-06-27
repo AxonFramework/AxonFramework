@@ -31,7 +31,7 @@ import java.util.Objects;
  * @since 5.0.0
  */
 @Internal
-public class HierachicalUsagePropertyProvider implements UsagePropertyProvider {
+public class HierarchicalUsagePropertyProvider implements UsagePropertyProvider {
 
     private final List<UsagePropertyProvider> providers;
 
@@ -42,7 +42,7 @@ public class HierachicalUsagePropertyProvider implements UsagePropertyProvider {
      *
      * @param providers The list of {@link UsagePropertyProvider} instances to combine.
      */
-    public HierachicalUsagePropertyProvider(@Nonnull List<UsagePropertyProvider> providers) {
+    public HierarchicalUsagePropertyProvider(@Nonnull List<UsagePropertyProvider> providers) {
         Objects.requireNonNull(providers, "The providers may not be null.");
         this.providers = providers.stream()
                                   .sorted(Comparator.comparingInt(UsagePropertyProvider::priority).reversed())

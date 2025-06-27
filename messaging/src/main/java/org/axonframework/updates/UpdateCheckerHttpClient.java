@@ -16,6 +16,7 @@
 
 package org.axonframework.updates;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.updates.api.UpdateCheckRequest;
 import org.axonframework.updates.api.UpdateCheckResponse;
@@ -29,6 +30,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 
 
@@ -53,8 +55,8 @@ public class UpdateCheckerHttpClient {
      *
      * @param userProperties The {@link UsagePropertyProvider} to use for retrieving the URL and other properties.
      */
-    public UpdateCheckerHttpClient(UsagePropertyProvider userProperties) {
-        this.userProperties = userProperties;
+    public UpdateCheckerHttpClient(@Nonnull UsagePropertyProvider userProperties) {
+        this.userProperties = Objects.requireNonNull(userProperties, "The userProperties must not be null.");
         this.client = HttpClient.newBuilder()
                                 .followRedirects(HttpClient.Redirect.ALWAYS)
                                 .build();
@@ -69,7 +71,7 @@ public class UpdateCheckerHttpClient {
      * @return An {@link Optional} containing the {@link UpdateCheckResponse} if the request was successful, or empty if it
      * failed.
      */
-    public Optional<UpdateCheckResponse> sendRequest(UpdateCheckRequest updateCheckRequest, boolean firstRequest) {
+    public Optional<UpdateCheckResponse> sendRequest(@Nonnull UpdateCheckRequest updateCheckRequest, boolean firstRequest) {
         String url = userProperties.getUrl() + "?" + updateCheckRequest.toQueryString();
 
         try {
@@ -83,7 +85,8 @@ public class UpdateCheckerHttpClient {
                     .headers("X-Instance-Id", updateCheckRequest.instanceId())
                     .headers("X-Uptime", String.valueOf(ManagementFactory.getRuntimeMXBean().getUptime()))
                     .headers("X-First-Run", firstRequest ? "true" : "false")
-                    .GET().build();
+                    .GET()
+                    .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {

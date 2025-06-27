@@ -63,7 +63,7 @@ public interface UsagePropertyProvider {
      * @return A new {@code UsagePropertyProvider} instance.
      */
     static UsagePropertyProvider create() {
-        return new HierachicalUsagePropertyProvider(
+        return new HierarchicalUsagePropertyProvider(
                 List.of(
                         new CommandLineUsagePropertyProvider(),
                         new EnvironmentVariableUsagePropertyProvider(),

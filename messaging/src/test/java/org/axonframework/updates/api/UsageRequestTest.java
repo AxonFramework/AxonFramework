@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class UpdateCheckRequestTest {
 
     @Test
-    void testToQueryString() {
+    void toQueryString() {
         UpdateCheckRequest request = new UpdateCheckRequest(
                 "machine-1234",
                 "instance-5678",
@@ -53,7 +53,7 @@ class UpdateCheckRequestTest {
     }
 
     @Test
-    void testToUserAgent() {
+    void toUserAgent() {
         UpdateCheckRequest request = new UpdateCheckRequest(
                 "machine-1234",
                 "instance-5678",

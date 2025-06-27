@@ -16,6 +16,7 @@
 
 package org.axonframework.updates.api;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 
 /**
@@ -29,9 +30,9 @@ import org.axonframework.common.annotation.Internal;
  */
 @Internal
 public record Artifact(
-        String groupId,
-        String artifactId,
-        String version
+        @Nonnull String groupId,
+        @Nonnull String artifactId,
+        @Nonnull String version
 ) {
 
 }

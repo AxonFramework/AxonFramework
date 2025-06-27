@@ -39,7 +39,7 @@ public class LoggingUpdateCheckerReporter implements UpdateCheckerReporter {
     private static Logger logger = LoggerFactory.getLogger(LoggingUpdateCheckerReporter.class);
 
     @Override
-    public void report(UpdateCheckRequest request, UpdateCheckResponse updateCheckResponse) {
+    public void report(@Nonnull UpdateCheckRequest request, @Nonnull UpdateCheckResponse updateCheckResponse) {
 
         boolean hasUpgrades = !updateCheckResponse.upgrades().isEmpty();
         boolean hasVulnerabilities = !updateCheckResponse.vulnerabilities().isEmpty();

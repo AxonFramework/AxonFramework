@@ -29,6 +29,7 @@ import org.axonframework.updates.detection.TestEnvironmentDetector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -72,10 +73,10 @@ public class UpdateChecker implements Runnable {
      * @param client   The HTTP client used to send requests to the telemetry endpoint.
      * @param reporter The reporter that will handle the response from the telemetry endpoint.
      */
-    public UpdateChecker(UpdateCheckerHttpClient client, UpdateCheckerReporter reporter) {
-        this.client = client;
+    public UpdateChecker(@Nonnull UpdateCheckerHttpClient client, @Nonnull UpdateCheckerReporter reporter) {
+        this.client = Objects.requireNonNull(client, "The client must not be null.");
         this.machineId = new MachineId();
-        this.reporter = reporter;
+        this.reporter = Objects.requireNonNull(reporter, "The reporter must not be null.");
     }
 
     /**

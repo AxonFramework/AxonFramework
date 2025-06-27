@@ -16,6 +16,7 @@
 
 package org.axonframework.updates;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.updates.api.UpdateCheckRequest;
 import org.axonframework.updates.api.UpdateCheckResponse;
 
@@ -34,5 +35,5 @@ public interface UpdateCheckerReporter {
      * @param request  The request that was made to the update checker.
      * @param response The response to report.
      */
-    void report(UpdateCheckRequest request, UpdateCheckResponse response);
+    void report(@Nonnull UpdateCheckRequest request, @Nonnull UpdateCheckResponse response);
 }

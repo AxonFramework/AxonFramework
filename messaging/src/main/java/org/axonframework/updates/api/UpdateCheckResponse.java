@@ -37,9 +37,9 @@ import java.util.List;
  */
 @Internal
 public record UpdateCheckResponse(
-        Integer checkInterval,
-        List<ArtifactAvailableUpgrade> upgrades,
-        List<DetectedVulnerability> vulnerabilities
+        int checkInterval,
+        @Nonnull List<ArtifactAvailableUpgrade> upgrades,
+        @Nonnull List<DetectedVulnerability> vulnerabilities
 ) {
 
     /**
@@ -68,7 +68,7 @@ public record UpdateCheckResponse(
         List<ArtifactAvailableUpgrade> upgrades = new ArrayList<>();
         List<DetectedVulnerability> vulnerabilities = new ArrayList<>();
         if (body == null || body.isBlank()) {
-            return new UpdateCheckResponse(null, List.of(), List.of());
+            return new UpdateCheckResponse(checkInterval, List.of(), List.of());
         }
         String[] lines = body.split("\\r?\\n");
         for (String line : lines) {

@@ -33,7 +33,7 @@ class AxonVersionDetectorTest {
      * META-INF/maven/org.axonframework/axon-modelling/pom.properties.
      */
     @Test
-    void testDetectsFilePomProperties() {
+    void detectsFilePomProperties() {
         var versions = AxonVersionDetector.safeDetectAxonModules();
         assertFalse(versions.isEmpty(), "Expected at least one Axon module version to be detected");
         assertTrue(versions.stream().anyMatch(v -> v.groupId().equals("org.axonframework") &&

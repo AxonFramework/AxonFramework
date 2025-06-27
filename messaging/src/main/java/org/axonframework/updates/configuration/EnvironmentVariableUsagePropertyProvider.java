@@ -16,7 +16,10 @@
 
 package org.axonframework.updates.configuration;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
+
+import java.util.Objects;
 
 /**
  * A {@link UsagePropertyProvider} implementation that reads the usage properties from the
@@ -55,8 +58,8 @@ public class EnvironmentVariableUsagePropertyProvider implements UsagePropertyPr
      *
      * @param envSupplier The supplier to use for retrieving environment variables.
      */
-    public EnvironmentVariableUsagePropertyProvider(EnvironmentVariableSupplier envSupplier) {
-        this.envSupplier = envSupplier;
+    public EnvironmentVariableUsagePropertyProvider(@Nonnull EnvironmentVariableSupplier envSupplier) {
+        this.envSupplier = Objects.requireNonNull(envSupplier, "The envSupplier must not be null.");
     }
 
     @Override

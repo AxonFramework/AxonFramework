@@ -21,13 +21,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class HierachicalUsagePropertyProviderTest {
+class HierarchicalUsagePropertyProviderTest {
     @Test
     void getDisabled_returnsFirstNonNullByPriority() {
         UsagePropertyProvider low = new DummyProvider(null, null, 1);
         UsagePropertyProvider mid = new DummyProvider(false, null, 5);
         UsagePropertyProvider high = new DummyProvider(true, null, 10);
-        HierachicalUsagePropertyProvider provider = new HierachicalUsagePropertyProvider(List.of(low, mid, high));
+        HierarchicalUsagePropertyProvider provider = new HierarchicalUsagePropertyProvider(List.of(low, mid, high));
         // high has highest priority and non-null value
         assertTrue(provider.getDisabled());
     }
@@ -37,7 +37,7 @@ class HierachicalUsagePropertyProviderTest {
         UsagePropertyProvider low = new DummyProvider(null, null, 1);
         UsagePropertyProvider high = new DummyProvider(null, null, 10);
         UsagePropertyProvider mid = new DummyProvider(false, null, 5);
-        HierachicalUsagePropertyProvider provider = new HierachicalUsagePropertyProvider(List.of(low, mid, high));
+        HierarchicalUsagePropertyProvider provider = new HierarchicalUsagePropertyProvider(List.of(low, mid, high));
         // mid is the first non-null
         assertFalse(provider.getDisabled());
     }
@@ -46,7 +46,7 @@ class HierachicalUsagePropertyProviderTest {
     void getDisabled_returnsFalseIfAllNull() {
         UsagePropertyProvider low = new DummyProvider(null, null, 1);
         UsagePropertyProvider high = new DummyProvider(null, null, 10);
-        HierachicalUsagePropertyProvider provider = new HierachicalUsagePropertyProvider(List.of(low, high));
+        HierarchicalUsagePropertyProvider provider = new HierarchicalUsagePropertyProvider(List.of(low, high));
         assertFalse(provider.getDisabled());
     }
 
@@ -55,7 +55,7 @@ class HierachicalUsagePropertyProviderTest {
         UsagePropertyProvider low = new DummyProvider(null, null, 1);
         UsagePropertyProvider mid = new DummyProvider(null, "http://mid", 5);
         UsagePropertyProvider high = new DummyProvider(null, "http://high", 10);
-        HierachicalUsagePropertyProvider provider = new HierachicalUsagePropertyProvider(List.of(low, mid, high));
+        HierarchicalUsagePropertyProvider provider = new HierarchicalUsagePropertyProvider(List.of(low, mid, high));
         assertEquals("http://high", provider.getUrl());
     }
 
@@ -64,7 +64,7 @@ class HierachicalUsagePropertyProviderTest {
         UsagePropertyProvider low = new DummyProvider(null, null, 1);
         UsagePropertyProvider high = new DummyProvider(null, null, 10);
         UsagePropertyProvider mid = new DummyProvider(null, "http://mid", 5);
-        HierachicalUsagePropertyProvider provider = new HierachicalUsagePropertyProvider(List.of(low, mid, high));
+        HierarchicalUsagePropertyProvider provider = new HierarchicalUsagePropertyProvider(List.of(low, mid, high));
         assertEquals("http://mid", provider.getUrl());
     }
 
@@ -72,7 +72,7 @@ class HierachicalUsagePropertyProviderTest {
     void getUrl_returnsEmptyIfAllNull() {
         UsagePropertyProvider low = new DummyProvider(null, null, 1);
         UsagePropertyProvider high = new DummyProvider(null, null, 10);
-        HierachicalUsagePropertyProvider provider = new HierachicalUsagePropertyProvider(List.of(low, high));
+        HierarchicalUsagePropertyProvider provider = new HierarchicalUsagePropertyProvider(List.of(low, high));
         assertEquals("", provider.getUrl());
     }
 }

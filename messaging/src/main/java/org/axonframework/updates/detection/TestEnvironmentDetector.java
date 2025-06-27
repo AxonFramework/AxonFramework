@@ -39,7 +39,7 @@ public class TestEnvironmentDetector {
     /**
      * Checks whether the current environment is a test environment.
      *
-     * @return {@code true} if the current environment is a test environment, {@code false} otherwise
+     * @return {@code true} if the current environment is a test environment, {@code false} otherwise.
      */
     public static boolean isTestEnvironment() {
         if(System.getProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT, "false").equals("true")) {
