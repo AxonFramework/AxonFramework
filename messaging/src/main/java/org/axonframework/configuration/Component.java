@@ -18,6 +18,7 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.Objects;
@@ -90,12 +91,24 @@ public interface Component<C> extends DescribableComponent {
     /**
      * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
      *
-     * @param type The type of the component this object identifies, typically an interface.
+     * @param type The type reference of the component this object identifies.
      * @param name The name of the component this object identifies, potentially {@code null} when unimportant. Will
      *             throw an {@link IllegalArgumentException} for an empty {@code name}.
      * @param <C>  The type of the component this object identifies, typically an interface.
      */
-    record Identifier<C>(@Nonnull Class<C> type, @Nullable String name) {
+    record Identifier<C>(@Nonnull TypeReference<C> type, @Nullable String name) {
+
+        /**
+         * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
+         *
+         * @param type The type of the component this object identifies, typically an interface.
+         * @param name The name of the component this object identifies, potentially {@code null} when unimportant. Will
+         *             throw an {@link IllegalArgumentException} for an empty {@code name}.
+         */
+        public Identifier(@Nonnull Class<C> type,
+                          @Nullable String name) {
+            this(TypeReference.fromType(type), name);
+        }
 
         /**
          * Compact constructor asserting whether the {@code type} and {@code name} are non-null and not empty.
@@ -120,12 +133,36 @@ public interface Component<C> extends DescribableComponent {
          * {@link #name()} is identical, {@code false} otherwise.
          */
         public boolean matches(@Nonnull Identifier<?> other) {
-            return type.isAssignableFrom(other.type()) && Objects.equals(other.name(), name);
+            return matchesType(other) && Objects.equals(other.name(), name);
+        }
+
+        /**
+         * Validate whether the given {@code other Identifier} type matches with {@code this Identifier} type, by
+         * checking if the {@link #type()}  is {@link Class#isAssignableFrom(Class)} to give {@code other} type.
+         *
+         * @param other The other identifier to compare with this identifier.
+         * @return {@code true} if the {@link #type()} is assignable from the {@code other} type, {@code false}
+         * otherwise.
+         */
+        public boolean matchesType(@Nonnull Identifier<?> other) {
+            return type.getTypeAsClass().isAssignableFrom(other.type().getTypeAsClass());
+        }
+
+        /**
+         * Returns the {@link #type()} as a {@link Class}.
+         * <p>
+         * This means any generics present on the {@code type} are lost. When those are needed, be sure to use
+         * {@link #type()} instead.
+         *
+         * @return The {@link #type()} as a {@link Class}.
+         */
+        public Class<C> typeAsClass() {
+            return this.type.getTypeAsClass();
         }
 
         @Override
         public String toString() {
-            return type.getName() + ":" + name;
+            return type.getTypeAsClass().getName() + ":" + name;
         }
     }
 }

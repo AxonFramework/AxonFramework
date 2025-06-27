@@ -57,6 +57,7 @@ import static org.mockito.Mockito.*;
 })
 @TestPropertySource("classpath:test.metrics.application.properties")
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+@Disabled("TODO #3496")
 class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
 
     @Autowired

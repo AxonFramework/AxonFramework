@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link DefaultComponentRegistry}.
- *
+ *asdfasdf
  * @author Allard Buijze
  */
 class DefaultComponentRegistryTest {
@@ -283,6 +283,7 @@ class DefaultComponentRegistryTest {
             TestModule testModule = new TestModule("module");
             //noinspection unchecked
             ComponentFactory<String> testFactory = mock(ComponentFactory.class);
+            when(testFactory.forType()).thenReturn(String.class);
 
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                        .registerEnhancer(testEnhancer)

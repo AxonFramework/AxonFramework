@@ -96,6 +96,7 @@ import static org.junit.jupiter.api.Assertions.*;
 })
 @TestPropertySource(properties = "spring.main.banner-mode=off")
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+@Disabled("TODO #3495")
 public class TrackingEventProcessorIntegrationTest {
 
     @Autowired

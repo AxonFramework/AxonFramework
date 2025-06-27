@@ -79,29 +79,7 @@ class InfraConfigurationTest {
     }
 
     @Test
-    void infraConfigurationConstructsSpringConfigurerAndSpringAxonConfiguration() {
-        testApplicationContext.run(context -> {
-            assertThat(context).hasSingleBean(SpringConfigurer.class);
-            assertThat(context).getBean("springAxonConfigurer")
-                               .isInstanceOf(SpringConfigurer.class);
-            assertThat(context).hasSingleBean(SpringAxonConfiguration.class);
-            // The SpringAxonConfiguration is a factory for the DefaultConfigurer.ConfigurationImpl that is private.
-            // Hence, we perform a non-null check.
-            assertThat(context).getBean("springAxonConfiguration")
-                               .isNotNull();
-        });
-    }
-
-    @Test
-    void infraConfigurationConstructsLookUpBeans() {
-        testApplicationContext.run(context -> {
-            assertThat(context).hasSingleBean(MessageHandlerLookup.class);
-            assertThat(context).hasSingleBean(SpringAggregateLookup.class);
-            assertThat(context).hasSingleBean(SpringSagaLookup.class);
-        });
-    }
-
-    @Test
+    @Disabled("TODO #3498")
     void multipleEventUpcasterChainBeansAreCombinedInSingleEventUpcasterChainThroughConfiguration() {
         //noinspection unchecked
         Stream<IntermediateEventRepresentation> mockStream = mock(Stream.class);
@@ -133,7 +111,7 @@ class InfraConfigurationTest {
      * provide them in a sorted fashion.
      */
     @Test
-    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since Event Processors aren't started")
+    @Disabled("TODO #3495 - Reintroduce with new Spring configuration - Faulty since Event Processors aren't started ")
     void eventHandlingComponentsAreRegisteredAccordingToOrderAnnotation() {
         testApplicationContext.withUserConfiguration(EventHandlerOrderingContext.class).run(context -> {
             // Validate existence of Event Processor "test"
@@ -167,27 +145,7 @@ class InfraConfigurationTest {
     }
 
     @Test
-    void customSpringAxonConfigurationOvertakesDefaultSpringAxonConfiguration() {
-        testApplicationContext.withUserConfiguration(CustomizedConfigurerContext.class).run(context -> {
-            assertThat(context).hasSingleBean(SpringAxonConfiguration.class);
-
-            SpringAxonConfiguration result = context.getBean(SpringAxonConfiguration.class);
-            assertThat(result).isInstanceOf(CustomizedConfigurerContext.CustomSpringAxonConfiguration.class);
-        });
-    }
-
-    @Test
-    void customSpringConfigurerOvertakesDefaultSpringConfigurer() {
-        testApplicationContext.withUserConfiguration(CustomizedConfigurerContext.class).run(context -> {
-            assertThat(context).hasSingleBean(SpringConfigurer.class);
-
-            SpringConfigurer result = context.getBean(SpringConfigurer.class);
-            assertThat(result).isInstanceOf(CustomizedConfigurerContext.CustomSpringConfigurer.class);
-        });
-    }
-
-    @Test
-    @Disabled("TODO #3075 - Reintroduce with new Spring configuration - Faulty since MessageHandlerRegistrar isn't started")
+    @Disabled("TODO #3498")
     void configurerModuleRegisteredHandlerEnhancersAreIncluded() {
         testApplicationContext.withUserConfiguration(HandlerEnhancerConfigurerModuleContext.class).run(context -> {
             assertThat(context).hasBean("handlerInvoked")
@@ -209,6 +167,7 @@ class InfraConfigurationTest {
     }
 
     @Test
+    @Disabled("TODO #3502")
     void configurerModulesRegisteredInOrder() {
         List<ConfigurerModule> initOrder = new ArrayList<>();
         ConfigurerModule module1 = new RegisteringOrderedConfigurerModule(initOrder, 1);

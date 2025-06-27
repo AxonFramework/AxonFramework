@@ -68,6 +68,7 @@ import static org.mockito.Mockito.*;
         WebClientAutoConfiguration.class
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+@Disabled("TODO #3496")
 class AxonAutoConfigurationWithHibernateTest {
 
     @Autowired

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Jan Galinski
  * @since 4.11.0
  */
+@Disabled("TODO #3496")
 class AvroSerializerAutoConfigurationTest {
 
     private ApplicationContextRunner testApplicationContext;

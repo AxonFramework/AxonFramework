@@ -62,6 +62,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private OverridePolicy overridePolicy = OverridePolicy.WARN;
     private boolean enhancerScanning = true;
     private final List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new ArrayList<>();
+    private final List<Class<? extends ConfigurationEnhancer>> invokedEnhancers = new ArrayList<>();
+
+    private Optional<Configuration> parentConfig = Optional.empty();
 
     @Override
     public <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> definition) {
@@ -74,8 +77,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         Component<? extends C> component = creator.createComponent();
         Identifier<? extends C> id = component.identifier();
         logger.debug("Registering component [{}] of type [{}].", id.name(), id.type());
-        if (overridePolicy == OverridePolicy.REJECT && hasComponent(id.type(), id.name())) {
-            throw new ComponentOverrideException(id.type(), id.name());
+        if (overridePolicy == OverridePolicy.REJECT && hasComponent(id.typeAsClass(), id.name())) {
+            throw new ComponentOverrideException(id.typeAsClass(), id.name());
         }
 
         Component<? extends C> previous = components.put(component);
@@ -102,8 +105,17 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public boolean hasComponent(@Nonnull Class<?> type,
-                                @Nullable String name) {
-        return components.contains(new Identifier<>(type, name));
+                                @Nullable String name,
+                                @Nonnull SearchScope searchScope) {
+        return switch (searchScope) {
+            case ALL -> components.contains(new Identifier<>(type, name)) || parentHasComponent(type, name);
+            case CURRENT -> components.contains(new Identifier<>(type, name));
+            case ANCESTORS -> parentHasComponent(type, name);
+        };
+    }
+
+    private Boolean parentHasComponent(Class<?> type, String name) {
+        return parentConfig.map(parent -> parent.hasComponent(type, name)).orElse(false);
     }
 
     @Override
@@ -167,6 +179,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         if (initialized.getAndSet(true)) {
             throw new IllegalStateException("Component registry has already been initialized.");
         }
+        this.parentConfig = Optional.ofNullable(optionalParent);
         if (enhancerScanning) {
             scanForConfigurationEnhancers();
         }
@@ -195,13 +208,26 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     /**
      * Invoke all the {@link #registerEnhancer(ConfigurationEnhancer) registered}
      * {@link ConfigurationEnhancer enhancers} on this {@code ComponentRegistry} implementation in their
-     * {@link ConfigurationEnhancer#order()}. This will ensure all sensible default components and decorators are in
-     * place from these enhancers.
+     * {@link ConfigurationEnhancer#order()}.
+     * <p>
+     * This will ensure all sensible default components and decorators are in place from these enhancers.
+     * <p>
+     * The disabled enhancers filter is invoked in a for-loop instead of as a Stream operation, as a
+     * {@code ConfigurationEnhancer} can add more enhancers that should be disabled. By making the filter part of the
+     * stream operation, that update is lost.
      */
     private void invokeEnhancers() {
-        enhancers.stream()
-                 .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
-                 .forEach(enhancer -> enhancer.enhance(this));
+        List<ConfigurationEnhancer>
+                distinctAndOrderedEnhancers = enhancers.stream()
+                                                       .distinct()
+                                                       .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
+                                                       .toList();
+        for (ConfigurationEnhancer enhancer : distinctAndOrderedEnhancers) {
+            if (!disabledEnhancers.contains(enhancer.getClass())) {
+                enhancer.enhance(this);
+                invokedEnhancers.add(enhancer.getClass());
+            }
+        }
     }
 
     /**
@@ -246,6 +272,12 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public DefaultComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass) {
+        if (invokedEnhancers.contains(enhancerClass)) {
+            logger.warn("Disabling Configuration Enhancer [{}] won't take effect as it has already been invoked. "
+                                + "We recommend to invoke disabling of this enhancer before it takes effect.",
+                        enhancerClass.getSimpleName());
+            return this;
+        }
         this.disabledEnhancers.add(enhancerClass);
         return this;
     }
@@ -335,6 +367,11 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         }
 
         private <C> Optional<Component<C>> fromFactory(Class<C> type, String name) {
+            if (name == null) {
+                // The ComponentFactory requires a non-null name at all times.
+                return Optional.empty();
+            }
+
             for (ComponentFactory<?> factory : factories) {
                 if (!type.isAssignableFrom(factory.forType())) {
                     continue;

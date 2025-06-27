@@ -60,7 +60,7 @@ import org.axonframework.serialization.json.JacksonConverter;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class MessagingConfigurationDefaults implements ConfigurationEnhancer {
+public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     @Override
     public int order() {
