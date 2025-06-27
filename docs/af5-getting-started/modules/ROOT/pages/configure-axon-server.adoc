@@ -67,7 +67,7 @@ docker compose up
 
 This will start Axon Server and make it available at `http://localhost:8024` for the web UI and `localhost:8124` for gRPC connections.
 
-== Creating a DCB-enabled context
+== Dynamic Consistency Boundary context creation
 
 Here's where it gets exciting!
 To use the Dynamic Consistency Boundary features we've been learning about, you need to create a special DCB-enabled context in Axon Server.
