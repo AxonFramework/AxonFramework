@@ -373,7 +373,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                         String.class,
                         Collections.singleton(SubEntity.class),
                         parameterResolverFactory,
-                        messageTypeResolver
+                        messageTypeResolver,
+                        converter
                 );
             });
         }
@@ -386,7 +387,8 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                         ConcreteEntity.class,
                         String.class,
                         parameterResolverFactory,
-                        messageTypeResolver
+                        messageTypeResolver,
+                        converter
                 );
             });
         }
