@@ -149,6 +149,33 @@ void beforeEach() {
 ----
 <1> The fixture automatically detects and uses Axon Server when the connector is present
 
+== Exploring events in Axon Server UI
+
+One of the powerful features of Axon Server is its web-based interface that allows you to explore and analyze the events stored in your Event Store.
+After running your application and executing some commands, you can use the Axon Server UI to inspect the events that have been persisted.
+
+Navigate to the Event Store section in the Axon Server UI and click on the "Search" tab.
+Here you'll find a comprehensive interface for exploring your events:
+
+image::AxonServer_DCBEvents_Search.png[]
+
+The Event Store Search interface provides several powerful capabilities:
+
+* **Event Browsing**: View all events stored in your Event Store in chronological order
+* **Event Details**: See the complete event payload, including all properties and their values
+* **Tag Visualization**: Each event displays its associated tags in the rightmost column, making it easy to see which business entities each event relates to
+* **Tag Filtering**: Use the search functionality to filter events by specific tags (e.g., `courseId` or `studentId`)
+* **Event Type Filtering**: Filter events by their type to focus on specific kinds of domain events
+* **Time-based Filtering**: Search for events within specific time ranges
+* **Context Selection**: Switch between different contexts to explore events from different parts of your application
+
+This interface is particularly valuable when working with Dynamic Consistency Boundaries, as you can easily see how events are tagged with multiple business entity identifiers.
+For example, a `StudentSubscribedToCourse` event will show both `studentId` and `courseId` tags, demonstrating how a single event can be associated with multiple business concepts.
+
+The search capabilities make it easy to trace the event history for specific business entities or understand the sequence of events that led to a particular system state.
+This is invaluable for debugging, auditing, and understanding the behavior of your event-sourced application.
+
+
 == Switching between Event Store implementations
 
 Sometimes you might want to switch back to the in-memory Event Store for development or testing purposes.
