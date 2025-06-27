@@ -39,6 +39,8 @@ import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.json.JacksonConverter;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link MessagingConfigurer}.
@@ -69,6 +71,7 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     public void enhance(@Nonnull ComponentRegistry registry) {
         registry.registerIfNotPresent(MessageTypeResolver.class,
                                       MessagingConfigurationDefaults::defaultMessageTypeResolver)
+                .registerIfNotPresent(Converter.class, c -> new JacksonConverter())
                 .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
                 .registerIfNotPresent(EventGateway.class, MessagingConfigurationDefaults::defaultEventGateway)

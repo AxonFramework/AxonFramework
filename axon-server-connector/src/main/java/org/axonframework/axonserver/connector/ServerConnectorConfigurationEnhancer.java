@@ -23,8 +23,6 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.json.JacksonConverter;
 
 import javax.annotation.Nonnull;
 
@@ -45,8 +43,7 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-        registry.registerIfNotPresent(Converter.class, c -> new JacksonConverter())
-                .registerIfNotPresent(AxonServerConfiguration.class, c -> new AxonServerConfiguration())
+        registry.registerIfNotPresent(AxonServerConfiguration.class, c -> new AxonServerConfiguration())
                 .registerIfNotPresent(connectionManagerDefinition())
                 .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity())
                 .registerIfNotPresent(eventStorageEngineDefinition())
