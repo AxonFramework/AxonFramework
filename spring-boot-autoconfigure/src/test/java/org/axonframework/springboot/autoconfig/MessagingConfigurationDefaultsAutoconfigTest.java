@@ -68,6 +68,8 @@ class MessagingConfigurationDefaultsAutoconfigTest {
             assertThat(context).hasBean(EventGateway.class.getName());
             assertThat(context).hasSingleBean(EventSink.class);
             assertThat(context).hasBean(EventSink.class.getName());
+            assertThat(context).hasSingleBean(EventBus.class);
+            assertThat(context).hasBean(EventBus.class.getName());
             assertThat(context).hasSingleBean(QueryGateway.class);
             assertThat(context).hasBean(QueryGateway.class.getName());
             assertThat(context).hasSingleBean(QueryBus.class);
