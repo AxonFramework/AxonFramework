@@ -17,6 +17,9 @@
   <a href="https://developer.axoniq.io/axon-framework/overview">Technical Overview</a>
   ·
   <a href="https://github.com/AxonFramework/AxonFramework/issues">Feature / Bug Request</a>
+  ·
+  <a href="https://www.axoniq.io/privacy-policy">Privacy Policy</a>
+
 
 </p>
 
