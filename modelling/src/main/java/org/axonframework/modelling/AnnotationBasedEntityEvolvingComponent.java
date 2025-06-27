@@ -19,12 +19,14 @@ package org.axonframework.modelling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.Converter;
 
 import java.util.Objects;
 import java.util.Set;
@@ -46,6 +48,8 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
 
     private final Class<E> entityType;
     private final AnnotatedHandlerInspector<E> inspector;
+    private Converter converter;
+    private MessageTypeResolver messageTypeResolver;
 
     /**
      * Initialize a new annotation-based {@link EntityEvolver}.
@@ -66,10 +70,14 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
      * @param inspector  The inspector to use to find the annotated handlers on the entity.
      */
     public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType,
-                                                  @Nonnull AnnotatedHandlerInspector<E> inspector
+                                                  @Nonnull AnnotatedHandlerInspector<E> inspector,
+                                                  Converter converter,
+                                                  MessageTypeResolver messageTypeResolver
     ) {
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.inspector = requireNonNull(inspector, "The Annotated Handler Inspector must not be null.");
+        this.converter = converter;
+        this.messageTypeResolver = messageTypeResolver;
     }
 
     @Override
@@ -78,15 +86,25 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
                     @Nonnull ProcessingContext context) {
         try {
             var listenerType = entity.getClass();
-            var handler = inspector.getHandlers(listenerType)
-                                   .filter(h -> h.canHandle(event, context))
-                                   .findFirst();
-            if (handler.isPresent()) {
+
+            var handlers = inspector.getHandlers(listenerType)
+                                    .filter(h -> messageTypeResolver.resolveOrThrow(h.payloadType()).name()
+                                                                    .equals(event.type().name()))
+                                    .toList();
+
+            E currentEntityState = entity;
+            for (var handler : handlers) {
+                var convertedEvent = event.withConvertedPayload(p -> converter.convert(p, handler.payloadType()));
+                if (!handler.canHandle(convertedEvent, context)) {
+                    continue;
+                }
                 var interceptor = inspector.chainedInterceptor(listenerType);
-                var result = interceptor.handle(event, context, entity, handler.get());
-                return entityFromStreamResultOrUpdatedExisting(result.first().asCompletableFuture().join(), entity);
+                var result = interceptor.handle(convertedEvent, context, entity, handler);
+                currentEntityState = entityFromStreamResultOrUpdatedExisting(result.first().asCompletableFuture()
+                                                                                   .join(), entity);
             }
-            return entity;
+
+            return currentEntityState;
         } catch (Exception e) {
             throw new StateEvolvingException(
                     "Failed to apply event [" + event.type() + "] in order to evolve [" + entity.getClass() + "] state",
