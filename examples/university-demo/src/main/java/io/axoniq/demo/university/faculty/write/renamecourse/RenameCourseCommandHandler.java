@@ -35,24 +35,48 @@ class RenameCourseCommandHandler {
     }
 
     @EventSourcedEntity(tagKey = FacultyTags.COURSE_ID)
-    static class State {
-
-        private boolean created = false;
-        private String name;
+    record State(
+            boolean created,
+            String name
+    ) {
 
         @EntityCreator
-        public State() {
+        static State initial() {
+            return new State(false, null);
         }
 
         @EventSourcingHandler
-        void evolve(CourseCreated event) {
-            this.created = true;
-            this.name = event.name();
+        State evolve(CourseCreated event) {
+            return new State(true, event.name());
         }
 
         @EventSourcingHandler
-        void evolve(CourseRenamed event) {
-            this.name = event.name();
+        State evolve(CourseRenamed event) {
+            return new State(this.created, event.name());
         }
+
     }
+
+// Alternative State implementation based on mutable class
+//    @EventSourcedEntity(tagKey = FacultyTags.COURSE_ID)
+//    static class State {
+//
+//        private boolean created = false;
+//        private String name;
+//
+//        @EntityCreator
+//        public State() {
+//        }
+//
+//        @EventSourcingHandler
+//        void evolve(CourseCreated event) {
+//            this.created = true;
+//            this.name = event.name();
+//        }
+//
+//        @EventSourcingHandler
+//        void evolve(CourseRenamed event) {
+//            this.name = event.name();
+//        }
+//    }
 }
