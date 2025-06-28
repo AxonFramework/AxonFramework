@@ -31,9 +31,11 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
+import org.mockito.*;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
@@ -251,13 +253,23 @@ class SimpleEventStoreTest {
         }
 
         @Test
-        void publishConstructsNewUnitOfWorkToInvokeTheTransactionIn() {
+        void publishInvokeEventStorageEngineRightAwayWithAppendConditionNone() {
+            // given...
             EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+            EventMessage<?> testEvent = createEvent(0);
+            ArgumentCaptor<List<TaggedEventMessage<?>>> eventCaptor = ArgumentCaptor.forClass(List.class);
 
-            CompletableFuture<Void> result = testSubject.publish(null, createEvent(0));
+            // when...
+            CompletableFuture<Void> result = testSubject.publish(null, testEvent);
+
+            // then...
             awaitSuccessfulCompletion(result);
+            verify(mockStorageEngine).appendEvents(eq(AppendCondition.none()), eventCaptor.capture());
+            List<TaggedEventMessage<?>> capturedEvents = eventCaptor.getValue();
+            assertEquals(1, capturedEvents.size());
+            assertEquals(testEvent, capturedEvents.getFirst().event());
         }
     }
 
