@@ -55,7 +55,7 @@
         </sonar.coverage.jacoco.xmlReportPaths>
         <!-- Main -->
         <axon.version>4.11.2</axon.version>
-        <kotlin.version>2.1.21</kotlin.version>
+        <kotlin.version>2.2.0</kotlin.version>
         <!-- Serialization -->
         <jackson-kotlin.version>2.19.1</jackson-kotlin.version>
         <kotlin-serialization.version>1.6.3</kotlin-serialization.version>
@@ -63,7 +63,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <log4j.version>2.13.3</log4j.version>
         <!-- Testing -->
-        <junit.jupiter.version>5.13.1</junit.jupiter.version>
+        <junit.jupiter.version>5.13.2</junit.jupiter.version>
         <mockk.version>1.12.4</mockk.version>
         <!-- Build -->
         <central-publishing-maven-plugin.version>0.8.0</central-publishing-maven-plugin.version>
