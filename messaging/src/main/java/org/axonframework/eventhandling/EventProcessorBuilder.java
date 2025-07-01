@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.apache.commons.lang3.NotImplementedException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -179,6 +178,6 @@ public abstract class EventProcessorBuilder {
     }
 
     public EventHandlingComponent eventHandlingComponent() {
-        throw new NotImplementedException("Not implemented in AbstractEventProcessorBuilder");
+        throw new RuntimeException("Not implemented in AbstractEventProcessorBuilder");
     }
 }
