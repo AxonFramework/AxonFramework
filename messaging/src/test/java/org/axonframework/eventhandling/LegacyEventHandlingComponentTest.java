@@ -51,71 +51,80 @@ class LegacyEventHandlingComponentTest {
         testSubject = new LegacyEventHandlingComponent(mockInvoker);
     }
 
-    @Test
-    void supportedEvents_shouldConvertEventTypesToQualifiedNames() {
-        //given
-        Set<Class<?>> supportedTypes = Set.of(String.class, Integer.class);
-        when(mockInvoker.supportedEventTypes()).thenReturn(supportedTypes);
+    @Nested
+    class SupportedEvents {
 
-        //when
-        Set<QualifiedName> result = testSubject.supportedEvents();
+        @Test
+        void shouldConvertEventTypesToQualifiedNames() {
+            //given
+            Set<Class<?>> supportedTypes = Set.of(String.class, Integer.class);
+            when(mockInvoker.supportedEventTypes()).thenReturn(supportedTypes);
 
-        //then
-        assertThat(result).hasSize(2);
-        assertThat(result).contains(new QualifiedName(String.class));
-        assertThat(result).contains(new QualifiedName(Integer.class));
+            //when
+            Set<QualifiedName> result = testSubject.supportedEvents();
+
+            //then
+            assertThat(result).hasSize(2);
+            assertThat(result).contains(new QualifiedName(String.class));
+            assertThat(result).contains(new QualifiedName(Integer.class));
+        }
+
+        @Test
+        void shouldReturnEmptySetWhenInvokerReturnsEmpty() {
+            //given
+            when(mockInvoker.supportedEventTypes()).thenReturn(Set.of());
+
+            //when
+            Set<QualifiedName> result = testSubject.supportedEvents();
+
+            //then
+            assertThat(result).isEmpty();
+        }
     }
 
-    @Test
-    void supportedEvents_shouldReturnEmptySetWhenInvokerReturnsEmpty() {
-        //given
-        when(mockInvoker.supportedEventTypes()).thenReturn(Set.of());
+    @Nested
+    class IsSupported {
 
-        //when
-        Set<QualifiedName> result = testSubject.supportedEvents();
+        @Test
+        void shouldReturnTrueWhenEventIsSupported() {
+            //given
+            Set<Class<?>> supportedTypes = Set.of(String.class);
+            when(mockInvoker.supportedEventTypes()).thenReturn(supportedTypes);
+            QualifiedName eventName = new QualifiedName(String.class);
 
-        //then
-        assertThat(result).isEmpty();
-    }
+            //when
+            boolean result = testSubject.isSupported(eventName);
 
-    @Test
-    void isSupported_shouldReturnTrueWhenEventIsSupported() {
-        //given
-        Set<Class<?>> supportedTypes = Set.of(String.class);
-        when(mockInvoker.supportedEventTypes()).thenReturn(supportedTypes);
-        QualifiedName eventName = new QualifiedName(String.class);
+            //then
+            assertThat(result).isTrue();
+        }
 
-        //when
-        boolean result = testSubject.isSupported(eventName);
+        @Test
+        void shouldReturnFalseWhenEventIsNotSupported() {
+            //given
+            Set<Class<?>> supportedTypes = Set.of(String.class);
+            when(mockInvoker.supportedEventTypes()).thenReturn(supportedTypes);
+            QualifiedName eventName = new QualifiedName(Integer.class);
 
-        //then
-        assertThat(result).isTrue();
-    }
+            //when
+            boolean result = testSubject.isSupported(eventName);
 
-    @Test
-    void isSupported_shouldReturnFalseWhenEventIsNotSupported() {
-        //given
-        Set<Class<?>> supportedTypes = Set.of(String.class);
-        when(mockInvoker.supportedEventTypes()).thenReturn(supportedTypes);
-        QualifiedName eventName = new QualifiedName(Integer.class);
+            //then
+            assertThat(result).isFalse();
+        }
 
-        //when
-        boolean result = testSubject.isSupported(eventName);
+        @Test
+        void shouldReturnFalseWhenNoSupportedEventsProvided() {
+            //given
+            when(mockInvoker.supportedEventTypes()).thenReturn(Set.of());
+            QualifiedName eventName = new QualifiedName(String.class);
 
-        //then
-        assertThat(result).isFalse();
-    }
+            //when
+            boolean result = testSubject.isSupported(eventName);
 
-    @Test
-    void isSupported_shouldReturnFalseWhenNoSupportedEventsProvided() {
-        when(mockInvoker.supportedEventTypes()).thenReturn(Set.of());
-        QualifiedName eventName = new QualifiedName(String.class);
-
-        //when
-        boolean result = testSubject.isSupported(eventName);
-
-        //then
-        assertThat(result).isFalse();
+            //then
+            assertThat(result).isFalse();
+        }
     }
 
     @Test
