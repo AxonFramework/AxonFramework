@@ -67,7 +67,8 @@ class PolymorphicAnnotatedEntityMetamodelTest extends AbstractAnnotatedEntityMet
                 Project.class,
                 Set.of(InternalProject.class, OpenSourceProject.class),
                 parameterResolverFactory,
-                messageTypeResolver
+                messageTypeResolver,
+                converter
         );
     }
 

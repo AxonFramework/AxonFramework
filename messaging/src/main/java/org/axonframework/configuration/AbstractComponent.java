@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 
 import java.util.List;
@@ -95,10 +96,11 @@ public abstract class AbstractComponent<C, A extends C>
     }
 
     @Override
-    public Class<C> type() {
-        return this.identifier.type();
+    public Class<C> rawType() {
+        return this.identifier.typeAsClass();
     }
 
+    @Nullable
     @Override
     public String name() {
         return this.identifier.name();

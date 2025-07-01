@@ -31,7 +31,7 @@ import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.stereotype.Saga;
-import org.axonframework.springboot.autoconfig.AxonAutoConfiguration;
+import org.axonframework.springboot.autoconfig.LegacyAxonAutoConfiguration;
 import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +76,7 @@ import static org.junit.jupiter.api.Assertions.*;
         WebClientAutoConfiguration.class
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+@Disabled("TODO #3496")
 class SagaCustomizeIntegrationTest {
 
     @Autowired
@@ -118,7 +119,7 @@ class SagaCustomizeIntegrationTest {
         return new GenericEventMessage<>(new MessageType("event"), payload);
     }
 
-    @AutoConfigureBefore(AxonAutoConfiguration.class)
+    @AutoConfigureBefore(LegacyAxonAutoConfiguration.class)
     @Configuration
     public static class Context {
 

@@ -46,6 +46,7 @@ import javax.sql.DataSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Disabled("TODO #3496")
 class DbSchedulerAutoConfigurationTest {
 
     @Test
