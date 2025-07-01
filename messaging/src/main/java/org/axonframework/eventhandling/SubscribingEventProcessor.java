@@ -210,6 +210,12 @@ public class SubscribingEventProcessor implements EventProcessor {
         }
 
         @Override
+        public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
+            super.eventHandlingComponent(eventHandlingComponent);
+            return this;
+        }
+
+        @Override
         public Builder errorHandler(@Nonnull ErrorHandler errorHandler) {
             super.errorHandler(errorHandler);
             return this;
