@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.EventProcessorOperations;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.ResetNotSupportedException;
@@ -505,9 +506,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         @Deprecated(since = "5.0.0", forRemoval = true)
         @Override
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
-            throw new RuntimeException(
-                    "The eventHandlerInvoker() method is no longer supported. Use eventHandlingComponent() instead."
-            );
+            return eventHandlingComponent(new LegacyEventHandlingComponent(eventHandlerInvoker));
         }
 
         @Override
