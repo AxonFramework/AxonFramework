@@ -45,14 +45,11 @@ class UpdateCheckerTest {
 
     @BeforeEach
     void setUp() {
-        System.setProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT, "true");
         updateChecker = new UpdateChecker(httpClient, reporter);
     }
 
     @AfterEach
     void tearDown() {
-        // Reset the system property after tests
-        System.clearProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT);
         updateChecker.stop();
     }
 
