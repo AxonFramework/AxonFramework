@@ -590,7 +590,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         assertTrue(result);
         Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
 
-        assertLetter(firstTestLetter, resultSequence.pollFirst());
+        assertLetter(firstTestLetter, resultSequence.pollFirst()); //fixme: flaky test!
         assertLetter(secondTestLetter, resultSequence.pollFirst());
         assertLetter(thirdTestLetter, resultSequence.pollFirst());
     }
