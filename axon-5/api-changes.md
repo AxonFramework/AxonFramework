@@ -398,37 +398,16 @@ public void streamingEvents(
 
 ### TrackingEventProcessor Removal
 
-Axon Framework 5 introduces a significant change in the event processing architecture with the **removal of 
-`TrackingEventProcessor`** and the elevation of `PooledStreamingEventProcessor` as the default and recommended 
-streaming event processor.
+The `TrackingEventProcessor` has been removed from the framework, with `PooledStreamingEventProcessor` taking over as the default streaming event processor.
+The main difference between these processors lies in their threading model, but the benefits of the PooledStreaming event processor far outweighed the Tracking one.
 
-The `TrackingEventProcessor` and its associated `TrackingEventProcessorConfiguration` have been **completely removed** 
-from Axon Framework 5. This decision was made for several strategic reasons:
-- Supporting two similar event processing implementations created unnecessary complexity and 
-   development overhead, preventing the team from focusing on advancing the more modern solution.
-- The decision allows the Axon team to concentrate their engineering efforts on polishing 
-   and optimizing `PooledStreamingEventProcessor` rather than maintaining legacy code.
+In the `PooledStreamingEventProcessor` there is a much lower IO overhead, and more segments can be processed in parallel with the same resources.
+The processor uses one thread pool to read the event stream and another thread pool to process the events, so it reads the stream only once regardless of segment count.
+For example, when processing 8 segments on a single instance, instead of reading the event stream 8 times, it now reads it once.
+In the contrary, the `TrackingEventProcessor` opens a separate event stream per segment it claims.
 
-The shift from `TrackingEventProcessor` to `PooledStreamingEventProcessor` introduces one important behavioral change:
-
-**Segment Processing Coordination:**
-- **TrackingEventProcessor**: Segments ran independently at their own pace
-- **PooledStreamingEventProcessor**: Segments are coordinated and process **as fast as the slowest segment**
-
-**Why This Change is Actually Better:**
-- **Discourages Bad Practices**: Slow segments indicate performance issues that should be addressed
-- **Encourages Optimization**: Forces developers to optimize event handlers properly  
-- **⚖Better System Health**: Prevents cascading problems from uneven IO resource utilization
-
-### Impact Assessment
-
-This change primarily affects users who:
-- Directly configured `TrackingEventProcessor` instances
-- Used `tracking` mode in the Spring Boot configuration for event processors
-- Relied on segment-independent processing speeds
-
-Most users leveraging Axon's default configurations will experience this as a **performance improvement** with minimal 
-migration effort required.
+The pooled streaming processor has one limitation: segments process as fast as the slowest segment. However, this minor disadvantage is outweighed by the `PooledStreamingEventProcessor` advantages and does not warrant maintaining the `TrackingEventProcessor`.
+Users who previously configured `TrackingEventProcessor` instances or used `tracking` mode in Spring Boot configuration should migrate to `PooledStreamingEventProcessor`.
 
 ## ApplicationConfigurer and Configuration
 
