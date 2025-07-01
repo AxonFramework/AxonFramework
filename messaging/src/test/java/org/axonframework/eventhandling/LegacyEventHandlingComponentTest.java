@@ -104,8 +104,7 @@ class LegacyEventHandlingComponentTest {
     }
 
     @Test
-    void isSupported_shouldReturnTrueWhenNoSupportedEventsProvided() {
-        // Given (legacy invoker returns empty set)
+    void isSupported_shouldReturnFalseWhenNoSupportedEventsProvided() {
         when(mockInvoker.supportedEventTypes()).thenReturn(Set.of());
         QualifiedName eventName = new QualifiedName(String.class);
 
@@ -113,7 +112,7 @@ class LegacyEventHandlingComponentTest {
         boolean result = testSubject.isSupported(eventName);
 
         // Then
-        assertTrue(result);
+        assertFalse(result);
     }
 
     @Test
