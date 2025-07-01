@@ -56,7 +56,6 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         this.configuration = configuration;
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
 
-        // Safely cast CommandBus with proper error handling
         CommandBus commandBusComponent = configuration.getComponent(CommandBus.class);
         if (!(commandBusComponent instanceof RecordingCommandBus)) {
             throw new FixtureExecutionException(
