@@ -90,6 +90,7 @@ public class UpdateChecker implements Runnable {
                 return;
             }
             if (TestEnvironmentDetector.isTestEnvironment()) {
+                started.set(false);
                 logger.debug("Skipping AxonIQ UpdateChecker as a testsuite environment was detected.");
                 return;
             }
