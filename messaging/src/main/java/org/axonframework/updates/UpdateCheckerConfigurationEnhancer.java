@@ -22,6 +22,9 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.updates.configuration.UsagePropertyProvider;
+import org.axonframework.updates.detection.TestEnvironmentDetector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.axonframework.configuration.ComponentDefinition.ofType;
 
@@ -35,9 +38,14 @@ import static org.axonframework.configuration.ComponentDefinition.ofType;
  */
 @Internal
 public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer {
+    private static final Logger logger = LoggerFactory.getLogger(UpdateCheckerConfigurationEnhancer.class);
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
+        if (TestEnvironmentDetector.isTestEnvironment()) {
+            logger.debug("Skipping AxonIQ UpdateChecker as a testsuite environment was detected.");
+            return;
+        }
         componentRegistry.registerIfNotPresent(ofType(UsagePropertyProvider.class)
                                                        .withBuilder(c -> UsagePropertyProvider.create()))
                          .registerIfNotPresent(ofType(UpdateCheckerHttpClient.class)

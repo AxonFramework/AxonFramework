@@ -22,9 +22,21 @@ import org.axonframework.updates.configuration.UsagePropertyProvider;
 import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
+import static org.axonframework.updates.detection.TestEnvironmentDetector.AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UpdateCheckerConfigurationEnhancerTest {
+
+    @BeforeEach
+    void setUp() {
+        System.setProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT, "true");
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Reset the system property after tests
+        System.clearProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT);
+    }
 
     @Test
     void configureShouldConfigureComponentsWithStartAndShutdown() {
