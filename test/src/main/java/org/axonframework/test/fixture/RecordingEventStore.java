@@ -16,6 +16,7 @@
 
 package org.axonframework.test.fixture;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
@@ -34,9 +35,15 @@ import java.util.List;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class RecordingEventStore extends RecordingEventSink implements EventStore {
+@Internal
+public class RecordingEventStore extends RecordingEventSink implements EventStore {
 
-    RecordingEventStore(EventStore delegate) {
+    /**
+     * Creates a new {@link RecordingEventStore} that will record all events published to the given {@code delegate}.
+     *
+     * @param delegate The {@link EventStore} to which events will be published.
+     */
+    public RecordingEventStore(EventStore delegate) {
         super(delegate);
     }
 
