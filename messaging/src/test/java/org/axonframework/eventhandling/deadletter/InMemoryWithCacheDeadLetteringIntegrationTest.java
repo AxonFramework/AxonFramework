@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.deadletter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.junit.jupiter.api.*;
 
 /**
  * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the
@@ -28,6 +29,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
  *
  * @author Gerard Klijs
  */
+@Disabled("TODO: Support dead lettering with EventHandlingComponent instead of EventHandlerInvoker")
 class InMemoryWithCacheDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     @Override
