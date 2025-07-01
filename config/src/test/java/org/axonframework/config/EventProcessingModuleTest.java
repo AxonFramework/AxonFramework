@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
@@ -36,6 +37,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.SequencingEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
@@ -345,16 +347,16 @@ class EventProcessingModuleTest {
         assertTrue(specialProcessorOptional.isPresent());
         EventProcessor specialProcessor = specialProcessorOptional.get();
 
+        // Access the EventHandlingComponent through EventProcessorOperations
         EventProcessorOperations defaultOperations = getField("eventProcessorOperations", defaultProcessor);
-        MultiEventHandlerInvoker defaultInvoker = (MultiEventHandlerInvoker) getField("eventHandlerInvoker", defaultOperations);
+        EventHandlingComponent defaultComponent = getField("eventHandlingComponent", defaultOperations);
+        
         EventProcessorOperations specialOperations = getField("eventProcessorOperations", specialProcessor);
-        MultiEventHandlerInvoker specialInvoker = (MultiEventHandlerInvoker) getField("eventHandlerInvoker", specialOperations);
+        EventHandlingComponent specialComponent = getField("eventHandlingComponent", specialOperations);
 
-        // TODO #3098 - Support segmenting with sequencing per EventHandler - rewrite this assertion
-//        assertEquals(sequentialPolicy,
-//                     ((SimpleEventHandlerInvoker) defaultInvoker.delegates().getFirst()).getSequencingPolicy());
-//        assertEquals(fullConcurrencyPolicy,
-//                     ((SimpleEventHandlerInvoker) specialInvoker.delegates().getFirst()).getSequencingPolicy());
+        SequencingEventHandlingComponent sequencingComponent = (SequencingEventHandlingComponent) defaultComponent;
+        assertEquals(sequentialPolicy, sequencingComponent.getSequencingPolicy());
+        assertEquals(fullConcurrencyPolicy, sequencingComponent.getSequencingPolicy());
     }
 
     @Test
