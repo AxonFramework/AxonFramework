@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  * This adapter allows deprecated {@code EventHandlerInvoker} implementations to work with the new event handling
  * component architecture.
  * <p>
- * This class is intended as a migration aid and should be used temporarily while transitioning from 
+ * This class is intended as a migration helper and should be used temporarily while transitioning from
  * {@code EventHandlerInvoker} to {@code EventHandlingComponent}.
  *
  * @author Mateusz Nowak
@@ -64,7 +64,6 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
         }
     }
 
-    // todo: maybe do not support this method and just do the check for isSupported with can handle?
     @Override
     public Set<QualifiedName> supportedEvents() {
         return eventHandlerInvoker.supportedEventTypes()

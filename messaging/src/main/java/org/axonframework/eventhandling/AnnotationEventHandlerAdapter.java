@@ -233,7 +233,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
                         .stream()
                         .flatMap(Collection::stream)
                         .filter(handlingMember -> handlingMember.canHandleMessageType(EventMessage.class))
-                        .map(handlingMember -> handlingMember.payloadType())
+                        .map(MessageHandlingMember::payloadType)
                         .collect(Collectors.toSet());
     }
 }
