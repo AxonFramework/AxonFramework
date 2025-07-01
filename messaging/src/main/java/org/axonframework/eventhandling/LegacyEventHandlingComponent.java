@@ -68,6 +68,7 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
         }
     }
 
+    // todo: maybe do not support this method and just do the check for isSupported with can handle?
     @Override
     public Set<QualifiedName> supportedEvents() {
         return eventHandlerInvoker.supportedEventTypes()
