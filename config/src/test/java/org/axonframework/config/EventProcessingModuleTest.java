@@ -206,6 +206,18 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    void assigningAPooledProcessorFailsWhenUsingSimpleEventBus() {
+        LegacyConfigurer configurer =
+                LegacyDefaultConfigurer.defaultConfiguration()
+                                       .configureEventBus(c -> SimpleEventBus.builder().build())
+                                       .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
+                                                                .registerEventHandler(c -> new TrackingEventHandler())
+                                                                .registerPooledStreamingEventProcessor("tracking"));
+
+        assertThrows(LifecycleHandlerInvocationException.class, configurer::start);
+    }
+
+    @Test
     void assignmentRulesOverrideThoseWithLowerPriority() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
         ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
