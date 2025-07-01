@@ -17,15 +17,12 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
-import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,14 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SimpleEventHandlingComponent implements EventHandlingComponent {
 
     private final ConcurrentHashMap<QualifiedName, EventHandler> eventHandlers;
-    private final SequencingPolicy<EventMessage<?>> sequencingPolicy;
 
     public SimpleEventHandlingComponent() {
-        this(new FullConcurrencyPolicy());
-    }
-
-    public SimpleEventHandlingComponent(SequencingPolicy<EventMessage<?>> sequencingPolicy) {
-        this.sequencingPolicy = sequencingPolicy;
         this.eventHandlers = new ConcurrentHashMap<>();
     }
 
@@ -81,10 +72,5 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
     @Override
     public Set<QualifiedName> supportedEvents() {
         return Set.copyOf(eventHandlers.keySet());
-    }
-
-    @Override
-    public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
-        return sequencingPolicy.getSequenceIdentifierFor(event);
     }
 }
