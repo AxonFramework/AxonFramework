@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Test class for {@link SequencingEventHandlingComponent}.
  */
-class SequencingPolicyEventHandlingComponentTest {
+class SequencingEventHandlingComponentTest {
 
     @Test
     void sequenceIdentifierForUsesPolicyAsFallbackWhenDelegateReturnsEmpty() {
