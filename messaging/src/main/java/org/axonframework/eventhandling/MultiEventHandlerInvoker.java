@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
  * @author Milan Savic
  * @since 3.3
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class MultiEventHandlerInvoker implements EventHandlerInvoker {
 
     private final List<EventHandlerInvoker> delegates;

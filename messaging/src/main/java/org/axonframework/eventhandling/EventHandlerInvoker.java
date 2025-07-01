@@ -30,7 +30,7 @@ import java.util.Set;
  * @since 3.0
  * @deprecated In favor of the {@link EventHandlingComponent}.
  */
-@Deprecated
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface EventHandlerInvoker {
 
     /**
@@ -116,6 +116,8 @@ public interface EventHandlerInvoker {
     /**
      * Returns the set of classes representing the types of events that this invoker can handle.
      * This method is used to determine the supported events for migration to {@link EventHandlingComponent}.
+     * It's introduced as a refactoring step to limit the scope.
+     * The whole class will be removed during future refactoring steps.
      *
      * @return A set of classes representing the event types this invoker can handle.
      */

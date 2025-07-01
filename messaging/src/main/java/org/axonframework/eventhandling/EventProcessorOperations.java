@@ -21,8 +21,6 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -284,7 +282,6 @@ public final class EventProcessorOperations {
                                                                                         .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                         .build();
         private boolean streamingProcessor = false;
-        private SequencingPolicy<? super EventMessage<?>> sequencingPolicy = SequentialPerAggregatePolicy.instance();
 
         /**
          * Sets the {@code name} of the {@link EventProcessor} implementation.
@@ -372,23 +369,6 @@ public final class EventProcessorOperations {
          */
         public Builder streamingProcessor(boolean streamingProcessor) {
             this.streamingProcessor = streamingProcessor;
-            return this;
-        }
-
-        /**
-         * Sets the {@link SequencingPolicy} in charge of deciding whether a given event should be handled (through
-         * {@link EventHandlerInvoker#handle(EventMessage, ProcessingContext, Segment)}) by the given {@link Segment}.
-         * Used when this {@link EventHandlerInvoker} is invoked for multiple Segments (i.e. using parallel processing).
-         * Defaults to a {@link SequentialPerAggregatePolicy},
-         *
-         * @param sequencingPolicy a {@link SequencingPolicy} in charge of deciding whether a given event should be
-         *                         handled by the given {@link Segment}
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder sequencingPolicy(@Nonnull SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
-            assertNonNull(sequencingPolicy, "The SequencingPolicy may not be null");
-            this.sequencingPolicy = sequencingPolicy;
-            //noinspection unchecked
             return this;
         }
 

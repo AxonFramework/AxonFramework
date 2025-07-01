@@ -23,7 +23,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.Set;
@@ -37,7 +37,7 @@ class SequencingEventHandlingComponentTest {
 
     @Test
     void sequenceIdentifierForUsesPolicyAsFallbackWhenDelegateReturnsEmpty() {
-        // given
+        //given
         var expectedSequenceId = "fallback-sequence-id";
         SequencingPolicy<EventMessage<?>> fallbackPolicy = event -> Optional.of(expectedSequenceId);
         var delegate = getEventHandlingComponentWithSequenceId(null);
@@ -47,10 +47,10 @@ class SequencingEventHandlingComponentTest {
                 "test-payload"
         );
 
-        // when
+        //when
         var result = testSubject.sequenceIdentifierFor(testEvent);
 
-        // then
+        //then
         assertThat(result)
                 .isPresent()
                 .contains(expectedSequenceId);
@@ -58,7 +58,7 @@ class SequencingEventHandlingComponentTest {
 
     @Test
     void sequenceIdentifierForUsesDelegateWhenItReturnsValue() {
-        // given
+        //given
         var delegateSequenceId = "delegate-sequence-id";
         var policySequenceId = "policy-sequence-id";
         SequencingPolicy<EventMessage<?>> policy = event -> Optional.of(policySequenceId);
@@ -69,10 +69,10 @@ class SequencingEventHandlingComponentTest {
                 "test-payload"
         );
 
-        // when
+        //when
         var result = testSubject.sequenceIdentifierFor(testEvent);
 
-        // then
+        //then
         assertThat(result)
                 .isPresent()
                 .contains(delegateSequenceId);
