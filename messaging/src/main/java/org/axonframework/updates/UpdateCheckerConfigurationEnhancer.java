@@ -23,6 +23,7 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.updates.configuration.UsagePropertyProvider;
 import org.axonframework.updates.detection.TestEnvironmentDetector;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.axonframework.configuration.ComponentDefinition.ofType;
@@ -37,7 +38,7 @@ import static org.axonframework.configuration.ComponentDefinition.ofType;
  */
 @Internal
 public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer {
-    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(UpdateCheckerConfigurationEnhancer.class);
+    private static final Logger logger = LoggerFactory.getLogger(UpdateCheckerConfigurationEnhancer.class);
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
