@@ -137,6 +137,40 @@ public class AxonAutoConfigurationTest {
     }
 
     @Test
+    void componentDefinitionsIntegrateWithSpringLifecycleRegistryThroughDedicatedSpringLifecycleBeans() {
+        testContext.withUserConfiguration(LifecycleContext.class).run(context -> {
+            // We expect beans to be registered for lifecycle handlers.
+            Map<String, SpringLifecycleStartHandler> startHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
+                    context, SpringLifecycleStartHandler.class
+            );
+            Map<String, SpringLifecycleShutdownHandler> shutdownHandlers = BeanFactoryUtils.beansOfTypeIncludingAncestors(
+                    context, SpringLifecycleShutdownHandler.class
+            );
+
+            // The LifecycleContext registers a start handler on phase 7 for the TestComponent
+            assertTrue(startHandlers.values().stream().anyMatch(h -> h.getPhase() == 7));
+            // The LifecycleContext registers a shutdown handler on phase 14 for the TestComponent
+            assertTrue(shutdownHandlers.values().stream().anyMatch(h -> h.getPhase() == 14));
+
+            for (SpringLifecycleStartHandler startHandler : startHandlers.values()) {
+                assertTrue(startHandler.isRunning());
+            }
+            for (SpringLifecycleShutdownHandler shutdownHandler : shutdownHandlers.values()) {
+                assertTrue(shutdownHandler.isRunning());
+            }
+
+            assertThat(context.getBean("componentSpecificStartHandlerInvoked", AtomicBoolean.class)).isTrue();
+            AtomicBoolean shutdownHandlerInvoked =
+                    context.getBean("componentSpecificShutdownHandlerInvoked", AtomicBoolean.class);
+            assertThat(shutdownHandlerInvoked).isFalse();
+
+            // Shutdown the Application Context to validate the shutdown handler is invoked.
+            context.stop();
+            assertThat(shutdownHandlerInvoked).isTrue();
+        });
+    }
+
+    @Test
     void validateDecoratorDefinitionsAreInvoked() {
         testContext.withUserConfiguration(DecoratorDefinitionContext.class).run(context -> {
             assertThat(context).hasBean("commandBus");
@@ -301,6 +335,45 @@ public class AxonAutoConfigurationTest {
         @Bean
         AxonConfiguration customAxonApplicationConfiguration(SpringAxonApplication customAxonApplication) {
             return customAxonApplication.build();
+        }
+    }
+
+    @Configuration
+    @EnableAutoConfiguration
+    public static class LifecycleContext {
+
+        @Bean
+        AtomicBoolean componentSpecificStartHandlerInvoked() {
+            return new AtomicBoolean(false);
+        }
+
+        @Bean
+        AtomicBoolean componentSpecificShutdownHandlerInvoked() {
+            return new AtomicBoolean(false);
+        }
+
+        @Bean
+        ConfigurationEnhancer lifecycleBeanAdder(AtomicBoolean componentSpecificStartHandlerInvoked,
+                                                 AtomicBoolean componentSpecificShutdownHandlerInvoked) {
+            return registry -> registry.registerComponent(
+                    ComponentDefinition.ofType(TestComponent.class)
+                                       .withBuilder(c -> new TestComponent(componentSpecificStartHandlerInvoked,
+                                                                           componentSpecificShutdownHandlerInvoked))
+                                       .onStart(7, TestComponent::start)
+                                       .onShutdown(14, TestComponent::shutdown)
+            );
+        }
+
+        private record TestComponent(AtomicBoolean started,
+                                     AtomicBoolean stopped) {
+
+            public void start() {
+                started.set(true);
+            }
+
+            public void shutdown() {
+                stopped.set(true);
+            }
         }
     }
 
