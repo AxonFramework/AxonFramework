@@ -18,12 +18,14 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -35,13 +37,18 @@ import java.util.concurrent.CompletableFuture;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class RecordingEventSink implements EventSink {
+@Internal
+public class RecordingEventSink implements EventSink {
 
     protected final EventSink delegate;
     private final List<EventMessage<?>> recorded;
 
-    RecordingEventSink(EventSink delegate) {
-        this.delegate = delegate;
+    /**
+     * Creates a new {@link RecordingEventSink} that will record all events published to the given {@code delegate}.
+     * @param delegate The {@link EventSink} to which events will be published.
+     */
+    public RecordingEventSink(@Nonnull EventSink delegate) {
+        this.delegate = Objects.requireNonNull(delegate, "The delegate EventSink may not be null");
         this.recorded = new ArrayList<>();
     }
 
