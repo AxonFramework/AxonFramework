@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
 import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
@@ -159,8 +158,6 @@ class EventProcessorOperationsTest {
 
         private static class Builder extends EventProcessorBuilder {
 
-            private EventHandlingComponent eventHandlingComponent;
-
             public Builder() {
                 super();
             }
@@ -183,19 +180,14 @@ class EventProcessorOperationsTest {
                 return this;
             }
 
+            @Override
             public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
-                assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
-                this.eventHandlingComponent = eventHandlingComponent;
+                super.eventHandlingComponent(eventHandlingComponent);
                 return this;
             }
 
             private TestEventProcessor build() {
                 return new TestEventProcessor(this);
-            }
-
-            @Override
-            public EventHandlingComponent eventHandlingComponent() {
-                return eventHandlingComponent;
             }
         }
     }
