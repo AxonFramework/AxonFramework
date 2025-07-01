@@ -17,7 +17,6 @@
 package org.axonframework.updates.detection;
 
 import org.axonframework.common.annotation.Internal;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
@@ -46,8 +45,6 @@ public class TestEnvironmentDetector {
         if(System.getProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT, "false").equals("true")) {
             return false; // Skip detection if explicitly configured
         }
-        LoggerFactory.getLogger(TestEnvironmentDetector.class)
-                .warn("Is not a test environment", new Throwable("bla"));
         return Arrays.stream(Thread.currentThread().getStackTrace())
                 .anyMatch(TestEnvironmentDetector::isTestClass);
     }
