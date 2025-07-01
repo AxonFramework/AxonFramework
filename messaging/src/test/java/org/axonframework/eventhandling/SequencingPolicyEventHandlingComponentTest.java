@@ -32,8 +32,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test class for {@link SequencingEventHandlingComponent}.
- *
- * @author Mateusz Nowak
  */
 class SequencingPolicyEventHandlingComponentTest {
 
@@ -42,7 +40,7 @@ class SequencingPolicyEventHandlingComponentTest {
         // given
         var expectedSequenceId = "fallback-sequence-id";
         SequencingPolicy<EventMessage<?>> fallbackPolicy = event -> Optional.of(expectedSequenceId);
-        var delegate = new SimpleEventHandlingComponent(); // Returns Optional.empty() by default
+        var delegate = getEventHandlingComponentWithSequenceId(null);
         var testSubject = new SequencingEventHandlingComponent(fallbackPolicy, delegate);
         var testEvent = new GenericEventMessage<>(
                 new MessageType("TestEvent"), 
@@ -85,7 +83,7 @@ class SequencingPolicyEventHandlingComponentTest {
         return new EventHandlingComponent() {
             @Override
             public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
-                return Optional.of(delegateSequenceId);
+                return Optional.ofNullable(delegateSequenceId);
             }
 
             @Override
