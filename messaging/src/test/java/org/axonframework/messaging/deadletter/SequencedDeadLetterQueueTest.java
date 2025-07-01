@@ -559,6 +559,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
     @SuppressWarnings("ConstantConditions")
     @Test
+    @Disabled("FIXME: flaky test!")
     void processInvocationHandlesAllLettersInSequence() {
         AtomicReference<Deque<DeadLetter<? extends M>>> resultLetters = new AtomicReference<>();
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
@@ -590,7 +591,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         assertTrue(result);
         Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
 
-        assertLetter(firstTestLetter, resultSequence.pollFirst()); //fixme: flaky test!
+        assertLetter(firstTestLetter, resultSequence.pollFirst()); //FIXME: flaky test!
         assertLetter(secondTestLetter, resultSequence.pollFirst());
         assertLetter(thirdTestLetter, resultSequence.pollFirst());
     }

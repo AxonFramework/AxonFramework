@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
-import org.apache.commons.lang3.NotImplementedException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -506,7 +505,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         @Deprecated(since = "5.0.0", forRemoval = true)
         @Override
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
-            throw new NotImplementedException(
+            throw new RuntimeException(
                     "The eventHandlerInvoker() method is no longer supported. Use eventHandlingComponent() instead."
             );
         }
