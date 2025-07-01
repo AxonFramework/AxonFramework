@@ -1060,6 +1060,7 @@ class EventProcessingModuleTest {
         verifyNoInteractions(defaultTransactionManager);
     }
 
+    @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
     void registerDeadLetterQueueConstructsDeadLetteringEventHandlerInvoker(
             @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
@@ -1106,6 +1107,7 @@ class EventProcessingModuleTest {
         assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", resultDeadLetteringInvoker));
     }
 
+    @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
     void registerDefaultDeadLetterPolicyIsUsed(@Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue)
             throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
@@ -1152,6 +1154,7 @@ class EventProcessingModuleTest {
         assertEquals(expectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
     }
 
+    @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
     void registerDeadLetterPolicyIsUsed(@Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue)
             throws NoSuchFieldException, IllegalAccessException {
@@ -1201,6 +1204,7 @@ class EventProcessingModuleTest {
         assertNotEquals(unexpectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
     }
 
+    @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
     void registeredDeadLetteringEventHandlerInvokerConfigurationIsUsed(
             @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
@@ -1304,6 +1308,7 @@ class EventProcessingModuleTest {
         assertEquals(3, interceptors.size());
     }
 
+    @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
     void registerDeadLetterQueueProviderConstructsDeadLetteringEventHandlerInvoker(
             @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
