@@ -61,15 +61,6 @@ public class SequencingEventHandlingComponent implements EventHandlingComponent 
         this.delegate = requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }
 
-    /**
-     * Returns the sequencing policy used by this component.
-     *
-     * @return The {@link SequencingPolicy} used for determining sequence identifiers.
-     */
-    public SequencingPolicy<? super EventMessage<?>> getSequencingPolicy() {
-        return sequencingPolicy;
-    }
-
     @Override
     public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
         requireNonNull(event, "Event Message may not be null");
