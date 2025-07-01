@@ -35,7 +35,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
  * {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
  * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name} and
- * {@link EventHandlerInvoker} are <b>hard requirements</b> and as such should be provided.
+ * {@link EventHandlingComponent} are <b>hard requirements</b> and as such should be provided.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -43,7 +43,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 public abstract class EventProcessorBuilder {
 
     protected String name;
-    protected EventHandlerInvoker eventHandlerInvoker;
+    private EventHandlingComponent eventHandlingComponent;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
     protected MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
@@ -68,10 +68,24 @@ public abstract class EventProcessorBuilder {
      * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
      *                            {@link EventMessage}s
      * @return the current Builder instance, for fluent interfacing
+     * @deprecated in favor of {@link #eventHandlingComponent(EventHandlingComponent)}
      */
+    @Deprecated(since = "5.0.0", forRemoval = true)
     public EventProcessorBuilder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
         assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
-        this.eventHandlerInvoker = eventHandlerInvoker;
+        return eventHandlingComponent(new LegacyEventHandlingComponent(eventHandlerInvoker));
+    }
+
+    /**
+     * Sets the {@link EventHandlingComponent} which will handle all the individual {@link EventMessage}s.
+     *
+     * @param eventHandlingComponent the {@link EventHandlingComponent} which will handle all the individual
+     *                               {@link EventMessage}s
+     * @return the current Builder instance, for fluent interfacing
+     */
+    public EventProcessorBuilder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
+        assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
+        this.eventHandlingComponent = eventHandlingComponent;
         return this;
     }
 
@@ -125,7 +139,7 @@ public abstract class EventProcessorBuilder {
      */
     protected void validate() throws AxonConfigurationException {
         assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
-//        assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
+        assertNonNull(eventHandlingComponent, "The EventHandlingComponent is a hard requirement and should be provided");
     }
 
     private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
@@ -139,15 +153,6 @@ public abstract class EventProcessorBuilder {
      */
     public String name() {
         return name;
-    }
-
-    /**
-     * Returns the {@link EventHandlerInvoker} which handles all the individual {@link EventMessage}s.
-     *
-     * @return The {@link EventHandlerInvoker} for this {@link EventProcessor} implementation.
-     */
-    public EventHandlerInvoker eventHandlerInvoker() {
-        return eventHandlerInvoker;
     }
 
     /**
@@ -177,7 +182,12 @@ public abstract class EventProcessorBuilder {
         return spanFactory;
     }
 
+    /**
+     * Returns the {@link EventHandlingComponent} which handles all the individual {@link EventMessage}s.
+     *
+     * @return The {@link EventHandlingComponent} for this {@link EventProcessor} implementation.
+     */
     public EventHandlingComponent eventHandlingComponent() {
-        throw new RuntimeException("Not implemented in AbstractEventProcessorBuilder");
+        return eventHandlingComponent;
     }
 }
