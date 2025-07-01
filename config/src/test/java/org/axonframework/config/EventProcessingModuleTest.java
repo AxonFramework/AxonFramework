@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
@@ -308,8 +309,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void assignSequencingPolicy()
-            throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    void assignSequencingPolicy() throws NoSuchFieldException, IllegalAccessException {
         Object mockHandler = new Object();
         Object specialHandler = new Object();
         SequentialPolicy sequentialPolicy = new SequentialPolicy();
@@ -334,15 +334,14 @@ class EventProcessingModuleTest {
         EventProcessor specialProcessor = specialProcessorOptional.get();
 
         EventProcessorOperations defaultOperations = getField("eventProcessorOperations", defaultProcessor);
-        MultiEventHandlerInvoker defaultInvoker = (MultiEventHandlerInvoker) getField("eventHandlerInvoker", defaultOperations);
+        EventHandlingComponent defaultInvoker = getField("eventHandlingComponent", defaultOperations);
         EventProcessorOperations specialOperations = getField("eventProcessorOperations", specialProcessor);
-        MultiEventHandlerInvoker specialInvoker = (MultiEventHandlerInvoker) getField("eventHandlerInvoker", specialOperations);
+        EventHandlingComponent specialInvoker = getField("eventHandlingComponent", specialOperations);
 
-        // TODO #3098 - Support segmenting with sequencing per EventHandler - rewrite this assertion
-//        assertEquals(sequentialPolicy,
-//                     ((SimpleEventHandlerInvoker) defaultInvoker.delegates().getFirst()).getSequencingPolicy());
-//        assertEquals(fullConcurrencyPolicy,
-//                     ((SimpleEventHandlerInvoker) specialInvoker.delegates().getFirst()).getSequencingPolicy());
+        EventMessage<Object> message =
+                new GenericEventMessage<>(new MessageType("event"), "test");
+        assertEquals(sequentialPolicy.getSequenceIdentifierFor(message), defaultInvoker.sequenceIdentifierFor(message));
+        assertEquals(fullConcurrencyPolicy.getSequenceIdentifierFor(message), specialInvoker.sequenceIdentifierFor(message));
     }
 
     @Test
@@ -810,7 +809,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testName, result.getName());
-        EventProcessorOperations operations = getField("eventProcessorOperations", result); 
+        EventProcessorOperations operations = getField("eventProcessorOperations", result);
         assertEquals(PropagatingErrorHandler.INSTANCE, getField("errorHandler", operations));
 //        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
         assertEquals(testTokenStore, getField("tokenStore", result));
