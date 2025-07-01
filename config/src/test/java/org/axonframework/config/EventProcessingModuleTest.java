@@ -319,7 +319,6 @@ class EventProcessingModuleTest {
         assertTrue(configuration.eventProcessor("ConcurrentMapProcessor").isPresent());
     }
 
-    @Disabled("TODO: Work on it!!!!")
     @Test
     void assignSequencingPolicy()
             throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
