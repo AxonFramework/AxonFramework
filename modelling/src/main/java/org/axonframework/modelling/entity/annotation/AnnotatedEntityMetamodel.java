@@ -40,6 +40,7 @@ import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.PolymorphicEntityMetamodel;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
+import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,10 +62,10 @@ import static java.util.stream.StreamSupport.stream;
 import static org.axonframework.messaging.annotation.AnnotatedHandlerInspector.inspectType;
 
 /**
- * An {@link EntityMetamodel} implementation that uses reflection to inspect the entity. It will detect
- * annotated command- and event-handling methods, as well as child entities annotated with {@link EntityMember}.
- * Everything that is discovered is then registered to a delegate {@link EntityMetamodel}, so that essentially
- * a declared metamodel is built of which it's structure is clearly defined.
+ * An {@link EntityMetamodel} implementation that uses reflection to inspect the entity. It will detect annotated
+ * command- and event-handling methods, as well as child entities annotated with {@link EntityMember}. Everything that
+ * is discovered is then registered to a delegate {@link EntityMetamodel}, so that essentially a declared metamodel is
+ * built of which it's structure is clearly defined.
  * <p>
  * Besides normal {@link EntityMetamodel} operations, this metamodel also provides a means to
  * {@link #getExpectedRepresentation(QualifiedName) get the expected representation} of a command or event handler based
@@ -74,7 +75,8 @@ import static org.axonframework.messaging.annotation.AnnotatedHandlerInspector.i
  * NOTE: This class is a complete rewrite of the pre-5.0.0
  * {@code org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory}. Both scan the class for
  * annotated methods and fields, but the AnnotatedEntityModel dropped aggregate versioning (conflict resolution), no
- * longer required an id in the entity, and creates a declarative metamodel instead of relying on reflection at runtime.
+ * longer required an id in the entity, and creates a declarative metamodel instead of relying on reflection at
+ * runtime.
  *
  * @param <E> The type of entity this metamodel describes.
  * @author Mitchell Herrijgers
@@ -89,6 +91,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     private final EntityMetamodel<E> delegateMetamodel;
     private final ParameterResolverFactory parameterResolverFactory;
     private final MessageTypeResolver messageTypeResolver;
+    private final Converter converter;
     private final Map<QualifiedName, Class<?>> payloadTypes = new HashMap<>();
     private final List<AnnotatedEntityMetamodel<?>> concreteMetamodels = new LinkedList<>();
     private final List<AnnotatedEntityMetamodel<?>> childMetamodels = new LinkedList<>();
@@ -103,24 +106,26 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * @param messageTypeResolver      The {@link MessageTypeResolver} to use for resolving message types from payload
      *                                 classes.
      * @param <E>                      The type of entity this metamodel describes.
-     * @return An annotated {@link EntityMetamodel} backed by a {@link ConcreteEntityMetamodel} for
-     * the given entity type.
+     * @return An annotated {@link EntityMetamodel} backed by a {@link ConcreteEntityMetamodel} for the given entity
+     * type.
      */
     public static <E> AnnotatedEntityMetamodel<E> forConcreteType(
             @Nonnull Class<E> entityType,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull MessageTypeResolver messageTypeResolver
+            @Nonnull MessageTypeResolver messageTypeResolver,
+            @Nonnull Converter converter
     ) {
         return new AnnotatedEntityMetamodel<>(entityType,
                                               Set.of(),
                                               parameterResolverFactory,
                                               messageTypeResolver,
+                                              converter,
                                               List.of());
     }
 
     /**
-     * Instantiate an annotated {@link EntityMetamodel} of a polymorphic entity type. At least one concrete
-     * type must be supplied, as this metamodel is meant to describe a polymorphic entity type with multiple concrete
+     * Instantiate an annotated {@link EntityMetamodel} of a polymorphic entity type. At least one concrete type must be
+     * supplied, as this metamodel is meant to describe a polymorphic entity type with multiple concrete
      * implementations.
      *
      * @param entityType               The polymorphic entity type this metamodel describes.
@@ -129,14 +134,15 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * @param messageTypeResolver      The {@link MessageTypeResolver} to use for resolving message types from payload
      *                                 classes.
      * @param <E>                      The type of the polymorphic entity.
-     * @return An annotated {@link EntityMetamodel} backed by a {@link PolymorphicEntityMetamodel} for
-     * the given entity type.
+     * @return An annotated {@link EntityMetamodel} backed by a {@link PolymorphicEntityMetamodel} for the given entity
+     * type.
      */
     public static <E> AnnotatedEntityMetamodel<E> forPolymorphicType(
             @Nonnull Class<E> entityType,
             @Nonnull Set<Class<? extends E>> concreteTypes,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull MessageTypeResolver messageTypeResolver
+            @Nonnull MessageTypeResolver messageTypeResolver,
+            @Nonnull Converter converter
     ) {
         requireNonNull(concreteTypes, "The concreteTypes may not be null.");
         Assert.isTrue(!concreteTypes.isEmpty(),
@@ -145,14 +151,14 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                                               concreteTypes,
                                               parameterResolverFactory,
                                               messageTypeResolver,
+                                              converter,
                                               List.of());
     }
 
     /**
-     * Instantiate an annotated {@link EntityMetamodel} of an entity type. If the supplied
-     * {@code concreteTypes} is not empty, the entity type is considered polymorphic and will be a
-     * {@link PolymorphicEntityMetamodel}. If no concrete types are supplied, the entity type is considered
-     * concrete and will be a {@link ConcreteEntityMetamodel}.
+     * Instantiate an annotated {@link EntityMetamodel} of an entity type. If the supplied {@code concreteTypes} is not
+     * empty, the entity type is considered polymorphic and will be a {@link PolymorphicEntityMetamodel}. If no concrete
+     * types are supplied, the entity type is considered concrete and will be a {@link ConcreteEntityMetamodel}.
      *
      * @param entityType               The concrete entity type this metamodel describes.
      * @param parameterResolverFactory The {@link ParameterResolverFactory} to use for resolving parameters.
@@ -168,6 +174,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
             @Nonnull Set<Class<? extends E>> concreteTypes,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
             @Nonnull MessageTypeResolver messageTypeResolver,
+            @Nonnull Converter converter,
             @Nonnull List<QualifiedName> commandsToSkip
     ) {
         this.commandsToSkip = requireNonNull(commandsToSkip, "The commandsToSkip may not be null.");
@@ -175,6 +182,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
         this.parameterResolverFactory = requireNonNull(parameterResolverFactory,
                                                        "The parameterResolverFactory may not be null.");
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The messageTypeResolver may not be null.");
+        this.converter = requireNonNull(converter, "The converter may not be null.");
         requireNonNull(concreteTypes, "The concreteTypes may not be null.");
         if (!concreteTypes.isEmpty()) {
             this.delegateMetamodel = initializePolymorphicMetamodel(entityType, concreteTypes);
@@ -186,7 +194,10 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     private EntityMetamodel<E> initializeConcreteModel(Class<E> entityType) {
         EntityMetamodelBuilder<E> builder = EntityMetamodel.forEntityType(entityType);
         AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory);
-        builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType, inspected));
+        builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType,
+                                                                           inspected,
+                                                                           converter,
+                                                                           messageTypeResolver));
         initializeDetectedHandlers(builder, inspected);
         initializeChildren(builder);
         return builder.build();
@@ -196,14 +207,17 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                                                               Set<Class<? extends E>> concreteTypes) {
         AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory);
         var builder = PolymorphicEntityMetamodel.forSuperType(entityType);
-        builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType, inspected));
+        builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType,
+                                                                           inspected,
+                                                                           converter,
+                                                                           messageTypeResolver));
         initializeChildren(builder);
         // Commands that are present on the parent entity should not be registered again on the concrete
         // types. So we tell concrete types to skip these commands.
         LinkedList<QualifiedName> registeredCommands = initializeDetectedHandlers(builder, inspected);
         concreteTypes.forEach(concreteType -> {
             AnnotatedEntityMetamodel<? extends E> createdConcreteEntityModel = new AnnotatedEntityMetamodel<>(
-                    concreteType, Set.of(), parameterResolverFactory, messageTypeResolver, registeredCommands
+                    concreteType, Set.of(), parameterResolverFactory, messageTypeResolver, converter, registeredCommands
             );
             concreteMetamodels.add(createdConcreteEntityModel);
             builder.addConcreteType(createdConcreteEntityModel);
@@ -361,9 +375,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     }
 
     /**
-     * This is the {@link AnnotatedEntityMetamodelFactory} method to create a child
-     * {@link AnnotatedEntityMetamodel} for the given {@code clazz}, while using the same resources as its
-     * parent metamodel (this instance).
+     * This is the {@link AnnotatedEntityMetamodelFactory} method to create a child {@link AnnotatedEntityMetamodel} for
+     * the given {@code clazz}, while using the same resources as its parent metamodel (this instance).
      *
      * @param clazz The class of the child entity to create a metamodel for.
      * @param <C>   The type of the child entity to create a metamodel for.
@@ -376,6 +389,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                                               Set.of(),
                                               parameterResolverFactory,
                                               messageTypeResolver,
+                                              converter,
                                               List.of());
     }
 
@@ -432,5 +446,14 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     @Nonnull
     public Class<E> entityType() {
         return entityType;
+    }
+
+    /**
+     * Returns the {@link Converter} configured in this {@link EntityMetamodel} implementation.
+     *
+     * @return The {@link Converter} configured in this {@link EntityMetamodel} implementation.
+     */
+    public Converter converter() {
+        return converter;
     }
 }

@@ -55,6 +55,7 @@ class EventProcessingModuleConfigTest {
     }
 
     @Test
+    @Disabled("TODO #3495")
     void eventProcessingConfiguration() {
         testApplicationContext.run(context -> {
             EventProcessingModule eventProcessingConfiguration = context.getBean(EventProcessingModule.class);

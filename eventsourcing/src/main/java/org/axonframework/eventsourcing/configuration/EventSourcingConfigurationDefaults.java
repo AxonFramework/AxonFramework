@@ -44,12 +44,11 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
+public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
 
     @Override
     public int order() {
-        // TODO Have to lower the value, as the MessagingConfigurationDefaults currently takes over otherwise.
-        return Integer.MAX_VALUE - 1;
+        return Integer.MAX_VALUE - 10;
     }
 
     @Override
@@ -58,7 +57,6 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(EventStorageEngine.class,
                                       EventSourcingConfigurationDefaults::defaultEventStorageEngine)
                 .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::defaultEventStore)
-                .registerIfNotPresent(EventSink.class, EventSourcingConfigurationDefaults::defaultEventSink)
                 .registerIfNotPresent(Snapshotter.class, EventSourcingConfigurationDefaults::defaultSnapshotter);
     }
 

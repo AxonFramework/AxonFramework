@@ -17,8 +17,10 @@
 package org.axonframework.messaging.configuration.reflection;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.SearchScope;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -27,6 +29,14 @@ import java.util.function.Function;
 
 /**
  * Utility class that provides methods to register a {@link ParameterResolverFactory} to the {@link ComponentRegistry}.
+ * <p>
+ * Ensures that the {@code ComponentRegistry} at all times has <b>one</b> {@code ParameterResolverFactory} component.
+ * Subsequent invocations of
+ * {@link #registerToComponentRegistry(ComponentRegistry, Function)}/{@link
+ * #registerToComponentRegistry(ComponentRegistry, int, Function)} will
+ * {@link ComponentRegistry#registerDecorator(Class, String, int, ComponentDecorator) decorate} the existing
+ * {@code ParameterResolverFactory} and given {@code ParameterResolverFactory} into a
+ * {@link MultiParameterResolverFactory}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -34,8 +44,8 @@ import java.util.function.Function;
 public class ParameterResolverFactoryUtils {
 
     /**
-     * Register a {@link ParameterResolverFactory} to the {@link ComponentRegistry} using the given {@code factory}
-     * function. It will be registered with order {@code 0}.
+     * Register a {@link ParameterResolverFactory} to the {@link SearchScope#CURRENT current} {@link ComponentRegistry}
+     * using the given {@code factory} function. It will be registered with order {@code 0}.
      *
      * @param componentRegistry The {@link ComponentRegistry} to register the {@link ParameterResolverFactory} to.
      * @param factory           The {@link Function} that creates the {@link ParameterResolverFactory} based on the
@@ -49,8 +59,8 @@ public class ParameterResolverFactoryUtils {
     }
 
     /**
-     * Register a {@link ParameterResolverFactory} to the {@link ComponentRegistry} using the given {@code factory}
-     * function.
+     * Register a {@link ParameterResolverFactory} to the {@link SearchScope#CURRENT current} {@link ComponentRegistry}
+     * using the given {@code factory} function.
      *
      * @param componentRegistry The {@link ComponentRegistry} to register the {@link ParameterResolverFactory} to.
      * @param order             The order in which the {@link ParameterResolverFactory} should be registered.
@@ -64,7 +74,7 @@ public class ParameterResolverFactoryUtils {
         Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
         Objects.requireNonNull(factory, "Factory cannot be null");
 
-        if (!componentRegistry.hasComponent(ParameterResolverFactory.class)) {
+        if (!componentRegistry.hasComponent(ParameterResolverFactory.class, SearchScope.CURRENT)) {
             componentRegistry.registerComponent(ParameterResolverFactory.class, factory::apply);
             return;
         }

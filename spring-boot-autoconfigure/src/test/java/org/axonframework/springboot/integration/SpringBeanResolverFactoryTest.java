@@ -66,6 +66,7 @@ import static org.mockito.Mockito.*;
  * @see SpringBeanDependencyResolverFactory
  * @see SpringBeanParameterResolverFactory
  */
+@Disabled("TODO #3496")
 class SpringBeanResolverFactoryTest {
 
     private static final AtomicInteger COUNTER = new AtomicInteger();

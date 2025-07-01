@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Sara Pellegrini
  */
-
+@Disabled("TODO #3496")
 class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,8 +95,8 @@ public abstract class ObjectUtils {
     }
 
     /**
-     * Returns the type of the given {@code instance}, <em>if</em> it is not {@code null}. If it is {@code null}, {@link
-     * Void#getClass()} will be returned.
+     * Returns the type of the given {@code instance}, <em>if</em> it is not {@code null}. If it is {@code null},
+     * {@link Void#getClass()} will be returned.
      *
      * @param instance the object to return the type for
      * @param <T>      the generic type of the {@link Class} to return
@@ -111,8 +111,8 @@ public abstract class ObjectUtils {
     }
 
     /**
-     * Gets number of millis which are remaining of current deadline to be reached by {@link
-     * System#currentTimeMillis()}. If deadline is passed, 0 will be returned.
+     * Gets number of millis which are remaining of current deadline to be reached by
+     * {@link System#currentTimeMillis()}. If deadline is passed, 0 will be returned.
      *
      * @param deadline deadline to be met
      * @return number of millis to deadline
@@ -130,7 +130,6 @@ public abstract class ObjectUtils {
      *
      * @param supplier The supplier to provide the instance to return
      * @param <T>      The type of object supplied
-     *
      * @return a supplier that returns the same instance
      */
     public static <T> Supplier<T> sameInstanceSupplier(Supplier<T> supplier) {

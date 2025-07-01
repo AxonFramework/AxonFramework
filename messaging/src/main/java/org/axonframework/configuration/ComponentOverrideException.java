@@ -45,6 +45,7 @@ public class ComponentOverrideException extends RuntimeException {
             return "Cannot override Component with type [" + type + "] and name ["
                     + name + "]; it is already registered.";
         }
-        return "Cannot override Component with type [" + type + "]; it is already registered.";
+        return "Cannot override Component with type [" + type + "]; it is already registered. "
+                + "To allow multiple components with the same type a unique name is required.";
     }
 }

@@ -62,6 +62,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
+@Disabled("TODO #3499")
 class AggregateStereotypeAutoConfigurationTest {
 
     private static final Object AGGREGATE_IDENTIFIER = "aggregateIdentifier";

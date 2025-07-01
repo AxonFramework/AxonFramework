@@ -22,8 +22,8 @@ import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.configuration.SearchScope;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.serialization.Converter;
 
 import javax.annotation.Nonnull;
 
@@ -44,11 +44,10 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-        registry.registerIfNotPresent(Converter.class, c -> new TestConverter())
-                .registerIfNotPresent(AxonServerConfiguration.class, c -> new AxonServerConfiguration())
-                .registerIfNotPresent(connectionManagerDefinition())
-                .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity())
-                .registerIfNotPresent(eventStorageEngineDefinition())
+        registry.registerIfNotPresent(AxonServerConfiguration.class, c -> new AxonServerConfiguration(), SearchScope.ALL)
+                .registerIfNotPresent(connectionManagerDefinition(), SearchScope.ALL)
+                .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity(), SearchScope.ALL)
+                .registerIfNotPresent(eventStorageEngineDefinition(), SearchScope.ALL)
                 .registerFactory(new AxonServerEventStorageEngineFactory());
     }
 

@@ -32,6 +32,7 @@ import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.configuration.EntityMetamodelConfigurationBuilder;
 import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
+import org.axonframework.serialization.Converter;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -91,14 +92,16 @@ class AnnotatedEventSourcedEntityModule<I, E>
                     entityType,
                     concreteTypes,
                     c.getComponent(ParameterResolverFactory.class),
-                    c.getComponent(MessageTypeResolver.class)
+                    c.getComponent(MessageTypeResolver.class),
+                    c.getComponent(Converter.class)
             );
         }
 
         return (c, b) -> AnnotatedEntityMetamodel.forConcreteType(
                 entityType,
                 c.getComponent(ParameterResolverFactory.class),
-                c.getComponent(MessageTypeResolver.class)
+                c.getComponent(MessageTypeResolver.class),
+                c.getComponent(Converter.class)
         );
     }
 

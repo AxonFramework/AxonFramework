@@ -167,7 +167,24 @@ public interface ComponentRegistry extends DescribableComponent {
      * otherwise.
      */
     default boolean hasComponent(@Nonnull Class<?> type) {
-        return hasComponent(type, null);
+        return hasComponent(type, (String) null);
+    }
+
+    /**
+     * Check whether there is a {@link Component} registered with this {@code Configurer} for the given {@code type}.
+     * <p>
+     * The given {@code searchScope} is used to define if the search only checks the {@link SearchScope#CURRENT current}
+     * registry, only checks all {@link SearchScope#ANCESTORS ancestors}, or checks {@link SearchScope#ALL both} the
+     * current registry and all ancestors.
+     *
+     * @param type        The type of the {@link Component} to check if it exists, typically an interface.
+     * @param searchScope The enumeration defining the search scope used to check if this registry has a
+     *                    {@link Component}.
+     * @return {@code true} when there is a {@link Component} registered under the given {@code type}, {@code false}
+     * otherwise.
+     */
+    default boolean hasComponent(@Nonnull Class<?> type, @Nonnull SearchScope searchScope) {
+        return hasComponent(type, null, searchScope);
     }
 
     /**
@@ -180,8 +197,30 @@ public interface ComponentRegistry extends DescribableComponent {
      * @return {@code true} when there is a {@link Component} registered under the given {@code type} and
      * {@code name combination}, {@code false} otherwise.
      */
+    default boolean hasComponent(@Nonnull Class<?> type,
+                                 @Nullable String name) {
+        return hasComponent(type, name, SearchScope.ALL);
+    }
+
+    /**
+     * Check whether there is a {@link Component} registered with this {@code Configurer} for the given {@code type} and
+     * {@code name} combination.
+     * <p>
+     * The given {@code searchScope} is used to define if the search only checks the {@link SearchScope#CURRENT current}
+     * registry, only checks all {@link SearchScope#ANCESTORS ancestors}, or checks {@link SearchScope#ALL both} the
+     * current registry and all ancestors.
+     *
+     * @param type        The type of the {@link Component} to check if it exists, typically an interface.
+     * @param name        The name of the {@link Component} to check if it exists. Use {@code null} when there is no
+     *                    name or use {@link #hasComponent(Class)} instead.
+     * @param searchScope The enumeration defining the search scope used to check if this registry has a
+     *                    {@link Component}.
+     * @return {@code true} when there is a {@link Component} registered under the given {@code type} and
+     * {@code name combination}, {@code false} otherwise.
+     */
     boolean hasComponent(@Nonnull Class<?> type,
-                         @Nullable String name);
+                         @Nullable String name,
+                         @Nonnull SearchScope searchScope);
 
     /**
      * Registers a {@link Component} only <b>if</b> there is none yet for the given {@code type}.
@@ -198,6 +237,31 @@ public interface ComponentRegistry extends DescribableComponent {
     default <C> ComponentRegistry registerIfNotPresent(@Nonnull Class<C> type,
                                                        @Nonnull ComponentBuilder<C> builder) {
         return registerIfNotPresent(type, null, builder);
+    }
+
+
+    /**
+     * Registers a {@link Component} only <b>if</b> there is none yet for the given {@code type}.
+     * <p>
+     * The given {@code builder} function gets the {@link Configuration configuration} as input, and is expected to
+     * provide the component as output. The component will be registered under an {@link Identifier} based on the given
+     * {@code type}.
+     * <p>
+     * The given {@code searchScope} is used to define if the search only checks the {@link SearchScope#CURRENT current}
+     * registry, only checks all {@link SearchScope#ANCESTORS ancestors}, or checks {@link SearchScope#ALL both} the
+     * current registry and all ancestors.
+     *
+     * @param type        The declared type of the component to build, typically an interface.
+     * @param builder     The builder building the component.
+     * @param searchScope The enumeration defining the search scope used to check if this registry has a
+     *                    {@link Component}.
+     * @param <C>         The type of component the {@code builder} builds.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    default <C> ComponentRegistry registerIfNotPresent(@Nonnull Class<C> type,
+                                                       @Nonnull ComponentBuilder<C> builder,
+                                                       @Nonnull SearchScope searchScope) {
+        return registerIfNotPresent(type, null, builder, searchScope);
     }
 
     /**
@@ -221,16 +285,72 @@ public interface ComponentRegistry extends DescribableComponent {
         return registerIfNotPresent(ComponentDefinition.ofTypeAndName(type, name).withBuilder(builder));
     }
 
+
+    /**
+     * Registers a {@link Component} only <b>if</b> there is none yet for the given {@code type} and {@code name}
+     * combination.
+     * <p>
+     * The given {@code builder} function gets the {@link Configuration configuration} as input, and is expected to
+     * provide the component as output. The component will be registered under an {@link Identifier} based on the given
+     * {@code type}.
+     * <p>
+     * The given {@code searchScope} is used to define if the search only checks the {@link SearchScope#CURRENT current}
+     * registry, only checks all {@link SearchScope#ANCESTORS ancestors}, or checks {@link SearchScope#ALL both} the
+     * current registry and all ancestors.
+     *
+     * @param type        The declared type of the component to build (typically an interface) <b>if</b> it has not been
+     *                    registered yet.
+     * @param name        The name of the component to build <b>if</b> it has not been registered yet.
+     * @param builder     The builder building the component.
+     * @param searchScope The enumeration defining the search scope used to check if this registry has a
+     *                    {@link Component}.
+     * @param <C>         The type of component the {@code builder} builds.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    default <C> ComponentRegistry registerIfNotPresent(@Nonnull Class<C> type,
+                                                       @Nullable String name,
+                                                       @Nonnull ComponentBuilder<C> builder,
+                                                       @Nonnull SearchScope searchScope) {
+        return registerIfNotPresent(ComponentDefinition.ofTypeAndName(type, name).withBuilder(builder), searchScope);
+    }
+
     /**
      * Registers a {@link Component} based on the given {@code definition} only <b>if</b> there is none yet for the
-     * definition's {@link ComponentDefinition#type() type} and {@link ComponentDefinition#name() name} combination.
+     * definition's {@link ComponentDefinition#rawType() raw type} and {@link ComponentDefinition#name() name}
+     * combination.
      *
      * @param definition The definition of the component to register.
      * @param <C>        The declared type of the component.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     default <C> ComponentRegistry registerIfNotPresent(@Nonnull ComponentDefinition<C> definition) {
-        return hasComponent(definition.type(), definition.name()) ? this : registerComponent(definition);
+        return definition.name() == null
+                ? hasComponent(definition.rawType()) ? this : registerComponent(definition)
+                : hasComponent(definition.rawType(), definition.name()) ? this : registerComponent(definition);
+    }
+
+
+    /**
+     * Registers a {@link Component} based on the given {@code definition} only <b>if</b> there is none yet for the
+     * definition's {@link ComponentDefinition#rawType() raw type} and {@link ComponentDefinition#name() name}
+     * combination.
+     * <p>
+     * The given {@code searchScope} is used to define if the search only checks the {@link SearchScope#CURRENT current}
+     * registry, only checks all {@link SearchScope#ANCESTORS ancestors}, or checks {@link SearchScope#ALL both} the
+     * current registry and all ancestors.
+     *
+     * @param definition  The definition of the component to register.
+     * @param searchScope The enumeration defining the search scope used to check if this registry has a
+     *                    {@link Component}.
+     * @param <C>         The declared type of the component.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    default <C> ComponentRegistry registerIfNotPresent(@Nonnull ComponentDefinition<C> definition,
+                                                       SearchScope searchScope) {
+        return definition.name() == null
+                ? hasComponent(definition.rawType(), searchScope) ? this : registerComponent(definition)
+                : hasComponent(definition.rawType(), definition.name(), searchScope) ? this : registerComponent(
+                definition);
     }
 
     /**

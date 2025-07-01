@@ -16,3 +16,4 @@
 
 org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer
 org.axonframework.modelling.annotation.InjectEntityParameterResolverFactoryConfigurationEnhancer
+org.axonframework.modelling.configuration.ModellingConfigurationDefaults
