@@ -56,12 +56,8 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event, 
                                                      @Nonnull ProcessingContext context) {
         try {
-            // Get the segment from context, or use root segment if not available
             Segment segment = Segment.fromContext(context).orElse(Segment.ROOT_SEGMENT);
-            
-            // Delegate to the wrapped invoker
             eventHandlerInvoker.handle(event, context, segment);
-            
             return MessageStream.empty();
         } catch (Exception e) {
             return MessageStream.failed(e);
@@ -85,22 +81,16 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
 
     @Override
     public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
-        // Check if delegate is MultiEventHandlerInvoker
-        if (eventHandlerInvoker instanceof MultiEventHandlerInvoker multiInvoker) {
-            if (!multiInvoker.delegates().isEmpty()) {
-                EventHandlerInvoker firstDelegate = multiInvoker.delegates().getFirst();
-                if (firstDelegate instanceof SimpleEventHandlerInvoker simpleInvoker) {
-                    return simpleInvoker.getSequencingPolicy().getSequenceIdentifierFor(event);
-                }
-            }
-        }
-        // Check if it's SimpleEventHandlerInvoker directly
-        else if (eventHandlerInvoker instanceof SimpleEventHandlerInvoker simpleInvoker) {
-            return simpleInvoker.getSequencingPolicy().getSequenceIdentifierFor(event);
-        }
-
-        // If it's none of the supported implementations, return empty
-        return Optional.empty();
+        return switch (eventHandlerInvoker) {
+            case MultiEventHandlerInvoker multiInvoker when !multiInvoker.delegates().isEmpty() ->
+                    Optional.ofNullable(multiInvoker.delegates().getFirst())
+                            .filter(SimpleEventHandlerInvoker.class::isInstance)
+                            .map(SimpleEventHandlerInvoker.class::cast)
+                            .flatMap(invoker -> invoker.getSequencingPolicy().getSequenceIdentifierFor(event));
+            case SimpleEventHandlerInvoker simpleInvoker ->
+                    simpleInvoker.getSequencingPolicy().getSequenceIdentifierFor(event);
+            default -> Optional.empty();
+        };
     }
 
     @Override
