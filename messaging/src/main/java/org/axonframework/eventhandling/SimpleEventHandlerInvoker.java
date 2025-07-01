@@ -49,6 +49,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     private final List<EventMessageHandler> eventHandlingComponents;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
+    private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
     private final SegmentMatcher segmentMatcher;
 
     /**
@@ -68,7 +69,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                                              : builder.wrapEventMessageHandler(handler)
                                      )
                                      .collect(Collectors.toCollection(ArrayList::new));
-        this.segmentMatcher = new SegmentMatcher(builder.sequencingPolicy::getSequenceIdentifierFor);
+        this.sequencingPolicy = builder.sequencingPolicy;
+        this.segmentMatcher = new SegmentMatcher(this.sequencingPolicy::getSequenceIdentifierFor);
         this.listenerInvocationErrorHandler = builder.listenerInvocationErrorHandler;
     }
 
@@ -183,11 +185,20 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         return listenerInvocationErrorHandler;
     }
 
+    /**
+     * Return the {@link SequencingPolicy} as configured for this {@link EventHandlerInvoker}.
+     *
+     * @return the {@link SequencingPolicy} as configured for this {@link EventHandlerInvoker}
+     */
+    public SequencingPolicy<? super EventMessage<?>> getSequencingPolicy() {
+        return sequencingPolicy;
+    }
+
     @Override
     public Set<Class<?>> supportedEventTypes() {
         return eventHandlingComponents.stream()
-                .flatMap(handler -> handler.supportedEventTypes().stream())
-                .collect(Collectors.toSet());
+                                      .flatMap(handler -> handler.supportedEventTypes().stream())
+                                      .collect(Collectors.toSet());
     }
 
     /**

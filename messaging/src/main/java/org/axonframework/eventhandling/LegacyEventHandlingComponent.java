@@ -85,7 +85,21 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
 
     @Override
     public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
-        // EventHandlerInvoker doesn't provide sequence identifier information
+        // Check if delegate is MultiEventHandlerInvoker
+        if (eventHandlerInvoker instanceof MultiEventHandlerInvoker multiInvoker) {
+            if (!multiInvoker.delegates().isEmpty()) {
+                EventHandlerInvoker firstDelegate = multiInvoker.delegates().getFirst();
+                if (firstDelegate instanceof SimpleEventHandlerInvoker simpleInvoker) {
+                    return simpleInvoker.getSequencingPolicy().getSequenceIdentifierFor(event);
+                }
+            }
+        }
+        // Check if it's SimpleEventHandlerInvoker directly
+        else if (eventHandlerInvoker instanceof SimpleEventHandlerInvoker simpleInvoker) {
+            return simpleInvoker.getSequencingPolicy().getSequenceIdentifierFor(event);
+        }
+
+        // If it's none of the supported implementations, return empty
         return Optional.empty();
     }
 
@@ -106,4 +120,4 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     public EventHandlerInvoker getEventHandlerInvoker() {
         return eventHandlerInvoker;
     }
-} 
+}
