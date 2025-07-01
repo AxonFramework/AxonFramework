@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class UpdateCheckerConfigurationEnhancerTest {
 
     @Test
-    void configureShouldConfigureComponents() {
+    void configureShouldConfigureComponentsWithStartAndShutdown() {
         UpdateCheckerConfigurationEnhancer enhancer = new UpdateCheckerConfigurationEnhancer();
         DefaultComponentRegistry componentRegistry = new DefaultComponentRegistry();
         assertDoesNotThrow(() -> enhancer.enhance(componentRegistry));
@@ -41,6 +41,14 @@ class UpdateCheckerConfigurationEnhancerTest {
         Configuration config = componentRegistry.build(lifecycleRegistry);
 
         UpdateChecker checker = config.getComponent(UpdateChecker.class);
+        assertFalse(checker.isStarted());
+
+        lifecycleRegistry.start(config);
+
+        assertTrue(checker.isStarted());
+
+        lifecycleRegistry.shutdown(config);
+
         assertFalse(checker.isStarted());
     }
 }
