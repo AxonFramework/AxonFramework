@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageType;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Map;
 import java.util.Set;
@@ -27,13 +27,18 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link MetaDataBasedTagResolver}
+ * Test class validating the {@link MetaDataBasedTagResolver}.
+ *
+ * @author Mateusz Nowak
  */
 class MetaDataBasedTagResolverTest {
 
     private static final String META_DATA_KEY = "testKey";
-    private static final GenericEventMessage<String> TEST_EVENT =
-            new GenericEventMessage<>(new MessageType("test", "event", "0.0.1"), "payload", Map.of(META_DATA_KEY, "testValue"));
+    private static final GenericEventMessage<String> TEST_EVENT = new GenericEventMessage<>(
+            new MessageType("test", "event", "0.0.1"),
+            "payload",
+            Map.of(META_DATA_KEY, "testValue")
+    );
 
     @Test
     void resolveReturnsExpectedTagWhenMetaDataKeyExists() {
@@ -62,6 +67,7 @@ class MetaDataBasedTagResolverTest {
 
     @Test
     void constructorThrowsNullPointerExceptionForNullMetaDataKey() {
+        //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> new MetaDataBasedTagResolver(null));
     }
 }

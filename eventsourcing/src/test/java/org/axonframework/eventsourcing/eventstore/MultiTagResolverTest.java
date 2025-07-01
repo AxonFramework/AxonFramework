@@ -27,13 +27,14 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link MultiTagResolver}
+ * Test class validating the {@link MultiTagResolver}.
+ *
+ * @author Mateusz Nowak
  */
 class MultiTagResolverTest {
 
     private static final GenericEventMessage<String> TEST_EVENT =
             new GenericEventMessage<>(new MessageType("test", "event", "0.0.1"), "payload");
-
 
     @Test
     void resolveCombinesTagsFromMultipleResolvers() {

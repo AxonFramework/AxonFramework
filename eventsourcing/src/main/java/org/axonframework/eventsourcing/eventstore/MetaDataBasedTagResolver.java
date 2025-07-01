@@ -35,11 +35,11 @@ public class MetaDataBasedTagResolver implements TagResolver {
     private final String metaDataKey;
 
     /**
-     * Constructs a {@link MetaDataBasedTagResolver} using the given metadata key.
+     * Constructs a {@code MetaDataBasedTagResolver} using the given metadata key.
      *
      * @param metaDataKey The key to extract the tag value from the event's metadata.
      */
-    public MetaDataBasedTagResolver(String metaDataKey) {
+    public MetaDataBasedTagResolver(@Nonnull String metaDataKey) {
         this.metaDataKey = Objects.requireNonNull(metaDataKey, "MetaDataKey cannot be null");
     }
 

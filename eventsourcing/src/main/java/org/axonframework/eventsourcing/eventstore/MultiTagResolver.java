@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * {@code TagResolver} that combines the results of multiple other tag resolvers. When multiple
- * resolvers provide the same tags, they are merged into a single set.
+ * {@code TagResolver} that combines the results of multiple other tag resolvers. When multiple resolvers provide the
+ * same tags, they are merged into a single set.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
