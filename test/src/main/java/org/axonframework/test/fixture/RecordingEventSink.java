@@ -25,6 +25,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -46,8 +47,8 @@ public class RecordingEventSink implements EventSink {
      * Creates a new {@link RecordingEventSink} that will record all events published to the given {@code delegate}.
      * @param delegate The {@link EventSink} to which events will be published.
      */
-    public RecordingEventSink(EventSink delegate) {
-        this.delegate = delegate;
+    public RecordingEventSink(@Nonnull EventSink delegate) {
+        this.delegate = Objects.requireNonNull(delegate, "The delegate EventSink may not be null");
         this.recorded = new ArrayList<>();
     }
 

@@ -31,6 +31,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -52,8 +53,8 @@ public class RecordingCommandBus implements CommandBus {
      *
      * @param delegate The {@link CommandBus} to which commands will be dispatched.
      */
-    public RecordingCommandBus(CommandBus delegate) {
-        this.delegate = delegate;
+    public RecordingCommandBus(@Nonnull CommandBus delegate) {
+        this.delegate = Objects.requireNonNull(delegate, "The delegate CommandBus may not be null");
     }
 
     @Override
