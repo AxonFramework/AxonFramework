@@ -400,7 +400,7 @@ public final class EventProcessorOperations {
          */
         private void validate() throws AxonConfigurationException {
             assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
-            assertNonNull(eventHandlingComponent, "The EventHandlerInvoker is a hard requirement and should be provided");
+            assertNonNull(eventHandlingComponent, "The EventHandlingComponent is a hard requirement and should be provided");
         }
 
         private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {

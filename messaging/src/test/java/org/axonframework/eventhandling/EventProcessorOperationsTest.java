@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
 import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
@@ -63,13 +64,12 @@ class EventProcessorOperationsTest {
             }
         };
 
-        EventMessageHandler mockHandler = mock(EventMessageHandler.class);
-        EventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
-                                                                           .eventHandlers(mockHandler)
-                                                                           .build();
+        EventHandlingComponent mockEventHandlingComponent = mock(EventHandlingComponent.class);
+        when(mockEventHandlingComponent.handle(any(), any())).thenReturn(MessageStream.empty());
+        when(mockEventHandlingComponent.isSupported(any())).thenReturn(true);
         TestEventProcessor testSubject = TestEventProcessor.builder()
                                                            .name("test")
-                                                           .eventHandlerInvoker(eventHandlerInvoker)
+                                                           .eventHandlingComponent(mockEventHandlingComponent)
                                                            .messageMonitor(messageMonitor)
                                                            .build();
 
@@ -107,7 +107,7 @@ class EventProcessorOperationsTest {
             builder.validate();
             this.eventProcessorOperations = new EventProcessorOperations.Builder()
                     .name(builder.name())
-                    .eventHandlerInvoker(builder.eventHandlerInvoker())
+                    .eventHandlingComponent(builder.eventHandlingComponent())
                     .errorHandler(builder.errorHandler())
                     .spanFactory(builder.spanFactory())
                     .messageMonitor(builder.messageMonitor())
@@ -159,6 +159,8 @@ class EventProcessorOperationsTest {
 
         private static class Builder extends EventProcessorBuilder {
 
+            private EventHandlingComponent eventHandlingComponent;
+
             public Builder() {
                 super();
             }
@@ -181,8 +183,19 @@ class EventProcessorOperationsTest {
                 return this;
             }
 
+            public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
+                assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
+                this.eventHandlingComponent = eventHandlingComponent;
+                return this;
+            }
+
             private TestEventProcessor build() {
                 return new TestEventProcessor(this);
+            }
+
+            @Override
+            public EventHandlingComponent eventHandlingComponent() {
+                return eventHandlingComponent;
             }
         }
     }
