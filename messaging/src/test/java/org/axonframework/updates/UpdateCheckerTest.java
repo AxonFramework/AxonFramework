@@ -17,8 +17,7 @@
 package org.axonframework.updates;
 
 import org.axonframework.updates.api.UpdateCheckResponse;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -48,6 +47,13 @@ class UpdateCheckerTest {
     void setUp() {
         System.setProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT, "true");
         updateChecker = new UpdateChecker(httpClient, reporter);
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Reset the system property after tests
+        System.clearProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT);
+        updateChecker.stop();
     }
 
     @Test
