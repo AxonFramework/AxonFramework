@@ -59,6 +59,11 @@ public class MachineId {
     private void initialize() {
         try {
             File file = getFile();
+            if(file == null) {
+                logger.debug("Could not determine user home directory. Machine ID will not be stored.");
+                machineId = UUID.randomUUID().toString();
+                return;
+            }
             if (file.exists()) {
                 machineId = new String(Files.readAllBytes(file.toPath()));
                 return;
@@ -76,6 +81,9 @@ public class MachineId {
 
     private File getFile() {
         String pwdDir = System.getProperty("user.home");
+        if(pwdDir == null) {
+            return null;
+        }
         String installationIdFilePath = pwdDir + MACHINE_ID_PATH;
         return new File(installationIdFilePath);
     }
