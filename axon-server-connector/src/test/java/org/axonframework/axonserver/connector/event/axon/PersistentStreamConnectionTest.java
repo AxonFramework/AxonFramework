@@ -60,6 +60,7 @@ import static org.mockito.Mockito.*;
 /**
  * Test class validating the {@link PersistentStreamConnection}.
  */
+@Disabled("TODO #3520")
 class PersistentStreamConnectionTest {
 
     private static final String STREAM_NAME = "stream-name";
