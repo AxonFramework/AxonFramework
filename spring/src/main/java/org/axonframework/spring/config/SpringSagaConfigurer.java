@@ -16,23 +16,23 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.ConfigurerModule;
+import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import jakarta.annotation.Nonnull;
-
 /**
- * A {@link ConfigurerModule} implementation that configures a Saga based on configuration found in the Application
+ * A {@link ConfigurationEnhancer} implementation that configures a Saga based on configuration found in the Application
  * Context.
  *
  * @author Allard Buijze
  * @since 4.6.0
  */
-public class SpringSagaConfigurer implements ConfigurerModule, ApplicationContextAware {
+// TODO #3097 Fix as part of referred to issue
+public class SpringSagaConfigurer implements ConfigurationEnhancer, ApplicationContextAware {
 
     private final Class<?> sagaType;
     private String sagaStore;
@@ -57,17 +57,17 @@ public class SpringSagaConfigurer implements ConfigurerModule, ApplicationContex
     }
 
     @Override
-    public void configureModule(LegacyConfigurer configurer) {
-        configurer.eventProcessing()
-                  .registerSaga(sagaType,
-                                sagaConfigurer -> {
-                                    if (sagaStore != null && !"".equals(sagaStore)) {
-                                        //noinspection unchecked
-                                        sagaConfigurer.configureSagaStore(
-                                                c -> applicationContext.getBean(sagaStore, SagaStore.class)
-                                        );
-                                    }
-                                });
+    public void enhance(@Nonnull ComponentRegistry registry) {
+//        configurer.eventProcessing()
+//                  .registerSaga(sagaType,
+//                                sagaConfigurer -> {
+//                                    if (sagaStore != null && !"".equals(sagaStore)) {
+//                                        noinspection unchecked
+//                                        sagaConfigurer.configureSagaStore(
+//                                                c -> applicationContext.getBean(sagaStore, SagaStore.class)
+//                                        );
+//                                    }
+//                                });
     }
 
     @Override
