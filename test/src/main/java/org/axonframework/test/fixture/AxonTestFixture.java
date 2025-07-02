@@ -59,22 +59,17 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         CommandBus commandBusComponent = configuration.getComponent(CommandBus.class);
         if (!(commandBusComponent instanceof RecordingCommandBus)) {
             throw new FixtureExecutionException(
-                "CommandBus is not a RecordingCommandBus. This may happen in Spring environments where the " +
-                "MessagesRecordingConfigurationEnhancer is not properly registered. " +
-                "Please declare MessagesRecordingConfigurationEnhancer as a bean in your test context. " +
-                "Note: This configuration may be subject to change until the 5.0.0 release."
+                "CommandBus is not a RecordingCommandBus. This may happen if you have decorated the recording " +
+                "implementation with an enhancer with order Integer.MAX_VALUE. "
             );
         }
         this.commandBus = (RecordingCommandBus) commandBusComponent;
 
-        // Safely cast EventSink with proper error handling
         EventSink eventSinkComponent = configuration.getComponent(EventSink.class);
         if (!(eventSinkComponent instanceof RecordingEventSink)) {
             throw new FixtureExecutionException(
-                "EventSink is not a RecordingEventSink. This may happen in Spring environments where the " +
-                "MessagesRecordingConfigurationEnhancer is not properly registered. " +
-                "Please declare MessagesRecordingConfigurationEnhancer as a bean in your test context. " +
-                "Note: This configuration may be subject to change until the 5.0.0 release."
+                "EventSink is not a RecordingEventSink. This may happen if you have decorated the recording " +
+                "implementation with an enhancer with order Integer.MAX_VALUE. "
             );
         }
         this.eventSink = (RecordingEventSink) eventSinkComponent;
