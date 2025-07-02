@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.modelling.command.LegacyRepository;
 
 /**
@@ -36,8 +36,9 @@ public abstract class BeanHelper {
      * @return The {@link LegacyRepository} instance for the aggregate.
      * @throws IllegalArgumentException if the given {@code aggregateType} has not been configured.
      */
-    public static <T> LegacyRepository<T> repository(Class<T> aggregateType, LegacyConfiguration configuration) {
-        return configuration.repository(aggregateType);
+    // TODO #3499 Fix/remove as part of referred to issue
+    public static <T> LegacyRepository<T> repository(Class<T> aggregateType, Configuration configuration) {
+        return configuration.getComponent(LegacyRepository.class);
     }
 
     private BeanHelper() {

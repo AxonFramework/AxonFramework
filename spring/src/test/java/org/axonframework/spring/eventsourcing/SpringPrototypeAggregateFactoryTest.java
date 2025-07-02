@@ -16,9 +16,6 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -26,20 +23,15 @@ import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.spring.config.SpringAggregateLookup;
-import org.axonframework.spring.config.SpringAxonConfiguration;
-import org.axonframework.spring.config.SpringConfigurer;
 import org.axonframework.spring.eventsourcing.context.SpringWiredAggregate;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
+// TODO #3499 Fix as part of referred to issue
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = SpringPrototypeAggregateFactoryTest.Context.class)
 class SpringPrototypeAggregateFactoryTest {
@@ -106,19 +99,19 @@ class SpringPrototypeAggregateFactoryTest {
             return new SpringAggregateLookup();
         }
 
-        @Bean
-        public SpringAxonConfiguration springAxonConfiguration(LegacyConfigurer configurer) {
-            return new SpringAxonConfiguration(configurer);
-        }
+//        @Bean
+//        public SpringAxonConfiguration springAxonConfiguration(LegacyConfigurer configurer) {
+//            return new SpringAxonConfiguration(configurer);
+//        }
 
-        @Bean
-        public SpringConfigurer springAxonConfigurer(ConfigurableListableBeanFactory beanFactory,
-                                                     List<ConfigurerModule> configurerModules,
-                                                     List<ModuleConfiguration> moduleConfigurations) {
-            SpringConfigurer configurer = new SpringConfigurer(beanFactory);
-            moduleConfigurations.forEach(configurer::registerModule);
-            configurerModules.forEach(c -> c.configureModule(configurer));
-            return configurer;
-        }
+//        @Bean
+//        public SpringConfigurer springAxonConfigurer(ConfigurableListableBeanFactory beanFactory,
+//                                                     List<ConfigurerModule> configurerModules,
+//                                                     List<ModuleConfiguration> moduleConfigurations) {
+//            SpringConfigurer configurer = new SpringConfigurer(beanFactory);
+//            moduleConfigurations.forEach(configurer::registerModule);
+//            configurerModules.forEach(c -> c.configureModule(configurer));
+//            return configurer;
+//        }
     }
 }
