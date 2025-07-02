@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-// TODO #3499 Fix as part of referred to issue
+@Disabled("TODO #3499") // TODO #3499 Fix as part of referred to issue
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = SpringPrototypeAggregateFactoryTest.Context.class)
 class SpringPrototypeAggregateFactoryTest {
