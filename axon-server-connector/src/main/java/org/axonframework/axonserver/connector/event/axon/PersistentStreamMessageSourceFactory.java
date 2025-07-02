@@ -17,7 +17,7 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
-import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.configuration.Configuration;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -44,6 +44,7 @@ public interface PersistentStreamMessageSourceFactory {
      * @param batchSize                  The number of events to be fetched in a single batch from the stream.
      * @param context                    The context in which the persistent stream operates. This can be used to
      *                                   differentiate streams in different environments or applications.
+     *                                   @param configuration              Global configuration of Axon components.
      * @return A new instance of {@link PersistentStreamMessageSource} configured with the provided parameters.
      * @throws IllegalArgumentException                                   If any of the required parameters are null or
      *                                                                    invalid.
@@ -55,5 +56,5 @@ public interface PersistentStreamMessageSourceFactory {
                                         ScheduledExecutorService scheduler,
                                         int batchSize,
                                         String context,
-                                        LegacyConfiguration configuration);
+                                        Configuration configuration);
 }

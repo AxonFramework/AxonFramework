@@ -18,6 +18,7 @@ package org.axonframework.springboot.autoconfig;
 
 
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
@@ -29,7 +30,6 @@ import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessage
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
-import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
@@ -66,7 +66,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.lang.Nullable;
 
 import java.util.concurrent.ScheduledExecutorService;
-import jakarta.annotation.Nonnull;
 
 /**
  * Configures Axon Server as implementation for the CommandBus, QueryBus and EventStore.
@@ -352,11 +351,13 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                                                                                     .getSource());
                                                                processingConfigurer.registerSequencingPolicy(
                                                                        e.getKey(),
-                                                                       new PersistentStreamSequencingPolicyProvider(
-                                                                               e.getKey(),
-                                                                               persistentStreamConfig.getSequencingPolicy(),
-                                                                               persistentStreamConfig.getSequencingPolicyParameters()
-                                                                       )
+                                                                       // TODO #3520
+                                                                       null
+//                                                                       new PersistentStreamSequencingPolicyProvider(
+//                                                                               e.getKey(),
+//                                                                               persistentStreamConfig.getSequencingPolicy(),
+//                                                                               persistentStreamConfig.getSequencingPolicyParameters()
+//                                                                       )
                                                                );
                                                            })
         );

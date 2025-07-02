@@ -25,7 +25,7 @@ import io.axoniq.axonserver.connector.impl.StreamClosedException;
 import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -33,6 +33,8 @@ import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +66,7 @@ public class PersistentStreamConnection {
     private final Logger logger = LoggerFactory.getLogger(PersistentStreamConnection.class);
 
     private final String streamId;
-    private final LegacyConfiguration configuration;
+    private final Configuration configuration;
     private final PersistentStreamProperties persistentStreamProperties;
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
@@ -90,7 +92,7 @@ public class PersistentStreamConnection {
      * @param batchSize                  The batch size for collecting events.
      */
     public PersistentStreamConnection(String streamId,
-                                      LegacyConfiguration configuration,
+                                      Configuration configuration,
                                       PersistentStreamProperties persistentStreamProperties,
                                       ScheduledExecutorService scheduler,
                                       int batchSize) {
@@ -113,7 +115,7 @@ public class PersistentStreamConnection {
      * @param defaultContext             The default context to use for the connection.
      */
     public PersistentStreamConnection(String streamId,
-                                      LegacyConfiguration configuration,
+                                      Configuration configuration,
                                       PersistentStreamProperties persistentStreamProperties,
                                       ScheduledExecutorService scheduler,
                                       int batchSize,
@@ -219,7 +221,7 @@ public class PersistentStreamConnection {
 
         public SegmentConnection(PersistentStreamSegment persistentStreamSegment) {
             this.persistentStreamSegment = persistentStreamSegment;
-            serializer = new GrpcMetaDataAwareSerializer(configuration.eventSerializer());
+            serializer = new GrpcMetaDataAwareSerializer(configuration.getComponent(Serializer.class));
         }
 
         private class RetryState implements SegmentState {
@@ -262,7 +264,7 @@ public class PersistentStreamConnection {
 
                 if (logger.isTraceEnabled()) {
                     logger.trace("{}[{}] readMessagesFromSegment - closed: {}",
-                            streamId, persistentStreamSegment.segment(), persistentStreamSegment.isClosed());
+                                 streamId, persistentStreamSegment.segment(), persistentStreamSegment.isClosed());
                 }
 
                 try {
@@ -272,8 +274,12 @@ public class PersistentStreamConnection {
                             try {
                                 processBatch(batch);
                             } catch (Exception ex) {
-                                logger.warn("{}: Exception while processing events for segment {}, retrying after {} second",
-                                        streamId, persistentStreamSegment.segment(), MIN_RETRY_INTERVAL_SECONDS, ex);
+                                logger.warn(
+                                        "{}: Exception while processing events for segment {}, retrying after {} second",
+                                        streamId,
+                                        persistentStreamSegment.segment(),
+                                        MIN_RETRY_INTERVAL_SECONDS,
+                                        ex);
 
                                 currentState.set(new RetryState(batch));
                             }
@@ -289,7 +295,7 @@ public class PersistentStreamConnection {
                     }
                     persistentStreamSegment.error(e.getMessage());
                     logger.warn("{}: Exception while processing events for segment {}",
-                            streamId, persistentStreamSegment.segment(), e);
+                                streamId, persistentStreamSegment.segment(), e);
                 } finally {
                     processGate.set(false);
                     if (!persistentStreamSegment.isClosed() && persistentStreamSegment.peek() != null) {
@@ -330,9 +336,9 @@ public class PersistentStreamConnection {
                 consumer.get().accept(eventMessages);
                 if (logger.isTraceEnabled()) {
                     logger.trace("{}/{} processed {} entries",
-                            streamId,
-                            persistentStreamSegment.segment(),
-                            eventMessages.size());
+                                 streamId,
+                                 persistentStreamSegment.segment(),
+                                 eventMessages.size());
                 }
                 persistentStreamSegment.acknowledge(token);
             }
@@ -359,7 +365,7 @@ public class PersistentStreamConnection {
                                               );
                                           }),
                                      serializer,
-                                     configuration.upcasterChain())
+                                     configuration.getComponent(EventUpcasterChain.class))
                              .collect(Collectors.toList());
         }
 

@@ -18,6 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.configuration.SubscribableMessageSourceDefinition;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandlerInvoker;
@@ -39,7 +40,6 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 

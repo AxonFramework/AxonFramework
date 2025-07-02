@@ -1124,12 +1124,11 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer usingSubscribingEventProcessors(
             SubscribableMessageSourceDefinitionBuilder defaultSource) {
-        this.defaultEventProcessorBuilder = (name,
-                                             conf,
-                                             eventHandlerInvoker) -> subscribingEventProcessor(name,
-                                                                                               eventHandlerInvoker,
-                                                                                               defaultSource.build(name)
-                                                                                                            .create(conf));
+        // TODO #3520 Fix as part of referred to issue
+        this.defaultEventProcessorBuilder =
+                (name, conf, eventHandlerInvoker) -> subscribingEventProcessor(
+                        name, eventHandlerInvoker, defaultSource.build(name).create(null)
+                );
         return this;
     }
 }
