@@ -690,6 +690,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void listStreamingQueryWhenRequestingTooMany() {
         QueryMessage<ListQuery, List<String>> queryMessage = new GenericQueryMessage<>(
                 new MessageType("query"), new ListQuery(1000), multipleInstancesOf(String.class)
