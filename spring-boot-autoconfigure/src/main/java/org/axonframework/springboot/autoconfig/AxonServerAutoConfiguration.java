@@ -183,9 +183,10 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
             AxonServerConnectionManager connectionManager,
             AxonServerConfiguration configuration
     ) {
-        return new EventProcessorInfoConfiguration(c -> eventProcessingConfiguration,
-                                                   c -> connectionManager,
-                                                   c -> configuration);
+        // TODO #3521
+        return new EventProcessorInfoConfiguration(/*c -> eventProcessingConfiguration*/null,
+                                                                                        c -> connectionManager,
+                                                                                        c -> configuration);
     }
 
     @Bean
