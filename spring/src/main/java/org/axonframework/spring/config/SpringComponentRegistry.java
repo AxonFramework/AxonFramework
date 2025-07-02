@@ -424,6 +424,8 @@ public class SpringComponentRegistry implements
                                          )
                                          .getBeanDefinition();
             ((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(name, definition);
+            // Initialize the components lifecycle handlers, by adapting them into SmartLifecycle beans through the SpringLifecycleRegistry.
+            component.initLifecycle(configuration, lifecycleRegistry);
         });
     }
 
