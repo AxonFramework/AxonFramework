@@ -25,7 +25,8 @@ import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
@@ -56,7 +57,7 @@ public class EventProcessorControlService {
     private static final String UNKNOWN_EVENT_PROCESSOR_MODE = "Unknown";
 
     protected final AxonServerConnectionManager axonServerConnectionManager;
-    protected final EventProcessingConfiguration eventProcessingConfiguration;
+    protected final Configuration eventProcessingConfiguration;
     protected final String context;
     protected final Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorConfig;
 
@@ -78,7 +79,7 @@ public class EventProcessorControlService {
      *                                     from.
      */
     public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
-                                        EventProcessingConfiguration eventProcessingConfiguration,
+                                        Configuration eventProcessingConfiguration,
                                         AxonServerConfiguration axonServerConfiguration) {
         this(axonServerConnectionManager,
              eventProcessingConfiguration,
@@ -104,7 +105,7 @@ public class EventProcessorControlService {
      *                                     (for example) retrieve the load balancing strategies from.
      */
     public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
-                                        EventProcessingConfiguration eventProcessingConfiguration,
+                                        Configuration eventProcessingConfiguration,
                                         String context,
                                         Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorConfig) {
         this.axonServerConnectionManager = axonServerConnectionManager;
@@ -127,7 +128,8 @@ public class EventProcessorControlService {
             return;
         }
 
-        Map<String, EventProcessor> eventProcessors = eventProcessingConfiguration.eventProcessors();
+        // TODO #3521
+        Map<String, EventProcessor> eventProcessors = eventProcessingConfiguration.getComponent(Map.class);
         AxonServerConnection connection = axonServerConnectionManager.getConnection(context);
 
         registerInstructionHandlers(connection, eventProcessors);
@@ -142,7 +144,9 @@ public class EventProcessorControlService {
                                .stream()
                                .filter(entry -> {
                                    if (!processorNames.contains(entry.getKey())) {
-                                       logger.info("Event Processor [{}] is not a registered. Please check the name or register the Event Processor", entry.getKey());
+                                       logger.info(
+                                               "Event Processor [{}] is not a registered. Please check the name or register the Event Processor",
+                                               entry.getKey());
                                        return false;
                                    }
                                    return true;
@@ -152,7 +156,9 @@ public class EventProcessorControlService {
         strategiesPerProcessor.forEach((processorName, strategy) -> {
             Optional<String> optionalIdentifier = tokenStoreIdentifierFor(processorName);
             if (!optionalIdentifier.isPresent()) {
-                logger.warn("Cannot find token store identifier for processor [{}]. Load balancing cannot be configured without this identifier.", processorName);
+                logger.warn(
+                        "Cannot find token store identifier for processor [{}]. Load balancing cannot be configured without this identifier.",
+                        processorName);
                 return;
             }
             String tokenStoreIdentifier = optionalIdentifier.get();
@@ -185,8 +191,9 @@ public class EventProcessorControlService {
     }
 
     private Optional<String> tokenStoreIdentifierFor(String processorName) {
-        TokenStore tokenStore = eventProcessingConfiguration.tokenStore(processorName);
-        return eventProcessingConfiguration.transactionManager(processorName)
+        // TODO #3521 - Be sure to be able to retrieve processor-specific components from their respective Modules
+        TokenStore tokenStore = eventProcessingConfiguration.getComponent(TokenStore.class);
+        return eventProcessingConfiguration.getComponent(TransactionManager.class)
                                            .fetchInTransaction(tokenStore::retrieveStorageIdentifier);
     }
 

@@ -140,7 +140,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
 
     private static void describeType(DescribableComponent component, ObjectNode objectNode) {
         var type = component instanceof Component<?>
-                ? ((Component<?>) component).identifier().type().getName()
+                ? ((Component<?>) component).identifier().typeAsClass().getName()
                 : component.getClass().getName();
         objectNode.put("_type", type);
     }

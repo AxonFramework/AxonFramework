@@ -16,6 +16,8 @@
 
 package org.axonframework.test.fixture;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
@@ -23,6 +25,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * An {@link EventStore} implementation recording all the events that are
@@ -34,10 +37,16 @@ import java.util.List;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class RecordingEventStore extends RecordingEventSink implements EventStore {
+@Internal
+public class RecordingEventStore extends RecordingEventSink implements EventStore {
 
-    RecordingEventStore(EventStore delegate) {
-        super(delegate);
+    /**
+     * Creates a new {@link RecordingEventStore} that will record all events published to the given {@code delegate}.
+     *
+     * @param delegate The {@link EventStore} to which events will be published.
+     */
+    public RecordingEventStore(@Nonnull EventStore delegate) {
+        super(Objects.requireNonNull(delegate, "The delegate EventStore may not be null"));
     }
 
     @Override

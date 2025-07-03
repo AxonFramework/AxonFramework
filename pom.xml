@@ -601,7 +601,7 @@
                 <configuration>
                     <publishingServerId>central</publishingServerId>
                     <excludeArtifacts>
-                        axon-integrationtests
+                        axon-integrationtests,axon-configuration,axon-legacy,axon-metrics,axon-micrometer,axon-migration,axon-tracing-opentelemetry
                     </excludeArtifacts>
                 </configuration>
             </plugin>

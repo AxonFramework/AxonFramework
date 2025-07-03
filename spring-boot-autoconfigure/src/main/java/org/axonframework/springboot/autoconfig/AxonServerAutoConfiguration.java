@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.springboot.autoconfig;
 
 
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
@@ -29,7 +30,6 @@ import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessage
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
-import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
@@ -66,7 +66,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.lang.Nullable;
 
 import java.util.concurrent.ScheduledExecutorService;
-import jakarta.annotation.Nonnull;
 
 /**
  * Configures Axon Server as implementation for the CommandBus, QueryBus and EventStore.
@@ -75,7 +74,7 @@ import jakarta.annotation.Nonnull;
  * @since 4.0
  */
 @AutoConfiguration
-@AutoConfigureBefore(AxonAutoConfiguration.class)
+@AutoConfigureBefore(LegacyAxonAutoConfiguration.class)
 @ConditionalOnClass(AxonServerConfiguration.class)
 @EnableConfigurationProperties(TagsConfigurationProperties.class)
 @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
@@ -183,9 +182,10 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
             AxonServerConnectionManager connectionManager,
             AxonServerConfiguration configuration
     ) {
-        return new EventProcessorInfoConfiguration(c -> eventProcessingConfiguration,
-                                                   c -> connectionManager,
-                                                   c -> configuration);
+        // TODO #3521
+        return new EventProcessorInfoConfiguration(/*c -> eventProcessingConfiguration*/null,
+                                                                                        c -> connectionManager,
+                                                                                        c -> configuration);
     }
 
     @Bean
@@ -351,11 +351,13 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                                                                                     .getSource());
                                                                processingConfigurer.registerSequencingPolicy(
                                                                        e.getKey(),
-                                                                       new PersistentStreamSequencingPolicyProvider(
-                                                                               e.getKey(),
-                                                                               persistentStreamConfig.getSequencingPolicy(),
-                                                                               persistentStreamConfig.getSequencingPolicyParameters()
-                                                                       )
+                                                                       // TODO #3520
+                                                                       null
+//                                                                       new PersistentStreamSequencingPolicyProvider(
+//                                                                               e.getKey(),
+//                                                                               persistentStreamConfig.getSequencingPolicy(),
+//                                                                               persistentStreamConfig.getSequencingPolicyParameters()
+//                                                                       )
                                                                );
                                                            })
         );

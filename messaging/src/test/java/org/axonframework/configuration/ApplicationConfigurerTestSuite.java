@@ -72,6 +72,52 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
      */
     public abstract C createConfigurer();
 
+    private AxonConfiguration buildConfiguration() {
+        initialize(testSubject);
+        return testSubject.build();
+    }
+
+    /**
+     * Initializes the given {@code testSubject}.
+     * <p>
+     * Does nothing by default.
+     *
+     * @param testSubject The test subject of type {@code C} to initialize.
+     */
+    protected void initialize(C testSubject) {
+        // No-op
+    }
+
+    /**
+     * Boolean stating whether the {@link ApplicationConfigurer} under test supports {@link Component} overriding.
+     *
+     * @return {@code true} when {@link Component Components} can be overridden, {@code false} otherwise.
+     */
+    public boolean supportsOverriding() {
+        return true;
+    }
+
+    /**
+     * Boolean stating whether the {@link ApplicationConfigurer} under test supports the use of
+     * {@link ComponentFactory ComponentFactories}.
+     *
+     * @return {@code true} when {@link ComponentFactory ComponentFactories} are supported, {@code false} otherwise.
+     */
+    public boolean supportsComponentFactories() {
+        return true;
+    }
+
+    /**
+     * Boolean stating whether the {@link ApplicationConfigurer} under test does its own lifecycle management through
+     * the {@link LifecycleRegistry}.
+     *
+     * @return {@code true} when the {@link ApplicationConfigurer} under test controls the lifecycle management through
+     * the {@link LifecycleRegistry}, {@code false} otherwise.
+     */
+    public boolean doesOwnLifecycleManagement() {
+        return true;
+    }
+
     protected static class TestComponent {
 
         private final String state;
@@ -172,7 +218,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             TestComponent testComponent = TEST_COMPONENT;
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent));
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertEquals(testComponent, config.getComponent(TestComponent.class));
         }
@@ -184,7 +230,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     cr -> cr.registerComponent(SpecificTestComponent.class, c -> testComponent)
             );
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertEquals(testComponent, config.getComponent(TestComponent.class));
         }
@@ -197,7 +243,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     cr -> cr.registerComponent(TestComponent.class, testName, c -> testComponent)
             );
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertEquals(testComponent, config.getComponent(TestComponent.class, testName));
         }
@@ -210,7 +256,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     cr -> cr.registerComponent(SpecificTestComponent.class, testName, c -> testComponent)
             );
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertEquals(testComponent, config.getComponent(TestComponent.class, testName));
         }
@@ -220,7 +266,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             TestComponent testComponent = TEST_COMPONENT;
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent));
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class);
 
@@ -235,7 +281,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     cr -> cr.registerComponent(SpecificTestComponent.class, c -> testComponent)
             );
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class);
 
@@ -251,7 +297,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     cr -> cr.registerComponent(TestComponent.class, testName, c -> testComponent)
             );
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class, testName);
 
@@ -267,7 +313,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     cr -> cr.registerComponent(SpecificTestComponent.class, testName, c -> testComponent)
             );
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class, testName);
 
@@ -277,7 +323,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void getOptionalComponentResultsInEmptyOptionalForUnregisteredComponent() {
-            Optional<TestComponent> result = testSubject.build().getOptionalComponent(TestComponent.class);
+            Optional<TestComponent> result = buildConfiguration().getOptionalComponent(TestComponent.class);
 
             assertFalse(result.isPresent());
         }
@@ -295,7 +341,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     testNameTwo,
                     c -> testComponentTwo));
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertEquals(testComponentOne, config.getComponent(TestComponent.class, testNameOne));
             assertEquals(testComponentTwo, config.getComponent(TestComponent.class, testNameTwo));
@@ -309,7 +355,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                 return TEST_COMPONENT;
             }));
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertEquals(0, invocationCounter.get());
             config.getComponent(TestComponent.class, "name");
@@ -320,12 +366,14 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void registeringComponentsForTheSameTypeReplacesThePreviousComponentBuilder() {
+            Assumptions.assumeTrue(supportsOverriding(), "Ignore test since Component overriding is not supported.");
+
             TestComponent testComponent = new TestComponent("replaced-component");
             TestComponent expectedComponent = new TestComponent("the-winner");
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent)
                                                   .registerComponent(TestComponent.class, c -> expectedComponent));
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertNotEquals(testComponent, config.getComponent(TestComponent.class));
             assertEquals(expectedComponent, config.getComponent(TestComponent.class));
@@ -333,6 +381,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void registeringComponentsForTheSameTypeAndNameReplacesThePreviousComponentBuilder() {
+            Assumptions.assumeTrue(supportsOverriding(), "Ignore test since Component overriding is not supported.");
+
             TestComponent testComponent = new TestComponent("replaced-component");
             TestComponent expectedComponent = new TestComponent("the-winner");
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, "name", c -> testComponent)
@@ -340,7 +390,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                                      "name",
                                                                      c -> expectedComponent));
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertNotEquals(testComponent, config.getComponent(TestComponent.class, "name"));
             assertEquals(expectedComponent, config.getComponent(TestComponent.class, "name"));
@@ -355,7 +405,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                                      "id",
                                                                      c -> registeredComponent));
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             TestComponent result = config.getComponent(TestComponent.class, "id", () -> {
                 invoked.set(true);
@@ -426,6 +476,49 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
+        void hasComponentForClassAndSearchScope() {
+            testSubject.componentRegistry(cr -> {
+                assertFalse(cr.hasComponent(TestComponent.class, SearchScope.CURRENT));
+                assertFalse(cr.hasComponent(TestComponent.class, SearchScope.ALL));
+                assertFalse(cr.hasComponent(TestComponent.class, SearchScope.ANCESTORS));
+            });
+
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT));
+
+            testSubject.componentRegistry(cr -> {
+                assertTrue(cr.hasComponent(TestComponent.class, SearchScope.CURRENT));
+                assertTrue(cr.hasComponent(TestComponent.class, SearchScope.ALL));
+                assertFalse(cr.hasComponent(TestComponent.class, SearchScope.ANCESTORS));
+            });
+        }
+
+        @Test
+        void hasComponentForClassAndSearchScopeInAncestorsOnly() {
+            testSubject.componentRegistry(parentCr -> {
+                assertFalse(parentCr.hasComponent(TestComponent.class, SearchScope.CURRENT));
+                assertFalse(parentCr.hasComponent(TestComponent.class, SearchScope.ALL));
+                assertFalse(parentCr.hasComponent(TestComponent.class, SearchScope.ANCESTORS));
+            });
+
+            testSubject.componentRegistry(
+                    parentCr -> parentCr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+            );
+
+            testSubject.componentRegistry(parentCr -> parentCr.registerModule(
+                    new TestModule("test-name").componentRegistry(
+                            childCr -> childCr.registerEnhancer(registry -> {
+                                assertFalse(registry.hasComponent(TestComponent.class, SearchScope.CURRENT));
+                                assertTrue(registry.hasComponent(TestComponent.class, SearchScope.ALL));
+                                assertTrue(registry.hasComponent(TestComponent.class, SearchScope.ANCESTORS));
+                            })
+                    )
+            ));
+
+            // Building the configuration triggers the ConfigurationEnhancer performing the has component checks.
+            buildConfiguration();
+        }
+
+        @Test
         void hasComponentForClassAndName() {
             testSubject.componentRegistry(cr -> assertFalse(cr.hasComponent(TestComponent.class, "some-name")));
 
@@ -434,6 +527,69 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                                      c -> TEST_COMPONENT));
 
             testSubject.componentRegistry(cr -> assertTrue(cr.hasComponent(TestComponent.class, "some-name")));
+        }
+
+        @Test
+        void hasComponentForClassNameAndSearchScope() {
+            testSubject.componentRegistry(parentCr -> {
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.CURRENT));
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.ALL));
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.ANCESTORS));
+            });
+
+            testSubject.componentRegistry(
+                    parentCr -> parentCr.registerComponent(TestComponent.class, "some-name", c -> TEST_COMPONENT)
+            );
+
+            testSubject.componentRegistry(parentCr -> parentCr.registerModule(
+                    new TestModule("test-name").componentRegistry(
+                            childCr -> childCr.registerEnhancer(registry -> {
+                                assertFalse(registry.hasComponent(TestComponent.class,
+                                                                  "some-name",
+                                                                  SearchScope.CURRENT));
+                                assertTrue(registry.hasComponent(TestComponent.class, "some-name", SearchScope.ALL));
+                                assertTrue(registry.hasComponent(TestComponent.class,
+                                                                 "some-name",
+                                                                 SearchScope.ANCESTORS
+                                ));
+                            })
+                    )
+            ));
+
+            // Building the configuration triggers the ConfigurationEnhancer performing the has component checks.
+            buildConfiguration();
+        }
+
+        @Test
+        void hasComponentForClassNameAndSearchScopeInAncestorsOnly() {
+            testSubject.componentRegistry(parentCr -> {
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.CURRENT));
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.ALL));
+                assertFalse(parentCr.hasComponent(TestComponent.class, "some-name", SearchScope.ANCESTORS));
+            });
+
+            testSubject.componentRegistry(
+                    parentCr -> parentCr.registerComponent(TestComponent.class, "some-name", c -> TEST_COMPONENT)
+            );
+
+            testSubject.componentRegistry(parentCr -> parentCr.registerModule(
+                    new TestModule("test-name").componentRegistry(
+                            childCr -> childCr.registerEnhancer(registry -> {
+                                assertFalse(registry.hasComponent(TestComponent.class,
+                                                                  "some-name",
+                                                                  SearchScope.CURRENT));
+                                assertTrue(registry.hasComponent(TestComponent.class,
+                                                                 "some-name",
+                                                                 SearchScope.ALL));
+                                assertTrue(registry.hasComponent(TestComponent.class,
+                                                                 "some-name",
+                                                                 SearchScope.ANCESTORS));
+                            })
+                    )
+            ));
+
+            // Building the configuration triggers the ConfigurationEnhancer performing the has component checks.
+            buildConfiguration();
         }
     }
 
@@ -457,7 +613,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             // then...
             testSubject.componentRegistry(cr -> assertTrue(cr.hasComponent(TestComponent.class)));
             // Retrieve the component, otherwise the builder is never invoked.
-            testSubject.build().getComponent(TestComponent.class);
+            buildConfiguration().getComponent(TestComponent.class);
             assertTrue(firstConstruction.get());
 
             // when second registration if present...
@@ -468,7 +624,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             // then...
             // Retrieve the component, otherwise the builder is never invoked.
-            testSubject.build().getComponent(TestComponent.class);
+            buildConfiguration().getComponent(TestComponent.class);
             assertFalse(secondConstruction.get());
         }
 
@@ -490,7 +646,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             // then...
             testSubject.componentRegistry(cr -> assertTrue(cr.hasComponent(TestComponent.class, testName)));
             // Retrieve the component, otherwise the builder is never invoked.
-            testSubject.build().getComponent(TestComponent.class, testName);
+            buildConfiguration().getComponent(TestComponent.class, testName);
             assertTrue(firstConstruction.get());
 
             // when second registration if present...
@@ -501,7 +657,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             // then...
             // Retrieve the component, otherwise the builder is never invoked.
-            testSubject.build().getComponent(TestComponent.class, testName);
+            buildConfiguration().getComponent(TestComponent.class, testName);
             assertFalse(secondConstruction.get());
         }
 
@@ -526,7 +682,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             // then...
             testSubject.componentRegistry(cr -> assertTrue(cr.hasComponent(TestComponent.class, testName)));
             // Retrieve the component, otherwise the builder is never invoked.
-            testSubject.build().getComponent(TestComponent.class, testName);
+            buildConfiguration().getComponent(TestComponent.class, testName);
             assertTrue(firstConstruction.get());
 
             // when second registration if present...
@@ -540,7 +696,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             // then...
             // Retrieve the component, otherwise the builder is never invoked.
-            testSubject.build().getComponent(TestComponent.class, testName);
+            buildConfiguration().getComponent(TestComponent.class, testName);
             assertFalse(secondConstruction.get());
         }
     }
@@ -564,7 +720,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                (c, name, delegate) -> new TestComponent(delegate.state + "1"))
             );
 
-            TestComponent result = testSubject.build().getComponent(TestComponent.class);
+            TestComponent result = buildConfiguration().getComponent(TestComponent.class);
 
             assertEquals(expectedState, result.state());
         }
@@ -579,7 +735,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                (c, name, delegate) -> new TestComponent(delegate.state + "1"))
             );
 
-            TestComponent result = testSubject.build().getComponent(SpecificTestComponent.class);
+            TestComponent result = buildConfiguration().getComponent(TestComponent.class);
 
             assertEquals(expectedState, result.state());
         }
@@ -595,7 +751,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                (c, name, delegate) -> new TestComponent(delegate.state + "1"))
             );
 
-            TestComponent result = testSubject.build().getComponent(SpecificTestComponent.class, testName);
+            TestComponent result = buildConfiguration().getComponent(TestComponent.class, testName);
 
             assertEquals(expectedState, result.state());
         }
@@ -656,7 +812,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             testSubject.componentRegistry(cr -> cr.registerEnhancer(configurer -> invoked.set(true)));
 
-            testSubject.build();
+            buildConfiguration();
 
             assertTrue(invoked.get());
         }
@@ -667,9 +823,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             testSubject.componentRegistry(cr -> cr.registerEnhancer(configurer -> counter.getAndIncrement()));
             // First build
-            testSubject.build();
+            buildConfiguration();
             // Second build
-            testSubject.build();
+            buildConfiguration();
 
             assertEquals(1, counter.get());
         }
@@ -702,7 +858,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             testSubject.componentRegistry(cr -> cr.registerEnhancer(enhancerOne).registerEnhancer(enhancerTwo)
                                                   .registerEnhancer(enhancerThree));
 
-            testSubject.build();
+            buildConfiguration();
 
             InOrder enhancementOrder = inOrder(enhancerOne, enhancerTwo, enhancerThree);
             enhancementOrder.verify(enhancerOne).enhance(any());
@@ -749,7 +905,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                   .registerEnhancer(enhancerWithHighOrder)
                                                   .registerEnhancer(enhancerWithLowOrder));
 
-            testSubject.build();
+            buildConfiguration();
 
             InOrder enhancementOrder = inOrder(enhancerWithLowOrder, enhancerWithDefaultOrder, enhancerWithHighOrder);
             enhancementOrder.verify(enhancerWithLowOrder).enhance(any());
@@ -763,7 +919,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     TestComponent.class, c -> TEST_COMPONENT
             )));
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
         }
@@ -777,13 +933,15 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                                                   .registerEnhancer(enhancer));
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertEquals(expected, config.getComponent(TestComponent.class));
         }
 
         @Test
         void registeredEnhancersCanReplaceComponents() {
+            Assumptions.assumeTrue(supportsOverriding(), "Ignore test since Component overriding is not supported.");
+
             TestComponent expected = new TestComponent("replacement");
 
             testSubject.componentRegistry(
@@ -794,7 +952,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                             ))
             );
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertNotEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
             assertEquals(expected, config.getComponent(TestComponent.class));
@@ -813,7 +971,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                       }
                                                   }));
 
-            Configuration config = testSubject.build();
+            Configuration config = buildConfiguration();
 
             assertEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
             assertEquals(expected, config.getComponent(TestComponent.class, "conditional"));
@@ -835,7 +993,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             testSubject.componentRegistry(cr -> cr.registerModule(new TestModule("one"))
                                                   .registerModule(new TestModule("two")));
 
-            AxonConfiguration configuration = testSubject.build();
+            AxonConfiguration configuration = buildConfiguration();
             List<Configuration> result = configuration.getModuleConfigurations();
 
             assertEquals(2, result.size());
@@ -884,7 +1042,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             );
 
             // Root configurer outcome only has own components.
-            Configuration rootConfig = testSubject.build();
+            Configuration rootConfig = buildConfiguration();
             assertEquals(rootComponent, rootConfig.getComponent(TestComponent.class, "root"));
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "one").isPresent());
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "two").isPresent());
@@ -921,7 +1079,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             );
 
             // Root configurer outcome only has own components.
-            Configuration rootConfig = testSubject.build();
+            Configuration rootConfig = buildConfiguration();
             assertEquals(rootComponent, rootConfig.getComponent(TestComponent.class, "root"));
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "one").isPresent());
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "two").isPresent());
@@ -986,7 +1144,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             );
 
             // Check decoration on root level.
-            Configuration root = testSubject.build();
+            Configuration root = buildConfiguration();
             assertEquals(expectedRootComponentState, root.getComponent(TestComponent.class).state());
             assertNotEquals(expectedLevelOneComponentState, root.getComponent(TestComponent.class).state());
             assertNotEquals(expectedLevelTwoComponentState, root.getComponent(TestComponent.class).state());
@@ -1017,7 +1175,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     )
             );
 
-            Configuration rootConfig = testSubject.build();
+            Configuration rootConfig = buildConfiguration();
 
             TestComponent result = rootConfig.getComponent(TestComponent.class, "id", () -> {
                 invoked.set(true);
@@ -1048,6 +1206,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void factoryIsNotConsultedWhenComponentForTypeAndNameIsAlreadyPresent() {
+            Assumptions.assumeTrue(supportsComponentFactories(),
+                                   "Ignore test since ComponentFactories are not supported.");
+
             TestComponent expectedComponent = new TestComponent("state");
             TestComponent expectedNamedComponent = new TestComponent("named");
             TestComponentFactory testFactory = spy(new TestComponentFactory("constructed"));
@@ -1058,7 +1219,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                         .registerFactory(testFactory)
             );
 
-            AxonConfiguration config = testSubject.build();
+            AxonConfiguration config = buildConfiguration();
 
             assertEquals(expectedComponent, config.getComponent(TestComponent.class));
             assertEquals(expectedNamedComponent, config.getComponent(TestComponent.class, "name"));
@@ -1068,40 +1229,50 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void factoryIsConsultedOnceWhenThereIsNoComponentForTypeAndName() {
+            Assumptions.assumeTrue(supportsComponentFactories(),
+                                   "Ignore test since ComponentFactories are not supported.");
+
             String expectedState = "constructed";
             TestComponentFactory testFactory = spy(new TestComponentFactory(expectedState));
 
             testSubject.componentRegistry(registry -> registry.registerFactory(testFactory));
 
-            AxonConfiguration config = testSubject.build();
+            AxonConfiguration config = buildConfiguration();
 
-            TestComponent resultComponent = config.getComponent(TestComponent.class);
+            TestComponent resultComponent = config.getComponent(TestComponent.class, "first-instance");
             assertEquals(expectedState, resultComponent.state());
             // Second retrieval should return same object since first invocation should register the object.
-            assertSame(resultComponent, config.getComponent(TestComponent.class));
+            assertSame(resultComponent, config.getComponent(TestComponent.class, "first-instance"));
             verify(testFactory, times(1)).construct(any(), any());
-            assertNotSame(resultComponent, config.getComponent(TestComponent.class, "another-instance"));
+            assertNotSame(resultComponent, config.getComponent(TestComponent.class, "second-instance"));
             verify(testFactory, times(2)).construct(any(), any());
         }
 
         @Test
         void factoryIsConsultedButMayReturnNothingWhenThereIsNoComponentForTypeAndName() {
+            Assumptions.assumeTrue(supportsComponentFactories(),
+                                   "Ignore test since ComponentFactories are not supported.");
+
             String expectedState = "constructed";
             TestComponentFactory testFactory = spy(new TestComponentFactory(expectedState, new AtomicBoolean(false)));
 
             testSubject.componentRegistry(registry -> registry.registerFactory(testFactory));
 
-            AxonConfiguration config = testSubject.build();
+            AxonConfiguration config = buildConfiguration();
 
             assertFalse(config.getOptionalComponent(TestComponent.class).isPresent());
             assertFalse(config.getOptionalComponent(TestComponent.class).isPresent());
             assertFalse(config.getOptionalComponent(TestComponent.class, "name").isPresent());
             assertFalse(config.getOptionalComponent(TestComponent.class, "name").isPresent());
-            verify(testFactory, times(4)).construct(any(), any());
+            // The ComponentFactory invocation is skipped when no name is given. Hence why we check for two invocations!
+            verify(testFactory, times(2)).construct(any(), any());
         }
 
         @Test
         void getOrDefaultConsultsFactoryBeforeInvokingDefaultSupplier() {
+            Assumptions.assumeTrue(supportsComponentFactories(),
+                                   "Ignore test since ComponentFactories are not supported.");
+
             AtomicBoolean invoked = new AtomicBoolean(false);
             TestComponent expectedDefaultComponent = new TestComponent("default");
             String expectedFactoryState = "constructed";
@@ -1110,7 +1281,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             testSubject.componentRegistry(registry -> registry.registerFactory(testFactory));
 
-            AxonConfiguration config = testSubject.build();
+            AxonConfiguration config = buildConfiguration();
 
             TestComponent result = config.getComponent(TestComponent.class, "first", () -> {
                 invoked.set(true);
@@ -1137,6 +1308,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void startLifecycleHandlersAreInvokedInAscendingPhaseOrder() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
@@ -1161,6 +1337,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void startLifecycleHandlerConfiguredThroughConfigurerAreInvokedInAscendingPhaseOrder() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
@@ -1188,6 +1369,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         @SuppressWarnings("java:S2925")
         void startLifecycleHandlersWillOnlyProceedToFollowingPhaseAfterCurrentPhaseIsFinalized()
                 throws InterruptedException {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             // Create a lock for the slow handler and lock it immediately, to spoof the handler's slow/long process
             ReentrantLock slowHandlerLock = new ReentrantLock();
             slowHandlerLock.lock();
@@ -1204,7 +1390,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             Thread startThread = new Thread(() -> testSubject.start());
             startThread.start();
             // Sleep to give the start thread some time to execute
-            Thread.sleep(250);
+            Thread.sleep(350);
 
             try {
                 // Phase one has not started yet, as the method has not been invoked yet.
@@ -1229,6 +1415,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void shutdownLifecycleHandlersAreInvokedInDescendingPhaseOrder() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
@@ -1254,6 +1445,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void shutdownLifecycleHandlersConfiguredThroughConfigurerAreInvokedInDescendingPhaseOrder() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
@@ -1282,6 +1478,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         @SuppressWarnings("java:S2925")
         void shutdownLifecycleHandlersWillOnlyProceedToFollowingPhaseAfterCurrentPhaseIsFinalized()
                 throws InterruptedException {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             // Create a lock for the slow handler and lock it immediately, to spoof the handler's slow/long process
             ReentrantLock slowHandlerLock = new ReentrantLock();
             slowHandlerLock.lock();
@@ -1328,6 +1529,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
          */
         @Test
         void outOfOrderAddedStartHandlerDuringShutdownIsNotCalledImmediately() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandlerAdder = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance addedPhaseOneStartHandler = spy(new LifecycleManagedInstance());
@@ -1358,6 +1564,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void failingStartLifecycleProceedsIntoShutdownOrderAtFailingPhase() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
             LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
@@ -1401,6 +1612,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void lifecycleHandlersProceedToFollowingPhaseWhenTheThreadIsInterrupted() throws InterruptedException {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             AtomicBoolean invoked = new AtomicBoolean(false);
 
             LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
@@ -1430,6 +1646,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         @Test
         @SuppressWarnings("java:S2925")
         void timeOutContinuesWithTheNextLifecyclePhase() throws InterruptedException {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             CountDownLatch handlerStarted = new CountDownLatch(1);
             AtomicBoolean handler1Invoked = new AtomicBoolean();
             AtomicBoolean handler2Invoked = new AtomicBoolean();
@@ -1458,6 +1679,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         @Test
         void factoryRegisteredShutdownHandlersAreInvoked() {
+            Assumptions.assumeTrue(
+                    doesOwnLifecycleManagement(),
+                    "Ignore test since lifecycle management is not managed by the ApplicationConfigurer itself."
+            );
+
             // given...
             AtomicBoolean shutdownInvoked = new AtomicBoolean(false);
             testSubject.componentRegistry(registry -> registry.registerFactory(new TestComponentFactory(

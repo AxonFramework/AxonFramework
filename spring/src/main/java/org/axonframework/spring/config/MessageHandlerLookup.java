@@ -16,10 +16,10 @@
 
 package org.axonframework.spring.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.slf4j.Logger;
@@ -41,16 +41,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 /**
  * A {@link BeanDefinitionRegistryPostProcessor} implementation that detects beans with Axon Message handlers and
  * registers an {@link MessageHandlerConfigurer} to have these handlers registered in the Axon
- * {@link LegacyConfiguration}.
+ * {@link org.axonframework.configuration.Configuration}.
  *
  * @author Allard Buijze
  * @since 4.6.0
  */
+// TODO #3498 Fix as part of referred to issue
 public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageHandlerLookup.class);

@@ -92,6 +92,32 @@ public interface Configuration extends DescribableComponent {
                                          @Nullable String name);
 
     /**
+     * Check whether there is a {@link Component} present in this {@code Configuration} for the given {@code type}.
+     *
+     * @param type The type of the {@link Component} to check if it exists, typically an interface.
+     * @return {@code true} when there is a {@link Component} registered under the given {@code type}, {@code false}
+     * otherwise.
+     */
+    default boolean hasComponent(@Nonnull Class<?> type) {
+        return hasComponent(type, null);
+    }
+
+    /**
+     * Check whether there is a {@link Component} present in this {@code Configuration} for the given {@code type} and
+     * {@code name} combination.
+     *
+     * @param type The type of the {@link Component} to check if it exists, typically an interface.
+     * @param name The name of the {@link Component} to check if it exists. Use {@code null} when there is no name or
+     *             use {@link #hasComponent(Class)} instead.
+     * @return {@code true} when there is a {@link Component} registered under the given {@code type} and
+     * {@code name combination}, {@code false} otherwise.
+     */
+    default boolean hasComponent(@Nonnull Class<?> type,
+                                 @Nullable String name) {
+        return getOptionalComponent(type, name).isPresent();
+    }
+
+    /**
      * Returns the component declared under the given {@code type}, reverting to the given {@code defaultImpl} if no
      * such component is defined.
      * <p>

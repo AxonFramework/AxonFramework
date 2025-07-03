@@ -33,6 +33,8 @@ import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.json.JacksonConverter;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -53,6 +55,7 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
 
     protected final ParameterResolverFactory parameterResolverFactory = createParameterResolverFactory();
     protected final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
+    protected final Converter converter = new JacksonConverter();
     protected final AnnotatedEntityMetamodel<E> metamodel = getMetamodel();
     protected E entityState = null;
     protected List<Object> publishedEvents = new LinkedList<>();

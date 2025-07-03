@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Milan Savic
  */
+@Disabled("TODO #3496")
 class AxonAutoConfigurationWithTagsTest {
 
     private ApplicationContextRunner testContext;

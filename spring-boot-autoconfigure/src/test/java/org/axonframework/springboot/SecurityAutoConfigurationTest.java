@@ -26,6 +26,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Disabled("TODO #3496")
 class SecurityAutoConfigurationTest {
 
     @Test

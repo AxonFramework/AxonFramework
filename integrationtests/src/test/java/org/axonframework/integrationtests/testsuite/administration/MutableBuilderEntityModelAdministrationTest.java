@@ -46,6 +46,9 @@ import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
+import org.axonframework.serialization.Converter;
+
+import java.util.Objects;
 
 import static java.lang.String.format;
 
@@ -58,11 +61,12 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
     EntityMetamodel<MutablePerson> buildEntityMetamodel(Configuration configuration,
                                                         EntityMetamodelBuilder<MutablePerson> builder) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
+        Converter converter = configuration.getComponent(Converter.class);
 
         // Task is the list-based child-model of Employee
         EntityMetamodel<MutableTask> taskMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableTask.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableTask.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableTask.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -75,7 +79,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // SalaryInformation is the singular child-model of Employee
         EntityMetamodel<MutableSalaryInformation> salaryInformationMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableSalaryInformation.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableSalaryInformation.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableSalaryInformation.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -88,7 +92,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // Employee is a concrete entity type
         EntityMetamodel<MutableEmployee> employeeMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableEmployee.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableEmployee.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableEmployee.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
                                         ((command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -119,8 +123,10 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                                       return null;
                                   })
                                   .eventTargetMatcher((o, eventMessage, ctx) -> {
-                                      if (eventMessage.getPayload() instanceof TaskCompleted taskAssigned) {
-                                          return o.getTaskId().equals(taskAssigned.taskId());
+                                     if(eventMessage.type().name().equals(TaskCompleted.class.getName())) {
+                                         TaskCompleted taskCompleted = converter.convert(eventMessage.getPayload(), TaskCompleted.class);
+                                         Objects.requireNonNull(taskCompleted, "TaskCompleted event payload cannot be null");
+                                         return o.getTaskId().equals(taskCompleted.taskId());
                                       }
                                       return false;
                                   })
@@ -139,7 +145,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // Customer is a concrete entity type
         EntityMetamodel<MutableCustomer> customerMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableCustomer.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableCustomer.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableCustomer.class, converter, typeResolver))
                 .instanceCommandHandler(
                         typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
                         ((command, entity, context) -> {
@@ -154,7 +160,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .forPolymorphicEntityType(MutablePerson.class)
                 .addConcreteType(employeeMetamodel)
                 .addConcreteType(customerMetamodel)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutablePerson.class))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutablePerson.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,

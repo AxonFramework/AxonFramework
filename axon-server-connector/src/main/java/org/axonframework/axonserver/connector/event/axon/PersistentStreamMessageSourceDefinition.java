@@ -17,8 +17,8 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.SubscribableMessageSourceDefinition;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.SubscribableMessageSourceDefinition;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableMessageSource;
 
@@ -28,7 +28,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Definition of a {@link PersistentStreamMessageSource}.
  * <p>
  * Used to create {@code PersistentStreamMessageSource} instances with a specific Axon
- * {@link LegacyConfiguration configuration}.
+ * {@link Configuration configuration}.
  *
  * @author Marc Gathier
  * @since 4.10.0
@@ -44,7 +44,7 @@ public class PersistentStreamMessageSourceDefinition implements SubscribableMess
     private final PersistentStreamMessageSourceFactory messageSourceFactory;
 
     /**
-     * Instantiates a {@link PersistentStreamMessageSourceDefinition} instance based on the given parameters.
+     * Instantiates a {@code PersistentStreamMessageSourceDefinition} instance based on the given parameters.
      *
      * @param name                       The name of the persistent stream. It's a unique identifier of the
      *                                   {@link PersistentStream} connection with Axon Sever. Usage of the same name
@@ -69,7 +69,7 @@ public class PersistentStreamMessageSourceDefinition implements SubscribableMess
     }
 
     @Override
-    public SubscribableMessageSource<EventMessage<?>> create(LegacyConfiguration configuration) {
+    public SubscribableMessageSource<EventMessage<?>> create(Configuration configuration) {
         return messageSourceFactory.build(name,
                                           persistentStreamProperties,
                                           scheduler,
