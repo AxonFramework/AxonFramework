@@ -31,12 +31,14 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
@@ -440,21 +442,14 @@ class PooledStreamingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(2, testSubject.processingStatus().size()));
     }
 
-    @Disabled("TODO #3098 - Support ignoring events by mean of the EventCriteria API")
     @Test
-    void eventsWhichMustBeIgnoredAreNotHandledOnlyValidated() throws Exception {
-        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
-
-        // The custom ArgumentMatcher, for some reason, first runs the assertion with null, failing the current check.
-        // Hence, a null check is added to the matcher.
-        when(stubEventHandler.canHandle(
-                argThat(argument -> argument != null && Integer.class.equals(argument.getPayloadType())), any(), any()
-        )).thenReturn(false);
-        when(stubEventHandler.canHandle(
-                argThat(argument -> argument != null && String.class.equals(argument.getPayloadType())), any(), any()
-        )).thenReturn(true);
-        when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
-        when(stubEventHandler.canHandleType(String.class)).thenReturn(true);
+    void eventsWhichMustBeIgnoredAreNotHandled() {
+        // given
+        EventCriteria stringOnlyCriteria = EventCriteria.havingAnyTag()
+                                                        .andBeingOneOfTypes(new QualifiedName(String.class.getName()));
+        
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
+                                                           .eventCriteria(stringOnlyCriteria)));
 
         EventMessage<Integer> eventToIgnoreOne = EventTestUtils.asEventMessage(1337);
         EventMessage<Integer> eventToIgnoreTwo = EventTestUtils.asEventMessage(42);
@@ -471,12 +466,10 @@ class PooledStreamingEventProcessorTest {
         eventsToHandle.add(eventToHandleTwo.getPayload());
 
         List<Object> eventsToValidate = new ArrayList<>();
-        eventsToValidate.add(eventToIgnoreOne.getPayload());
-        eventsToValidate.add(eventToIgnoreTwo.getPayload());
-        eventsToValidate.add(eventToIgnoreThree.getPayload());
         eventsToValidate.add(eventToHandleOne.getPayload());
         eventsToValidate.add(eventToHandleTwo.getPayload());
 
+        // when
         stubMessageSource.publishMessage(eventToIgnoreOne);
         stubMessageSource.publishMessage(eventToIgnoreTwo);
         stubMessageSource.publishMessage(eventToIgnoreThree);
@@ -486,32 +479,30 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
-        // noinspection unchecked
-        ArgumentCaptor<EventMessage<?>> validatedEventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-        verify(stubEventHandler, timeout(500).times(5)).canHandle(validatedEventCaptor.capture(), any(), any());
-
-        List<EventMessage<?>> validatedEvents = validatedEventCaptor.getAllValues();
-        assertEquals(5, validatedEvents.size());
-        for (EventMessage<?> validatedEvent : validatedEvents) {
-            assertTrue(eventsToValidate.contains(validatedEvent.getPayload()));
-        }
-
-        //noinspection unchecked
+        
+        // then - Verify that only String events are handled (Integer events are filtered out by EventCriteria).
         ArgumentCaptor<EventMessage<?>> handledEventsCaptor = ArgumentCaptor.forClass(EventMessage.class);
-        verify(stubEventHandler, timeout(500).times(2)).handle(handledEventsCaptor.capture(), any(), any());
-        List<EventMessage<?>> handledEvents = handledEventsCaptor.getAllValues();
-        assertEquals(2, handledEvents.size());
-        for (EventMessage<?> validatedEvent : handledEvents) {
-            //noinspection SuspiciousMethodCalls
-            assertTrue(eventsToHandle.contains(validatedEvent.getPayload()));
-        }
+        assertWithin(1, TimeUnit.SECONDS, () -> {
+            verify(stubEventHandlingComponent, times(2)).handle(handledEventsCaptor.capture(), any());
+        });
 
+        // then - Validate that the correct String events were handled.
+        List<EventMessage<?>> handledEvents = handledEventsCaptor.getAllValues();
+        assertThat(handledEvents).hasSize(2);
+        
+        List<Object> handledPayloads = handledEvents.stream()
+                                                   .map(EventMessage::getPayload)
+                                                   .collect(Collectors.toList());
+        assertThat(handledPayloads).containsExactlyInAnyOrderElementsOf(eventsToHandle);
+
+        // then - Verify that ignored events are tracked correctly
         List<EventMessage<?>> ignoredEvents = stubMessageSource.getIgnoredEvents();
-        assertEquals(3, ignoredEvents.size());
-        for (EventMessage<?> ignoredMessage : ignoredEvents) {
-            //noinspection SuspiciousMethodCalls
-            assertTrue(eventsToIgnore.contains(ignoredMessage.getPayload()));
-        }
+        assertThat(ignoredEvents).hasSize(3);
+        
+        List<Object> ignoredPayloads = ignoredEvents.stream()
+                                                   .map(EventMessage::getPayload)
+                                                   .collect(Collectors.toList());
+        assertThat(ignoredPayloads).containsExactlyInAnyOrderElementsOf(eventsToIgnore);
     }
 
     @Test
