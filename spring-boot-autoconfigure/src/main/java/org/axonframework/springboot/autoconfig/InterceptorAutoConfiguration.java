@@ -22,7 +22,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.spring.config.SpringConfigurer;
+import org.axonframework.spring.config.SpringComponentRegistry;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -47,7 +47,7 @@ import java.util.Optional;
  * @since 4.11.0
  */
 @AutoConfiguration
-@ConditionalOnClass(SpringConfigurer.class)
+@ConditionalOnClass(SpringComponentRegistry.class)
 @AutoConfigureAfter({
         LegacyAxonAutoConfiguration.class,
         JpaAutoConfiguration.class,

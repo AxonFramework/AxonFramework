@@ -17,8 +17,7 @@
 package org.axonframework.integrationtests.deadline.quartz;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.ConfigurationScopeAwareProvider;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
@@ -42,13 +41,13 @@ import static org.mockito.Mockito.*;
 class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 
     @Override
-    public DeadlineManager buildDeadlineManager(LegacyConfiguration configuration) {
+    public DeadlineManager buildDeadlineManager(Configuration configuration) {
         try {
             Scheduler scheduler = new StdSchedulerFactory().getScheduler();
             QuartzDeadlineManager quartzDeadlineManager =
                     QuartzDeadlineManager.builder()
                                          .scheduler(scheduler)
-                                         .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
+//                                         .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
                                          .serializer(TestSerializer.JACKSON.getSerializer())
                                          .spanFactory(configuration.getComponent(DeadlineManagerSpanFactory.class))
                                          .build();

@@ -37,11 +37,6 @@
         <!-- Axon -->
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-configuration</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>

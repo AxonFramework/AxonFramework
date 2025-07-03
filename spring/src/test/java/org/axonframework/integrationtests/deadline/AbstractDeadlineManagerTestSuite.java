@@ -16,17 +16,21 @@
 
 package org.axonframework.integrationtests.deadline;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.AxonNonTransientException;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.LegacyDefaultConfigurer;
+import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -54,7 +58,6 @@ import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.tracing.TestSpanFactory;
-import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,6 +88,7 @@ import static org.mockito.Mockito.*;
  * @author Steven van Beelen
  * @since 3.3
  */
+// TODO #3065 Fix as part of referred to issue.
 public abstract class AbstractDeadlineManagerTestSuite {
 
     private static final int DEADLINE_TIMEOUT = 100;
@@ -98,11 +102,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private static final UUID SAGA_ENDED = UUID.randomUUID();
     private static final boolean LIVE = false;
     private static final boolean CLOSED = true;
-    // This ensures we do not wire Axon Server components
-    private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
     private static final String CUSTOM_CORRELATION_DATA_KEY = "custom-correlation-data";
 
-    protected LegacyConfiguration configuration;
+    protected AxonConfiguration configuration;
     protected TestSpanFactory spanFactory;
     private List<Message<?>> publishedMessages;
     private DeadlineManager deadlineManager;
@@ -122,29 +124,30 @@ public abstract class AbstractDeadlineManagerTestSuite {
         correlationDataProviders.add(new MessageOriginProvider());
         correlationDataProviders.add(new SimpleCorrelationDataProvider(CUSTOM_CORRELATION_DATA_KEY));
 
-        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES);
-        configurer.eventProcessing()
-                  .usingSubscribingEventProcessors()
-                  .registerSaga(MySaga.class);
-        configuration = configurer.configureEventStore(c -> eventStore)
-                                  .configureCorrelationDataProviders(config -> {
-                                      return correlationDataProviders;
-                                  })
-                                  .configureAggregate(MyAggregate.class)
-                                  .registerComponent(DeadlineManager.class, this::buildAndSpyDeadlineManager)
-                                  .configureSpanFactory(c -> spanFactory)
-                                  .start();
+        MessagingConfigurer configurer =
+                MessagingConfigurer.create()
+                                   .componentRegistry(ComponentRegistry::disableEnhancerScanning);
+//        configurer.eventProcessing()
+//                  .usingSubscribingEventProcessors()
+//                  .registerSaga(MySaga.class);
+//        configuration = configurer.configureEventStore(c -> eventStore)
+//                                  .configureCorrelationDataProviders(config -> {
+//                                      return correlationDataProviders;
+//                                  })
+//                                  .configureAggregate(MyAggregate.class)
+//                                  .registerComponent(DeadlineManager.class, this::buildAndSpyDeadlineManager)
+//                                  .configureSpanFactory(c -> spanFactory)
+//                                  .start();
 
         publishedMessages = new CopyOnWriteArrayList<>();
         //noinspection resource
-        configuration.eventBus().subscribe(events -> publishedMessages.addAll(events));
+//        configuration.eventBus().subscribe(events -> publishedMessages.addAll(events));
     }
 
-    private DeadlineManager buildAndSpyDeadlineManager(LegacyConfiguration configuration) {
+    private DeadlineManager buildAndSpyDeadlineManager(Configuration configuration) {
         DeadlineManager builtManager = buildDeadlineManager(configuration);
-        //noinspection resource
         builtManager.registerHandlerInterceptor(
-                new CorrelationDataInterceptor<>(configuration.correlationDataProviders())
+                new CorrelationDataInterceptor<>(configuration.getComponent(CorrelationDataProvider.class))
         );
         managerName = builtManager.getClass().getSimpleName();
         this.deadlineManager = spy(builtManager);
@@ -159,34 +162,35 @@ public abstract class AbstractDeadlineManagerTestSuite {
     /**
      * Build the {@link DeadlineManager} to be tested.
      *
-     * @param configuration the {@link LegacyConfiguration} used to set up this test class
+     * @param configuration the {@link Configuration} used to set up this test class
      * @return a {@link DeadlineManager} to be tested
      */
-    public abstract DeadlineManager buildDeadlineManager(LegacyConfiguration configuration);
+    public abstract DeadlineManager buildDeadlineManager(Configuration configuration);
 
     @Test
     void deadlineOnAggregate() {
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
         // Set time a bit over the current time, as the CommandBus' process may just stall the deadline scheduling.
         Instant afterDeadlineWasScheduled = Instant.now().plusMillis(50);
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
 
-        Message<?> aggregateCreatedEvent = publishedMessages.get(0);
-        assertTrue(aggregateCreatedEvent instanceof GenericEventMessage);
+        Message<?> aggregateCreatedEvent = publishedMessages.getFirst();
+        assertInstanceOf(GenericEventMessage.class, aggregateCreatedEvent);
         assertTrue(afterDeadlineWasScheduled.isAfter(((GenericEventMessage<?>) aggregateCreatedEvent).getTimestamp()));
         Message<?> deadLineEvent = publishedMessages.get(1);
-        assertTrue(deadLineEvent instanceof GenericEventMessage);
+        assertInstanceOf(GenericEventMessage.class, deadLineEvent);
         assertTrue(afterDeadlineWasScheduled.isBefore(((GenericEventMessage<?>) deadLineEvent).getTimestamp()));
     }
 
     @Test
     void deadlineScheduleAndExecutionIsTraced() {
-        String scheduledDeadlineId = configuration.commandGateway()
-                                                  .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
-                                                                                            DEADLINE_TIMEOUT),
-                                                               String.class);
+        String scheduledDeadlineId = configuration.getComponent(CommandGateway.class)
+                                                  .sendAndWait(new CreateMyAggregateCommand(
+                                                                       IDENTIFIER, DEADLINE_TIMEOUT
+                                                               ), String.class);
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
@@ -204,11 +208,16 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     public void deadlineCancellationWithinScopeOnAggregate() {
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
-        configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, "some-payload"));
-        configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, "some-payload"));
-        configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, null));
-        configuration.commandGateway().sendAndWait(new CancelDeadlineWithinScope(IDENTIFIER));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, "some-payload"));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, "some-payload"));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, null));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CancelDeadlineWithinScope(IDENTIFIER));
 
         spanFactory.verifySpanCompleted("DeadlineManager.cancelAllWithinScope(deadlineName)");
         spanFactory.verifySpanCompleted("DeadlineManager.cancelAllWithinScope(specificDeadlineName)");
@@ -219,17 +228,20 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void deadlineCancellationOnAggregate() {
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
-                                                                                DEADLINE_TIMEOUT,
-                                                                                CANCEL_BEFORE_DEADLINE));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
+                                                               DEADLINE_TIMEOUT,
+                                                               CANCEL_BEFORE_DEADLINE));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
     }
 
     @Test
     void deadlineOnChildEntity() {
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
-        configuration.commandGateway().sendAndWait(new TriggerDeadlineInChildEntityCommand(IDENTIFIER));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new TriggerDeadlineInChildEntityCommand(IDENTIFIER));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredInChildEvent(new EntityDeadlinePayload("entity" + IDENTIFIER)),
@@ -240,10 +252,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void deadlineWithSpecifiedDeadlineName() {
         String expectedDeadlinePayload = "deadlinePayload";
 
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
-                                                                                DEADLINE_TIMEOUT,
-                                                                                CANCEL_BEFORE_DEADLINE));
-        configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
+                                                               DEADLINE_TIMEOUT,
+                                                               CANCEL_BEFORE_DEADLINE));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new SpecificDeadlineOccurredEvent(expectedDeadlinePayload));
@@ -251,9 +265,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void deadlineCancellationOnAggregateIsTracedCorrectly() {
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
-                                                                                DEADLINE_TIMEOUT,
-                                                                                CANCEL_BEFORE_DEADLINE));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
+                                                               DEADLINE_TIMEOUT,
+                                                               CANCEL_BEFORE_DEADLINE));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
 
@@ -264,10 +279,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     public void deadlineCancelAllOnAggregateIsTracedCorrectly() {
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
-                                                                                DEADLINE_TIMEOUT,
-                                                                                DO_NOT_CANCEL_BEFORE_DEADLINE));
-        configuration.commandGateway().sendAndWait(new CancelAllDeadlinesWithName(IDENTIFIER));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
+                                                               DEADLINE_TIMEOUT,
+                                                               DO_NOT_CANCEL_BEFORE_DEADLINE));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CancelAllDeadlinesWithName(IDENTIFIER));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
 
@@ -277,10 +294,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void deadlineWithoutPayload() {
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
-                                                                                DEADLINE_TIMEOUT,
-                                                                                CANCEL_BEFORE_DEADLINE));
-        configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, null));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
+                                                               DEADLINE_TIMEOUT,
+                                                               CANCEL_BEFORE_DEADLINE));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, null));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new SpecificDeadlineOccurredEvent(null));
@@ -288,12 +307,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void handlerInterceptorOnAggregate() {
-        //noinspection resource
-        configuration.deadlineManager().registerHandlerInterceptor((uow, context, chain) -> {
+        configuration.getComponent(DeadlineManager.class).registerHandlerInterceptor((uow, context, chain) -> {
             uow.transformMessage(AbstractDeadlineManagerTestSuite::asDeadlineMessage);
             return chain.proceedSync(context);
         });
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(FAKE_IDENTIFIER)));
@@ -301,9 +320,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void dispatchInterceptorOnAggregate() {
-        //noinspection resource
-        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) -> asDeadlineMessage(m));
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
+        configuration.getComponent(DeadlineManager.class)
+                     .registerDispatchInterceptor(messages -> (i, m) -> asDeadlineMessage(m));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(FAKE_IDENTIFIER)));
@@ -316,14 +336,16 @@ public abstract class AbstractDeadlineManagerTestSuite {
                 new CustomCorrelationDataDispatchInterceptor(expectedCorrelationData);
 
 //        TODO - Verify test
-//        configuration.commandGateway().registerDispatchInterceptor(correlationDataDispatchInterceptor);
+//        configuration.getComponent(org.axonframework.commandhandling.gateway.CommandGateway.class)
+//        .registerDispatchInterceptor(correlationDataDispatchInterceptor);
 
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
 
-        Message<?> aggregateCreatedEvent = publishedMessages.get(0);
+        Message<?> aggregateCreatedEvent = publishedMessages.getFirst();
         assertTrue(aggregateCreatedEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
         assertEquals(expectedCorrelationData, aggregateCreatedEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
         Message<?> deadLineEvent = publishedMessages.get(1);
@@ -333,7 +355,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void scheduleInPastTriggersDeadline() {
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, -10000));
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, -10000));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
@@ -341,13 +364,14 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void failedExecution() {
-        //noinspection resource
-        configuration.deadlineManager().registerHandlerInterceptor((uow, context, interceptorChain) -> {
-            interceptorChain.proceedSync(context);
-            throw new AxonNonTransientException("Simulating handling error") {
-            };
-        });
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
+        configuration.getComponent(DeadlineManager.class)
+                     .registerHandlerInterceptor((uow, context, interceptorChain) -> {
+                         interceptorChain.proceedSync(context);
+                         throw new AxonNonTransientException("Simulating handling error") {
+                         };
+                     });
+        configuration.getComponent(CommandGateway.class)
+                     .sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
     }
 
@@ -355,7 +379,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void deadlineOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
-        configuration.eventStore().publish(testEventMessage);
+        configuration.getComponent(EventSink.class)
+                     .publish(null, testEventMessage);
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
@@ -370,11 +395,16 @@ public abstract class AbstractDeadlineManagerTestSuite {
         ScheduleSpecificDeadline thirdSchedule = new ScheduleSpecificDeadline(IDENTIFIER, null);
         CancelDeadlineWithinScope scheduleCancellation = new CancelDeadlineWithinScope(IDENTIFIER);
 
-        configuration.eventStore().publish(asEventMessage(sagaStartingEvent));
-        configuration.eventStore().publish(asEventMessage(firstSchedule));
-        configuration.eventStore().publish(asEventMessage(secondSchedule));
-        configuration.eventStore().publish(asEventMessage(thirdSchedule));
-        configuration.eventStore().publish(asEventMessage(scheduleCancellation));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(sagaStartingEvent));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(firstSchedule));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(secondSchedule));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(thirdSchedule));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(scheduleCancellation));
 
 
         assertPublishedEvents(sagaStartingEvent, firstSchedule, secondSchedule, thirdSchedule, scheduleCancellation);
@@ -386,7 +416,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void deadlineCancellationOnSaga() {
-        configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
         assertSagaIs(LIVE);
@@ -394,7 +425,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void deadlineCancellationOnSagaIsCorrectlyTraced() {
-        configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
 
@@ -405,8 +437,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     public void deadlineCancelAllOnSagaIsCorrectlyTraced() {
-        configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
-        configuration.eventStore().publish(asEventMessage(new CancelAllDeadlinesWithName(IDENTIFIER)));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(new CancelAllDeadlinesWithName(IDENTIFIER)));
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
                               new CancelAllDeadlinesWithName(IDENTIFIER));
@@ -418,10 +452,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void deadlineWithSpecifiedDeadlineNameOnSaga() {
         String expectedDeadlinePayload = "deadlinePayload";
 
-        configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
-        configuration.eventStore().publish(asEventMessage(
-                new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload))
-        );
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(
+                             new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload))
+                     );
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
                               new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload),
@@ -431,8 +467,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void deadlineWithoutPayloadOnSaga() {
-        configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
-        configuration.eventStore().publish(asEventMessage(new ScheduleSpecificDeadline(IDENTIFIER, null)));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(new ScheduleSpecificDeadline(IDENTIFIER, null)));
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
                               new ScheduleSpecificDeadline(IDENTIFIER, null),
@@ -442,9 +480,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void sagaEndingDeadlineEndsTheSaga() {
-        LegacyEventStore eventStore = configuration.eventStore();
-        eventStore.publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
-        eventStore.publish(asEventMessage(new ScheduleSpecificDeadline(IDENTIFIER, END_SAGA)));
+        EventSink eventStore = configuration.getComponent(EventSink.class);
+        eventStore.publish(null, asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
+        eventStore.publish(null, asEventMessage(new ScheduleSpecificDeadline(IDENTIFIER, END_SAGA)));
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
                               new ScheduleSpecificDeadline(IDENTIFIER, END_SAGA),
@@ -456,14 +494,14 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void handlerInterceptorOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
-        //noinspection resource
-        configuration.deadlineManager().registerHandlerInterceptor((uow, context, chain) -> {
+        configuration.getComponent(DeadlineManager.class).registerHandlerInterceptor((uow, context, chain) -> {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(deadlineMessage.getDeadlineName(),
                                                                       new DeadlinePayload(FAKE_IDENTIFIER),
                                                                       deadlineMessage.getTimestamp()));
             return chain.proceedSync(context);
         });
-        configuration.eventStore().publish(testEventMessage);
+        configuration.getComponent(EventSink.class)
+                     .publish(null, testEventMessage);
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
                               new DeadlineOccurredEvent(new DeadlinePayload(FAKE_IDENTIFIER)));
@@ -474,14 +512,14 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void dispatchInterceptorOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
-        //noinspection resource
-        configuration.deadlineManager()
+        configuration.getComponent(DeadlineManager.class)
                      .registerDispatchInterceptor(
                              messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(),
                                                                      new DeadlinePayload(FAKE_IDENTIFIER),
                                                                      m.getTimestamp())
                      );
-        configuration.eventStore().publish(testEventMessage);
+        configuration.getComponent(EventSink.class)
+                     .publish(null, testEventMessage);
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
                               new DeadlineOccurredEvent(new DeadlinePayload(FAKE_IDENTIFIER)));
@@ -494,12 +532,13 @@ public abstract class AbstractDeadlineManagerTestSuite {
         MessageDispatchInterceptor<Message<?>> correlationDataDispatchInterceptor =
                 new CustomCorrelationDataDispatchInterceptor(expectedCorrelationData);
 
-        //noinspection resource
-        configuration.eventStore().registerDispatchInterceptor(correlationDataDispatchInterceptor);
+        configuration.getComponent(EventSink.class);
+// TODO #3065                     .registerDispatchInterceptor(correlationDataDispatchInterceptor);
 
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
-        configuration.eventStore().publish(testEventMessage);
+        configuration.getComponent(EventSink.class)
+                     .publish(null, testEventMessage);
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
@@ -529,7 +568,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     private void assertSagaIs(boolean live) {
         //noinspection unchecked
-        SagaStore<MySaga> sagaStore = configuration.eventProcessingConfiguration().sagaStore();
+        SagaStore<MySaga> sagaStore = null; // TODO #3065 configuration.eventProcessingConfiguration().sagaStore();
         Set<String> sagaIds = sagaStore.findSagas(MySaga.class, new AssociationValue("id", IDENTIFIER.toString()));
         assertEquals(live, sagaIds.isEmpty());
     }
@@ -954,24 +993,24 @@ public abstract class AbstractDeadlineManagerTestSuite {
         @DeadlineHandler
         public void on(DeadlinePayload deadlinePayload, @Timestamp Instant timestamp) {
             assertNotNull(timestamp);
-            eventStore.publish(asEventMessage(new DeadlineOccurredEvent(deadlinePayload)));
+            eventStore.publish(null, asEventMessage(new DeadlineOccurredEvent(deadlinePayload)));
         }
 
         @DeadlineHandler(deadlineName = "specificDeadlineName")
         public void on(Object deadlinePayload, @Timestamp Instant timestamp) {
             assertNotNull(timestamp);
-            eventStore.publish(asEventMessage(new SpecificDeadlineOccurredEvent(deadlinePayload)));
+            eventStore.publish(null, asEventMessage(new SpecificDeadlineOccurredEvent(deadlinePayload)));
         }
 
         @DeadlineHandler(deadlineName = "payloadlessDeadline")
         public void on() {
-            eventStore.publish(asEventMessage(new SpecificDeadlineOccurredEvent(null)));
+            eventStore.publish(null, asEventMessage(new SpecificDeadlineOccurredEvent(null)));
         }
 
         @EndSaga
         @DeadlineHandler(deadlineName = "sagaEndingDeadline")
         public void sagaEndingDeadline() {
-            eventStore.publish(asEventMessage(new DeadlineOccurredEvent(new DeadlinePayload(SAGA_ENDED))));
+            eventStore.publish(null, asEventMessage(new DeadlineOccurredEvent(new DeadlinePayload(SAGA_ENDED))));
         }
 
         @Autowired

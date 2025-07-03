@@ -16,39 +16,33 @@
 
 package org.axonframework.spring.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.caching.Cache;
-import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
-import org.axonframework.common.lock.NullLockFactory;
-import org.axonframework.config.AggregateConfigurer;
-import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.LegacyConfigurer;
+import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.CommandTargetResolver;
-import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.modelling.command.LegacyRepository;
-import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.util.Set;
-import jakarta.annotation.Nonnull;
 
 /**
- * A {@link ConfigurerModule} implementation that will configure an Aggregate with the Axon {@link
- * LegacyConfiguration}.
+ * A {@link ConfigurationEnhancer} implementation that will configure an Aggregate with the Axon
+ * {@link org.axonframework.configuration.Configuration}.
  *
  * @param <T> The type of Aggregate to configure
- *
  * @author Allard Buijze
  * @since 4.6.0
  */
-public class SpringAggregateConfigurer<T> implements ConfigurerModule, ApplicationContextAware {
+// TODO #3499 Fix as part of referred to issue
+public class SpringAggregateConfigurer<T> implements ConfigurationEnhancer, ApplicationContextAware {
 
     private final Class<T> aggregateType;
     private final Set<Class<? extends T>> subTypes;
@@ -64,7 +58,7 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
     private String aggregateFactory;
 
     /**
-     * Initializes a {@link ConfigurerModule} for given {@code aggregateType} and possible {@code subTypes}.
+     * Initializes a {@link ConfigurationEnhancer} for given {@code aggregateType} and possible {@code subTypes}.
      *
      * @param aggregateType The declared type of the aggregate.
      * @param subTypes      The possible subtypes of this aggregate.
@@ -154,59 +148,59 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
     }
 
     @Override
-    public void configureModule(@Nonnull LegacyConfigurer configurer) {
-        AggregateConfigurer<T> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(aggregateType)
-                                                                        .withSubtypes(subTypes);
+    public void enhance(@Nonnull ComponentRegistry registry) {
+//        AggregateConfigurer<T> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(aggregateType)
+//                                                                        .withSubtypes(subTypes);
         if (snapshotFilter != null) {
-            aggregateConfigurer.configureSnapshotFilter(
-                    c -> applicationContext.getBean(snapshotFilter, SnapshotFilter.class)
-            );
+//            aggregateConfigurer.configureSnapshotFilter(
+//                    c -> applicationContext.getBean(snapshotFilter, SnapshotFilter.class)
+//            );
         }
         if (aggregateRepository != null) {
             //noinspection unchecked
-            aggregateConfigurer.configureRepository(
-                    c -> applicationContext.getBean(aggregateRepository, LegacyRepository.class)
-            );
+//            aggregateConfigurer.configureRepository(
+//                    c -> applicationContext.getBean(aggregateRepository, LegacyRepository.class)
+//            );
         } else if (isEntityManagerAnnotationPresent(aggregateType)) {
-            aggregateConfigurer.configureRepository(
-                    c -> LegacyGenericJpaRepository.builder(aggregateType)
-                                                   .parameterResolverFactory(c.parameterResolverFactory())
-                                                   .handlerDefinition(c.handlerDefinition(aggregateType))
-                                                   .lockFactory(c.getComponent(
-                                                           LockFactory.class, () -> NullLockFactory.INSTANCE
-                                                   ))
-                                                   .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
-                                                   .eventBus(c.eventBus())
-                                                   .repositoryProvider(c::repository)
-                                                   .spanFactory(c.getComponent(RepositorySpanFactory.class))
-                                                   .build()
-            );
+//            aggregateConfigurer.configureRepository(
+//                    c -> LegacyGenericJpaRepository.builder(aggregateType)
+//                                                   .parameterResolverFactory(c.parameterResolverFactory())
+//                                                   .handlerDefinition(c.handlerDefinition(aggregateType))
+//                                                   .lockFactory(c.getComponent(
+//                                                           LockFactory.class, () -> NullLockFactory.INSTANCE
+//                                                   ))
+//                                                   .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+//                                                   .eventBus(c.eventBus())
+//                                                   .repositoryProvider(c::repository)
+//                                                   .spanFactory(c.getComponent(RepositorySpanFactory.class))
+//                                                   .build()
+//            );
         }
 
         if (snapshotTriggerDefinition != null) {
-            aggregateConfigurer.configureSnapshotTrigger(
-                    c -> applicationContext.getBean(snapshotTriggerDefinition, SnapshotTriggerDefinition.class)
-            );
+//            aggregateConfigurer.configureSnapshotTrigger(
+//                    c -> applicationContext.getBean(snapshotTriggerDefinition, SnapshotTriggerDefinition.class)
+//            );
         }
         if (commandTargetResolver != null) {
-            aggregateConfigurer.configureCommandTargetResolver(
-                    c -> applicationContext.getBean(commandTargetResolver, CommandTargetResolver.class)
-            );
+//            aggregateConfigurer.configureCommandTargetResolver(
+//                    c -> applicationContext.getBean(commandTargetResolver, CommandTargetResolver.class)
+//            );
         }
         if (cache != null) {
-            aggregateConfigurer.configureCache(c -> applicationContext.getBean(cache, Cache.class));
+//            aggregateConfigurer.configureCache(c -> applicationContext.getBean(cache, Cache.class));
         }
         if (lockFactory != null) {
-            aggregateConfigurer.configureLockFactory(c -> applicationContext.getBean(lockFactory, LockFactory.class));
+//            aggregateConfigurer.configureLockFactory(c -> applicationContext.getBean(lockFactory, LockFactory.class));
         }
         if (aggregateFactory != null) {
             //noinspection unchecked
-            aggregateConfigurer.configureAggregateFactory(
-                    c -> applicationContext.getBean(aggregateFactory, AggregateFactory.class)
-            );
+//            aggregateConfigurer.configureAggregateFactory(
+//                    c -> applicationContext.getBean(aggregateFactory, AggregateFactory.class)
+//            );
         }
-        aggregateConfigurer.configureFilterEventsByType(c -> filterEventsByType);
-        configurer.configureAggregate(aggregateConfigurer);
+//        aggregateConfigurer.configureFilterEventsByType(c -> filterEventsByType);
+//        configurer.configureAggregate(aggregateConfigurer);
     }
 
     private boolean isEntityManagerAnnotationPresent(Class<T> type) {

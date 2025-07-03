@@ -34,7 +34,6 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.SubscribableMessageSourceDefinition;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
@@ -382,10 +381,11 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
                             name,
                             c -> {
                                 Object bean = applicationContext.getBean(settings.getSource());
-                                if (bean instanceof SubscribableMessageSourceDefinition) {
-                                    return ((SubscribableMessageSourceDefinition<? extends EventMessage<?>>) bean)
-                                            .create(c);
-                                }
+                                // TODO #3520
+//                                if (bean instanceof SubscribableMessageSourceDefinition) {
+//                                    return ((SubscribableMessageSourceDefinition<? extends EventMessage<?>>) bean)
+//                                            .create(c);
+//                                }
                                 if (bean instanceof SubscribableMessageSource) {
                                     return (SubscribableMessageSource<? extends EventMessage<?>>) bean;
                                 }
