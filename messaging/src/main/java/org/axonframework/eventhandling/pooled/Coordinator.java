@@ -1004,20 +1004,20 @@ class Coordinator {
             }
 
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
-                // EventCriteria filtering is now supported - events are filtered based on configured criteria
-                // Handle null tracking token case since conditionFor() requires non-null position
-                if (trackingToken == null) {
-                    eventStream = eventSource.open(StreamingCondition.startingFrom(null));
-                    logger.debug("Processor [{}] opened stream from beginning (null token).", name);
-                } else if (!eventCriteria.hasCriteria()) {
-                    // When no actual filtering criteria, use simpler startingFrom for better compatibility
+                // Handle the case where we have a null token but need to apply event criteria
+                if (trackingToken == null && eventCriteria.hasCriteria()) {
+                    // Get a valid starting token using firstToken() to apply criteria from the beginning
+                    TrackingToken validStartToken = joinAndUnwrap(eventSource.firstToken());
+                    eventStream = eventSource.open(StreamingCondition.conditionFor(validStartToken, eventCriteria));
+                    logger.debug("Processor [{}] opened stream from beginning with criteria and token [{}].", name, validStartToken);
+                } else if (trackingToken == null || !eventCriteria.hasCriteria()) {
+                    // When no filtering criteria or null token, use simpler startingFrom for compatibility
                     eventStream = eventSource.open(StreamingCondition.startingFrom(trackingToken));
-                    logger.debug("Processor [{}] opened stream with tracking token [{}] (no filtering).", name, trackingToken);
+                    logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
                 } else {
-                    // Use conditionFor when we have actual filtering criteria
+                    // Use conditionFor when we have both a valid token and filtering criteria
                     eventStream = eventSource.open(StreamingCondition.conditionFor(trackingToken, eventCriteria));
-                    logger.debug("Processor [{}] opened stream with tracking token [{}] and event criteria [{}].", 
-                               name, trackingToken, eventCriteria);
+                    logger.debug("Processor [{}] opened stream with tracking token [{}] and criteria.", name, trackingToken);
                 }
                 availabilityCallbackSupported = true;
                 eventStream.onAvailable(this::scheduleImmediateCoordinationTask);
