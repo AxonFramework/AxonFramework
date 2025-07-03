@@ -409,25 +409,27 @@ class PooledStreamingEventProcessorTest {
         assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
     }
 
-    @Disabled("TODO #3098 - Support ignoring events by mean of the EventCriteria API")
     @Test
     void handlingUnknownMessageTypeWillAdvanceToken() {
+        // given - Let all events through EventCriteria but configure an EventHandlingComponent to not support Integer events
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
+        QualifiedName integerTypeName = new QualifiedName(Integer.class.getName());
+        when(stubEventHandlingComponent.isSupported(integerTypeName)).thenReturn(false);
 
-        when(stubEventHandler.canHandle(any(), any(), any())).thenReturn(false);
-        when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
-
-        EventMessage<Integer> eventToIgnoreOne = EventTestUtils.asEventMessage(1337);
-        stubMessageSource.publishMessage(eventToIgnoreOne);
-
+        // when - Publish an Integer event that will reach the processor but won't be handled
+        EventMessage<Integer> eventToIgnore = EventTestUtils.asEventMessage(1337);
+        stubMessageSource.publishMessage(eventToIgnore);
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
-        assertWithin(
-                100, TimeUnit.MILLISECONDS,
-                () -> assertEquals(1, testSubject.processingStatus().get(0).getCurrentPosition().orElse(0))
-        );
 
-        assertEquals(1, stubMessageSource.getIgnoredEvents().size());
+        // then - Verify processor status and token advancement
+        assertWithin(1, TimeUnit.SECONDS, () -> assertThat(testSubject.processingStatus()).hasSize(1));
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> {
+            long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
+            assertThat(currentPosition).isEqualTo(1);
+        });
+
+        // then - Verify no events were handled
+        verify(stubEventHandlingComponent, never()).handle(any(), any());
     }
 
     @Test
