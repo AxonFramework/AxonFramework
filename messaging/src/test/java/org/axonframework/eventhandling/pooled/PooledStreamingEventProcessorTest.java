@@ -410,7 +410,7 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
-    void handlingUnknownMessageTypeWillAdvanceToken() {
+    void handlingMessageTypeNotSupportedByEventHandlingComponentWillAdvanceToken() {
         // given - Let all events through EventCriteria but configure an EventHandlingComponent to not support Integer events
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
         QualifiedName integerTypeName = new QualifiedName(Integer.class.getName());
@@ -420,7 +420,7 @@ class PooledStreamingEventProcessorTest {
         EventMessage<Integer> eventToIgnore = EventTestUtils.asEventMessage(1337);
         stubMessageSource.publishMessage(eventToIgnore);
         testSubject.start();
-
+        
         // then - Verify processor status and token advancement
         assertWithin(1, TimeUnit.SECONDS, () -> assertThat(testSubject.processingStatus()).hasSize(1));
         assertWithin(100, TimeUnit.MILLISECONDS, () -> {
@@ -430,6 +430,34 @@ class PooledStreamingEventProcessorTest {
 
         // then - Verify no events were handled
         verify(stubEventHandlingComponent, never()).handle(any(), any());
+    }
+
+    @Test
+    void handlingMessageTypeFilteredOutByEventCriteriaWillNotAdvanceToken() {
+        // given - Configure EventCriteria to filter out Integer events at stream level
+        EventCriteria stringOnlyCriteria = EventCriteria.havingAnyTag()
+                                                        .andBeingOneOfTypes(new QualifiedName(String.class.getName()));
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
+                                                           .eventCriteria(stringOnlyCriteria)));
+
+        // when - Publish an Integer event that will be filtered out by EventCriteria before reaching processor
+        EventMessage<Integer> eventToFilter = EventTestUtils.asEventMessage(1337);
+        stubMessageSource.publishMessage(eventToFilter);
+        testSubject.start();
+        
+        // then - Verify processor status, but token should NOT advance (stays at 0)
+        assertWithin(1, TimeUnit.SECONDS, () -> assertThat(testSubject.processingStatus()).hasSize(1));
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> {
+            long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
+            assertThat(currentPosition).isEqualTo(0); // Token should not advance - event was filtered at stream level
+        });
+
+        // then - Verify no events were handled (filtered out by EventCriteria)
+        verify(stubEventHandlingComponent, never()).handle(any(), any());
+        
+        // then - Verify the event was tracked as ignored (even though filtered at stream level)
+        assertThat(stubMessageSource.getIgnoredEvents()).hasSize(1);
+        assertThat(stubMessageSource.getIgnoredEvents().getFirst().getPayload()).isEqualTo(1337);
     }
 
     @Test
