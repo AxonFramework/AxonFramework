@@ -39,6 +39,7 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -168,12 +169,13 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
+                                      .eventCriteria(builder.eventCriteria)
                                       // .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment)) // TODO #3304 - Integrate event replay logic into Event Handling Component
                                       .build();
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@code PooledStreamingEventProcessor}.
+     * Instantiate a Builder to be able to create a {@link PooledStreamingEventProcessor}.
      * <p>
      * Upon initialization of this builder, the following fields are defaulted:
      * <ul>
@@ -458,6 +460,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
      *     <li>The {@link EventProcessorSpanFactory} defaults to a {@link org.axonframework.eventhandling.DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
      *     <li>The {@code coordinatorExtendsClaims} defaults to a {@code false}.</li>
+     *     <li>The {@link EventCriteria} defaults to {@link EventCriteria#havingAnyTag()}, which means all events are processed.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -485,6 +488,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         private int batchSize = 1;
         private Clock clock = GenericEventMessage.clock;
         private boolean coordinatorExtendsClaims = false;
+        private EventCriteria eventCriteria = EventCriteria.havingAnyTag();
 
         protected Builder() {
         }
@@ -776,6 +780,22 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          */
         public Builder enableCoordinatorClaimExtension() {
             this.coordinatorExtendsClaims = true;
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventCriteria} used to filter events when opening the event stream. This allows the
+         * processor to only process events that match the specified criteria, reducing the amount of data processed
+         * and potentially improving performance.
+         * <p>
+         * By default, this is set to {@link EventCriteria#havingAnyTag()}, which means all events are processed.
+         * 
+         * @param eventCriteria the {@link EventCriteria} to use for filtering events
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder eventCriteria(@Nonnull EventCriteria eventCriteria) {
+            assertNonNull(eventCriteria, "EventCriteria may not be null");
+            this.eventCriteria = eventCriteria;
             return this;
         }
 
