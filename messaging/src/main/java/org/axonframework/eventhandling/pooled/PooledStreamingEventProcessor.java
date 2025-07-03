@@ -159,7 +159,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .unitOfWorkFactory(unitOfWorkFactory)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
-                                      .eventFilter(event -> eventProcessorOperations.canHandleType(event.type()))
                                       .onMessageIgnored(eventProcessorOperations::reportIgnored)
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
