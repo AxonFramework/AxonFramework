@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
@@ -1004,21 +1005,9 @@ class Coordinator {
             }
 
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
-                // Handle the case where we have a null token but need to apply event criteria
-                if (trackingToken == null && eventCriteria.hasCriteria()) {
-                    // Get a valid starting token using firstToken() to apply criteria from the beginning
-                    TrackingToken validStartToken = joinAndUnwrap(eventSource.firstToken());
-                    eventStream = eventSource.open(StreamingCondition.conditionFor(validStartToken, eventCriteria));
-                    logger.debug("Processor [{}] opened stream from beginning with criteria and token [{}].", name, validStartToken);
-                } else if (trackingToken == null || !eventCriteria.hasCriteria()) {
-                    // When no filtering criteria or null token, use simpler startingFrom for compatibility
-                    eventStream = eventSource.open(StreamingCondition.startingFrom(trackingToken));
-                    logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
-                } else {
-                    // Use conditionFor when we have both a valid token and filtering criteria
-                    eventStream = eventSource.open(StreamingCondition.conditionFor(trackingToken, eventCriteria));
-                    logger.debug("Processor [{}] opened stream with tracking token [{}] and criteria.", name, trackingToken);
-                }
+                var startStreamingFrom = Objects.requireNonNullElse(trackingToken, new GlobalSequenceTrackingToken(-1));
+                eventStream = eventSource.open(StreamingCondition.conditionFor(startStreamingFrom, eventCriteria));
+                logger.debug("Processor [{}] opened stream with tracking token [{}] and criteria [{}].", name, trackingToken, eventCriteria);
                 availabilityCallbackSupported = true;
                 eventStream.onAvailable(this::scheduleImmediateCoordinationTask);
                 lastScheduledToken = trackingToken;
