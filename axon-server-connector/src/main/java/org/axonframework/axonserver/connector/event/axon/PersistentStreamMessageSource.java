@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector.event.axon;
 import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.common.Registration;
-import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableMessageSource;
 
@@ -56,7 +56,7 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
      * @param batchSize                  The batch size for collecting events.
      */
     public PersistentStreamMessageSource(String name,
-                                         LegacyConfiguration configuration,
+                                         Configuration configuration,
                                          PersistentStreamProperties persistentStreamProperties,
                                          ScheduledExecutorService scheduler,
                                          int batchSize) {
@@ -77,7 +77,7 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
      * @param context                    The context in which this persistent stream exists (or needs to be created).
      */
     public PersistentStreamMessageSource(String name,
-                                         LegacyConfiguration configuration,
+                                         Configuration configuration,
                                          PersistentStreamProperties persistentStreamProperties,
                                          ScheduledExecutorService scheduler,
                                          int batchSize,

@@ -16,11 +16,14 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.config.LegacyConfiguration;
+import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.IncompatibleAggregateException;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.springframework.beans.factory.BeanNameAware;
@@ -29,7 +32,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.util.Map;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 
@@ -146,13 +148,14 @@ public class SpringPrototypeAggregateFactory<T>
         }
 
         AggregateModel<T> model;
-        if (applicationContext.getBeanNamesForType(LegacyConfiguration.class).length > 0) {
-            LegacyConfiguration configuration = applicationContext.getBean(LegacyConfiguration.class);
-            model = AnnotatedAggregateMetaModelFactory.inspectAggregate(getAggregateType(),
-                                                                        configuration.parameterResolverFactory(),
-                                                                        configuration
-                                                                                .handlerDefinition(getAggregateType()),
-                                                                        subtypes.keySet());
+        if (applicationContext.getBeanNamesForType(Configuration.class).length > 0) {
+            Configuration configuration = applicationContext.getBean(Configuration.class);
+            model = AnnotatedAggregateMetaModelFactory.inspectAggregate(
+                    getAggregateType(),
+                    configuration.getComponent(ParameterResolverFactory.class),
+                    configuration.getComponent(HandlerDefinition.class),
+                    // TODO #3499 Replace "configuration.handlerDefinition(getAggregateType())" for new config equivalent
+                    subtypes.keySet());
         } else {
             model = AnnotatedAggregateMetaModelFactory.inspectAggregate(getAggregateType(),
                                                                         subtypes.keySet());

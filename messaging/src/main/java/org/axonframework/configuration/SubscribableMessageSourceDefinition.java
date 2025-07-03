@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.config;
+package org.axonframework.configuration;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -31,8 +31,8 @@ public interface SubscribableMessageSourceDefinition<M extends Message<?>> {
     /**
      * Creates a {@link SubscribableMessageSource} based on this definition and the provided configuration.
      *
-     * @param configuration The Axon {@link LegacyConfiguration} to base the {@link SubscribableMessageSource} on.
+     * @param configuration The Axon {@link Configuration} to base the {@link SubscribableMessageSource} on.
      * @return A {@link SubscribableMessageSource} based on this definition and the provided configuration.
      */
-    SubscribableMessageSource<M> create(LegacyConfiguration configuration);
+    SubscribableMessageSource<M> create(Configuration configuration);
 }

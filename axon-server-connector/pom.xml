@@ -73,10 +73,17 @@
             </exclusions>
         </dependency>
 
-        <!-- Optional dependency on Axon Framework -->
+        <!-- Optional dependencies on Axon Framework -->
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-configuration</artifactId>
+            <artifactId>axon-messaging</artifactId>
+            <version>${project.parent.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-eventsourcing</artifactId>
             <version>${project.parent.version}</version>
             <optional>true</optional>
         </dependency>

@@ -18,8 +18,7 @@ package org.axonframework.integrationtests.deadline.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.ConfigurationScopeAwareProvider;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
@@ -60,14 +59,14 @@ class HumanReadableDbSchedulerDeadlineManagerTest extends AbstractDeadlineManage
     }
 
     @Override
-    public DeadlineManager buildDeadlineManager(LegacyConfiguration configuration) {
+    public DeadlineManager buildDeadlineManager(Configuration configuration) {
         reCreateTable(dataSource);
         DbSchedulerDeadlineManagerSupplier supplier = new DbSchedulerDeadlineManagerSupplier();
         scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.humanReadableTask(supplier));
         DbSchedulerDeadlineManager deadlineManager = DbSchedulerDeadlineManager
                 .builder()
                 .scheduler(scheduler)
-                .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
+//                .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
                 .serializer(TestSerializer.JACKSON.getSerializer())
                 .transactionManager(NoTransactionManager.INSTANCE)
                 .spanFactory(configuration.getComponent(DeadlineManagerSpanFactory.class))
