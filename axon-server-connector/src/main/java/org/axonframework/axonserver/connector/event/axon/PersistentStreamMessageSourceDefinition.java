@@ -28,7 +28,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Definition of a {@link PersistentStreamMessageSource}.
  * <p>
  * Used to create {@code PersistentStreamMessageSource} instances with a specific Axon
- * {@link org.axonframework.configuration.Configuration configuration}.
+ * {@link Configuration configuration}.
  *
  * @author Marc Gathier
  * @since 4.10.0
