@@ -44,7 +44,7 @@ public interface PersistentStreamMessageSourceFactory {
      * @param batchSize                  The number of events to be fetched in a single batch from the stream.
      * @param context                    The context in which the persistent stream operates. This can be used to
      *                                   differentiate streams in different environments or applications.
-     *                                   @param configuration              Global configuration of Axon components.
+     * @param configuration              Global configuration of Axon components.
      * @return A new instance of {@link PersistentStreamMessageSource} configured with the provided parameters.
      * @throws IllegalArgumentException                                   If any of the required parameters are null or
      *                                                                    invalid.
