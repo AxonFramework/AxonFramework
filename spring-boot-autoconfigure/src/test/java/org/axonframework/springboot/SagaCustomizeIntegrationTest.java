@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventProcessingModule;
@@ -23,7 +24,6 @@ import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
@@ -54,6 +54,7 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.awaitility.Awaitility.await;
@@ -142,11 +143,14 @@ class SagaCustomizeIntegrationTest {
                 Class<?> aClass = Class.forName(bd.getBeanClassName());
                 String processorGroupName = eventProcessingConfiguration.sagaProcessingGroup(aClass);
                 if (!registeredProcessingGroups.contains(processorGroupName)) {
-                    eventProcessingConfiguration.registerTrackingEventProcessor(
+                    eventProcessingConfiguration.registerPooledStreamingEventProcessor(
                             processorGroupName,
                             LegacyConfiguration::eventStore,
-                            c -> TrackingEventProcessorConfiguration.forParallelProcessing(2)
-                                                                    .andInitialSegmentsCount(2)
+                            (config, builder) -> builder
+                                    .workerExecutor(name -> Executors.newScheduledThreadPool(
+                                            2,
+                                            new AxonThreadFactory("Worker - " + name))
+                                    ).initialSegmentCount(2)
                     );
 
                     registeredProcessingGroups.add(processorGroupName);
