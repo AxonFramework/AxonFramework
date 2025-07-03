@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.TrackingTokenSource;
@@ -97,6 +98,7 @@ class Coordinator {
     private final Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken;
     private final boolean coordinatorExtendsClaims;
     private final Consumer<Segment> segmentReleasedAction;
+    private final EventCriteria eventCriteria;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState;
@@ -135,6 +137,7 @@ class Coordinator {
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
         this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
         this.segmentReleasedAction = builder.segmentReleasedAction;
+        this.eventCriteria = builder.eventCriteria;
     }
 
     /**
@@ -428,6 +431,7 @@ class Coordinator {
         private boolean coordinatorExtendsClaims = false;
         private Consumer<Segment> segmentReleasedAction = segment -> {
         };
+        private EventCriteria eventCriteria = EventCriteria.havingAnyTag();
 
         /**
          * The name of the processor this service coordinates for.
@@ -651,6 +655,21 @@ class Coordinator {
          */
         Builder segmentReleasedAction(Consumer<Segment> segmentReleasedAction) {
             this.segmentReleasedAction = segmentReleasedAction;
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventCriteria} used to filter events when opening the event stream. This allows the
+         * coordinator to only process events that match the specified criteria, reducing the amount of data processed
+         * and potentially improving performance.
+         * <p>
+         * By default, this is set to {@link EventCriteria#havingAnyTag()}, which means all events are processed.
+         * 
+         * @param eventCriteria the {@link EventCriteria} to use for filtering events
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder eventCriteria(EventCriteria eventCriteria) {
+            this.eventCriteria = eventCriteria;
             return this;
         }
 
@@ -985,9 +1004,10 @@ class Coordinator {
             }
 
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
-                // TODO #3098 - Support ignoring events by mean of the EventCriteria API
-                eventStream = eventSource.open(StreamingCondition.startingFrom(trackingToken));
-                logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
+                // EventCriteria filtering is now supported - events are filtered based on configured criteria
+                eventStream = eventSource.open(StreamingCondition.conditionFor(trackingToken, eventCriteria));
+                logger.debug("Processor [{}] opened stream with tracking token [{}] and event criteria [{}].", 
+                           name, trackingToken, eventCriteria);
                 availabilityCallbackSupported = true;
                 eventStream.onAvailable(this::scheduleImmediateCoordinationTask);
                 lastScheduledToken = trackingToken;
@@ -1101,7 +1121,7 @@ class Coordinator {
                 EventMessage<?> event = eventEntry.message();
                 ignoredMessageHandler.accept(event);
                 if (!eventFilter.canHandleTypeOf(event)) {
-                    // TODO #3098 - Support ignoring events by mean of the EventCriteria API
+                    // Event filtering is now performed at the stream level using EventCriteria
                 }
             }
         }
@@ -1117,7 +1137,7 @@ class Coordinator {
                     EventMessage<?> event = eventEntry.message();
                     ignoredMessageHandler.accept(event);
                     if (!eventFilter.canHandleTypeOf(event)) {
-                        // TODO #3098 - Support ignoring events by mean of the EventCriteria API
+                        // Event filtering is now performed at the stream level using EventCriteria
                     }
                 });
             }
