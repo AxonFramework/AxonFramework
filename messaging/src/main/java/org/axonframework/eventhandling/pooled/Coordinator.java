@@ -1005,9 +1005,20 @@ class Coordinator {
 
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
                 // EventCriteria filtering is now supported - events are filtered based on configured criteria
-                eventStream = eventSource.open(StreamingCondition.conditionFor(trackingToken, eventCriteria));
-                logger.debug("Processor [{}] opened stream with tracking token [{}] and event criteria [{}].", 
-                           name, trackingToken, eventCriteria);
+                // Handle null tracking token case since conditionFor() requires non-null position
+                if (trackingToken == null) {
+                    eventStream = eventSource.open(StreamingCondition.startingFrom(null));
+                    logger.debug("Processor [{}] opened stream from beginning (null token).", name);
+                } else if (!eventCriteria.hasCriteria()) {
+                    // When no actual filtering criteria, use simpler startingFrom for better compatibility
+                    eventStream = eventSource.open(StreamingCondition.startingFrom(trackingToken));
+                    logger.debug("Processor [{}] opened stream with tracking token [{}] (no filtering).", name, trackingToken);
+                } else {
+                    // Use conditionFor when we have actual filtering criteria
+                    eventStream = eventSource.open(StreamingCondition.conditionFor(trackingToken, eventCriteria));
+                    logger.debug("Processor [{}] opened stream with tracking token [{}] and event criteria [{}].", 
+                               name, trackingToken, eventCriteria);
+                }
                 availabilityCallbackSupported = true;
                 eventStream.onAvailable(this::scheduleImmediateCoordinationTask);
                 lastScheduledToken = trackingToken;
