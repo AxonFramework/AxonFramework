@@ -88,7 +88,6 @@ class Coordinator {
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService executorService;
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
-    private final EventFilter eventFilter;
     private final Consumer<? super EventMessage<?>> ignoredMessageHandler;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private final long tokenClaimInterval;
@@ -126,7 +125,6 @@ class Coordinator {
         this.unitOfWorkFactory = builder.unitOfWorkFactory;
         this.executorService = builder.executorService;
         this.workPackageFactory = builder.workPackageFactory;
-        this.eventFilter = builder.eventFilter;
         this.ignoredMessageHandler = builder.ignoredMessageHandler;
         this.processingStatusUpdater = builder.processingStatusUpdater;
         this.tokenClaimInterval = builder.tokenClaimInterval;
@@ -388,24 +386,6 @@ class Coordinator {
     }
 
     /**
-     * Functional interface defining a validation if a given {@link EventMessage} can be handled by all
-     * {@link WorkPackage}s this {@link Coordinator} could ever service.
-     */
-    @FunctionalInterface
-    interface EventFilter {
-
-        /**
-         * Checks whether the given {@code eventMessage} contains a type of message that can be handled by any of the
-         * event handlers this processor coordinates.
-         *
-         * @param eventMessage the {@link EventMessage} to validate whether it can be handled
-         * @return {@code true} if the processor contains a handler for given {@code eventMessage}'s type, {@code false}
-         * otherwise
-         */
-        boolean canHandleTypeOf(EventMessage<?> eventMessage);
-    }
-
-    /**
      * Package private builder class to construct a {@link Coordinator}. Not used for validation of the fields as is the
      * case with most builders, but purely to clarify the construction of a {@code WorkPackage}.
      */
@@ -417,7 +397,6 @@ class Coordinator {
         private UnitOfWorkFactory unitOfWorkFactory;
         private ScheduledExecutorService executorService;
         private BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
-        private EventFilter eventFilter;
         private Consumer<? super EventMessage<?>> ignoredMessageHandler = i -> {
         };
         private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
@@ -502,20 +481,6 @@ class Coordinator {
             this.workPackageFactory = workPackageFactory;
             return this;
         }
-
-        /**
-         * A {@link EventFilter} used to check whether {@link EventMessage} must be ignored by all
-         * {@link WorkPackage}s.
-         *
-         * @param eventFilter a {@link EventFilter} used to check whether {@link EventMessage} must be ignored by all
-         *                    {@link WorkPackage}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder eventFilter(EventFilter eventFilter) {
-            this.eventFilter = eventFilter;
-            return this;
-        }
-
 
         /**
          * A {@link Consumer} of {@link EventMessage} that is invoked when the event is ignored by all
@@ -1120,9 +1085,6 @@ class Coordinator {
             if (!anyScheduled) {
                 EventMessage<?> event = eventEntry.message();
                 ignoredMessageHandler.accept(event);
-                if (!eventFilter.canHandleTypeOf(event)) {
-                    // Event filtering is now performed at the stream level using EventCriteria
-                }
             }
         }
 
@@ -1136,9 +1098,6 @@ class Coordinator {
                 eventEntries.forEach(eventEntry -> {
                     EventMessage<?> event = eventEntry.message();
                     ignoredMessageHandler.accept(event);
-                    if (!eventFilter.canHandleTypeOf(event)) {
-                        // Event filtering is now performed at the stream level using EventCriteria
-                    }
                 });
             }
         }
