@@ -21,9 +21,9 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
+import org.axonframework.config.LegacyEventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -32,10 +32,8 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.config.MessageHandlerLookup;
-import org.axonframework.spring.config.SpringAggregateLookup;
 import org.axonframework.spring.config.SpringAxonConfiguration;
 import org.axonframework.spring.config.SpringConfigurer;
-import org.axonframework.spring.config.SpringSagaLookup;
 import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -117,8 +115,8 @@ class InfraConfigurationTest {
             // Validate existence of Event Processor "test"
             assertThat(context).getBean("eventProcessingModule")
                                .isNotNull();
-            EventProcessingModule eventProcessingModule =
-                    context.getBean("eventProcessingModule", EventProcessingModule.class);
+            LegacyEventProcessingModule eventProcessingModule =
+                    context.getBean("eventProcessingModule", LegacyEventProcessingModule.class);
             assertThat(eventProcessingModule.eventProcessor("test")).isPresent();
 
             assertThat(context).getBean("eventHandlerInvocations", CountDownLatch.class)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.config.EventProcessingConfiguration;
-import org.axonframework.config.EventProcessingModule;
+import org.axonframework.config.LegacyEventProcessingModule;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
 /**
- * Auto configuration for {@link EventProcessingModule}.
+ * Auto configuration for {@link LegacyEventProcessingModule}.
  *
  * @author Milan Savic
  * @since 4.0
@@ -41,8 +41,8 @@ import org.springframework.context.annotation.Bean;
 public class EventProcessingAutoConfiguration {
 
     @Bean
-    @ConditionalOnMissingBean({EventProcessingModule.class, EventProcessingConfiguration.class})
-    public EventProcessingModule eventProcessingModule() {
-        return new EventProcessingModule();
+    @ConditionalOnMissingBean({LegacyEventProcessingModule.class, EventProcessingConfiguration.class})
+    public LegacyEventProcessingModule eventProcessingModule() {
+        return new LegacyEventProcessingModule();
     }
 }
