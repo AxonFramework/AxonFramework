@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequencingPolicy;
@@ -61,7 +60,7 @@ class EventProcessorConfigurationTest {
                 .withUserConfiguration(Context.class)
                 .withPropertyValues(
                         "axon.axonserver.enabled=false",
-                        "axon.eventhandling.processors.first.mode=tracking",
+                        "axon.eventhandling.processors.first.mode=pooled",
                         "axon.eventhandling.processors.first.sequencingPolicy=customPolicy"
                 )
                 .run(context -> {
@@ -73,10 +72,10 @@ class EventProcessorConfigurationTest {
 
                     EventProcessor eventProcessor = processors.get("first");
                     assertNotNull(eventProcessor);
-                    assertEquals(TrackingEventProcessor.class, eventProcessor.getClass());
+                    assertEquals(PooledStreamingEventProcessor.class, eventProcessor.getClass());
 
                     long tokenClaimInterval = ReflectionUtils.getFieldValue(
-                            TrackingEventProcessor.class.getDeclaredField("tokenClaimInterval"), eventProcessor
+                            PooledStreamingEventProcessor.class.getDeclaredField("tokenClaimInterval"), eventProcessor
                     );
                     assertEquals(5000L, tokenClaimInterval, "Must be 5000 ms by default");
 
@@ -103,7 +102,7 @@ class EventProcessorConfigurationTest {
                 .withUserConfiguration(Context.class)
                 .withPropertyValues(
                         "axon.axonserver.enabled=false",
-                        "axon.eventhandling.processors.non_default_token_claim_interval.mode=tracking",
+                        "axon.eventhandling.processors.non_default_token_claim_interval.mode=pooled",
                         "axon.eventhandling.processors.non_default_token_claim_interval.tokenClaimInterval=1000",
                         "axon.eventhandling.processors.non_default_token_claim_interval.tokenClaimIntervalTimeUnit=MINUTES"
                 )
@@ -116,9 +115,9 @@ class EventProcessorConfigurationTest {
 
                     EventProcessor eventProcessor = processors.get("non_default_token_claim_interval");
                     assertNotNull(eventProcessor);
-                    assertEquals(TrackingEventProcessor.class, eventProcessor.getClass());
+                    assertEquals(PooledStreamingEventProcessor.class, eventProcessor.getClass());
                     long tokenClaimInterval = ReflectionUtils.getFieldValue(
-                            TrackingEventProcessor.class.getDeclaredField("tokenClaimInterval"), eventProcessor
+                            PooledStreamingEventProcessor.class.getDeclaredField("tokenClaimInterval"), eventProcessor
                     );
 
                     assertEquals(60000000L,
@@ -148,7 +147,7 @@ class EventProcessorConfigurationTest {
 
                     EventProcessor defaultProcessor = processors.get("first");
                     assertNotNull(defaultProcessor);
-                    assertEquals(TrackingEventProcessor.class, defaultProcessor.getClass());
+                    assertEquals(PooledStreamingEventProcessor.class, defaultProcessor.getClass());
 
                     EventProcessor pooledProcessor = processors.get("second");
                     assertNotNull(pooledProcessor);

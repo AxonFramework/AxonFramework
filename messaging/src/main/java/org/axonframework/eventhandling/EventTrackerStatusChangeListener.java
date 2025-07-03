@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.Map;
 
 /**
  * Represent a listener that is notified whenever the {@link Map} of {@link EventTrackerStatus}' in the {@link
- * TrackingEventProcessor} this component is registered to has changed.
+ * StreamingEventProcessor} this component is registered to has changed.
  *
  * @author Steven van Beelen
  * @since 4.4
