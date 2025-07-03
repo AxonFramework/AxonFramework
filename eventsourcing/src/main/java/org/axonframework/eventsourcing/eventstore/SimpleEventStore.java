@@ -31,7 +31,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -83,7 +82,7 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
             AppendCondition none = AppendCondition.none();
             List<TaggedEventMessage<?>> taggedEvents = new ArrayList<>();
             for (EventMessage<?> event : events) {
-                taggedEvents.add(new GenericTaggedEventMessage<>(event, Set.of()));
+                taggedEvents.add(new GenericTaggedEventMessage<>(event, tagResolver.resolve(event)));
             }
             return eventStorageEngine.appendEvents(none, taggedEvents)
                                      .thenApply(EventStorageEngine.AppendTransaction::commit)
