@@ -16,219 +16,77 @@
 
 package org.axonframework.config;
 
-import org.axonframework.common.Assert;
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.modelling.saga.AbstractSagaManager;
-import org.axonframework.modelling.saga.AnnotatedSagaManager;
-import org.axonframework.modelling.saga.SagaManagerSpanFactory;
-import org.axonframework.modelling.saga.SagaRepository;
-import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
+import jakarta.annotation.Nonnull;
 import org.axonframework.modelling.saga.repository.SagaStore;
 
-import java.util.function.Function;
-
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-
 /**
- * Provides mechanisms to configure the components used to manage and store Saga.
+ * A configurer for saga registration that allows customization of saga behavior.
  *
- * @param <T> the Saga type under configuration
- * @author Allard Buijze
- * @since 4.0
+ * @param <T> The type of the saga being configured.
+ * @author Mateusz Nowak
+ * @since 5.0.0
  */
 public class SagaConfigurer<T> {
 
-    private final Class<T> type;
-    private Function<LegacyConfiguration, AbstractSagaManager<T>> managerBuilder;
-    private Function<LegacyConfiguration, SagaRepository<T>> repositoryBuilder;
-    @SuppressWarnings("unchecked")
-    private Function<LegacyConfiguration, SagaStore<? super T>> storeBuilder =
-            c -> c.eventProcessingConfiguration()
-                  .sagaStore();
-    private SagaConfigurationImpl<T> sagaConfig;
+    private final Class<T> sagaType;
+    private String processingGroup;
+    private SagaStore<Object> sagaStore;
 
     /**
-     * Retrieve the {@link SagaConfigurer} for given {@code sagaType}.
+     * Creates a new {@code SagaConfigurer} for the given saga type.
      *
-     * @param sagaType the type of the Saga
-     * @param <T>      a generic specifying the Saga type
-     * @return a {@link SagaConfigurer} to configure a Saga with
+     * @param sagaType The type of the saga being configured.
      */
-    public static <T> SagaConfigurer<T> forType(Class<T> sagaType) {
-        return new SagaConfigurer<>(sagaType);
-    }
-
-
-    /**
-     * Initializes a configurer for the given Saga Type.
-     *
-     * @param type the type of Saga
-     */
-    protected SagaConfigurer(Class<T> type) {
-        verifyNotInitialized();
-        assertNonNull(type, "Saga type is not allowed to be null");
-        this.type = type;
+    public SagaConfigurer(@Nonnull Class<T> sagaType) {
+        this.sagaType = sagaType;
     }
 
     /**
-     * Configures a Saga Manager for this Saga.
+     * Configures the processing group for this saga.
      *
-     * @param managerBuilder a {@link Function} that builds a Saga Manager
-     * @return this {@link SagaConfigurer} instance, for fluent interfacing
+     * @param processingGroup The processing group name.
+     * @return This configurer for a fluent API.
      */
-    public SagaConfigurer<T> configureSagaManager(
-            Function<LegacyConfiguration, AbstractSagaManager<T>> managerBuilder
-    ) {
-        verifyNotInitialized();
-        assertNonNull(managerBuilder, "SagaManager builder is not allowed to be null");
-        this.managerBuilder = managerBuilder;
+    public SagaConfigurer<T> processingGroup(@Nonnull String processingGroup) {
+        this.processingGroup = processingGroup;
         return this;
     }
 
     /**
-     * Configures a {@link SagaRepository} for this Saga.
+     * Configures the saga store for this saga.
      *
-     * @param repositoryBuilder a {@link Function} that builds {@link SagaRepository}
-     * @return this {@link SagaConfigurer} instance, for fluent interfacing
+     * @param sagaStore The saga store to use.
+     * @return This configurer for a fluent API.
      */
-    public SagaConfigurer<T> configureRepository(
-            Function<LegacyConfiguration, SagaRepository<T>> repositoryBuilder
-    ) {
-        verifyNotInitialized();
-        assertNonNull(repositoryBuilder, "SagaRepository builder is not allowed to be null");
-        this.repositoryBuilder = repositoryBuilder;
+    public SagaConfigurer<T> sagaStore(@Nonnull SagaStore<Object> sagaStore) {
+        this.sagaStore = sagaStore;
         return this;
     }
 
     /**
-     * Configures a {@link SagaStore} for this Saga.
+     * Gets the saga type.
      *
-     * @param storeBuilder a {@link Function} that builds {@link SagaStore}
-     * @return this {@link SagaConfigurer} instance, for fluent interfacing
+     * @return The saga type.
      */
-    public SagaConfigurer<T> configureSagaStore(
-            Function<LegacyConfiguration, SagaStore<? super T>> storeBuilder
-    ) {
-        verifyNotInitialized();
-        assertNonNull(storeBuilder, "SagaStore builder is not allowed to be null");
-        this.storeBuilder = storeBuilder;
-        return this;
-    }
-
-    private void verifyNotInitialized() {
-        if (this.sagaConfig != null) {
-            throw new AxonConfigurationException(
-                    "SagaConfiguration has already been created. Cannot make modifications.");
-        }
+    public Class<T> getSagaType() {
+        return sagaType;
     }
 
     /**
-     * Initializes Saga Configuration by using the main {@link LegacyConfiguration}. After initialization, it is safe to
-     * call accessor methods on this Configuration.
+     * Gets the configured processing group.
      *
-     * @param configuration the main {@link LegacyConfiguration} used to provide components to this Saga Configuration
-     * @return the instance describing the Saga Configuration
+     * @return The processing group, or null if not configured.
      */
-    public SagaConfiguration<T> initialize(LegacyConfiguration configuration) {
-        if (this.sagaConfig == null) {
-            sagaConfig = new SagaConfigurationImpl<>(this);
-            sagaConfig.initialize(configuration);
-        }
-        return sagaConfig;
+    public String getProcessingGroup() {
+        return processingGroup;
     }
 
-    private static class SagaConfigurationImpl<S> implements SagaConfiguration<S> {
-
-        private final SagaConfigurer<S> configurer;
-        private LegacyConfiguration config;
-        private Component<AbstractSagaManager<S>> manager;
-        private Component<SagaRepository<S>> repository;
-        private Component<SagaStore<? super S>> store;
-
-        /**
-         * Creates a Saga Configuration using the given {@link SagaConfigurer}.
-         *
-         * @param sagaConfigurer a {@link SagaConfigurer} to build a Saga Configuration with
-         */
-        protected SagaConfigurationImpl(SagaConfigurer<S> sagaConfigurer) {
-            this.configurer = sagaConfigurer;
-        }
-
-        @Override
-        public Class<S> type() {
-            return configurer.type;
-        }
-
-        @Override
-        public AbstractSagaManager<S> manager() {
-            ensureInitialized();
-            return manager.get();
-        }
-
-        @Override
-        public SagaRepository<S> repository() {
-            ensureInitialized();
-            return repository.get();
-        }
-
-        @Override
-        public SagaStore<? super S> store() {
-            ensureInitialized();
-            return store.get();
-        }
-
-        @Override
-        public ListenerInvocationErrorHandler listenerInvocationErrorHandler() {
-            ensureInitialized();
-            return config.eventProcessingConfiguration()
-                         .listenerInvocationErrorHandler(processingGroup());
-        }
-
-        @Override
-        public String processingGroup() {
-            ensureInitialized();
-            return config.eventProcessingConfiguration()
-                         .sagaProcessingGroup(configurer.type);
-        }
-
-        private void initialize(LegacyConfiguration configuration) {
-            this.config = configuration;
-            String managerName = configurer.type.getSimpleName() + "Manager";
-            String repositoryName = configurer.type.getSimpleName() + "Repository";
-            store = new Component<>(configuration, "sagaStore", configurer.storeBuilder);
-            Function<LegacyConfiguration, SagaRepository<S>> repositoryBuilder = configurer.repositoryBuilder;
-            if (repositoryBuilder == null) {
-                repositoryBuilder = c -> AnnotatedSagaRepository.<S>builder()
-                                                                .sagaType(configurer.type)
-                                                                .sagaStore(store.get())
-                                                                .resourceInjector(c.resourceInjector())
-                                                                .parameterResolverFactory(c.parameterResolverFactory())
-                                                                .handlerDefinition(c.handlerDefinition(configurer.type))
-                                                                .build();
-            }
-            repository = new Component<>(configuration, repositoryName, repositoryBuilder);
-
-            Function<LegacyConfiguration, AbstractSagaManager<S>> managerBuilder = configurer.managerBuilder;
-            if (managerBuilder == null) {
-                managerBuilder = c -> {
-                    EventProcessingConfiguration eventProcessingConfiguration = c.eventProcessingConfiguration();
-                    return AnnotatedSagaManager.<S>builder()
-                                               .sagaType(configurer.type)
-                                               .sagaRepository(repository.get())
-                                               .parameterResolverFactory(c.parameterResolverFactory())
-                                               .handlerDefinition(c.handlerDefinition(configurer.type))
-                                               .listenerInvocationErrorHandler(eventProcessingConfiguration.listenerInvocationErrorHandler(
-                                                       processingGroup()))
-                                               .spanFactory(configuration.getComponent(SagaManagerSpanFactory.class))
-                                               .build();
-                };
-            }
-            manager = new Component<>(configuration, managerName, managerBuilder);
-        }
-
-        private void ensureInitialized() {
-            Assert.state(config != null, () -> "Configuration is not initialized yet");
-        }
+    /**
+     * Gets the configured saga store.
+     *
+     * @return The saga store, or null if not configured.
+     */
+    public SagaStore<Object> getSagaStore() {
+        return sagaStore;
     }
 }

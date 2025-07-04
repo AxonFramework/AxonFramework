@@ -22,38 +22,26 @@ import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * A {@link Module} and {@link ModuleBuilder} implementation providing operations to construct an event processing
- * application module.
+ * A base {@link Module} and {@link ModuleBuilder} interface for event processing application modules.
  * <p>
- * The {@code EventProcessingModule} follows a builder paradigm, wherein event handlers, sagas, and event processors
- * can be registered in a structured way through different phases.
+ * The {@code EventProcessingModule} provides a foundation for event processing configuration, wherein event handlers
+ * and sagas can be registered. Specialized implementations can extend this interface to provide specific event
+ * processor configuration capabilities.
  * <p>
- * To initiate event handler registration, you should move into the handler registration phase by invoking
- * {@link SetupPhase#eventHandlers()}. To register event processors, a similar registration phase switch should be made
- * by invoking {@link SetupPhase#eventProcessors()}.
+ * This module follows a builder paradigm with different phases for structured configuration.
  * <p>
- * Here's an example of how to register event handlers and configure event processors:
+ * Here's an example of a basic event processing module:
  * <pre>
  * EventProcessingModule.named("my-event-processing-module")
  *                      .eventHandlers()
  *                      .eventHandler(config -> new MyEventHandler())
- *                      .saga(MySaga.class)
- *                      .eventProcessors()
- *                      .subscribingEventProcessor("my-subscribing-processor")
- *                      .pooledStreamingEventProcessor("my-streaming-processor",
- *                                                    config -> config.eventStore());
+ *                      .saga(MySaga.class);
  * </pre>
  * <p>
  * Note that users do not have to invoke {@link #build()} themselves when using this interface, as the
@@ -77,9 +65,7 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
     /**
      * The setup phase of the event processing module.
      * <p>
-     * Allows for two paths when building an event processing module. Firstly, the {@link #eventHandlers()} method
-     * allows users to start configuring event handlers and sagas for this module. The second option allows for moving
-     * to the {@link #eventProcessors()} configuration flow of this module.
+     * Allows users to initiate event handler configuration through the {@link #eventHandlers()} method.
      */
     interface SetupPhase {
 
@@ -104,35 +90,13 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                     .accept(eventHandlerPhase);
             return eventHandlerPhase;
         }
-
-        /**
-         * Initiates the event processor configuration phase for this module.
-         *
-         * @return The event processor phase of this module, for a fluent API.
-         */
-        EventProcessorPhase eventProcessors();
-
-        /**
-         * Initiates the event processor configuration phase for this module, as well as performing the given
-         * {@code configurationLambda} within this phase.
-         *
-         * @param configurationLambda A consumer of the event processor phase, performing event processor configuration
-         *                            right away.
-         * @return The event processor phase of this module, for a fluent API.
-         */
-        default EventProcessorPhase eventProcessors(@Nonnull Consumer<EventProcessorPhase> configurationLambda) {
-            EventProcessorPhase eventProcessorPhase = eventProcessors();
-            requireNonNull(configurationLambda, "The event processor configuration lambda cannot be null.")
-                    .accept(eventProcessorPhase);
-            return eventProcessorPhase;
-        }
     }
 
     /**
      * The event handler configuration phase of the event processing module.
      * <p>
-     * Every registered event handler will be subscribed to the appropriate event processors configured in this module.
-     * Sagas registered in this phase will also be managed by the configured event processors.
+     * Event handlers and sagas registered in this phase will be managed by event processors. The specific type of
+     * event processor depends on the implementation of the event processing module.
      */
     interface EventHandlerPhase extends SetupPhase, ModuleBuilder<EventProcessingModule> {
 
@@ -186,108 +150,16 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
          */
         EventHandlerPhase eventHandlerInvoker(@Nonnull String processingGroup,
                                               @Nonnull ComponentBuilder<EventHandlerInvoker> eventHandlerInvokerBuilder);
-    }
-
-    /**
-     * The event processor configuration phase of the event processing module.
-     * <p>
-     * This phase allows for the configuration of different types of event processors that will handle the events
-     * for the event handlers and sagas registered in this module.
-     */
-    interface EventProcessorPhase extends SetupPhase, ModuleBuilder<EventProcessingModule> {
 
         /**
-         * Registers a subscribing event processor with this module.
+         * Configures a default processing group for event handlers that don't have explicit assignment.
          * <p>
-         * The subscribing event processor will subscribe to events from the configured event bus and process them
-         * in the publishing thread.
+         * This method allows setting a default processing group name that will be used for event handlers
+         * that are not explicitly assigned to a specific processing group.
          *
-         * @param processorName The name of the event processor.
-         * @return The subscribing event processor configuration phase, for a fluent API.
+         * @param processingGroup The default processing group name.
+         * @return The event handler phase of this module, for a fluent API.
          */
-        SubscribingEventProcessorPhase subscribingEventProcessor(@Nonnull String processorName);
-
-        /**
-         * Registers a pooled streaming event processor with this module.
-         * <p>
-         * The pooled streaming event processor will stream events from the configured event store and process them
-         * using a thread pool for improved performance.
-         *
-         * @param processorName The name of the event processor.
-         * @return The pooled streaming event processor configuration phase, for a fluent API.
-         */
-        PooledStreamingEventProcessorPhase pooledStreamingEventProcessor(@Nonnull String processorName);
-
-        /**
-         * Registers a custom event processor with this module.
-         * <p>
-         * This allows for registering event processors that are not of the standard types provided by the framework.
-         *
-         * @param processorName           The name of the event processor.
-         * @param eventProcessorBuilder   A builder that creates the event processor instance.
-         * @return The event processor phase of this module, for a fluent API.
-         */
-        EventProcessorPhase customEventProcessor(@Nonnull String processorName,
-                                                 @Nonnull ComponentBuilder<EventProcessor> eventProcessorBuilder);
-    }
-
-    /**
-     * Configuration phase for a subscribing event processor.
-     */
-    interface SubscribingEventProcessorPhase extends EventProcessorPhase {
-
-        /**
-         * Configures the message source for this subscribing event processor.
-         * <p>
-         * If not specified, the default event bus will be used.
-         *
-         * @param messageSourceBuilder A builder that creates the message source.
-         * @return The subscribing event processor configuration phase, for a fluent API.
-         */
-        SubscribingEventProcessorPhase messageSource(
-                @Nonnull ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> messageSourceBuilder);
-
-        /**
-         * Configures the subscribing event processor using the provided builder.
-         *
-         * @param processorConfigurer A consumer that configures the SubscribingEventProcessor.Builder.
-         * @return The subscribing event processor configuration phase, for a fluent API.
-         */
-        SubscribingEventProcessorPhase configureSubscribing(@Nonnull Consumer<SubscribingEventProcessor.Builder> processorConfigurer);
-    }
-
-    /**
-     * Configuration phase for a pooled streaming event processor.
-     */
-    interface PooledStreamingEventProcessorPhase extends EventProcessorPhase {
-
-        /**
-         * Configures the event source for this pooled streaming event processor.
-         * <p>
-         * This is typically the event store from which events will be streamed.
-         *
-         * @param eventSourceBuilder A builder that creates the event source.
-         * @return The pooled streaming event processor configuration phase, for a fluent API.
-         */
-        PooledStreamingEventProcessorPhase eventSource(
-                @Nonnull ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> eventSourceBuilder);
-
-        /**
-         * Configures the token store for this pooled streaming event processor.
-         * <p>
-         * If not specified, the default token store will be used.
-         *
-         * @param tokenStoreBuilder A builder that creates the token store.
-         * @return The pooled streaming event processor configuration phase, for a fluent API.
-         */
-        PooledStreamingEventProcessorPhase tokenStore(@Nonnull ComponentBuilder<TokenStore> tokenStoreBuilder);
-
-        /**
-         * Configures the pooled streaming event processor using the provided builder.
-         *
-         * @param processorConfigurer A consumer that configures the PooledStreamingEventProcessor.Builder.
-         * @return The pooled streaming event processor configuration phase, for a fluent API.
-         */
-        PooledStreamingEventProcessorPhase configurePooledStreaming(@Nonnull Consumer<PooledStreamingEventProcessor.Builder> processorConfigurer);
+        EventHandlerPhase defaultProcessingGroup(@Nonnull String processingGroup);
     }
 } 
