@@ -294,7 +294,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * @return The {@link Class} of the expected representation for handlers of the given {@code qualifiedName}, or
      * {@code null} if no such representation is found.
      */
-    public Class<?> getExpectedRepresentation(QualifiedName qualifiedName) {
+    public Class getExpectedRepresentation(QualifiedName qualifiedName) {
         if (payloadTypes.containsKey(qualifiedName)) {
             return payloadTypes.get(qualifiedName);
         }

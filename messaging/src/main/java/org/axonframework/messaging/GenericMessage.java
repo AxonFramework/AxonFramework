@@ -26,6 +26,7 @@ import org.axonframework.serialization.SerializedObjectHolder;
 import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Generic implementation of the {@link Message} interface containing the {@link #getPayload() payload} and
@@ -216,5 +217,11 @@ public class GenericMessage<P> extends AbstractMessage<P> {
             serializedObjectHolder = new SerializedObjectHolder(this);
         }
         return serializedObjectHolder;
+    }
+
+    @Override
+    public <C> Message<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
+        C convertedPayload = conversion.apply(getPayload());
+        return new GenericMessage<>(type(),  convertedPayload, MetaData.from(metaData));
     }
 }

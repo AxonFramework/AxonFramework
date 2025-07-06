@@ -21,6 +21,7 @@ import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
@@ -30,7 +31,7 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
 import org.axonframework.modelling.command.EntityIdResolver;
-import org.axonframework.modelling.configuration.EntityMetamodelConfigurationBuilder;
+import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 import org.axonframework.serialization.Converter;
 
@@ -59,6 +60,7 @@ class AnnotatedEventSourcedEntityModule<I, E>
 
     private final Class<I> idType;
     private final Class<E> entityType;
+    private final Set<Class<? extends E>> concreteTypes;
 
     AnnotatedEventSourcedEntityModule(@Nonnull Class<I> idType, @Nonnull Class<E> entityType) {
         super("AnnotatedEventSourcedEntityModule<%s, %s>".formatted(idType.getSimpleName(),
@@ -70,12 +72,12 @@ class AnnotatedEventSourcedEntityModule<I, E>
         Map<String, Object> annotationAttributes = AnnotationUtils
                 .findAnnotationAttributes(entityType, EventSourcedEntity.class)
                 .orElseThrow(() -> new IllegalArgumentException("The given class is not an @EventSourcedEntity."));
-        var concreteTypes = getConcreteEntityTypes(annotationAttributes);
+        this.concreteTypes = getConcreteEntityTypes(annotationAttributes);
 
         componentRegistry(cr -> cr.registerModule(
                 EventSourcedEntityModule
                         .declarative(idType, entityType)
-                        .messagingModel(getMessagingModelFactory(entityType, concreteTypes))
+                        .messagingModel((c, b) -> this.buildMetaModel(c))
                         .entityFactory(entityFactory(annotationAttributes, concreteTypes))
                         .criteriaResolver(criteriaResolver(annotationAttributes))
                         .entityIdResolver(entityIdResolver(annotationAttributes)))
@@ -83,12 +85,9 @@ class AnnotatedEventSourcedEntityModule<I, E>
 
     }
 
-    private EntityMetamodelConfigurationBuilder<E> getMessagingModelFactory(
-            Class<E> entityType,
-            Set<Class<? extends E>> concreteTypes
-    ) {
+    private AnnotatedEntityMetamodel<E> buildMetaModel(@Nonnull Configuration c) {
         if (!concreteTypes.isEmpty()) {
-            return (c, b) -> AnnotatedEntityMetamodel.forPolymorphicType(
+            return AnnotatedEntityMetamodel.forPolymorphicType(
                     entityType,
                     concreteTypes,
                     c.getComponent(ParameterResolverFactory.class),
@@ -97,7 +96,7 @@ class AnnotatedEventSourcedEntityModule<I, E>
             );
         }
 
-        return (c, b) -> AnnotatedEntityMetamodel.forConcreteType(
+        return AnnotatedEntityMetamodel.forConcreteType(
                 entityType,
                 c.getComponent(ParameterResolverFactory.class),
                 c.getComponent(MessageTypeResolver.class),
@@ -125,7 +124,10 @@ class AnnotatedEventSourcedEntityModule<I, E>
     private ComponentBuilder<EntityIdResolver<I>> entityIdResolver(Map<String, Object> annotationAttributes) {
         var type = (Class<EntityIdResolverDefinition>) annotationAttributes.get("entityIdResolverDefinition");
         var definition = getConstructorFunctionWithZeroArguments(type).get();
-        return c -> definition.createIdResolver(entityType, idType, c);
+        return c -> {
+            var component = (AnnotatedEntityMetamodel<E>) c.getComponent(EntityMetamodel.class, entityName());
+            return definition.createIdResolver(entityType, idType, component, c);
+        };
     }
 
     private Set<Class<? extends E>> getConcreteEntityTypes(Map<String, Object> attributes) {
