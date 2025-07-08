@@ -127,6 +127,13 @@ You could take the stance of dropping all the snapshots which are stored (for a 
 It is also possible to filter out snapshot events when reading your Aggregate from the event store.
 To that end, a `SnapshotFilter` can be defined per Aggregate type or for the entire `EventStore`.
 
+[WARNING]
+====
+`SnapshotFilter` Implementations are applied to *all aggregates* when reading from the `EventStore`, regardless of how they are defined - on the `Aggregate` or on the `EventStore` level (even when using the `@Aggregate` annotation).
+If implementing a custom filter, you must check for the appropriate aggregate type within your filter implementation to ensure that you do not filter our snapshots for other aggregate types.
+Check the `SnapshotFilter` interface Javadoc for more details.
+====
+
 The `SnapshotFilter` is a functional interface, providing two main operations: `allow(DomainEventData&lt;?)` and `combine(SnapshotFilter)`.
 The former provides the `DomainEventData` which reflects the snapshot events.
 The latter allows combining several `SnapshotFilter`s together.
