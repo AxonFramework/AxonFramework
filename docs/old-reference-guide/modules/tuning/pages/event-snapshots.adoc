@@ -129,7 +129,7 @@ To that end, a `SnapshotFilter` can be defined per Aggregate type or for the ent
 
 [WARNING]
 ====
-`SnapshotFilter` Implementations are applied to *all aggregates* when reading from the `EventStore`, regardless of how they are defined - on the `Aggregate` or on the `EventStore` level (even when using the `@Aggregate` annotation).
+`SnapshotFilter` implementations are applied to *all aggregates* when reading from the `EventStore`, regardless of how they are defined - on the `Aggregate` or on the `EventStore` level (even when using the `@Aggregate` annotation).
 If implementing a custom filter, you must check for the appropriate aggregate type within your filter implementation to ensure that you do not filter our snapshots for other aggregate types.
 Check the `SnapshotFilter` interface Javadoc for more details.
 ====
