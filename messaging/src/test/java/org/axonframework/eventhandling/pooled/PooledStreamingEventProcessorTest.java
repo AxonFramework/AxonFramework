@@ -75,6 +75,7 @@ import javax.annotation.Nonnull;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.axonframework.eventhandling.EventTestUtils.createEvents;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -342,13 +343,6 @@ class PooledStreamingEventProcessorTest {
                                         .orElse(-1);
             assertEquals(100, lowestToken);
         });
-    }
-
-    // TODO - Discuss: Perfect candidate to move to a commons test utils module?
-    private static List<EventMessage<Integer>> createEvents(int number) {
-        return IntStream.range(0, number)
-                        .mapToObj(i -> new GenericEventMessage<>(new MessageType("event"), i))
-                        .collect(Collectors.toList());
     }
 
     private long tokenPosition(TrackingToken token) {
