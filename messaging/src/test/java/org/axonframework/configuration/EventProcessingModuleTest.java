@@ -1,0 +1,158 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.configuration;
+
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.junit.jupiter.api.*;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class EventProcessingModuleTest {
+
+    private MessagingConfigurer configurer;
+
+    @BeforeEach
+    void setUp() {
+        configurer = MessagingConfigurer.create();
+    }
+
+    @Test
+    void subscribingProcessorIsRegisteredAndStarted() {
+        // given
+        AtomicBoolean started = new AtomicBoolean(false);
+        AtomicBoolean stopped = new AtomicBoolean(false);
+
+        SimpleEventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
+        eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+
+        SubscribableMessageSource<EventMessage<?>> messageSource = handler -> {
+            started.set(true);
+            return () -> stopped.getAndSet(true);
+        };
+
+        EventProcessingModule module = EventProcessingModule.named("test-subscriber")
+                                                            .subscribing()
+                                                            .eventHandlingComponent(c -> eventHandlingComponent)
+                                                            .messageSource(c -> messageSource)
+                                                            .build();
+
+        var configuration = configurer
+                .componentRegistry(cr -> cr.registerModule(module))
+                .build();
+
+        // when
+        configuration.start();
+
+        // then
+        assertTrue(started.get(), "Processor should be started");
+
+        // when
+        configuration.shutdown();
+
+        // then
+        assertTrue(stopped.get(), "Processor should be stopped");
+    }
+
+    @Test
+    void streamingProcessorIsRegisteredAndStarted() {
+        // given
+        AtomicBoolean started = new AtomicBoolean(false);
+        AtomicBoolean stopped = new AtomicBoolean(false);
+
+        SimpleEventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
+        eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+        TokenStore tokenStore = new InMemoryTokenStore();
+        var monitor = NoOpMessageMonitor.instance();
+
+        EventProcessingModule module = EventProcessingModule.named("test-streaming")
+                                                            .streaming()
+                                                            .eventHandlingComponent(c -> eventHandlingComponent)
+                                                            .tokenStore(c -> tokenStore)
+                                                            .messageMonitor(c -> monitor)
+                                                            .build();
+
+        var configuration = configurer
+                .componentRegistry(cr -> cr.registerModule(module))
+                .build();
+
+        // when
+        configuration.start();
+
+        // then
+        assertTrue(started.get(), "Streaming processor should be started");
+
+        // when
+        configuration.shutdown();
+
+        // then
+        assertTrue(stopped.get(), "Streaming processor should be stopped");
+    }
+
+    @Test
+    void missingNameThrows() {
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                EventProcessingModule.named("")
+                                     .subscribing()
+                                     .eventHandlingComponent(c -> null)
+                                     .messageSource(c -> null)
+                                     .build()
+        );
+        assertTrue(ex.getMessage().contains("Processor name"));
+    }
+
+    @Test
+    void missingEventHandlingComponentThrows() {
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                EventProcessingModule.named("test")
+                                     .subscribing()
+                                     .messageSource(c -> null)
+                                     .build()
+        );
+        assertTrue(ex.getMessage().contains("EventHandlingComponent"));
+    }
+
+    @Test
+    void missingMessageSourceThrows() {
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                EventProcessingModule.named("test")
+                                     .subscribing()
+                                     .eventHandlingComponent(c -> null)
+                                     .build()
+        );
+        assertTrue(ex.getMessage().contains("MessageSource"));
+    }
+
+    @Test
+    void missingTokenStoreThrows() {
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                EventProcessingModule.named("test")
+                                     .streaming()
+                                     .eventHandlingComponent(c -> null)
+                                     .build()
+        );
+        assertTrue(ex.getMessage().contains("TokenStore"));
+    }
+} 
