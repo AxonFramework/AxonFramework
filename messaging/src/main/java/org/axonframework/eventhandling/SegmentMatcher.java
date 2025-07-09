@@ -20,8 +20,6 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 
 import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * Utility class that matches {@link EventMessage}s against a {@link Segment} based on a {@link SequencingPolicy}.
@@ -35,16 +33,16 @@ import java.util.function.Function;
 @Internal
 class SegmentMatcher {
 
-    private final Function<? super EventMessage<?>, Optional<Object>> sequenceIdentifierProvider;
+    private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
 
     /**
-     * Initialize a SegmentMatcher with the given {@code sequenceIdentifierProvider}. This function is used to extract
+     * Initialize a SegmentMatcher with the given {@code sequencingPolicy}. This policy is used to extract
      * the sequence identifier from messages, which is then used to match against segments.
      *
-     * @param sequenceIdentifierProvider A function that provides the sequence identifier for a given event message.
+     * @param sequencingPolicy A policy that provides the sequence identifier for a given event message.
      */
-    public SegmentMatcher(Function<? super EventMessage<?>, Optional<Object>> sequenceIdentifierProvider) {
-        this.sequenceIdentifierProvider = sequenceIdentifierProvider;
+    public SegmentMatcher(SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+        this.sequencingPolicy = sequencingPolicy;
     }
 
     /**
@@ -67,6 +65,6 @@ class SegmentMatcher {
      * @return The sequence identifier for the event, never {@code null}.
      */
     public Object sequenceIdentifier(EventMessage<?> event) {
-        return sequenceIdentifierProvider.apply(event).orElseGet(event::getIdentifier);
+        return sequencingPolicy.getSequenceIdentifierFor(event).orElseGet(event::getIdentifier);
     }
 }

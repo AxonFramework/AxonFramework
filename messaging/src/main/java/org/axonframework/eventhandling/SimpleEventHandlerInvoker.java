@@ -70,7 +70,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                                      )
                                      .collect(Collectors.toCollection(ArrayList::new));
         this.sequencingPolicy = builder.sequencingPolicy;
-        this.segmentMatcher = new SegmentMatcher(this.sequencingPolicy::getSequenceIdentifierFor);
+        this.segmentMatcher = new SegmentMatcher(this.sequencingPolicy);
         this.listenerInvocationErrorHandler = builder.listenerInvocationErrorHandler;
     }
 
