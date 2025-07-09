@@ -113,7 +113,7 @@ class PooledStreamingEventProcessorTest {
 
         setTestSubject(createTestSubject());
 
-        when(stubEventHandlingComponent.isSupported(any())).thenReturn(true);
+        when(stubEventHandlingComponent.supports(any())).thenReturn(true);
         when(stubEventHandlingComponent.handle(any(), any())).thenReturn(MessageStream.empty());
     }
 
@@ -433,7 +433,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void tokenStoreReturningSingleNullToken() {
-        when(stubEventHandlingComponent.isSupported(any())).thenReturn(false);
+        when(stubEventHandlingComponent.supports(any())).thenReturn(false);
 
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(0), testSubject.getName(), 1);
@@ -589,7 +589,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void startFailsWhenShutdownIsInProgress() throws Exception {
-        when(stubEventHandlingComponent.isSupported(any())).thenReturn(true);
+        when(stubEventHandlingComponent.supports(any())).thenReturn(true);
         // Use CountDownLatch to block worker threads from actually doing work, and thus shutting down successfully.
         CountDownLatch latch = new CountDownLatch(1);
         doAnswer(i -> latch.await(10, TimeUnit.MILLISECONDS)).when(stubEventHandlingComponent)

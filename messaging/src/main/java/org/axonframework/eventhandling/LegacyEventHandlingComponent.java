@@ -73,7 +73,7 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     }
 
     @Override
-    public boolean isSupported(QualifiedName eventName) {
+    public boolean supports(@Nonnull QualifiedName eventName) {
         Set<QualifiedName> supportedEvents = supportedEvents();
         return supportedEvents.contains(eventName);
     }

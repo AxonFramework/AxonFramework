@@ -47,7 +47,7 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * @param eventName The name of the event to check for support.
      * @return {@code true} if the given {@code eventName} is supported, {@code false} otherwise.
      */
-    default boolean isSupported(QualifiedName eventName) {
+    default boolean supports(@Nonnull QualifiedName eventName) {
         return supportedEvents().contains(eventName);
     }
 

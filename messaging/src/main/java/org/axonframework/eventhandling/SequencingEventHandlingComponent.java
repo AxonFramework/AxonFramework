@@ -74,8 +74,8 @@ public class SequencingEventHandlingComponent implements EventHandlingComponent 
     }
 
     @Override
-    public boolean isSupported(QualifiedName eventName) {
-        return delegate.isSupported(eventName);
+    public boolean supports(@Nonnull QualifiedName eventName) {
+        return delegate.supports(eventName);
     }
 
     @Nonnull

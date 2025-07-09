@@ -135,7 +135,7 @@ public final class EventProcessorOperations {
             throws Exception {
         try {
             var eventMessageQualifiedName = eventMessage.type().qualifiedName();
-            var eventSupported = eventHandlingComponent.isSupported(eventMessageQualifiedName);
+            var eventSupported = eventHandlingComponent.supports(eventMessageQualifiedName);
             return eventSupported && segmentMatcher.matches(segment, eventMessage);
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(name(), e, Collections.singletonList(eventMessage)));
@@ -146,7 +146,7 @@ public final class EventProcessorOperations {
     public boolean canHandleType(MessageType messageType) {
         try {
             var eventMessageQualifiedName = messageType.qualifiedName();
-            return eventHandlingComponent.isSupported(eventMessageQualifiedName);
+            return eventHandlingComponent.supports(eventMessageQualifiedName);
         } catch (Exception e) {
             return false;
         }

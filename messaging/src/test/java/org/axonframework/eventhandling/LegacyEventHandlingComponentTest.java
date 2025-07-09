@@ -93,7 +93,7 @@ class LegacyEventHandlingComponentTest {
             QualifiedName eventName = new QualifiedName(String.class);
 
             //when
-            boolean result = testSubject.isSupported(eventName);
+            boolean result = testSubject.supports(eventName);
 
             //then
             assertThat(result).isTrue();
@@ -107,7 +107,7 @@ class LegacyEventHandlingComponentTest {
             QualifiedName eventName = new QualifiedName(Integer.class);
 
             //when
-            boolean result = testSubject.isSupported(eventName);
+            boolean result = testSubject.supports(eventName);
 
             //then
             assertThat(result).isFalse();
@@ -120,7 +120,7 @@ class LegacyEventHandlingComponentTest {
             QualifiedName eventName = new QualifiedName(String.class);
 
             //when
-            boolean result = testSubject.isSupported(eventName);
+            boolean result = testSubject.supports(eventName);
 
             //then
             assertThat(result).isFalse();

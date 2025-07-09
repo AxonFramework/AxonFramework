@@ -22,13 +22,14 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import java.util.Objects;
 
 /**
- * Utility class that matches {@link EventMessage}s against a {@link Segment} based on a {@link SequencingPolicy}.
+ * Utility class that matches {@link EventMessage EventMessages} against a {@link Segment} based on a
+ * {@link SequencingPolicy}.
  * <p>
  * This class uses the sequencing policy to determine the sequence identifier for a message, and then checks if that
  * identifier matches the given segment.
  *
  * @author Mateusz Nowak
- * @since 5.0
+ * @since 5.0.0
  */
 @Internal
 class SegmentMatcher {
@@ -36,8 +37,8 @@ class SegmentMatcher {
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
 
     /**
-     * Initialize a SegmentMatcher with the given {@code sequencingPolicy}. This policy is used to extract
-     * the sequence identifier from messages, which is then used to match against segments.
+     * Initialize a SegmentMatcher with the given {@code sequencingPolicy}. This policy is used to extract the sequence
+     * identifier from messages, which is then used to match against segments.
      *
      * @param sequencingPolicy A policy that provides the sequence identifier for a given event message.
      */
