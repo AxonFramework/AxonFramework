@@ -33,13 +33,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class EventProcessingModuleTest {
 
-    private MessagingConfigurer configurer;
-
-    @BeforeEach
-    void setUp() {
-        configurer = MessagingConfigurer.create();
-    }
-
     @Test
     void subscribingProcessorIsRegisteredAndStarted() {
         AtomicBoolean started = new AtomicBoolean(false);
