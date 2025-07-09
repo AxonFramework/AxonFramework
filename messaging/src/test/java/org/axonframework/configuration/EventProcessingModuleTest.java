@@ -16,18 +16,19 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EventProcessingModuleTest {
@@ -44,10 +45,7 @@ class EventProcessingModuleTest {
         // given
         AtomicBoolean started = new AtomicBoolean(false);
         AtomicBoolean stopped = new AtomicBoolean(false);
-
         SimpleEventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
-        eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-
         SubscribableMessageSource<EventMessage<?>> messageSource = handler -> {
             started.set(true);
             return () -> stopped.getAndSet(true);
@@ -81,34 +79,37 @@ class EventProcessingModuleTest {
         // given
         AtomicBoolean started = new AtomicBoolean(false);
         AtomicBoolean stopped = new AtomicBoolean(false);
-
         SimpleEventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
-        eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-        TokenStore tokenStore = new InMemoryTokenStore();
-        var monitor = NoOpMessageMonitor.instance();
+        InMemoryTokenStore tokenStore = new InMemoryTokenStore();
+        AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
+        eventSource.setOnOpen(() -> started.set(true));
+        eventSource.setOnClose(() -> stopped.set(true));
 
-        EventProcessingModule module = EventProcessingModule.named("test-streaming")
-                                                            .streaming()
-                                                            .eventHandlingComponent(c -> eventHandlingComponent)
-                                                            .tokenStore(c -> tokenStore)
-                                                            .messageMonitor(c -> monitor)
-                                                            .build();
+        EventProcessingModule module = EventProcessingModule.named("streaming-test")
+                .streaming()
+                .eventHandlingComponent(c -> eventHandlingComponent)
+                .tokenStore(c -> tokenStore)
+                .eventSource(c -> eventSource)
+                .transactionManager(c -> new NoOpTransactionManager())
+                .build();
 
-        var configuration = configurer
+        var configuration = MessagingConfigurer.create()
                 .componentRegistry(cr -> cr.registerModule(module))
                 .build();
 
-        // when
         configuration.start();
 
-        // then
-        assertTrue(started.get(), "Streaming processor should be started");
+        // Awaitility: Wait for the processor to start (async startup)
+        await().atMost(Duration.ofSeconds(1)).untilAsserted(() ->
+                assertThat(started).as("processor started").isTrue()
+        );
 
-        // when
         configuration.shutdown();
 
-        // then
-        assertTrue(stopped.get(), "Streaming processor should be stopped");
+        // Awaitility: Wait for the processor to stop (async shutdown)
+        await().atMost(Duration.ofSeconds(1)).untilAsserted(() ->
+                assertThat(stopped).as("processor stopped").isTrue()
+        );
     }
 
     @Test
