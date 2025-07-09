@@ -171,7 +171,7 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                 if (messageSource == null) {
                     throw new IllegalStateException("MessageSource must be provided for subscribing processor");
                 }
-                return new EventProcessingModuleImpl(
+                return new SimpleEventProcessingModule(
                         name,
                         eventHandlingComponent,
                         errorHandler,
@@ -247,7 +247,7 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                 if (tokenStore == null) {
                     throw new IllegalStateException("TokenStore must be provided for streaming processor");
                 }
-                return new EventProcessingModuleImpl(
+                return new SimpleEventProcessingModule(
                         name,
                         eventHandlingComponent,
                         errorHandler,
@@ -269,7 +269,7 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
         /**
          * Concrete implementation of EventProcessingModule that registers the processor with the parent configurer.
          */
-        private static class EventProcessingModuleImpl implements EventProcessingModule {
+        private static class SimpleEventProcessingModule implements EventProcessingModule {
             private final String name;
             private final ComponentBuilder<EventHandlingComponent> eventHandlingComponent;
             private final ComponentBuilder<ErrorHandler> errorHandler;
@@ -283,7 +283,7 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
             private final ComponentBuilder<ScheduledExecutorService> coordinatorExecutor;
             private final ProcessorKind kind;
 
-            EventProcessingModuleImpl(
+            SimpleEventProcessingModule(
                     String name,
                     ComponentBuilder<EventHandlingComponent> eventHandlingComponent,
                     ComponentBuilder<ErrorHandler> errorHandler,
@@ -323,16 +323,26 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
 
             @Override
             public Configuration build(Configuration config, LifecycleRegistry lifecycleRegistry) {
+                // Prepare optional components only if their builders are not null
+                var errorHandlerInstance = errorHandler != null ? errorHandler.build(config) : null;
+                var messageMonitorInstance = messageMonitor != null ? messageMonitor.build(config) : null;
+                var spanFactoryInstance = spanFactory != null ? spanFactory.build(config) : null;
                 switch (kind) {
                     case SUBSCRIBING -> {
-                        var processor = org.axonframework.eventhandling.SubscribingEventProcessor.builder()
+                        var builder = org.axonframework.eventhandling.SubscribingEventProcessor.builder()
                                 .name(name)
                                 .eventHandlingComponent(eventHandlingComponent.build(config))
-                                .errorHandler(errorHandler != null ? errorHandler.build(config) : null)
-                                .messageMonitor(messageMonitor != null ? messageMonitor.build(config) : null)
-                                .spanFactory(spanFactory != null ? spanFactory.build(config) : null)
-                                .messageSource(messageSource.build(config))
-                                .build();
+                                .messageSource(messageSource.build(config));
+                        if (errorHandlerInstance != null) {
+                            builder.errorHandler(errorHandlerInstance);
+                        }
+                        if (messageMonitorInstance != null) {
+                            builder.messageMonitor(messageMonitorInstance);
+                        }
+                        if (spanFactoryInstance != null) {
+                            builder.spanFactory(spanFactoryInstance);
+                        }
+                        var processor = builder.build();
                         // Register processor lifecycle
                         lifecycleRegistry.onStart(processor::start);
                         lifecycleRegistry.onShutdown(processor::shutDown);
@@ -342,10 +352,16 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                         var builder = org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor.builder()
                                 .name(name)
                                 .eventHandlingComponent(eventHandlingComponent.build(config))
-                                .errorHandler(errorHandler != null ? errorHandler.build(config) : null)
-                                .messageMonitor(messageMonitor != null ? messageMonitor.build(config) : null)
-                                .spanFactory(spanFactory != null ? spanFactory.build(config) : null)
                                 .tokenStore(tokenStore.build(config));
+                        if (errorHandlerInstance != null) {
+                            builder.errorHandler(errorHandlerInstance);
+                        }
+                        if (messageMonitorInstance != null) {
+                            builder.messageMonitor(messageMonitorInstance);
+                        }
+                        if (spanFactoryInstance != null) {
+                            builder.spanFactory(spanFactoryInstance);
+                        }
                         if (batchSize != null) builder.batchSize(batchSize);
                         if (initialSegmentCount != null) builder.initialSegmentCount(initialSegmentCount);
                         if (workerExecutor != null) builder.workerExecutor(workerExecutor.build(config));
