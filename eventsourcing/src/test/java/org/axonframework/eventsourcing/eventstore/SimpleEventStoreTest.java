@@ -25,15 +25,18 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
+import org.mockito.*;
 
 import java.time.Instant;
-import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
@@ -57,13 +60,17 @@ import static org.mockito.Mockito.*;
  */
 class SimpleEventStoreTest {
 
-    private SimpleEventStore testSubject;
     private EventStorageEngine mockStorageEngine;
+    private TagResolver tagResolver;
+
+    private SimpleEventStore testSubject;
 
     @BeforeEach
     void setUp() {
         mockStorageEngine = mock(EventStorageEngine.class);
-        testSubject = new SimpleEventStore(mockStorageEngine, m -> Collections.emptySet());
+        tagResolver = mock(TagResolver.class);
+
+        testSubject = new SimpleEventStore(mockStorageEngine, tagResolver);
     }
 
     private static GlobalSequenceTrackingToken aGlobalSequenceToken() {
@@ -251,13 +258,30 @@ class SimpleEventStoreTest {
         }
 
         @Test
-        void publishConstructsNewUnitOfWorkToInvokeTheTransactionIn() {
+        void publishInvokeEventStorageEngineRightAwayWithAppendConditionNone() {
+            // given...
             EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+            Tag testTag = new Tag("id", "value");
+            when(tagResolver.resolve(any())).thenReturn(Set.of(testTag));
+            EventMessage<?> testEvent = createEvent(0);
+            //noinspection unchecked
+            ArgumentCaptor<List<TaggedEventMessage<?>>> eventCaptor = ArgumentCaptor.forClass(List.class);
 
-            CompletableFuture<Void> result = testSubject.publish(null, createEvent(0));
+            // when...
+            CompletableFuture<Void> result = testSubject.publish(null, testEvent);
+
+            // then...
             awaitSuccessfulCompletion(result);
+            verify(mockStorageEngine).appendEvents(eq(AppendCondition.none()), eventCaptor.capture());
+            List<TaggedEventMessage<?>> capturedEvents = eventCaptor.getValue();
+            assertEquals(1, capturedEvents.size());
+            TaggedEventMessage<?> resultEvent = capturedEvents.getFirst();
+            assertEquals(testEvent, resultEvent.event());
+            List<Tag> resultTags = resultEvent.tags().stream().toList();
+            assertEquals(1, resultTags.size());
+            assertEquals(testTag, resultTags.getFirst());
         }
     }
 
