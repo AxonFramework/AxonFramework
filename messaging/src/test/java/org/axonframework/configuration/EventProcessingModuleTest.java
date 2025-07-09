@@ -42,41 +42,33 @@ class EventProcessingModuleTest {
 
     @Test
     void subscribingProcessorIsRegisteredAndStarted() {
-        // given
         AtomicBoolean started = new AtomicBoolean(false);
         AtomicBoolean stopped = new AtomicBoolean(false);
+
         SimpleEventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
         SubscribableMessageSource<EventMessage<?>> messageSource = handler -> {
             started.set(true);
             return () -> stopped.getAndSet(true);
         };
 
-        EventProcessingModule module = EventProcessingModule.named("test-subscriber")
-                                                            .subscribing()
-                                                            .eventHandlingComponent(c -> eventHandlingComponent)
-                                                            .messageSource(c -> messageSource)
-                                                            .build();
+        var module = EventProcessingModule.named("test-processor")
+                                          .subscribing()
+                                          .eventHandlingComponent(c -> eventHandlingComponent)
+                                          .messageSource(c -> messageSource)
+                                          .build();
 
-        var configuration = configurer
-                .componentRegistry(cr -> cr.registerModule(module))
-                .build();
+        var configuration = MessagingConfigurer.create()
+                                               .componentRegistry(cr -> cr.registerModule((Module) module))
+                                               .build();
 
-        // when
         configuration.start();
-
-        // then
-        assertTrue(started.get(), "Processor should be started");
-
-        // when
+        assertThat(started).as("processor started").isTrue();
         configuration.shutdown();
-
-        // then
-        assertTrue(stopped.get(), "Processor should be stopped");
+        assertThat(stopped).as("processor stopped").isTrue();
     }
 
     @Test
     void streamingProcessorIsRegisteredAndStarted() {
-        // given
         AtomicBoolean started = new AtomicBoolean(false);
         AtomicBoolean stopped = new AtomicBoolean(false);
         SimpleEventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
@@ -85,32 +77,25 @@ class EventProcessingModuleTest {
         eventSource.setOnOpen(() -> started.set(true));
         eventSource.setOnClose(() -> stopped.set(true));
 
-        EventProcessingModule module = EventProcessingModule.named("streaming-test")
-                .streaming()
-                .eventHandlingComponent(c -> eventHandlingComponent)
-                .tokenStore(c -> tokenStore)
-                .eventSource(c -> eventSource)
-                .transactionManager(c -> new NoOpTransactionManager())
-                .build();
+        var module = EventProcessingModule.named("test-processor")
+                                          .streaming()
+                                          .eventHandlingComponent(c -> eventHandlingComponent)
+                                          .tokenStore(c -> tokenStore)
+                                          .eventSource(c -> eventSource)
+                                          .transactionManager(c -> new NoOpTransactionManager())
+                                          .build();
 
         var configuration = MessagingConfigurer.create()
-                .componentRegistry(cr -> cr.registerModule(module))
-                .build();
+                                               .componentRegistry(cr -> cr.registerModule(module))
+                                               .build();
 
-        // when
         configuration.start();
-
-        // then
         await().atMost(Duration.ofSeconds(1)).untilAsserted(() ->
-                assertThat(started).as("processor started").isTrue()
+                                                                    assertThat(started).as("processor started").isTrue()
         );
-
-        // when
         configuration.shutdown();
-
-        // then
         await().atMost(Duration.ofSeconds(1)).untilAsserted(() ->
-                assertThat(stopped).as("processor stopped").isTrue()
+                                                                    assertThat(stopped).as("processor stopped").isTrue()
         );
     }
 
