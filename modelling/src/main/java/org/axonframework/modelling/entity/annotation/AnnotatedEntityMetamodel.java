@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
@@ -294,7 +295,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * @return The {@link Class} of the expected representation for handlers of the given {@code qualifiedName}, or
      * {@code null} if no such representation is found.
      */
-    public Class<?> getExpectedRepresentation(QualifiedName qualifiedName) {
+    @Nullable
+    public Class<?> getExpectedRepresentation(@Nonnull QualifiedName qualifiedName) {
         if (payloadTypes.containsKey(qualifiedName)) {
             return payloadTypes.get(qualifiedName);
         }

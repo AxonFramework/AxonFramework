@@ -19,6 +19,7 @@ package org.axonframework.modelling.annotation;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 
 /**
  * Definition for an {@link EntityIdResolver} that uses annotations to resolve the entity identifier.
@@ -31,6 +32,7 @@ public class AnnotationBasedEntityIdResolverDefinition implements EntityIdResolv
     @Override
     public <E, ID> EntityIdResolver<ID> createIdResolver(@Nonnull Class<E> entityType,
                                                          @Nonnull Class<ID> idType,
+                                                         @Nonnull AnnotatedEntityMetamodel<E> entityMetamodel,
                                                          @Nonnull Configuration configuration
     ) {
         return new AnnotationBasedEntityIdResolver<>();

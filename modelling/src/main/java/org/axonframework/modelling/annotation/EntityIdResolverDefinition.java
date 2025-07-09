@@ -19,6 +19,7 @@ package org.axonframework.modelling.annotation;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 
 /**
  * Definition describing how to create an {@link EntityIdResolver} for a given entity type and identifier type. Used by
@@ -33,16 +34,18 @@ public interface EntityIdResolverDefinition {
     /**
      * Creates an {@link EntityIdResolver} for the given entity type and identifier type.
      *
-     * @param entityType    The type of the entity for which the resolver is created.
-     * @param idType        The type of the identifier for which the resolver is created.
-     * @param configuration The configuration of the application, providing access to the components available.
-     * @param <E>           The type of the entity for which the resolver is created.
-     * @param <ID>          The type of the identifier for which the resolver is created.
+     * @param entityType      The type of the entity for which the resolver is created.
+     * @param idType          The type of the identifier for which the resolver is created.
+     * @param entityMetamodel The metamodel of the entity.
+     * @param configuration   The configuration of the application, providing access to the components available.
+     * @param <E>             The type of the entity for which the resolver is created.
+     * @param <ID>            The type of the identifier for which the resolver is created.
      * @return The {@link EntityIdResolver} for the given entity type and identifier type.
      */
     <E, ID> EntityIdResolver<ID> createIdResolver(
             @Nonnull Class<E> entityType,
             @Nonnull Class<ID> idType,
+            @Nonnull AnnotatedEntityMetamodel<E> entityMetamodel,
             @Nonnull Configuration configuration
     );
 }
