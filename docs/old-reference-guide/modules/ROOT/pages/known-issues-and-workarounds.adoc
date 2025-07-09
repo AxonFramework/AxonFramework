@@ -59,7 +59,7 @@ Hence, given the history on the subject, and the Axon-team having explained this
 
 == Protobuf version conflicts with Axon Server Connector
 
-When using Axon Framework 4.11+ with Axon Server, you might encounter startup failures with this error:
+When using Axon Framework 4.11+ with Axon Server Connector, you might encounter startup failures with this error:
 
 ```
 java.lang.NoClassDefFoundError: com/google/protobuf/RuntimeVersion$RuntimeDomain
