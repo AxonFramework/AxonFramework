@@ -29,15 +29,16 @@ import org.axonframework.serialization.Converter;
 import java.util.Objects;
 
 /**
- * Implementation of the {@link EntityIdResolver} that converts the payload through the configured {@link Converter} the
- * expected representation of the message handler in the {@link AnnotatedEntityMetamodel}. It will then use the delegate
- * {@link EntityIdResolver} to resolve the id, defaulting to the {@link AnnotationBasedEntityIdResolver}.
+ * Implementation of the {@link EntityIdResolver} that converts the payload through the configured {@link Converter}
+ * the, taking the expected representation of the message handler through the {@link AnnotatedEntityMetamodel}. It will
+ * then use the delegate {@link EntityIdResolver} to resolve the id, defaulting to the
+ * {@link AnnotationBasedEntityIdResolver}.
  *
  * @param <ID> The type of the identifier to resolve.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class AnnotatedEntityMetamodelEntityIdResolver<ID> implements EntityIdResolver<ID>, DescribableComponent {
+public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, DescribableComponent {
 
     private final AnnotatedEntityMetamodel<?> metamodel;
     private final Converter converter;
@@ -53,10 +54,10 @@ public class AnnotatedEntityMetamodelEntityIdResolver<ID> implements EntityIdRes
      * @param converter The {@link Converter to use}.
      * @param delegate  The {@link EntityIdResolver} to use on the message after conversion.
      */
-    public AnnotatedEntityMetamodelEntityIdResolver(AnnotatedEntityMetamodel<?> metamodel,
-                                                    @Nonnull Class<ID> idType,
-                                                    Converter converter,
-                                                    EntityIdResolver<ID> delegate) {
+    public AnnotatedEntityIdResolver(@Nonnull AnnotatedEntityMetamodel<?> metamodel,
+                                     @Nonnull Class<ID> idType,
+                                     @Nonnull Converter converter,
+                                     @Nonnull EntityIdResolver<ID> delegate) {
         this.idType = Objects.requireNonNull(idType, "The idType should not be null.");
         this.metamodel = Objects.requireNonNull(metamodel, "The metamodel should not be null,");
         this.converter = Objects.requireNonNull(converter, "The converter should not be null.");

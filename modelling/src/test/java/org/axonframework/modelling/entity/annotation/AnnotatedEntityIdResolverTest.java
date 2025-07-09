@@ -33,16 +33,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 @ExtendWith(MockitoExtension.class)
-class AnnotatedEntityMetamodelEntityIdResolverTest {
+class AnnotatedEntityIdResolverTest {
 
     @Mock
     private AnnotatedEntityMetamodel<String> metamodel;
 
-    private AnnotatedEntityMetamodelEntityIdResolver<String> resolver;
+    private AnnotatedEntityIdResolver<String> resolver;
 
     @BeforeEach
     void setUp() {
-        resolver = new AnnotatedEntityMetamodelEntityIdResolver<>(
+        resolver = new AnnotatedEntityIdResolver<>(
                 metamodel, String.class, new JacksonConverter(), new AnnotationBasedEntityIdResolver<>()
         );
     }
@@ -54,7 +54,9 @@ class AnnotatedEntityMetamodelEntityIdResolverTest {
                 {"identifier": "test5362"}""");
 
         QualifiedName qualifiedName = messageType.qualifiedName();
-        Mockito.when(metamodel.getExpectedRepresentation(qualifiedName)).thenReturn(MyIdHoldingObject.class);
+        Mockito.doReturn(MyIdHoldingObject.class)
+               .when(metamodel)
+               .getExpectedRepresentation(qualifiedName);
 
 
         String resolvedId = resolver.resolve(serializedMessage, new StubProcessingContext());

@@ -33,14 +33,14 @@ import org.axonframework.serialization.Converter;
  * @since 5.0.0
  * @author Mitchell Herrijgers
  */
-public class AnnotatedEntityModelEntityIdResolverDefinition implements EntityIdResolverDefinition {
+public class AnnotatedEntityIdResolverDefinition implements EntityIdResolverDefinition {
 
     @Override
     public <E, ID> EntityIdResolver<ID> createIdResolver(@Nonnull Class<E> entityType,
                                                          @Nonnull Class<ID> idType,
                                                          @Nonnull AnnotatedEntityMetamodel<E> entityMetamodel,
                                                          @Nonnull Configuration configuration) {
-        return new AnnotatedEntityMetamodelEntityIdResolver<>(
+        return new AnnotatedEntityIdResolver<>(
                 entityMetamodel,
                 idType,
                 configuration.getComponent(Converter.class),
