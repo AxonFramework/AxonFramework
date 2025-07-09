@@ -27,13 +27,7 @@ import org.axonframework.monitoring.MessageMonitor;
 /**
  * Module for configuring a SubscribingEventProcessor.
  */
-public class SubscribingEventProcessorModule implements Module {
-    private final String name;
-    private final ComponentBuilder<EventHandlingComponent> eventHandlingComponent;
-    private final ComponentBuilder<ErrorHandler> errorHandler;
-    private final ComponentBuilder<MessageMonitor<? super EventMessage<?>>> messageMonitor;
-    private final ComponentBuilder<EventProcessorSpanFactory> spanFactory;
-    private final ComponentBuilder<TransactionManager> transactionManager;
+public class SubscribingEventProcessorModule extends EventProcessorModule {
     private final ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> messageSource;
 
     SubscribingEventProcessorModule(
@@ -45,17 +39,9 @@ public class SubscribingEventProcessorModule implements Module {
             ComponentBuilder<TransactionManager> transactionManager,
             ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> messageSource
     ) {
-        this.name = name;
-        this.eventHandlingComponent = eventHandlingComponent;
-        this.errorHandler = errorHandler;
-        this.messageMonitor = messageMonitor;
-        this.spanFactory = spanFactory;
-        this.transactionManager = transactionManager;
+        super(name, eventHandlingComponent, errorHandler, messageMonitor, spanFactory, transactionManager);
         this.messageSource = messageSource;
     }
-
-    @Override
-    public String name() { return name; }
 
     @Override
     public Configuration build(Configuration config, LifecycleRegistry lifecycleRegistry) {
@@ -77,26 +63,10 @@ public class SubscribingEventProcessorModule implements Module {
         return config;
     }
 
-    public static class Builder implements EventProcessingModule.SubscribingPhase {
-        private final String name;
-        private ComponentBuilder<EventHandlingComponent> eventHandlingComponent;
-        private ComponentBuilder<ErrorHandler> errorHandler;
-        private ComponentBuilder<MessageMonitor<? super EventMessage<?>>> messageMonitor;
-        private ComponentBuilder<EventProcessorSpanFactory> spanFactory;
-        private ComponentBuilder<TransactionManager> transactionManager;
+    public static class Builder extends EventProcessorModule.Builder<Builder> implements EventProcessingModule.SubscribingPhase {
         private ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> messageSource;
 
-        public Builder(String name) { this.name = name; }
-        @Override
-        public Builder errorHandler(ComponentBuilder<ErrorHandler> errorHandler) { this.errorHandler = errorHandler; return this; }
-        @Override
-        public Builder eventHandlingComponent(ComponentBuilder<EventHandlingComponent> eventHandlingComponent) { this.eventHandlingComponent = eventHandlingComponent; return this; }
-        @Override
-        public Builder messageMonitor(ComponentBuilder<MessageMonitor<? super EventMessage<?>>> messageMonitor) { this.messageMonitor = messageMonitor; return this; }
-        @Override
-        public Builder spanFactory(ComponentBuilder<EventProcessorSpanFactory> spanFactory) { this.spanFactory = spanFactory; return this; }
-        @Override
-        public Builder transactionManager(ComponentBuilder<TransactionManager> transactionManager) { this.transactionManager = transactionManager; return this; }
+        public Builder(String name) { super(name); }
         @Override
         public Builder messageSource(ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> messageSource) { this.messageSource = messageSource; return this; }
         @Override

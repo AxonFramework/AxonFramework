@@ -25,6 +25,7 @@ import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,6 +76,8 @@ class EventProcessingModuleTest {
                                           .eventHandlingComponent(c -> eventHandlingComponent)
                                           .tokenStore(c -> tokenStore)
                                           .eventSource(c -> eventSource)
+                                          .workerExecutor(c -> Executors.newScheduledThreadPool(5))
+                                          .coordinatorExecutor(c -> Executors.newScheduledThreadPool(1))
                                           .transactionManager(c -> new NoOpTransactionManager())
                                           .build();
 
@@ -83,13 +86,10 @@ class EventProcessingModuleTest {
                                                .build();
 
         configuration.start();
-        await().atMost(Duration.ofSeconds(1)).untilAsserted(() ->
-                                                                    assertThat(started).as("processor started").isTrue()
-        );
+        await().atMost(Duration.ofSeconds(1))
+               .untilAsserted(() -> assertThat(started).as("processor started").isTrue());
         configuration.shutdown();
-        await().atMost(Duration.ofSeconds(1)).untilAsserted(() ->
-                                                                    assertThat(stopped).as("processor stopped").isTrue()
-        );
+        await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertThat(stopped).as("processor stopped").isTrue());
     }
 
     @Test

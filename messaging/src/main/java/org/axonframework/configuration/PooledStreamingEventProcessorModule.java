@@ -30,13 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 /**
  * Module for configuring a PooledStreamingEventProcessor.
  */
-public class PooledStreamingEventProcessorModule implements Module {
-    private final String name;
-    private final ComponentBuilder<EventHandlingComponent> eventHandlingComponent;
-    private final ComponentBuilder<ErrorHandler> errorHandler;
-    private final ComponentBuilder<MessageMonitor<? super EventMessage<?>>> messageMonitor;
-    private final ComponentBuilder<EventProcessorSpanFactory> spanFactory;
-    private final ComponentBuilder<TransactionManager> transactionManager;
+public class PooledStreamingEventProcessorModule extends EventProcessorModule {
     private final ComponentBuilder<TokenStore> tokenStore;
     private final ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> eventSource;
     private final Integer batchSize;
@@ -58,12 +52,7 @@ public class PooledStreamingEventProcessorModule implements Module {
             ComponentBuilder<ScheduledExecutorService> workerExecutor,
             ComponentBuilder<ScheduledExecutorService> coordinatorExecutor
     ) {
-        this.name = name;
-        this.eventHandlingComponent = eventHandlingComponent;
-        this.errorHandler = errorHandler;
-        this.messageMonitor = messageMonitor;
-        this.spanFactory = spanFactory;
-        this.transactionManager = transactionManager;
+        super(name, eventHandlingComponent, errorHandler, messageMonitor, spanFactory, transactionManager);
         this.tokenStore = tokenStore;
         this.eventSource = eventSource;
         this.batchSize = batchSize;
@@ -71,9 +60,6 @@ public class PooledStreamingEventProcessorModule implements Module {
         this.workerExecutor = workerExecutor;
         this.coordinatorExecutor = coordinatorExecutor;
     }
-
-    @Override
-    public String name() { return name; }
 
     @Override
     public Configuration build(Configuration config, LifecycleRegistry lifecycleRegistry) {
@@ -100,13 +86,7 @@ public class PooledStreamingEventProcessorModule implements Module {
         return config;
     }
 
-    public static class Builder implements EventProcessingModule.StreamingPhase {
-        private final String name;
-        private ComponentBuilder<EventHandlingComponent> eventHandlingComponent;
-        private ComponentBuilder<ErrorHandler> errorHandler;
-        private ComponentBuilder<MessageMonitor<? super EventMessage<?>>> messageMonitor;
-        private ComponentBuilder<EventProcessorSpanFactory> spanFactory;
-        private ComponentBuilder<TransactionManager> transactionManager;
+    public static class Builder extends EventProcessorModule.Builder<Builder> implements EventProcessingModule.StreamingPhase {
         private ComponentBuilder<TokenStore> tokenStore;
         private ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> eventSource;
         private Integer batchSize;
@@ -114,17 +94,7 @@ public class PooledStreamingEventProcessorModule implements Module {
         private ComponentBuilder<ScheduledExecutorService> workerExecutor;
         private ComponentBuilder<ScheduledExecutorService> coordinatorExecutor;
 
-        public Builder(String name) { this.name = name; }
-        @Override
-        public Builder errorHandler(ComponentBuilder<ErrorHandler> errorHandler) { this.errorHandler = errorHandler; return this; }
-        @Override
-        public Builder eventHandlingComponent(ComponentBuilder<EventHandlingComponent> eventHandlingComponent) { this.eventHandlingComponent = eventHandlingComponent; return this; }
-        @Override
-        public Builder messageMonitor(ComponentBuilder<MessageMonitor<? super EventMessage<?>>> messageMonitor) { this.messageMonitor = messageMonitor; return this; }
-        @Override
-        public Builder spanFactory(ComponentBuilder<EventProcessorSpanFactory> spanFactory) { this.spanFactory = spanFactory; return this; }
-        @Override
-        public Builder transactionManager(ComponentBuilder<TransactionManager> transactionManager) { this.transactionManager = transactionManager; return this; }
+        public Builder(String name) { super(name); }
         @Override
         public Builder tokenStore(ComponentBuilder<TokenStore> tokenStore) { this.tokenStore = tokenStore; return this; }
         @Override
