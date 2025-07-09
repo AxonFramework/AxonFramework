@@ -97,16 +97,18 @@ class EventProcessingModuleTest {
                 .componentRegistry(cr -> cr.registerModule(module))
                 .build();
 
+        // when
         configuration.start();
 
-        // Awaitility: Wait for the processor to start (async startup)
+        // then
         await().atMost(Duration.ofSeconds(1)).untilAsserted(() ->
                 assertThat(started).as("processor started").isTrue()
         );
 
+        // when
         configuration.shutdown();
 
-        // Awaitility: Wait for the processor to stop (async shutdown)
+        // then
         await().atMost(Duration.ofSeconds(1)).untilAsserted(() ->
                 assertThat(stopped).as("processor stopped").isTrue()
         );
