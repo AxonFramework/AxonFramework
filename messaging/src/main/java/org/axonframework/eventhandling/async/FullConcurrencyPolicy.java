@@ -30,8 +30,9 @@ import java.util.Optional;
  */
 public class FullConcurrencyPolicy implements SequencingPolicy<EventMessage<?>> {
 
+    @Nonnull
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+    public Object getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
         return Optional.of(event.getIdentifier());
     }
 }

@@ -42,8 +42,9 @@ public class SequentialPerAggregatePolicy implements SequencingPolicy<EventMessa
         return INSTANCE;
     }
 
+    @Nonnull
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event) {
+    public Object getSequenceIdentifierFor(@Nonnull EventMessage event) {
         if (event instanceof DomainEventMessage) {
             var aggregateId = ((DomainEventMessage) event).getAggregateIdentifier();
             return Optional.ofNullable(aggregateId);

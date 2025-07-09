@@ -23,7 +23,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import java.util.Set;
@@ -81,8 +81,9 @@ class SequencingEventHandlingComponentTest {
     @Nonnull
     private EventHandlingComponent getEventHandlingComponentWithSequenceId(String delegateSequenceId) {
         return new EventHandlingComponent() {
+            @Nonnull
             @Override
-            public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+            public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
                 return Optional.ofNullable(delegateSequenceId);
             }
 

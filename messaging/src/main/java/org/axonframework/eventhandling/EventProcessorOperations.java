@@ -86,7 +86,7 @@ public final class EventProcessorOperations {
         this.messageMonitor = builder.messageMonitor;
         this.spanFactory = builder.spanFactory;
         this.streamingProcessor = builder.streamingProcessor;
-        this.segmentMatcher = new SegmentMatcher(eventHandlingComponent::sequenceIdentifierFor);
+        this.segmentMatcher = new SegmentMatcher(event -> eventHandlingComponent.sequenceIdentifierFor(event));
     }
 
     /**

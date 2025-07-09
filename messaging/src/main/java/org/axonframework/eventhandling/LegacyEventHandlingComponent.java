@@ -78,8 +78,9 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
         return supportedEvents.contains(eventName);
     }
 
+    @Nonnull
     @Override
-    public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
         return switch (eventHandlerInvoker) {
             case MultiEventHandlerInvoker multiInvoker when !multiInvoker.delegates().isEmpty() ->
                     Optional.ofNullable(multiInvoker.delegates().getFirst())

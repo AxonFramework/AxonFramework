@@ -30,8 +30,9 @@ public class SequentialPolicy implements SequencingPolicy<Object> {
 
     private static final Object FULL_SEQUENTIAL_POLICY = new Object();
 
+    @Nonnull
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull Object task) {
+    public Object getSequenceIdentifierFor(@Nonnull Object task) {
         return Optional.of(FULL_SEQUENTIAL_POLICY);
     }
 }

@@ -61,10 +61,11 @@ public class SequencingEventHandlingComponent implements EventHandlingComponent 
         this.delegate = requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }
 
+    @Nonnull
     @Override
-    public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
         requireNonNull(event, "Event Message may not be null");
-        Optional<Object> delegateResult = delegate.sequenceIdentifierFor(event);
+        var delegateResult = delegate.sequenceIdentifierFor(event);
         return delegateResult.isPresent() ? delegateResult : sequencingPolicy.getSequenceIdentifierFor(event);
     }
 

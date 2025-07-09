@@ -60,8 +60,9 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
         fallbackSequencingPolicy = builder.fallbackSequencingPolicy;
     }
 
+    @Nonnull
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
+    public Object getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
         if (payloadClass.isAssignableFrom(eventMessage.getPayloadType())) {
             @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.getPayload();
             return Optional.ofNullable(propertyExtractor.apply(castedPayload));
@@ -191,8 +192,9 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
                 return INSTANCE;
             }
 
+            @Nonnull
             @Override
-            public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
+            public Object getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
                 throw new IllegalArgumentException(
                         "The event message payload is not of a supported type. "
                                 + "Either make sure that the processor only consumes supported events "
