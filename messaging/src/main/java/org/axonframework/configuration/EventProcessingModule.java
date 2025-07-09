@@ -17,14 +17,17 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.monitoring.MessageMonitor;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -86,6 +89,10 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
      * Subscribing event processor configuration phase.
      */
     interface SubscribingPhase extends SharedConfigPhase<SubscribingPhase> {
+        /**
+         * Sets the transaction manager for the subscribing event processor.
+         */
+        SubscribingPhase transactionManager(ComponentBuilder<TransactionManager> transactionManager);
         SubscribingPhase messageSource(@Nonnull ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> messageSource);
         EventProcessingModule build();
     }
@@ -94,11 +101,19 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
      * Streaming (pooled) event processor configuration phase.
      */
     interface StreamingPhase extends SharedConfigPhase<StreamingPhase> {
+        /**
+         * Sets the event source (StreamableEventSource) for the streaming event processor.
+         */
+        StreamingPhase eventSource(ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> eventSource);
         StreamingPhase tokenStore(@Nonnull ComponentBuilder<TokenStore> tokenStore);
         StreamingPhase batchSize(int batchSize);
         StreamingPhase initialSegmentCount(int initialSegmentCount);
         StreamingPhase workerExecutor(@Nonnull ComponentBuilder<ScheduledExecutorService> workerExecutor);
         StreamingPhase coordinatorExecutor(@Nonnull ComponentBuilder<ScheduledExecutorService> coordinatorExecutor);
+        /**
+         * Sets the transaction manager for the streaming event processor.
+         */
+        StreamingPhase transactionManager(ComponentBuilder<TransactionManager> transactionManager);
         EventProcessingModule build();
     }
 
@@ -110,10 +125,12 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
         private ComponentBuilder<EventHandlingComponent> eventHandlingComponent;
         private ComponentBuilder<MessageMonitor<? super EventMessage<?>>> messageMonitor;
         private ComponentBuilder<EventProcessorSpanFactory> spanFactory;
+        private ComponentBuilder<TransactionManager> transactionManager;
         // Subscribing-specific
         private ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> messageSource;
         // Streaming-specific
         private ComponentBuilder<TokenStore> tokenStore;
+        private ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> eventSource;
         private Integer batchSize;
         private Integer initialSegmentCount;
         private ComponentBuilder<ScheduledExecutorService> workerExecutor;
@@ -155,6 +172,11 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                 return this;
             }
             @Override
+            public SubscribingPhase transactionManager(ComponentBuilder<TransactionManager> transactionManager) {
+                Builder.this.transactionManager = transactionManager;
+                return this;
+            }
+            @Override
             public SubscribingPhase messageSource(ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
                 Builder.this.messageSource = messageSource;
                 return this;
@@ -178,11 +200,13 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                         messageMonitor,
                         spanFactory,
                         messageSource,
-                        null, // tokenStore
-                        null, // batchSize
-                        null, // initialSegmentCount
-                        null, // workerExecutor
-                        null, // coordinatorExecutor
+                        tokenStore,
+                        null, // eventSource
+                        batchSize,
+                        initialSegmentCount,
+                        workerExecutor,
+                        coordinatorExecutor,
+                        transactionManager,
                         ProcessorKind.SUBSCRIBING
                 );
             }
@@ -216,6 +240,11 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                 return this;
             }
             @Override
+            public StreamingPhase eventSource(ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> eventSource) {
+                Builder.this.eventSource = eventSource;
+                return this;
+            }
+            @Override
             public StreamingPhase batchSize(int batchSize) {
                 Builder.this.batchSize = batchSize;
                 return this;
@@ -236,6 +265,11 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                 return this;
             }
             @Override
+            public StreamingPhase transactionManager(ComponentBuilder<TransactionManager> transactionManager) {
+                Builder.this.transactionManager = transactionManager;
+                return this;
+            }
+            @Override
             public EventProcessingModule build() {
                 // Validate required fields
                 if (name == null || name.isBlank()) {
@@ -247,6 +281,9 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                 if (tokenStore == null) {
                     throw new IllegalStateException("TokenStore must be provided for streaming processor");
                 }
+                if (eventSource == null) {
+                    throw new IllegalStateException("EventSource must be provided for streaming processor");
+                }
                 return new SimpleEventProcessingModule(
                         name,
                         eventHandlingComponent,
@@ -255,10 +292,12 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                         spanFactory,
                         null, // messageSource
                         tokenStore,
+                        eventSource,
                         batchSize,
                         initialSegmentCount,
                         workerExecutor,
                         coordinatorExecutor,
+                        transactionManager,
                         ProcessorKind.STREAMING
                 );
             }
@@ -277,10 +316,12 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
             private final ComponentBuilder<EventProcessorSpanFactory> spanFactory;
             private final ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> messageSource;
             private final ComponentBuilder<TokenStore> tokenStore;
+            private final ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> eventSource;
             private final Integer batchSize;
             private final Integer initialSegmentCount;
             private final ComponentBuilder<ScheduledExecutorService> workerExecutor;
             private final ComponentBuilder<ScheduledExecutorService> coordinatorExecutor;
+            private final ComponentBuilder<TransactionManager> transactionManager;
             private final ProcessorKind kind;
 
             SimpleEventProcessingModule(
@@ -291,10 +332,12 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                     ComponentBuilder<EventProcessorSpanFactory> spanFactory,
                     ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> messageSource,
                     ComponentBuilder<TokenStore> tokenStore,
+                    ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> eventSource,
                     Integer batchSize,
                     Integer initialSegmentCount,
                     ComponentBuilder<ScheduledExecutorService> workerExecutor,
                     ComponentBuilder<ScheduledExecutorService> coordinatorExecutor,
+                    ComponentBuilder<TransactionManager> transactionManager,
                     ProcessorKind kind
             ) {
                 this.name = name;
@@ -304,10 +347,12 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                 this.spanFactory = spanFactory;
                 this.messageSource = messageSource;
                 this.tokenStore = tokenStore;
+                this.eventSource = eventSource;
                 this.batchSize = batchSize;
                 this.initialSegmentCount = initialSegmentCount;
                 this.workerExecutor = workerExecutor;
                 this.coordinatorExecutor = coordinatorExecutor;
+                this.transactionManager = transactionManager;
                 this.kind = kind;
             }
 
@@ -327,12 +372,12 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                 var errorHandlerInstance = errorHandler != null ? errorHandler.build(config) : null;
                 var messageMonitorInstance = messageMonitor != null ? messageMonitor.build(config) : null;
                 var spanFactoryInstance = spanFactory != null ? spanFactory.build(config) : null;
+                var transactionManagerInstance = transactionManager != null ? transactionManager.build(config) : null;
                 switch (kind) {
                     case SUBSCRIBING -> {
                         var builder = org.axonframework.eventhandling.SubscribingEventProcessor.builder()
                                 .name(name)
-                                .eventHandlingComponent(eventHandlingComponent.build(config))
-                                .messageSource(messageSource.build(config));
+                                .eventHandlingComponent(eventHandlingComponent.build(config));
                         if (errorHandlerInstance != null) {
                             builder.errorHandler(errorHandlerInstance);
                         }
@@ -341,6 +386,12 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                         }
                         if (spanFactoryInstance != null) {
                             builder.spanFactory(spanFactoryInstance);
+                        }
+                        if (transactionManagerInstance != null) {
+                            builder.transactionManager(transactionManagerInstance);
+                        }
+                        if (messageSource != null) {
+                            builder.messageSource(messageSource.build(config));
                         }
                         var processor = builder.build();
                         // Register processor lifecycle
@@ -351,8 +402,7 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                     case STREAMING -> {
                         var builder = org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor.builder()
                                 .name(name)
-                                .eventHandlingComponent(eventHandlingComponent.build(config))
-                                .tokenStore(tokenStore.build(config));
+                                .eventHandlingComponent(eventHandlingComponent.build(config));
                         if (errorHandlerInstance != null) {
                             builder.errorHandler(errorHandlerInstance);
                         }
@@ -362,6 +412,17 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                         if (spanFactoryInstance != null) {
                             builder.spanFactory(spanFactoryInstance);
                         }
+                        if (transactionManagerInstance != null) {
+                            builder.transactionManager(transactionManagerInstance);
+                        }
+                        if (eventSource != null) {
+                            builder.eventSource(eventSource.build(config));
+                        }
+                        if (tokenStore != null) {
+                            builder.tokenStore(tokenStore.build(config));
+                        }
+                        builder.coordinatorExecutor(Executors.newSingleThreadScheduledExecutor()); // todo: change!
+                        builder.workerExecutor(Executors.newSingleThreadScheduledExecutor());
                         if (batchSize != null) builder.batchSize(batchSize);
                         if (initialSegmentCount != null) builder.initialSegmentCount(initialSegmentCount);
                         if (workerExecutor != null) builder.workerExecutor(workerExecutor.build(config));
@@ -372,8 +433,8 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                         lifecycleRegistry.onShutdown(processor::shutDown);
                         return config;
                     }
+                    default -> throw new IllegalStateException("Unknown processor kind: " + kind);
                 }
-                return config;
             }
         }
     }
