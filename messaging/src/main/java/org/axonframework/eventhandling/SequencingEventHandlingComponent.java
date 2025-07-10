@@ -39,9 +39,9 @@ import static java.util.Objects.requireNonNull;
  * <p>
  *
  * @author Mateusz Nowak
- * @since 5.0.0
  * @see SequencingPolicy
  * @see EventHandlingComponent
+ * @since 5.0.0
  */
 public class SequencingEventHandlingComponent implements EventHandlingComponent {
 
@@ -49,11 +49,11 @@ public class SequencingEventHandlingComponent implements EventHandlingComponent 
     private final EventHandlingComponent delegate;
 
     /**
-     * Creates a new {@link SequencingEventHandlingComponent} that uses the given {@code sequencingPolicy}
-     * as fallback for sequence identification while delegating all other operations to the {@code delegate} component.
+     * Creates a new {@link SequencingEventHandlingComponent} that uses the given {@code sequencingPolicy} as fallback
+     * for sequence identification while delegating all other operations to the {@code delegate} component.
      *
      * @param sequencingPolicy The policy to use as fallback for determining sequence identifiers for events.
-     * @param delegate        The underlying event handling component to delegate operations to.
+     * @param delegate         The underlying event handling component to delegate operations to.
      */
     public SequencingEventHandlingComponent(@Nonnull SequencingPolicy<? super EventMessage<?>> sequencingPolicy,
                                             @Nonnull EventHandlingComponent delegate) {
@@ -61,11 +61,12 @@ public class SequencingEventHandlingComponent implements EventHandlingComponent 
         this.delegate = requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }
 
+    @Nonnull
     @Override
-    public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
         requireNonNull(event, "Event Message may not be null");
-        Optional<Object> delegateResult = delegate.sequenceIdentifierFor(event);
-        return delegateResult.isPresent() ? delegateResult : sequencingPolicy.getSequenceIdentifierFor(event);
+        return sequencingPolicy.getSequenceIdentifierFor(event)
+                               .orElseGet(() -> delegate.sequenceIdentifierFor(event));
     }
 
     @Override

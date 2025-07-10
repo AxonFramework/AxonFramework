@@ -19,7 +19,6 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
 
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -59,7 +58,8 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * @param event The event for which to get the sequencing identifier.
      * @return A sequence identifier for the given event.
      */
-    default Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
-        return Optional.empty();
+    @Nonnull
+    default Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+        return event.getIdentifier();
     }
 }

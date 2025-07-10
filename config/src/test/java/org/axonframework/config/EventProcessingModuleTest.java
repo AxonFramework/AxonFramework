@@ -90,6 +90,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.axonframework.utils.AssertUtils.assertWithin;
@@ -353,8 +354,8 @@ class EventProcessingModuleTest {
 
         EventMessage<Object> message =
                 new GenericEventMessage<>(new MessageType("event"), "test");
-        assertEquals(sequentialPolicy.getSequenceIdentifierFor(message), defaultInvoker.sequenceIdentifierFor(message));
-        assertEquals(fullConcurrencyPolicy.getSequenceIdentifierFor(message), specialInvoker.sequenceIdentifierFor(message));
+        assertThat(sequentialPolicy.getSequenceIdentifierFor(message)).hasValue(defaultInvoker.sequenceIdentifierFor(message));
+        assertThat(fullConcurrencyPolicy.getSequenceIdentifierFor(message)).hasValue(specialInvoker.sequenceIdentifierFor(message));
     }
 
     @Test

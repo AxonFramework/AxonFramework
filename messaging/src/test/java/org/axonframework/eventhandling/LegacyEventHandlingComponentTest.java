@@ -70,7 +70,7 @@ class LegacyEventHandlingComponentTest {
         }
 
         @Test
-        void shouldReturnEmptySetWhenInvokerReturnsEmpty() {
+        void shouldReturnEventIdentifierSetWhenInvokerReturnsEmpty() {
             //given
             when(mockInvoker.supportedEventTypes()).thenReturn(Set.of());
 
@@ -166,17 +166,16 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(simpleInvoker);
 
             //when
-            Optional<Object> result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isPresent();
-            assertThat(result.get()).isEqualTo(expectedSequenceId);
+            assertThat(result).isEqualTo(expectedSequenceId);
             verify(sequencingPolicy).getSequenceIdentifierFor(event);
         }
 
         @Test
         @SuppressWarnings("unchecked")
-        void shouldReturnEmptyFromSimpleEventHandlerInvokerWhenPolicyReturnsEmpty() {
+        void shouldReturnEventIdentifierFromSimpleEventHandlerInvokerWhenPolicyReturnsEmpty() {
             //given
             SimpleEventHandlerInvoker simpleInvoker = mock(SimpleEventHandlerInvoker.class);
             SequencingPolicy<EventMessage<?>> sequencingPolicy = mock(SequencingPolicy.class);
@@ -188,10 +187,10 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(simpleInvoker);
 
             //when
-            Optional<Object> result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEmpty();
+            assertThat(result).isEqualTo(event.getIdentifier());
             verify(sequencingPolicy).getSequenceIdentifierFor(event);
         }
 
@@ -212,16 +211,15 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            Optional<Object> result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isPresent();
-            assertThat(result.get()).isEqualTo(expectedSequenceId);
+            assertThat(result).isEqualTo(expectedSequenceId);
             verify(sequencingPolicy).getSequenceIdentifierFor(event);
         }
 
         @Test
-        void shouldReturnEmptyFromMultiEventHandlerInvokerWithNonSimpleDelegate() {
+        void shouldReturnEventIdentifierFromMultiEventHandlerInvokerWithNonSimpleDelegate() {
             //given
             MultiEventHandlerInvoker multiInvoker = mock(MultiEventHandlerInvoker.class);
             EventHandlerInvoker otherInvoker = mock(EventHandlerInvoker.class);
@@ -232,14 +230,14 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            Optional<Object> result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEmpty();
+            assertThat(result).isEqualTo(event.getIdentifier());
         }
 
         @Test
-        void shouldReturnEmptyFromMultiEventHandlerInvokerWithEmptyDelegates() {
+        void shouldReturnEventIdentifierFromMultiEventHandlerInvokerWithEmptyDelegates() {
             //given
             MultiEventHandlerInvoker multiInvoker = mock(MultiEventHandlerInvoker.class);
             EventMessage<?> event = mock(EventMessage.class);
@@ -249,14 +247,14 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            Optional<Object> result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEmpty();
+            assertThat(result).isEqualTo(event.getIdentifier());
         }
 
         @Test
-        void shouldReturnEmptyFromUnsupportedEventHandlerInvokerType() {
+        void shouldReturnEventIdentifierFromUnsupportedEventHandlerInvokerType() {
             //given
             EventHandlerInvoker unsupportedInvoker = mock(EventHandlerInvoker.class);
             EventMessage<?> event = mock(EventMessage.class);
@@ -264,10 +262,10 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(unsupportedInvoker);
 
             //when
-            Optional<Object> result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEmpty();
+            assertThat(result).isEqualTo(event.getIdentifier());
         }
 
         @Test
@@ -283,10 +281,10 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            Optional<Object> result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEmpty();
+            assertThat(result).isEqualTo(event.getIdentifier());
         }
 
         @Test
@@ -302,10 +300,10 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            Optional<Object> result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEmpty();
+            assertThat(result).isEqualTo(event.getIdentifier());
             // Verify that secondInvoker (which is SimpleEventHandlerInvoker) is never called
             verifyNoInteractions(secondInvoker);
         }

@@ -78,17 +78,19 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
         return supportedEvents.contains(eventName);
     }
 
+    @Nonnull
     @Override
-    public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
         return switch (eventHandlerInvoker) {
             case MultiEventHandlerInvoker multiInvoker when !multiInvoker.delegates().isEmpty() ->
                     Optional.ofNullable(multiInvoker.delegates().getFirst())
                             .filter(SimpleEventHandlerInvoker.class::isInstance)
                             .map(SimpleEventHandlerInvoker.class::cast)
-                            .flatMap(invoker -> invoker.getSequencingPolicy().getSequenceIdentifierFor(event));
+                            .flatMap(invoker -> invoker.getSequencingPolicy().getSequenceIdentifierFor(event))
+                            .orElseGet(event::getIdentifier);
             case SimpleEventHandlerInvoker simpleInvoker ->
-                    simpleInvoker.getSequencingPolicy().getSequenceIdentifierFor(event);
-            default -> Optional.empty();
+                    simpleInvoker.getSequencingPolicy().getSequenceIdentifierFor(event).orElseGet(event::getIdentifier);
+            default -> event.getIdentifier();
         };
     }
 
