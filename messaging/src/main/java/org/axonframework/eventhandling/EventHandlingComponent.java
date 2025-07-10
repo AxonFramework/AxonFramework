@@ -17,9 +17,9 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.messaging.QualifiedName;
 
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -59,7 +59,7 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * @param event The event for which to get the sequencing identifier.
      * @return A sequence identifier for the given event.
      */
-    default Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
-        return Optional.empty();
+    default Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+        return new FullConcurrencyPolicy();
     }
 }

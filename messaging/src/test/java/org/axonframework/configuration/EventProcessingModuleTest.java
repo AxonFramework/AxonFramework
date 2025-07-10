@@ -45,6 +45,7 @@ class EventProcessingModuleTest {
             return () -> stopped.getAndSet(true);
         };
 
+        // todo: remove named
         var module = EventProcessingModule.named("test-processor")
                                           .subscribing()
                                           .eventHandlingComponent(c -> eventHandlingComponent)

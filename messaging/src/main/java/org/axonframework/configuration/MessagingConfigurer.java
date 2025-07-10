@@ -64,6 +64,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
 
     private final ApplicationConfigurer applicationConfigurer;
 
+    // todo: default event processor builder?
     /**
      * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
      *
