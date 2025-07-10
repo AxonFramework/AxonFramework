@@ -480,7 +480,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      * </ul>
      */
     public static class Builder extends EventProcessorBuilder {
-
+        // todo: defaults as an enhancer, customization as a customization
         private StreamableEventSource<? extends EventMessage<?>> eventSource;
         private TokenStore tokenStore;
         private TransactionManager transactionManager;

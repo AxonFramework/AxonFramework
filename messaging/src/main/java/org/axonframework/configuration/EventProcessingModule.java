@@ -68,7 +68,7 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
                 return new org.axonframework.configuration.SubscribingEventProcessorModule.Builder(name);
             }
             @Override
-            public StreamingPhase streaming() {
+            public StreamingPhase streaming() { // todo: pooledStreaming()
                 return new org.axonframework.configuration.PooledStreamingEventProcessorModule.Builder(name);
             }
         };
