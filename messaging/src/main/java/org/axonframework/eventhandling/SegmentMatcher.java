@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 
@@ -42,20 +43,23 @@ class SegmentMatcher {
      *
      * @param sequencingPolicy A policy that provides the sequence identifier for a given event message.
      */
-    public SegmentMatcher(SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+    public SegmentMatcher(@Nonnull SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+        Objects.requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
         this.sequencingPolicy = sequencingPolicy;
     }
 
     /**
-     * Checks whether the given {@code segment} matches the given {@code message}, based on the configured sequencing
+     * Checks whether the given {@code segment} matches the given {@code event}, based on the configured sequencing
      * policy.
      *
      * @param segment The segment to match against.
-     * @param message The message to check.
-     * @return {@code true} if the message matches the segment, {@code false} otherwise.
+     * @param event The event to check.
+     * @return {@code true} if the event matches the segment, {@code false} otherwise.
      */
-    public boolean matches(Segment segment, EventMessage<?> message) {
-        return segment.matches(Objects.hashCode(sequenceIdentifier(message)));
+    public boolean matches(@Nonnull Segment segment, @Nonnull EventMessage<?> event) {
+        Objects.requireNonNull(segment, "Segment may not be null");
+        Objects.requireNonNull(event, "EventMessage may not be null");
+        return segment.matches(Objects.hashCode(sequenceIdentifier(event)));
     }
 
     /**
@@ -65,7 +69,8 @@ class SegmentMatcher {
      * @param event The event to get the sequence identifier for.
      * @return The sequence identifier for the event, never {@code null}.
      */
-    public Object sequenceIdentifier(EventMessage<?> event) {
+    public Object sequenceIdentifier(@Nonnull EventMessage<?> event) {
+        Objects.requireNonNull(event, "EventMessage may not be null");
         return sequencingPolicy.getSequenceIdentifierFor(event).orElseGet(event::getIdentifier);
     }
 }

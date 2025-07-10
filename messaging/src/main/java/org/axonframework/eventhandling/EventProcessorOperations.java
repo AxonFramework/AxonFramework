@@ -311,9 +311,9 @@ public final class EventProcessorOperations {
         /**
          * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
          *
-         * @param eventHandlingComponent the {@link EventHandlingComponent} which will handle all the individual
-         *                            {@link EventMessage}s
-         * @return the current Builder instance, for fluent interfacing
+         * @param eventHandlingComponent The {@link EventHandlingComponent} which will handle all the individual
+         *                            {@link EventMessage}s.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
             assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
