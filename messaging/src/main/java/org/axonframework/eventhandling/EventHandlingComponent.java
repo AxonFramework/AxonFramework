@@ -51,9 +51,13 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
     }
 
     /**
-     * Returns the sequence identifier for the given {@code event}. When two events have the same identifier (as defined
-     * by their equals method), they will be executed sequentially. A {@code Optional#empty()} value indicates that
-     * there are no sequencing requirements for the handling of this event.
+     * Returns the sequence identifier for the given {@code event}. When two events have the same sequence identifier
+     * (as defined by their equals method), they will be executed sequentially.
+     * <p>
+     * The default implementation returns the event's identifier, which effectively means no specific sequencing is
+     * applied (full concurrency). Override this method to provide custom sequencing behavior, such as handling events
+     * for the same aggregate sequentially. Or use a {@link SequenceOverridingEventHandlingComponent} if you cannot
+     * inherit from a certain {@code EventHandlingComponent} implementation.
      *
      * @param event The event for which to get the sequencing identifier.
      * @return A sequence identifier for the given event.
