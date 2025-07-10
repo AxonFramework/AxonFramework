@@ -29,6 +29,7 @@ import org.hamcrest.StringDescription;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static java.lang.String.format;
 import static org.axonframework.test.matchers.Matchers.*;
@@ -125,5 +126,9 @@ public class EventValidator implements EventMessageHandler {
      */
     private Object unwrapEvent(Object event) {
         return event instanceof EventMessage ? ((EventMessage) event).getPayload() : event;
+    }
+
+    public Set<Class<?>> supportedEventTypes() {
+        return Set.of();
     }
 }

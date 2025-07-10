@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -37,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
                 .propertyExtractor(TestEvent::id)
                 .build();
 
-        assertEquals("42", sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42"))));
+        assertThat(sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42")))).hasValue("42");
     }
 
     @Test
@@ -47,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
                 .propertyName("id")
                 .build();
 
-        assertEquals("42", sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42"))));
+        assertThat(sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42")))).hasValue("42");
     }
 
     @Test
@@ -69,7 +70,7 @@ import static org.junit.jupiter.api.Assertions.*;
                 .fallbackSequencingPolicy(SequentialPerAggregatePolicy.instance())
                 .build();
 
-        assertEquals("A", sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent("42")));
+        assertThat(sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent("42"))).hasValue("A");
     }
 
     private DomainEventMessage<?> newStubDomainEvent(final Object payload) {

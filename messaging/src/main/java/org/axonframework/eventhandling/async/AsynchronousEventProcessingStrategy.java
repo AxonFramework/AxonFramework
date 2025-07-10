@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.async;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessingStrategy;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -31,7 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
-import jakarta.annotation.Nonnull;
 
 import static java.util.Objects.requireNonNull;
 
@@ -88,8 +88,10 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
                             Consumer<List<? extends EventMessage<?>>> processor) {
         Map<Object, List<EventMessage<?>>> groupedEvents = new HashMap<>();
         for (EventMessage<?> event : events) {
-            groupedEvents.computeIfAbsent(sequencingPolicy.getSequenceIdentifierFor(event), key -> new ArrayList<>())
-                    .add(event);
+            groupedEvents.computeIfAbsent(
+                    sequencingPolicy.getSequenceIdentifierFor(event).orElse(null),
+                    key -> new ArrayList<>()
+            ).add(event);
         }
         groupedEvents.forEach((sequenceIdentifier, eventGroup) -> {
             if (sequenceIdentifier == null) {

@@ -24,6 +24,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Interface to be implemented by classes that can handle events.
@@ -89,5 +90,19 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Mes
      */
     default boolean supportsReset() {
         return true;
+    }
+
+    /**
+     * Returns the set of event payload types that this handler can handle.
+     * <p>
+     * The default implementation returns an empty set, indicating that the handler
+     * does not provide information about supported event types. Implementations should
+     * override this method to provide accurate type information.
+     *
+     * @return A set of classes representing the event payload types this handler can handle.
+     * @since 5.0.0
+     */
+    default Set<Class<?>> supportedEventTypes() {
+        return Set.of();
     }
 }

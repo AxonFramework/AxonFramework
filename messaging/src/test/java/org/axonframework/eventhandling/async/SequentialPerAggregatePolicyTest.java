@@ -38,12 +38,12 @@ class SequentialPerAggregatePolicyTest {
         // ok, pretty useless, but everything should be tested
         SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
         String aggregateIdentifier = UUID.randomUUID().toString();
-        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
-        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
-        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID().toString()));
+        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier)).orElse(null);
+        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier)).orElse(null);
+        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID().toString())).orElse(null);
         Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<>(
                 new MessageType("event"), "bla"
-        ));
+        )).orElse(null);
 
         assertEquals(id1, id2);
         assertNotEquals(id1, id3);

@@ -536,7 +536,7 @@ the `INBOUND_EVENT_CONNECTORS`.
 
 This registration approach of a complete definition, wherein the construction of the component and the decoration
 thereof are kept and **only** invoked when used in your end application, ensures that lifecycle management does not
-cause eager initialization of _any_ component. 
+cause eager initialization of _any_ component.
 
 ### Decorating components with the ComponentDecorator interface
 
@@ -1018,7 +1018,7 @@ public class MyEntity {
 
 While very similar to the reflection-based aggregates from AF4, reflection-based entities have gained some new capabilities.
 
-First, it is now possible to define two or more children of the same type. 
+First, it is now possible to define two or more children of the same type.
 Note that the `@EntityMember#commandTargetResolver` must resolve to only one value over all children.
 
 ```java
@@ -1032,7 +1032,7 @@ public abstract class Project {
 }
 ```
 
-Second, the `@EntityMember#commandTargetResolver` can now be customized. 
+Second, the `@EntityMember#commandTargetResolver` can now be customized.
 By creating your own definition, you can route the command target using something else than the `@RoutingKey`.
 
 ```java
@@ -1388,9 +1388,10 @@ This section contains four subsections, called:
 
 ### Changed Method return types
 
-| Method                                         | Before                         | After                     |
-|------------------------------------------------|--------------------------------|---------------------------|
-| `CorrelationDataProvider#correlationDataFor()` | `Map<String, String>`          | `Map<String, ?>`          | 
-| `CommandTargetResolver#resolveTarget`          | `VersionedAggregateIdentifier` | `String`                  |
-| `EventGateway#publish(Object...)`              | `void`                         | `CompletableFuture<Void>` |
-| `EventGateway#publish(List<?>)`                | `void`                         | `CompletableFuture<Void>` |
+| Method                                               | Before                         | After                     |
+|------------------------------------------------------|--------------------------------|---------------------------|
+| `CorrelationDataProvider#correlationDataFor()`       | `Map<String, String>`          | `Map<String, ?>`          | 
+| `CommandTargetResolver#resolveTarget`                | `VersionedAggregateIdentifier` | `String`                  |
+| `EventGateway#publish(Object...)`                    | `void`                         | `CompletableFuture<Void>` |
+| `EventGateway#publish(List<?>)`                      | `void`                         | `CompletableFuture<Void>` |
+| `SequencingPolicy#getSequenceIdentifierFor(List<?>)` | `Object`                       | `Optional<Object>`        |
