@@ -70,7 +70,7 @@ class LegacyEventHandlingComponentTest {
         }
 
         @Test
-        void shouldReturnEventIdentifierSetWhenInvokerReturnsEmpty() {
+        void shouldReturnEmptySetWhenInvokerReturnsEmpty() {
             //given
             when(mockInvoker.supportedEventTypes()).thenReturn(Set.of());
 
