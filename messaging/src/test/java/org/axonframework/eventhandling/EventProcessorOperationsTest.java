@@ -66,6 +66,9 @@ class EventProcessorOperationsTest {
         EventHandlingComponent mockEventHandlingComponent = mock(EventHandlingComponent.class);
         when(mockEventHandlingComponent.handle(any(), any())).thenReturn(MessageStream.empty());
         when(mockEventHandlingComponent.supports(any())).thenReturn(true);
+        when(mockEventHandlingComponent.sequenceIdentifierFor(any())).thenAnswer(
+                e -> e.getArgument(0, EventMessage.class).getIdentifier()
+        );
         TestEventProcessor testSubject = TestEventProcessor.builder()
                                                            .name("test")
                                                            .eventHandlingComponent(mockEventHandlingComponent)
