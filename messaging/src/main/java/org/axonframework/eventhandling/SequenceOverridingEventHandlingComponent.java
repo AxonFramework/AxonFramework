@@ -43,20 +43,20 @@ import static java.util.Objects.requireNonNull;
  * @see EventHandlingComponent
  * @since 5.0.0
  */
-public class SequencingEventHandlingComponent implements EventHandlingComponent {
+public class SequenceOverridingEventHandlingComponent implements EventHandlingComponent {
 
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
     private final EventHandlingComponent delegate;
 
     /**
-     * Creates a new {@link SequencingEventHandlingComponent} that uses the given {@code sequencingPolicy} to
+     * Creates a new {@link SequenceOverridingEventHandlingComponent} that uses the given {@code sequencingPolicy} to
      * override sequence identification while delegating all other operations to the {@code delegate} component.
      *
      * @param sequencingPolicy The policy to use for determining sequence identifiers for events.
      * @param delegate         The underlying event handling component to delegate operations to.
      */
-    public SequencingEventHandlingComponent(@Nonnull SequencingPolicy<? super EventMessage<?>> sequencingPolicy,
-                                            @Nonnull EventHandlingComponent delegate) {
+    public SequenceOverridingEventHandlingComponent(@Nonnull SequencingPolicy<? super EventMessage<?>> sequencingPolicy,
+                                                    @Nonnull EventHandlingComponent delegate) {
         this.sequencingPolicy = requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
         this.delegate = requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }

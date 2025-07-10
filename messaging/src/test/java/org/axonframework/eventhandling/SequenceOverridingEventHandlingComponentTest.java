@@ -31,9 +31,9 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class for {@link SequencingEventHandlingComponent}.
+ * Test class for {@link SequenceOverridingEventHandlingComponent}.
  */
-class SequencingEventHandlingComponentTest {
+class SequenceOverridingEventHandlingComponentTest {
 
     @Test
     void sequenceIdentifierForUsesPolicyWhenItProvidesSequence() {
@@ -42,7 +42,7 @@ class SequencingEventHandlingComponentTest {
         var delegateSequenceId = "delegate-sequence-id";
         SequencingPolicy<EventMessage<?>> policy = event -> Optional.of(policySequenceId);
         var delegate = getEventHandlingComponentWithSequenceId(delegateSequenceId);
-        var testSubject = new SequencingEventHandlingComponent(policy, delegate);
+        var testSubject = new SequenceOverridingEventHandlingComponent(policy, delegate);
         var testEvent = new GenericEventMessage<>(
                 new MessageType("TestEvent"), 
                 "test-payload"
@@ -61,7 +61,7 @@ class SequencingEventHandlingComponentTest {
         var delegateSequenceId = "delegate-sequence-id";
         SequencingPolicy<EventMessage<?>> policy = event -> Optional.empty();
         EventHandlingComponent delegate = getEventHandlingComponentWithSequenceId(delegateSequenceId);
-        var testSubject = new SequencingEventHandlingComponent(policy, delegate);
+        var testSubject = new SequenceOverridingEventHandlingComponent(policy, delegate);
         var testEvent = new GenericEventMessage<>(
                 new MessageType("TestEvent"), 
                 "test-payload"
