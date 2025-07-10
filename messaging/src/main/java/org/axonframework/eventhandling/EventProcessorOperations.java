@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -86,7 +87,7 @@ public final class EventProcessorOperations {
         this.messageMonitor = builder.messageMonitor;
         this.spanFactory = builder.spanFactory;
         this.streamingProcessor = builder.streamingProcessor;
-        this.segmentMatcher = new SegmentMatcher(eventHandlingComponent::sequenceIdentifierFor);
+        this.segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
     }
 
     /**

@@ -36,12 +36,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SequencingEventHandlingComponentTest {
 
     @Test
-    void sequenceIdentifierForUsesPolicyAsFallbackWhenDelegateReturnsEmpty() {
+    void sequenceIdentifierForUsesPolicyWhenItProvidesSequence() {
         //given
-        var expectedSequenceId = "fallback-sequence-id";
-        SequencingPolicy<EventMessage<?>> fallbackPolicy = event -> Optional.of(expectedSequenceId);
-        var delegate = getEventHandlingComponentWithSequenceId(null);
-        var testSubject = new SequencingEventHandlingComponent(fallbackPolicy, delegate);
+        var policySequenceId = "policy-sequence-id";
+        var delegateSequenceId = "delegate-sequence-id";
+        SequencingPolicy<EventMessage<?>> policy = event -> Optional.of(policySequenceId);
+        var delegate = getEventHandlingComponentWithSequenceId(delegateSequenceId);
+        var testSubject = new SequencingEventHandlingComponent(policy, delegate);
         var testEvent = new GenericEventMessage<>(
                 new MessageType("TestEvent"), 
                 "test-payload"
@@ -51,17 +52,14 @@ class SequencingEventHandlingComponentTest {
         var result = testSubject.sequenceIdentifierFor(testEvent);
 
         //then
-        assertThat(result)
-                .isPresent()
-                .contains(expectedSequenceId);
+        assertThat(result).isEqualTo(policySequenceId);
     }
 
     @Test
-    void sequenceIdentifierForUsesDelegateWhenItReturnsValue() {
+    void sequenceIdentifierForUsesDelegateWhenPolicyReturnsEmpty() {
         //given
         var delegateSequenceId = "delegate-sequence-id";
-        var policySequenceId = "policy-sequence-id";
-        SequencingPolicy<EventMessage<?>> policy = event -> Optional.of(policySequenceId);
+        SequencingPolicy<EventMessage<?>> policy = event -> Optional.empty();
         EventHandlingComponent delegate = getEventHandlingComponentWithSequenceId(delegateSequenceId);
         var testSubject = new SequencingEventHandlingComponent(policy, delegate);
         var testEvent = new GenericEventMessage<>(
@@ -73,9 +71,7 @@ class SequencingEventHandlingComponentTest {
         var result = testSubject.sequenceIdentifierFor(testEvent);
 
         //then
-        assertThat(result)
-                .isPresent()
-                .contains(delegateSequenceId);
+        assertThat(result).isEqualTo(delegateSequenceId);
     }
 
     @Nonnull
@@ -115,4 +111,4 @@ class SequencingEventHandlingComponentTest {
             }
         };
     }
-} 
+}

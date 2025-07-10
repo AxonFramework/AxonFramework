@@ -29,13 +29,13 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Decorator implementation of {@link EventHandlingComponent} that uses a configurable {@link SequencingPolicy} as
- * fallback to determine the sequence identifier for events, while delegating all other operations to an underlying
+ * Decorator implementation of {@link EventHandlingComponent} that uses a configurable {@link SequencingPolicy} to
+ * determine the sequence identifier for events, while delegating all other operations to an underlying
  * {@link EventHandlingComponent}.
  * <p>
- * This component first delegates sequence identification to the underlying component. If the delegate returns
- * {@link Optional#empty()}, then the configured sequencing policy is used as a fallback to determine the sequence
- * identifier. This allows for customizing the sequencing behavior without overriding existing sequencing logic.
+ * This component first attempts to determine sequence identification using the configured sequencing policy. If the
+ * policy returns {@link Optional#empty()}, only then it falls back to the delegate component's sequence identifier.
+ * This allows for overriding the sequencing behavior of the underlying component.
  * <p>
  *
  * @author Mateusz Nowak
@@ -49,10 +49,10 @@ public class SequencingEventHandlingComponent implements EventHandlingComponent 
     private final EventHandlingComponent delegate;
 
     /**
-     * Creates a new {@link SequencingEventHandlingComponent} that uses the given {@code sequencingPolicy} as fallback
-     * for sequence identification while delegating all other operations to the {@code delegate} component.
+     * Creates a new {@link SequencingEventHandlingComponent} that uses the given {@code sequencingPolicy} to
+     * override sequence identification while delegating all other operations to the {@code delegate} component.
      *
-     * @param sequencingPolicy The policy to use as fallback for determining sequence identifiers for events.
+     * @param sequencingPolicy The policy to use for determining sequence identifiers for events.
      * @param delegate         The underlying event handling component to delegate operations to.
      */
     public SequencingEventHandlingComponent(@Nonnull SequencingPolicy<? super EventMessage<?>> sequencingPolicy,
@@ -100,4 +100,4 @@ public class SequencingEventHandlingComponent implements EventHandlingComponent 
     public EventHandlerRegistry subscribe(@Nonnull EventHandlingComponent handlingComponent) {
         return delegate.subscribe(handlingComponent);
     }
-} 
+}
