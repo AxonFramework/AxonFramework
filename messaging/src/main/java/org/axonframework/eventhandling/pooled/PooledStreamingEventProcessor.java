@@ -495,11 +495,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         private int batchSize = 1;
         private Clock clock = GenericEventMessage.clock;
         private boolean coordinatorExtendsClaims = false;
-        /**
-         * Function to build EventCriteria from the set of supported event types of the assigned EventHandlingComponent.
-         * By default, it returns EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents).
-         */
-        private @Nonnull Function<Set<QualifiedName>, EventCriteria> eventCriteria =
+        private Function<Set<QualifiedName>, EventCriteria> eventCriteria =
                 (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
 
         protected Builder() {
@@ -796,7 +792,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         }
 
         /**
-         * Sets the function to build the {@link EventCriteria} used to filter events when opening the event stream. The
+         * Sets the function to build the {@link EventCriteria} used to filter events when opening the event source. The
          * function receives the set of supported event types from the assigned EventHandlingComponent.
          * <p>
          * <b>Intention:</b> This function is mainly intended to allow you to specify the tags for filtering or to build
@@ -807,12 +803,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          * <p>
          * By default, it returns {@code EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents)}.
          *
-         * @param eventCriteriaBuilder the function to build the {@link EventCriteria} from supported event types
-         * @return the current Builder instance, for fluent interfacing
+         * @param eventCriteriaProvider The function to build the {@link EventCriteria} from supported event types.
+         * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder eventCriteria(@Nonnull Function<Set<QualifiedName>, EventCriteria> eventCriteriaBuilder) {
-            assertNonNull(eventCriteriaBuilder, "EventCriteria builder function may not be null");
-            this.eventCriteria = eventCriteriaBuilder;
+        public Builder eventCriteria(@Nonnull Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider) {
+            assertNonNull(eventCriteriaProvider, "EventCriteria builder function may not be null");
+            this.eventCriteria = eventCriteriaProvider;
             return this;
         }
 

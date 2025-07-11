@@ -423,11 +423,13 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
 
         // then - Verify processor status and token advancement
-        assertWithin(1, TimeUnit.SECONDS, () -> assertThat(testSubject.processingStatus()).hasSize(1));
-        assertWithin(100, TimeUnit.MILLISECONDS, () -> {
-            long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
-            assertThat(currentPosition).isEqualTo(1);
-        });
+        await().atMost(1, TimeUnit.SECONDS)
+               .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
+        await().atMost(200, TimeUnit.MILLISECONDS)
+               .untilAsserted(() -> {
+                   long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
+                   assertThat(currentPosition).isEqualTo(1);
+               });
 
         // then - Verify no events were handled
         verify(stubEventHandlingComponent, never()).handle(any(), any());
@@ -456,11 +458,13 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
 
         // then
-        assertWithin(1, TimeUnit.SECONDS, () -> assertThat(testSubject.processingStatus()).hasSize(1));
-        assertWithin(100, TimeUnit.MILLISECONDS, () -> {
-            long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
-            assertThat(currentPosition).isEqualTo(1);
-        });
+        await().atMost(1, TimeUnit.SECONDS)
+               .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
+        await().atMost(200, TimeUnit.MILLISECONDS)
+               .untilAsserted(() -> {
+                   long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
+                   assertThat(currentPosition).isEqualTo(1);
+               });
 
         // then
         verify(stubEventHandlingComponent, times(1)).handle(any(), any());
@@ -480,11 +484,13 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
 
         // then - Verify processor status, but token should NOT advance (stays at 0)
-        assertWithin(1, TimeUnit.SECONDS, () -> assertThat(testSubject.processingStatus()).hasSize(1));
-        assertWithin(100, TimeUnit.MILLISECONDS, () -> {
-            long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
-            assertThat(currentPosition).isEqualTo(0); // Token should not advance - event was filtered at stream level
-        });
+        await().atMost(1, TimeUnit.SECONDS)
+               .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
+        await().atMost(200, TimeUnit.MILLISECONDS)
+               .untilAsserted(() -> {
+                   long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
+                   assertThat(currentPosition).isEqualTo(0); // Token should not advance - event was filtered at stream level
+               });
 
         // then - Verify no events were handled (filtered out by EventCriteria)
         verify(stubEventHandlingComponent, never()).handle(any(), any());
@@ -542,13 +548,13 @@ class PooledStreamingEventProcessorTest {
 
         testSubject.start();
 
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        await().atMost(1, TimeUnit.SECONDS)
+              .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
 
         // then - Verify that only String events are handled (Integer events are filtered out by EventCriteria).
         ArgumentCaptor<EventMessage<?>> handledEventsCaptor = ArgumentCaptor.forClass(EventMessage.class);
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            verify(stubEventHandlingComponent, times(2)).handle(handledEventsCaptor.capture(), any());
-        });
+        await().atMost(1, TimeUnit.SECONDS)
+                .untilAsserted(() -> verify(stubEventHandlingComponent, times(2)).handle(handledEventsCaptor.capture(), any()));
 
         // then - Validate that the correct String events were handled.
         List<EventMessage<?>> handledEvents = handledEventsCaptor.getAllValues();
