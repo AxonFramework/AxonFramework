@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector;
+package org.axonframework.util;
 
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -22,7 +22,7 @@ import java.util.concurrent.Callable;
 /**
  * A wrapper class of {@link Callable Callables} that adheres to a priority by implementing {@link PriorityTask}. Uses a
  * combination of {@code priority} and {@code index} to compare between {@code this} and other priority task instances.
- * A calculator (e.g. {@link org.axonframework.axonserver.connector.command.CommandPriorityCalculator}) defines the
+ * A calculator defines the
  * priority of the task. This task uses the {@code index} to differentiate between tasks with the same priority,
  * ensuring the insert order is leading in those scenarios.
  *
@@ -31,9 +31,8 @@ import java.util.concurrent.Callable;
  * @author Allard Buijze
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
- * @see org.axonframework.axonserver.connector.command.CommandPriorityCalculator
- * @see org.axonframework.axonserver.connector.query.QueryPriorityCalculator
  * @since 4.6.0
+ * @param <T> The type of the result returned by the {@link Callable#call()} method.
  */
 public class PriorityCallable<T> implements Callable<T>, PriorityTask {
 

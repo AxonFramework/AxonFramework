@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -57,7 +58,7 @@ class DistributedCommandBusTest {
 
         connector = new StubConnector();
         delegate = new SimpleCommandBus();
-        testSubject = new DistributedCommandBus(delegate, connector);
+        testSubject = new DistributedCommandBus(delegate, connector, new DistributedCommandBusConfiguration());
     }
 
     @Test
@@ -71,8 +72,8 @@ class DistributedCommandBusTest {
 
     @Test
     void incomingCommandsAreRejectedWhenNoHandlerRegistered() {
-        Connector.ResultCallback mockCallback = mock();
-        connector.handler.get().accept(testCommand, mockCallback);
+        CommandBusConnector.ResultCallback mockCallback = mock();
+        connector.handler.get().handle(testCommand, mockCallback);
 
         verify(mockCallback).error(isA(NoHandlerForCommandException.class));
     }
@@ -84,8 +85,8 @@ class DistributedCommandBusTest {
         testSubject.subscribe(testCommand.type().qualifiedName(),
                               (command, context) -> MessageStream.just(resultMessage));
 
-        Connector.ResultCallback mockCallback = mock();
-        connector.handler.get().accept(testCommand, mockCallback);
+        CommandBusConnector.ResultCallback mockCallback = mock();
+        connector.handler.get().handle(testCommand, mockCallback);
 
         verify(mockCallback).success(same(resultMessage));
     }
@@ -99,11 +100,11 @@ class DistributedCommandBusTest {
         verify(mock).describeProperty("connector", connector);
     }
 
-    private static class StubConnector implements Connector {
+    private static class StubConnector implements CommandBusConnector {
 
         private final Map<CommandMessage<?>, CompletableFuture<?>> dispatchedCommands = new ConcurrentHashMap<>();
         private final Map<String, Integer> subscriptions = new ConcurrentHashMap<>();
-        private final AtomicReference<BiConsumer<CommandMessage<?>, ResultCallback>> handler = new AtomicReference<>();
+        private final AtomicReference<Handler> handler = new AtomicReference<>();
 
 
         @Override
@@ -115,17 +116,17 @@ class DistributedCommandBusTest {
         }
 
         @Override
-        public void subscribe(String commandName, int loadFactor) {
+        public void subscribe(@Nonnull String commandName, int loadFactor) {
             subscriptions.put(commandName, loadFactor);
         }
 
         @Override
-        public boolean unsubscribe(String commandName) {
+        public boolean unsubscribe(@Nonnull String commandName) {
             return subscriptions.remove(commandName) != null;
         }
 
         @Override
-        public void onIncomingCommand(BiConsumer<CommandMessage<?>, ResultCallback> handler) {
+        public void onIncomingCommand(@Nonnull Handler handler) {
             this.handler.set(handler);
         }
 
@@ -137,7 +138,7 @@ class DistributedCommandBusTest {
             return subscriptions;
         }
 
-        public BiConsumer<CommandMessage<?>, ResultCallback> getHandler() {
+        public Handler getHandler() {
             return handler.get();
         }
     }

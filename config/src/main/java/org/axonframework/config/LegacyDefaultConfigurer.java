@@ -94,6 +94,7 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -864,7 +865,8 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                                           commandHandler,
                                           config.parameterResolverFactory(),
                                           config.handlerDefinition(commandHandler.getClass()),
-                                          messageTypeResolver
+                                          messageTypeResolver,
+                                          config.getComponent(Converter.class)
                                   ));
                             // TODO AnnotationCommandHandlerAdapter#subscribe does not use a Registration anymore
                             // If we support automated unsubscribe, we need to figure out another way.

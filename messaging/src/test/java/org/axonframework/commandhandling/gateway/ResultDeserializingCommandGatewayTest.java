@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
 import java.nio.charset.StandardCharsets;
@@ -36,15 +36,15 @@ class ResultDeserializingCommandGatewayTest {
     private static final byte[] HELLO_BYTES = HELLO_MESSAGE.getBytes(StandardCharsets.UTF_8);
     private static final MessageType TEST_TYPE = new MessageType("message");
 
-    private Serializer mockSerializer;
+    private Converter mockConverter;
     private CommandGateway mockDelegate;
-    private ResultDeserializingCommandGateway testSubject;
+    private ConvertingCommandGateway testSubject;
 
     @BeforeEach
     void setUp() {
         mockDelegate = mock(CommandGateway.class);
-        mockSerializer = mock(Serializer.class);
-        testSubject = new ResultDeserializingCommandGateway(mockDelegate, mockSerializer);
+        mockConverter = mock(Converter.class);
+        testSubject = new ConvertingCommandGateway(mockDelegate, mockConverter);
     }
 
     @Test
@@ -54,7 +54,7 @@ class ResultDeserializingCommandGatewayTest {
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockSerializer.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         CompletableFuture<byte[]> actual = testSubject.send("Test", null).resultAs(byte[].class);
         assertTrue(actual.isDone());
@@ -68,7 +68,7 @@ class ResultDeserializingCommandGatewayTest {
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockSerializer.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         CompletableFuture<byte[]> actual = testSubject.send("Test", null, byte[].class);
         assertTrue(actual.isDone());
@@ -82,7 +82,7 @@ class ResultDeserializingCommandGatewayTest {
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockSerializer.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         var commandResult = testSubject.send("Test", null);
         CompletableFuture<byte[]> actual = commandResult.resultAs(byte[].class);
@@ -97,7 +97,7 @@ class ResultDeserializingCommandGatewayTest {
         CommandResult stubResult = new FutureCommandResult(completableFuture);
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockSerializer.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         var commandResult = testSubject.send("Test", null);
         CompletableFuture<byte[]> actual = commandResult.resultAs(byte[].class);

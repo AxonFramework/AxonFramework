@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.util;
 
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.ProcessingInstruction;
 import io.axoniq.axonserver.grpc.ProcessingKey;
 
@@ -32,6 +33,17 @@ public abstract class ProcessingInstructionHelper {
 
     private ProcessingInstructionHelper() {
         // Utility class
+    }
+
+    /**
+     * Creates a new {@link ProcessingInstruction.Builder} with the given {@code key} and {@code value}.
+     * @param key The {@link ProcessingKey} to set on the {@link ProcessingInstruction.Builder}
+     * @param value The {@link MetaDataValue.Builder} to set on the {@link ProcessingInstruction.Builder}.
+     * @return A {@link ProcessingInstruction.Builder} initialized with the given {@code key} and {@code value}.
+     */
+    public static ProcessingInstruction.Builder createProcessingInstruction(ProcessingKey key,
+                                                                            MetaDataValue.Builder value) {
+        return ProcessingInstruction.newBuilder().setKey(key).setValue(value);
     }
 
     /**

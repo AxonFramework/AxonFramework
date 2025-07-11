@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,57 +16,59 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
 
 /**
- * A connector that resolves the priority of each Message and forwards it to a delegate. Downstream connectors may use
- * this priority in their communication to Messaging platforms.
+ * A {@link CommandBusConnector} implementation that wraps another {@link CommandBusConnector} and delegates all calls
+ * to it. This can be used to add additional functionality through decoration to a {@link CommandBusConnector} without
+ * having to implement all methods again.
+ *
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
-public class PriorityResolvingConnector implements Connector {
+public abstract class WrappedCommandBusConnector implements CommandBusConnector, DescribableComponent {
 
-    private final Connector delegate;
-    private final PriorityResolver<? super CommandMessage<?>> priorityResolver;
+    private final CommandBusConnector delegate;
 
     /**
-     * Initialize the PriortyResolvingConnector to resolve the priority using given {@code priorityResolver} before
-     * forwarding it to given {@code delegate}.
-     * <p>
-     * The priority of each Message is attached to the {@link ProcessingContext} using the
-     * {@link PriorityResolver#PRIORITY_KEY} key.
+     * Initialize the WrappedConnector to delegate all calls to the given {@code delegate}.
      *
-     * @param delegate         The connector to forward Messages
-     * @param priorityResolver The function to resolve the Priority of each Message
+     * @param delegate The {@link CommandBusConnector} to delegate all calls to.
      */
-    public PriorityResolvingConnector(Connector delegate,
-                                      PriorityResolver<? super CommandMessage<?>> priorityResolver) {
+    protected WrappedCommandBusConnector(CommandBusConnector delegate) {
         this.delegate = delegate;
-        this.priorityResolver = priorityResolver;
     }
 
     @Override
     public CompletableFuture<CommandResultMessage<?>> dispatch(CommandMessage<?> command,
                                                                ProcessingContext processingContext) {
-        priorityResolver.priorityFor(command);
         return delegate.dispatch(command, processingContext);
     }
 
     @Override
-    public void subscribe(String commandName, int loadFactor) {
+    public void subscribe(@Nonnull String commandName, int loadFactor) {
         delegate.subscribe(commandName, loadFactor);
     }
 
     @Override
-    public boolean unsubscribe(String commandName) {
+    public boolean unsubscribe(@Nonnull String commandName) {
         return delegate.unsubscribe(commandName);
     }
 
     @Override
-    public void onIncomingCommand(BiConsumer<CommandMessage<?>, ResultCallback> handler) {
+    public void onIncomingCommand(@Nonnull Handler handler) {
         delegate.onIncomingCommand(handler);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
     }
 }

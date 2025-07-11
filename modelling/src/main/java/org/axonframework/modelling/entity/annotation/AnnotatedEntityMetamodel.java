@@ -417,7 +417,9 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     @Nonnull
     public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage<?> message,
                                                                       @Nonnull ProcessingContext context) {
-        return delegateMetamodel.handleCreate(message, context);
+        logger.debug("Handling creation command: {} for type: {}", message.type(), entityType());
+        var convertedMessage = message.withConvertedPayload(o -> converter.convert(o, getExpectedRepresentation(message.type().qualifiedName())));
+        return delegateMetamodel.handleCreate(convertedMessage, context);
     }
 
     @Override
@@ -428,7 +430,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
             @Nonnull ProcessingContext context
     ) {
         logger.debug("Handling instance command: {} for entity: {} of type: {}", message.type(), entity, entityType());
-        return delegateMetamodel.handleInstance(message, entity, context);
+        var convertedMessage = message.withConvertedPayload(o -> converter.convert(o, getExpectedRepresentation(message.type().qualifiedName())));
+        return delegateMetamodel.handleInstance(convertedMessage, entity, context);
     }
 
     @Override

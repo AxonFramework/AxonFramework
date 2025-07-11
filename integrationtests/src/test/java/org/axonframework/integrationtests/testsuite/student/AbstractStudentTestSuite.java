@@ -16,9 +16,9 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
@@ -27,6 +27,7 @@ import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
+import org.axonframework.integrationtests.testsuite.AbstractAxonServerIntegrationTest;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
@@ -40,12 +41,8 @@ import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.serialization.Converter;
-import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -62,37 +59,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  */
-@Testcontainers
-public abstract class AbstractStudentTestSuite {
+public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegrationTest {
 
     protected static final GenericCommandResultMessage<String> SUCCESSFUL_COMMAND_RESULT =
             new GenericCommandResultMessage<>(new MessageType("empty"), "successful");
-    private static final AxonServerContainer container = new AxonServerContainer()
-            .withAxonServerHostname("localhost")
-            .withDevMode(true);
     protected CommandGateway commandGateway;
     protected StateManager stateManager;
     private StatefulCommandHandlingModule.CommandHandlerPhase statefulCommandHandlingModule;
     private EventSourcedEntityModule<String, Course> courseEntity;
     private EventSourcedEntityModule<String, Student> studentEntity;
-    private AxonConfiguration startedConfiguration;
-
-    @BeforeAll
-    static void beforeAll() {
-        container.start();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        container.stop();
-    }
 
     @BeforeEach
-    void setUp() throws IOException {
-        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
-                                                           container.getHttpPort(),
-                                                           "default",
-                                                           AxonServerContainerUtils.DCB_CONTEXT);
+    protected void prepareModule() {
         studentEntity = EventSourcedEntityModule
                 .declarative(String.class, Student.class)
                 .messagingModel((c, b) -> b
@@ -110,19 +88,22 @@ public abstract class AbstractStudentTestSuite {
                 .criteriaResolver(this::courseCriteriaResolver)
                 .build();
 
-        statefulCommandHandlingModule = StatefulCommandHandlingModule.named("student-course-module")
-                                                                     .entities()
-                                                                     .entity(studentEntity)
-                                                                     .entity(courseEntity)
-                                                                     .entities(this::registerAdditionalEntities)
-                                                                     .commandHandlers();
+        statefulCommandHandlingModule = StatefulCommandHandlingModule
+                .named("student-course-module")
+                .entities()
+                .entity(studentEntity)
+                .entity(courseEntity)
+                .entities(this::registerAdditionalEntities)
+                .commandHandlers();
+
+
     }
 
-    @AfterEach
-    void tearDown() {
-        if (startedConfiguration != null) {
-            startedConfiguration.shutdown();
-        }
+    @Override
+    protected ApplicationConfigurer createConfigurer() {
+        return EventSourcingConfigurer
+                .create()
+                .registerStatefulCommandHandlingModule(statefulCommandHandlingModule);
     }
 
     /**
@@ -141,17 +122,7 @@ public abstract class AbstractStudentTestSuite {
      * Starts the Axon Framework application.
      */
     protected void startApp() {
-        AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
-        axonServerConfiguration.setServers(
-                container.getHost() + ":" + container.getGrpcPort()
-        );
-        startedConfiguration = EventSourcingConfigurer
-                .create()
-                .componentRegistry(cr -> {
-                    cr.registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration);
-                })
-                .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
-                .start();
+        super.startApp();
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);
 
         Configuration moduleConfig = startedConfiguration.getModuleConfigurations().getFirst();
@@ -220,6 +191,10 @@ public abstract class AbstractStudentTestSuite {
 
     protected <T> void sendCommand(T payload) {
         commandGateway.sendAndWait(payload);
+    }
+
+    protected <T, R> R sendCommand(T payload, Class<R> expectedResultType) {
+        return commandGateway.sendAndWait(payload, expectedResultType);
     }
 
     protected void verifyStudentName(String id, String name) {

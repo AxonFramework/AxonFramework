@@ -102,6 +102,10 @@ public final class JacksonConverter implements Converter {
     private <S, T> T performConversion(S input, Class<S> sourceType, Class<T> targetType)
             throws JsonProcessingException {
 
+        if (input instanceof byte[] && targetType.equals(String.class)) {
+            return objectMapper.readValue(new String((byte[]) input), targetType);
+        }
+
         // Handle serialization: event -> byte[] or String
         if (canSerialize(targetType)) {
             var json = objectMapper.writeValueAsString(input);

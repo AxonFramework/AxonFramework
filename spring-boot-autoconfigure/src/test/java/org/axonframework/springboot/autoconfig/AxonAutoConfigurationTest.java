@@ -16,7 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer;
+import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -246,7 +246,7 @@ public class AxonAutoConfigurationTest {
 
                 @Override
                 public void enhance(@NotNull ComponentRegistry registry) {
-                    registry.disableEnhancer(ServerConnectorConfigurationEnhancer.class);
+                    registry.disableEnhancer(AxonServerConfigurationEnhancer.class);
                 }
 
                 @Override

@@ -40,6 +40,7 @@ import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberCha
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.Converter;
 
 import java.util.Set;
 
@@ -59,6 +60,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
     private final MessageTypeResolver messageTypeResolver;
+    private final Converter converter;
     private final SimpleCommandHandlingComponent handlingComponent;
 
     /**
@@ -67,8 +69,9 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
      *
      * @param annotatedCommandHandler The object containing the {@link CommandHandler} annotated methods.
      */
-    public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler) {
-        this(annotatedCommandHandler, ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()));
+    public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler, Converter converter) {
+        this(annotatedCommandHandler, ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()),
+             converter);
     }
 
     /**
@@ -79,11 +82,12 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      */
     public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler,
-                                             @Nonnull ParameterResolverFactory parameterResolverFactory) {
+                                             @Nonnull ParameterResolverFactory parameterResolverFactory,
+                                             Converter converter) {
         this(annotatedCommandHandler,
              parameterResolverFactory,
              ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
-             new ClassBasedMessageTypeResolver());
+             new ClassBasedMessageTypeResolver(), converter);
     }
 
     /**
@@ -101,11 +105,12 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
     public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler,
                                              @Nonnull ParameterResolverFactory parameterResolverFactory,
                                              @Nonnull HandlerDefinition handlerDefinition,
-                                             @Nonnull MessageTypeResolver messageTypeResolver) {
+                                             @Nonnull MessageTypeResolver messageTypeResolver, Converter converter) {
         this.handlingComponent = SimpleCommandHandlingComponent.create(
                 "AnnotationCommandHandlerAdapter[%s]".formatted(annotatedCommandHandler.getClass().getName())
         );
         this.target = requireNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null.");
+        this.converter = converter;
         this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedCommandHandler.getClass(),
                                                            parameterResolverFactory,
                                                            handlerDefinition);
@@ -129,11 +134,13 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
                                              .orElseGet(() -> new QualifiedName(handler.payloadType()));
 
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
-        handlingComponent.subscribe(qualifiedName, (command, ctx) ->
-                interceptorChain.handle(command, ctx, target, handler)
-                                .mapMessage(this::asCommandResultMessage)
-                                .first()
-                                .cast());
+        handlingComponent.subscribe(qualifiedName, (command, ctx) -> {
+            var convertedCommand = command.withConvertedPayload(p -> converter.convert(p, handler.payloadType()));
+            return interceptorChain.handle(convertedCommand, ctx, target, handler)
+                            .mapMessage(this::asCommandResultMessage)
+                            .first()
+                            .cast();
+        });
     }
 
     @Nonnull
