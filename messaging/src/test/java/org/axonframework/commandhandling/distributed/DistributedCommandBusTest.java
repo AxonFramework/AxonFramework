@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.distributed;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -107,9 +108,10 @@ class DistributedCommandBusTest {
         private final AtomicReference<Handler> handler = new AtomicReference<>();
 
 
+        @Nonnull
         @Override
-        public CompletableFuture<CommandResultMessage<?>> dispatch(CommandMessage<?> command,
-                                                                   ProcessingContext processingContext) {
+        public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                                   @Nullable ProcessingContext processingContext) {
             CompletableFuture<CommandResultMessage<?>> future = new CompletableFuture<>();
             dispatchedCommands.put(command, future);
             return future;

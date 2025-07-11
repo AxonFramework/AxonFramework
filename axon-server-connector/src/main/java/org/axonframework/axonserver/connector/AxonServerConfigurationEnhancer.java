@@ -22,7 +22,7 @@ import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.commandhandling.distributed.CommandPriorityResolver;
+import org.axonframework.commandhandling.distributed.CommandPriorityCalculator;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.configuration.ComponentDecorator;
@@ -88,8 +88,8 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
 
     private ComponentDecorator<AxonServerCommandBusConnectorConfiguration, AxonServerCommandBusConnectorConfiguration> priorityConnectorDecorator() {
         return (config, name, delegate) -> config
-                .getOptionalComponent(CommandPriorityResolver.class)
-                .map(delegate::withCommandPriorityResolver)
+                .getOptionalComponent(CommandPriorityCalculator.class)
+                .map(delegate::withPriorityCalculator)
                 .orElse(delegate);
     }
 
@@ -132,8 +132,8 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                   ));
     }
 
-    private ComponentDefinition<CommandPriorityResolver> commandPriorityResolverDefinition() {
-        return ComponentDefinition.ofType(CommandPriorityResolver.class)
+    private ComponentDefinition<CommandPriorityCalculator> commandPriorityResolverDefinition() {
+        return ComponentDefinition.ofType(CommandPriorityCalculator.class)
                                   .withBuilder(config -> message -> 0);
     }
 

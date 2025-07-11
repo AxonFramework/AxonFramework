@@ -17,26 +17,25 @@
 package org.axonframework.axonserver.connector.command;
 
 import jakarta.annotation.Nullable;
-import org.axonframework.commandhandling.distributed.CommandPriorityResolver;
+import org.axonframework.commandhandling.distributed.CommandPriorityCalculator;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 
 /**
  * Configuration for the {@link AxonServerCommandBusConnector}. It allows setting a {@link RoutingStrategy} and a
- * {@link CommandPriorityResolver} to be used by the connector. All settings are optional.
+ * {@link CommandPriorityCalculator} to be used by the connector. All settings are optional.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public record AxonServerCommandBusConnectorConfiguration(
-        @Nullable RoutingStrategy routingStrategy,
-        @Nullable CommandPriorityResolver commandPriorityResolver
-) {
+public class AxonServerCommandBusConnectorConfiguration {
+
+    private RoutingStrategy routingStrategy = null;
+    private CommandPriorityCalculator priorityCalculator = null;
 
     /**
      * Initializes a default {@code AxonServerCommandBusConnectorConfiguration}.
      */
     public AxonServerCommandBusConnectorConfiguration() {
-        this(null, null);
     }
 
     /**
@@ -49,19 +48,42 @@ public record AxonServerCommandBusConnectorConfiguration(
      * @return A new {@code AxonServerCommandBusConnectorConfiguration} with the given routing strategy.
      */
     public AxonServerCommandBusConnectorConfiguration withRoutingStrategy(@Nullable RoutingStrategy routingStrategy) {
-        return new AxonServerCommandBusConnectorConfiguration(routingStrategy, commandPriorityResolver);
+        this.routingStrategy = routingStrategy;
+        return this;
     }
 
     /**
-     * Sets the {@link CommandPriorityResolver} to be used by the {@link AxonServerCommandBusConnector}. If no
-     * {@link CommandPriorityResolver} is provided, commands will be sent without a priority.
+     * Returns the {@link RoutingStrategy} set for this {@link AxonServerCommandBusConnector}. Can be null.
      *
-     * @param commandPriorityResolver The {@link CommandPriorityResolver} to use for determining command priorities.
+     * @return The (nullable) routing strategy to be used.
+     */
+    @Nullable
+    public RoutingStrategy getRoutingStrategy() {
+        return routingStrategy;
+    }
+
+    /**
+     * Sets the {@link CommandPriorityCalculator} to be used by the {@link AxonServerCommandBusConnector}. If no
+     * {@link CommandPriorityCalculator} is provided, commands will be sent without a priority.
+     *
+     * @param priorityCalculator The {@link CommandPriorityCalculator} to use for determining command priorities.
      * @return A new {@code AxonServerCommandBusConnectorConfiguration} with the given command priority resolver.
      */
-    public AxonServerCommandBusConnectorConfiguration withCommandPriorityResolver(
-            @Nullable CommandPriorityResolver commandPriorityResolver
+    public AxonServerCommandBusConnectorConfiguration withPriorityCalculator(
+            @Nullable CommandPriorityCalculator priorityCalculator
     ) {
-        return new AxonServerCommandBusConnectorConfiguration(routingStrategy, commandPriorityResolver);
+        this.priorityCalculator = priorityCalculator;
+        return this;
+    }
+
+    /**
+     * Returns the {@link CommandPriorityCalculator} to be used by the {@link AxonServerCommandBusConnector}. If non is
+     * provided, commands will be sent without a priority.
+     *
+     * @return The (nullable) command priority resolver.
+     */
+    @Nullable
+    public CommandPriorityCalculator getPriorityCalculator() {
+        return priorityCalculator;
     }
 }

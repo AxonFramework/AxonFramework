@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.distributed;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.Message;
@@ -58,17 +59,19 @@ public class PayloadConvertingCommandBusConnector<T> extends WrappedCommandBusCo
         this.representation = Objects.requireNonNull(representation, "The representation must not be null.");
     }
 
+    @Nonnull
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(CommandMessage<?> command,
-                                                               ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         CommandMessage<?> serializedCommand = command.withConvertedPayload(p -> converter.convert(p, representation));
         return delegate.dispatch(serializedCommand, processingContext);
     }
 
     @Override
     public void onIncomingCommand(@Nonnull Handler handler) {
-        delegate.onIncomingCommand((commandMessage, callback) -> handler.handle(
+        delegate.onIncomingCommand((commandMessage, priority, callback) -> handler.handle(
                 commandMessage,
+                priority,
                 new ConvertingResultMessageCallback(callback))
         );
     }
@@ -95,7 +98,7 @@ public class PayloadConvertingCommandBusConnector<T> extends WrappedCommandBusCo
         }
 
         @Override
-        public void error(Throwable cause) {
+        public void error(@Nonnull Throwable cause) {
             callback.error(cause);
         }
     }

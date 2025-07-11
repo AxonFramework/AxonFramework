@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.distributed;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.Message;
@@ -45,8 +46,9 @@ public interface CommandBusConnector {
      * @param processingContext The processing context for the command.
      * @return A {@link CompletableFuture} that will complete with the result of the command handling.
      */
-    CompletableFuture<CommandResultMessage<?>> dispatch(CommandMessage<?> command,
-                                                        ProcessingContext processingContext);
+    @Nonnull
+    CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                        @Nullable ProcessingContext processingContext);
 
     /**
      * Subscribes to a command with the given {@code commandName} and a {@code loadFactor}.
@@ -88,7 +90,7 @@ public interface CommandBusConnector {
          * @param priority       The priority of the command, which can be used to determine the order of processing.
          * @param callback       The callback to invoke with the result of handling the command.
          */
-        void handle(CommandMessage<?> commandMessage, long priority, ResultCallback callback);
+        void handle(@Nonnull CommandMessage<?> commandMessage, long priority, @Nonnull ResultCallback callback);
     }
 
     /**
@@ -100,15 +102,16 @@ public interface CommandBusConnector {
         /**
          * Called when the command processing is successful.
          *
-         * @param resultMessage The result message containing the outcome of the command processing.
+         * @param resultMessage The result message containing the outcome of the command processing. If the message
+         *                      handling yielded no result message, a {@code null} should be passed.
          */
-        void success(Message<?> resultMessage);
+        void success(@Nullable Message<?> resultMessage);
 
         /**
          * Called when an error occurs during command processing.
          *
          * @param cause The exception that caused the error.
          */
-        void error(Throwable cause);
+        void error(@Nonnull Throwable cause);
     }
 }

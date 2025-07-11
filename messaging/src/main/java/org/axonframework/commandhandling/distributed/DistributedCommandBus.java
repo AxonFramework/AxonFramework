@@ -102,8 +102,9 @@ public class DistributedCommandBus implements CommandBus {
         private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
         @Override
-        public void handle(CommandMessage<?> commandMessage, int priority,
-                           CommandBusConnector.ResultCallback callback) {
+        public void handle(@Nonnull CommandMessage<?> commandMessage,
+                           long priority,
+                           @Nonnull CommandBusConnector.ResultCallback callback) {
             logger.debug("Received command [{}] for processing with priority [{}]", commandMessage.type(), priority);
             long sequence = TASK_SEQUENCE.incrementAndGet();
             executorService.submit(new PriorityRunnable(() -> {
@@ -111,7 +112,7 @@ public class DistributedCommandBus implements CommandBus {
             }, priority, sequence));
         }
 
-        private void doHandleCommand(CommandMessage<?> commandMessage, int priority,
+        private void doHandleCommand(CommandMessage<?> commandMessage, long priority,
                                      CommandBusConnector.ResultCallback callback) {
             logger.info("Processing incoming command [{}] with priority [{}]", commandMessage.type(), priority);
             delegate.dispatch(commandMessage, null).whenComplete((resultMessage, e) -> {

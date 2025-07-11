@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotation.RoutingKey;
 import org.axonframework.common.AxonConfigurationException;
@@ -29,7 +30,6 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.*;
 
@@ -58,18 +58,20 @@ public class AnnotationRoutingStrategy implements RoutingStrategy {
     private final Map<Class<?>, RoutingKeyResolver> resolverMap = new ConcurrentHashMap<>();
 
     /**
-     * Instantiate a default {@link AnnotationRoutingStrategy}.
-     * <p>
-     * The {@code annotationType} is defaulted to {@link RoutingKey}.
-     *
-     * @return a default {@link AnnotationRoutingStrategy}
+     * Instantiate an annotation {@link RoutingStrategy}. The {@code annotationType} is defaulted to {@link RoutingKey}.
      */
     public AnnotationRoutingStrategy() {
         this(RoutingKey.class);
     }
 
-    public AnnotationRoutingStrategy(Class<? extends Annotation> annotationType) {
-        this.annotationType = annotationType;
+    /**
+     * Instantiate an annotation {@link RoutingStrategy}. The {@code annotationType} is used to indicate which field to
+     * use as routing key.
+     *
+     * @param annotationType The annotation to check the fields of the payload for.
+     */
+    public AnnotationRoutingStrategy(@Nonnull Class<? extends Annotation> annotationType) {
+        this.annotationType = Objects.requireNonNull(annotationType, "The annotationType can not be null.");
     }
 
     @Override

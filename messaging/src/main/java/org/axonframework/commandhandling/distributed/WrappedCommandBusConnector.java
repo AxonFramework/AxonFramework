@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.distributed;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -46,9 +47,10 @@ public abstract class WrappedCommandBusConnector implements CommandBusConnector,
         this.delegate = delegate;
     }
 
+    @Nonnull
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(CommandMessage<?> command,
-                                                               ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         return delegate.dispatch(command, processingContext);
     }
 

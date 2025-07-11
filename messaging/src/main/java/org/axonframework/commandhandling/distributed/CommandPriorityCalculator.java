@@ -17,13 +17,21 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.gateway.CommandResult;
 import org.axonframework.messaging.Context.ResourceKey;
-import org.axonframework.messaging.Message;
 
-public interface CommandPriorityResolver {
+/**
+ * Calculate the priority of {@link CommandMessage} based on its content. Higher value means higher priority.
+ *
+ * @author Marc Gathier
+ * @since 4.0
+ */
+public interface CommandPriorityCalculator {
 
-    ResourceKey<Integer> PRIORITY_KEY = ResourceKey.withLabel("Priority");
-
-    int priorityFor(CommandMessage<?> message);
+    /**
+     * Determines the priority of the given {@code command}. The higher the returned value, the higher the priority is.
+     *
+     * @param command a {@link CommandMessage} to prioritize
+     * @return an {@code int} defining the priority of the given {@code command}
+     */
+    int determinePriority(CommandMessage<?> command);
 }

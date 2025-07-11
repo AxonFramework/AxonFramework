@@ -26,6 +26,7 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerMetadataConverter;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.commandhandling.CommandMessage;
@@ -33,7 +34,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.commandhandling.distributed.CommandPriorityResolver;
+import org.axonframework.commandhandling.distributed.CommandPriorityCalculator;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
@@ -53,8 +54,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.createProcessingInstruction;
 import static org.axonframework.axonserver.connector.AxonServerMetadataConverter.convertFromMetaDataValues;
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.createProcessingInstruction;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -73,7 +74,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     private final AxonServerConnection connection;
     private final AtomicReference<CommandBusConnector.Handler> incomingHandler = new AtomicReference<>();
     private final Map<String, Registration> subscriptions = new ConcurrentHashMap<>();
-    private final CommandPriorityResolver priorityResolver;
+    private final CommandPriorityCalculator priorityCalculator;
     private final RoutingStrategy routingKeyResolver;
 
     /**
@@ -87,16 +88,21 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
                                          @Nonnull AxonServerCommandBusConnectorConfiguration configuration) {
         this.connection = Objects.requireNonNull(connection, "The AxonServerConnection must not be null.");
         Objects.requireNonNull(configuration, "The AxonServerCommandBusConnectorConfiguration must not be null.");
-        this.priorityResolver = configuration.commandPriorityResolver();
-        this.routingKeyResolver = configuration.routingStrategy();
+        this.priorityCalculator = configuration.getPriorityCalculator();
+        this.routingKeyResolver = configuration.getRoutingStrategy();
     }
 
+    @Nonnull
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(CommandMessage<?> command,
-                                                               ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         return connection.commandChannel()
                          .sendCommand(buildOutgoingCommand(command))
-                         .thenCompose(this::buildResultMessage);
+                         .thenCompose(this::buildResultMessage)
+                         .exceptionally(e -> {
+                             // Convert to dispatch exception, not 100% if necessary
+                             throw ErrorCode.COMMAND_DISPATCH_ERROR.convert(e);
+                         });
     }
 
     private CompletableFuture<CommandResultMessage<?>> buildResultMessage(CommandResponse commandResponse) {
@@ -156,10 +162,10 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     private void addPriority(Command.Builder builder, CommandMessage<?> command) {
-        if (priorityResolver == null) {
+        if (priorityCalculator == null) {
             return;
         }
-        long priority = priorityResolver.priorityFor(command);
+        long priority = priorityCalculator.determinePriority(command);
         var instruction = createProcessingInstruction(ProcessingKey.PRIORITY,
                                                       MetaDataValue.newBuilder().setNumberValue(priority));
         builder.addProcessingInstructions(instruction).build();
@@ -284,7 +290,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         }
 
         @Override
-        public void error(Throwable cause) {
+        public void error(@Nonnull Throwable cause) {
 
             result.completeExceptionally(cause);
         }
