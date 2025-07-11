@@ -36,11 +36,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class StatefulCommandHandlingComponentTest {
 
     private final StateManager stateManager = SimpleStateManager
-            .builder("test")
+            .named("test")
             .register(String.class, Integer.class,
                       (id, ctx) -> CompletableFuture.completedFuture(Integer.parseInt(id)),
-                      (id, entity, context) -> CompletableFuture.completedFuture(null))
-            .build();
+                      (id, entity, context) -> CompletableFuture.completedFuture(null));
 
 
     @Test

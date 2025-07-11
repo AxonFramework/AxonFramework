@@ -17,25 +17,71 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MetaData;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+/**
+ * Test utilities when dealing with events.
+ *
+ * @author Mateusz Nowak
+ * @author Steven van Beelen
+ */
 public abstract class EventTestUtils {
+
+    private static final MessageType TYPE = new MessageType("event");
+    public static final String PAYLOAD = "payload";
+    public static final String AGGREGATE = "aggregate";
+    private static final String AGGREGATE_TYPE = "aggregateType";
+    private static final MetaData METADATA = MetaData.emptyInstance();
 
     private EventTestUtils() {
         // Utility class
     }
 
     /**
-     * Returns the given event as an EventMessage. If {@code event} already implements EventMessage, it is returned
-     * as-is. If it is a Message, a new EventMessage will be created using the payload and meta data of the given
-     * message. Otherwise, the given {@code event} is wrapped into a GenericEventMessage as its payload.
+     * Constructs a {@link List} of {@link EventMessage EventMessages} with a size equalling the given {@code number}.
+     * <p>
+     * The {@link EventMessage#getPayload() payload} of the events equals it's position within the sequence.
      *
-     * @param event the event to wrap as EventMessage
-     * @param <P>   The generic type of the expected payload of the resulting object
-     * @return an EventMessage containing given {@code event} as payload, or {@code event} if it already implements
-     * EventMessage.
+     * @param number The number of events to construct.
+     * @return A {@link List} of {@link EventMessage EventMessages} with a size equalling the given {@code number}.
+     */
+    public static List<EventMessage<?>> createEvents(int number) {
+        return IntStream.range(0, number)
+                        .mapToObj(EventTestUtils::createEvent)
+                        .collect(Collectors.toList());
+    }
+
+    /**
+     * Constructs an {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() payload}.
+     *
+     * @param seq The payload for the message to construct.
+     * @return An {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() payload}.
+     */
+    public static EventMessage<?> createEvent(int seq) {
+        return EventTestUtils.asEventMessage(seq);
+    }
+
+    /**
+     * Returns the given {@code event} wrapped in an {@link EventMessage}.
+     * <p>
+     * If {@code event} already implements {@code EventMessage}, it is returned as-is. If it is a {@link Message}, a new
+     * {@code EventMessage} will be created using the payload and metadata of the given message. Otherwise, the given
+     * {@code event} is wrapped into a {@link GenericEventMessage} as its payload.
+     *
+     * @param event The event to wrap as {@link EventMessage}.
+     * @param <P>   The generic type of the expected payload of the resulting object.
+     * @return An {@link EventMessage} containing given {@code event} as payload, or {@code event} if it already
+     * implements {@code EventMessage}.
      */
     @SuppressWarnings("unchecked")
     public static <P> EventMessage<P> asEventMessage(@Nonnull Object event) {

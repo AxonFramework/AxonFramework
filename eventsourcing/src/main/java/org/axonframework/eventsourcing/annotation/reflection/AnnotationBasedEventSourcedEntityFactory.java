@@ -31,6 +31,7 @@ import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.PayloadParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -70,25 +71,28 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     private final IdTypeParameterResolver idTypeParameterResolver = new IdTypeParameterResolver();
     private final ParameterResolverFactory resolverFactory;
     private final MessageTypeResolver messageTypeResolver;
+    private final Converter converter;
 
     /**
      * Instantiate an annotation-based {@link EventSourcedEntityFactory} for the given concrete {@code entityType}. When
      * using a polymorphic entity type, you can use the
      * {@link #AnnotationBasedEventSourcedEntityFactory(Class, Class, Set, ParameterResolverFactory,
-     * MessageTypeResolver)}, so that all subtypes of the entity type will be scanned for static methods and
+     * MessageTypeResolver, Converter)}, so that all subtypes of the entity type will be scanned for static methods and
      * constructors.
      *
      * @param entityType               The type of the entity to create. Must be concrete.
      * @param idType                   The type of the identifier used by the entity.
      * @param parameterResolverFactory The factory to use to resolve parameters.
      * @param messageTypeResolver      The factory to use to resolve the payload type.
+     * @param converter                The converter to use for converting event payloads to the handler's expected type.
      */
     public AnnotationBasedEventSourcedEntityFactory(@Nonnull Class<E> entityType,
                                                     @Nonnull Class<ID> idType,
                                                     @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                    @Nonnull MessageTypeResolver messageTypeResolver
+                                                    @Nonnull MessageTypeResolver messageTypeResolver,
+                                                    @Nonnull Converter converter
     ) {
-        this(entityType, idType, Collections.emptySet(), parameterResolverFactory, messageTypeResolver);
+        this(entityType, idType, Collections.emptySet(), parameterResolverFactory, messageTypeResolver, converter);
     }
 
     /**
@@ -102,12 +106,14 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
      * @param subTypes                 The concrete types that extend the {@code entityType}.
      * @param parameterResolverFactory The factory to use to resolve parameters.
      * @param messageTypeResolver      The factory to use to resolve the payload type.
+     * @param converter                The converter to use for converting event payloads to the handler's expected type.
      */
     public AnnotationBasedEventSourcedEntityFactory(@Nonnull Class<E> entityType,
                                                     @Nonnull Class<ID> idType,
                                                     @Nonnull Set<Class<? extends E>> subTypes,
                                                     @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                    @Nonnull MessageTypeResolver messageTypeResolver
+                                                    @Nonnull MessageTypeResolver messageTypeResolver,
+                                                    @Nonnull Converter converter
     ) {
         this.entityType = Objects.requireNonNull(entityType, "The entityType must not be null.");
         this.types = new HashSet<>(subTypes);
@@ -118,6 +124,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                                                       "The parameterResolverFactory must not be null.");
         this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver,
                                                           "The messageTypeResolver must not be null.");
+        this.converter = Objects.requireNonNull(converter, "The converter must not be null.");
 
         initialize();
     }
@@ -157,9 +164,10 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             throw new AxonConfigurationException("Method-based @EntityCreator must be static. Found method: %s".formatted(
                     method));
         }
-        if (!method.getReturnType().isAssignableFrom(entityType)) {
+        if (!this.entityType.isAssignableFrom(method.getReturnType())) {
             throw new AxonConfigurationException(
-                    "Method-based @EntityCreator must return the entity type or a subtype. Found method: [%s]".formatted(method));
+                    "Method-based @EntityCreator must return the entity type or a subtype. Found method: [%s]".formatted(
+                            method));
         }
         addEntityCreatorExecutable(method);
     }
@@ -178,12 +186,13 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         ParameterResolver<?>[] parameterResolvers = new ParameterResolver[executable.getParameterCount()];
         boolean hasMessageParameter = false;
         Class<?> concreteIdType = null;
+        Class<?> expectedPayloadRepresentation = null;
 
         for (int i = 0; i < executable.getParameterCount(); i++) {
             Class<?> parameterType = executable.getParameterTypes()[i];
 
             // Check the parameter type for the ID type and assign our special IdTypeParameterResolver
-            if(AnnotationUtils.isAnnotationPresent(executable.getParameters()[i], InjectEntityId.class)) {
+            if (AnnotationUtils.isAnnotationPresent(executable.getParameters()[i], InjectEntityId.class)) {
                 if (concreteIdType != null && !concreteIdType.isAssignableFrom(parameterType)) {
                     throw new AxonConfigurationException(
                             "The @InjectEntityId annotation can only be used on a single parameter of type [%s] or a subtype. Found [%s] on parameter %d of method [%s]"
@@ -203,6 +212,13 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                         "Could not resolve parameter [%d] of [%s]. No suitable ParameterResolver found for type [%s]"
                                 .formatted(i, executable, parameterType.getName()));
             }
+            if (instance instanceof PayloadParameterResolver payloadParameterResolver) {
+                if (expectedPayloadRepresentation != null) {
+                    throw new AxonConfigurationException("The method [%s] has multiple payload parameters".formatted(
+                            executable));
+                }
+                expectedPayloadRepresentation = payloadParameterResolver.supportedPayloadType();
+            }
             parameterResolvers[i] = instance;
         }
 
@@ -219,6 +235,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                                               parameterResolvers,
                                               payloadQualifiedNames,
                                               concreteIdType,
+                                              expectedPayloadRepresentation,
                                               hasMessageParameter));
     }
 
@@ -251,25 +268,33 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             compatibleCreators = getMethodsCompatibleWithIdAndNoMessage(id);
         }
         if (compatibleCreators.isEmpty()) {
-            StringBuilder message = new StringBuilder("No suitable @EntityCreator found for id: [%s] and event message [%s]. Candidates were:"
-                                                              .formatted(id, eventMessage));
+            StringBuilder message = new StringBuilder(
+                    "No suitable @EntityCreator found for id: [%s] and event message [%s]. Candidates were:"
+                            .formatted(id, eventMessage));
             creators.forEach(creator -> message.append("\n - ").append(creator));
             throw new AxonConfigurationException(message.toString());
         }
         Set<ScannedEntityCreator> matchingCreators = compatibleCreators
                 .stream()
-                .filter(e -> e.parametersMatch(context))
+                .filter(e -> {
+                    var convertedContext = e.mapContextWithMessageIfNecessary(context);
+                    return e.parametersMatch(convertedContext);
+                })
                 .collect(Collectors.toSet());
         if (matchingCreators.isEmpty()) {
             // Create a message explaining which parameters cuold not be resolved of which candidate.
             StringBuilder message = new StringBuilder(
-                    "No @EntityCreator matched for entity id: [%s] and event message [%s]. Candidates were:\n".formatted(id, eventMessage));
+                    "No @EntityCreator matched for entity id: [%s] and event message [%s]. Candidates were:\n".formatted(
+                            id,
+                            eventMessage));
             for (ScannedEntityCreator compatibleCreator : compatibleCreators) {
                 List<Integer> unresolvableParameterIndices = compatibleCreator
                         .getUnresolvableParameterIndices(context);
-                message.append(" - [%s] could not resolve parameters indices: %s\n".formatted(compatibleCreator, unresolvableParameterIndices));
+                message.append(" - [%s] could not resolve parameters indices: %s\n".formatted(compatibleCreator,
+                                                                                              unresolvableParameterIndices));
             }
-            message.append("\n\nPlease ensure that the parameters can be resolved by the ParameterResolverFactory implementations on the classpath.");
+            message.append(
+                    "\n\nPlease ensure that the parameters can be resolved by the ParameterResolverFactory implementations on the classpath.");
             throw new AxonConfigurationException(message.toString());
         }
         return matchingCreators.stream()
@@ -297,6 +322,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         private final ParameterResolver<?>[] parameterResolvers;
         private final List<QualifiedName> payloadQualifiedNames;
         private final Class<?> concreteIdType;
+        private final Class<?> expectedPayloadRepresentation;
         private final boolean hasMessageParameter;
 
         private ScannedEntityCreator(
@@ -304,6 +330,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                 ParameterResolver<?>[] parameterResolvers,
                 List<QualifiedName> payloadQualifiedNames,
                 Class<?> concreteIdType,
+                Class<?> expectedPayloadRepresentation,
                 boolean hasMessageParameter
         ) {
             this.hasMessageParameter = hasMessageParameter;
@@ -313,13 +340,15 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
             this.parameterResolvers = parameterResolvers;
             this.payloadQualifiedNames = payloadQualifiedNames;
             this.concreteIdType = concreteIdType;
+            this.expectedPayloadRepresentation = expectedPayloadRepresentation;
         }
 
         private E invoke(ID id, ProcessingContext context) {
             ProcessingContext contextWithId = context.withResource(ID_KEY, id);
+            ProcessingContext convertedContext = mapContextWithMessageIfNecessary(contextWithId);
             Object[] args = new Object[executable.getParameterCount()];
             for (int i = 0; i < args.length; i++) {
-                args[i] = parameterResolvers[i].resolveParameterValue(contextWithId);
+                args[i] = parameterResolvers[i].resolveParameterValue(convertedContext);
             }
             return constructEntityWithArguments(args);
         }
@@ -371,6 +400,16 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         @Override
         public String toString() {
             return ReflectionUtils.getMemberGenericString(executable);
+        }
+
+        public ProcessingContext mapContextWithMessageIfNecessary(ProcessingContext context) {
+            Message<?> eventMessage = Message.fromContext(context);
+            if (eventMessage != null && expectedPayloadRepresentation != null) {
+                var convertedEvent = eventMessage.withConvertedPayload(
+                        p -> converter.convert(p, expectedPayloadRepresentation));
+                return Message.addToContext(context, convertedEvent);
+            }
+            return context;
         }
     }
 

@@ -17,8 +17,7 @@
 package org.axonframework.integrationtests.deadline.jobrunr;
 
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.ConfigurationScopeAwareProvider;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
@@ -58,13 +57,13 @@ class JobrunrDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Override
-    public DeadlineManager buildDeadlineManager(LegacyConfiguration configuration) {
+    public DeadlineManager buildDeadlineManager(Configuration configuration) {
         StorageProvider storageProvider = new InMemoryStorageProvider();
         JobScheduler scheduler = new JobScheduler(storageProvider);
         JobRunrDeadlineManager manager = JobRunrDeadlineManager
                 .builder()
                 .jobScheduler(scheduler)
-                .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
+//                .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
                 .serializer(TestSerializer.JACKSON.getSerializer())
                 .transactionManager(NoTransactionManager.INSTANCE)
                 .spanFactory(configuration.getComponent(DeadlineManagerSpanFactory.class))
@@ -121,7 +120,7 @@ class JobrunrDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 
     @Test
     void doNotThrowIllegalJobStateChangeExceptionForAnAlreadyDeletedJob() {
-        DeadlineManager testSubject = configuration.deadlineManager();
+        DeadlineManager testSubject = configuration.getComponent(DeadlineManager.class);
 
         String deadlineName = "doubleDeleteDoesNotThrowException";
         String scheduleId = testSubject.schedule(Duration.ofMinutes(15), deadlineName, null,

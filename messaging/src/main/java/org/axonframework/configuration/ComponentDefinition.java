@@ -18,6 +18,7 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.TypeReference;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -63,7 +64,9 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
 
     /**
      * Starts defining a component with given declared {@code type}. To distinguish between different instances of the
-     * same type, consider using {@link #ofTypeAndName(Class, String)} instead.
+     * same type, consider using {@link #ofTypeAndName(Class, String)} instead. In case the component carries a generic
+     * type, consider using {@link #ofType(TypeReference)} instead to prevent casting errors during registration of the
+     * component.
      * <p>
      * Either {@link IncompleteComponentDefinition#withBuilder(ComponentBuilder) withBuilder(...)} or
      * {@link IncompleteComponentDefinition#withInstance(Object) withInstance(...)} must be called on the result of this
@@ -80,7 +83,9 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
 
     /**
      * Starts defining a component with given declared {@code type} and {@code name}. If only a single instance of a
-     * component is expected to be used, consider using {@link #ofType(Class)} instead.
+     * component is expected to be used, consider using {@link #ofType(Class)} instead. In case the component carries a
+     * generic type, consider using {@link #ofTypeAndName(TypeReference, String)} instead to prevent casting errors
+     * during registration of the component.
      *
      * @param type The declared type of this component.
      * @param name The name of this component. Use {@code null} when there is no name or use {@link #ofType(Class)}
@@ -99,6 +104,56 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
             @Override
             public ComponentDefinition<C> withBuilder(@Nonnull ComponentBuilder<? extends C> builder) {
                 return new LazyInitializedComponentDefinition<>(new Component.Identifier<>(type, name), builder);
+            }
+        };
+    }
+
+    /**
+     * Starts defining a component with given declared {@code type}. To distinguish between different instances of the
+     * same type, consider using {@link #ofTypeAndName(TypeReference, String)} instead.
+     * <p>
+     * This method is a convenience overload of {@link #ofTypeAndName(Class, String)} that can accept a type reference
+     * so components with generic types can be registered without casting errors. If your component does not have a
+     * generic type, consider using {@link #ofTypeAndName(Class, String)} instead.
+     * <p>
+     * Either {@link IncompleteComponentDefinition#withBuilder(ComponentBuilder) withBuilder(...)} or
+     * {@link IncompleteComponentDefinition#withInstance(Object) withInstance(...)} must be called on the result of this
+     * invocation to create a valid {@code ComponentDefinition} instance.
+     *
+     * @param type The declared type of the component.
+     * @param <C>  The declared type of the component.
+     * @return A builder to complete the creation of a {@code ComponentDefinition}.
+     * @see #ofTypeAndName(Class, String)
+     */
+    static <C> IncompleteComponentDefinition<C> ofType(@Nonnull TypeReference<C> type) {
+        return ofTypeAndName(type, null);
+    }
+
+    /**
+     * Starts defining a component with given declared {@code type} and {@code name}. If only a single instance of a
+     * component is expected to be used, consider using {@link #ofType(TypeReference)} instead.
+     * <p>
+     * This method is a convenience overload of {@link #ofTypeAndName(Class, String)} that can accept a type reference
+     * so components with generic types can be registered without casting errors. If your component does not have a
+     * generic type, consider using {@link #ofTypeAndName(Class, String)} instead.
+     *
+     * @param type The declared type of this component.
+     * @param name The name of this component.
+     * @param <C>  The declared type of this component.
+     * @return A builder to complete the creation of a {@code ComponentDefinition}.
+     */
+    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull TypeReference<C> type, @Nullable String name) {
+        return new IncompleteComponentDefinition<>() {
+            private final Component.Identifier<C> identifier = new Component.Identifier<>(type, name);
+
+            @Override
+            public ComponentDefinition<C> withInstance(@Nonnull C instance) {
+                return new InstantiatedComponentDefinition<>(identifier, instance);
+            }
+
+            @Override
+            public ComponentDefinition<C> withBuilder(@Nonnull ComponentBuilder<? extends C> builder) {
+                return new LazyInitializedComponentDefinition<>(identifier, builder);
             }
         };
     }
@@ -186,6 +241,22 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
             return CompletableFuture.completedFuture(null);
         });
     }
+
+    /**
+     * Returns the given {@link Component.Identifier#typeAsClass() type as a Class} of this {@code ComponentDefinition},
+     * set on {@link #ofType(Class)} or {@link #ofTypeAndName(Class, String)}.
+     *
+     * @return The given {@link Component.Identifier#typeAsClass() type as a Class} of this {@code ComponentDefinition}.
+     */
+    Class<C> rawType();
+
+    /**
+     * Returns the given name of this {@code ComponentDefinition}, set on {@link #ofTypeAndName(Class, String)}.
+     *
+     * @return The given name of this {@code ComponentDefinition}.
+     */
+    @Nullable
+    String name();
 
     /**
      * Mandatory interface to be implemented by all implementations of {@code ComponentDefinition}.

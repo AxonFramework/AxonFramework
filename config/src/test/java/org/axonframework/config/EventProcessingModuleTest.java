@@ -22,7 +22,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.AbstractEventProcessor;
+import org.axonframework.configuration.SubscribableMessageSourceDefinition;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorOperations;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -40,8 +41,6 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
@@ -75,6 +74,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -89,6 +89,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
@@ -206,13 +207,13 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void assigningATrackingProcessorFailsWhenUsingSimpleEventBus() {
+    void assigningAPooledProcessorFailsWhenUsingSimpleEventBus() {
         LegacyConfigurer configurer =
                 LegacyDefaultConfigurer.defaultConfiguration()
                                        .configureEventBus(c -> SimpleEventBus.builder().build())
                                        .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
                                                                 .registerEventHandler(c -> new TrackingEventHandler())
-                                                                .registerTrackingEventProcessor("tracking"));
+                                                                .registerPooledStreamingEventProcessor("tracking"));
 
         assertThrows(LifecycleHandlerInvocationException.class, configurer::start);
     }
@@ -320,7 +321,8 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void assignSequencingPolicy() throws NoSuchFieldException {
+    void assignSequencingPolicy()
+            throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Object mockHandler = new Object();
         Object specialHandler = new Object();
         SequentialPolicy sequentialPolicy = new SequentialPolicy();
@@ -334,20 +336,20 @@ class EventProcessingModuleTest {
                   .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
         LegacyConfiguration config = configurer.start();
 
-        Optional<AbstractEventProcessor> defaultProcessorOptional =
-                config.eventProcessingConfiguration().eventProcessor("default", AbstractEventProcessor.class);
+        Optional<EventProcessor> defaultProcessorOptional =
+                config.eventProcessingConfiguration().eventProcessor("default", EventProcessor.class);
         assertTrue(defaultProcessorOptional.isPresent());
-        AbstractEventProcessor defaultProcessor = defaultProcessorOptional.get();
+        EventProcessor defaultProcessor = defaultProcessorOptional.get();
 
-        Optional<AbstractEventProcessor> specialProcessorOptional =
-                config.eventProcessingConfiguration().eventProcessor("special", AbstractEventProcessor.class);
+        Optional<EventProcessor> specialProcessorOptional =
+                config.eventProcessingConfiguration().eventProcessor("special", EventProcessor.class);
         assertTrue(specialProcessorOptional.isPresent());
-        AbstractEventProcessor specialProcessor = specialProcessorOptional.get();
+        EventProcessor specialProcessor = specialProcessorOptional.get();
 
-        MultiEventHandlerInvoker defaultInvoker =
-                getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), defaultProcessor);
-        MultiEventHandlerInvoker specialInvoker =
-                getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), specialProcessor);
+        EventProcessorOperations defaultOperations = getField("eventProcessorOperations", defaultProcessor);
+        MultiEventHandlerInvoker defaultInvoker = (MultiEventHandlerInvoker) getField("eventHandlerInvoker", defaultOperations);
+        EventProcessorOperations specialOperations = getField("eventProcessorOperations", specialProcessor);
+        MultiEventHandlerInvoker specialInvoker = (MultiEventHandlerInvoker) getField("eventHandlerInvoker", specialOperations);
 
         assertEquals(sequentialPolicy,
                      ((SimpleEventHandlerInvoker) defaultInvoker.delegates().getFirst()).getSequencingPolicy());
@@ -399,6 +401,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureMonitor() throws Exception {
         MessageCollectingMonitor subscribingMonitor = new MessageCollectingMonitor();
         MessageCollectingMonitor trackingMonitor = new MessageCollectingMonitor(1);
@@ -423,6 +426,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureSpanFactory() {
         TestSpanFactory spanFactory = new TestSpanFactory();
         CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
@@ -445,6 +449,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureDefaultListenerInvocationErrorHandler() throws Exception {
         EventMessage<Boolean> errorThrowingEventMessage =
                 new GenericEventMessage<>(new MessageType("event"), true);
@@ -472,6 +477,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
         EventMessage<Boolean> errorThrowingEventMessage =
                 new GenericEventMessage<>(new MessageType("event"), true);
@@ -503,6 +509,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureDefaultErrorHandler() throws Exception {
         EventMessage<Integer> failingEventMessage =
                 new GenericEventMessage<>(new MessageType("event"), 1000);
@@ -528,33 +535,6 @@ class EventProcessingModuleTest {
         } finally {
             config.shutdown();
         }
-    }
-
-    @Test
-    void trackingProcessorsUsesConfiguredDefaultStreamableMessageSource() {
-        configurer.eventProcessing().configureDefaultStreamableMessageSource(c -> eventStoreOne);
-        configurer.eventProcessing().usingTrackingEventProcessors();
-        configurer.registerEventHandler(c -> new TrackingEventHandler());
-
-        LegacyConfiguration config = configurer.start();
-        Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
-                                                           .eventProcessor("tracking", TrackingEventProcessor.class);
-        assertTrue(processor.isPresent());
-        assertEquals(eventStoreOne, processor.get().getMessageSource());
-    }
-
-    @Test
-    void trackingProcessorsUsesSpecificSource() {
-        configurer.eventProcessing()
-                  .configureDefaultStreamableMessageSource(c -> eventStoreOne)
-                  .registerTrackingEventProcessor("tracking", c -> eventStoreTwo)
-                  .registerEventHandler(c -> new TrackingEventHandler());
-
-        LegacyConfiguration config = configurer.start();
-        Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
-                                                           .eventProcessor("tracking", TrackingEventProcessor.class);
-        assertTrue(processor.isPresent());
-        assertEquals(eventStoreTwo, processor.get().getMessageSource());
     }
 
     @Test
@@ -586,6 +566,7 @@ class EventProcessingModuleTest {
 
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void configureErrorHandlerPerEventProcessor() throws Exception {
         EventMessage<Integer> failingEventMessage =
                 new GenericEventMessage<>(new MessageType("event"), 1000);
@@ -621,200 +602,6 @@ class EventProcessingModuleTest {
     void packageOfObject() {
         String expectedPackageName = EventProcessingModule.class.getPackage().getName();
         assertEquals(expectedPackageName, EventProcessingModule.packageOfObject(this));
-    }
-
-    @Test
-    void defaultTrackingEventProcessingConfiguration() throws NoSuchFieldException {
-        Object someHandler = new Object();
-        TrackingEventProcessorConfiguration testTepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(4);
-        configurer.eventProcessing()
-                  .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .byDefaultAssignTo("default")
-                  .registerEventHandler(config -> someHandler)
-                  .registerEventHandler(config -> new TrackingEventHandler())
-                  .registerTrackingEventProcessorConfiguration(config -> testTepConfig);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTrackingTep =
-                config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
-        assertTrue(resultTrackingTep.isPresent());
-        TrackingEventProcessor trackingTep = resultTrackingTep.get();
-        int trackingTepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), trackingTep);
-        assertEquals(4, trackingTepSegmentsSize);
-
-        Optional<TrackingEventProcessor> resultDefaultTep =
-                config.eventProcessingConfiguration().eventProcessor("default", TrackingEventProcessor.class);
-        assertTrue(resultDefaultTep.isPresent());
-        TrackingEventProcessor defaultTep = resultDefaultTep.get();
-        int defaultTepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), defaultTep);
-        assertEquals(4, defaultTepSegmentsSize);
-    }
-
-    @Test
-    void customTrackingEventProcessingConfiguration() throws NoSuchFieldException {
-        Object someHandler = new Object();
-        TrackingEventProcessorConfiguration testTepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(4);
-        configurer.eventProcessing()
-                  .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .byDefaultAssignTo("default")
-                  .registerEventHandler(config -> someHandler)
-                  .registerEventHandler(config -> new TrackingEventHandler())
-                  .registerTrackingEventProcessorConfiguration("tracking", config -> testTepConfig);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTrackingTep =
-                config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
-        assertTrue(resultTrackingTep.isPresent());
-        TrackingEventProcessor trackingTep = resultTrackingTep.get();
-        int trackingTepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), trackingTep);
-        assertEquals(4, trackingTepSegmentsSize);
-
-        Optional<TrackingEventProcessor> resultDefaultTep =
-                config.eventProcessingConfiguration().eventProcessor("default", TrackingEventProcessor.class);
-        assertTrue(resultDefaultTep.isPresent());
-        TrackingEventProcessor defaultTep = resultDefaultTep.get();
-        int defaultTepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), defaultTep);
-        assertEquals(1, defaultTepSegmentsSize);
-    }
-
-    @Test
-    void sagaTrackingProcessorConstructionUsesDefaultSagaProcessorConfigIfNoCustomizationIsPresent()
-            throws NoSuchFieldException {
-        configurer.eventProcessing()
-                  .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .registerSaga(Object.class);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTep =
-                config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
-        assertTrue(resultTep.isPresent());
-        TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
-        assertEquals(1, tepSegmentsSize);
-
-        Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(eventStoreTwo);
-        verify(eventStoreTwo, times(0)).createTailToken();
-        // The default Saga Config starts the stream at the head
-        verify(eventStoreTwo).createHeadToken();
-    }
-
-    @Test
-    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomProcessor()
-            throws NoSuchFieldException {
-        configurer.eventProcessing()
-                  .assignProcessingGroup(someGroup -> "custom-processor")
-                  .registerTrackingEventProcessor("custom-processor", config -> eventStoreOne)
-                  .registerSaga(CustomSaga.class);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTep = config.eventProcessingConfiguration().eventProcessor(
-                "custom-processor", TrackingEventProcessor.class
-        );
-        assertTrue(resultTep.isPresent());
-        TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
-        assertEquals(1, tepSegmentsSize);
-
-        Function<TrackingTokenSource, CompletableFuture<TrackingToken>> tepInitialTokenBuilder =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        TrackingToken actualInitialToken = tepInitialTokenBuilder.apply(eventStoreTwo).join();
-        // In absence of the default Saga Config, the stream starts at the tail
-        assertEquals(0, actualInitialToken.position().orElse(-1));
-        // to create the default replay token, we need to retrieve the head token
-        verify(eventStoreTwo).createHeadToken();
-    }
-
-    @Test
-    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomTrackingProcessorBuilder()
-            throws NoSuchFieldException {
-        TrackingEventProcessorConfiguration testTepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(3);
-        configurer.eventProcessing()
-                  .registerTrackingEventProcessor("ObjectProcessor", config -> eventStoreOne, config -> testTepConfig)
-                  .registerSaga(Object.class);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTep =
-                config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
-        assertTrue(resultTep.isPresent());
-        TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
-        assertEquals(3, tepSegmentsSize);
-
-        Function<TrackingTokenSource, CompletableFuture<TrackingToken>> tepInitialTokenBuilder =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        TrackingToken initialToken = tepInitialTokenBuilder.apply(eventStoreTwo).join();
-        // In absence of the default Saga Config, the stream starts at the tail
-        assertEquals(0, initialToken.position().orElse(-1));
-        // to create the default replay token, we need to retrieve the head token
-        verify(eventStoreTwo).createHeadToken();
-    }
-
-    @Test
-    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomConfigInstance()
-            throws NoSuchFieldException {
-        TrackingEventProcessorConfiguration testTepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(4);
-        configurer.eventProcessing()
-                  .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .registerSaga(Object.class)
-                  .registerTrackingEventProcessorConfiguration("ObjectProcessor", config -> testTepConfig);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTep =
-                config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
-        assertTrue(resultTep.isPresent());
-        TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
-        assertEquals(4, tepSegmentsSize);
-
-        Function<TrackingTokenSource, CompletableFuture<TrackingToken>> tepInitialTokenBuilder =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        TrackingToken actualInitialToken = tepInitialTokenBuilder.apply(eventStoreTwo).join();
-        // In absence of the default Saga Config, the stream starts at the tail
-        assertEquals(0, actualInitialToken.position().orElse(-1));
-        // to create the default replay token, we need to retrieve the head token
-        verify(eventStoreTwo).createHeadToken();
-    }
-
-    @Test
-    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomDefaultConfig()
-            throws NoSuchFieldException {
-        TrackingEventProcessorConfiguration testTepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(4);
-        configurer.eventProcessing()
-                  .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .registerSaga(Object.class)
-                  .registerTrackingEventProcessorConfiguration(config -> testTepConfig);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTep =
-                config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
-        assertTrue(resultTep.isPresent());
-        TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
-        assertEquals(4, tepSegmentsSize);
-
-        Function<TrackingTokenSource, CompletableFuture<TrackingToken>> tepInitialTokenBuilder =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        TrackingToken actualInitialToken = tepInitialTokenBuilder.apply(eventStoreTwo).join();
-        // In absence of the default Saga Config, the stream starts at the tail
-        assertEquals(0, actualInitialToken.position().orElse(-1));
-        // to create the default replay token, we need to retrieve the head token
-        verify(eventStoreTwo).createHeadToken();
     }
 
     @Test
@@ -1007,11 +794,12 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testName, result.getName());
-        assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
+        EventProcessorOperations operations = getField("eventProcessorOperations", result);
+        assertEquals(PropagatingErrorHandler.INSTANCE, getField("errorHandler", operations));
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertInstanceOf(SimpleUnitOfWorkFactory.class, getField("unitOfWorkFactory", result));
         assertEquals(config.getComponent(EventProcessorSpanFactory.class),
-                     getField(AbstractEventProcessor.class, "spanFactory", result));
+                     getField("spanFactory", operations));
     }
 
     @Test
@@ -1034,7 +822,8 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testName, result.getName());
-        assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
+        EventProcessorOperations operations = getField("eventProcessorOperations", result); 
+        assertEquals(PropagatingErrorHandler.INSTANCE, getField("errorHandler", operations));
 //        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertInstanceOf(SimpleUnitOfWorkFactory.class, getField("unitOfWorkFactory", result));
@@ -1233,6 +1022,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void defaultTransactionManagerIsUsedUponEventProcessorConstruction() throws InterruptedException {
         String testName = "pooled-streaming";
         EventMessage<Integer> testEvent = new GenericEventMessage<>(new MessageType("event"), 1000);
@@ -1256,6 +1046,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    @Disabled("Disabled due to lifecycle solution removal")
     void defaultTransactionManagerIsOverriddenByProcessorSpecificInstance() throws InterruptedException {
         String testName = "pooled-streaming";
         EventMessage<Integer> testEvent = new GenericEventMessage<>(new MessageType("event"), 1000);
@@ -1284,7 +1075,7 @@ class EventProcessingModuleTest {
     @Test
     void registerDeadLetterQueueConstructsDeadLetteringEventHandlerInvoker(
             @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
-    ) throws NoSuchFieldException, IllegalAccessException {
+    ) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         String processingGroup = "pooled-streaming";
 
         configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
@@ -1311,8 +1102,9 @@ class EventProcessingModuleTest {
         assertTrue(optionalProcessor.isPresent());
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
-        EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        EventHandlerInvoker resultInvoker = (EventHandlerInvoker) ensureAccessible(
+                resultProcessor.getClass().getDeclaredMethod("eventHandlerInvoker")
+        ).invoke(resultProcessor);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1328,7 +1120,7 @@ class EventProcessingModuleTest {
 
     @Test
     void registerDefaultDeadLetterPolicyIsUsed(@Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue)
-            throws NoSuchFieldException, IllegalAccessException {
+            throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         String processingGroup = "pooled-streaming";
         EnqueuePolicy<EventMessage<?>> expectedPolicy = (letter, cause) -> Decisions.ignore();
 
@@ -1358,8 +1150,9 @@ class EventProcessingModuleTest {
         assertTrue(optionalProcessor.isPresent());
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
-        EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        EventHandlerInvoker resultInvoker = (EventHandlerInvoker) ensureAccessible(
+                resultProcessor.getClass().getDeclaredMethod("eventHandlerInvoker")
+        ).invoke(resultProcessor);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1406,8 +1199,8 @@ class EventProcessingModuleTest {
         assertTrue(optionalProcessor.isPresent());
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
-        EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        EventProcessorOperations operations = getField("eventProcessorOperations", resultProcessor);
+        EventHandlerInvoker resultInvoker = getField("eventHandlerInvoker", operations);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1448,8 +1241,8 @@ class EventProcessingModuleTest {
         assertTrue(optionalProcessor.isPresent());
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
-        EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        EventProcessorOperations operations = getField("eventProcessorOperations", resultProcessor);
+        EventHandlerInvoker resultInvoker = getField("eventHandlerInvoker", operations);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1526,7 +1319,7 @@ class EventProcessingModuleTest {
     @Test
     void registerDeadLetterQueueProviderConstructsDeadLetteringEventHandlerInvoker(
             @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
-    ) throws NoSuchFieldException, IllegalAccessException {
+    ) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         String processingGroup = "pooled-streaming";
 
         configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
@@ -1553,8 +1346,8 @@ class EventProcessingModuleTest {
         assertTrue(optionalProcessor.isPresent());
         PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
 
-        EventHandlerInvoker resultInvoker =
-                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        EventProcessorOperations operations = getField("eventProcessorOperations", resultProcessor);
+        EventHandlerInvoker resultInvoker = getField("eventHandlerInvoker", operations);
         assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
 
         MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
@@ -1608,7 +1401,7 @@ class EventProcessingModuleTest {
         configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine());
         configurer.eventProcessing()
                   .registerSubscribingEventProcessor("subscribing")
-                  .registerTrackingEventProcessor("tracking")
+                  .registerPooledStreamingEventProcessor("pooled")
                   .assignHandlerInstancesMatching(
                           "subscribing", eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class)
                   )

@@ -23,6 +23,6 @@ public record GiveRaise(
         @TargetEntityId
         PersonIdentifier identifier,
         Double newSalary
-) {
+) implements PersonCommand {
 
 }

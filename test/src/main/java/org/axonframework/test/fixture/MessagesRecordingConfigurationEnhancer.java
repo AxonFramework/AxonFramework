@@ -25,7 +25,14 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 
 import java.util.Objects;
 
-class MessagesRecordingConfigurationEnhancer implements ConfigurationEnhancer {
+/**
+ * ConfigurationEnhancer that registers {@link RecordingEventStore}, {@link RecordingEventSink} and
+ * {@link RecordingCommandBus}. The recorded messages can then be used to assert expectations with test cases.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
+public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {

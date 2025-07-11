@@ -16,8 +16,7 @@
 
 package org.axonframework.integrationtests.deadline;
 
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.ConfigurationScopeAwareProvider;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.SimpleDeadlineManager;
@@ -37,9 +36,9 @@ import static org.mockito.Mockito.*;
 class SimpleDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 
     @Override
-    public DeadlineManager buildDeadlineManager(LegacyConfiguration configuration) {
+    public DeadlineManager buildDeadlineManager(Configuration configuration) {
         return SimpleDeadlineManager.builder()
-                                    .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
+//                                    .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
                                     .spanFactory(configuration.getComponent(DeadlineManagerSpanFactory.class))
                                     .messageNameResolver(new ClassBasedMessageTypeResolver())
                                     .build();

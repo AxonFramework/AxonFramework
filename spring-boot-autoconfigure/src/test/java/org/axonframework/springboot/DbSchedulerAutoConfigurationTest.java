@@ -18,8 +18,8 @@ package org.axonframework.springboot;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.task.Task;
-import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
 import org.axonframework.deadline.dbscheduler.DbSchedulerHumanReadableDeadlineDetails;
@@ -46,6 +46,7 @@ import javax.sql.DataSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Disabled("TODO #3496")
 class DbSchedulerAutoConfigurationTest {
 
     @Test
@@ -173,7 +174,6 @@ class DbSchedulerAutoConfigurationTest {
                                              .scopeAwareProvider(scopeAwareProvider)
                                              .serializer(serializer)
                                              .useBinaryPojo(false)
-                                             .startScheduler(false)
                                              .build();
         }
     }

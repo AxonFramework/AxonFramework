@@ -52,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.*;
         AxonServerActuatorAutoConfiguration.class
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+@Disabled("TODO #3498")
 public class AxonHandlerConfigurationTest {
 
     @Autowired

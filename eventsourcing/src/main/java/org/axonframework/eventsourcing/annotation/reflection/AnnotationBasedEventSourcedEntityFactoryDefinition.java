@@ -23,6 +23,9 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.serialization.Converter;
+
+import java.util.Set;
 
 /**
  * Definition for an annotation-based {@link EventSourcedEntityFactory} that constructs an
@@ -42,14 +45,17 @@ public class AnnotationBasedEventSourcedEntityFactoryDefinition
     @Override
     public EventSourcedEntityFactory<Object, Object> createFactory(
             @Nonnull Class<Object> entityType,
+            @Nonnull Set<Class<? extends Object>> entitySubTypes,
             @Nonnull Class<Object> idType,
             @Nonnull Configuration configuration
     ) {
         return new AnnotationBasedEventSourcedEntityFactory<>(
                 entityType,
                 idType,
+                entitySubTypes,
                 configuration.getComponent(ParameterResolverFactory.class),
-                configuration.getComponent(MessageTypeResolver.class)
+                configuration.getComponent(MessageTypeResolver.class),
+                configuration.getComponent(Converter.class)
         );
     }
 }

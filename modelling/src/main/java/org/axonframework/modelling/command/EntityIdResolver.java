@@ -28,14 +28,14 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * This interface was changed to be able to resolve any type of entity id, not just Strings, and to have the
  * {@link ProcessingContext} available for resolving the id.
  *
- * @param <I> The type of the identifier.
+ * @param <ID> The type of the identifier.
  * @author Allard Buijze
  * @author Mitchell Herrijgers
  * @see org.axonframework.modelling.StateManager
  * @since 1.2.0
  */
 @FunctionalInterface
-public interface EntityIdResolver<I> {
+public interface EntityIdResolver<ID> {
 
     /**
      * Resolve the id of the entity from the given {@code message} and {@code context}.
@@ -45,5 +45,5 @@ public interface EntityIdResolver<I> {
      * @return The id of the entity.
      */
     @Nonnull
-    I resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context);
+    ID resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context);
 }

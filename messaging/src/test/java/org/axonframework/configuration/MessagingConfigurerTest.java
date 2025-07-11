@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -46,6 +47,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Steven van Beelen
  */
 class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingConfigurer> {
+
+    @Override
+    public MessagingConfigurer createConfigurer() {
+        return testSubject == null ? MessagingConfigurer.create() : testSubject;
+    }
 
     @Test
     void defaultComponents() {
@@ -129,7 +135,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void registerEventSinkOverridesDefault() {
-        EventSink expected = (events) -> null;
+        EventSink expected = (context, events) -> FutureUtils.emptyCompletedFuture();
 
         Configuration result = testSubject.registerEventSink(c -> expected)
                                           .build();
@@ -166,11 +172,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                            .getComponent(TestComponent.class);
 
         assertEquals(tc, result);
-    }
-
-    @Override
-    public MessagingConfigurer createConfigurer() {
-        return MessagingConfigurer.create();
     }
 
     private static class TestComponent {

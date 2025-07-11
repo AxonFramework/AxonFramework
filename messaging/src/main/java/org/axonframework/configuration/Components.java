@@ -18,6 +18,7 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
@@ -42,6 +43,7 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
+@Internal
 public class Components implements DescribableComponent {
 
     private final Map<Identifier<?>, Component<?>> components = new ConcurrentHashMap<>();
@@ -55,8 +57,8 @@ public class Components implements DescribableComponent {
      * @param identifier The identifier to retrieve a {@link Component} for.
      * @param <C>        The type of the component to retrieve.
      * @return An {@link Optional} on the {@link Component} registered under the given {@code identifier}.
-     * @throws IllegalArgumentException When multiple matching {@link Component Components} are found for the given
-     *                                  {@code identifier}.
+     * @throws AmbiguousComponentMatchException When multiple matching {@link Component Components} are found for the
+     *                                          given {@code identifier}.
      */
     @Nonnull
     public <C> Optional<Component<C>> get(@Nonnull Identifier<C> identifier) {
@@ -77,13 +79,7 @@ public class Components implements DescribableComponent {
                                                .toList();
 
         if (matches.size() > 1) {
-            throw new IllegalArgumentException(
-                    "No single instance found for type ["
-                            + identifier.type()
-                            + "] and name ["
-                            + identifier.name()
-                            + "]. Please try a more specific type-name combination."
-            );
+            throw new AmbiguousComponentMatchException(identifier);
         }
         return matches;
     }
@@ -125,13 +121,21 @@ public class Components implements DescribableComponent {
 
     /**
      * Check whether there is a {@link Component} present for the given {@code identifier}.
+     * <p>
+     * If the given {@code identifier} has a nullable {@link Identifier#name() name}, <b>all</b> identifiers of this
+     * collection trigger a match if their {@link Identifier#type() type} is assignable to the given
+     * {@code identifier's} type.
      *
      * @param identifier The identifier for which to check if there is a {@link Component} present.
      * @return {@code true} if this collection contains a {@link Component} identified by the given {@code identifier},
      * {@code false} otherwise.
      */
     public boolean contains(@Nonnull Identifier<?> identifier) {
-        return components.containsKey(identifier);
+        return identifier.name() != null
+                ? components.containsKey(identifier)
+                : components.keySet()
+                            .stream()
+                            .anyMatch(identifier::matchesType);
     }
 
     /**

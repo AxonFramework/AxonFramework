@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -29,8 +28,6 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-
-import java.util.Objects;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link EventSourcingConfigurer}.
@@ -47,36 +44,20 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
+public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
 
     @Override
     public int order() {
-        // TODO Have to lower the value, as the MessagingConfigurationDefaults currently takes over otherwise.
-        return Integer.MAX_VALUE - 1;
+        return Integer.MAX_VALUE - 10;
     }
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-        Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.");
-
-        registerIfNotPresent(registry, TagResolver.class,
-                             EventSourcingConfigurationDefaults::defaultTagResolver);
-        registerIfNotPresent(registry, EventStorageEngine.class,
-                             EventSourcingConfigurationDefaults::defaultEventStorageEngine);
-        registerIfNotPresent(registry, EventStore.class,
-                             EventSourcingConfigurationDefaults::defaultEventStore);
-        registerIfNotPresent(registry, EventSink.class,
-                             EventSourcingConfigurationDefaults::defaultEventSink);
-        registerIfNotPresent(registry, Snapshotter.class,
-                             EventSourcingConfigurationDefaults::defaultSnapshotter);
-    }
-
-    private <C> void registerIfNotPresent(ComponentRegistry registry,
-                                          Class<C> type,
-                                          ComponentBuilder<C> builder) {
-        if (!registry.hasComponent(type)) {
-            registry.registerComponent(type, builder);
-        }
+        registry.registerIfNotPresent(TagResolver.class, EventSourcingConfigurationDefaults::defaultTagResolver)
+                .registerIfNotPresent(EventStorageEngine.class,
+                                      EventSourcingConfigurationDefaults::defaultEventStorageEngine)
+                .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::defaultEventStore)
+                .registerIfNotPresent(Snapshotter.class, EventSourcingConfigurationDefaults::defaultSnapshotter);
     }
 
     private static TagResolver defaultTagResolver(Configuration configuration) {

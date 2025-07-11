@@ -1,24 +1,17 @@
-org.axonframework.springboot.autoconfig.AvroSerializerAutoConfiguration
+#
+# Copyright (c) 2010-2025. Axon Framework
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 org.axonframework.springboot.autoconfig.AxonAutoConfiguration
-org.axonframework.springboot.autoconfig.AxonTimeoutAutoConfiguration
-org.axonframework.springboot.autoconfig.AxonDbSchedulerAutoConfiguration
-org.axonframework.springboot.autoconfig.AxonJobRunrAutoConfiguration
-org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration
-org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration
-org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration
-org.axonframework.springboot.autoconfig.AxonTracingAutoConfiguration
-org.axonframework.springboot.autoconfig.EventProcessingAutoConfiguration
-org.axonframework.springboot.autoconfig.InfraConfiguration
-org.axonframework.springboot.autoconfig.InterceptorAutoConfiguration
-org.axonframework.springboot.autoconfig.JdbcAutoConfiguration
-org.axonframework.springboot.autoconfig.JpaAutoConfiguration
-org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration
-org.axonframework.springboot.autoconfig.MetricsAutoConfiguration
-org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration
-org.axonframework.springboot.autoconfig.NoOpTransactionAutoConfiguration
-org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration
-org.axonframework.springboot.autoconfig.CBORMapperAutoConfiguration
-org.axonframework.springboot.autoconfig.OpenTelemetryAutoConfiguration
-org.axonframework.springboot.autoconfig.SecurityAutoConfiguration
-org.axonframework.springboot.autoconfig.TransactionAutoConfiguration
-org.axonframework.springboot.autoconfig.XStreamAutoConfiguration

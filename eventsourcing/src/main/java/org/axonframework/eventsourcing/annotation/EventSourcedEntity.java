@@ -16,11 +16,19 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.reflection.AnnotationBasedEventSourcedEntityFactoryDefinition;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
+import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
+import org.axonframework.modelling.entity.EntityCommandHandler;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityIdResolverDefinition;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -29,13 +37,12 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to configure several aspects of an event-sourced entity. This annotation is required to construct an
- * annotation-based entity through the
- * {@link org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder#annotatedEntity(Class, Class)}.
- * <p>
- * While loading the entity from the {@link EventSourcingRepository}, the provided {@code id} needs to be
- * translated to an {@link EventCriteria} instance to load the correct events. Unless overridden, this translation is
- * done by the {@link AnnotationBasedEventCriteriaResolver}. So, {@link EventCriteria} will be resolved in the following
- * order:
+ * annotation-based entity through the {@link EventSourcedEntityModule#annotated(Class, Class)}.
+ *
+ * <h2>Event Criteria</h2>
+ * While loading the entity from the {@link EventSourcingRepository}, the provided {@code id} needs to be translated to
+ * an {@link EventCriteria} instance to load the correct events. Unless overridden, this translation is done by the
+ * {@link AnnotationBasedEventCriteriaResolver}. The {@link EventCriteria} will be resolved in the following order:
  * <ol>
  *     <li>
  *         Using the custom {@link #criteriaResolverDefinition()}. The definition should return a {@link CriteriaResolver},
@@ -49,23 +56,50 @@ import java.lang.annotation.Target;
  *         parameter to resolve the type of the message. Other arguments are not supported.
  *     </li>
  *     <li>
- *         If no matching {@link EventCriteriaBuilder} is found, the {@link EventSourcedEntity#tagKey()} will be used as the tag key, and the {@link Object#toString()} of the id will be used as value.
+ *         If no matching {@link EventCriteriaBuilder} is found, the {@link EventSourcedEntity#tagKey()} will be used as
+ *         the tag key, and the {@link Object#toString()} of the id will be used as value.
  *     </li>
  *     <li>
- *         If the {@link EventSourcedEntity#tagKey()} is empty, the {@link Class#getSimpleName()} of the entity will be used as tag key, and the {@link Object#toString()} of the id will be used as value.
- *         Note that the tag format rules are undecided until <a href="https://github.com/AxonFramework/AxonFramework/issues/3326">issue 3326/a> is resolved. This may change in the future.
+ *         If the {@link EventSourcedEntity#tagKey()} is empty, the {@link Class#getSimpleName()} of the entity will be
+ *         used as the key, and the {@link Object#toString()} of the id will be used as value.
  *     </li>
  * </ol>
  *
+ * <h2>Entity Factory</h2>
+ * Event-sourced entities need to be instantiated before they can be evolved based on past events. The
+ * {@link EventSourcedEntityFactory} is responsible for creating a new instance of the entity.
+ * By default, this is done based on constructors or static methods annotated with {@link EntityCreator}.
+ * These creators can take the payload or message of the first event, or the entity id as a parameter.
+ * For more information, see the examples in the Javadoc of the annotation.
+ *
+ * <h2>Command handling</h2>
+ * Entities can declare {@link org.axonframework.commandhandling.annotation.CommandHandler}-annotated methods
+ * to execute a command on the entity. When a command targets an entity, the following steps are taken:
+ * <ol>
+ *     <li>The {@link org.axonframework.modelling.entity.EntityCommandHandlingComponent} will use the
+ *     {@link EntityIdResolverDefinition} to resolve the entity id from the command message.</li>
+ *     <li>The entity id is used to resolve the {@link EventCriteria} for the entity, as described above.</li>
+ *     <li>The {@link EventSourcedEntityFactory} is used to create a new instance of the entity by the {@link EventSourcingRepository}.</li>
+ *     <li>Existing events for the entity are used to {@link org.axonframework.modelling.EntityEvolver evolve} the entity.</li>
+ *     <li>The command is called on the entity in case of a
+ *     {@link org.axonframework.modelling.entity.EntityMetamodelBuilder#instanceCommandHandler(QualifiedName, EntityCommandHandler) instance command handler},
+ *     or on the {@link org.axonframework.modelling.entity.EntityMetamodelBuilder#creationalCommandHandler(QualifiedName, CommandHandler) creational command handler}
+ *     if it did not exist.
+ *     </li>
+ * </ol>
  * <p>
- * The {@link #entityFactoryDefinition()} is used to create a new instance of the entity. The provided class should implement the
- * {@link EventSourcedEntityFactory} interface, and have a no-arg constructor, or a 1-arg constructor with the {@link Class} of the entity as parameter.
- * By default, the {@link ConstructorBasedEventSourcedEntityFactory} is used, which creates a new instance using the
- * no-arg constructor of the entity class, or a 1-arg constructor with the id as parameter.
+ * By default, the id is resolved using the {@link AnnotationBasedEntityIdResolver}, which resolves the
+ * id based on the {@link org.axonframework.modelling.annotation.TargetEntityId} annotation on a field or method
+ * of the command payload. You can customize this behavior by providing a custom {@link #entityIdResolverDefinition()}.
+ *
+ * <h2>Polymorphic entities</h2>
+ * Polymorphic entities are entities that can have multiple concrete types, and the type of the entity is determined
+ * by the payload of the first event. In this case, the {@link EventSourcedEntity#concreteTypes()} should be
+ * specified with the concrete types of the entity.
  *
  * @author Mitchell Herrijgers
- * @see EventSourcingRepository
- * @see CriteriaResolver
+ * @see EntityCreator
+ * @see EventCriteriaBuilder
  * @see AnnotationBasedEventCriteriaResolver
  * @see EventCriteriaBuilder
  * @see EventSourcedEntityFactory
@@ -88,6 +122,15 @@ public @interface EventSourcedEntity {
     String tagKey() default "";
 
     /**
+     * If the entity is a polymorphic entity, any subclasses that should be considered concrete types of the entity
+     * should be specified here. Classes that are not specified here will not be scanned.
+     *
+     * @return The concrete types of the entity that should be considered when building the
+     * {@link org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel}.
+     */
+    Class<?>[] concreteTypes() default {};
+
+    /**
      * The definition of the {@link CriteriaResolver} to use to resolve the {@link EventCriteria} for the entity. A
      * custom definition can be provided to override the default behavior of the
      * {@link AnnotationBasedEventCriteriaResolver}.
@@ -104,4 +147,15 @@ public @interface EventSourcedEntity {
      * @return The definition to construct an {@link EventSourcedEntityFactory}.
      */
     Class<? extends EventSourcedEntityFactoryDefinition> entityFactoryDefinition() default AnnotationBasedEventSourcedEntityFactoryDefinition.class;
+
+    /**
+     * The definition of the {@link EntityIdResolverDefinition} to use to resolve the entity id from a
+     * {@link org.axonframework.commandhandling.CommandMessage command message}. Defaults to the
+     * {@link AnnotatedEntityIdResolverDefinition}, which resolves the entity id based on the
+     * {@link org.axonframework.modelling.annotation.TargetEntityId} annotation on a payload field or method, after
+     * converting the payload to the representation wanted by the entity.
+     *
+     * @return The definition to construct an {@link EntityIdResolverDefinition}.
+     */
+    Class<? extends EntityIdResolverDefinition> entityIdResolverDefinition() default AnnotatedEntityIdResolverDefinition.class;
 }

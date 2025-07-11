@@ -61,7 +61,7 @@ import org.springframework.context.annotation.Primary;
  */
 @AutoConfiguration
 @AutoConfigureAfter(AxonServerAutoConfiguration.class)
-@AutoConfigureBefore(AxonAutoConfiguration.class)
+@AutoConfigureBefore(LegacyAxonAutoConfiguration.class)
 @ConditionalOnClass(AxonServerConfiguration.class)
 @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
 public class AxonServerBusAutoConfiguration {

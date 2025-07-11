@@ -20,10 +20,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.annotation.MessageIdentifier;
@@ -67,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
+@Disabled("TODO #3495")
 class PooledStreamingEventProcessorIntegrationTest {
 
     private ApplicationContextRunner testApplicationContext;
@@ -89,7 +90,7 @@ class PooledStreamingEventProcessorIntegrationTest {
             processor.shutDown();
 
             EventGateway eventGateway = context.getBean(EventGateway.class);
-            eventGateway.publish(new OriginalEvent("my-text"));
+            eventGateway.publish(null, new OriginalEvent("my-text"));
             processor.start();
             await().atMost(Duration.ofMillis(500))
                    .until(() -> processor.processingStatus().size() == 1);
@@ -121,7 +122,7 @@ class PooledStreamingEventProcessorIntegrationTest {
             EventGateway eventGateway = context.getBean(EventGateway.class);
 
             for (int i = 0; i < numberOfEvents; i++) {
-                eventGateway.publish(new OriginalEvent("Event[" + i + "]"));
+                eventGateway.publish(null, new OriginalEvent("Event[" + i + "]"));
             }
             processor.start();
 

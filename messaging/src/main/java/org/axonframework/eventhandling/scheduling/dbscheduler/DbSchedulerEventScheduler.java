@@ -33,7 +33,6 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
-import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
@@ -66,7 +65,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @since 4.8.0
  */
 @SuppressWarnings("Duplicates")
-public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
+public class DbSchedulerEventScheduler implements EventScheduler {
 
     private static final Logger logger = getLogger(DbSchedulerEventScheduler.class);
     private static final TaskWithDataDescriptor<DbSchedulerHumanReadableEventData> humanReadableTaskDescriptor =
@@ -321,12 +320,6 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         if (isShutdown.compareAndSet(false, true) && stopScheduler) {
             scheduler.stop();
         }
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-        lifecycle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
-        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
     }
 
     @SuppressWarnings("rawtypes")

@@ -16,9 +16,10 @@
 
 package org.axonframework.spring.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.stereotype.Aggregate;
@@ -38,7 +39,6 @@ import org.springframework.core.ResolvableType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
@@ -52,6 +52,7 @@ import static org.springframework.core.ResolvableType.forClassWithGenerics;
  * @author Allard Buijze
  * @since 4.6.0
  */
+// TODO #3499 Fix as part of referred to issue
 public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAggregateLookup.class);
@@ -230,7 +231,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
                         repositoryName,
                         BeanDefinitionBuilder.rootBeanDefinition(BeanHelper.class)
                                              .addConstructorArgValue(aggregateType)
-                                             .addConstructorArgValue(new RuntimeBeanReference(LegacyConfiguration.class))
+                                             .addConstructorArgValue(new RuntimeBeanReference(Configuration.class))
                                              .setFactoryMethod("repository")
                                              .applyCustomizers(bd -> {
                                                  ResolvableType resolvableRepositoryType =

@@ -26,6 +26,7 @@ import org.axonframework.integrationtests.testsuite.administration.common.Person
 import org.axonframework.integrationtests.testsuite.administration.events.EmailAddressChanged;
 import org.axonframework.integrationtests.testsuite.administration.events.EmployeeCreated;
 import org.axonframework.integrationtests.testsuite.administration.events.TaskAssigned;
+import org.axonframework.modelling.entity.annotation.EntityMember;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,9 @@ import java.util.stream.Collectors;
 public record ImmutableEmployee(
         PersonIdentifier identifier,
         String emailAddress,
+        @EntityMember
         ImmutableSalaryInformation salaryInformation,
+        @EntityMember(routingKey = "taskId")
         List<ImmutableTask> taskList
 ) implements ImmutablePerson {
 
@@ -95,7 +98,6 @@ public record ImmutableEmployee(
         return taskList;
     }
 
-    @EventSourcingHandler
     public ImmutableEmployee evolveTaskList(
             List<ImmutableTask> taskList) {
         return new ImmutableEmployee(
@@ -115,6 +117,7 @@ public record ImmutableEmployee(
                 taskList
         );
     }
+
     public ImmutableEmployee evolveSalaryInformation(ImmutableSalaryInformation immutableSalaryInformation) {
         return new ImmutableEmployee(
                 identifier,

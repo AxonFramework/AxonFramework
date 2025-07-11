@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import jakarta.annotation.Nonnull;
+import  jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -24,7 +24,6 @@ import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.Context.ResourceKey;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.repository.ManagedEntity;
@@ -178,16 +177,6 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
             updateActiveEntity(sourcedEntity, processingContext);
             return CompletableFuture.completedFuture(sourcedEntity);
         }).resultNow();
-    }
-
-    private void createInitialEntityStateBasedOnEvent(ID identifier, EventSourcedEntity<ID, E> entity,
-                                                      MessageStream.Entry<? extends EventMessage<?>> entry,
-                                                      ProcessingContext context) {
-        E createdEntity = entityFactory.create(identifier, entry.message(), context);
-        if (createdEntity == null) {
-            throw new EntityMissingAfterFirstEventException(identifier);
-        }
-        entity.applyStateChange(e -> createdEntity);
     }
 
     private void updateActiveEntity(EventSourcedEntity<ID, E> entity, ProcessingContext processingContext,

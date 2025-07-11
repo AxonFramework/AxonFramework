@@ -28,6 +28,7 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerRegistration;
@@ -48,8 +49,6 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.StringUtils;
-import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.Distributed;
@@ -108,7 +107,6 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -121,7 +119,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Marc Gathier
  * @since 4.0
  */
-public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Lifecycle {
+public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -231,13 +229,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
      */
     public static Builder builder() {
         return new Builder();
-    }
-
-    @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
-        lifecycle.onStart(Phase.INBOUND_QUERY_CONNECTOR, this::start);
-        lifecycle.onShutdown(Phase.INBOUND_QUERY_CONNECTOR, this::disconnect);
-        lifecycle.onShutdown(Phase.OUTBOUND_QUERY_CONNECTORS, this::shutdownDispatching);
     }
 
     /**

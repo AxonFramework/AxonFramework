@@ -31,7 +31,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
+import static org.axonframework.eventhandling.DomainEventTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -54,7 +54,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
     public void uniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
                 AggregateStreamCreationException.class,
-                () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 0), createEvent("id", "otherAggregate", 0))
+                () -> testSubject.appendEvents(createDomainEvent("id", AGGREGATE, 0), createDomainEvent("id", "otherAggregate", 0))
         );
     }
 
@@ -62,7 +62,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
     public void uniqueKeyConstraintOnEventIdentifier() {
         assertThrows(
                 ConcurrencyException.class,
-                () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 1), createEvent("id", "otherAggregate", 1))
+                () -> testSubject.appendEvents(createDomainEvent("id", AGGREGATE, 1), createDomainEvent("id", "otherAggregate", 1))
         );
     }
 
@@ -77,7 +77,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
         //noinspection unchecked
         testSubject = createEngine(engineBuilder -> (EB) engineBuilder.upcasterChain(mockUpcasterChain));
 
-        testSubject.appendEvents(createEvents(4));
+        testSubject.appendEvents(createDomainEvents(4));
         List<DomainEventMessage<?>> upcastedEvents = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
         assertEquals(8, upcastedEvents.size());
 
@@ -95,7 +95,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
     public void storeDuplicateFirstEventWithExceptionTranslatorThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
                 AggregateStreamCreationException.class,
-                () -> testSubject.appendEvents(createEvent(0), createEvent(0))
+                () -> testSubject.appendEvents(createDomainEvent(0), createDomainEvent(0))
         );
     }
 
@@ -103,7 +103,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
     public void storeDuplicateEventWithExceptionTranslator() {
         assertThrows(
                 ConcurrencyException.class,
-                () -> testSubject.appendEvents(createEvent(1), createEvent(1))
+                () -> testSubject.appendEvents(createDomainEvent(1), createDomainEvent(1))
         );
     }
 
@@ -113,7 +113,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
         testSubject = createEngine(engineBuilder -> (EB) engineBuilder.persistenceExceptionResolver(e -> false));
         assertThrows(
                 EventStoreException.class,
-                () -> testSubject.appendEvents(createEvent(0), createEvent(0))
+                () -> testSubject.appendEvents(createDomainEvent(0), createDomainEvent(0))
         );
     }
 
@@ -124,7 +124,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
         //noinspection unchecked
         testSubject = createEngine(builder -> (EB) builder.snapshotFilter(allowAll));
 
-        testSubject.storeSnapshot(createEvent(1));
+        testSubject.storeSnapshot(createDomainEvent(1));
         assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
     }
 
@@ -135,7 +135,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
         //noinspection unchecked
         testSubject = createEngine(builder -> (EB) builder.snapshotFilter(rejectAll));
 
-        testSubject.storeSnapshot(createEvent(1));
+        testSubject.storeSnapshot(createDomainEvent(1));
         assertFalse(testSubject.readSnapshot(AGGREGATE).isPresent());
     }
 
@@ -146,7 +146,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
         //noinspection unchecked
         testSubject = createEngine(builder -> (EB) builder.snapshotFilter(combinedFilter));
 
-        testSubject.storeSnapshot(createEvent(1));
+        testSubject.storeSnapshot(createDomainEvent(1));
         assertFalse(testSubject.readSnapshot(AGGREGATE).isPresent());
     }
 

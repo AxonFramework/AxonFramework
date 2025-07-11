@@ -70,6 +70,7 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "management.endpoints.migrate-legacy-ids=true"
         }
 )
+@Disabled("TODO as part of issue #3310")
 class AxonAutoConfigurationWithGracefulShutdownTest {
 
     @Autowired

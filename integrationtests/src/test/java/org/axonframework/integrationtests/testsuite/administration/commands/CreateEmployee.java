@@ -25,6 +25,6 @@ public record CreateEmployee(
         String emailAddress,
         String role,
         Double initialSalary
-) {
+)  implements PersonCommand {
 
 }

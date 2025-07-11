@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Event-sourced Student model
+ * Event-sourced Student entity
  */
 public class Student {
 

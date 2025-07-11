@@ -19,14 +19,15 @@ package org.axonframework.eventhandling.pooled;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorBuilder;
+import org.axonframework.eventhandling.EventProcessorOperations;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -39,8 +40,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -53,6 +53,7 @@ import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,7 +80,7 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * This approach utilizes two threads pools. One to retrieve the events to provide them to the work packages and another
  * to actual handle the events. Respectively, the coordinator thread pool and the work package thread pool. It is this
  * approach which allows for greater parallelization and processing speed than the
- * {@link org.axonframework.eventhandling.TrackingEventProcessor}.
+ * TrackingEventProcessor (removed in 5.0.0).
  * <p>
  * If no {@link TrackingToken}s are present for this processor, the {@code PooledStreamingEventProcessor} will
  * initialize them in a given segment count. By default, it will create {@code 16} segments, which can be configured
@@ -89,11 +90,11 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class PooledStreamingEventProcessor extends AbstractEventProcessor
-        implements StreamingEventProcessor, Lifecycle {
+public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+    private final EventProcessorOperations eventProcessorOperations;
     private final String name;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final TokenStore tokenStore;
@@ -111,7 +112,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
 
     /**
-     * Instantiate a {@link PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert the following for their presence prior to constructing this processor:
      * <ul>
@@ -125,10 +126,18 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      * </ul>
      * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link PooledStreamingEventProcessor} instance
+     * @param builder the {@link Builder} used to instantiate a {@code PooledStreamingEventProcessor} instance
      */
-    protected PooledStreamingEventProcessor(PooledStreamingEventProcessor.Builder builder) {
-        super(builder);
+    protected PooledStreamingEventProcessor(Builder builder) {
+        builder.validate();
+        this.eventProcessorOperations = new EventProcessorOperations.Builder()
+                .name(builder.name())
+                .eventHandlerInvoker(builder.eventHandlerInvoker())
+                .errorHandler(builder.errorHandler())
+                .spanFactory(builder.spanFactory())
+                .messageMonitor(builder.messageMonitor())
+                .streamingProcessor(true)
+                .build();
         this.name = builder.name();
         this.eventSource = builder.eventSource;
         this.tokenStore = builder.tokenStore;
@@ -150,8 +159,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
                                       .unitOfWorkFactory(unitOfWorkFactory)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
-                                      .eventFilter(event -> canHandleType(event.getPayloadType()))
-                                      .onMessageIgnored(this::reportIgnored)
+                                      .eventFilter(event -> eventProcessorOperations.canHandleType(event.getPayloadType()))
+                                      .onMessageIgnored(eventProcessorOperations::reportIgnored)
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
                                       .claimExtensionThreshold(claimExtensionThreshold)
@@ -165,7 +174,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link PooledStreamingEventProcessor}.
+     * Instantiate a Builder to be able to create a {@code PooledStreamingEventProcessor}.
      * <p>
      * Upon initialization of this builder, the following fields are defaulted:
      * <ul>
@@ -191,16 +200,24 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      *
-     * @return a Builder to be able to create a {@link PooledStreamingEventProcessor}
+     * @return a Builder to be able to create a {@code PooledStreamingEventProcessor}
      */
     public static Builder builder() {
         return new Builder();
     }
 
     @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
-        handle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
-        handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdownAsync);
+    public String getName() {
+        return eventProcessorOperations.name();
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        return eventProcessorOperations.handlerInterceptors();
+    }
+
+    private EventHandlerInvoker eventHandlerInvoker() {
+        return eventProcessorOperations.eventHandlerInvoker();
     }
 
     @Override
@@ -367,7 +384,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (eventMessages, unitOfWork, processingSegments) -> processInUnitOfWork(
+        WorkPackage.BatchProcessor batchProcessor = (eventMessages, unitOfWork, processingSegments) -> eventProcessorOperations.processInUnitOfWork(
                 eventMessages,
                 unitOfWork,
                 processingSegments
@@ -377,7 +394,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
                           .tokenStore(tokenStore)
                           .unitOfWorkFactory(unitOfWorkFactory)
                           .executorService(workerExecutor)
-                          .eventFilter(this::canHandle)
+                          .eventFilter(eventProcessorOperations::canHandle)
                           .batchProcessor(batchProcessor)
                           .segment(segment)
                           .initialToken(initialToken)
@@ -418,6 +435,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         processingStatus.computeIfPresent(segmentId, (s, ts) -> segmentUpdater.apply(ts));
     }
 
+    @Override
+    public Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
+        return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
+    }
+
     /**
      * Builder class to instantiate a {@link PooledStreamingEventProcessor}.
      * <p>
@@ -447,7 +470,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      */
-    public static class Builder extends AbstractEventProcessor.Builder {
+    public static class Builder extends EventProcessorBuilder {
 
         private StreamableEventSource<? extends EventMessage<?>> eventSource;
         private TokenStore tokenStore;
@@ -784,5 +807,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
         public String name() {
             return name;
         }
+
     }
 }
