@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.gateway;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
+import org.axonframework.serialization.ConversionException;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -49,8 +50,19 @@ public interface CommandResult {
      */
     default <R> CompletableFuture<R> resultAs(@Nonnull Class<R> type) {
         requireNonNull(type, "The result type must not be null");
-        return getResultMessage().thenApply(Message::getPayload)
-                                 .thenApply(type::cast);
+        return getResultMessage().thenApply(r -> {
+            if (r == null || r.getPayload() == null) {
+                return null;
+            }
+            if (type.isInstance(r.getPayload())) {
+                return type.cast(r.getPayload());
+            }
+            throw new ConversionException(
+                    String.format("Expected result of type [%s] in the CommandResult, but got [%s]",
+                                  type.getName(),
+                                  r.getPayload().getClass().getName())
+            );
+        });
     }
 
     /**

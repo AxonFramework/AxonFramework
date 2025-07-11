@@ -25,9 +25,15 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.util.PriorityRunnable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Implementation of a {@code CommandBus} that is aware of multiple instances of a {@code CommandBus} working together
@@ -36,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
  * Each "physical" {@code CommandBus} instance is considered a "segment" of a conceptual distributed
  * {@code CommandBus}.
  * <p>
- * The {@code DistributedCommandBus} relies on a {@link Connector} to dispatch commands and replies to different
+ * The {@code DistributedCommandBus} relies on a {@link CommandBusConnector} to dispatch commands and replies to different
  * segments of the {@code CommandBus}. Depending on the implementation used, each segment may run in a different JVM.
  *
  * @author Allard Buijze
@@ -44,8 +50,11 @@ import java.util.concurrent.CompletableFuture;
  */
 public class DistributedCommandBus implements CommandBus {
 
+    private final Logger logger = LoggerFactory.getLogger(DistributedCommandBus.class);
     private final CommandBus delegate;
-    private final Connector connector;
+    private final CommandBusConnector connector;
+    private final int loadFactor;
+    private final ExecutorService executorService;
 
     /**
      * Constructs a {@code DistributedCommandBus} using the given {@code delegate} for
@@ -54,27 +63,25 @@ public class DistributedCommandBus implements CommandBus {
      *
      * @param delegate  The delegate {@code CommandBus} used to subscribe handlers too.
      * @param connector The {@code Connector} to use to reschedule failed commands.
+     * @param configuration The {@code DistributedCommandBusConfiguration} containing the load factor for this bus.
      */
     public DistributedCommandBus(@Nonnull CommandBus delegate,
-                                 @Nonnull Connector connector) {
-        this.delegate = Objects.requireNonNull(delegate, "Given CommandBus delegate cannot be null.");
-        this.connector = Objects.requireNonNull(connector, "Given Connector cannot be null.");
-        connector.onIncomingCommand((command, callback) -> delegate.dispatch(command, null)
-                                                                   .whenComplete((chr, e) -> {
-                                                                       if (e == null) {
-                                                                           callback.success(chr);
-                                                                       } else {
-                                                                           callback.error(e);
-                                                                       }
-                                                                   }));
+                                 @Nonnull CommandBusConnector connector,
+                                 @Nonnull DistributedCommandBusConfiguration configuration) {
+        this.delegate = Objects.requireNonNull(delegate, "The given CommandBus delegate cannot be null.");
+        this.connector = Objects.requireNonNull(connector, "The given Connector cannot be null.");
+        this.loadFactor = configuration.getLoadFactor();
+        this.executorService = configuration.getExecutorServiceFactory()
+                                            .createExecutorService(configuration, new PriorityBlockingQueue<>(1000));
+        connector.onIncomingCommand(new DistributedHandler());
     }
 
     @Override
     public DistributedCommandBus subscribe(@Nonnull QualifiedName name,
                                            @Nonnull CommandHandler handler) {
-        CommandHandler commandHandler = Objects.requireNonNull(handler, "Given handler cannot be null.");
+        CommandHandler commandHandler = Objects.requireNonNull(handler, "The given handler cannot be null.");
         delegate.subscribe(name, commandHandler);
-        connector.subscribe(name.toString(), 100);
+        connector.subscribe(name.toString(), loadFactor);
         return this;
     }
 
@@ -88,5 +95,49 @@ public class DistributedCommandBus implements CommandBus {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("connector", connector);
+    }
+
+    private class DistributedHandler implements CommandBusConnector.Handler {
+
+        private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
+
+        @Override
+        public void handle(CommandMessage<?> commandMessage, int priority,
+                           CommandBusConnector.ResultCallback callback) {
+            logger.debug("Received command [{}] for processing with priority [{}]", commandMessage.type(), priority);
+            long sequence = TASK_SEQUENCE.incrementAndGet();
+            executorService.submit(new PriorityRunnable(() -> {
+                doHandleCommand(commandMessage, priority, callback);
+            }, priority, sequence));
+        }
+
+        private void doHandleCommand(CommandMessage<?> commandMessage, int priority,
+                                     CommandBusConnector.ResultCallback callback) {
+            logger.info("Processing incoming command [{}] with priority [{}]", commandMessage.type(), priority);
+            delegate.dispatch(commandMessage, null).whenComplete((resultMessage, e) -> {
+                try {
+                    if (e == null) {
+                        handleSuccess(commandMessage, callback, resultMessage);
+                    } else {
+                        handleError(commandMessage, callback, e);
+                    }
+                } catch (Throwable ex) {
+                    logger.error("Error handling response of command [{}]", commandMessage.type(), ex);
+                    handleError(commandMessage, callback, ex);
+                }
+            });
+        }
+
+        private void handleError(CommandMessage<?> commandMessage, CommandBusConnector.ResultCallback callback,
+                                 Throwable e) {
+            logger.error("Error processing incoming command [{}]", commandMessage.type(), e);
+            callback.error(e);
+        }
+
+        private void handleSuccess(CommandMessage<?> commandMessage, CommandBusConnector.ResultCallback callback,
+                                   CommandResultMessage<?> resultMessage) {
+            logger.debug("Successfully processed command [{}] with result [{}]", commandMessage.type(), resultMessage);
+            callback.success(resultMessage);
+        }
     }
 }

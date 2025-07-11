@@ -27,22 +27,22 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link ServerConnectorConfigurationEnhancer}.
+ * Test class validating the {@link AxonServerConfigurationEnhancer}.
  *
  * @author Allard Buijze
  */
 class ServerConnectorConfigurationEnhancerTest {
 
-    private ServerConnectorConfigurationEnhancer testSubject;
+    private AxonServerConfigurationEnhancer testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new ServerConnectorConfigurationEnhancer();
+        testSubject = new AxonServerConfigurationEnhancer();
     }
 
     @Test
     void orderEqualsEnhancersConstant() {
-        assertEquals(ServerConnectorConfigurationEnhancer.ENHANCER_ORDER, testSubject.order());
+        assertEquals(AxonServerConfigurationEnhancer.ENHANCER_ORDER, testSubject.order());
     }
 
     @Test
