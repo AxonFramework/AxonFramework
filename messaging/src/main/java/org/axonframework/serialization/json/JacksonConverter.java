@@ -18,6 +18,7 @@ package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.serialization.ConversionException;
@@ -61,6 +62,7 @@ public class JacksonConverter implements Converter {
      */
     public JacksonConverter(@Nonnull ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
+        this.objectMapper.registerModule(new JavaTimeModule());
     }
 
     @Override
