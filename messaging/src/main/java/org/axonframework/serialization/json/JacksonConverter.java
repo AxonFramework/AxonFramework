@@ -20,14 +20,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * A {@link Converter} implementation that uses Jackson's {@link com.fasterxml.jackson.databind.ObjectMapper} to convert
@@ -35,16 +34,6 @@ import java.nio.charset.StandardCharsets;
  * <p>
  * Although the Jackson {@code Converter} requires classes to be compatible with this specific serializer, it provides
  * much more compact serialization, while still being human-readable.
- *
- *
- * Converter implementation using Jackson for object serialization and deserialization.
- * <p>
- * This converter provides robust and maintainable format handling for event payloads and other objects,
- * using Jackson for transformation between object and wire formats (such as JSON in String or byte[] form).
- * <p>
- * Intended for use with Axon Framework event storage and messaging, ensuring consistent payload
- * transformation between object and wire formats. Users may provide a custom-configured {@link ObjectMapper}
- * or use the default.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -58,17 +47,17 @@ public class JacksonConverter implements Converter {
     private final ObjectMapper objectMapper;
 
     /**
-     * Constructs a JacksonFacultyEventConverter with a default ObjectMapper.
-     * The default mapper does not register any custom serializers or deserializers.
+     * Constructs a {@code JacksonConverter} with a default {@link ObjectMapper} that
+     * {@link ObjectMapper#findAndRegisterModules() finds and registers known modules}.
      */
     public JacksonConverter() {
         this(new ObjectMapper().findAndRegisterModules());
     }
 
     /**
-     * Constructs a JacksonFacultyEventConverter with a user-provided ObjectMapper.
+     * Constructs a {@code JacksonConverter} with the given {@code objectMapper}.
      *
-     * @param objectMapper The ObjectMapper to use for serialization/deserialization.
+     * @param objectMapper The mapper used to convert objects into and from a JSON format.
      */
     public JacksonConverter(@Nonnull ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
@@ -76,7 +65,9 @@ public class JacksonConverter implements Converter {
 
     @Override
     public boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType) {
-        return sourceType.equals(targetType) || canSerialize(targetType) || canDeserialize(sourceType);
+        return sourceType.equals(targetType)
+                || canSerialize(targetType)
+                || canDeserialize(sourceType);
     }
 
     private static boolean canSerialize(Class<?> targetType) {
@@ -101,21 +92,20 @@ public class JacksonConverter implements Converter {
         try {
             return performConversion(input, sourceType, targetType);
         } catch (JsonProcessingException e) {
-            var errorMessage = """
-                Failed to convert between %s and %s: %s
-                """.formatted(sourceType.getSimpleName(), targetType.getSimpleName(), e.getMessage());
-            logger.error(errorMessage, e);
-            throw new ConversionException(errorMessage, e);
+            String message = """
+                    Failed to convert between %s and %s: %s
+                    """.formatted(sourceType.getSimpleName(), targetType.getSimpleName(), e.getMessage());
+            logger.error(message, e);
+            throw new ConversionException(message, e);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private <S, T> T performConversion(S input, Class<S> sourceType, Class<T> targetType)
-            throws JsonProcessingException {
-
-        // Handle serialization: event -> byte[] or String
+    private <S, T> T performConversion(S input,
+                                       Class<S> sourceType,
+                                       Class<T> targetType) throws JsonProcessingException {
         if (canSerialize(targetType)) {
-            var json = objectMapper.writeValueAsString(input);
+            String json = objectMapper.writeValueAsString(input);
             return switch (targetType.getName()) {
                 case "[B" -> (T) json.getBytes(StandardCharsets.UTF_8); // byte[]
                 case "java.lang.String" -> (T) json;
@@ -123,28 +113,11 @@ public class JacksonConverter implements Converter {
             };
         }
 
-        // Handle deserialization: byte[] or String -> event
         var jsonInput = switch (input) {
             case byte[] bytes -> new String(bytes, StandardCharsets.UTF_8);
             case String str -> str;
             default -> throw new IllegalArgumentException("Unsupported source type: " + sourceType);
         };
-
         return objectMapper.readValue(jsonInput, targetType);
-    }
-
-    /**
-     * Custom exception for conversion failures.
-     */
-    public static final class ConversionException extends RuntimeException {
-
-        /**
-         * Constructs a new ConversionException with the specified detail message.
-         * @param message The detail message.
-         * @param cause The cause of the exception.
-         */
-        public ConversionException(String message, Throwable cause) {
-            super(message, cause);
-        }
     }
 }
