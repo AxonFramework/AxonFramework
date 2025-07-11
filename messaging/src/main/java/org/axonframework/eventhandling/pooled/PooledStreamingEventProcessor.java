@@ -39,9 +39,11 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -55,6 +57,8 @@ import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -78,8 +82,8 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * <p>
  * This approach utilizes two threads pools. One to retrieve the events to provide them to the work packages and another
  * to actual handle the events. Respectively, the coordinator thread pool and the work package thread pool. It is this
- * approach which allows for greater parallelization and processing speed than the
- * TrackingEventProcessor (removed in 5.0.0).
+ * approach which allows for greater parallelization and processing speed than the TrackingEventProcessor (removed in
+ * 5.0.0).
  * <p>
  * If no {@link TrackingToken}s are present for this processor, the {@code PooledStreamingEventProcessor} will
  * initialize them in a given segment count. By default, it will create {@code 16} segments, which can be configured
@@ -129,9 +133,10 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      */
     protected PooledStreamingEventProcessor(Builder builder) {
         builder.validate();
+        var eventHandlingComponent = builder.eventHandlingComponent();
         this.eventProcessorOperations = new EventProcessorOperations.Builder()
                 .name(builder.name())
-                .eventHandlingComponent(builder.eventHandlingComponent())
+                .eventHandlingComponent(eventHandlingComponent)
                 .errorHandler(builder.errorHandler())
                 .spanFactory(builder.spanFactory())
                 .messageMonitor(builder.messageMonitor())
@@ -151,6 +156,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         this.batchSize = builder.batchSize;
         this.clock = builder.clock;
 
+        var supportedEvents = eventHandlingComponent.supportedEvents();
+        var eventCriteria = Objects.requireNonNull(
+                builder.eventCriteria.apply(supportedEvents),
+                "EventCriteria builder function must not return null"
+        );
         this.coordinator = Coordinator.builder()
                                       .name(name)
                                       .eventSource(eventSource)
@@ -158,7 +168,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .unitOfWorkFactory(unitOfWorkFactory)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
-                                      .eventFilter(event -> eventProcessorOperations.canHandleType(event.type()))
                                       .onMessageIgnored(eventProcessorOperations::reportIgnored)
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
@@ -168,12 +177,13 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
+                                      .eventCriteria(eventCriteria)
                                       // .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment)) // TODO #3304 - Integrate event replay logic into Event Handling Component
                                       .build();
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@code PooledStreamingEventProcessor}.
+     * Instantiate a Builder to be able to create a {@link PooledStreamingEventProcessor}.
      * <p>
      * Upon initialization of this builder, the following fields are defaulted:
      * <ul>
@@ -485,6 +495,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         private int batchSize = 1;
         private Clock clock = GenericEventMessage.clock;
         private boolean coordinatorExtendsClaims = false;
+        private Function<Set<QualifiedName>, EventCriteria> eventCriteria =
+                (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
 
         protected Builder() {
         }
@@ -776,6 +788,27 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          */
         public Builder enableCoordinatorClaimExtension() {
             this.coordinatorExtendsClaims = true;
+            return this;
+        }
+
+        /**
+         * Sets the function to build the {@link EventCriteria} used to filter events when opening the event source. The
+         * function receives the set of supported event types from the assigned EventHandlingComponent.
+         * <p>
+         * <b>Intention:</b> This function is mainly intended to allow you to specify the tags for filtering or to build
+         * more complex criteria.
+         * For example, if not all supported event types share the same tag, you may use
+         * {@link EventCriteria#either(EventCriteria...)} to construct a disjunction of criteria for different event
+         * types and tags. See {@link org.axonframework.eventstreaming.EventCriteria} for advanced usage and examples.
+         * <p>
+         * By default, it returns {@code EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents)}.
+         *
+         * @param eventCriteriaProvider The function to build the {@link EventCriteria} from supported event types.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder eventCriteria(@Nonnull Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider) {
+            assertNonNull(eventCriteriaProvider, "EventCriteria builder function may not be null");
+            this.eventCriteria = eventCriteriaProvider;
             return this;
         }
 
