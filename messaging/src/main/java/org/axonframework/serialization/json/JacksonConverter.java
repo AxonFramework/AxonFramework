@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.serialization.ChainingConverter;
 import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ public class JacksonConverter implements Converter {
 
     private static final Logger logger = LoggerFactory.getLogger(JacksonConverter.class);
 
+    private final ChainingConverter converter;
     private final ObjectMapper objectMapper;
 
     /**
@@ -61,6 +63,7 @@ public class JacksonConverter implements Converter {
      * @param objectMapper The mapper used to convert objects into and from a JSON format.
      */
     public JacksonConverter(@Nonnull ObjectMapper objectMapper) {
+        this.converter = new ChainingConverter();
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
         this.objectMapper.registerModule(new JavaTimeModule());
     }
