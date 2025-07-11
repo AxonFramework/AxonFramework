@@ -414,7 +414,7 @@ class PooledStreamingEventProcessorTest {
         // given - Let all events through EventCriteria but configure an EventHandlingComponent to not support Integer events
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
         QualifiedName integerTypeName = new QualifiedName(Integer.class.getName());
-        when(stubEventHandlingComponent.isSupported(integerTypeName)).thenReturn(false);
+        when(stubEventHandlingComponent.supports(integerTypeName)).thenReturn(false);
 
         // when - Publish an Integer event that will reach the processor but won't be handled
         EventMessage<Integer> eventToIgnore = EventTestUtils.asEventMessage(1337);
@@ -433,7 +433,7 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
-    void handlingMessageTypeFilteredOutByEventCriteriaWillNotAdvanceToken() {
+    void eventCriteriaFiltersEventsOnSourceLevelSoEventIsNotHandledAndTokenNotAdvanced() {
         // given - Configure EventCriteria to filter out Integer events at stream level
         EventCriteria stringOnlyCriteria = EventCriteria.havingAnyTag()
                                                         .andBeingOneOfTypes(new QualifiedName(String.class.getName()));
