@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -57,7 +58,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -434,9 +434,11 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void eventCriteriaFiltersEventsOnSourceLevelSoEventIsNotHandledAndTokenNotAdvanced() {
-        // given - Configure eventTypes to filter out Integer events at stream level
+        // given - Configure EventCriteria to filter out Integer events at stream level
+        EventCriteria stringOnlyCriteria = EventCriteria.havingAnyTag()
+                                                        .andBeingOneOfTypes(new QualifiedName(String.class.getName()));
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
-                                                           .eventTypes(Set.of(new QualifiedName(String.class.getName())))));
+                                                           .eventCriteria(stringOnlyCriteria)));
 
         // when - Publish an Integer event that will be filtered out by EventCriteria before reaching processor
         EventMessage<Integer> eventToFilter = EventTestUtils.asEventMessage(1337);
@@ -473,8 +475,11 @@ class PooledStreamingEventProcessorTest {
     @Test
     void eventsWhichMustBeIgnoredAreNotHandled() {
         // given
+        EventCriteria stringOnlyCriteria = EventCriteria.havingAnyTag()
+                                                        .andBeingOneOfTypes(new QualifiedName(String.class.getName()));
+        
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
-                                                           .eventTypes(Set.of(new QualifiedName(String.class.getName())))));
+                                                           .eventCriteria(stringOnlyCriteria)));
 
         EventMessage<Integer> eventToIgnoreOne = EventTestUtils.asEventMessage(1337);
         EventMessage<Integer> eventToIgnoreTwo = EventTestUtils.asEventMessage(42);
@@ -1066,8 +1071,7 @@ class PooledStreamingEventProcessorTest {
                                              .name(PROCESSOR_NAME)
                                              .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
-                                             .tokenStore(new InMemoryTokenStore())
-                                             .transactionManager(NoTransactionManager.instance());
+                                             .tokenStore(new InMemoryTokenStore());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
@@ -1102,8 +1106,7 @@ class PooledStreamingEventProcessorTest {
                                              .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
                                              .tokenStore(new InMemoryTokenStore())
-                                             .transactionManager(NoTransactionManager.instance())
-                                             .coordinatorExecutor(coordinatorExecutor);
+                                             .transactionManager(NoTransactionManager.instance());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
