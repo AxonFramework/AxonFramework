@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.configuration;
+package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.ComponentBuilder;
@@ -24,6 +24,8 @@ import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
+import org.axonframework.eventhandling.configuration.EventProcessingModule;
+import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.monitoring.MessageMonitor;

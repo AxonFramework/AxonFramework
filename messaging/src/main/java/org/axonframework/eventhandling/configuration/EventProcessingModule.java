@@ -25,6 +25,8 @@ import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
+import org.axonframework.eventhandling.SubscribingEventProcessorModule;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.SubscribableMessageSource;
