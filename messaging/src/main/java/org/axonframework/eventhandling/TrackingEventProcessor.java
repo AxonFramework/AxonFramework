@@ -499,7 +499,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 );
             }
             checkSegmentCaughtUp(segment, eventStream);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
+            if (!Thread.currentThread().isInterrupted()) {
+                // Rethrow exception if it's not an interruption. Otherwise, the method calling processBatch will fail.
+                throw e;
+            }
             if (isRunning()) {
                 logger.error("Event processor [{}] was interrupted. Shutting down.", getName(), e);
                 setShutdownState();
