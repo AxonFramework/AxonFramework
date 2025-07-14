@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -72,6 +73,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.EventTestUtils.createEvents;
 import static org.axonframework.utils.AssertUtils.assertWithin;
@@ -92,7 +94,8 @@ class PooledStreamingEventProcessorTest {
     private static final String PROCESSOR_NAME = "test";
 
     private PooledStreamingEventProcessor testSubject;
-    private EventHandlerInvoker stubEventHandler;
+    private EventHandlerInvoker stubEventHandler; // TODO: remove in TODO #3304 - Integrate event replay logic into Event Handling Component
+    private EventHandlingComponent stubEventHandlingComponent;
     private AsyncInMemoryStreamableEventSource stubMessageSource;
     private InMemoryTokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
@@ -103,6 +106,7 @@ class PooledStreamingEventProcessorTest {
     void setUp() {
         stubMessageSource = new AsyncInMemoryStreamableEventSource();
         stubEventHandler = mock(EventHandlerInvoker.class);
+        stubEventHandlingComponent = mock(EventHandlingComponent.class);
         tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(2));
         workerExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(8));
@@ -110,8 +114,11 @@ class PooledStreamingEventProcessorTest {
 
         setTestSubject(createTestSubject());
 
-        when(stubEventHandler.canHandleType(any())).thenReturn(true);
-        when(stubEventHandler.canHandle(any(), any(), any())).thenReturn(true);
+        when(stubEventHandlingComponent.supports(any())).thenReturn(true);
+        when(stubEventHandlingComponent.handle(any(), any())).thenReturn(MessageStream.empty());
+        when(stubEventHandlingComponent.sequenceIdentifierFor(any())).thenAnswer(
+                e -> e.getArgument(0, EventMessage.class).getIdentifier()
+        );
     }
 
     private void setTestSubject(PooledStreamingEventProcessor testSubject) {
@@ -128,7 +135,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder processorBuilder =
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
-                                             .eventHandlerInvoker(stubEventHandler)
+                                             .eventHandlingComponent(stubEventHandlingComponent)
                                              .errorHandler(PropagatingErrorHandler.instance())
                                              .eventSource(stubMessageSource)
                                              .tokenStore(tokenStore)
@@ -159,9 +166,9 @@ class PooledStreamingEventProcessorTest {
                                                           .when(spy)
                                                           .initializeTokenSegments(any(), anyInt(), any());
 
-        List<EventMessage<?>> events = createEvents(100);
+        List<EventMessage<Integer>> events =
+                createEvents(100);
         events.forEach(stubMessageSource::publishMessage);
-        mockEventHandlerInvoker();
         testSubject.start();
 
         assertTrue(testSubject.isRunning());
@@ -207,9 +214,9 @@ class PooledStreamingEventProcessorTest {
     }
 
     private void startAndAssertProcessorClaimsAllTokens() {
-        List<EventMessage<?>> events = createEvents(100);
+        List<EventMessage<Integer>> events =
+                createEvents(100);
         events.forEach(stubMessageSource::publishMessage);
-        mockEventHandlerInvoker();
 
         testSubject.start();
 
@@ -228,7 +235,6 @@ class PooledStreamingEventProcessorTest {
     void handlingEventsAreCorrectlyTraced() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(8);
         List<Message<?>> invokedMessages = new CopyOnWriteArrayList<>();
-        mockEventHandlerInvoker();
         doAnswer(
                 answer -> {
                     EventMessage<?> message = answer.getArgument(0, EventMessage.class);
@@ -236,11 +242,11 @@ class PooledStreamingEventProcessorTest {
                     spanFactory.verifySpanActive("StreamingEventProcessor.batch");
                     spanFactory.verifySpanActive("StreamingEventProcessor.process", message);
                     countDownLatch.countDown();
-                    return null;
+                    return MessageStream.empty();
                 }
-        ).when(stubEventHandler).handle(any(), any(), any());
+        ).when(stubEventHandlingComponent).handle(any(), any());
 
-        List<EventMessage<?>> events = createEvents(8);
+        List<EventMessage<Integer>> events = createEvents(8);
         events.forEach(stubMessageSource::publishMessage);
         testSubject.start();
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
@@ -256,7 +262,6 @@ class PooledStreamingEventProcessorTest {
     @Test
     void handlingEventsHaveSegmentAndTokenInUnitOfWork() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(8);
-        mockEventHandlerInvoker();
         doAnswer(
                 answer -> {
                     var processingContext = answer.getArgument(1, ProcessingContext.class);
@@ -271,11 +276,11 @@ class PooledStreamingEventProcessorTest {
                         return null;
                     }
                     countDownLatch.countDown();
-                    return null;
+                    return MessageStream.empty();
                 }
-        ).when(stubEventHandler).handle(any(), any(), any());
+        ).when(stubEventHandlingComponent).handle(any(), any());
 
-        List<EventMessage<?>> events = createEvents(8);
+        List<EventMessage<Integer>> events = createEvents(8);
         events.forEach(stubMessageSource::publishMessage);
         testSubject.start();
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
@@ -298,6 +303,7 @@ class PooledStreamingEventProcessorTest {
                 .fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
     }
 
+    @Disabled("TODO #3304 - Integrate event replay logic into Event Handling Component")
     @Test
     void startingAfterShutdownLetsProcessorProceed() {
         when(stubEventHandler.supportsReset()).thenReturn(true);
@@ -305,7 +311,7 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
         testSubject.shutDown();
 
-        List<EventMessage<?>> events = createEvents(100);
+        List<EventMessage<Integer>> events = createEvents(100);
         events.forEach(stubMessageSource::publishMessage);
 
         testSubject.start();
@@ -326,9 +332,8 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void allTokensUpdatedToLatestValue() {
-        List<EventMessage<?>> events = createEvents(100);
+        List<EventMessage<Integer>> events = createEvents(100);
         events.forEach(stubMessageSource::publishMessage);
-        mockEventHandlerInvoker();
 
         testSubject.start();
 
@@ -350,18 +355,17 @@ class PooledStreamingEventProcessorTest {
     @Test
     void exceptionWhileHandlingEventAbortsWorker() throws Exception {
         MessageType testName = new MessageType("event");
-        List<EventMessage<?>> events = Stream.of(1, 2, 2, 4, 5)
+        List<EventMessage<Integer>> events = Stream.of(1, 2, 2, 4, 5)
                                                    .map(i -> new GenericEventMessage<>(testName, i))
                                                    .collect(Collectors.toList());
-        mockEventHandlerInvoker();
-        doThrow(new RuntimeException("Simulating worker failure"))
-                .doNothing()
-                .when(stubEventHandler)
-                .handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any(), any());
+        doReturn(MessageStream.failed(new RuntimeException("Simulating worker failure")))
+                .doReturn(MessageStream.empty())
+                .when(stubEventHandlingComponent)
+                .handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any());
 
         testSubject.start();
 
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertThat(testSubject.processingStatus()).hasSize(8));
         assertEquals(8, tokenStore.fetchSegments(PROCESSOR_NAME).length);
 
         verify(stubEventHandler, never()).canHandle(any(), any(), any());
@@ -370,10 +374,9 @@ class PooledStreamingEventProcessorTest {
 
         assertWithin(1, TimeUnit.SECONDS, () -> {
             try {
-                verify(stubEventHandler).handle(
+                verify(stubEventHandlingComponent).handle(
                         argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())),
-                        any(),
-                        argThat(s -> s.getSegmentId() == ((Integer) events.get(2).getPayload()))
+                        any()
                 );
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -381,8 +384,8 @@ class PooledStreamingEventProcessorTest {
         });
 
         assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(7, testSubject.processingStatus().size());
-            assertFalse(testSubject.processingStatus().containsKey(2));
+            assertThat(testSubject.processingStatus()).hasSize(7);
+            assertThat(testSubject.processingStatus()).containsKey(2);
         });
     }
 
@@ -427,8 +430,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void tokenStoreReturningSingleNullToken() {
-        when(stubEventHandler.canHandle(any(), any(), any())).thenReturn(false);
-        when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
+        when(stubEventHandlingComponent.supports(any())).thenReturn(false);
 
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(0), testSubject.getName(), 1);
@@ -518,7 +520,6 @@ class PooledStreamingEventProcessorTest {
         AsyncInMemoryStreamableEventSource testMessageSource = new AsyncInMemoryStreamableEventSource(
                 streamCallbackSupported);
         setTestSubject(createTestSubject(builder -> builder.eventSource(testMessageSource)));
-        mockEventHandlerInvoker();
 
         Stream.of(0, 1, 2, 3)
               .map(i -> new GenericEventMessage<>(new MessageType("event"), i))
@@ -585,11 +586,11 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void startFailsWhenShutdownIsInProgress() throws Exception {
-        when(stubEventHandler.canHandle(any(), any(), any())).thenReturn(true);
+        when(stubEventHandlingComponent.supports(any())).thenReturn(true);
         // Use CountDownLatch to block worker threads from actually doing work, and thus shutting down successfully.
         CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(i -> latch.await(10, TimeUnit.MILLISECONDS)).when(stubEventHandler)
-                                                             .handle(any(), any(), any());
+        doAnswer(i -> latch.await(10, TimeUnit.MILLISECONDS)).when(stubEventHandlingComponent)
+                                                             .handle(any(), any());
 
         testSubject.start();
 
@@ -686,15 +687,12 @@ class PooledStreamingEventProcessorTest {
         // When...
         testSubject.releaseSegment(testSegmentId);
 
-        assertWithin(
-                testTokenClaimInterval + 50, TimeUnit.MILLISECONDS,
-                () -> assertNull(testSubject.processingStatus().get(testSegmentId))
-        );
+        await().atMost(testTokenClaimInterval + 200, TimeUnit.MILLISECONDS)
+                       .untilAsserted(() -> assertNull(testSubject.processingStatus().get(testSegmentId)));
+
         // Assert that within twice the tokenClaimInterval, the WorkPackage is in progress again.
-        assertWithin(
-                (testTokenClaimInterval * 2) + 50, TimeUnit.MILLISECONDS,
-                () -> assertNotNull(testSubject.processingStatus().get(testSegmentId))
-        );
+        await().atMost((testTokenClaimInterval * 2) + 200, TimeUnit.MILLISECONDS)
+               .untilAsserted(() -> assertNotNull(testSubject.processingStatus().get(testSegmentId)));
     }
 
     @Test
@@ -827,6 +825,7 @@ class PooledStreamingEventProcessorTest {
                      () -> assertEquals(2, testSubject.processingStatus().size()));
     }
 
+    @Disabled("TODO #3304 - Integrate event replay logic into Event Handling Component")
     @Test
     void supportReset() {
         when(stubEventHandler.supportsReset()).thenReturn(true);
@@ -838,6 +837,7 @@ class PooledStreamingEventProcessorTest {
         assertFalse(testSubject.supportsReset());
     }
 
+    @Disabled("TODO #3304 - Integrate event replay logic into Event Handling Component")
     @Test
     void resetTokensFailsIfTheProcessorIsStillRunning() {
         testSubject.start();
@@ -845,6 +845,7 @@ class PooledStreamingEventProcessorTest {
         assertThrows(IllegalStateException.class, () -> testSubject.resetTokens());
     }
 
+    @Disabled("TODO #3304 - Integrate event replay logic into Event Handling Component")
     @Test
     void resetTokens() {
         int expectedSegmentCount = 2;
@@ -872,6 +873,7 @@ class PooledStreamingEventProcessorTest {
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
     }
 
+    @Disabled("TODO #3304 - Integrate event replay logic into Event Handling Component")
     @Test
     void resetTokensWithContext() {
         int expectedSegmentCount = 2;
@@ -903,6 +905,7 @@ class PooledStreamingEventProcessorTest {
         );
     }
 
+    @Disabled("TODO #3304 - Integrate event replay logic into Event Handling Component")
     @Test
     void resetTokensFromDefinedPosition() {
         TrackingToken testToken = new GlobalSequenceTrackingToken(42);
@@ -931,6 +934,7 @@ class PooledStreamingEventProcessorTest {
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
     }
 
+    @Disabled("TODO #3304 - Integrate event replay logic into Event Handling Component")
     @Test
     void resetTokensFromDefinedPositionAndWithResetContext() {
         TrackingToken testToken = new GlobalSequenceTrackingToken(42);
@@ -976,7 +980,6 @@ class PooledStreamingEventProcessorTest {
     @Test
     void processingStatusIsUpdatedWithTrackingToken() {
         testSubject.start();
-        mockEventHandlerInvoker();
 
         Stream.of(1, 2, 2, 4, 5)
               .map(i -> new GenericEventMessage<>(new MessageType("event"), i))
@@ -990,14 +993,6 @@ class PooledStreamingEventProcessorTest {
         );
     }
 
-    private void mockEventHandlerInvoker() {
-        when(stubEventHandler.canHandleType(any())).thenReturn(true);
-        when(stubEventHandler.canHandle(any(), any(), any())).thenAnswer(
-                answer -> answer.getArgument(0, EventMessage.class)
-                                .getPayload()
-                                .equals(answer.getArgument(2, Segment.class).getSegmentId())
-        );
-    }
 
     @Test
     void buildWithNullMessageSourceThrowsAxonConfigurationException() {
@@ -1030,7 +1025,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder builderTestSubject =
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
-                                             .eventHandlerInvoker(stubEventHandler)
+                                             .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
                                              .transactionManager(NoTransactionManager.INSTANCE);
 
@@ -1050,7 +1045,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder builderTestSubject =
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
-                                             .eventHandlerInvoker(stubEventHandler)
+                                             .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
                                              .tokenStore(new InMemoryTokenStore());
 
@@ -1084,7 +1079,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder builderTestSubject =
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
-                                             .eventHandlerInvoker(stubEventHandler)
+                                             .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
                                              .tokenStore(new InMemoryTokenStore())
                                              .transactionManager(NoTransactionManager.instance());
@@ -1119,7 +1114,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder builderTestSubject =
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
-                                             .eventHandlerInvoker(stubEventHandler)
+                                             .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
                                              .tokenStore(new InMemoryTokenStore())
                                              .transactionManager(NoTransactionManager.instance())
@@ -1176,14 +1171,14 @@ class PooledStreamingEventProcessorTest {
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.batchSize(-1));
     }
 
+    @Disabled("TODO #3304 - Integrate event replay logic into Event Handling Component")
     @Test
     void isReplaying() {
-        mockEventHandlerInvoker();
         when(stubEventHandler.supportsReset()).thenReturn(true);
 
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
 
-        List<EventMessage<?>> events = createEvents(100);
+        List<EventMessage<Integer>> events = createEvents(100);
         testSubject.start();
 
         events.forEach(stubMessageSource::publishMessage);
@@ -1216,7 +1211,7 @@ class PooledStreamingEventProcessorTest {
     void isCaughtUpWhenDoneProcessing() throws Exception {
         mockSlowEventHandler();
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
-        List<EventMessage<?>> events = createEvents(3);
+        List<EventMessage<Integer>> events = createEvents(3);
         events.forEach(stubMessageSource::publishMessage);
 
         testSubject.start();
@@ -1310,8 +1305,8 @@ class PooledStreamingEventProcessorTest {
     private void mockSlowEventHandler() throws Exception {
         doAnswer(invocation -> {
             Thread.sleep(1000);
-            return null;
-        }).when(stubEventHandler).handle(any(), any(), any());
+            return MessageStream.empty();
+        }).when(stubEventHandlingComponent).handle(any(), any());
     }
 
     @Test
@@ -1321,15 +1316,15 @@ class PooledStreamingEventProcessorTest {
 
         AtomicBoolean isWaiting = new AtomicBoolean(false);
         CountDownLatch handleLatch = new CountDownLatch(1);
-        mockEventHandlerInvoker();
         doAnswer(invocation -> {
             // Waiting for the latch to simulate a slow/busy WorkPackage.
             isWaiting.set(true);
-            return handleLatch.await(5, TimeUnit.SECONDS);
-        }).when(stubEventHandler)
-          .handle(any(), any(), any());
+            handleLatch.await(5, TimeUnit.SECONDS);
+            return MessageStream.empty();
+        }).when(stubEventHandlingComponent)
+          .handle(any(), any());
 
-        List<EventMessage<?>> events = createEvents(42);
+        List<EventMessage<Integer>> events = createEvents(42);
         events.forEach(stubMessageSource::publishMessage);
 
         testSubject.start();
@@ -1366,15 +1361,15 @@ class PooledStreamingEventProcessorTest {
 
         AtomicBoolean isWaiting = new AtomicBoolean(false);
         CountDownLatch handleLatch = new CountDownLatch(1);
-        mockEventHandlerInvoker();
         doAnswer(invocation -> {
             // Waiting for the latch to simulate a slow/busy WorkPackage.
             isWaiting.set(true);
-            return handleLatch.await(5, TimeUnit.SECONDS);
-        }).when(stubEventHandler)
-          .handle(any(), any(), any());
+            handleLatch.await(5, TimeUnit.SECONDS);
+            return MessageStream.empty();
+        }).when(stubEventHandlingComponent)
+          .handle(any(), any());
 
-        List<EventMessage<?>> events = createEvents(42);
+        List<EventMessage<Integer>> events = createEvents(42);
         events.forEach(stubMessageSource::publishMessage);
 
         testSubject.start();

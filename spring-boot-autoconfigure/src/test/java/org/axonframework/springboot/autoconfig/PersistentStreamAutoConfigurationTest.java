@@ -27,7 +27,6 @@ import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.LegacyDefaultConfigurer;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
@@ -143,7 +142,7 @@ class PersistentStreamAutoConfigurationTest {
                        LegacyConfigurer defaultConfigurer = LegacyDefaultConfigurer.defaultConfiguration();
                        configurerModule.configureModule(defaultConfigurer);
                        LegacyConfiguration configuration = defaultConfigurer.buildConfiguration();
-                       SequencingPolicy<? super EventMessage<?>> sequencingPolicy =
+                       SequencingPolicy sequencingPolicy =
                                configuration.eventProcessingConfiguration().sequencingPolicy("payments");
                        assertThat(sequencingPolicy).isNotNull();
                        assertThat(sequencingPolicy).isNotInstanceOf(DEFAULT_SEQUENCING_POLICY_CLASS);

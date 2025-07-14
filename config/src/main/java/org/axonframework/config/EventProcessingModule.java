@@ -118,7 +118,7 @@ public class EventProcessingModule
     protected final Map<String, List<Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
     protected final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
     protected final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
-    protected final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
+    protected final Map<String, Component<SequencingPolicy>> sequencingPolicies = new HashMap<>();
     protected final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
     protected final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
     protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
@@ -142,7 +142,7 @@ public class EventProcessingModule
             "errorHandler",
             c -> c.getComponent(ErrorHandler.class, PropagatingErrorHandler::instance)
     );
-    private final Component<SequencingPolicy<? super EventMessage<?>>> defaultSequencingPolicy = new Component<>(
+    private final Component<SequencingPolicy> defaultSequencingPolicy = new Component<>(
             () -> configuration,
             "sequencingPolicy",
             c -> SequentialPerAggregatePolicy.instance()
@@ -449,7 +449,7 @@ public class EventProcessingModule
     }
 
     @Override
-    public SequencingPolicy<? super EventMessage<?>> sequencingPolicy(String processingGroup) {
+    public SequencingPolicy sequencingPolicy(String processingGroup) {
         validateConfigInitialization();
         return sequencingPolicies.containsKey(processingGroup)
                 ? sequencingPolicies.get(processingGroup).get()
@@ -738,7 +738,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerSequencingPolicy(String processingGroup,
-                                                              Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> policyBuilder) {
+                                                              Function<LegacyConfiguration, SequencingPolicy> policyBuilder) {
         this.sequencingPolicies.put(processingGroup, new Component<>(() -> configuration,
                                                                      "sequencingPolicy",
                                                                      policyBuilder));
@@ -747,7 +747,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDefaultSequencingPolicy(
-            Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> policyBuilder
+            Function<LegacyConfiguration, SequencingPolicy> policyBuilder
     ) {
         this.defaultSequencingPolicy.update(policyBuilder);
         return this;

@@ -354,7 +354,7 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     public void configureEventHandling(EventProcessingConfigurer eventProcessingConfigurer,
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((name, settings) -> {
-            Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy =
+            Function<LegacyConfiguration, SequencingPolicy> sequencingPolicy =
                     resolveSequencingPolicy(applicationContext, settings);
             eventProcessingConfigurer.registerSequencingPolicy(name, sequencingPolicy);
 
@@ -430,9 +430,9 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @SuppressWarnings("unchecked")
-    private Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> resolveSequencingPolicy(
+    private Function<LegacyConfiguration, SequencingPolicy> resolveSequencingPolicy(
             ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v) {
-        Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy;
+        Function<LegacyConfiguration, SequencingPolicy> sequencingPolicy;
         if (v.getSequencingPolicy() != null) {
             sequencingPolicy = c -> applicationContext.getBean(v.getSequencingPolicy(), SequencingPolicy.class);
         } else {

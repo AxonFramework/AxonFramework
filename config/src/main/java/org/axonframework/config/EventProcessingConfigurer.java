@@ -433,7 +433,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerSequencingPolicy(String processingGroup,
-                                                       Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> policyBuilder);
+                                                       Function<LegacyConfiguration, SequencingPolicy> policyBuilder);
 
     /**
      * Registers the {@link SequencingPolicy} created by given {@code policyBuilder} to the processing groups for which
@@ -445,7 +445,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerDefaultSequencingPolicy(
-            Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> policyBuilder
+            Function<LegacyConfiguration, SequencingPolicy> policyBuilder
     );
 
     /**

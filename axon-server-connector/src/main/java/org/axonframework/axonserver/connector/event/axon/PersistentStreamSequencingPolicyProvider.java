@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static java.lang.String.format;
@@ -37,7 +38,7 @@ import static java.lang.String.format;
  * @since 4.10.0
  */
 public class PersistentStreamSequencingPolicyProvider
-        implements Function<Configuration, SequencingPolicy<? super EventMessage<?>>> {
+        implements Function<Configuration, SequencingPolicy> {
 
     /**
      * A {@link String} constant representing the "sequential per aggregate" sequencing policy. This means all events
@@ -94,8 +95,8 @@ public class PersistentStreamSequencingPolicyProvider
     }
 
     @Override
-    public SequencingPolicy<EventMessage<?>> apply(Configuration configuration) {
-        return this::sequencingIdentifier;
+    public SequencingPolicy apply(Configuration configuration) {
+        return event -> Optional.ofNullable(sequencingIdentifier(event));
     }
 
     private Object sequencingIdentifier(EventMessage<?> event) {

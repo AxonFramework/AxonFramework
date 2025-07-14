@@ -26,6 +26,7 @@ import org.junit.jupiter.api.*;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -46,7 +47,7 @@ public class MetaDataSequencingPolicyTest {
         DomainEventMessage<?> testEvent =
                 newStubDomainEvent("42", Collections.singletonMap("metaDataKey", "metaDataValue"));
 
-        assertEquals("metaDataValue", metaDataPolicy.getSequenceIdentifierFor(testEvent));
+        assertThat(metaDataPolicy.getSequenceIdentifierFor(testEvent)).contains("metaDataValue");
     }
 
     @Test
@@ -56,7 +57,7 @@ public class MetaDataSequencingPolicyTest {
                 .metaDataKey("metaDataKey")
                 .build();
 
-        assertNotNull(metaDataPolicy.getSequenceIdentifierFor(newStubDomainEvent("42")));
+        assertThat(metaDataPolicy.getSequenceIdentifierFor(newStubDomainEvent("42"))).isPresent();
     }
 
     @Test
