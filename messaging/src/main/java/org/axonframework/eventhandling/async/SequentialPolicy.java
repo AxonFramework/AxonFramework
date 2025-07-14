@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.async;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Optional;
 
@@ -26,12 +27,12 @@ import java.util.Optional;
  * @author Allard Buijze
  * @since 0.3
  */
-public class SequentialPolicy implements SequencingPolicy<Object> {
+public class SequentialPolicy implements SequencingPolicy {
 
     private static final Object FULL_SEQUENTIAL_POLICY = new Object();
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull Object task) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> task) {
         return Optional.of(FULL_SEQUENTIAL_POLICY);
     }
 }

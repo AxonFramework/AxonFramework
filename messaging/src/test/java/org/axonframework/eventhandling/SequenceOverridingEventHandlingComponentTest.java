@@ -40,7 +40,7 @@ class SequenceOverridingEventHandlingComponentTest {
         //given
         var policySequenceId = "policy-sequence-id";
         var delegateSequenceId = "delegate-sequence-id";
-        SequencingPolicy<EventMessage<?>> policy = event -> Optional.of(policySequenceId);
+        SequencingPolicy policy = event -> Optional.of(policySequenceId);
         var delegate = getEventHandlingComponentWithSequenceId(delegateSequenceId);
         var testSubject = new SequenceOverridingEventHandlingComponent(policy, delegate);
         var testEvent = new GenericEventMessage<>(
@@ -59,7 +59,7 @@ class SequenceOverridingEventHandlingComponentTest {
     void sequenceIdentifierForUsesDelegateWhenPolicyReturnsEmpty() {
         //given
         var delegateSequenceId = "delegate-sequence-id";
-        SequencingPolicy<EventMessage<?>> policy = event -> Optional.empty();
+        SequencingPolicy policy = event -> Optional.empty();
         EventHandlingComponent delegate = getEventHandlingComponentWithSequenceId(delegateSequenceId);
         var testSubject = new SequenceOverridingEventHandlingComponent(policy, delegate);
         var testEvent = new GenericEventMessage<>(

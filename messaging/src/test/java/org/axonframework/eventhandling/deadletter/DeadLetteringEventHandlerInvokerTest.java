@@ -67,7 +67,7 @@ class DeadLetteringEventHandlerInvokerTest {
             new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
 
     private EventMessageHandler handler;
-    private SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
+    private SequencingPolicy sequencingPolicy;
     private SequencedDeadLetterQueue<EventMessage<?>> queue;
     private EnqueuePolicy<EventMessage<?>> enqueuePolicy;
     private TransactionManager transactionManager;

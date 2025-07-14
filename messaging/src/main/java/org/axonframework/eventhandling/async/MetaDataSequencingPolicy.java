@@ -33,7 +33,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Lucas Campos
  * @since 4.6.0
  */
-public class MetaDataSequencingPolicy implements SequencingPolicy<EventMessage<?>> {
+public class MetaDataSequencingPolicy implements SequencingPolicy {
 
     private final String metaDataKey;
 

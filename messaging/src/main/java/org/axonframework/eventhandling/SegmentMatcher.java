@@ -35,7 +35,7 @@ import java.util.Objects;
 @Internal
 class SegmentMatcher {
 
-    private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
+    private final SequencingPolicy sequencingPolicy;
 
     /**
      * Initialize a SegmentMatcher with the given {@code sequencingPolicy}. This policy is used to extract the sequence
@@ -43,7 +43,7 @@ class SegmentMatcher {
      *
      * @param sequencingPolicy A policy that provides the sequence identifier for a given event message.
      */
-    public SegmentMatcher(@Nonnull SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+    public SegmentMatcher(@Nonnull SequencingPolicy sequencingPolicy) {
         Objects.requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
         this.sequencingPolicy = sequencingPolicy;
     }

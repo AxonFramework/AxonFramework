@@ -49,7 +49,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     private final List<EventMessageHandler> eventHandlingComponents;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
-    private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
+    private final SequencingPolicy sequencingPolicy;
     private final SegmentMatcher segmentMatcher;
 
     /**
@@ -190,7 +190,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      *
      * @return the {@link SequencingPolicy} as configured for this {@link EventHandlerInvoker}
      */
-    public SequencingPolicy<? super EventMessage<?>> getSequencingPolicy() {
+    public SequencingPolicy getSequencingPolicy() {
         return sequencingPolicy;
     }
 
@@ -214,7 +214,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
-        private SequencingPolicy<? super EventMessage<?>> sequencingPolicy = SequentialPerAggregatePolicy.instance();
+        private SequencingPolicy sequencingPolicy = SequentialPerAggregatePolicy.instance();
         private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         /**
@@ -307,7 +307,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                         handled by the given {@link Segment}
          * @return the current Builder instance, for fluent interfacing
          */
-        public B sequencingPolicy(@Nonnull SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+        public B sequencingPolicy(@Nonnull SequencingPolicy sequencingPolicy) {
             assertNonNull(sequencingPolicy, "The SequencingPolicy may not be null");
             this.sequencingPolicy = sequencingPolicy;
             //noinspection unchecked

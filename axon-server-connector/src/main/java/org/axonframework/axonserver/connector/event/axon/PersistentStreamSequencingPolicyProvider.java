@@ -38,7 +38,7 @@ import static java.lang.String.format;
  * @since 4.10.0
  */
 public class PersistentStreamSequencingPolicyProvider
-        implements Function<Configuration, SequencingPolicy<? super EventMessage<?>>> {
+        implements Function<Configuration, SequencingPolicy> {
 
     /**
      * A {@link String} constant representing the "sequential per aggregate" sequencing policy. This means all events
@@ -95,7 +95,7 @@ public class PersistentStreamSequencingPolicyProvider
     }
 
     @Override
-    public SequencingPolicy<? super EventMessage<?>> apply(Configuration configuration) {
+    public SequencingPolicy apply(Configuration configuration) {
         return event -> Optional.ofNullable(sequencingIdentifier(event));
     }
 

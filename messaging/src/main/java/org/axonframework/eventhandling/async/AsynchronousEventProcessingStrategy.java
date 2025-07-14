@@ -46,7 +46,7 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
     private static final Logger logger = LoggerFactory.getLogger(AsynchronousEventProcessingStrategy.class);
     private final String scheduledEventsKey = this + "_SCHEDULED_EVENTS";
     private final Executor executor;
-    private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
+    private final SequencingPolicy sequencingPolicy;
     private final ConcurrentMap<Object, EventProcessorTask> currentTasks = new ConcurrentHashMap<>();
 
     /**
@@ -58,7 +58,7 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
      * @param sequencingPolicy the policy that determines if an event may be processed in sequence or in parallel
      */
     public AsynchronousEventProcessingStrategy(Executor executor,
-                                               SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+                                               SequencingPolicy sequencingPolicy) {
         this.executor = requireNonNull(executor);
         this.sequencingPolicy = requireNonNull(sequencingPolicy);
     }

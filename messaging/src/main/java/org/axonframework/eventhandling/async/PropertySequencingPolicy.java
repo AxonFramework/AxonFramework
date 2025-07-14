@@ -38,11 +38,11 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 4.5.2
  */
 @SuppressWarnings("rawtypes")
-public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMessage> {
+public class PropertySequencingPolicy<T, K> implements SequencingPolicy {
 
     private final Class<T> payloadClass;
     private final Function<T, K> propertyExtractor;
-    private final SequencingPolicy<EventMessage> fallbackSequencingPolicy;
+    private final SequencingPolicy fallbackSequencingPolicy;
 
     /**
      * Instantiate a {@link PropertySequencingPolicy} based on the fields contained in the {@link Builder}.
@@ -61,7 +61,7 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage<?> eventMessage) {
         if (payloadClass.isAssignableFrom(eventMessage.getPayloadType())) {
             @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.getPayload();
             return Optional.ofNullable(propertyExtractor.apply(castedPayload));
@@ -116,7 +116,7 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
 
         private final Class<T> payloadClass;
         private Function<T, K> propertyExtractor;
-        private SequencingPolicy<EventMessage> fallbackSequencingPolicy = ExceptionRaisingSequencingPolicy.instance();
+        private SequencingPolicy fallbackSequencingPolicy = ExceptionRaisingSequencingPolicy.instance();
 
         private Builder(final Class<T> payloadClass) {
             assertNonNull(payloadClass, "Payload class may not be null");
@@ -158,7 +158,7 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
          * @param fallbackSequencingPolicy The new fallback sequencing policy.
          * @return The current Builder instance, for fluent interfacing
          */
-        public Builder<T, K> fallbackSequencingPolicy(final SequencingPolicy<EventMessage> fallbackSequencingPolicy) {
+        public Builder<T, K> fallbackSequencingPolicy(final SequencingPolicy fallbackSequencingPolicy) {
             assertNonNull(fallbackSequencingPolicy, "Fallback sequencing policy may not be null");
             this.fallbackSequencingPolicy = fallbackSequencingPolicy;
             return this;
@@ -183,7 +183,7 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
         /**
          * A simple implementation of a {@link SequencingPolicy} that raises an {@link IllegalArgumentException}.
          */
-        private static final class ExceptionRaisingSequencingPolicy implements SequencingPolicy<EventMessage> {
+        private static final class ExceptionRaisingSequencingPolicy implements SequencingPolicy {
 
             private static final ExceptionRaisingSequencingPolicy INSTANCE = new ExceptionRaisingSequencingPolicy();
 

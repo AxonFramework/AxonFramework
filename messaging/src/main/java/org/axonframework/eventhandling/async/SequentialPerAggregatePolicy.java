@@ -29,7 +29,7 @@ import java.util.Optional;
  * @author Allard Buijze
  * @since 0.3
  */
-public class SequentialPerAggregatePolicy implements SequencingPolicy<EventMessage> {
+public class SequentialPerAggregatePolicy implements SequencingPolicy {
 
     private static final SequentialPerAggregatePolicy INSTANCE = new SequentialPerAggregatePolicy();
 
@@ -43,9 +43,9 @@ public class SequentialPerAggregatePolicy implements SequencingPolicy<EventMessa
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
         if (event instanceof DomainEventMessage) {
-            var aggregateId = ((DomainEventMessage) event).getAggregateIdentifier();
+            var aggregateId = ((DomainEventMessage<?>) event).getAggregateIdentifier();
             return Optional.ofNullable(aggregateId);
         }
         return Optional.empty();

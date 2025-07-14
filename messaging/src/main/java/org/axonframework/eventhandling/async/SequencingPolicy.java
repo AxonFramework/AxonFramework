@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.async;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Optional;
 
@@ -40,7 +41,7 @@ import java.util.Optional;
  * @since 0.3
  */
 @FunctionalInterface
-public interface SequencingPolicy<T> {
+public interface SequencingPolicy {
 
     /**
      * Returns the sequence identifier for the given {@code event}. When two events have the same identifier (as defined
@@ -56,5 +57,5 @@ public interface SequencingPolicy<T> {
      * @return A sequence identifier for the given event, or {@code Optional#empty()} if this policy cannot determine a
      * sequence identifier for the given event.
      */
-    Optional<Object> getSequenceIdentifierFor(@Nonnull T event);
+    Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> event);
 }

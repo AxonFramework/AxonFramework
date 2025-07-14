@@ -156,7 +156,7 @@ class LegacyEventHandlingComponentTest {
         void shouldReturnSequenceIdentifierFromSimpleEventHandlerInvoker() {
             //given
             SimpleEventHandlerInvoker simpleInvoker = mock(SimpleEventHandlerInvoker.class);
-            SequencingPolicy<EventMessage<?>> sequencingPolicy = mock(SequencingPolicy.class);
+            SequencingPolicy sequencingPolicy = mock(SequencingPolicy.class);
             EventMessage<?> event = mock(EventMessage.class);
             Object expectedSequenceId = "test-sequence-id";
 
@@ -178,7 +178,7 @@ class LegacyEventHandlingComponentTest {
         void shouldReturnEventIdentifierFromSimpleEventHandlerInvokerWhenPolicyReturnsEmpty() {
             //given
             SimpleEventHandlerInvoker simpleInvoker = mock(SimpleEventHandlerInvoker.class);
-            SequencingPolicy<EventMessage<?>> sequencingPolicy = mock(SequencingPolicy.class);
+            SequencingPolicy sequencingPolicy = mock(SequencingPolicy.class);
             EventMessage<?> event = mock(EventMessage.class);
 
             when(simpleInvoker.getSequencingPolicy()).thenReturn((SequencingPolicy) sequencingPolicy);
@@ -200,7 +200,7 @@ class LegacyEventHandlingComponentTest {
             //given
             MultiEventHandlerInvoker multiInvoker = mock(MultiEventHandlerInvoker.class);
             SimpleEventHandlerInvoker simpleInvoker = mock(SimpleEventHandlerInvoker.class);
-            SequencingPolicy<EventMessage<?>> sequencingPolicy = mock(SequencingPolicy.class);
+            SequencingPolicy sequencingPolicy = mock(SequencingPolicy.class);
             EventMessage<?> event = mock(EventMessage.class);
             Object expectedSequenceId = "multi-sequence-id";
 
