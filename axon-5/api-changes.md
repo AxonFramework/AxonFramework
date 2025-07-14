@@ -1155,6 +1155,8 @@ Minor API Changes
   allows component construction to be lazy instead of eager, since we do not require an active instance anymore (as was
   the case with the `Lifecycle` interface). Please read
   the [Component Lifecycle Management](#component-lifecycle-management) section for more details on this.
+* The SequencingPolicy interface no longer uses generics and now operates directly on EventMessage<?>. This simplifies
+  its usage and implementation, as many implementations do not depend on the payload type and can ignore it entirely.
 
 Stored Format Changes
 =====================
@@ -1350,6 +1352,7 @@ This section contains four subsections, called:
 | `Converter#convert(Object, Class<?>, Class<T>)`                                                                                 | `Converter.#convert(S, Class<S>, Class<T>)`                                                                            |
 | `EventGateway#publish(Object...)`                                                                                               | `EventGateway#publish(ProcessingContext, Object...)`                                                                   |
 | `EventGateway#publish(List<?>)`                                                                                                 | `EventGateway#publish(ProcessingContext, List<?>)`                                                                     |
+| `SequencingPolicy#getSequenceIdentifierFor(Object)`                                                                             | `SequencingPolicy#getSequenceIdentifierFor(EventMessage<?>)`                                                           |
 
 ### Removed Methods and Constructors
 
