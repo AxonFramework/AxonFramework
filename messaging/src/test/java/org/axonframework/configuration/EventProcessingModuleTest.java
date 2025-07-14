@@ -46,8 +46,7 @@ class EventProcessingModuleTest {
         };
 
         // todo: remove named
-        var module = EventProcessingModule.named("test-processor")
-                                          .subscribing()
+        var module = EventProcessingModule.subscribing("test-processor")
                                           .eventHandlingComponent(c -> eventHandlingComponent)
                                           .messageSource(c -> messageSource)
                                           .build();
@@ -72,8 +71,7 @@ class EventProcessingModuleTest {
         eventSource.setOnOpen(() -> started.set(true));
         eventSource.setOnClose(() -> stopped.set(true));
 
-        var module = EventProcessingModule.named("test-processor")
-                                          .streaming()
+        var module = EventProcessingModule.pooledStreaming("test-processor")
                                           .eventHandlingComponent(c -> eventHandlingComponent)
                                           .tokenStore(c -> tokenStore)
                                           .eventSource(c -> eventSource)
@@ -96,8 +94,7 @@ class EventProcessingModuleTest {
     @Test
     void missingNameThrows() {
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                EventProcessingModule.named("")
-                                     .subscribing()
+                EventProcessingModule.subscribing("")
                                      .eventHandlingComponent(c -> null)
                                      .messageSource(c -> null)
                                      .build()
@@ -108,8 +105,7 @@ class EventProcessingModuleTest {
     @Test
     void missingEventHandlingComponentThrows() {
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                EventProcessingModule.named("test")
-                                     .subscribing()
+                EventProcessingModule.subscribing("test")
                                      .messageSource(c -> null)
                                      .build()
         );
@@ -119,8 +115,7 @@ class EventProcessingModuleTest {
     @Test
     void missingMessageSourceThrows() {
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                EventProcessingModule.named("test")
-                                     .subscribing()
+                EventProcessingModule.subscribing("test")
                                      .eventHandlingComponent(c -> null)
                                      .build()
         );
@@ -130,8 +125,7 @@ class EventProcessingModuleTest {
     @Test
     void missingTokenStoreThrows() {
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                EventProcessingModule.named("test")
-                                     .streaming()
+                EventProcessingModule.pooledStreaming("test")
                                      .eventHandlingComponent(c -> null)
                                      .build()
         );
