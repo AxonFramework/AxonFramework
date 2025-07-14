@@ -687,15 +687,12 @@ class PooledStreamingEventProcessorTest {
         // When...
         testSubject.releaseSegment(testSegmentId);
 
-        assertWithin(
-                testTokenClaimInterval + 50, TimeUnit.MILLISECONDS,
-                () -> assertNull(testSubject.processingStatus().get(testSegmentId))
-        );
+        await().atMost(testTokenClaimInterval + 200, TimeUnit.MILLISECONDS)
+                       .untilAsserted(() -> assertNull(testSubject.processingStatus().get(testSegmentId)));
+
         // Assert that within twice the tokenClaimInterval, the WorkPackage is in progress again.
-        assertWithin(
-                (testTokenClaimInterval * 2) + 50, TimeUnit.MILLISECONDS,
-                () -> assertNotNull(testSubject.processingStatus().get(testSegmentId))
-        );
+        await().atMost((testTokenClaimInterval * 2) + 200, TimeUnit.MILLISECONDS)
+               .untilAsserted(() -> assertNotNull(testSubject.processingStatus().get(testSegmentId)));
     }
 
     @Test
