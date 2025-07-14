@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.configuration;
+package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.Module;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
@@ -64,7 +67,7 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
      * @return a builder phase to configure a subscribing event processor
      */
     static SubscribingPhase subscribing(String name) {
-        return new org.axonframework.configuration.SubscribingEventProcessorModule.Builder(name);
+        return new SubscribingEventProcessorModule.Builder(name);
     }
 
     /**
@@ -75,7 +78,7 @@ public interface EventProcessingModule extends Module, ModuleBuilder<EventProces
      * @return a builder phase to configure a pooled streaming event processor
      */
     static StreamingPhase pooledStreaming(String name) {
-        return new org.axonframework.configuration.PooledStreamingEventProcessorModule.Builder(name);
+        return new PooledStreamingEventProcessorModule.Builder(name);
     }
 
     /**

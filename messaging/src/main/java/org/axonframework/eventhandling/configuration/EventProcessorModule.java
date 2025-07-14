@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.configuration;
+package org.axonframework.eventhandling.configuration;
 
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;

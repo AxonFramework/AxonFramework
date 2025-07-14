@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.configuration;
+package org.axonframework.eventhandling.configuration;
 
 import org.axonframework.common.transaction.NoOpTransactionManager;
+import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
