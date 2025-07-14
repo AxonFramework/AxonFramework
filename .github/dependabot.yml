@@ -52,6 +52,8 @@ updates:
         versions: [ "[1.11.4,)" ]
       - dependency-name: "org.apache.felix:maven-bundle-plugin"
         versions: [ "[6.0.0,)" ]
+      - dependency-name: "org.axonframework:axon-server-connector"
+        versions: [ "[2025.0.0,)" ]
       - dependency-name: "org.dom4j:dom4j"
         versions: [ "[2.2.0,)" ]
       - dependency-name: "org.hibernate:hibernate-validator"
