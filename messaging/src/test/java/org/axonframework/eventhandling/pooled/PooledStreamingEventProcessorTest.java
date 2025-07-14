@@ -31,12 +31,14 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
@@ -56,6 +58,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -407,25 +410,94 @@ class PooledStreamingEventProcessorTest {
         assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
     }
 
-    @Disabled("TODO #3098 - Support ignoring events by mean of the EventCriteria API")
     @Test
-    void handlingUnknownMessageTypeWillAdvanceToken() {
+    void handlingMessageTypeNotSupportedByEventHandlingComponentWillAdvanceToken() {
+        // given - Let all events through EventCriteria but configure an EventHandlingComponent to not support Integer events
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
+        QualifiedName integerTypeName = new QualifiedName(Integer.class.getName());
+        when(stubEventHandlingComponent.supports(integerTypeName)).thenReturn(false);
 
-        when(stubEventHandler.canHandle(any(), any(), any())).thenReturn(false);
-        when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
-
-        EventMessage<Integer> eventToIgnoreOne = EventTestUtils.asEventMessage(1337);
-        stubMessageSource.publishMessage(eventToIgnoreOne);
-
+        // when - Publish an Integer event that will reach the processor but won't be handled
+        EventMessage<Integer> eventToIgnore = EventTestUtils.asEventMessage(1337);
+        stubMessageSource.publishMessage(eventToIgnore);
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
-        assertWithin(
-                100, TimeUnit.MILLISECONDS,
-                () -> assertEquals(1, testSubject.processingStatus().get(0).getCurrentPosition().orElse(0))
+
+        // then - Verify processor status and token advancement
+        await().atMost(1, TimeUnit.SECONDS)
+               .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
+        await().atMost(200, TimeUnit.MILLISECONDS)
+               .untilAsserted(() -> {
+                   long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
+                   assertThat(currentPosition).isEqualTo(1);
+               });
+
+        // then - Verify no events were handled
+        verify(stubEventHandlingComponent, never()).handle(any(), any());
+    }
+
+    @Test
+    void handlingMessageTypeSupportedByEventHandlingComponentWillAdvanceToken() {
+        // given
+        QualifiedName integerTypeName = new QualifiedName(Integer.class.getName());
+        QualifiedName stringTypeName = new QualifiedName(String.class);
+        when(stubEventHandlingComponent.supportedEvents()).thenReturn(Set.of(stringTypeName));
+        when(stubEventHandlingComponent.supports(stringTypeName)).thenReturn(true);
+        when(stubEventHandlingComponent.supports(integerTypeName)).thenReturn(false);
+        setTestSubject(
+                createTestSubject(builder -> builder
+                        .initialSegmentCount(1)
+                        .eventCriteria(supportedEvents ->
+                                               EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents)
+                        )
+                )
         );
 
-        assertEquals(1, stubMessageSource.getIgnoredEvents().size());
+        // when
+        EventMessage<Integer> supportedEvent = EventTestUtils.asEventMessage("Payload");
+        stubMessageSource.publishMessage(supportedEvent);
+        testSubject.start();
+
+        // then
+        await().atMost(1, TimeUnit.SECONDS)
+               .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
+        await().atMost(200, TimeUnit.MILLISECONDS)
+               .untilAsserted(() -> {
+                   long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
+                   assertThat(currentPosition).isEqualTo(1);
+               });
+
+        // then
+        verify(stubEventHandlingComponent, times(1)).handle(any(), any());
+    }
+
+    @Test
+    void eventCriteriaFiltersEventsOnSourceLevelSoEventIsNotHandledAndTokenNotAdvanced() {
+        // given - Configure EventCriteria to filter out Integer events at stream level
+        EventCriteria stringOnlyCriteria = EventCriteria.havingAnyTag()
+                                                        .andBeingOneOfTypes(new QualifiedName(String.class.getName()));
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
+                                                           .eventCriteria((__) -> stringOnlyCriteria)));
+
+        // when - Publish an Integer event that will be filtered out by EventCriteria before reaching processor
+        EventMessage<Integer> eventToFilter = EventTestUtils.asEventMessage(1337);
+        stubMessageSource.publishMessage(eventToFilter);
+        testSubject.start();
+
+        // then - Verify processor status, but token should NOT advance (stays at 0)
+        await().atMost(1, TimeUnit.SECONDS)
+               .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
+        await().atMost(200, TimeUnit.MILLISECONDS)
+               .untilAsserted(() -> {
+                   long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
+                   assertThat(currentPosition).isEqualTo(0); // Token should not advance - event was filtered at stream level
+               });
+
+        // then - Verify no events were handled (filtered out by EventCriteria)
+        verify(stubEventHandlingComponent, never()).handle(any(), any());
+
+        // then - Verify the event was tracked as ignored (even though filtered at stream level)
+        assertThat(stubMessageSource.getIgnoredEvents()).hasSize(1);
+        assertThat(stubMessageSource.getIgnoredEvents().getFirst().getPayload()).isEqualTo(1337);
     }
 
     @Test
@@ -440,21 +512,14 @@ class PooledStreamingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(2, testSubject.processingStatus().size()));
     }
 
-    @Disabled("TODO #3098 - Support ignoring events by mean of the EventCriteria API")
     @Test
-    void eventsWhichMustBeIgnoredAreNotHandledOnlyValidated() throws Exception {
-        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
+    void eventsWhichMustBeIgnoredAreNotHandled() {
+        // given
+        EventCriteria stringOnlyCriteria = EventCriteria.havingAnyTag()
+                                                        .andBeingOneOfTypes(new QualifiedName(String.class.getName()));
 
-        // The custom ArgumentMatcher, for some reason, first runs the assertion with null, failing the current check.
-        // Hence, a null check is added to the matcher.
-        when(stubEventHandler.canHandle(
-                argThat(argument -> argument != null && Integer.class.equals(argument.getPayloadType())), any(), any()
-        )).thenReturn(false);
-        when(stubEventHandler.canHandle(
-                argThat(argument -> argument != null && String.class.equals(argument.getPayloadType())), any(), any()
-        )).thenReturn(true);
-        when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
-        when(stubEventHandler.canHandleType(String.class)).thenReturn(true);
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
+                                                           .eventCriteria((__) -> stringOnlyCriteria)));
 
         EventMessage<Integer> eventToIgnoreOne = EventTestUtils.asEventMessage(1337);
         EventMessage<Integer> eventToIgnoreTwo = EventTestUtils.asEventMessage(42);
@@ -471,12 +536,10 @@ class PooledStreamingEventProcessorTest {
         eventsToHandle.add(eventToHandleTwo.getPayload());
 
         List<Object> eventsToValidate = new ArrayList<>();
-        eventsToValidate.add(eventToIgnoreOne.getPayload());
-        eventsToValidate.add(eventToIgnoreTwo.getPayload());
-        eventsToValidate.add(eventToIgnoreThree.getPayload());
         eventsToValidate.add(eventToHandleOne.getPayload());
         eventsToValidate.add(eventToHandleTwo.getPayload());
 
+        // when
         stubMessageSource.publishMessage(eventToIgnoreOne);
         stubMessageSource.publishMessage(eventToIgnoreTwo);
         stubMessageSource.publishMessage(eventToIgnoreThree);
@@ -485,33 +548,31 @@ class PooledStreamingEventProcessorTest {
 
         testSubject.start();
 
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
-        // noinspection unchecked
-        ArgumentCaptor<EventMessage<?>> validatedEventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-        verify(stubEventHandler, timeout(500).times(5)).canHandle(validatedEventCaptor.capture(), any(), any());
+        await().atMost(1, TimeUnit.SECONDS)
+              .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
 
-        List<EventMessage<?>> validatedEvents = validatedEventCaptor.getAllValues();
-        assertEquals(5, validatedEvents.size());
-        for (EventMessage<?> validatedEvent : validatedEvents) {
-            assertTrue(eventsToValidate.contains(validatedEvent.getPayload()));
-        }
-
-        //noinspection unchecked
+        // then - Verify that only String events are handled (Integer events are filtered out by EventCriteria).
         ArgumentCaptor<EventMessage<?>> handledEventsCaptor = ArgumentCaptor.forClass(EventMessage.class);
-        verify(stubEventHandler, timeout(500).times(2)).handle(handledEventsCaptor.capture(), any(), any());
-        List<EventMessage<?>> handledEvents = handledEventsCaptor.getAllValues();
-        assertEquals(2, handledEvents.size());
-        for (EventMessage<?> validatedEvent : handledEvents) {
-            //noinspection SuspiciousMethodCalls
-            assertTrue(eventsToHandle.contains(validatedEvent.getPayload()));
-        }
+        await().atMost(1, TimeUnit.SECONDS)
+                .untilAsserted(() -> verify(stubEventHandlingComponent, times(2)).handle(handledEventsCaptor.capture(), any()));
 
+        // then - Validate that the correct String events were handled.
+        List<EventMessage<?>> handledEvents = handledEventsCaptor.getAllValues();
+        assertThat(handledEvents).hasSize(2);
+
+        List<Object> handledPayloads = handledEvents.stream()
+                                                    .map(EventMessage::getPayload)
+                                                    .collect(Collectors.toList());
+        assertThat(handledPayloads).containsExactlyInAnyOrderElementsOf(eventsToHandle);
+
+        // then - Verify that ignored events are tracked correctly
         List<EventMessage<?>> ignoredEvents = stubMessageSource.getIgnoredEvents();
-        assertEquals(3, ignoredEvents.size());
-        for (EventMessage<?> ignoredMessage : ignoredEvents) {
-            //noinspection SuspiciousMethodCalls
-            assertTrue(eventsToIgnore.contains(ignoredMessage.getPayload()));
-        }
+        assertThat(ignoredEvents).hasSize(3);
+
+        List<Object> ignoredPayloads = ignoredEvents.stream()
+                                                    .map(EventMessage::getPayload)
+                                                    .collect(Collectors.toList());
+        assertThat(ignoredPayloads).containsExactlyInAnyOrderElementsOf(eventsToIgnore);
     }
 
     @Test
@@ -1047,7 +1108,8 @@ class PooledStreamingEventProcessorTest {
                                              .name(PROCESSOR_NAME)
                                              .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
-                                             .tokenStore(new InMemoryTokenStore());
+                                             .tokenStore(new InMemoryTokenStore())
+                                             .transactionManager(NoTransactionManager.instance());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
@@ -1082,7 +1144,8 @@ class PooledStreamingEventProcessorTest {
                                              .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
                                              .tokenStore(new InMemoryTokenStore())
-                                             .transactionManager(NoTransactionManager.instance());
+                                             .transactionManager(NoTransactionManager.instance())
+                                             .coordinatorExecutor(coordinatorExecutor);
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
@@ -1300,7 +1363,6 @@ class PooledStreamingEventProcessorTest {
         assertFalse(ReplayToken.isReplay(trackingToken),
                     "Not a replay token: " + trackingToken);
     }
-
 
     private void mockSlowEventHandler() throws Exception {
         doAnswer(invocation -> {
