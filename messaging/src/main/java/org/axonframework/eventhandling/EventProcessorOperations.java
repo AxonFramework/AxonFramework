@@ -32,7 +32,6 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -48,7 +47,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * Support class containing common {@link EventProcessor} functionality.
  * <p>
  * The {@link EventProcessor} implementations are in charge of providing the events that need to be processed. Once these events are obtained they
- * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Collection)} for processing.
+ * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Segment)} for processing.
  * <p>
  * Actual handling of events is deferred to an {@link EventHandlerInvoker}. Before each message is handled by the
  * invoker this event processor creates an interceptor chain containing all registered
@@ -158,10 +157,8 @@ public final class EventProcessorOperations {
      *
      * @param eventMessages The batch of messages that is to be processed
      * @param unitOfWork    The Unit of Work that has been prepared to process the messages
-     * @throws Exception when an exception occurred during processing of the batch
      */
-    public void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                             UnitOfWork unitOfWork) throws Exception {
+    public void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages, UnitOfWork unitOfWork) {
         processInUnitOfWork(eventMessages, unitOfWork, Segment.ROOT_SEGMENT).join();
     }
 
@@ -183,7 +180,7 @@ public final class EventProcessorOperations {
             for (EventMessage<?> message : eventMessages) {
                 result = result.thenCompose(v -> spanFactory
                         .createProcessEventSpan(streamingProcessor, message)
-                        .runSupplierAsync(() -> processMessage(processingSegment, processingContext, message))
+                        .runSupplierAsync(() -> processMessage(message, processingContext, processingSegment))
                 );
             }
 
@@ -205,9 +202,10 @@ public final class EventProcessorOperations {
                           .runSupplierAsync(unitOfWork::execute);
     }
 
-    private CompletableFuture<Void> processMessage(Segment processingSegment,
-                                                   ProcessingContext processingContext,
-                                                   EventMessage<?> message
+    private CompletableFuture<Void> processMessage(
+            EventMessage<?> message,
+            ProcessingContext processingContext,
+            Segment processingSegment
     ) {
         try {
             var monitorCallback = messageMonitor.onMessageIngested(message);
@@ -218,12 +216,18 @@ public final class EventProcessorOperations {
                             interceptors,
                             (msg, ctx) -> processMessageInUnitOfWork(processingSegment,
                                                                      msg,
-                                                                     ctx,
-                                                                     monitorCallback));
+                                                                     ctx
+                            ));
             return chain.proceed(message, processingContext)
                         .ignoreEntries()
                         .asCompletableFuture()
-                        .thenApply(e -> null);
+                        .whenComplete((__, ex) -> {
+                            if (ex == null) {
+                                monitorCallback.reportSuccess();
+                            } else {
+                                monitorCallback.reportFailure(ex);
+                            }
+                        }).thenApply(__ -> null);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
@@ -231,21 +235,14 @@ public final class EventProcessorOperations {
 
     private MessageStream.Empty<?> processMessageInUnitOfWork(Segment processingSegment,
                                                               EventMessage<?> message,
-                                                              ProcessingContext processingContext,
-                                                              MessageMonitor.MonitorCallback monitorCallback
+                                                              ProcessingContext processingContext
     ) {
-        try {
-            if (segmentMatcher.matches(processingSegment, message)) {
-                FutureUtils.joinAndUnwrap(
-                        eventHandlingComponent.handle(message, processingContext).asCompletableFuture()
-                );
-            }
-            monitorCallback.reportSuccess();
+        if(!segmentMatcher.matches(processingSegment, message)){
             return MessageStream.empty();
-        } catch (Exception exception) {
-            monitorCallback.reportFailure(exception);
-            throw exception;
         }
+        // todo: try to return MessageStream directly
+        FutureUtils.joinAndUnwrap(eventHandlingComponent.handle(message, processingContext).asCompletableFuture());
+        return MessageStream.empty();
     }
 
     /**
