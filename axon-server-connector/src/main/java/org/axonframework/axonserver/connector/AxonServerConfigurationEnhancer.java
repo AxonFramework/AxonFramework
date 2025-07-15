@@ -19,9 +19,6 @@ package org.axonframework.axonserver.connector;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
-import org.axonframework.commandhandling.CommandPriorityCalculator;
-import org.axonframework.commandhandling.RoutingStrategy;
-import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.configuration.ComponentDecorator;
@@ -58,11 +55,9 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                 .registerIfNotPresent(connectionManagerDefinition(), SearchScope.ALL)
                 .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity(), SearchScope.ALL)
                 .registerIfNotPresent(eventStorageEngineDefinition(), SearchScope.ALL)
-                .registerIfNotPresent(commandPriorityResolverDefinition(), SearchScope.ALL)
-                .registerIfNotPresent(routingStrategyDefinition(), SearchScope.ALL)
-                .registerFactory(new AxonServerEventStorageEngineFactory())
                 .registerIfNotPresent(commandBusConnectorDefinition(), SearchScope.ALL)
-                .registerDecorator(CommandBusConnector.class, 0, getPayloadConvertingConnectorComponentDecorator());
+                .registerDecorator(CommandBusConnector.class, 0, getPayloadConvertingConnectorComponentDecorator())
+                .registerFactory(new AxonServerEventStorageEngineFactory());
     }
 
     private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector<Object>> getPayloadConvertingConnectorComponentDecorator() {
@@ -108,16 +103,6 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                   .withBuilder(config -> new AxonServerCommandBusConnector(
                                           config.getComponent(AxonServerConnectionManager.class).getConnection()
                                   ));
-    }
-
-    private ComponentDefinition<CommandPriorityCalculator> commandPriorityResolverDefinition() {
-        return ComponentDefinition.ofType(CommandPriorityCalculator.class)
-                                  .withBuilder(config -> message -> 0);
-    }
-
-    private ComponentDefinition<RoutingStrategy> routingStrategyDefinition() {
-        return ComponentDefinition.ofType(RoutingStrategy.class)
-                                  .withBuilder(config -> new AnnotationRoutingStrategy());
     }
 
     @Override
