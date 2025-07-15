@@ -23,6 +23,7 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -186,7 +187,9 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                                         ProcessingContext context,
                                         Segment segment) {
         return spanFactory.createBatchSpan(streamingProcessor, events)
-                          .runSupplierAsync(() -> processEach(events, context, segment)
+                          .runSupplierAsync(() -> {
+                              MessageStream<?> stream = processEach(events, context, segment);
+                              return stream.reduce(null, (acc, entry) -> null)
                                   .exceptionally(e -> {
                                       try {
                                           var cause = e instanceof CompletionException ? e.getCause() : e;
@@ -197,60 +200,44 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                                           throw new EventProcessingException("Exception occurred while processing events", ex);
                                       }
                                       return null;
-                                  }));
-//        trackBatchProcessing(context, events);
-//        return processEach(events, context, segment)
-//                .exceptionally(e -> {
-//                    try {
-//                        var cause = e instanceof CompletionException ? e.getCause() : e;
-//                        errorHandler.handleError(new ErrorContext(name(), cause, events));
-//                    } catch (RuntimeException ex) {
-//                        throw ex;
-//                    } catch (Exception ex) {
-//                        throw new EventProcessingException("Exception occurred while processing events", ex);
-//                    }
-//                    return null;
-//                });
+                                  });
+                          });
     }
 
     @Nonnull
-    private CompletableFuture<?> processEach(List<? extends EventMessage<?>> events, ProcessingContext ctx, Segment segment) {
-        CompletableFuture<?> result = CompletableFuture.completedFuture(null);
-
-        for (EventMessage<?> message : events) {
-            result = result.thenCompose(v -> spanFactory
-                    .createProcessEventSpan(streamingProcessor, message)
-                    .runSupplierAsync(() -> process(message, ctx, segment).ignoreEntries().asCompletableFuture())
-            );
-        }
-
-        return result;
+    private MessageStream<?> processEach(List<? extends EventMessage<?>> events, ProcessingContext ctx, Segment segment) {
+        return events.stream()
+                .map(message -> process(message, ctx, segment))
+                .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
     }
 
-    private MessageStream<?> process(
+    private MessageStream<Message<?>> process(
             EventMessage<?> event,
             ProcessingContext context,
             Segment segment
     ) {
-        try {
-            var monitorCallback = messageMonitor.onMessageIngested(event);
+        return spanFactory
+                .createProcessEventSpan(streamingProcessor, event)
+                .runSupplier(() -> {
+                    try {
+                        var monitorCallback = messageMonitor.onMessageIngested(event);
 
-            DefaultInterceptorChain<EventMessage<?>, ?> chain =
-                    new DefaultInterceptorChain<>(
-                            null,
-                            interceptors,
-                            (msg, ctx) -> processIfSegmentMatches(msg, ctx, segment)
-                    );
-            return chain.proceed(event, context)
-                    .whenComplete(monitorCallback::reportSuccess)
-                    .onErrorContinue(ex -> {
-                        monitorCallback.reportFailure(ex);
-                        return MessageStream.failed(ex);
-                    })
-                    .ignoreEntries();
-        } catch (Exception e) {
-            return MessageStream.failed(e);
-        }
+                        DefaultInterceptorChain<EventMessage<?>, ?> chain =
+                                new DefaultInterceptorChain<>(
+                                        null,
+                                        interceptors,
+                                        (msg, ctx) -> processIfSegmentMatches(msg, ctx, segment)
+                                );
+                        return chain.proceed(event, context)
+                                    .whenComplete(monitorCallback::reportSuccess)
+                                    .onErrorContinue(ex -> {
+                                        monitorCallback.reportFailure(ex);
+                                        return MessageStream.failed(ex);
+                                    }).cast();
+                    } catch (Exception e) {
+                        return MessageStream.failed(e);
+                    }
+                });
     }
 
     private MessageStream<?> processIfSegmentMatches(EventMessage<?> message,
