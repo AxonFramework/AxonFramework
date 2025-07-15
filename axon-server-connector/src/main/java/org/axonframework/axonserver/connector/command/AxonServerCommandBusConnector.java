@@ -29,13 +29,12 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerMetadataConverter;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.commandhandling.distributed.CommandPriorityCalculator;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.GenericMessage;
@@ -47,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,8 +74,6 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     private final AxonServerConnection connection;
     private final AtomicReference<CommandBusConnector.Handler> incomingHandler = new AtomicReference<>();
     private final Map<String, Registration> subscriptions = new ConcurrentHashMap<>();
-    private final CommandPriorityCalculator priorityCalculator;
-    private final RoutingStrategy routingKeyResolver;
 
     /**
      * Creates a new {@code AxonServerConnector} that communicate with Axon Server using the provided {@code connection}
@@ -88,8 +86,6 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
                                          @Nonnull AxonServerCommandBusConnectorConfiguration configuration) {
         this.connection = Objects.requireNonNull(connection, "The AxonServerConnection must not be null.");
         Objects.requireNonNull(configuration, "The AxonServerCommandBusConnectorConfiguration must not be null.");
-        this.priorityCalculator = configuration.getPriorityCalculator();
-        this.routingKeyResolver = configuration.getRoutingStrategy();
     }
 
     @Nonnull
@@ -162,25 +158,24 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     private void addPriority(Command.Builder builder, CommandMessage<?> command) {
-        if (priorityCalculator == null) {
+        Optional<Long> priority = command.priority();
+        if (priority.isEmpty()) {
             return;
         }
-        long priority = priorityCalculator.determinePriority(command);
-        var instruction = createProcessingInstruction(ProcessingKey.PRIORITY,
-                                                      MetaDataValue.newBuilder().setNumberValue(priority));
+        var instruction = createProcessingInstruction(
+                ProcessingKey.PRIORITY,
+                MetaDataValue.newBuilder().setNumberValue(priority.get()));
         builder.addProcessingInstructions(instruction).build();
     }
 
     private void addRoutingKey(Command.Builder builder, CommandMessage<?> command) {
-        if (routingKeyResolver == null) {
+        Optional<String> routingKey = command.routingKey();
+        if (routingKey.isEmpty()) {
             return;
         }
-        String routingKey = routingKeyResolver.getRoutingKey(command);
-        if (routingKey == null || routingKey.isEmpty()) {
-            return;
-        }
-        var instruction = createProcessingInstruction(ProcessingKey.ROUTING_KEY,
-                                                      MetaDataValue.newBuilder().setTextValue(routingKey));
+        var instruction = createProcessingInstruction(
+                ProcessingKey.ROUTING_KEY,
+                MetaDataValue.newBuilder().setTextValue(routingKey.get()));
         builder.addProcessingInstructions(instruction).build();
     }
 
@@ -210,9 +205,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         logger.info("Received incoming command [{}]", command.getName());
         try {
             CompletableFuture<CommandResponse> result = new CompletableFuture<>();
-            long priority = priority(command.getProcessingInstructionsList());
             incomingHandler.get().handle(convertToCommandMessage(command),
-                                         priority,
                                          new FutureResultCallback(result, command));
             return result;
         } catch (Exception e) {
@@ -225,13 +218,17 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
     private CommandMessage<?> convertToCommandMessage(Command command) {
         SerializedObject commandPayload = command.getPayload();
+        long priority = priority(command.getProcessingInstructionsList());
+        String routingKey = ProcessingInstructionHelper.routingKey(command.getProcessingInstructionsList());
         return new GenericCommandMessage<>(
                 new GenericMessage<>(
                         command.getMessageIdentifier(),
                         new MessageType(commandPayload.getType(), commandPayload.getRevision()),
                         commandPayload.getData().toByteArray(),
                         convertFromMetaDataValues(command.getMetaDataMap())
-                )
+                ),
+                routingKey,
+                priority
         );
     }
 

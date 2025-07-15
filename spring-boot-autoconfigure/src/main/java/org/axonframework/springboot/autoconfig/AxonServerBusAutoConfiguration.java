@@ -27,7 +27,7 @@ import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.LegacyConfiguration;

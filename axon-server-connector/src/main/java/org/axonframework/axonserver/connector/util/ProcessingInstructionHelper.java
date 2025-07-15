@@ -59,6 +59,18 @@ public abstract class ProcessingInstructionHelper {
     }
 
     /**
+     * Retrieve the routing key as a {@link String} from the given {@code processingInstructions}, by searching for the
+     * {@link ProcessingInstruction} who's key equals the {@link ProcessingKey#ROUTING_KEY}.
+     *
+     * @param processingInstructions The {@link List} of {@link ProcessingInstruction}s to retrieve the
+     *                               {@link ProcessingKey#ROUTING_KEY} from.
+     * @return A {@link String} specifying the routing key for a given operation, or {@code null} if not found.
+     */
+    public static String routingKey(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionString(processingInstructions, ProcessingKey.ROUTING_KEY).orElse(null);
+    }
+
+    /**
      * Retrieve the desired 'number of results' as a {@code long} from the given {@code processingInstructions}, by
      * searching for the {@link ProcessingInstruction} who's key equals the {@link ProcessingKey#NR_OF_RESULTS}.
      *
@@ -121,6 +133,14 @@ public abstract class ProcessingInstructionHelper {
         return processingInstructions.stream()
                                      .filter(instruction -> processingKey.equals(instruction.getKey()))
                                      .map(instruction -> instruction.getValue().getBooleanValue())
+                                     .findFirst();
+    }
+
+    private static Optional<String> getProcessingInstructionString(List<ProcessingInstruction> processingInstructions,
+                                                                   ProcessingKey processingKey) {
+        return processingInstructions.stream()
+                                     .filter(instruction -> processingKey.equals(instruction.getKey()))
+                                     .map(instruction -> instruction.getValue().getTextValue())
                                      .findFirst();
     }
 }

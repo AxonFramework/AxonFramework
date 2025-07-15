@@ -187,25 +187,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                     throw new IllegalArgumentException("Unknown type: " + id.type());
                 }))
                 .criteriaResolver(c -> (s, ctx) -> EventCriteria.havingTags("Person", s.key()))
-                .entityIdResolver(config -> (message, context) -> {
-                    List<Class<? extends PersonCommand>> personCommandTypes = List.of(
-                            AssignTaskCommand.class,
-                            CreateCustomer.class,
-                            CreateEmployee.class,
-                            ChangeEmailAddress.class,
-                            AssignTaskCommand.class,
-                            CompleteTaskCommand.class,
-                            GiveRaise.class
-                    );
-                    var clazz = personCommandTypes.stream().filter(type -> type.getName().equals(message.type().name()))
-                                                  .findFirst()
-                                                  .orElseThrow(() -> new IllegalArgumentException(format(
-                                                          "Unknown command type: %s",
-                                                          message.type().name())));
-                    PersonCommand personCommand = config.getComponent(Converter.class)
-                                                        .convert(message.getPayload(), clazz);
-                    return Objects.requireNonNull(personCommand).identifier();
-                });
+                .entityIdResolver(PersonIdentifierEntityIdResolver::new);
         return StatefulCommandHandlingModule
                 .named("MutableBuilderEntityModelAdministrationTest")
                 .entities()

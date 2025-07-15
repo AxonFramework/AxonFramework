@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
+package org.axonframework.commandhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.RoutingKey;
+import org.axonframework.commandhandling.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;

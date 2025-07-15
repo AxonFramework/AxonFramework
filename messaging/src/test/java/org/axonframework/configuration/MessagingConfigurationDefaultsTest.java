@@ -24,7 +24,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -72,7 +72,7 @@ class MessagingConfigurationDefaultsTest {
         Configuration resultConfig = configurer.build();
 
         assertInstanceOf(ClassBasedMessageTypeResolver.class, resultConfig.getComponent(MessageTypeResolver.class));
-        assertInstanceOf(DefaultCommandGateway.class, resultConfig.getComponent(CommandGateway.class));
+        assertInstanceOf(ConvertingCommandGateway.class, resultConfig.getComponent(CommandGateway.class));
         assertInstanceOf(SimpleCommandBus.class, resultConfig.getComponent(CommandBus.class));
         assertInstanceOf(DefaultEventGateway.class, resultConfig.getComponent(EventGateway.class));
         assertInstanceOf(SimpleEventBus.class, resultConfig.getComponent(EventBus.class));

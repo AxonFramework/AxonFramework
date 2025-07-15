@@ -34,9 +34,10 @@ import org.junit.jupiter.api.*;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -59,7 +60,10 @@ class DistributedCommandBusTest {
 
         connector = new StubConnector();
         delegate = new SimpleCommandBus();
-        testSubject = new DistributedCommandBus(delegate, connector, new DistributedCommandBusConfiguration());
+        DistributedCommandBusConfiguration configuration = new DistributedCommandBusConfiguration();
+        // Create virtual threads for the test, so we don't have to manage the thread pool.
+        configuration.withExecutorService(Executors.newVirtualThreadPerTaskExecutor());
+        testSubject = new DistributedCommandBus(delegate, connector, configuration);
     }
 
     @Test
@@ -76,7 +80,9 @@ class DistributedCommandBusTest {
         CommandBusConnector.ResultCallback mockCallback = mock();
         connector.handler.get().handle(testCommand, mockCallback);
 
-        verify(mockCallback).error(isA(NoHandlerForCommandException.class));
+        await().untilAsserted(() -> {
+            verify(mockCallback).error(isA(NoHandlerForCommandException.class));
+        });
     }
 
     @Test
@@ -88,8 +94,10 @@ class DistributedCommandBusTest {
 
         CommandBusConnector.ResultCallback mockCallback = mock();
         connector.handler.get().handle(testCommand, mockCallback);
+        await().untilAsserted(() -> {
+            verify(mockCallback).success(same(resultMessage));
+        });
 
-        verify(mockCallback).success(same(resultMessage));
     }
 
     @Test

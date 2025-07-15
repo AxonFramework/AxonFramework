@@ -87,10 +87,9 @@ public interface CommandBusConnector {
          * Handles the incoming command message.
          *
          * @param commandMessage The command message to handle.
-         * @param priority       The priority of the command, which can be used to determine the order of processing.
          * @param callback       The callback to invoke with the result of handling the command.
          */
-        void handle(@Nonnull CommandMessage<?> commandMessage, long priority, @Nonnull ResultCallback callback);
+        void handle(@Nonnull CommandMessage<?> commandMessage, @Nonnull ResultCallback callback);
     }
 
     /**

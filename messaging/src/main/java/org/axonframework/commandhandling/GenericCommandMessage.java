@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
@@ -24,8 +25,8 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 /**
  * Generic implementation of the {@link CommandMessage} interface.
@@ -36,6 +37,9 @@ import jakarta.annotation.Nonnull;
  * @since 2.0.0
  */
 public class GenericCommandMessage<P> extends MessageDecorator<P> implements CommandMessage<P> {
+
+    private final String routingKey;
+    private final Long priority;
 
     /**
      * Constructs a {@code GenericCommandMessage} for the given {@code type} and {@code payload}.
@@ -63,6 +67,25 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
         this(new GenericMessage<>(type, payload, metaData));
     }
 
+
+    /**
+     * Constructs a {@code GenericCommandMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
+     *
+     * @param type       The {@link MessageType type} for this {@link CommandMessage}.
+     * @param payload    The payload of type {@code P} for this {@link CommandMessage}.
+     * @param metaData   The metadata for this {@link CommandMessage}.
+     * @param routingKey The routing key for this {@link CommandMessage}, if any.
+     * @param priority   The priority for this {@link CommandMessage}, if any.
+     */
+    public GenericCommandMessage(@Nonnull MessageType type,
+                                 @Nonnull P payload,
+                                 @Nonnull Map<String, String> metaData,
+                                 @Nullable String routingKey,
+                                 @Nullable Long priority
+    ) {
+        this(new GenericMessage<>(type, payload, metaData), routingKey, priority);
+    }
+
     /**
      * Constructs a {@code GenericCommandMessage} with given {@code delegate}.
      * <p>
@@ -79,6 +102,40 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      */
     public GenericCommandMessage(@Nonnull Message<P> delegate) {
         super(delegate);
+        this.routingKey = null;
+        this.priority = null;
+    }
+
+    /**
+     * Constructs a {@code GenericCommandMessage} with given {@code delegate}.
+     * <p>
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
+     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * {@code GenericCommandMessage}.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
+     *
+     * @param delegate   The {@link Message} containing {@link Message#getPayload() payload},
+     *                   {@link Message#type() qualifiedName}, {@link Message#getIdentifier() identifier} and
+     *                   {@link Message#getMetaData() metadata} for the {@link CommandMessage} to reconstruct.
+     * @param routingKey The routing key for this {@link CommandMessage}, if any.
+     * @param priority   The priority for this {@link CommandMessage}, if any.
+     */
+    public GenericCommandMessage(@Nonnull Message<P> delegate, @Nullable String routingKey, @Nullable Long priority) {
+        super(delegate);
+        this.routingKey = routingKey;
+        this.priority = priority;
+    }
+
+    @Override
+    public Optional<String> routingKey() {
+        return Optional.ofNullable(routingKey);
+    }
+
+    @Override
+    public Optional<Long> priority() {
+        return Optional.ofNullable(priority);
     }
 
     @Override

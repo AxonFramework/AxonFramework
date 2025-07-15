@@ -69,9 +69,8 @@ public class PayloadConvertingCommandBusConnector<T> extends WrappedCommandBusCo
 
     @Override
     public void onIncomingCommand(@Nonnull Handler handler) {
-        delegate.onIncomingCommand((commandMessage, priority, callback) -> handler.handle(
+        delegate.onIncomingCommand((commandMessage, callback) -> handler.handle(
                 commandMessage,
-                priority,
                 new ConvertingResultMessageCallback(callback))
         );
     }

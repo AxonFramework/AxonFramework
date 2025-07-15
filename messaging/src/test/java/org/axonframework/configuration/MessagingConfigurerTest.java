@@ -19,7 +19,7 @@ package org.axonframework.configuration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
@@ -63,7 +63,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Optional<CommandGateway> commandGateway = result.getOptionalComponent(CommandGateway.class);
         assertTrue(commandGateway.isPresent());
-        assertInstanceOf(DefaultCommandGateway.class, commandGateway.get());
+        assertInstanceOf(ConvertingCommandGateway.class, commandGateway.get());
 
         Optional<CommandBus> commandBus = result.getOptionalComponent(CommandBus.class);
         assertTrue(commandBus.isPresent());

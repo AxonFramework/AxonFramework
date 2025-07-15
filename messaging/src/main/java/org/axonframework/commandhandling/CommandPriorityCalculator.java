@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
-
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.Context.ResourceKey;
+package org.axonframework.commandhandling;
 
 /**
  * Calculate the priority of {@link CommandMessage} based on its content. Higher value means higher priority.
@@ -33,5 +30,5 @@ public interface CommandPriorityCalculator {
      * @param command a {@link CommandMessage} to prioritize
      * @return an {@code int} defining the priority of the given {@code command}
      */
-    int determinePriority(CommandMessage<?> command);
+    long determinePriority(CommandMessage<?> command);
 }

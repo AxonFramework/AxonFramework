@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
-
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.Context.ResourceKey;
+package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
 

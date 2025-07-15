@@ -31,10 +31,9 @@ import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessage
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
-import org.axonframework.commandhandling.distributed.CommandPriorityCalculator;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
+import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;

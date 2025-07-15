@@ -103,18 +103,27 @@ public class DistributedCommandBus implements CommandBus {
 
         @Override
         public void handle(@Nonnull CommandMessage<?> commandMessage,
-                           long priority,
                            @Nonnull CommandBusConnector.ResultCallback callback) {
-            logger.debug("Received command [{}] for processing with priority [{}]", commandMessage.type(), priority);
+            Long priority = commandMessage.priority().orElse(0L);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Received command [{}] for processing with priority [{}] and routing key [{}]", commandMessage.type(),
+                                 commandMessage.priority().orElse(null),
+                                 commandMessage.routingKey().orElse(null)
+                );
+            }
             long sequence = TASK_SEQUENCE.incrementAndGet();
             executorService.submit(new PriorityRunnable(() -> {
-                doHandleCommand(commandMessage, priority, callback);
+                doHandleCommand(commandMessage, callback);
             }, priority, sequence));
         }
 
-        private void doHandleCommand(CommandMessage<?> commandMessage, long priority,
+        private void doHandleCommand(CommandMessage<?> commandMessage,
                                      CommandBusConnector.ResultCallback callback) {
-            logger.info("Processing incoming command [{}] with priority [{}]", commandMessage.type(), priority);
+            logger.info("Processing incoming command [{}] with priority [{}] and routing key [{}]",
+                        commandMessage.type(),
+                        commandMessage.priority().orElse(null),
+                        commandMessage.routingKey().orElse(null)
+            );
             delegate.dispatch(commandMessage, null).whenComplete((resultMessage, e) -> {
                 try {
                     if (e == null) {

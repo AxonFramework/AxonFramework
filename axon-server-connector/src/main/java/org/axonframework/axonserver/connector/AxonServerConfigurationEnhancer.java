@@ -20,11 +20,11 @@ import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnec
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnectorConfiguration;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
-import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.commandhandling.distributed.CommandPriorityCalculator;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentRegistry;
@@ -66,11 +66,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                 .registerIfNotPresent(routingStrategyDefinition(), SearchScope.ALL)
                 .registerFactory(new AxonServerEventStorageEngineFactory())
                 .registerIfNotPresent(commandBusConnectorDefinition(), SearchScope.ALL)
-                .registerDecorator(CommandBusConnector.class, 0, getPayloadConvertingConnectorComponentDecorator())
-                .registerDecorator(AxonServerCommandBusConnectorConfiguration.class,
-                                   0,
-                                   routingStrategyConnectorDecorator())
-                .registerDecorator(AxonServerCommandBusConnectorConfiguration.class, 0, priorityConnectorDecorator());
+                .registerDecorator(CommandBusConnector.class, 0, getPayloadConvertingConnectorComponentDecorator());
     }
 
     private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector<Object>> getPayloadConvertingConnectorComponentDecorator() {
@@ -78,19 +74,6 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                 delegate,
                 config.getComponent(Converter.class),
                 byte[].class);
-    }
-
-    private ComponentDecorator<AxonServerCommandBusConnectorConfiguration, AxonServerCommandBusConnectorConfiguration> routingStrategyConnectorDecorator() {
-        return (config, name, delegate) -> config.getOptionalComponent(RoutingStrategy.class)
-                                                 .map(delegate::withRoutingStrategy)
-                                                 .orElse(delegate);
-    }
-
-    private ComponentDecorator<AxonServerCommandBusConnectorConfiguration, AxonServerCommandBusConnectorConfiguration> priorityConnectorDecorator() {
-        return (config, name, delegate) -> config
-                .getOptionalComponent(CommandPriorityCalculator.class)
-                .map(delegate::withPriorityCalculator)
-                .orElse(delegate);
     }
 
     private ComponentDefinition<AxonServerConnectionManager> connectionManagerDefinition() {

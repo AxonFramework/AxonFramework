@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.UnresolvedRoutingKeyPolicy;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
