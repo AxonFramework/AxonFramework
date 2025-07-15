@@ -176,7 +176,7 @@ public class UnitOfWork implements ProcessingLifecycle {
         try {
             CompletableFuture<R> result = action.call();
             if(result == null) {
-                return CompletableFuture.failedFuture(new NullPointerException("The action returned a null CompletableFuture"));
+                return CompletableFuture.failedFuture(new NullPointerException("The action returned a null CompletableFuture."));
             }
             return result;
         } catch (Exception e) {

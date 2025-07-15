@@ -19,9 +19,10 @@ package org.axonframework.util;
 /**
  * Represents a task such as {@link Runnable} or {@link Comparable} that adheres to a priority by implementing
  * {@link Comparable}. Uses a combination of {@code priority} and {@code index} to compare between {@code this} and
- * other {@link PriorityTask} instances. A calculator defines the priority of the task.
- * This task uses the {@code index} to differentiate between tasks with the same priority, ensuring the insert order is
- * leading in those scenarios.
+ * other {@link PriorityTask} instances. A calculator  (e.g.
+ * {@link org.axonframework.commandhandling.CommandPriorityCalculator})  defines the priority of the task. This task
+ * uses the {@code index} to differentiate between tasks with the same priority, ensuring the insert order is leading in
+ * those scenarios.
  *
  * @author Stefan Dragisic
  * @author Milan Savic

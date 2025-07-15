@@ -22,7 +22,7 @@ import java.util.concurrent.Callable;
 /**
  * A wrapper class of {@link Callable Callables} that adheres to a priority by implementing {@link PriorityTask}. Uses a
  * combination of {@code priority} and {@code index} to compare between {@code this} and other priority task instances.
- * A calculator defines the
+ * A calculator (e.g. {@link org.axonframework.commandhandling.CommandPriorityCalculator}) defines the
  * priority of the task. This task uses the {@code index} to differentiate between tasks with the same priority,
  * ensuring the insert order is leading in those scenarios.
  *

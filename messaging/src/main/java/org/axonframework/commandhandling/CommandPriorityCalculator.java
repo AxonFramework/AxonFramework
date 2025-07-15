@@ -27,8 +27,8 @@ public interface CommandPriorityCalculator {
     /**
      * Determines the priority of the given {@code command}. The higher the returned value, the higher the priority is.
      *
-     * @param command a {@link CommandMessage} to prioritize
-     * @return an {@code int} defining the priority of the given {@code command}
+     * @param command a {@link CommandMessage} to prioritize.
+     * @return an {@code int} defining the priority of the given {@code command}.
      */
     long determinePriority(CommandMessage<?> command);
 }

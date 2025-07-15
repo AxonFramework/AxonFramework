@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
+package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
-import org.axonframework.commandhandling.annotation.RoutingKey;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 

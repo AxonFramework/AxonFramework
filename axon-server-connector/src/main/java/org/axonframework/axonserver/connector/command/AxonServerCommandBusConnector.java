@@ -76,10 +76,10 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     private final Map<String, Registration> subscriptions = new ConcurrentHashMap<>();
 
     /**
-     * Creates a new {@code AxonServerConnector} that communicate with Axon Server using the provided {@code connection}
-     * and the provided {@code configuration}.
+     * Creates a new {@code AxonServerConnector} that communicate with Axon Server using the provided
+     * {@code connection}.
      *
-     * @param connection    The {@code AxonServerConnection} to communicate to Axon Server with.
+     * @param connection The {@code AxonServerConnection} to communicate to Axon Server with.
      */
     public AxonServerCommandBusConnector(@Nonnull AxonServerConnection connection) {
         this.connection = Objects.requireNonNull(connection, "The AxonServerConnection must not be null.");

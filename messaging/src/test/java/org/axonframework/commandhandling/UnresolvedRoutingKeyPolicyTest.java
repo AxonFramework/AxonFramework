@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
+package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.UnresolvedRoutingKeyPolicy;
+import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
