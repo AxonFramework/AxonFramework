@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Decorator for {@link EventProcessingPipeline} that adds error handling logic using an {@link ErrorHandler}.
  */
-public class ErrorHandlingEventProcessingPipelineDecorator extends EventProcessingPipelineDecorator {
+class ErrorHandlingEventProcessingPipelineDecorator extends EventProcessingPipelineDecorator {
     private final ErrorHandler errorHandler;
 
     public ErrorHandlingEventProcessingPipelineDecorator(EventProcessingPipeline delegate, ErrorHandler errorHandler) {

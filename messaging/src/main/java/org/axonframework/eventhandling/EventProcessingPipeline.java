@@ -26,11 +26,11 @@ import java.util.concurrent.CompletableFuture;
  * Internal interface representing a pipeline for processing event messages in a unit of work.
  * Decorators can be used to add cross-cutting concerns.
  */
-public interface EventProcessingPipeline {
+interface EventProcessingPipeline {
     String getProcessorName();
     CompletableFuture<Void> processInUnitOfWork(
         List<? extends EventMessage<?>> eventMessages,
-        UnitOfWork unitOfWork, // ProcessingContext
-        Collection<Segment> processingSegments // sequence identifier?
+        UnitOfWork unitOfWork,
+        Collection<Segment> processingSegments
     ) throws Exception;
 } 

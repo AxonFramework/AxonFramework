@@ -207,6 +207,27 @@ public final class EventProcessorOperations {
                           }));
     }
 
+    private MessageStream.Empty<?> processMessageInUnitOfWork(Collection<Segment> processingSegments,
+                                                              EventMessage<?> message,
+                                                              ProcessingContext processingContext,
+                                                              MessageMonitor.MonitorCallback monitorCallback
+    ) throws Exception {
+        try {
+            for (Segment processingSegment : processingSegments) {
+                if (segmentMatcher.matches(processingSegment, message)) {
+                    FutureUtils.joinAndUnwrap(
+                            eventHandlingComponent.handle(message, processingContext).asCompletableFuture()
+                    );
+                }
+            }
+            monitorCallback.reportSuccess();
+            return MessageStream.empty();
+        } catch (Exception exception) {
+            monitorCallback.reportFailure(exception);
+            throw exception;
+        }
+    }
+
     private CompletableFuture<Void> processMessage(Collection<Segment> processingSegments,
                                                    ProcessingContext processingContext,
                                                    EventMessage<?> message
@@ -228,27 +249,6 @@ public final class EventProcessorOperations {
                         .thenApply(e -> null);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    private MessageStream.Empty<?> processMessageInUnitOfWork(Collection<Segment> processingSegments,
-                                                              EventMessage<?> message,
-                                                              ProcessingContext processingContext,
-                                                              MessageMonitor.MonitorCallback monitorCallback
-    ) throws Exception {
-        try {
-            for (Segment processingSegment : processingSegments) {
-                if (segmentMatcher.matches(processingSegment, message)) {
-                    FutureUtils.joinAndUnwrap(
-                            eventHandlingComponent.handle(message, processingContext).asCompletableFuture()
-                    );
-                }
-            }
-            monitorCallback.reportSuccess();
-            return MessageStream.empty();
-        } catch (Exception exception) {
-            monitorCallback.reportFailure(exception);
-            throw exception;
         }
     }
 

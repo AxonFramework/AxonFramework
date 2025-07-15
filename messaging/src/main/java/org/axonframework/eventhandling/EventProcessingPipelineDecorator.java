@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  * Forwards all calls to the delegate by default.
  * Subclasses can override methods to add cross-cutting behavior.
  */
-public abstract class EventProcessingPipelineDecorator implements EventProcessingPipeline {
+abstract class EventProcessingPipelineDecorator implements EventProcessingPipeline {
     protected final EventProcessingPipeline delegate;
 
     protected EventProcessingPipelineDecorator(EventProcessingPipeline delegate) {
