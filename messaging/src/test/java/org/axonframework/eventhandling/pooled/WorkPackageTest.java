@@ -542,7 +542,7 @@ class WorkPackageTest {
         private final List<ContextMessage> processedEvents = new ArrayList<>();
 
         @Override
-        public CompletableFuture<Void> processBatch(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext,
+        public CompletableFuture<?> processBatch(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext,
                                                       Segment processingSegment) {
             processingContext.runOnInvocation(ctx -> {
                 if (batchProcessorPredicate.test(eventMessages, TrackingToken.fromContext(ctx).orElse(null))) {

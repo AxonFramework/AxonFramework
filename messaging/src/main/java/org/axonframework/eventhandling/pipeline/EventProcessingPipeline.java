@@ -28,5 +28,5 @@ public interface EventProcessingPipeline {
 //    MessageStream.Empty<?> process(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext,
 //                                   Segment processingSegment);
 
-    CompletableFuture<Void> process(List<? extends EventMessage<?>> events, ProcessingContext context, Segment segment);
+    CompletableFuture<?> process(List<? extends EventMessage<?>> events, ProcessingContext context, Segment segment);
 }

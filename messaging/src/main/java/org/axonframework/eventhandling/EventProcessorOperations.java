@@ -164,7 +164,7 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
      * @param eventMessages     The batch of messages that is to be processed
      * @param processingContext The Processing Context that has been prepared to process the messages
      */
-    public CompletableFuture<Void> process(List<? extends EventMessage<?>> eventMessages,
+    public CompletableFuture<?> process(List<? extends EventMessage<?>> eventMessages,
                                            ProcessingContext processingContext) {
         return process(eventMessages, processingContext, Segment.ROOT_SEGMENT);
     }
@@ -179,26 +179,27 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
      * @param segment The segment for which the events should be processed in this processing context
      */
     @Override
-    public CompletableFuture<Void> process(List<? extends EventMessage<?>> events,
+    public CompletableFuture<?> process(List<? extends EventMessage<?>> events,
                                            ProcessingContext context,
                                            Segment segment) {
-        context.onError((ctx, phase, exception) -> {
-            try {
-                var cause = exception instanceof CompletionException ? exception.getCause() : exception;
-                errorHandler.handleError(new ErrorContext(name(), cause, events));
-            } catch (RuntimeException ex) {
-                throw ex;
-            } catch (Exception ex) {
-                throw new EventProcessingException("Exception occurred while processing events", ex);
-            }
-        });
         return spanFactory.createBatchSpan(streamingProcessor, events)
-                          .runSupplierAsync(() -> processEach(events, context, segment));
+                          .runSupplierAsync(() -> processEach(events, context, segment)
+                                  .exceptionally(e -> {
+                                      try {
+                                          var cause = e instanceof CompletionException ? e.getCause() : e;
+                                          errorHandler.handleError(new ErrorContext(name(), cause, events));
+                                      } catch (RuntimeException ex) {
+                                          throw ex;
+                                      } catch (Exception ex) {
+                                          throw new EventProcessingException("Exception occurred while processing events", ex);
+                                      }
+                                      return null;
+                                  }));
     }
 
     @Nonnull
-    private CompletableFuture<Void> processEach(List<? extends EventMessage<?>> events, ProcessingContext ctx, Segment segment) {
-        CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
+    private CompletableFuture<?> processEach(List<? extends EventMessage<?>> events, ProcessingContext ctx, Segment segment) {
+        CompletableFuture<?> result = CompletableFuture.completedFuture(null);
 
         for (EventMessage<?> message : events) {
             result = result.thenCompose(v -> spanFactory
@@ -210,7 +211,7 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
         return result;
     }
 
-    private CompletableFuture<Void> process(
+    private CompletableFuture<?> process(
             EventMessage<?> message,
             ProcessingContext context,
             Segment segment
@@ -233,7 +234,7 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                             } else {
                                 monitorCallback.reportFailure(ex);
                             }
-                        }).thenApply(__ -> null);
+                        });
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }

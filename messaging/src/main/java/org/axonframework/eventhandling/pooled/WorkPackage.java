@@ -543,7 +543,7 @@ class WorkPackage {
          * @param processingSegment the {@link Segment} for which the {@code eventMessages} should be processed in the
          *                          given {@code unitOfWork}
          */
-        CompletableFuture<Void> processBatch(List<? extends EventMessage<?>> eventMessages,
+        CompletableFuture<?> processBatch(List<? extends EventMessage<?>> eventMessages,
                                              ProcessingContext processingContext,
                                              Segment processingSegment);
     }
