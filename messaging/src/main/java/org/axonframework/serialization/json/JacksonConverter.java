@@ -84,7 +84,9 @@ public class JacksonConverter implements Converter {
 
     @Nullable
     @Override
-    public <S, T> T convert(@Nullable S input, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
+    public <S, T> T convert(@Nullable S input,
+                            @Nonnull Class<S> sourceType,
+                            @Nonnull Class<T> targetType) {
         if (input == null) {
             return null;
         }
@@ -94,34 +96,27 @@ public class JacksonConverter implements Converter {
         }
 
         try {
-            return performConversion(input, sourceType, targetType);
-        } catch (JsonProcessingException e) {
-            String message = """
-                    Failed to convert between %s and %s: %s
-                    """.formatted(sourceType.getSimpleName(), targetType.getSimpleName(), e.getMessage());
-            logger.error(message, e);
-            throw new ConversionException(message, e);
+            JavaType targetJavaType = objectMapper.constructType(targetType);
+            if (converter.canConvert(sourceType, targetJavaType.getRawClass())) {
+                // Converter has got this entirely.
+                //noinspection unchecked
+                return (T) converter.convert(input, targetJavaType.getRawClass());
+            } else if (converter.canConvert(sourceType, byte[].class)) {
+                // Converting from source byte[] to requested target type.
+                return objectMapper.readValue(converter.convert(input, byte[].class), targetJavaType);
+            } else if (converter.canConvert(targetJavaType.getRawClass(), byte[].class)) {
+                // Converting to byte[] from some input type.
+                //noinspection unchecked
+                return (T) converter.convert(objectMapper.writeValueAsBytes(input), targetJavaType.getRawClass());
+            } else {
+                // Unsure, let's see of the ObjectMapper can do this itself.
+                return objectMapper.convertValue(input, targetJavaType);
+            }
+        } catch (IOException e) {
+            throw new ConversionException(
+                    "Exception when trying to convert object of type '" + sourceType.getTypeName() + "' to '"
+                            + targetType.getTypeName() + "'", e
+            );
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <S, T> T performConversion(S input,
-                                       Class<S> sourceType,
-                                       Class<T> targetType) throws JsonProcessingException {
-        if (canSerialize(targetType)) {
-            String json = objectMapper.writeValueAsString(input);
-            return switch (targetType.getName()) {
-                case "[B" -> (T) json.getBytes(StandardCharsets.UTF_8); // byte[]
-                case "java.lang.String" -> (T) json;
-                default -> throw new IllegalArgumentException("Unsupported target type: " + targetType);
-            };
-        }
-
-        var jsonInput = switch (input) {
-            case byte[] bytes -> new String(bytes, StandardCharsets.UTF_8);
-            case String str -> str;
-            default -> throw new IllegalArgumentException("Unsupported source type: " + sourceType);
-        };
-        return objectMapper.readValue(jsonInput, targetType);
     }
 }
