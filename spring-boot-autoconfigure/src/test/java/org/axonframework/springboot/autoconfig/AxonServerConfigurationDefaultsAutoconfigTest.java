@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import io.axoniq.axonserver.connector.AxonServerConnection;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
@@ -109,7 +110,10 @@ class AxonServerConfigurationDefaultsAutoconfigTest {
 
         @Bean
         public AxonServerConnectionManager customAxonServerConnectionManager() {
-            return mock(AxonServerConnectionManager.class);
+            AxonServerConnectionManager mock = mock(AxonServerConnectionManager.class);
+            AxonServerConnection connectionMock = mock();
+            when(mock.getConnection()).thenReturn(connectionMock);
+            return mock;
         }
 
         @Bean
