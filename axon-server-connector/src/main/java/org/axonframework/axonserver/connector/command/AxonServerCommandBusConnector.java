@@ -91,11 +91,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
                                                                @Nullable ProcessingContext processingContext) {
         return connection.commandChannel()
                          .sendCommand(buildOutgoingCommand(command))
-                         .thenCompose(this::buildResultMessage)
-                         .exceptionally(e -> {
-                             // Convert to dispatch exception, not 100% if necessary
-                             throw ErrorCode.COMMAND_DISPATCH_ERROR.convert(e);
-                         });
+                         .thenCompose(this::buildResultMessage);
     }
 
     private CompletableFuture<CommandResultMessage<?>> buildResultMessage(CommandResponse commandResponse) {

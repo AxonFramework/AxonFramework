@@ -17,6 +17,8 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.MetaDataValue;
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +34,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 5.0.0
  */
+@Internal
 public class AxonServerMetadataConverter {
 
     /**
@@ -40,7 +43,8 @@ public class AxonServerMetadataConverter {
      * @param source The source map containing String key-value pairs.
      * @return A map where each value is converted to an Axon Server {@link MetaDataValue}.
      */
-    public static Map<String, MetaDataValue> convertToMetaDataValues(Map<String, String> source) {
+    @Nonnull
+    public static Map<String, MetaDataValue> convertToMetaDataValues(@Nonnull Map<String, String> source) {
         Map<String, MetaDataValue> result = new HashMap<>();
         source.forEach((k, v) -> {
             MetaDataValue convertedValue = convertToTextMetaDataValue(v);
@@ -59,7 +63,8 @@ public class AxonServerMetadataConverter {
      * @param source The source map containing Axon Server {@link MetaDataValue} objects.
      * @return A map where each value is converted to a String representation.
      */
-    public static Map<String, String> convertFromMetaDataValues(Map<String, MetaDataValue> source) {
+    @Nonnull
+    public static Map<String, String> convertFromMetaDataValues(@Nonnull Map<String, MetaDataValue> source) {
         Map<String, String> result = new HashMap<>();
         source.forEach((k, v) -> {
             String convertedValue = convertFromMetaDataValue(v);
