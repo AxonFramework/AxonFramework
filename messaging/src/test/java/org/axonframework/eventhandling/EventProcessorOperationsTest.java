@@ -24,12 +24,13 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
@@ -103,18 +104,21 @@ class EventProcessorOperationsTest {
 
     private static class TestEventProcessor implements EventProcessor {
 
+        private static final SimpleUnitOfWorkFactory UNIT_OF_WORK_FACTORY = new SimpleUnitOfWorkFactory();
         private final EventProcessorOperations eventProcessorOperations;
 
         private TestEventProcessor(Builder builder) {
             builder.validate();
-            this.eventProcessorOperations = new EventProcessorOperations.Builder()
-                    .name(builder.name())
-                    .eventHandlingComponent(builder.eventHandlingComponent())
-                    .errorHandler(builder.errorHandler())
-                    .spanFactory(builder.spanFactory())
-                    .messageMonitor(builder.messageMonitor())
-                    .streamingProcessor(true)
-                    .build();
+            var eventHandlingComponent = builder.eventHandlingComponent();
+            this.eventProcessorOperations = new EventProcessorOperations(
+                    builder.name(),
+                    eventHandlingComponent,
+                    builder.errorHandler(),
+                    builder.messageMonitor(),
+                    builder.spanFactory(),
+                    new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e))),
+                    true
+            );
         }
 
         private static Builder builder() {
@@ -149,8 +153,10 @@ class EventProcessorOperationsTest {
             return false;
         }
 
-        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {
-            eventProcessorOperations.processInUnitOfWork(eventMessages, new UnitOfWork());
+        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) {
+            var unitOfWork = UNIT_OF_WORK_FACTORY.create();
+            unitOfWork.onPreInvocation(processingContext -> eventProcessorOperations.process(eventMessages, processingContext).asCompletableFuture());
+            unitOfWork.execute().join();
         }
 
         @Override
