@@ -38,7 +38,6 @@ import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalLong;
@@ -546,7 +545,7 @@ class WorkPackageTest {
 
         @Override
         public void processBatch(List<? extends EventMessage<?>> eventMessages, UnitOfWork unitOfWork,
-                                 Collection<Segment> processingSegments) {
+                                 Segment processingSegment) {
             FutureUtils.joinAndUnwrap(unitOfWork.executeWithResult(ctx -> {
                 if (batchProcessorPredicate.test(eventMessages, TrackingToken.fromContext(ctx).orElse(null))) {
                     processedEvents.addAll(eventMessages.stream().map(m -> new ContextMessage(m, ctx)).toList());

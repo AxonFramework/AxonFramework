@@ -36,8 +36,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
@@ -340,7 +338,7 @@ class WorkPackage {
                             batchProcessedCallback.run();
                         }
                 );
-                batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
+                batchProcessor.processBatch(eventBatch, unitOfWork, segment);
             } finally {
                 processingEvents.set(false);
             }
@@ -539,13 +537,13 @@ class WorkPackage {
          *
          * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
          * @param unitOfWork         the {@link UnitOfWork} that has been prepared to process the {@code eventMessages}
-         * @param processingSegments the {@link Segment}s for which the {@code eventMessages} should be processed in the
+         * @param processingSegment the {@link Segment} for which the {@code eventMessages} should be processed in the
          *                           given {@code unitOfWork}
          * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
          */
         void processBatch(List<? extends EventMessage<?>> eventMessages,
                           UnitOfWork unitOfWork,
-                          Collection<Segment> processingSegments) throws Exception;
+                          Segment processingSegment) throws Exception;
     }
 
     /**

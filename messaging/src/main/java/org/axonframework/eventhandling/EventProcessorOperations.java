@@ -60,8 +60,6 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 @Internal
 public final class EventProcessorOperations {
 
-    private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
-
     private final String name;
     private final EventHandlingComponent eventHandlingComponent;
     private final ErrorHandler errorHandler;
@@ -164,7 +162,7 @@ public final class EventProcessorOperations {
      */
     public void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                              UnitOfWork unitOfWork) throws Exception {
-        processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT).join();
+        processInUnitOfWork(eventMessages, unitOfWork, Segment.ROOT_SEGMENT).join();
     }
 
     /**
@@ -174,61 +172,40 @@ public final class EventProcessorOperations {
      *
      * @param eventMessages      The batch of messages that is to be processed
      * @param unitOfWork         The Unit of Work that has been prepared to process the messages
-     * @param processingSegments The segments for which the events should be processed in this unit of work
-     * @throws Exception when an exception occurred during processing of the batch
+     * @param processingSegment The segment for which the events should be processed in this unit of work
      */
     public CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                                        UnitOfWork unitOfWork,
-                                                       Collection<Segment> processingSegments) throws Exception {
+                                                       Segment processingSegment) {
         unitOfWork.onInvocation(processingContext -> {
             CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
 
             for (EventMessage<?> message : eventMessages) {
                 result = result.thenCompose(v -> spanFactory
                         .createProcessEventSpan(streamingProcessor, message)
-                        .runSupplierAsync(() -> processMessage(processingSegments, processingContext, message))
+                        .runSupplierAsync(() -> processMessage(processingSegment, processingContext, message))
                 );
             }
 
             return result;
         });
 
-        return spanFactory.createBatchSpan(streamingProcessor, eventMessages)
-                          .runSupplierAsync(() -> unitOfWork.execute().exceptionally(e -> {
-                              try {
-                                  var cause = e instanceof CompletionException ? e.getCause() : e;
-                                  errorHandler.handleError(new ErrorContext(name(), cause, eventMessages));
-                              } catch (RuntimeException ex) {
-                                  throw ex;
-                              } catch (Exception ex) {
-                                  throw new EventProcessingException("Exception occurred while processing events", ex);
-                              }
-                              return null;
-                          }));
-    }
-
-    private MessageStream.Empty<?> processMessageInUnitOfWork(Collection<Segment> processingSegments,
-                                                              EventMessage<?> message,
-                                                              ProcessingContext processingContext,
-                                                              MessageMonitor.MonitorCallback monitorCallback
-    ) throws Exception {
-        try {
-            for (Segment processingSegment : processingSegments) {
-                if (segmentMatcher.matches(processingSegment, message)) {
-                    FutureUtils.joinAndUnwrap(
-                            eventHandlingComponent.handle(message, processingContext).asCompletableFuture()
-                    );
-                }
+        unitOfWork.onError((processingContext, phase, exception) -> {
+            try {
+                var cause = exception instanceof CompletionException ? exception.getCause() : exception;
+                errorHandler.handleError(new ErrorContext(name(), cause, eventMessages));
+            } catch (RuntimeException ex) {
+                throw ex;
+            } catch (Exception ex) {
+                throw new EventProcessingException("Exception occurred while processing events", ex);
             }
-            monitorCallback.reportSuccess();
-            return MessageStream.empty();
-        } catch (Exception exception) {
-            monitorCallback.reportFailure(exception);
-            throw exception;
-        }
+        });
+
+        return spanFactory.createBatchSpan(streamingProcessor, eventMessages)
+                          .runSupplierAsync(unitOfWork::execute);
     }
 
-    private CompletableFuture<Void> processMessage(Collection<Segment> processingSegments,
+    private CompletableFuture<Void> processMessage(Segment processingSegment,
                                                    ProcessingContext processingContext,
                                                    EventMessage<?> message
     ) {
@@ -239,7 +216,7 @@ public final class EventProcessorOperations {
                     new DefaultInterceptorChain<>(
                             null,
                             interceptors,
-                            (msg, ctx) -> processMessageInUnitOfWork(processingSegments,
+                            (msg, ctx) -> processMessageInUnitOfWork(processingSegment,
                                                                      msg,
                                                                      ctx,
                                                                      monitorCallback));
@@ -249,6 +226,25 @@ public final class EventProcessorOperations {
                         .thenApply(e -> null);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    private MessageStream.Empty<?> processMessageInUnitOfWork(Segment processingSegment,
+                                                              EventMessage<?> message,
+                                                              ProcessingContext processingContext,
+                                                              MessageMonitor.MonitorCallback monitorCallback
+    ) {
+        try {
+            if (segmentMatcher.matches(processingSegment, message)) {
+                FutureUtils.joinAndUnwrap(
+                        eventHandlingComponent.handle(message, processingContext).asCompletableFuture()
+                );
+            }
+            monitorCallback.reportSuccess();
+            return MessageStream.empty();
+        } catch (Exception exception) {
+            monitorCallback.reportFailure(exception);
+            throw exception;
         }
     }
 
