@@ -80,12 +80,9 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
      * and the provided {@code configuration}.
      *
      * @param connection    The {@code AxonServerConnection} to communicate to Axon Server with.
-     * @param configuration The configuration for the Axon Server Command Bus Connector.
      */
-    public AxonServerCommandBusConnector(@Nonnull AxonServerConnection connection,
-                                         @Nonnull AxonServerCommandBusConnectorConfiguration configuration) {
+    public AxonServerCommandBusConnector(@Nonnull AxonServerConnection connection) {
         this.connection = Objects.requireNonNull(connection, "The AxonServerConnection must not be null.");
-        Objects.requireNonNull(configuration, "The AxonServerCommandBusConnectorConfiguration must not be null.");
     }
 
     @Nonnull

@@ -17,14 +17,13 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
-import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnectorConfiguration;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
+import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
-import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentRegistry;
@@ -55,9 +54,6 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
     public void enhance(@Nonnull ComponentRegistry registry) {
         registry.registerIfNotPresent(AxonServerConfiguration.class,
                                       c -> new AxonServerConfiguration(),
-                                      SearchScope.ALL)
-                .registerIfNotPresent(AxonServerCommandBusConnectorConfiguration.class,
-                                      c -> new AxonServerCommandBusConnectorConfiguration(),
                                       SearchScope.ALL)
                 .registerIfNotPresent(connectionManagerDefinition(), SearchScope.ALL)
                 .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity(), SearchScope.ALL)
@@ -110,8 +106,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
     private ComponentDefinition<CommandBusConnector> commandBusConnectorDefinition() {
         return ComponentDefinition.ofType(CommandBusConnector.class)
                                   .withBuilder(config -> new AxonServerCommandBusConnector(
-                                          config.getComponent(AxonServerConnectionManager.class).getConnection(),
-                                           config.getComponent(AxonServerCommandBusConnectorConfiguration.class)
+                                          config.getComponent(AxonServerConnectionManager.class).getConnection()
                                   ));
     }
 
