@@ -16,7 +16,7 @@
 
 package org.axonframework.serialization.json;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.annotation.Nonnull;
@@ -27,7 +27,7 @@ import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -46,8 +46,8 @@ public class JacksonConverter implements Converter {
 
     private static final Logger logger = LoggerFactory.getLogger(JacksonConverter.class);
 
-    private final ChainingConverter converter;
     private final ObjectMapper objectMapper;
+    private final ChainingConverter converter;
 
     /**
      * Constructs a {@code JacksonConverter} with a default {@link ObjectMapper} that
@@ -63,9 +63,14 @@ public class JacksonConverter implements Converter {
      * @param objectMapper The mapper used to convert objects into and from a JSON format.
      */
     public JacksonConverter(@Nonnull ObjectMapper objectMapper) {
-        this.converter = new ChainingConverter();
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
         this.objectMapper.registerModule(new JavaTimeModule());
+        // TODO The Converter used to be configurable for the JacksonSerializer. I don't think we need that anymore. Thoughts?
+        this.converter = new ChainingConverter();
+        this.converter.registerConverter(new JsonNodeToByteArrayConverter(this.objectMapper));
+        this.converter.registerConverter(new ByteArrayToJsonNodeConverter(this.objectMapper));
+        this.converter.registerConverter(new JsonNodeToObjectNodeConverter());
+        this.converter.registerConverter(new ObjectNodeToJsonNodeConverter());
     }
 
     @Override
