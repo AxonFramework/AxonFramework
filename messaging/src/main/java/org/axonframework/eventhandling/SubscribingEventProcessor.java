@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -29,6 +30,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -66,13 +68,17 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
-        this.eventProcessorOperations = new EventProcessorOperations.Builder()
-                .name(builder.name())
-                .eventHandlingComponent(builder.eventHandlingComponent())
-                .errorHandler(builder.errorHandler())
-                .spanFactory(builder.spanFactory())
-                .messageMonitor(builder.messageMonitor())
-                .build();
+        var eventHandlingComponent = builder.eventHandlingComponent();
+        var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
+        this.eventProcessorOperations = new EventProcessorOperations(
+                builder.name(),
+                eventHandlingComponent,
+                builder.errorHandler(),
+                builder.messageMonitor(),
+                builder.spanFactory(),
+                segmentMatcher,
+                false
+        );
     }
 
     /**
@@ -139,7 +145,9 @@ public class SubscribingEventProcessor implements EventProcessor {
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
             var unitOfWork = transactionalUnitOfWorkFactory.create();
-            eventProcessorOperations.processInUnitOfWork(eventMessages, unitOfWork);
+            FutureUtils.joinAndUnwrap(
+                    unitOfWork.executeWithResult(processingContext -> eventProcessorOperations.process(eventMessages, processingContext).asCompletableFuture())
+            );
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {

@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
@@ -36,8 +37,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
@@ -332,7 +331,6 @@ class WorkPackage {
                     ctx.putResource(Segment.RESOURCE_KEY, segment);
                     ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
                 });
-
                 unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
                 unitOfWork.runOnAfterCommit(
                         u -> {
@@ -340,7 +338,9 @@ class WorkPackage {
                             batchProcessedCallback.run();
                         }
                 );
-                batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
+                FutureUtils.joinAndUnwrap(
+                        unitOfWork.executeWithResult(ctx -> batchProcessor.processBatch(eventBatch, ctx, segment))
+                );
             } finally {
                 processingEvents.set(false);
             }
@@ -537,15 +537,15 @@ class WorkPackage {
          * given {@code unitOfWork}. The collection of {@link Segment} instances defines the segments for which the
          * {@code eventMessages} should be processed.
          *
-         * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
-         * @param unitOfWork         the {@link UnitOfWork} that has been prepared to process the {@code eventMessages}
-         * @param processingSegments the {@link Segment}s for which the {@code eventMessages} should be processed in the
-         *                           given {@code unitOfWork}
-         * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
+         * @param eventMessages     the batch of {@link EventMessage}s that is to be processed
+         * @param processingContext the {@link ProcessingContext} that has been prepared to process the
+         *                          {@code eventMessages}
+         * @param processingSegment the {@link Segment} for which the {@code eventMessages} should be processed in the
+         *                          given {@code unitOfWork}
          */
-        void processBatch(List<? extends EventMessage<?>> eventMessages,
-                          UnitOfWork unitOfWork,
-                          Collection<Segment> processingSegments) throws Exception;
+        CompletableFuture<?> processBatch(List<? extends EventMessage<?>> eventMessages,
+                                             ProcessingContext processingContext,
+                                             Segment processingSegment);
     }
 
     /**

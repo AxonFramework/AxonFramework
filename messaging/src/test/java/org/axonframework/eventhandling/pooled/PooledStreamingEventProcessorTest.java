@@ -19,6 +19,8 @@ package org.axonframework.eventhandling.pooled;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
+import org.axonframework.eventhandling.ErrorContext;
+import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
@@ -1457,4 +1459,68 @@ class PooledStreamingEventProcessorTest {
         // Unblock the WorkPackage after successful validation
         handleLatch.countDown();
     }
+
+    @Nested
+    class ErrorHandlerTest {
+
+        @Test
+        void errorHandlerIsInvokedWhenEventHandlingComponentHandleFails() {
+            // given
+            var mockErrorHandler = mock(ErrorHandler.class);
+            var expectedError = new RuntimeException("Simulated handling error");
+            when(stubEventHandlingComponent.handle(any(), any())).thenReturn(MessageStream.failed(expectedError));
+            setTestSubject(createTestSubject(builder -> builder.errorHandler(mockErrorHandler)));
+
+            // when
+            var testEvent = EventTestUtils.asEventMessage(42);
+            stubMessageSource.publishMessage(testEvent);
+            testSubject.start();
+
+            // then
+            await().atMost(1, TimeUnit.SECONDS)
+                   .untilAsserted(() -> {
+                       var errorContextCaptor = ArgumentCaptor.forClass(ErrorContext.class);
+                       verify(mockErrorHandler).handleError(errorContextCaptor.capture());
+
+                       var capturedContext = errorContextCaptor.getValue();
+                       assertThat(capturedContext.error()).isEqualTo(expectedError);
+                       assertThat(capturedContext.eventProcessor()).isEqualTo(PROCESSOR_NAME);
+
+                       var eventMessages = capturedContext.failedEvents();
+                       assertThat(eventMessages).hasSize(1);
+                       assertThat(eventMessages.getFirst()).isEqualTo(testEvent);
+                   });
+        }
+
+        @Test
+        void errorHandlerIsInvokedWhenEventHandlingComponentSupportsFails() {
+            // given
+            var mockErrorHandler = mock(ErrorHandler.class);
+            var expectedError = new RuntimeException("Simulated supports error");
+            when(stubEventHandlingComponent.supports(new QualifiedName(Integer.class))).thenThrow(expectedError);
+            setTestSubject(createTestSubject(builder -> builder.errorHandler(mockErrorHandler).initialSegmentCount(1)));
+
+            // when
+            var testEvent = EventTestUtils.asEventMessage(42);
+            stubMessageSource.publishMessage(testEvent);
+            testSubject.start();
+
+            // then
+            await().atMost(1, TimeUnit.SECONDS)
+                   .untilAsserted(() -> {
+                       var errorContextCaptor = ArgumentCaptor.forClass(ErrorContext.class);
+                       verify(mockErrorHandler).handleError(errorContextCaptor.capture());
+
+                       var capturedContext = errorContextCaptor.getValue();
+                       assertThat(capturedContext.error()).isEqualTo(expectedError);
+                       assertThat(capturedContext.eventProcessor()).isEqualTo(PROCESSOR_NAME);
+
+                       var eventMessages = capturedContext.failedEvents();
+                       assertThat(eventMessages).hasSize(1);
+                       assertThat(eventMessages.getFirst()).isEqualTo(testEvent);
+                   });
+        }
+
+    }
 }
+
