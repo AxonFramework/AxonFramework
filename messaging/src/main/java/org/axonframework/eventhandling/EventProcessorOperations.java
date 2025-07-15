@@ -180,6 +180,17 @@ public final class EventProcessorOperations {
     public CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                                        UnitOfWork unitOfWork,
                                                        Collection<Segment> processingSegments) throws Exception {
+        // Create a resource key for storing the batch span
+        ResourceKey<OpenTelemetrySpan> batchSpanKey = new ResourceKey<>("batchSpan");
+
+        // Pre-invocation: create the batch span and store it as a resource
+        unitOfWork.onPreInvocation(processingContext -> {
+            OpenTelemetrySpan batchSpan = spanFactory.createBatchSpan(streamingProcessor, eventMessages);
+            processingContext.putResource(batchSpanKey, batchSpan);
+            return batchSpan.wrapCompletableFuture(CompletableFuture.completedFuture(null));
+        });
+
+        // Regular invocation: process each message in its own span (unchanged)
         unitOfWork.onInvocation(processingContext -> {
             CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
 
@@ -193,18 +204,20 @@ public final class EventProcessorOperations {
             return result;
         });
 
-        return spanFactory.createBatchSpan(streamingProcessor, eventMessages)
-                          .runSupplierAsync(() -> unitOfWork.execute().exceptionally(e -> {
-                              try {
-                                  var cause = e instanceof CompletionException ? e.getCause() : e;
-                                  errorHandler.handleError(new ErrorContext(name(), cause, eventMessages));
-                              } catch (RuntimeException ex) {
-                                  throw ex;
-                              } catch (Exception ex) {
-                                  throw new EventProcessingException("Exception occurred while processing events", ex);
-                              }
-                              return null;
-                          }));
+        // Error handling
+        unitOfWork.onError((processingContext, phase, exception) -> {
+            try {
+                var cause = exception instanceof CompletionException ? exception.getCause() : exception;
+                errorHandler.handleError(new ErrorContext(name(), cause, eventMessages));
+            } catch (RuntimeException ex) {
+                throw ex;
+            } catch (Exception ex) {
+                throw new EventProcessingException("Exception occurred while processing events", ex);
+            }
+        });
+
+        // Execute the unit of work and use the batch span
+        return unitOfWork.execute();
     }
 
     private MessageStream.Empty<?> processMessageInUnitOfWork(Collection<Segment> processingSegments,
