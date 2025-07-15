@@ -23,14 +23,20 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Decorator for {@link EventProcessingPipeline} that adds error handling logic using an {@link ErrorHandler}.
+ * Default implementation of {@link EventProcessingPipeline} that delegates to the EventHandlingComponent.
  */
-public class ErrorHandlingEventProcessingPipelineDecorator extends EventProcessingPipelineDecorator {
-    private final ErrorHandler errorHandler;
+public class DefaultEventProcessingPipeline implements EventProcessingPipeline {
+    private final String processorName;
+    private final EventHandlingComponent eventHandlingComponent;
 
-    public ErrorHandlingEventProcessingPipelineDecorator(EventProcessingPipeline delegate, ErrorHandler errorHandler) {
-        super(delegate);
-        this.errorHandler = errorHandler;
+    public DefaultEventProcessingPipeline(String processorName, EventHandlingComponent eventHandlingComponent) {
+        this.processorName = processorName;
+        this.eventHandlingComponent = eventHandlingComponent;
+    }
+
+    @Override
+    public String getProcessorName() {
+        return processorName;
     }
 
     @Override
@@ -38,16 +44,16 @@ public class ErrorHandlingEventProcessingPipelineDecorator extends EventProcessi
             List<? extends EventMessage<?>> eventMessages,
             UnitOfWork unitOfWork,
             Collection<Segment> processingSegments
-    ) throws Exception {
+    ) {
         try {
-            return delegate.processInUnitOfWork(eventMessages, unitOfWork, processingSegments);
-        } catch (Exception e) {
-            try {
-                errorHandler.handleError(new ErrorContext(getProcessorName(), e, eventMessages));
-            } catch (Exception handlerException) {
-                throw new EventProcessingException("Exception occurred while handling error", handlerException);
+            for (EventMessage<?> event : eventMessages) {
+                eventHandlingComponent.handle(event, (org.axonframework.messaging.unitofwork.ProcessingContext) unitOfWork);
             }
-            throw e;
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            CompletableFuture<Void> failed = new CompletableFuture<>();
+            failed.completeExceptionally(e);
+            return failed;
         }
     }
 } 

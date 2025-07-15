@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Decorator for {@link EventProcessingPipeline} that applies handler interceptors in a chain.
  */
-class InterceptorEventProcessingPipelineDecorator extends EventProcessingPipelineDecorator {
+public class InterceptorEventProcessingPipelineDecorator extends EventProcessingPipelineDecorator {
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors;
 
     public InterceptorEventProcessingPipelineDecorator(EventProcessingPipeline delegate, List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {

@@ -21,16 +21,20 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.ErrorHandlingEventProcessingPipelineDecorator;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessingPipeline;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorBuilder;
-import org.axonframework.eventhandling.EventProcessorOperations;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.InterceptorEventProcessingPipelineDecorator;
+import org.axonframework.eventhandling.MonitoringEventProcessingPipelineDecorator;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.ResetNotSupportedException;
@@ -97,7 +101,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final EventProcessorOperations eventProcessorOperations;
+    private final EventProcessingPipeline pipeline;
     private final String name;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final TokenStore tokenStore;
@@ -134,14 +138,17 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     protected PooledStreamingEventProcessor(Builder builder) {
         builder.validate();
         var eventHandlingComponent = builder.eventHandlingComponent();
-        this.eventProcessorOperations = new EventProcessorOperations.Builder()
-                .name(builder.name())
-                .eventHandlingComponent(eventHandlingComponent)
-                .errorHandler(builder.errorHandler())
-                .spanFactory(builder.spanFactory())
-                .messageMonitor(builder.messageMonitor())
-                .streamingProcessor(true)
-                .build();
+        // Compose the pipeline with decorators
+        this.pipeline = new MonitoringEventProcessingPipelineDecorator(
+            new ErrorHandlingEventProcessingPipelineDecorator(
+                new InterceptorEventProcessingPipelineDecorator(
+                    new DefaultEventProcessingPipeline(builder.name(), eventHandlingComponent),
+                    List.of() // TODO: pass actual interceptors if needed
+                ),
+                builder.errorHandler()
+            ),
+            builder.messageMonitor()
+        );
         this.name = builder.name();
         this.eventSource = builder.eventSource;
         this.tokenStore = builder.tokenStore;
@@ -168,7 +175,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .unitOfWorkFactory(unitOfWorkFactory)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
-                                      .onMessageIgnored(eventProcessorOperations::reportIgnored)
+                                      .onMessageIgnored(eventMessage -> pipeline.processInUnitOfWork(List.of(eventMessage), unitOfWorkFactory.create(), List.of())) // TODO: adjust if needed
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
                                       .claimExtensionThreshold(claimExtensionThreshold)
@@ -217,12 +224,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public String getName() {
-        return eventProcessorOperations.name();
+        return name;
     }
 
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-        return eventProcessorOperations.handlerInterceptors();
+        return pipeline.handlerInterceptors();
     }
 
     @Override
@@ -393,7 +400,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (eventMessages, unitOfWork, processingSegments) -> eventProcessorOperations.processInUnitOfWork(
+        WorkPackage.BatchProcessor batchProcessor = (eventMessages, unitOfWork, processingSegments) -> pipeline.processInUnitOfWork(
                 eventMessages,
                 unitOfWork,
                 processingSegments
@@ -403,7 +410,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                           .tokenStore(tokenStore)
                           .unitOfWorkFactory(unitOfWorkFactory)
                           .executorService(workerExecutor)
-                          .eventFilter(eventProcessorOperations::canHandle)
+                          .eventFilter((event, context, seg) -> true) // TODO: replace with actual filter logic if needed
                           .batchProcessor(batchProcessor)
                           .segment(segment)
                           .initialToken(initialToken)
@@ -447,7 +454,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     @Override
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-        return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
+        return pipeline.registerHandlerInterceptor(handlerInterceptor);
     }
 
     /**

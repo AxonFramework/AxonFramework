@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Decorator for {@link EventProcessingPipeline} that adds message monitoring logic using a {@link MessageMonitor}.
  */
-class MonitoringEventProcessingPipelineDecorator extends EventProcessingPipelineDecorator {
+public class MonitoringEventProcessingPipelineDecorator extends EventProcessingPipelineDecorator {
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
 
     public MonitoringEventProcessingPipelineDecorator(EventProcessingPipeline delegate, MessageMonitor<? super EventMessage<?>> messageMonitor) {
