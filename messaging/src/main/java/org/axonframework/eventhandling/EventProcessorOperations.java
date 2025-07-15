@@ -21,13 +21,11 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
-import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.tracing.Span;
@@ -39,6 +37,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 /**
  * Support class containing common {@link EventProcessor} functionality.
@@ -169,7 +168,7 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
      * @param processingContext The Processing Context that has been prepared to process the messages
      */
     public CompletableFuture<?> process(List<? extends EventMessage<?>> eventMessages,
-                                           ProcessingContext processingContext) {
+                                        ProcessingContext processingContext) {
         return process(eventMessages, processingContext, Segment.ROOT_SEGMENT);
     }
 
@@ -186,58 +185,55 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
     public CompletableFuture<?> process(List<? extends EventMessage<?>> events,
                                         ProcessingContext context,
                                         Segment segment) {
-        return spanFactory.createBatchSpan(streamingProcessor, events)
-                          .runSupplierAsync(() -> {
-                              MessageStream<?> stream = processEach(events, context, segment);
-                              return stream.reduce(null, (acc, entry) -> null)
-                                  .exceptionally(e -> {
-                                      try {
-                                          var cause = e instanceof CompletionException ? e.getCause() : e;
-                                          errorHandler.handleError(new ErrorContext(name(), cause, events));
-                                      } catch (RuntimeException ex) {
-                                          throw ex;
-                                      } catch (Exception ex) {
-                                          throw new EventProcessingException("Exception occurred while processing events", ex);
-                                      }
-                                      return null;
-                                  });
-                          });
+        return trackBatchProcessing(events, () -> processEach(events, context, segment))
+                .ignoreEntries()
+                .asCompletableFuture()
+                .exceptionally(e -> {
+                    try {
+                        var cause = e instanceof CompletionException ? e.getCause() : e;
+                        errorHandler.handleError(new ErrorContext(name(), cause, events));
+                    } catch (RuntimeException ex) {
+                        throw ex;
+                    } catch (Exception ex) {
+                        throw new EventProcessingException("Exception occurred while processing events", ex);
+                    }
+                    return null;
+                });
     }
 
     @Nonnull
-    private MessageStream<?> processEach(List<? extends EventMessage<?>> events, ProcessingContext ctx, Segment segment) {
+    private MessageStream<Message<?>> processEach(List<? extends EventMessage<?>> events, ProcessingContext ctx,
+                                                  Segment segment) {
         return events.stream()
-                .map(message -> process(message, ctx, segment))
-                .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
+                     .map(event -> processEvent(event, ctx, segment))
+                     .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
     }
 
-    private MessageStream<Message<?>> process(
+    private MessageStream<Message<?>> processEvent(
             EventMessage<?> event,
             ProcessingContext context,
             Segment segment
     ) {
-        return spanFactory
-                .createProcessEventSpan(streamingProcessor, event)
-                .runSupplier(() -> {
-                    try {
-                        var monitorCallback = messageMonitor.onMessageIngested(event);
+        return trackEventProcessing(event, () -> {
+            try {
+                var monitorCallback = messageMonitor.onMessageIngested(event);
 
-                        DefaultInterceptorChain<EventMessage<?>, ?> chain =
-                                new DefaultInterceptorChain<>(
-                                        null,
-                                        interceptors,
-                                        (msg, ctx) -> processIfSegmentMatches(msg, ctx, segment)
-                                );
-                        return chain.proceed(event, context)
-                                    .whenComplete(monitorCallback::reportSuccess)
-                                    .onErrorContinue(ex -> {
-                                        monitorCallback.reportFailure(ex);
-                                        return MessageStream.failed(ex);
-                                    }).cast();
-                    } catch (Exception e) {
-                        return MessageStream.failed(e);
-                    }
-                });
+                DefaultInterceptorChain<EventMessage<?>, ?> chain =
+                        new DefaultInterceptorChain<>(
+                                null,
+                                interceptors,
+                                (msg, ctx) -> processIfSegmentMatches(msg, ctx, segment)
+                        );
+                return chain.proceed(event, context)
+                            .whenComplete(monitorCallback::reportSuccess)
+                            .onErrorContinue(ex -> {
+                                monitorCallback.reportFailure(ex);
+                                return MessageStream.failed(ex);
+                            }).cast();
+            } catch (Exception e) {
+                return MessageStream.failed(e);
+            }
+        });
     }
 
     private MessageStream<?> processIfSegmentMatches(EventMessage<?> message,
@@ -261,27 +257,29 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
         messageMonitor.onMessageIngested(eventMessage).reportIgnored();
     }
 
-    private void trackBatchProcessing(
-            ProcessingLifecycle processingLifecycle,
-            List<? extends EventMessage<?>> eventMessages
-    ) {
-        Context.ResourceKey<Span> batchSpanKey = Context.ResourceKey.withLabel("batchSpan");
-        processingLifecycle.runOnInvocation(processingContext -> {
-            Span batchSpan = spanFactory.createBatchSpan(streamingProcessor, eventMessages);
-            batchSpan.start();
-            processingContext.putResource(batchSpanKey, batchSpan);
-        });
-        processingLifecycle.onError((processingContext, phase, error) -> {
-            Span batchSpan = processingContext.getResource(batchSpanKey);
-            if (batchSpan != null) {
-                batchSpan.recordException(error);
-            }
-        });
-        processingLifecycle.doFinally(processingContext -> {
-            Span batchSpan = processingContext.getResource(batchSpanKey);
-            if (batchSpan != null) {
-                batchSpan.end();
-            }
-        });
+    // todo: I'm not sure about that, it had some thread local used inside runSupplierAsync
+    private MessageStream<Message<?>> trackBatchProcessing(List<? extends EventMessage<?>> eventMessages,
+                                                           Supplier<MessageStream<Message<?>>> messageStreamSupplier) {
+        var span = spanFactory.createBatchSpan(streamingProcessor, eventMessages);
+        return trackMessageStream(span, messageStreamSupplier);
+    }
+
+    private MessageStream<Message<?>> trackMessageStream(Span span,
+                                                         Supplier<MessageStream<Message<?>>> messageStreamSupplier) {
+        span.start();
+        var messageStream = messageStreamSupplier.get();
+        return messageStream
+                .whenComplete(span::end)
+                .onErrorContinue(ex -> {
+                    span.recordException(ex);
+                    span.end();
+                    return MessageStream.failed(ex);
+                });
+    }
+
+    private MessageStream<Message<?>> trackEventProcessing(EventMessage<?> event,
+                                                           Supplier<MessageStream<Message<?>>> messageStreamSupplier) {
+        var span = spanFactory.createProcessEventSpan(streamingProcessor, event);
+        return trackMessageStream(span, messageStreamSupplier);
     }
 }
