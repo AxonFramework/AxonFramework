@@ -25,7 +25,6 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -160,15 +159,6 @@ public final class EventProcessorOperations {
             return eventSupported && segmentMatcher.matches(segment, eventMessage);
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(name(), e, Collections.singletonList(eventMessage)));
-            return false;
-        }
-    }
-
-    public boolean canHandleType(MessageType messageType) {
-        try {
-            var eventMessageQualifiedName = messageType.qualifiedName();
-            return eventHandlingComponent.supports(eventMessageQualifiedName);
-        } catch (Exception e) {
             return false;
         }
     }
