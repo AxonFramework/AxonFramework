@@ -53,7 +53,7 @@ public interface InterceptorChain<M extends Message<?>, R extends Message<?>> {
             if (result instanceof MessageStream<?> messageStream) {
                 return (MessageStream<R>) messageStream;
             }
-            return MessageStream.fromFuture(CompletableFuture.completedFuture((R) proceedSync(context)));
+            return MessageStream.fromFuture(CompletableFuture.completedFuture((R) result));
         } catch (Exception e) {
             return MessageStream.fromFuture(CompletableFuture.failedFuture(e));
         }

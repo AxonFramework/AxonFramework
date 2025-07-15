@@ -17,17 +17,32 @@
 package org.axonframework.eventhandling.pipeline;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
 
+/**
+ * The interface defines a contract for processing a batch of events within a processing context.
+ *
+ * @author Allard Buijze
+ * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
 public interface EventProcessingPipeline {
 
-//    MessageStream.Empty<?> process(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext,
-//                                   Segment processingSegment);
-
-    MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context, Segment segment);
+    /**
+     * Processes a batch of events in the processing context.
+     *
+     * @param events  The batch of event messages to be processed.
+     * @param context The processing context in which the event messages are processed.
+     * @return A stream of messages resulting from the processing of the event messages.
+     */
+    MessageStream.Empty<Message<Void>> process(
+            List<? extends EventMessage<?>> events,
+            ProcessingContext context
+    );
 }
