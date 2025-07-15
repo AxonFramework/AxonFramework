@@ -20,8 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
-import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -80,7 +80,8 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
      *                               capabilities.
      * @param streamingProcessor     The boolean indicating whether this processor which uses the operations is a
      *                               streaming processor.
-     * @param segmentMatcher         The {@link SegmentMatcher} used to determine if an event should be processed by this segment.
+     * @param segmentMatcher         The {@link SegmentMatcher} used to determine if an event should be processed by
+     *                               this segment.
      */
     public EventProcessorOperations(@Nonnull String name,
                                     @Nonnull EventHandlingComponent eventHandlingComponent,
@@ -200,32 +201,21 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
     ) {
         return trackEventProcessing(event, () -> {
             try {
-                var monitorCallback = messageMonitor.onMessageIngested(event);
-
-                DefaultInterceptorChain<EventMessage<?>, ?> chain =
-                        new DefaultInterceptorChain<>(
-                                null,
-                                interceptors,
-                                (msg, ctx) -> processIfSegmentMatches(msg, ctx, segment)
-                        ); // TODO: Question -> Is it intentional that the message is intercepted, then the decision is made if matches the segment? We can do SegmentAwareEventHandlingComponent / event with supplier???
-                return chain.proceed(event, context)
-                            .whenComplete(monitorCallback::reportSuccess)
-                            .onErrorContinue(ex -> {
-                                monitorCallback.reportFailure(ex);
-                                return MessageStream.failed(ex);
-                            }).cast();
+                var eventHandlingComponent =
+                        new MonitoringEventHandlingComponent(
+                                new InterceptingEventHandlingComponent(
+                                        new SegmentMatchingEventHandlingComponent(
+                                                this.eventHandlingComponent, segmentMatcher, () -> segment
+                                        ),
+                                        interceptors
+                                ),
+                                messageMonitor
+                        );
+                return eventHandlingComponent.handle(event, context).cast();
             } catch (Exception e) {
                 return MessageStream.failed(e);
             }
         });
-    }
-
-    private MessageStream<?> processIfSegmentMatches(EventMessage<?> message,
-                                                     ProcessingContext processingContext,
-                                                     Segment processingSegment) {
-        return segmentMatcher.matches(processingSegment, message)
-                ? eventHandlingComponent.handle(message, processingContext)
-                : MessageStream.empty();
     }
 
     // todo: I'm not sure about that, it had some thread local used inside runSupplierAsync
