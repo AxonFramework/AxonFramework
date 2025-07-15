@@ -142,7 +142,7 @@ public class SubscribingEventProcessor implements EventProcessor {
         try {
             var unitOfWork = transactionalUnitOfWorkFactory.create();
             FutureUtils.joinAndUnwrap(
-                    unitOfWork.executeWithResult(processingContext -> eventProcessorOperations.process(eventMessages, processingContext))
+                    unitOfWork.executeWithResult(processingContext -> eventProcessorOperations.process(eventMessages, processingContext).asCompletableFuture())
             );
         } catch (RuntimeException e) {
             throw e;

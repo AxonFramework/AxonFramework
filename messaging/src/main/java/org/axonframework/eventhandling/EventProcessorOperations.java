@@ -34,8 +34,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
@@ -167,8 +165,8 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
      * @param eventMessages     The batch of messages that is to be processed
      * @param processingContext The Processing Context that has been prepared to process the messages
      */
-    public CompletableFuture<?> process(List<? extends EventMessage<?>> eventMessages,
-                                        ProcessingContext processingContext) {
+    public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> eventMessages,
+                                                      ProcessingContext processingContext) {
         return process(eventMessages, processingContext, Segment.ROOT_SEGMENT);
     }
 
@@ -182,23 +180,24 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
      * @param segment The segment for which the events should be processed in this processing context
      */
     @Override
-    public CompletableFuture<?> process(List<? extends EventMessage<?>> events,
-                                        ProcessingContext context,
-                                        Segment segment) {
+    public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events,
+                                                      ProcessingContext context,
+                                                      Segment segment) {
         return trackBatchProcessing(events, () -> processEach(events, context, segment))
-                .ignoreEntries()
-                .asCompletableFuture()
-                .exceptionally(e -> {
+                .onErrorContinue(ex -> {
                     try {
-                        var cause = e instanceof CompletionException ? e.getCause() : e;
-                        errorHandler.handleError(new ErrorContext(name(), cause, events));
-                    } catch (RuntimeException ex) {
-                        throw ex;
-                    } catch (Exception ex) {
-                        throw new EventProcessingException("Exception occurred while processing events", ex);
+                        errorHandler.handleError(new ErrorContext(name(), ex, events));
+                    } catch (RuntimeException re) {
+                        return MessageStream.failed(re);
+                    } catch (Exception e) {
+                        return MessageStream.failed(new EventProcessingException(
+                                "Exception occurred while processing events",
+                                e));
                     }
-                    return null;
-                });
+                    return MessageStream.empty().cast();
+                })
+                .ignoreEntries()
+                .cast();
     }
 
     @Nonnull

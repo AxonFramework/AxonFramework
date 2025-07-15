@@ -393,7 +393,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = eventProcessorOperations::process;
+        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> eventProcessorOperations.process(events, ctx, s)
+                                                                                                .asCompletableFuture();
         return WorkPackage.builder()
                           .name(name)
                           .tokenStore(tokenStore)
@@ -791,9 +792,9 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          * Sets the function to build the {@link EventCriteria} used to filter events when opening the event source. The
          * function receives the set of supported event types from the assigned EventHandlingComponent.
          * <p>
-         * <b>Intention:</b> This function is mainly intended to allow you to specify the tags for filtering or to build
-         * more complex criteria.
-         * For example, if not all supported event types share the same tag, you may use
+         * <b>Intention:</b> This function is mainly intended to allow you to specify the tags for filtering or to
+         * build
+         * more complex criteria. For example, if not all supported event types share the same tag, you may use
          * {@link EventCriteria#either(EventCriteria...)} to construct a disjunction of criteria for different event
          * types and tags. See {@link org.axonframework.eventstreaming.EventCriteria} for advanced usage and examples.
          * <p>

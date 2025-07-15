@@ -18,15 +18,16 @@ package org.axonframework.eventhandling.pipeline;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.Segment;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 public interface EventProcessingPipeline {
 
 //    MessageStream.Empty<?> process(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext,
 //                                   Segment processingSegment);
 
-    CompletableFuture<?> process(List<? extends EventMessage<?>> events, ProcessingContext context, Segment segment);
+    MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context, Segment segment);
 }

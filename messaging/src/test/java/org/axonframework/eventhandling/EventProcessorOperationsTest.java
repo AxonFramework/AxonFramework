@@ -152,7 +152,7 @@ class EventProcessorOperationsTest {
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) {
             var unitOfWork = UNIT_OF_WORK_FACTORY.create();
-            unitOfWork.onPreInvocation(processingContext -> eventProcessorOperations.process(eventMessages, processingContext));
+            unitOfWork.onPreInvocation(processingContext -> eventProcessorOperations.process(eventMessages, processingContext).asCompletableFuture());
             unitOfWork.execute().join();
         }
 
