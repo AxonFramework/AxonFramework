@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -139,7 +140,9 @@ public class SubscribingEventProcessor implements EventProcessor {
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
             var unitOfWork = transactionalUnitOfWorkFactory.create();
-            eventProcessorOperations.processInUnitOfWork(eventMessages, unitOfWork);
+            FutureUtils.joinAndUnwrap(
+                    unitOfWork.executeWithResult(processingContext -> eventProcessorOperations.processInUnitOfWork(eventMessages, processingContext))
+            );
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {

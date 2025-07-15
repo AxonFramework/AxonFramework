@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
@@ -338,7 +339,8 @@ class WorkPackage {
                             batchProcessedCallback.run();
                         }
                 );
-                batchProcessor.processBatch(eventBatch, unitOfWork, segment);
+                unitOfWork.onInvocation(ctx -> batchProcessor.processBatch(eventBatch, ctx, segment));
+                FutureUtils.joinAndUnwrap(unitOfWork.execute());
             } finally {
                 processingEvents.set(false);
             }
@@ -535,15 +537,15 @@ class WorkPackage {
          * given {@code unitOfWork}. The collection of {@link Segment} instances defines the segments for which the
          * {@code eventMessages} should be processed.
          *
-         * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
-         * @param unitOfWork         the {@link UnitOfWork} that has been prepared to process the {@code eventMessages}
+         * @param eventMessages     the batch of {@link EventMessage}s that is to be processed
+         * @param processingContext the {@link ProcessingContext} that has been prepared to process the
+         *                          {@code eventMessages}
          * @param processingSegment the {@link Segment} for which the {@code eventMessages} should be processed in the
-         *                           given {@code unitOfWork}
-         * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
+         *                          given {@code unitOfWork}
          */
-        void processBatch(List<? extends EventMessage<?>> eventMessages,
-                          UnitOfWork unitOfWork,
-                          Segment processingSegment) throws Exception;
+        CompletableFuture<Void> processBatch(List<? extends EventMessage<?>> eventMessages,
+                                             ProcessingContext processingContext,
+                                             Segment processingSegment);
     }
 
     /**

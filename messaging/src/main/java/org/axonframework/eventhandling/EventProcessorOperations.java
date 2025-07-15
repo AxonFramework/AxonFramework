@@ -27,6 +27,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -49,7 +50,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * Support class containing common {@link EventProcessor} functionality.
  * <p>
  * The {@link EventProcessor} implementations are in charge of providing the events that need to be processed. Once
- * these events are obtained they can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Segment)} for
+ * these events are obtained they can be passed to method {@link #processInUnitOfWork(List, ProcessingContext, Segment)} for
  * processing.
  * <p>
  * Actual handling of events is deferred to an {@link EventHandlerInvoker}. Before each message is handled by the
@@ -161,8 +162,8 @@ public final class EventProcessorOperations {
      * @param eventMessages The batch of messages that is to be processed
      * @param unitOfWork    The Unit of Work that has been prepared to process the messages
      */
-    public void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages, UnitOfWork unitOfWork) {
-        processInUnitOfWork(eventMessages, unitOfWork, Segment.ROOT_SEGMENT).join();
+    public CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext) {
+        return processInUnitOfWork(eventMessages, processingContext, Segment.ROOT_SEGMENT);
     }
 
     /**
@@ -175,23 +176,23 @@ public final class EventProcessorOperations {
      * @param processingSegment The segment for which the events should be processed in this unit of work
      */
     public CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                                       UnitOfWork unitOfWork,
+                                                       ProcessingContext processingContext,
                                                        Segment processingSegment) {
-        attachBatchSpan(unitOfWork, eventMessages);
-        unitOfWork.onInvocation(processingContext -> {
+        attachBatchSpan(processingContext, eventMessages);
+        processingContext.onInvocation(ctx -> {
             CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
 
             for (EventMessage<?> message : eventMessages) {
                 result = result.thenCompose(v -> spanFactory
                         .createProcessEventSpan(streamingProcessor, message)
-                        .runSupplierAsync(() -> processMessage(message, processingContext, processingSegment))
+                        .runSupplierAsync(() -> processMessage(message, ctx, processingSegment))
                 );
             }
 
             return result;
         });
 
-        unitOfWork.onError((processingContext, phase, exception) -> {
+        processingContext.onError((ctx, phase, exception) -> {
             try {
                 var cause = exception instanceof CompletionException ? exception.getCause() : exception;
                 errorHandler.handleError(new ErrorContext(name(), cause, eventMessages));
@@ -201,7 +202,8 @@ public final class EventProcessorOperations {
                 throw new EventProcessingException("Exception occurred while processing events", ex);
             }
         });
-        return unitOfWork.execute();
+
+        return FutureUtils.emptyCompletedFuture();
     }
 
     private CompletableFuture<Void> processMessage(
@@ -248,22 +250,22 @@ public final class EventProcessorOperations {
     }
 
     private void attachBatchSpan(
-            UnitOfWork unitOfWork,
+            ProcessingLifecycle processingLifecycle,
             List<? extends EventMessage<?>> eventMessages
     ) {
         Context.ResourceKey<Span> batchSpanKey = Context.ResourceKey.withLabel("batchSpan");
-        unitOfWork.runOnPreInvocation(processingContext -> {
+        processingLifecycle.runOnPreInvocation(processingContext -> {
             Span batchSpan = spanFactory.createBatchSpan(streamingProcessor, eventMessages);
             batchSpan.start();
             processingContext.putResource(batchSpanKey, batchSpan);
         });
-        unitOfWork.onError((processingContext, phase, error) -> {
+        processingLifecycle.onError((processingContext, phase, error) -> {
             Span batchSpan = processingContext.getResource(batchSpanKey);
             if (batchSpan != null) {
                 batchSpan.recordException(error);
             }
         });
-        unitOfWork.doFinally(processingContext -> {
+        processingLifecycle.doFinally(processingContext -> {
             Span batchSpan = processingContext.getResource(batchSpanKey);
             if (batchSpan != null) {
                 batchSpan.end();

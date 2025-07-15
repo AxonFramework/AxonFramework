@@ -393,11 +393,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (eventMessages, unitOfWork, processingSegment) -> eventProcessorOperations.processInUnitOfWork(
-                eventMessages,
-                unitOfWork,
-                processingSegment
-        ).join();
+        WorkPackage.BatchProcessor batchProcessor = eventProcessorOperations::processInUnitOfWork;
         return WorkPackage.builder()
                           .name(name)
                           .tokenStore(tokenStore)

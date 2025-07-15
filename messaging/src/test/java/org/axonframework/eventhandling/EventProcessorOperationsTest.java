@@ -150,7 +150,7 @@ class EventProcessorOperationsTest {
         }
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {
-            eventProcessorOperations.processInUnitOfWork(eventMessages, new UnitOfWork());
+            new UnitOfWork().executeWithResult(processingContext -> eventProcessorOperations.processInUnitOfWork(eventMessages, processingContext)).join();
         }
 
         @Override
