@@ -185,32 +185,32 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
     public CompletableFuture<?> process(List<? extends EventMessage<?>> events,
                                            ProcessingContext context,
                                            Segment segment) {
-//        return spanFactory.createBatchSpan(streamingProcessor, events)
-//                          .runSupplierAsync(() -> processEach(events, context, segment)
-//                                  .exceptionally(e -> {
-//                                      try {
-//                                          var cause = e instanceof CompletionException ? e.getCause() : e;
-//                                          errorHandler.handleError(new ErrorContext(name(), cause, events));
-//                                      } catch (RuntimeException ex) {
-//                                          throw ex;
-//                                      } catch (Exception ex) {
-//                                          throw new EventProcessingException("Exception occurred while processing events", ex);
-//                                      }
-//                                      return null;
-//                                  }));
-        trackBatchProcessing(context, events);
-        return processEach(events, context, segment)
-                .exceptionally(e -> {
-                    try {
-                        var cause = e instanceof CompletionException ? e.getCause() : e;
-                        errorHandler.handleError(new ErrorContext(name(), cause, events));
-                    } catch (RuntimeException ex) {
-                        throw ex;
-                    } catch (Exception ex) {
-                        throw new EventProcessingException("Exception occurred while processing events", ex);
-                    }
-                    return null;
-                });
+        return spanFactory.createBatchSpan(streamingProcessor, events)
+                          .runSupplierAsync(() -> processEach(events, context, segment)
+                                  .exceptionally(e -> {
+                                      try {
+                                          var cause = e instanceof CompletionException ? e.getCause() : e;
+                                          errorHandler.handleError(new ErrorContext(name(), cause, events));
+                                      } catch (RuntimeException ex) {
+                                          throw ex;
+                                      } catch (Exception ex) {
+                                          throw new EventProcessingException("Exception occurred while processing events", ex);
+                                      }
+                                      return null;
+                                  }));
+//        trackBatchProcessing(context, events);
+//        return processEach(events, context, segment)
+//                .exceptionally(e -> {
+//                    try {
+//                        var cause = e instanceof CompletionException ? e.getCause() : e;
+//                        errorHandler.handleError(new ErrorContext(name(), cause, events));
+//                    } catch (RuntimeException ex) {
+//                        throw ex;
+//                    } catch (Exception ex) {
+//                        throw new EventProcessingException("Exception occurred while processing events", ex);
+//                    }
+//                    return null;
+//                });
     }
 
     @Nonnull
