@@ -21,12 +21,15 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.tracing.Span;
 
 import java.util.Collections;
 import java.util.List;
@@ -182,19 +185,32 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
     public CompletableFuture<?> process(List<? extends EventMessage<?>> events,
                                            ProcessingContext context,
                                            Segment segment) {
-        return spanFactory.createBatchSpan(streamingProcessor, events)
-                          .runSupplierAsync(() -> processEach(events, context, segment)
-                                  .exceptionally(e -> {
-                                      try {
-                                          var cause = e instanceof CompletionException ? e.getCause() : e;
-                                          errorHandler.handleError(new ErrorContext(name(), cause, events));
-                                      } catch (RuntimeException ex) {
-                                          throw ex;
-                                      } catch (Exception ex) {
-                                          throw new EventProcessingException("Exception occurred while processing events", ex);
-                                      }
-                                      return null;
-                                  }));
+//        return spanFactory.createBatchSpan(streamingProcessor, events)
+//                          .runSupplierAsync(() -> processEach(events, context, segment)
+//                                  .exceptionally(e -> {
+//                                      try {
+//                                          var cause = e instanceof CompletionException ? e.getCause() : e;
+//                                          errorHandler.handleError(new ErrorContext(name(), cause, events));
+//                                      } catch (RuntimeException ex) {
+//                                          throw ex;
+//                                      } catch (Exception ex) {
+//                                          throw new EventProcessingException("Exception occurred while processing events", ex);
+//                                      }
+//                                      return null;
+//                                  }));
+        trackBatchProcessing(context, events);
+        return processEach(events, context, segment)
+                .exceptionally(e -> {
+                    try {
+                        var cause = e instanceof CompletionException ? e.getCause() : e;
+                        errorHandler.handleError(new ErrorContext(name(), cause, events));
+                    } catch (RuntimeException ex) {
+                        throw ex;
+                    } catch (Exception ex) {
+                        throw new EventProcessingException("Exception occurred while processing events", ex);
+                    }
+                    return null;
+                });
     }
 
     @Nonnull
@@ -260,5 +276,29 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
      */
     public void reportIgnored(EventMessage<?> eventMessage) {
         messageMonitor.onMessageIngested(eventMessage).reportIgnored();
+    }
+
+    private void trackBatchProcessing(
+            ProcessingLifecycle processingLifecycle,
+            List<? extends EventMessage<?>> eventMessages
+    ) {
+        Context.ResourceKey<Span> batchSpanKey = Context.ResourceKey.withLabel("batchSpan");
+        processingLifecycle.runOnInvocation(processingContext -> {
+            Span batchSpan = spanFactory.createBatchSpan(streamingProcessor, eventMessages);
+            batchSpan.start();
+            processingContext.putResource(batchSpanKey, batchSpan);
+        });
+        processingLifecycle.onError((processingContext, phase, error) -> {
+            Span batchSpan = processingContext.getResource(batchSpanKey);
+            if (batchSpan != null) {
+                batchSpan.recordException(error);
+            }
+        });
+        processingLifecycle.doFinally(processingContext -> {
+            Span batchSpan = processingContext.getResource(batchSpanKey);
+            if (batchSpan != null) {
+                batchSpan.end();
+            }
+        });
     }
 }
