@@ -238,9 +238,7 @@ public final class EventProcessorOperations {
                     new DefaultInterceptorChain<>(
                             null,
                             interceptors,
-                            (msg, ctx) -> FutureUtils.joinAndUnwrap(
-                                    processIfSegmentMatches(msg, ctx, processingSegment).asCompletableFuture()
-                            )
+                            (msg, ctx) -> processIfSegmentMatches(msg, ctx, processingSegment)
                     );
             return chain.proceed(message, processingContext)
                         .ignoreEntries()
