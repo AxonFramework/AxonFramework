@@ -49,6 +49,10 @@ public interface InterceptorChain<M extends Message<?>, R extends Message<?>> {
      */
     default MessageStream<R> proceed(@Nonnull M message, @Nonnull ProcessingContext context) {
         try {
+            var result = proceedSync(context);
+            if (result instanceof MessageStream<?> messageStream) {
+                return (MessageStream<R>) messageStream;
+            }
             return MessageStream.fromFuture(CompletableFuture.completedFuture((R) proceedSync(context)));
         } catch (Exception e) {
             return MessageStream.fromFuture(CompletableFuture.failedFuture(e));
