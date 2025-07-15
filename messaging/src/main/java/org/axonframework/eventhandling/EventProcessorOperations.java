@@ -183,8 +183,8 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
      */
     @Override
     public CompletableFuture<?> process(List<? extends EventMessage<?>> events,
-                                           ProcessingContext context,
-                                           Segment segment) {
+                                        ProcessingContext context,
+                                        Segment segment) {
         return spanFactory.createBatchSpan(streamingProcessor, events)
                           .runSupplierAsync(() -> processEach(events, context, segment)
                                   .exceptionally(e -> {
@@ -220,20 +220,20 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
         for (EventMessage<?> message : events) {
             result = result.thenCompose(v -> spanFactory
                     .createProcessEventSpan(streamingProcessor, message)
-                    .runSupplierAsync(() -> process(message, ctx, segment))
+                    .runSupplierAsync(() -> process(message, ctx, segment).ignoreEntries().asCompletableFuture())
             );
         }
 
         return result;
     }
 
-    private CompletableFuture<?> process(
-            EventMessage<?> message,
+    private MessageStream<?> process(
+            EventMessage<?> event,
             ProcessingContext context,
             Segment segment
     ) {
         try {
-            var monitorCallback = messageMonitor.onMessageIngested(message);
+            var monitorCallback = messageMonitor.onMessageIngested(event);
 
             DefaultInterceptorChain<EventMessage<?>, ?> chain =
                     new DefaultInterceptorChain<>(
@@ -241,25 +241,21 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                             interceptors,
                             (msg, ctx) -> processIfSegmentMatches(msg, ctx, segment)
                     );
-            return chain.proceed(message, context)
-                        .ignoreEntries()
-                        .asCompletableFuture()
-                        .whenComplete((__, ex) -> {
-                            if (ex == null) {
-                                monitorCallback.reportSuccess();
-                            } else {
-                                monitorCallback.reportFailure(ex);
-                            }
-                        });
+            return chain.proceed(event, context)
+                    .whenComplete(monitorCallback::reportSuccess)
+                    .onErrorContinue(ex -> {
+                        monitorCallback.reportFailure(ex);
+                        return MessageStream.failed(ex);
+                    })
+                    .ignoreEntries();
         } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+            return MessageStream.failed(e);
         }
     }
 
-    private MessageStream.Empty<?> processIfSegmentMatches(EventMessage<?> message,
-                                                           ProcessingContext processingContext,
-                                                           Segment processingSegment
-    ) {
+    private MessageStream<?> processIfSegmentMatches(EventMessage<?> message,
+                                                     ProcessingContext processingContext,
+                                                     Segment processingSegment) {
         return segmentMatcher.matches(processingSegment, message)
                 ? eventHandlingComponent.handle(message, processingContext)
                 : MessageStream.empty();
