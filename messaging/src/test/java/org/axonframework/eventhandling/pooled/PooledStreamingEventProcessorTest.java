@@ -357,7 +357,7 @@ class PooledStreamingEventProcessorTest {
         return token == null ? 0 : token.position().orElse(0);
     }
 
-    @Test
+    @RepeatedTest(10)
     void exceptionWhileHandlingEventAbortsWorker() throws Exception {
         MessageType testName = new MessageType("event");
         List<EventMessage<Integer>> events = Stream.of(1, 2, 2, 4, 5)

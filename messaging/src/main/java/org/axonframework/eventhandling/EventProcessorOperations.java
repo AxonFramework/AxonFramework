@@ -18,18 +18,15 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.Context;
+import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.tracing.Span;
 
 import java.util.Collections;
 import java.util.List;
@@ -54,7 +51,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @since 3.0
  */
 @Internal
-public final class EventProcessorOperations {
+public final class EventProcessorOperations implements EventProcessingPipeline {
 
     private final String name;
     private final EventHandlingComponent eventHandlingComponent;
@@ -81,7 +78,8 @@ public final class EventProcessorOperations {
      *                               they're processed.
      * @param spanFactory            The {@link EventProcessorSpanFactory} implementation to use for providing tracing
      *                               capabilities.
-     * @param streamingProcessor     The boolean indicating whether this processor which uses the operations is a streaming processor.
+     * @param streamingProcessor     The boolean indicating whether this processor which uses the operations is a
+     *                               streaming processor.
      */
     public EventProcessorOperations(@Nonnull String name,
                                     @Nonnull EventHandlingComponent eventHandlingComponent,
@@ -90,11 +88,13 @@ public final class EventProcessorOperations {
                                     @Nonnull EventProcessorSpanFactory spanFactory,
                                     boolean streamingProcessor
     ) {
-        this.name = Objects.requireNonNull(name, "The EventProcessor name is a hard requirement and should be provided");
+        this.name = Objects.requireNonNull(name,
+                                           "The EventProcessor name is a hard requirement and should be provided");
         if (name.isEmpty()) {
             throw new IllegalArgumentException("The EventProcessor name is a hard requirement and should be provided");
         }
-        this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
+        this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent,
+                                                             "EventHandlingComponent may not be null");
         this.errorHandler = Objects.requireNonNull(errorHandler, "ErrorHandler may not be null");
         this.messageMonitor = Objects.requireNonNull(messageMonitor, "MessageMonitor may not be null");
         this.spanFactory = Objects.requireNonNull(spanFactory, "SpanFactory may not be null");
@@ -174,45 +174,46 @@ public final class EventProcessorOperations {
      * the event processor creates an interceptor chain containing all registered
      * {@link MessageHandlerInterceptor interceptors}.
      *
-     * @param eventMessages     The batch of messages that is to be processed
-     * @param processingContext The Processing Context that has been prepared to process the messages
-     * @param processingSegment The segment for which the events should be processed in this processing context
+     * @param events  The batch of messages that is to be processed
+     * @param context The Processing Context that has been prepared to process the messages
+     * @param segment The segment for which the events should be processed in this processing context
      */
-    public CompletableFuture<Void> process(List<? extends EventMessage<?>> eventMessages,
-                                           ProcessingContext processingContext,
-                                           Segment processingSegment) {
-        trackBatchProcessing(processingContext, eventMessages);
-        processingContext.onInvocation(ctx -> {
-            CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
-
-            for (EventMessage<?> message : eventMessages) {
-                result = result.thenCompose(v -> spanFactory
-                        .createProcessEventSpan(streamingProcessor, message)
-                        .runSupplierAsync(() -> processMessage(message, ctx, processingSegment))
-                );
-            }
-
-            return result;
-        });
-
-        processingContext.onError((ctx, phase, exception) -> {
+    @Override
+    public CompletableFuture<Void> process(List<? extends EventMessage<?>> events,
+                                           ProcessingContext context,
+                                           Segment segment) {
+        context.onError((ctx, phase, exception) -> {
             try {
                 var cause = exception instanceof CompletionException ? exception.getCause() : exception;
-                errorHandler.handleError(new ErrorContext(name(), cause, eventMessages));
+                errorHandler.handleError(new ErrorContext(name(), cause, events));
             } catch (RuntimeException ex) {
                 throw ex;
             } catch (Exception ex) {
                 throw new EventProcessingException("Exception occurred while processing events", ex);
             }
         });
-
-        return FutureUtils.emptyCompletedFuture();
+        return spanFactory.createBatchSpan(streamingProcessor, events)
+                          .runSupplierAsync(() -> processEach(events, context, segment));
     }
 
-    private CompletableFuture<Void> processMessage(
+    @Nonnull
+    private CompletableFuture<Void> processEach(List<? extends EventMessage<?>> events, ProcessingContext ctx, Segment segment) {
+        CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
+
+        for (EventMessage<?> message : events) {
+            result = result.thenCompose(v -> spanFactory
+                    .createProcessEventSpan(streamingProcessor, message)
+                    .runSupplierAsync(() -> process(message, ctx, segment))
+            );
+        }
+
+        return result;
+    }
+
+    private CompletableFuture<Void> process(
             EventMessage<?> message,
-            ProcessingContext processingContext,
-            Segment processingSegment
+            ProcessingContext context,
+            Segment segment
     ) {
         try {
             var monitorCallback = messageMonitor.onMessageIngested(message);
@@ -221,9 +222,9 @@ public final class EventProcessorOperations {
                     new DefaultInterceptorChain<>(
                             null,
                             interceptors,
-                            (msg, ctx) -> processIfSegmentMatches(msg, ctx, processingSegment)
+                            (msg, ctx) -> processIfSegmentMatches(msg, ctx, segment)
                     );
-            return chain.proceed(message, processingContext)
+            return chain.proceed(message, context)
                         .ignoreEntries()
                         .asCompletableFuture()
                         .whenComplete((__, ex) -> {
@@ -245,30 +246,6 @@ public final class EventProcessorOperations {
         return segmentMatcher.matches(processingSegment, message)
                 ? eventHandlingComponent.handle(message, processingContext)
                 : MessageStream.empty();
-    }
-
-    private void trackBatchProcessing(
-            ProcessingLifecycle processingLifecycle,
-            List<? extends EventMessage<?>> eventMessages
-    ) {
-        Context.ResourceKey<Span> batchSpanKey = Context.ResourceKey.withLabel("batchSpan");
-        processingLifecycle.runOnInvocation(processingContext -> {
-            Span batchSpan = spanFactory.createBatchSpan(streamingProcessor, eventMessages);
-            batchSpan.start();
-            processingContext.putResource(batchSpanKey, batchSpan);
-        });
-        processingLifecycle.onError((processingContext, phase, error) -> {
-            Span batchSpan = processingContext.getResource(batchSpanKey);
-            if (batchSpan != null) {
-                batchSpan.recordException(error);
-            }
-        });
-        processingLifecycle.doFinally(processingContext -> {
-            Span batchSpan = processingContext.getResource(batchSpanKey);
-            if (batchSpan != null) {
-                batchSpan.end();
-            }
-        });
     }
 
     /**
