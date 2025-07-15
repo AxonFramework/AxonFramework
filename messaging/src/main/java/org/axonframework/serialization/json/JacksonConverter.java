@@ -76,6 +76,10 @@ public class JacksonConverter implements Converter {
     @Override
     public boolean canConvert(@Nonnull Class<?> sourceType,
                               @Nonnull Class<?> targetType) {
+        if (logger.isTraceEnabled()) {
+            logger.trace("Validating if we can convert from source type [{}] to target type [{}].",
+                         sourceType, targetType);
+        }
         return sourceType.equals(targetType)
                 || converter.canConvert(sourceType, targetType)
                 || converter.canConvert(sourceType, byte[].class)
@@ -88,27 +92,49 @@ public class JacksonConverter implements Converter {
                             @Nonnull Class<S> sourceType,
                             @Nonnull Class<T> targetType) {
         if (input == null) {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Input to convert is null, so returning null immediately.");
+            }
             return null;
         }
 
         if (sourceType.equals(targetType)) {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Casting given input since source and target type are identical.");
+            }
             return targetType.cast(input);
         }
 
         try {
             JavaType targetJavaType = objectMapper.constructType(targetType);
             if (converter.canConvert(sourceType, targetJavaType.getRawClass())) {
-                // Converter has got this entirely.
+                if (logger.isTraceEnabled()) {
+                    logger.trace(
+                            "Converter [{}] will do the entire conversion from source [{}] to target [{}] for [{}].",
+                            converter,
+                            sourceType,
+                            targetType,
+                            input);
+                }
                 //noinspection unchecked
                 return (T) converter.convert(input, targetJavaType.getRawClass());
             } else if (converter.canConvert(sourceType, byte[].class)) {
-                // Converting from source byte[] to requested target type.
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Converts input [{}] to byte[] before reading it into [{}].", input, targetJavaType);
+                }
                 return objectMapper.readValue(converter.convert(input, byte[].class), targetJavaType);
             } else if (converter.canConvert(targetJavaType.getRawClass(), byte[].class)) {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Writes input [{}] as a byte[] before converting to [{}].", input, targetJavaType);
+                }
                 // Converting to byte[] from some input type.
                 //noinspection unchecked
                 return (T) converter.convert(objectMapper.writeValueAsBytes(input), targetJavaType.getRawClass());
             } else {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("ObjectMapper [{}] will convert input [{}] to target type [{}].",
+                                 objectMapper, input, targetJavaType);
+                }
                 // Unsure, let's see of the ObjectMapper can do this itself.
                 return objectMapper.convertValue(input, targetJavaType);
             }
