@@ -221,19 +221,6 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                 : MessageStream.empty();
     }
 
-    /**
-     * Report the given {@code eventMessage} as ignored. Any registered {@link MessageMonitor} shall be notified of the
-     * ignored message.
-     * <p>
-     * Typically, messages are ignored when they are received by a processor that has no suitable Handler for the type
-     * of Event received.
-     *
-     * @param eventMessage the message that has been ignored.
-     */
-    public void reportIgnored(EventMessage<?> eventMessage) {
-        messageMonitor.onMessageIngested(eventMessage).reportIgnored();
-    }
-
     // todo: I'm not sure about that, it had some thread local used inside runSupplierAsync
     private MessageStream<Message<?>> trackBatchProcessing(List<? extends EventMessage<?>> eventMessages,
                                                            Supplier<MessageStream<Message<?>>> messageStreamSupplier) {

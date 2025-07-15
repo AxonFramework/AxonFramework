@@ -116,6 +116,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
     private final WorkPackage.EventFilter workPackageEventFilter;
+    private final MessageMonitor<? super EventMessage<?>> messageMonitor;
 
     /**
      * Instantiate a {@code PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -138,11 +139,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         builder.validate();
         var eventHandlingComponent = builder.eventHandlingComponent();
         var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
+        this.messageMonitor = builder.messageMonitor();
         this.eventProcessorOperations = new EventProcessorOperations(
                 builder.name(),
                 builder.eventHandlingComponent(),
                 builder.errorHandler(),
-                builder.messageMonitor(),
+                messageMonitor,
                 builder.spanFactory(),
                 segmentMatcher,
                 true
@@ -179,7 +181,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .unitOfWorkFactory(unitOfWorkFactory)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
-                                      .onMessageIgnored(eventProcessorOperations::reportIgnored)
+                                      .onMessageIgnored(this::reportIgnored)
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
                                       .claimExtensionThreshold(claimExtensionThreshold)
@@ -191,6 +193,19 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .eventCriteria(eventCriteria)
                                       // .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment)) // TODO #3304 - Integrate event replay logic into Event Handling Component
                                       .build();
+    }
+
+    /**
+     * Report the given {@code eventMessage} as ignored. Any registered {@link MessageMonitor} shall be notified of the
+     * ignored message.
+     * <p>
+     * Typically, messages are ignored when they are received by a processor that has no suitable Handler for the type
+     * of Event received.
+     *
+     * @param eventMessage the message that has been ignored.
+     */
+    private void reportIgnored(EventMessage<?> eventMessage) {
+        messageMonitor.onMessageIngested(eventMessage).reportIgnored();
     }
 
     /**

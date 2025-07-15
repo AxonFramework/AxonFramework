@@ -30,6 +30,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
@@ -108,12 +109,14 @@ class EventProcessorOperationsTest {
 
         private TestEventProcessor(Builder builder) {
             builder.validate();
+            var eventHandlingComponent = builder.eventHandlingComponent();
             this.eventProcessorOperations = new EventProcessorOperations(
                     builder.name(),
-                    builder.eventHandlingComponent(),
+                    eventHandlingComponent,
                     builder.errorHandler(),
                     builder.messageMonitor(),
                     builder.spanFactory(),
+                    new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e))),
                     true
             );
         }

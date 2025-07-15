@@ -30,6 +30,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -67,12 +68,15 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
+        var eventHandlingComponent = builder.eventHandlingComponent();
+        var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
         this.eventProcessorOperations = new EventProcessorOperations(
                 builder.name(),
-                builder.eventHandlingComponent(),
+                eventHandlingComponent,
                 builder.errorHandler(),
                 builder.messageMonitor(),
                 builder.spanFactory(),
+                segmentMatcher,
                 false
         );
     }
