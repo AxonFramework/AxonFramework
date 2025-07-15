@@ -74,18 +74,12 @@ public class JacksonConverter implements Converter {
     }
 
     @Override
-    public boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType) {
+    public boolean canConvert(@Nonnull Class<?> sourceType,
+                              @Nonnull Class<?> targetType) {
         return sourceType.equals(targetType)
-                || canSerialize(targetType)
-                || canDeserialize(sourceType);
-    }
-
-    private static boolean canSerialize(Class<?> targetType) {
-        return byte[].class.isAssignableFrom(targetType) || String.class.isAssignableFrom(targetType);
-    }
-
-    private static boolean canDeserialize(Class<?> sourceType) {
-        return byte[].class.isAssignableFrom(sourceType) || String.class.isAssignableFrom(sourceType);
+                || converter.canConvert(sourceType, targetType)
+                || converter.canConvert(sourceType, byte[].class)
+                || converter.canConvert(byte[].class, targetType);
     }
 
     @Nullable

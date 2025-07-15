@@ -16,10 +16,21 @@
 
 package org.axonframework.serialization.json;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.*;
+
+import java.io.InputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Test class validating the {@link JacksonConverter}.
+ *
+ * @author Allard Buijze
+ * @author Mateusz Nowak
+ * @author Steven van Beelen
+ */
 class JacksonConverterTest {
 
     private JacksonConverter converter;
@@ -73,12 +84,33 @@ class JacksonConverterTest {
 
     @Test
     void shouldReturnTrueForSupportedConversions() {
-        assertThat(converter.canConvert(TestEvent.class, String.class)).isTrue();
+        // Convert from concrete type:
         assertThat(converter.canConvert(TestEvent.class, byte[].class)).isTrue();
-        assertThat(converter.canConvert(String.class, TestEvent.class)).isTrue();
+        assertThat(converter.canConvert(TestEvent.class, String.class)).isTrue();
+        assertThat(converter.canConvert(TestEvent.class, InputStream.class)).isTrue();
+        assertThat(converter.canConvert(TestEvent.class, JsonNode.class)).isTrue();
+        assertThat(converter.canConvert(TestEvent.class, ObjectNode.class)).isTrue();
+        // Convert to concrete type:
         assertThat(converter.canConvert(byte[].class, TestEvent.class)).isTrue();
+        assertThat(converter.canConvert(String.class, TestEvent.class)).isTrue();
+        assertThat(converter.canConvert(InputStream.class, TestEvent.class)).isTrue();
+        assertThat(converter.canConvert(JsonNode.class, TestEvent.class)).isTrue();
+        assertThat(converter.canConvert(ObjectNode.class, TestEvent.class)).isTrue();
+        // Convert from another concrete type:
         assertThat(converter.canConvert(AnotherEvent.class, String.class)).isTrue();
         assertThat(converter.canConvert(AnotherEvent.class, byte[].class)).isTrue();
+        assertThat(converter.canConvert(AnotherEvent.class, InputStream.class)).isTrue();
+        assertThat(converter.canConvert(AnotherEvent.class, JsonNode.class)).isTrue();
+        assertThat(converter.canConvert(AnotherEvent.class, ObjectNode.class)).isTrue();
+        // Intermediate conversion levels:
+        assertThat(converter.canConvert(String.class, JsonNode.class)).isTrue();
+        assertThat(converter.canConvert(JsonNode.class, String.class)).isTrue();
+        assertThat(converter.canConvert(ObjectNode.class, JsonNode.class)).isTrue();
+        assertThat(converter.canConvert(ObjectNode.class, String.class)).isTrue();
+        assertThat(converter.canConvert(JsonNode.class, ObjectNode.class)).isTrue();
+        assertThat(converter.canConvert(String.class, ObjectNode.class)).isTrue();
+        assertThat(converter.canConvert(byte[].class, ObjectNode.class)).isTrue();
+        assertThat(converter.canConvert(ObjectNode.class, byte[].class)).isTrue();
     }
 
     @Test
