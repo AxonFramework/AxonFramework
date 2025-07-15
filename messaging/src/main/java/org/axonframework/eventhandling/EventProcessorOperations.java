@@ -21,6 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -30,6 +31,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 
 import java.util.Collections;
@@ -46,8 +48,9 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 /**
  * Support class containing common {@link EventProcessor} functionality.
  * <p>
- * The {@link EventProcessor} implementations are in charge of providing the events that need to be processed. Once these events are obtained they
- * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Segment)} for processing.
+ * The {@link EventProcessor} implementations are in charge of providing the events that need to be processed. Once
+ * these events are obtained they can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Segment)} for
+ * processing.
  * <p>
  * Actual handling of events is deferred to an {@link EventHandlerInvoker}. Before each message is handled by the
  * invoker this event processor creates an interceptor chain containing all registered
@@ -88,9 +91,9 @@ public final class EventProcessorOperations {
     }
 
     /**
-     * Returns the name of the event processor. This name is used to detect distributed instances of the
-     * same event processor. Multiple instances referring to the same logical event processor (on different JVM's)
-     * must have the same name.
+     * Returns the name of the event processor. This name is used to detect distributed instances of the same event
+     * processor. Multiple instances referring to the same logical event processor (on different JVM's) must have the
+     * same name.
      *
      * @return the name of this event processor
      */
@@ -105,8 +108,8 @@ public final class EventProcessorOperations {
     }
 
     /**
-     * Return the list of already registered {@link MessageHandlerInterceptor}s for the event processor.
-     * To register a new interceptor use {@link EventProcessor#registerHandlerInterceptor(MessageHandlerInterceptor)}
+     * Return the list of already registered {@link MessageHandlerInterceptor}s for the event processor. To register a
+     * new interceptor use {@link EventProcessor#registerHandlerInterceptor(MessageHandlerInterceptor)}
      *
      * @return The list of registered interceptors of the event processor.
      */
@@ -167,13 +170,14 @@ public final class EventProcessorOperations {
      * the event processor creates an interceptor chain containing all registered
      * {@link MessageHandlerInterceptor interceptors}.
      *
-     * @param eventMessages      The batch of messages that is to be processed
-     * @param unitOfWork         The Unit of Work that has been prepared to process the messages
+     * @param eventMessages     The batch of messages that is to be processed
+     * @param unitOfWork        The Unit of Work that has been prepared to process the messages
      * @param processingSegment The segment for which the events should be processed in this unit of work
      */
     public CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                                        UnitOfWork unitOfWork,
                                                        Segment processingSegment) {
+        attachBatchSpan(unitOfWork, eventMessages);
         unitOfWork.onInvocation(processingContext -> {
             CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
 
@@ -197,9 +201,7 @@ public final class EventProcessorOperations {
                 throw new EventProcessingException("Exception occurred while processing events", ex);
             }
         });
-
-        return spanFactory.createBatchSpan(streamingProcessor, eventMessages)
-                          .runSupplierAsync(unitOfWork::execute);
+        return unitOfWork.execute();
     }
 
     private CompletableFuture<Void> processMessage(
@@ -237,12 +239,36 @@ public final class EventProcessorOperations {
                                                               EventMessage<?> message,
                                                               ProcessingContext processingContext
     ) {
-        if(!segmentMatcher.matches(processingSegment, message)){
+        if (!segmentMatcher.matches(processingSegment, message)) {
             return MessageStream.empty();
         }
         // todo: try to return MessageStream directly
         FutureUtils.joinAndUnwrap(eventHandlingComponent.handle(message, processingContext).asCompletableFuture());
         return MessageStream.empty();
+    }
+
+    private void attachBatchSpan(
+            UnitOfWork unitOfWork,
+            List<? extends EventMessage<?>> eventMessages
+    ) {
+        Context.ResourceKey<Span> batchSpanKey = Context.ResourceKey.withLabel("batchSpan");
+        unitOfWork.runOnPreInvocation(processingContext -> {
+            Span batchSpan = spanFactory.createBatchSpan(streamingProcessor, eventMessages);
+            batchSpan.start();
+            processingContext.putResource(batchSpanKey, batchSpan);
+        });
+        unitOfWork.onError((processingContext, phase, error) -> {
+            Span batchSpan = processingContext.getResource(batchSpanKey);
+            if (batchSpan != null) {
+                batchSpan.recordException(error);
+            }
+        });
+        unitOfWork.doFinally(processingContext -> {
+            Span batchSpan = processingContext.getResource(batchSpanKey);
+            if (batchSpan != null) {
+                batchSpan.end();
+            }
+        });
     }
 
     /**
@@ -305,7 +331,7 @@ public final class EventProcessorOperations {
          * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
          *
          * @param eventHandlingComponent The {@link EventHandlingComponent} which will handle all the individual
-         *                            {@link EventMessage}s.
+         *                               {@link EventMessage}s.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
@@ -358,6 +384,7 @@ public final class EventProcessorOperations {
 
         /**
          * Sets whether the {@link EventProcessor} is a streaming processor.
+         *
          * @param streamingProcessor - Weather the {@link EventProcessor} is a streaming processor.
          * @return The current Builder instance, for fluent interfacing.
          */
@@ -374,7 +401,8 @@ public final class EventProcessorOperations {
          */
         private void validate() throws AxonConfigurationException {
             assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
-            assertNonNull(eventHandlingComponent, "The EventHandlingComponent is a hard requirement and should be provided");
+            assertNonNull(eventHandlingComponent,
+                          "The EventHandlingComponent is a hard requirement and should be provided");
         }
 
         private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
