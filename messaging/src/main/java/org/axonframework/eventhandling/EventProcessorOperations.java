@@ -39,9 +39,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertThat;
-
 /**
  * Support class containing common {@link EventProcessor} functionality.
  * <p>
@@ -93,18 +90,14 @@ public final class EventProcessorOperations {
                                     @Nonnull EventProcessorSpanFactory spanFactory,
                                     boolean streamingProcessor
     ) {
-        assertThat(name,
-                   n -> Objects.nonNull(name) && !name.isEmpty(),
-                   "The EventProcessor name is a hard requirement and should be provided");
-        assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
-        assertNonNull(errorHandler, "ErrorHandler may not be null");
-        assertNonNull(messageMonitor, "MessageMonitor may not be null");
-        assertNonNull(spanFactory, "SpanFactory may not be null");
-        this.name = name;
-        this.eventHandlingComponent = eventHandlingComponent;
-        this.errorHandler = errorHandler;
-        this.messageMonitor = messageMonitor;
-        this.spanFactory = spanFactory;
+        this.name = Objects.requireNonNull(name, "The EventProcessor name is a hard requirement and should be provided");
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("The EventProcessor name is a hard requirement and should be provided");
+        }
+        this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
+        this.errorHandler = Objects.requireNonNull(errorHandler, "ErrorHandler may not be null");
+        this.messageMonitor = Objects.requireNonNull(messageMonitor, "MessageMonitor may not be null");
+        this.spanFactory = Objects.requireNonNull(spanFactory, "SpanFactory may not be null");
         this.streamingProcessor = streamingProcessor;
         this.segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
     }
