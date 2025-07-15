@@ -115,6 +115,13 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
         return name;
     }
 
+    /**
+     * Registers a {@link MessageHandlerInterceptor} for the event processor. The interceptor will be applied to all
+     * messages handled by this event processor.
+     *
+     * @param interceptor The interceptor to register.
+     * @return A {@link Registration} that can be used to unregister the interceptor.
+     */
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
         interceptors.add(interceptor);
@@ -200,7 +207,7 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                                 null,
                                 interceptors,
                                 (msg, ctx) -> processIfSegmentMatches(msg, ctx, segment)
-                        );
+                        ); // TODO: Question -> Is it intentional that the message is intercepted, then the decision is made if matches the segment? We can do SegmentAwareEventHandlingComponent / event with supplier???
                 return chain.proceed(event, context)
                             .whenComplete(monitorCallback::reportSuccess)
                             .onErrorContinue(ex -> {
