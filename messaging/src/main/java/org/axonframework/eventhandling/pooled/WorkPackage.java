@@ -331,6 +331,7 @@ class WorkPackage {
                     ctx.putResource(Segment.RESOURCE_KEY, segment);
                     ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
                 });
+                unitOfWork.runOnPreInvocation(ctx -> batchProcessor.processBatch(eventBatch, ctx, segment));
 
                 unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
                 unitOfWork.runOnAfterCommit(
@@ -339,7 +340,6 @@ class WorkPackage {
                             batchProcessedCallback.run();
                         }
                 );
-                unitOfWork.onInvocation(ctx -> batchProcessor.processBatch(eventBatch, ctx, segment));
                 FutureUtils.joinAndUnwrap(unitOfWork.execute());
             } finally {
                 processingEvents.set(false);

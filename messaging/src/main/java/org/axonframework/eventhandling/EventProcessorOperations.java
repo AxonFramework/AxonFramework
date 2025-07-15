@@ -30,10 +30,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +47,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * Support class containing common {@link EventProcessor} functionality.
  * <p>
  * The {@link EventProcessor} implementations are in charge of providing the events that need to be processed. Once
- * these events are obtained they can be passed to method {@link #processInUnitOfWork(List, ProcessingContext, Segment)} for
+ * these events are obtained they can be passed to method {@link #process(List, ProcessingContext, Segment)} for
  * processing.
  * <p>
  * Actual handling of events is deferred to an {@link EventHandlerInvoker}. Before each message is handled by the
@@ -73,21 +70,43 @@ public final class EventProcessorOperations {
     private final SegmentMatcher segmentMatcher;
 
     /**
-     * Instantiate a {@link EventProcessorOperations} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link EventProcessorOperations} directly with the required components.
      * <p>
-     * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker} and {@link ErrorHandler} are not
-     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     * Will assert that the Event Processor {@code name}, {@link EventHandlingComponent}, {@link ErrorHandler},
+     * {@link MessageMonitor} and {@link EventProcessorSpanFactory} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link EventProcessorOperations} instance
+     * @param name                   The {@link String} defining the name of the event processor.
+     * @param eventHandlingComponent The {@link EventHandlingComponent} which will handle all the individual
+     *                               {@link EventMessage}s.
+     * @param errorHandler           The {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception
+     *                               during processing.
+     * @param messageMonitor         The {@link MessageMonitor} to monitor {@link EventMessage}s before and after
+     *                               they're processed.
+     * @param spanFactory            The {@link EventProcessorSpanFactory} implementation to use for providing tracing
+     *                               capabilities.
+     * @param streamingProcessor     The boolean indicating whether this processor which uses the operations is a streaming processor.
      */
-    public EventProcessorOperations(Builder builder) {
-        builder.validate();
-        this.name = builder.name;
-        this.eventHandlingComponent = builder.eventHandlingComponent;
-        this.errorHandler = builder.errorHandler;
-        this.messageMonitor = builder.messageMonitor;
-        this.spanFactory = builder.spanFactory;
-        this.streamingProcessor = builder.streamingProcessor;
+    public EventProcessorOperations(@Nonnull String name,
+                                    @Nonnull EventHandlingComponent eventHandlingComponent,
+                                    @Nonnull ErrorHandler errorHandler,
+                                    @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor,
+                                    @Nonnull EventProcessorSpanFactory spanFactory,
+                                    boolean streamingProcessor
+    ) {
+        assertThat(name,
+                   n -> Objects.nonNull(name) && !name.isEmpty(),
+                   "The EventProcessor name is a hard requirement and should be provided");
+        assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
+        assertNonNull(errorHandler, "ErrorHandler may not be null");
+        assertNonNull(messageMonitor, "MessageMonitor may not be null");
+        assertNonNull(spanFactory, "SpanFactory may not be null");
+        this.name = name;
+        this.eventHandlingComponent = eventHandlingComponent;
+        this.errorHandler = errorHandler;
+        this.messageMonitor = messageMonitor;
+        this.spanFactory = spanFactory;
+        this.streamingProcessor = streamingProcessor;
         this.segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
     }
 
@@ -159,11 +178,12 @@ public final class EventProcessorOperations {
      * the event processor creates an interceptor chain containing all registered
      * {@link MessageHandlerInterceptor interceptors}.
      *
-     * @param eventMessages The batch of messages that is to be processed
-     * @param unitOfWork    The Unit of Work that has been prepared to process the messages
+     * @param eventMessages     The batch of messages that is to be processed
+     * @param processingContext The Processing Context that has been prepared to process the messages
      */
-    public CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext) {
-        return processInUnitOfWork(eventMessages, processingContext, Segment.ROOT_SEGMENT);
+    public CompletableFuture<Void> process(List<? extends EventMessage<?>> eventMessages,
+                                           ProcessingContext processingContext) {
+        return process(eventMessages, processingContext, Segment.ROOT_SEGMENT);
     }
 
     /**
@@ -172,13 +192,13 @@ public final class EventProcessorOperations {
      * {@link MessageHandlerInterceptor interceptors}.
      *
      * @param eventMessages     The batch of messages that is to be processed
-     * @param unitOfWork        The Unit of Work that has been prepared to process the messages
-     * @param processingSegment The segment for which the events should be processed in this unit of work
+     * @param processingContext The Processing Context that has been prepared to process the messages
+     * @param processingSegment The segment for which the events should be processed in this processing context
      */
-    public CompletableFuture<Void> processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                                       ProcessingContext processingContext,
-                                                       Segment processingSegment) {
-        attachBatchSpan(processingContext, eventMessages);
+    public CompletableFuture<Void> process(List<? extends EventMessage<?>> eventMessages,
+                                           ProcessingContext processingContext,
+                                           Segment processingSegment) {
+        trackBatchProcessing(processingContext, eventMessages);
         processingContext.onInvocation(ctx -> {
             CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
 
@@ -218,10 +238,10 @@ public final class EventProcessorOperations {
                     new DefaultInterceptorChain<>(
                             null,
                             interceptors,
-                            (msg, ctx) -> processMessageInUnitOfWork(processingSegment,
-                                                                     msg,
-                                                                     ctx
-                            ));
+                            (msg, ctx) -> FutureUtils.joinAndUnwrap(
+                                    processIfSegmentMatches(msg, ctx, processingSegment).asCompletableFuture()
+                            )
+                    );
             return chain.proceed(message, processingContext)
                         .ignoreEntries()
                         .asCompletableFuture()
@@ -237,24 +257,21 @@ public final class EventProcessorOperations {
         }
     }
 
-    private MessageStream.Empty<?> processMessageInUnitOfWork(Segment processingSegment,
-                                                              EventMessage<?> message,
-                                                              ProcessingContext processingContext
+    private MessageStream.Empty<?> processIfSegmentMatches(EventMessage<?> message,
+                                                           ProcessingContext processingContext,
+                                                           Segment processingSegment
     ) {
-        if (!segmentMatcher.matches(processingSegment, message)) {
-            return MessageStream.empty();
-        }
-        // todo: try to return MessageStream directly
-        FutureUtils.joinAndUnwrap(eventHandlingComponent.handle(message, processingContext).asCompletableFuture());
-        return MessageStream.empty();
+        return segmentMatcher.matches(processingSegment, message)
+                ? eventHandlingComponent.handle(message, processingContext)
+                : MessageStream.empty();
     }
 
-    private void attachBatchSpan(
+    private void trackBatchProcessing(
             ProcessingLifecycle processingLifecycle,
             List<? extends EventMessage<?>> eventMessages
     ) {
         Context.ResourceKey<Span> batchSpanKey = Context.ResourceKey.withLabel("batchSpan");
-        processingLifecycle.runOnPreInvocation(processingContext -> {
+        processingLifecycle.runOnInvocation(processingContext -> {
             Span batchSpan = spanFactory.createBatchSpan(streamingProcessor, eventMessages);
             batchSpan.start();
             processingContext.putResource(batchSpanKey, batchSpan);
@@ -284,140 +301,5 @@ public final class EventProcessorOperations {
      */
     public void reportIgnored(EventMessage<?> eventMessage) {
         messageMonitor.onMessageIngested(eventMessage).reportIgnored();
-    }
-
-    /**
-     * Builder class to instantiate a {@link EventProcessorOperations}.
-     * <p>
-     * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults
-     * to a {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
-     * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name}
-     * and {@link EventHandlerInvoker} are <b>hard requirements</b> and as such should be provided.
-     */
-    public final static class Builder {
-
-        private String name;
-        private EventHandlingComponent eventHandlingComponent;
-        private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
-        private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-        private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
-                                                                                        .spanFactory(NoOpSpanFactory.INSTANCE)
-                                                                                        .build();
-        private boolean streamingProcessor = false;
-
-        /**
-         * Sets the {@code name} of the {@link EventProcessor} implementation.
-         *
-         * @param name a {@link String} defining the {@link EventProcessor} implementation
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder name(@Nonnull String name) {
-            assertEventProcessorName(name, "The EventProcessor name may not be null or empty");
-            this.name = name;
-            return this;
-        }
-
-        /**
-         * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
-         *
-         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
-         *                            {@link EventMessage}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
-            assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
-            return this;
-        }
-
-        /**
-         * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
-         *
-         * @param eventHandlingComponent The {@link EventHandlingComponent} which will handle all the individual
-         *                               {@link EventMessage}s.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
-            assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
-            this.eventHandlingComponent = eventHandlingComponent;
-            return this;
-        }
-
-        /**
-         * Sets the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during processing.
-         * Defaults to a {@link PropagatingErrorHandler}.
-         *
-         * @param errorHandler the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during
-         *                     processing
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder errorHandler(@Nonnull ErrorHandler errorHandler) {
-            assertNonNull(errorHandler, "ErrorHandler may not be null");
-            this.errorHandler = errorHandler;
-            return this;
-        }
-
-        /**
-         * Sets the {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're processed. Defaults
-         * to a {@link NoOpMessageMonitor}.
-         *
-         * @param messageMonitor a {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're
-         *                       processed
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
-            assertNonNull(messageMonitor, "MessageMonitor may not be null");
-            this.messageMonitor = messageMonitor;
-            return this;
-        }
-
-        /**
-         * Sets the {@link EventProcessorSpanFactory} implementation to use for providing tracing capabilities. Defaults
-         * to a {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides
-         * no tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = spanFactory;
-            return this;
-        }
-
-        /**
-         * Sets whether the {@link EventProcessor} is a streaming processor.
-         *
-         * @param streamingProcessor - Weather the {@link EventProcessor} is a streaming processor.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder streamingProcessor(boolean streamingProcessor) {
-            this.streamingProcessor = streamingProcessor;
-            return this;
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        private void validate() throws AxonConfigurationException {
-            assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
-            assertNonNull(eventHandlingComponent,
-                          "The EventHandlingComponent is a hard requirement and should be provided");
-        }
-
-        private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
-            assertThat(eventProcessorName, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
-        }
-
-        /**
-         * Initializes a {@link EventProcessorOperations} as specified through this Builder.
-         *
-         * @return a {@link EventProcessorOperations} as specified through this Builder
-         */
-        public EventProcessorOperations build() {
-            return new EventProcessorOperations(this);
-        }
     }
 }

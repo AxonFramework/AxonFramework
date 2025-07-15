@@ -24,7 +24,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
@@ -103,18 +103,19 @@ class EventProcessorOperationsTest {
 
     private static class TestEventProcessor implements EventProcessor {
 
+        private static final SimpleUnitOfWorkFactory UNIT_OF_WORK_FACTORY = new SimpleUnitOfWorkFactory();
         private final EventProcessorOperations eventProcessorOperations;
 
         private TestEventProcessor(Builder builder) {
             builder.validate();
-            this.eventProcessorOperations = new EventProcessorOperations.Builder()
-                    .name(builder.name())
-                    .eventHandlingComponent(builder.eventHandlingComponent())
-                    .errorHandler(builder.errorHandler())
-                    .spanFactory(builder.spanFactory())
-                    .messageMonitor(builder.messageMonitor())
-                    .streamingProcessor(true)
-                    .build();
+            this.eventProcessorOperations = new EventProcessorOperations(
+                    builder.name(),
+                    builder.eventHandlingComponent(),
+                    builder.errorHandler(),
+                    builder.messageMonitor(),
+                    builder.spanFactory(),
+                    true
+            );
         }
 
         private static Builder builder() {
@@ -149,8 +150,10 @@ class EventProcessorOperationsTest {
             return false;
         }
 
-        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {
-            new UnitOfWork().executeWithResult(processingContext -> eventProcessorOperations.processInUnitOfWork(eventMessages, processingContext)).join();
+        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) {
+            var unitOfWork = UNIT_OF_WORK_FACTORY.create();
+            unitOfWork.onPreInvocation(processingContext -> eventProcessorOperations.process(eventMessages, processingContext));
+            unitOfWork.execute().join();
         }
 
         @Override

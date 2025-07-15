@@ -67,13 +67,14 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
-        this.eventProcessorOperations = new EventProcessorOperations.Builder()
-                .name(builder.name())
-                .eventHandlingComponent(builder.eventHandlingComponent())
-                .errorHandler(builder.errorHandler())
-                .spanFactory(builder.spanFactory())
-                .messageMonitor(builder.messageMonitor())
-                .build();
+        this.eventProcessorOperations = new EventProcessorOperations(
+                builder.name(),
+                builder.eventHandlingComponent(),
+                builder.errorHandler(),
+                builder.messageMonitor(),
+                builder.spanFactory(),
+                false
+        );
     }
 
     /**
@@ -141,7 +142,7 @@ public class SubscribingEventProcessor implements EventProcessor {
         try {
             var unitOfWork = transactionalUnitOfWorkFactory.create();
             FutureUtils.joinAndUnwrap(
-                    unitOfWork.executeWithResult(processingContext -> eventProcessorOperations.processInUnitOfWork(eventMessages, processingContext))
+                    unitOfWork.executeWithResult(processingContext -> eventProcessorOperations.process(eventMessages, processingContext))
             );
         } catch (RuntimeException e) {
             throw e;

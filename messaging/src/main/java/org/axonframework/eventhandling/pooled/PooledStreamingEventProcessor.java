@@ -134,14 +134,14 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     protected PooledStreamingEventProcessor(Builder builder) {
         builder.validate();
         var eventHandlingComponent = builder.eventHandlingComponent();
-        this.eventProcessorOperations = new EventProcessorOperations.Builder()
-                .name(builder.name())
-                .eventHandlingComponent(eventHandlingComponent)
-                .errorHandler(builder.errorHandler())
-                .spanFactory(builder.spanFactory())
-                .messageMonitor(builder.messageMonitor())
-                .streamingProcessor(true)
-                .build();
+        this.eventProcessorOperations = new EventProcessorOperations(
+                builder.name(),
+                builder.eventHandlingComponent(),
+                builder.errorHandler(),
+                builder.messageMonitor(),
+                builder.spanFactory(),
+                true
+        );
         this.name = builder.name();
         this.eventSource = builder.eventSource;
         this.tokenStore = builder.tokenStore;
@@ -393,7 +393,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = eventProcessorOperations::processInUnitOfWork;
+        WorkPackage.BatchProcessor batchProcessor = eventProcessorOperations::process;
         return WorkPackage.builder()
                           .name(name)
                           .tokenStore(tokenStore)
