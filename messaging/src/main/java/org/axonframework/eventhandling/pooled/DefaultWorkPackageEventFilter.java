@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.eventhandling.pooled;
+
+import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.ErrorContext;
+import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.EventHandlingComponent;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.SegmentMatcher;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+
+import java.util.Collections;
+import java.util.Objects;
+
+/**
+ * Default implementation of a {@link WorkPackage.EventFilter} that filters events based on the
+ * {@link EventHandlingComponent} and {@link SegmentMatcher}.
+ * <p>
+ * This filter checks if the event message is supported by the event handling component and if it matches the segment.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
+class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
+
+    private final String eventProcessor;
+    private final EventHandlingComponent eventHandlingComponent;
+    private final SegmentMatcher segmentMatcher;
+    private final ErrorHandler errorHandler;
+
+    DefaultWorkPackageEventFilter(
+            @Nonnull String eventProcessor,
+            @Nonnull EventHandlingComponent eventHandlingComponent,
+            @Nonnull SegmentMatcher segmentMatcher,
+            @Nonnull ErrorHandler errorHandler
+    ) {
+        this.eventProcessor = Objects.requireNonNull(eventProcessor, "EventProcessor name may not be null");
+        this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
+        this.segmentMatcher = Objects.requireNonNull(segmentMatcher, "SegmentMatcher may not be null");
+        this.errorHandler = Objects.requireNonNull(errorHandler, "ErrorHandler may not be null");
+    }
+
+    /**
+     * Indicates whether the processor can/should handle the given {@code eventMessage} for the given {@code segment}.
+     * <p>
+     * This implementation will delegate the decision to the {@link EventHandlingComponent}.
+     *
+     * @param eventMessage The message for which to identify if the processor can handle it.
+     * @param segment      The segment for which the event should be processed.
+     * @return {@code true} if the event message should be handled, otherwise {@code false}.
+     * @throws Exception if the {@code errorHandler} throws an Exception back on the
+     *                   {@link ErrorHandler#handleError(ErrorContext)} call.
+     */
+    @Override
+    public boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Segment segment)
+            throws Exception {
+        try {
+            var eventMessageQualifiedName = eventMessage.type().qualifiedName();
+            var eventSupported = eventHandlingComponent.supports(eventMessageQualifiedName);
+            return eventSupported && segmentMatcher.matches(segment, eventMessage);
+        } catch (Exception e) {
+            errorHandler.handleError(new ErrorContext(eventProcessor, e, Collections.singletonList(eventMessage)));
+            return false;
+        }
+    }
+}

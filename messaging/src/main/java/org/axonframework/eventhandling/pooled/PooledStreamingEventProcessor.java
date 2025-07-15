@@ -35,6 +35,7 @@ import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.SegmentMatcher;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
@@ -58,6 +59,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -113,6 +115,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
+    private final WorkPackage.EventFilter workPackageEventFilter;
 
     /**
      * Instantiate a {@code PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -134,13 +137,21 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     protected PooledStreamingEventProcessor(Builder builder) {
         builder.validate();
         var eventHandlingComponent = builder.eventHandlingComponent();
+        var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
         this.eventProcessorOperations = new EventProcessorOperations(
                 builder.name(),
                 builder.eventHandlingComponent(),
                 builder.errorHandler(),
                 builder.messageMonitor(),
                 builder.spanFactory(),
+                segmentMatcher,
                 true
+        );
+        this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
+                builder.name(),
+                eventHandlingComponent,
+                segmentMatcher,
+                builder.errorHandler()
         );
         this.name = builder.name();
         this.eventSource = builder.eventSource;
@@ -400,7 +411,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                           .tokenStore(tokenStore)
                           .unitOfWorkFactory(unitOfWorkFactory)
                           .executorService(workerExecutor)
-                          .eventFilter(eventProcessorOperations::canHandle)
+                          .eventFilter(workPackageEventFilter)
                           .batchProcessor(batchProcessor)
                           .segment(segment)
                           .initialToken(initialToken)

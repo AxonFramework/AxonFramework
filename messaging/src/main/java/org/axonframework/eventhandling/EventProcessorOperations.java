@@ -33,7 +33,6 @@ import org.axonframework.tracing.Span;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
@@ -81,12 +80,14 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
      *                               capabilities.
      * @param streamingProcessor     The boolean indicating whether this processor which uses the operations is a
      *                               streaming processor.
+     * @param segmentMatcher         The {@link SegmentMatcher} used to determine if an event should be processed by this segment.
      */
     public EventProcessorOperations(@Nonnull String name,
                                     @Nonnull EventHandlingComponent eventHandlingComponent,
                                     @Nonnull ErrorHandler errorHandler,
                                     @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor,
                                     @Nonnull EventProcessorSpanFactory spanFactory,
+                                    @Nonnull SegmentMatcher segmentMatcher,
                                     boolean streamingProcessor
     ) {
         this.name = Objects.requireNonNull(name,
@@ -100,7 +101,7 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
         this.messageMonitor = Objects.requireNonNull(messageMonitor, "MessageMonitor may not be null");
         this.spanFactory = Objects.requireNonNull(spanFactory, "SpanFactory may not be null");
         this.streamingProcessor = streamingProcessor;
-        this.segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
+        this.segmentMatcher = Objects.requireNonNull(segmentMatcher, "SegmentMatcher may not be null");
     }
 
     /**
@@ -132,29 +133,6 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
 
     public String toString() {
         return name();
-    }
-
-    /**
-     * Indicates whether the processor can/should handle the given {@code eventMessage} for the given {@code segment}.
-     * <p>
-     * This implementation will delegate the decision to the {@link EventHandlerInvoker}.
-     *
-     * @param eventMessage The message for which to identify if the processor can handle it
-     * @param segment      The segment for which the event should be processed
-     * @return {@code true} if the event message should be handled, otherwise {@code false}
-     * @throws Exception if the {@code errorHandler} throws an Exception back on the
-     *                   {@link ErrorHandler#handleError(ErrorContext)} call
-     */
-    public boolean canHandle(EventMessage<?> eventMessage, @Nonnull ProcessingContext context, Segment segment)
-            throws Exception {
-        try {
-            var eventMessageQualifiedName = eventMessage.type().qualifiedName();
-            var eventSupported = eventHandlingComponent.supports(eventMessageQualifiedName);
-            return eventSupported && segmentMatcher.matches(segment, eventMessage);
-        } catch (Exception e) {
-            errorHandler.handleError(new ErrorContext(name(), e, Collections.singletonList(eventMessage)));
-            return false;
-        }
     }
 
     /**

@@ -33,7 +33,7 @@ import java.util.Objects;
  * @since 5.0.0
  */
 @Internal
-class SegmentMatcher {
+public class SegmentMatcher {
 
     private final SequencingPolicy sequencingPolicy;
 
