@@ -21,6 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -30,6 +31,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 
 import java.util.Collection;
@@ -181,24 +183,32 @@ public final class EventProcessorOperations {
                                                        UnitOfWork unitOfWork,
                                                        Collection<Segment> processingSegments) throws Exception {
         // Create a resource key for storing the batch span
-        ResourceKey<OpenTelemetrySpan> batchSpanKey = new ResourceKey<>("batchSpan");
+        Context.ResourceKey<Span> batchSpanKey = Context.ResourceKey.withLabel("batchSpan");
 
         // Pre-invocation: create the batch span and store it as a resource
         unitOfWork.onPreInvocation(processingContext -> {
-            OpenTelemetrySpan batchSpan = spanFactory.createBatchSpan(streamingProcessor, eventMessages);
+            Span batchSpan = spanFactory.createBatchSpan(streamingProcessor, eventMessages);
+            batchSpan.start(); // Start the span explicitly
             processingContext.putResource(batchSpanKey, batchSpan);
-            return batchSpan.wrapCompletableFuture(CompletableFuture.completedFuture(null));
+            return CompletableFuture.completedFuture(null);
         });
 
-        // Regular invocation: process each message in its own span (unchanged)
+        // Regular invocation: process each message in its own span
         unitOfWork.onInvocation(processingContext -> {
+            Span batchSpan = processingContext.getResource(batchSpanKey);
             CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
 
+            // Instead of using try-with-resources which closes the scope before async operations run,
+            // we'll propagate the span context to each async operation explicitly
             for (EventMessage<?> message : eventMessages) {
-                result = result.thenCompose(v -> spanFactory
-                        .createProcessEventSpan(streamingProcessor, message)
-                        .runSupplierAsync(() -> processMessage(processingSegments, processingContext, message))
-                );
+                Span processEventSpan = spanFactory.createProcessEventSpan(streamingProcessor, message);
+                // This ensures each processing span is a child of the batch span
+                result = result.thenCompose(v -> batchSpan.runSupplierAsync(() ->
+                    // Process the message in the context of the process event span
+                    processEventSpan.runSupplierAsync(() ->
+                        processMessage(processingSegments, processingContext, message)
+                    )
+                ));
             }
 
             return result;
@@ -206,6 +216,11 @@ public final class EventProcessorOperations {
 
         // Error handling
         unitOfWork.onError((processingContext, phase, exception) -> {
+            Span batchSpan = processingContext.getResource(batchSpanKey);
+            if (batchSpan != null) {
+                batchSpan.recordException(exception);
+            }
+
             try {
                 var cause = exception instanceof CompletionException ? exception.getCause() : exception;
                 errorHandler.handleError(new ErrorContext(name(), cause, eventMessages));
@@ -215,8 +230,15 @@ public final class EventProcessorOperations {
                 throw new EventProcessingException("Exception occurred while processing events", ex);
             }
         });
+        // After commit: end the span
+        unitOfWork.doFinally(processingContext -> {
+            Span batchSpan = processingContext.getResource(batchSpanKey);
+            if (batchSpan != null) {
+//                batchSpan.end();
+            }
+        });
 
-        // Execute the unit of work and use the batch span
+        // Execute the unit of work
         return unitOfWork.execute();
     }
 
