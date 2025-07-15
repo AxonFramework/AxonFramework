@@ -18,6 +18,9 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
+import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -30,7 +33,6 @@ import org.junit.jupiter.api.*;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
@@ -38,7 +40,7 @@ import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainE
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class EventProcessorOperationsTest {
+class EventProcessorWithMonitoringEventHandlingComponentTest {
 
     @Test
     void expectCallbackForAllMessages() throws Exception {
@@ -105,19 +107,17 @@ class EventProcessorOperationsTest {
     private static class TestEventProcessor implements EventProcessor {
 
         private static final SimpleUnitOfWorkFactory UNIT_OF_WORK_FACTORY = new SimpleUnitOfWorkFactory();
-        private final EventProcessorOperations eventProcessorOperations;
+        private final String name;
+        private final EventProcessingPipeline eventProcessingPipeline;
+        private final MessageHandlerInterceptors messageHandlerInterceptors;
 
         private TestEventProcessor(Builder builder) {
             builder.validate();
+            this.name = builder.name;
             var eventHandlingComponent = builder.eventHandlingComponent();
-            this.eventProcessorOperations = new EventProcessorOperations(
-                    builder.name(),
-                    eventHandlingComponent,
-                    builder.errorHandler(),
-                    builder.messageMonitor(),
-                    builder.spanFactory(),
-                    new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e))),
-                    true
+            this.messageHandlerInterceptors = new MessageHandlerInterceptors();
+            this.eventProcessingPipeline = new HandlingEventProcessingPipeline(
+                    new MonitoringEventHandlingComponent(builder.messageMonitor, eventHandlingComponent)
             );
         }
 
@@ -127,12 +127,12 @@ class EventProcessorOperationsTest {
 
         @Override
         public String getName() {
-            return eventProcessorOperations.name();
+            return name;
         }
 
         @Override
         public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-            return eventProcessorOperations.handlerInterceptors();
+            return messageHandlerInterceptors.toList();
         }
 
         @Override
@@ -155,14 +155,15 @@ class EventProcessorOperationsTest {
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) {
             var unitOfWork = UNIT_OF_WORK_FACTORY.create();
-            unitOfWork.onPreInvocation(processingContext -> eventProcessorOperations.process(eventMessages, processingContext).asCompletableFuture());
-            unitOfWork.execute().join();
+            unitOfWork.executeWithResult(ctx -> eventProcessingPipeline.process(
+                    eventMessages, ctx).asCompletableFuture()
+            ).join();
         }
 
         @Override
         public Registration registerHandlerInterceptor(
                 @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-            return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
+            return messageHandlerInterceptors.register(handlerInterceptor);
         }
 
         private static class Builder extends EventProcessorBuilder {

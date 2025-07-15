@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
@@ -27,6 +28,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Default implementation of a {@link WorkPackage.EventFilter} that filters events based on the
@@ -34,9 +36,13 @@ import java.util.Objects;
  * <p>
  * This filter checks if the event message is supported by the event handling component and if it matches the segment.
  *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
+@Internal
 class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
 
     private final String eventProcessor;
@@ -47,12 +53,12 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
     DefaultWorkPackageEventFilter(
             @Nonnull String eventProcessor,
             @Nonnull EventHandlingComponent eventHandlingComponent,
-            @Nonnull SegmentMatcher segmentMatcher,
             @Nonnull ErrorHandler errorHandler
     ) {
         this.eventProcessor = Objects.requireNonNull(eventProcessor, "EventProcessor name may not be null");
-        this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
-        this.segmentMatcher = Objects.requireNonNull(segmentMatcher, "SegmentMatcher may not be null");
+        this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent,
+                                                             "EventHandlingComponent may not be null");
+        this.segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
         this.errorHandler = Objects.requireNonNull(errorHandler, "ErrorHandler may not be null");
     }
 
@@ -68,8 +74,11 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
      *                   {@link ErrorHandler#handleError(ErrorContext)} call.
      */
     @Override
-    public boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Segment segment)
-            throws Exception {
+    public boolean canHandle(
+            EventMessage<?> eventMessage,
+            ProcessingContext context,
+            Segment segment
+    ) throws Exception {
         try {
             var eventMessageQualifiedName = eventMessage.type().qualifiedName();
             var eventSupported = eventHandlingComponent.supports(eventMessageQualifiedName);
