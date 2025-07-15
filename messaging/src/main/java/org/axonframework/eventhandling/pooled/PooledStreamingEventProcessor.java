@@ -27,18 +27,24 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorBuilder;
-import org.axonframework.eventhandling.EventProcessorOperations;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.SegmentMatcher;
 import org.axonframework.eventhandling.StreamingEventProcessor;
+import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
+import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pipeline.ErrorHandlingEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.TracingEventProcessingPipeline;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
@@ -59,7 +65,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -99,7 +104,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final EventProcessorOperations eventProcessorOperations;
+    private final EventProcessingPipeline eventProcessingPipeline;
     private final String name;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final TokenStore tokenStore;
@@ -117,6 +122,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
     private final WorkPackage.EventFilter workPackageEventFilter;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
+    private final MessageHandlerInterceptors messageHandlerInterceptors;
 
     /**
      * Instantiate a {@code PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -137,25 +143,34 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      */
     protected PooledStreamingEventProcessor(Builder builder) {
         builder.validate();
-        var eventHandlingComponent = builder.eventHandlingComponent();
-        var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
+        this.name = builder.name();
         this.messageMonitor = builder.messageMonitor();
-        this.eventProcessorOperations = new EventProcessorOperations(
-                builder.name(),
-                builder.eventHandlingComponent(),
+        this.messageHandlerInterceptors = new MessageHandlerInterceptors();
+        var spanFactory = builder.spanFactory();
+        var eventHandlingComponent =
+                new TracingEventHandlingComponent(
+                        (event) -> spanFactory.createProcessEventSpan(true, event),
+                        new MonitoringEventHandlingComponent(
+                                builder.messageMonitor(),
+                                new InterceptingEventHandlingComponent(
+                                        messageHandlerInterceptors,
+                                        builder.eventHandlingComponent()
+                                )
+                        )
+                );
+        this.eventProcessingPipeline = new ErrorHandlingEventProcessingPipeline(
+                name,
                 builder.errorHandler(),
-                messageMonitor,
-                builder.spanFactory(),
-                segmentMatcher,
-                true
+                new TracingEventProcessingPipeline(
+                        (eventsList) -> spanFactory.createBatchSpan(true, eventsList),
+                        new HandlingEventProcessingPipeline(eventHandlingComponent)
+                )
         );
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 builder.name(),
                 eventHandlingComponent,
-                segmentMatcher,
                 builder.errorHandler()
         );
-        this.name = builder.name();
         this.eventSource = builder.eventSource;
         this.tokenStore = builder.tokenStore;
         this.unitOfWorkFactory = builder.transactionManager == NoTransactionManager.instance()
@@ -243,12 +258,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public String getName() {
-        return eventProcessorOperations.name();
+        return name;
     }
 
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-        return eventProcessorOperations.handlerInterceptors();
+        return messageHandlerInterceptors.toList();
     }
 
     @Override
@@ -419,8 +434,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> eventProcessorOperations.process(events, ctx, s)
-                                                                                                .asCompletableFuture();
+        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> eventProcessingPipeline.process(events, ctx)
+                                                                                               .asCompletableFuture();
         return WorkPackage.builder()
                           .name(name)
                           .tokenStore(tokenStore)
@@ -470,7 +485,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     @Override
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-        return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
+        return messageHandlerInterceptors.register(handlerInterceptor);
     }
 
     /**
@@ -819,8 +834,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          * function receives the set of supported event types from the assigned EventHandlingComponent.
          * <p>
          * <b>Intention:</b> This function is mainly intended to allow you to specify the tags for filtering or to
-         * build
-         * more complex criteria. For example, if not all supported event types share the same tag, you may use
+         * build more complex criteria. For example, if not all supported event types share the same tag, you may use
          * {@link EventCriteria#either(EventCriteria...)} to construct a disjunction of criteria for different event
          * types and tags. See {@link org.axonframework.eventstreaming.EventCriteria} for advanced usage and examples.
          * <p>

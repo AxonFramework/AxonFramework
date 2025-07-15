@@ -331,7 +331,7 @@ class WorkPackage {
                     ctx.putResource(Segment.RESOURCE_KEY, segment);
                     ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
                 });
-                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
+                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken)); // todo: track the whole unit of work.
                 unitOfWork.runOnAfterCommit(
                         u -> {
                             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
@@ -537,11 +537,11 @@ class WorkPackage {
          * given {@code unitOfWork}. The collection of {@link Segment} instances defines the segments for which the
          * {@code eventMessages} should be processed.
          *
-         * @param eventMessages     the batch of {@link EventMessage}s that is to be processed
-         * @param processingContext the {@link ProcessingContext} that has been prepared to process the
-         *                          {@code eventMessages}
-         * @param processingSegment the {@link Segment} for which the {@code eventMessages} should be processed in the
-         *                          given {@code unitOfWork}
+         * @param eventMessages     The batch of {@link EventMessage}s that is to be processed.
+         * @param processingContext The {@link ProcessingContext} that has been prepared to process the
+         *                          {@code eventMessages}.
+         * @param processingSegment The {@link Segment} for which the {@code eventMessages} should be processed in the
+         *                          given {@code unitOfWork}.
          */
         CompletableFuture<?> processBatch(List<? extends EventMessage<?>> eventMessages,
                                              ProcessingContext processingContext,
