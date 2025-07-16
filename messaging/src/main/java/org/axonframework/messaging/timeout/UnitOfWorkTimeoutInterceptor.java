@@ -104,9 +104,10 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
     public Object handle(@Nonnull UnitOfWork<? extends Message<?>> unitOfWork,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         UnitOfWork<?> root = unitOfWork.root();
+        String taskName = "UnitOfWork of " + componentName;
         if (!root.resources().containsKey(TRANSACTION_TIME_LIMIT_RESOURCE_KEY)) {
             AxonTimeLimitedTask taskTimeout = new AxonTimeLimitedTask(
-                    "UnitOfWork of " + componentName,
+                    taskName,
                     timeout,
                     warningThreshold,
                     warningInterval,
@@ -115,10 +116,28 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
             );
             root.resources().put(TRANSACTION_TIME_LIMIT_RESOURCE_KEY, taskTimeout);
             taskTimeout.start();
-            unitOfWork.afterCommit(u -> taskTimeout.complete());
-            unitOfWork.onRollback(u -> taskTimeout.complete());
+            unitOfWork.afterCommit(u -> completeSafely(taskTimeout));
+            unitOfWork.onRollback(u -> completeSafely(taskTimeout));
         }
 
-        return interceptorChain.proceed();
+        AxonTimeLimitedTask task = (AxonTimeLimitedTask) root.resources().get(TRANSACTION_TIME_LIMIT_RESOURCE_KEY);
+        try {
+            AxonTaskJanitor.LOGGER.info(
+                    "Processing UnitOfWork [{}] with timeout [{} ms] using UnitOfWorkTimeoutInterceptor",
+                    componentName,
+                    timeout
+            );
+            return interceptorChain.proceed();
+        } catch (Exception e) {
+            throw task.detectInterruptionInsteadOfException(e);
+        }
+    }
+
+    private static void completeSafely(AxonTimeLimitedTask task) {
+        try {
+            task.complete();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
