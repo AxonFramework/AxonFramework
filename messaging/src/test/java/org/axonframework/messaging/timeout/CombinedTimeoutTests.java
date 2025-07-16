@@ -1,0 +1,241 @@
+package org.axonframework.messaging.timeout;
+
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
+import org.junit.jupiter.api.*;
+
+import java.lang.annotation.Annotation;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * The different timeout components, {@link TimeoutWrappedMessageHandlingMember} and
+ * {@link UnitOfWorkTimeoutInterceptor} are tested in isolation, but this test class combines them to ensure that the
+ * timeout behavior works as expected when both are used together.
+ */
+public class CombinedTimeoutTests {
+
+    /**
+     * Simple test where the message handling member takes longer than the timeout specified, and the batch fits inside
+     * the unit of work timeout.
+     */
+    @Test
+    void onMessageHandlerInterruptWorks() {
+        TimeoutWrappedMessageHandlingMember<Object> mhm = createMessageHandlingMember(100, () -> {
+            Thread.sleep(200);
+            return null;
+        });
+        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(500);
+
+        List<EventMessage<?>> batch = generateBatch(2);
+        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
+
+        await().until(uow::isRolledBack);
+        assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
+        assertFalse(Thread.interrupted());
+    }
+
+    /**
+     * Simple test where the unit of work timeout is shorter than the message handling member timeout, so the unit of
+     * work timeout should kick in.
+     */
+    @Test
+    void onUnitOfWorkInterruptWorks() {
+        TimeoutWrappedMessageHandlingMember<Object> mhm = createMessageHandlingMember(500, () -> {
+            Thread.sleep(200);
+            return null;
+        });
+        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(100);
+
+        List<EventMessage<?>> batch = generateBatch(2);
+        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
+
+        await().until(uow::isRolledBack);
+        assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
+        assertFalse(Thread.interrupted());
+    }
+
+    @Test
+    void handlingMemberInterruptStillWorksIfExceptionIsWrapped() {
+        TimeoutWrappedMessageHandlingMember<Object> mhm = createMessageHandlingMember(100, () -> {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Wrapped exception", e);
+            }
+            return null;
+        });
+        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(500);
+        List<EventMessage<?>> batch = generateBatch(2);
+        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
+        await().until(uow::isRolledBack);
+        assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
+        assertFalse(Thread.interrupted());
+    }
+
+    @Test
+    void handlingMemberInterruptStillWorksIfExceptionIsIgnored() {
+        TimeoutWrappedMessageHandlingMember<Object> mhm = createMessageHandlingMember(100, () -> {
+            try {
+                Thread.sleep(200);
+            } catch (Exception e) {
+                // Ignored
+            }
+            return null;
+        });
+        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(500);
+        List<EventMessage<?>> batch = generateBatch(2);
+        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
+        await().until(uow::isRolledBack);
+        assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
+        assertFalse(Thread.interrupted());
+    }
+
+    @Test
+    void unitOfWorkInterruptStillWorksIfExceptionIsWrapped() {
+        TimeoutWrappedMessageHandlingMember<Object> mhm = createMessageHandlingMember(500, () -> {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Wrapped exception", e);
+            }
+            return null;
+        });
+        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(300);
+        List<EventMessage<?>> batch = generateBatch(2);
+        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
+        await().until(uow::isRolledBack);
+        assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
+        assertFalse(Thread.interrupted());
+    }
+
+    @Test
+    void unitOfWorkInterruptStillWorksIfExceptionIsIgnored() {
+        TimeoutWrappedMessageHandlingMember<Object> mhm = createMessageHandlingMember(500, () -> {
+            try {
+                Thread.sleep(200);
+            } catch (Exception e) {
+                // Ignored
+            }
+            return null;
+        });
+        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(300);
+        List<EventMessage<?>> batch = generateBatch(2);
+        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
+        await().until(uow::isRolledBack);
+        assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
+        assertFalse(Thread.interrupted());
+    }
+
+    @Test
+    void whenThreadIsInterruptedFromUnrelatedProcessTheInterruptIsPreserved() {
+        TimeoutWrappedMessageHandlingMember<Object> mhm = createMessageHandlingMember(100000, () -> {
+            Thread.sleep(20);
+            Thread.currentThread().interrupt();
+            return null;
+        });
+        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(100000);
+
+        List<EventMessage<?>> batch = generateBatch(2);
+        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
+
+        await().until(uow::isRolledBack);
+        assertInstanceOf(InterruptedException.class, uow.getExecutionResult().getExceptionResult());
+        assertTrue(Thread.interrupted());
+    }
+
+    private List<EventMessage<?>> generateBatch(int size) {
+        List<EventMessage<?>> batch = new LinkedList<>();
+        for (int i = 0; i < size; i++) {
+            batch.add(new GenericEventMessage<>("TestEvent" + i));
+        }
+        return batch;
+    }
+
+
+    private BatchingUnitOfWork<?> doExecution(List<EventMessage<?>> batch,
+                                              UnitOfWorkTimeoutInterceptor interceptor,
+                                              TimeoutWrappedMessageHandlingMember<Object> mhm) {
+        BatchingUnitOfWork<?> uow = new BatchingUnitOfWork<>(batch);
+        uow.executeWithResult(() -> interceptor.handle(uow, () -> mhm.handle(uow.getMessage(), null)));
+        return uow;
+    }
+
+    private TimeoutWrappedMessageHandlingMember<Object> createMessageHandlingMember(int timeout,
+                                                                                    Callable<Object> callable) {
+        return new TimeoutWrappedMessageHandlingMember<>(
+                new SimpleMessageHandlingMember(callable),
+                timeout,
+                500,
+                100
+        );
+    }
+
+    private UnitOfWorkTimeoutInterceptor createTimeoutInterceptor(int timeout) {
+        return new UnitOfWorkTimeoutInterceptor(
+                "TestComponent",
+                timeout,
+                500,
+                100,
+                AxonTaskJanitor.INSTANCE,
+                AxonTaskJanitor.LOGGER
+        );
+    }
+
+    private static class SimpleMessageHandlingMember implements MessageHandlingMember<Object> {
+
+        private final Callable<Object> callable;
+
+        private SimpleMessageHandlingMember(Callable<Object> callable) {
+            this.callable = callable;
+        }
+
+        @Override
+        public Class<?> payloadType() {
+            return String.class;
+        }
+
+        @Override
+        public boolean canHandle(@Nonnull Message<?> message) {
+            return true;
+        }
+
+        @Override
+        public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
+            return true;
+        }
+
+        @Override
+        public Object handle(@Nonnull Message<?> message, @Nullable Object target) throws Exception {
+            callable.call();
+            return null;
+        }
+
+        @Override
+        public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
+            return Optional.empty();
+        }
+
+        @Override
+        public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
+            return false;
+        }
+
+        @Override
+        public Optional<Map<String, Object>> annotationAttributes(
+                Class<? extends Annotation> annotationType) {
+            return Optional.empty();
+        }
+    }
+}
