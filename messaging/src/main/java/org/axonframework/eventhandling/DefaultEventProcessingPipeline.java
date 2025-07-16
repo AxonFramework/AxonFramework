@@ -19,11 +19,12 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pipeline.ErrorHandlingEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.InterceptingEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.SegmentMatchingEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.TrackingEventProcessingPipeline;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -133,15 +134,34 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
     public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events,
                                                       ProcessingContext context,
                                                       Segment segment) {
+//        var eventHandlingComponent =
+//                new TrackingEventHandlingComponent(
+//                        new MonitoringEventHandlingComponent(
+//                                new InterceptingEventHandlingComponent(
+//                                        new SegmentMatchingEventHandlingComponent( // todo: do I need to check the message after intercepting or before?
+//                                                this.eventHandlingComponent, segmentMatcher, () -> segment
+//                                        ),
+//                                        messageHandlerInterceptors
+//                                ),
+//                                messageMonitor
+//                        ),
+//                        (event) -> spanFactory.createProcessEventSpan(streamingProcessor, event)
+//                );
+//        var pipeline =
+//                new ErrorHandlingEventProcessingPipeline(
+//                        // todo: add pipeline that parallelize processing for events with different sequence identifiers!
+//                        new TrackingEventProcessingPipeline(
+//                                new HandlingEventProcessingPipeline(eventHandlingComponent),
+//                                (eventsList) -> spanFactory.createBatchSpan(streamingProcessor, eventsList)
+//                        ),
+//                        name,
+//                        errorHandler
+//                );
+
         var eventHandlingComponent =
                 new TrackingEventHandlingComponent(
                         new MonitoringEventHandlingComponent(
-                                new InterceptingEventHandlingComponent(
-                                        new SegmentMatchingEventHandlingComponent( // todo: do I need to check the message after intercepting or before?
-                                                this.eventHandlingComponent, segmentMatcher, () -> segment
-                                        ),
-                                        messageHandlerInterceptors
-                                ),
+                                this.eventHandlingComponent,
                                 messageMonitor
                         ),
                         (event) -> spanFactory.createProcessEventSpan(streamingProcessor, event)
@@ -150,7 +170,13 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
                 new ErrorHandlingEventProcessingPipeline(
                         // todo: add pipeline that parallelize processing for events with different sequence identifiers!
                         new TrackingEventProcessingPipeline(
-                                new HandlingEventProcessingPipeline(eventHandlingComponent),
+                                new InterceptingEventProcessingPipeline(
+                                        new SegmentMatchingEventProcessingPipeline(
+                                                new HandlingEventProcessingPipeline(eventHandlingComponent),
+                                                segmentMatcher
+                                        ),
+                                        messageHandlerInterceptors
+                                ),
                                 (eventsList) -> spanFactory.createBatchSpan(streamingProcessor, eventsList)
                         ),
                         name,
