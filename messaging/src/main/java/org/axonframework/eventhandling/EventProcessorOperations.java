@@ -199,9 +199,8 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
             ProcessingContext context,
             Segment segment
     ) {
-        return trackEventProcessing(event, () -> {
-            try {
-                var eventHandlingComponent =
+        var eventHandlingComponent =
+                new TrackingEventHandlingComponent(
                         new MonitoringEventHandlingComponent(
                                 new InterceptingEventHandlingComponent(
                                         new SegmentMatchingEventHandlingComponent(
@@ -210,12 +209,10 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                                         interceptors
                                 ),
                                 messageMonitor
-                        );
-                return eventHandlingComponent.handle(event, context).cast();
-            } catch (Exception e) {
-                return MessageStream.failed(e);
-            }
-        });
+                        ),
+                        () -> spanFactory.createProcessEventSpan(streamingProcessor, event)
+                );
+        return eventHandlingComponent.handle(event, context).cast();
     }
 
     // todo: I'm not sure about that, it had some thread local used inside runSupplierAsync
@@ -236,11 +233,5 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                     span.end();
                     return MessageStream.failed(ex);
                 });
-    }
-
-    private MessageStream<Message<?>> trackEventProcessing(EventMessage<?> event,
-                                                           Supplier<MessageStream<Message<?>>> messageStreamSupplier) {
-        var span = spanFactory.createProcessEventSpan(streamingProcessor, event);
-        return trackMessageStream(span, messageStreamSupplier);
     }
 }
