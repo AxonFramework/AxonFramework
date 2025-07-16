@@ -21,6 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
+import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pipeline.ErrorHandlingEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
@@ -177,7 +178,7 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
                                         new SegmentMatchingEventHandlingComponent(
                                                 this.eventHandlingComponent, segmentMatcher, () -> segment
                                         ),
-                                        interceptors
+                                        new MessageHandlerInterceptors(interceptors)
                                 ),
                                 messageMonitor
                         ),

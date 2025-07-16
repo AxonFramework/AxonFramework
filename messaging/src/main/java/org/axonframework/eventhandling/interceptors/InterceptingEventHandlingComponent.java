@@ -17,20 +17,15 @@
 package org.axonframework.eventhandling.interceptors;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Objects;
 
 /**
  * An EventHandlingComponent implementation that supports intercepting event handling through
@@ -43,27 +38,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
 // TODO: Refactor to new interceptor support.
 public class InterceptingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
-    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
-
-    /**
-     * Constructs an InterceptingEventHandlingComponent with the given delegate.
-     *
-     * @param delegate the EventHandlingComponent to delegate to
-     */
-    public InterceptingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
-        super(delegate);
-    }
+    private final MessageHandlerInterceptors messageHandlerInterceptors;
 
     /**
      * Constructs an InterceptingEventHandlingComponent with the given delegate and interceptors.
      *
      * @param delegate     The EventHandlingComponent to delegate to.
-     * @param interceptors The list of interceptors to initialize with.
+     * @param messageHandlerInterceptors The list of interceptors to initialize with.
      */
     public InterceptingEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
-                                              @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+                                              @Nonnull MessageHandlerInterceptors messageHandlerInterceptors) {
         super(delegate);
-        this.interceptors.addAll(interceptors);
+        this.messageHandlerInterceptors = Objects.requireNonNull(messageHandlerInterceptors, "InterceptorsList may not be null");
     }
 
     @Nonnull
@@ -73,32 +59,10 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
         DefaultInterceptorChain<EventMessage<?>, ?> chain =
                 new DefaultInterceptorChain<>(
                         null,
-                        interceptors,
-                        (msg, ctx) -> delegate.handle(msg, ctx)
+                        messageHandlerInterceptors.toList(),
+                        delegate::handle
                 );
         return chain.proceed(event, context).ignoreEntries().cast();
     }
 
-    /**
-     * Registers a {@link MessageHandlerInterceptor} for the event processor. The interceptor will be applied to all
-     * messages handled by this event processor.
-     *
-     * @param interceptor The interceptor to register.
-     * @return A {@link Registration} that can be used to unregister the interceptor.
-     */
-    public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
-        interceptors.add(interceptor);
-        return () -> interceptors.remove(interceptor);
-    }
-
-    /**
-     * Return the list of already registered {@link MessageHandlerInterceptor}s for the event processor. To register a
-     * new interceptor use {@link EventProcessor#registerHandlerInterceptor(MessageHandlerInterceptor)}
-     *
-     * @return The list of registered interceptors for the event processor.
-     */
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> handlerInterceptors() {
-        return Collections.unmodifiableList(interceptors);
-    }
 }
