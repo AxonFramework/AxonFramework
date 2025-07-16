@@ -542,13 +542,10 @@ class WorkPackageTest {
         private final List<ContextMessage> processedEvents = new ArrayList<>();
 
         @Override
-        public CompletableFuture<?> processBatch(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext,
-                                                      Segment processingSegment) {
-            processingContext.runOnInvocation(ctx -> {
-                if (batchProcessorPredicate.test(eventMessages, TrackingToken.fromContext(ctx).orElse(null))) {
-                    processedEvents.addAll(eventMessages.stream().map(m -> new ContextMessage(m, ctx)).toList());
-                }
-            });
+        public CompletableFuture<?> processBatch(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext, Segment processingSegment) {
+            if (batchProcessorPredicate.test(eventMessages, TrackingToken.fromContext(processingContext).orElse(null))) {
+                processedEvents.addAll(eventMessages.stream().map(m -> new ContextMessage(m, processingContext)).toList());
+            }
             return CompletableFuture.completedFuture(null);
         }
 
