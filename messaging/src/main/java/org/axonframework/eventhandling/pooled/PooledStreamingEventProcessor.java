@@ -40,6 +40,7 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
@@ -100,7 +101,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final DefaultEventProcessingPipeline defaultEventProcessingPipeline;
+    private final EventProcessingPipeline eventProcessingPipeline;
     private final String name;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final TokenStore tokenStore;
@@ -143,7 +144,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
         this.messageMonitor = builder.messageMonitor();
         this.messageHandlerInterceptors = new MessageHandlerInterceptors();
-        this.defaultEventProcessingPipeline = new DefaultEventProcessingPipeline(
+        this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
                 builder.name(),
                 builder.eventHandlingComponent(),
                 builder.errorHandler(),
@@ -247,7 +248,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public String getName() {
-        return defaultEventProcessingPipeline.name();
+        return name;
     }
 
     @Override
@@ -423,8 +424,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> defaultEventProcessingPipeline.process(events, ctx, s)
-                                                                                                      .asCompletableFuture();
+        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> eventProcessingPipeline.process(events, ctx, s)
+                                                                                               .asCompletableFuture();
         return WorkPackage.builder()
                           .name(name)
                           .tokenStore(tokenStore)

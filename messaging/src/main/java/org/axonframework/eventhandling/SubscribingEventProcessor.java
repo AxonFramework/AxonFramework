@@ -23,6 +23,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -48,11 +49,12 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class SubscribingEventProcessor implements EventProcessor {
 
+    private final String name;
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
     private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
     private final MessageHandlerInterceptors messageHandlerInterceptors;
-    private final DefaultEventProcessingPipeline defaultEventProcessingPipeline;
+    private final EventProcessingPipeline eventProcessingPipeline;
 
     private volatile Registration eventBusRegistration;
 
@@ -67,13 +69,14 @@ public class SubscribingEventProcessor implements EventProcessor {
      */
     protected SubscribingEventProcessor(Builder builder) {
         builder.validate();
+        this.name = builder.name;
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
         var eventHandlingComponent = builder.eventHandlingComponent();
         var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
         this.messageHandlerInterceptors = new MessageHandlerInterceptors();
-        this.defaultEventProcessingPipeline = new DefaultEventProcessingPipeline(
+        this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
                 builder.name(),
                 eventHandlingComponent,
                 builder.errorHandler(),
@@ -104,7 +107,7 @@ public class SubscribingEventProcessor implements EventProcessor {
 
     @Override
     public String getName() {
-        return defaultEventProcessingPipeline.name();
+        return name;
     }
 
     @Override
@@ -150,9 +153,11 @@ public class SubscribingEventProcessor implements EventProcessor {
         try {
             var unitOfWork = transactionalUnitOfWorkFactory.create();
             FutureUtils.joinAndUnwrap(
-                    unitOfWork.executeWithResult(processingContext -> defaultEventProcessingPipeline.process(
-                            eventMessages,
-                            processingContext).asCompletableFuture())
+                    unitOfWork.executeWithResult(processingContext -> eventProcessingPipeline.process(
+                                                                                                            eventMessages,
+                                                                                                            processingContext,
+                                                                                                            Segment.ROOT_SEGMENT)
+                                                                                             .asCompletableFuture())
             );
         } catch (RuntimeException e) {
             throw e;

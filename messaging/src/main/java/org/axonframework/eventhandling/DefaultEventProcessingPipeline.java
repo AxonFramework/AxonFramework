@@ -46,8 +46,8 @@ import java.util.Objects;
  * component this event processor creates an interceptor chain containing all registered
  * {@link MessageHandlerInterceptor interceptors}.
  *
- * @author Rene de Waele
- * @since 3.0
+ * @author Matuesz Nowak
+ * @since 5.0.0
  */
 @Internal
 public final class DefaultEventProcessingPipeline implements EventProcessingPipeline {
@@ -105,21 +105,6 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
         this.segmentMatcher = Objects.requireNonNull(segmentMatcher, "SegmentMatcher may not be null");
         this.messageHandlerInterceptors = Objects.requireNonNull(messageHandlerInterceptors,
                                                                  "MessageHandlerInterceptors may not be null");
-    }
-
-    /**
-     * Returns the name of the event processor. This name is used to detect distributed instances of the same event
-     * processor. Multiple instances referring to the same logical event processor (on different JVM's) must have the
-     * same name.
-     *
-     * @return the name of this event processor
-     */
-    public String name() {
-        return name;
-    }
-
-    public String toString() {
-        return name;
     }
 
     /**
