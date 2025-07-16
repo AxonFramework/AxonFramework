@@ -21,6 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
+import org.axonframework.eventhandling.pipeline.ErrorHandlingEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
 import org.axonframework.messaging.Message;
@@ -171,18 +172,6 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                                                       ProcessingContext context,
                                                       Segment segment) {
         return trackBatchProcessing(events, () -> processEach(events, context, segment))
-                .onErrorContinue(ex -> {
-                    try {
-                        errorHandler.handleError(new ErrorContext(name(), ex, events));
-                    } catch (RuntimeException re) {
-                        return MessageStream.failed(re);
-                    } catch (Exception e) {
-                        return MessageStream.failed(new EventProcessingException(
-                                "Exception occurred while processing events",
-                                e));
-                    }
-                    return MessageStream.empty().cast();
-                })
                 .ignoreEntries()
                 .cast();
     }
@@ -203,7 +192,11 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                         ),
                         (event) -> spanFactory.createProcessEventSpan(streamingProcessor, event)
                 );
-        var pipeline = new HandlingEventProcessingPipeline(eventHandlingComponent);
+        var pipeline = new ErrorHandlingEventProcessingPipeline(
+                new HandlingEventProcessingPipeline(eventHandlingComponent),
+                name,
+                errorHandler
+        );
         return pipeline.process(events, ctx, segment).cast();
     }
 

@@ -26,5 +26,7 @@ import java.util.List;
 
 public interface EventProcessingPipeline {
 
+    // todo: is Segment needed here?
+    // todo: discuss Allard suggestion with EventProcessingTask?
     MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context, Segment segment);
 }
