@@ -122,7 +122,7 @@ public class UpdateChecker implements Runnable {
 
             logger.debug("AxonIQ will check library updates and vulnerabilities again in {} seconds.",
                          updateCheckResponse);
-            delayedTask = DelayedTask.of(this, updateCheckResponse.checkInterval() * 1000);
+            delayedTask = DelayedTask.of(this, updateCheckResponse.checkInterval() * 1000L);
             errorRetryBackoffFactor = 1; // Reset backoff factor on a successful report
             firstRequest = false;
         } catch (Exception e) {

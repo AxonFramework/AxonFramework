@@ -21,8 +21,8 @@ import org.axonframework.common.annotation.Internal;
 import java.util.Arrays;
 
 /**
- * This class detects whether the usage reporter is being used in a unit test environment, such
- * as a JUnit test or another testing framework.
+ * This class detects whether the usage reporter is being used in a unit test environment, such as a JUnit test or
+ * another testing framework.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -31,8 +31,8 @@ import java.util.Arrays;
 public class TestEnvironmentDetector {
 
     /**
-     * System property to force the usage reporter to assume it's not a test environment.
-     * This is useful for testing purposes, where you want to skip the detection logic.
+     * System property to force the usage reporter to assume it's not a test environment. This is useful for testing
+     * purposes, where you want to skip the detection logic.
      */
     public static final String AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT = "axoniq.usage.force-test-environment";
 
@@ -42,11 +42,11 @@ public class TestEnvironmentDetector {
      * @return {@code true} if the current environment is a test environment, {@code false} otherwise.
      */
     public static boolean isTestEnvironment() {
-        if(System.getProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT, "false").equals("true")) {
+        if (System.getProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT, "false").equals("true")) {
             return false; // Skip detection if explicitly configured
         }
         return Arrays.stream(Thread.currentThread().getStackTrace())
-                .anyMatch(TestEnvironmentDetector::isTestClass);
+                     .anyMatch(TestEnvironmentDetector::isTestClass);
     }
 
     private static boolean isTestClass(StackTraceElement stackTraceElement) {
