@@ -26,8 +26,5 @@ import java.util.List;
 
 public interface EventProcessingPipeline {
 
-//    MessageStream.Empty<?> process(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext,
-//                                   Segment processingSegment);
-
     MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context, Segment segment);
 }

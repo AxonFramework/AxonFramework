@@ -22,6 +22,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.Span;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -35,25 +36,25 @@ import java.util.function.Supplier;
  */
 public class TrackingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
-    private final Supplier<Span> spanSupplier;
+    private final Function<EventMessage<?>, Span> spanProvider;
 
     /**
      * Constructs the DelegatingEventHandlingComponent with given {@code delegate} to receive calls.
      *
      * @param delegate     The instance to delegate calls to.
-     * @param spanSupplier The {@link Supplier} of {@link Span} to track the event handling.
+     * @param spanProvider The provider of {@link Span} to track the event handling.
      */
     public TrackingEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
-                                          @Nonnull Supplier<Span> spanSupplier) {
+                                          @Nonnull Function<EventMessage<?>, Span> spanProvider) {
         super(delegate);
-        this.spanSupplier = spanSupplier;
+        this.spanProvider = spanProvider;
     }
 
     @Nonnull
     @Override
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
-        return trackMessageStream(spanSupplier.get(), () -> {
+        return trackMessageStream(spanProvider.apply(event), () -> {
             try {
                 return delegate.handle(event, context).cast();
             } catch (Exception e) {

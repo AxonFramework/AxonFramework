@@ -22,6 +22,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -189,16 +190,6 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
     @Nonnull
     private MessageStream<Message<?>> processEach(List<? extends EventMessage<?>> events, ProcessingContext ctx,
                                                   Segment segment) {
-        return events.stream()
-                     .map(event -> processEvent(event, ctx, segment))
-                     .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
-    }
-
-    private MessageStream<Message<?>> processEvent(
-            EventMessage<?> event,
-            ProcessingContext context,
-            Segment segment
-    ) {
         var eventHandlingComponent =
                 new TrackingEventHandlingComponent(
                         new MonitoringEventHandlingComponent(
@@ -210,9 +201,10 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                                 ),
                                 messageMonitor
                         ),
-                        () -> spanFactory.createProcessEventSpan(streamingProcessor, event)
+                        (event) -> spanFactory.createProcessEventSpan(streamingProcessor, event)
                 );
-        return eventHandlingComponent.handle(event, context).cast();
+        var pipeline = new HandlingEventProcessingPipeline(eventHandlingComponent);
+        return pipeline.process(events, ctx, segment).cast();
     }
 
     // todo: I'm not sure about that, it had some thread local used inside runSupplierAsync
