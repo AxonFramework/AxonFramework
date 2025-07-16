@@ -73,7 +73,9 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
         );
         task.start();
         try {
-            return super.handle(message, target);
+            Object result = super.handle(message, target);
+            task.ensureNoInterruptionWasSwallowed();
+            return result;
         } catch (Exception e) {
             throw task.detectInterruptionInsteadOfException(e);
         } finally {

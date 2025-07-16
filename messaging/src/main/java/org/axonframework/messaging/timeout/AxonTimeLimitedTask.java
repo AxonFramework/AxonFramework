@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Represents a task with a timeout. The task will be interrupted when the {@code timeout} is reached. If the
@@ -47,6 +46,7 @@ class AxonTimeLimitedTask {
     private final Logger logger;
     private boolean completed = false;
     private boolean interrupted = false;
+    private boolean interruptedExternally = false;
     private long startTimeMs = -1;
     private Future<?> currentScheduledFuture = null;
     private String startStackTrace;
@@ -138,8 +138,7 @@ class AxonTimeLimitedTask {
     /**
      * Marks the task as completed. Cancels the current future warning or interrupt if any exists.
      */
-    public void complete() throws InterruptedException, TimeoutException {
-        ensureNoInterruptionWasSwallowed();
+    public void complete() throws InterruptedException {
         completed = true;
         if (currentScheduledFuture != null) {
             currentScheduledFuture.cancel(false);
@@ -155,12 +154,12 @@ class AxonTimeLimitedTask {
      * exception might have been caught and swallowed by a lower component. This happens, for example, by the
      * {@link org.axonframework.eventhandling.LoggingErrorHandler} , which is the default in event processors.
      * <p>
-     * This function checks if the task was interrupted, and if so, it throws a {@link TimeoutException} to indicate
+     * This function checks if the task was interrupted, and if so, it throws a {@link AxonTimeoutException} to indicate
      * that the processing was aborted due to a timeout. If the task was not interrupted, it checks if the thread was
      * interrupted. If it was, it throws an {@link InterruptedException} to indicate that the processing was aborted due
      * to an interrupt. This effectively restores the proper error status, so upper components can handle it.
      */
-    private void ensureNoInterruptionWasSwallowed() throws TimeoutException, InterruptedException {
+    public void ensureNoInterruptionWasSwallowed() throws InterruptedException {
         if (isInterrupted()) {
             AxonTaskJanitor.LOGGER.info(
                     "Task [{}] was completed successfully, but was interrupted by the janitor because it was processing for too long. The exception was swallowed by a lower component. Throwing TimeoutException.",
@@ -168,11 +167,12 @@ class AxonTimeLimitedTask {
             );
             //noinspection ResultOfMethodCallIgnored
             Thread.interrupted(); // Clear the interrupt status
-            throw new TimeoutException(String.format("%s has timed out", getTaskName()));
+            throw new AxonTimeoutException(String.format("%s has timed out", getTaskName()));
         } else if (Thread.interrupted()) {
             // Something was interrupted while processing the task, so we don't need to interrupt it ourselves anymore.
             this.interrupted = true;
-            // The interrupt was not caused by the task, but by something else. However, we need to propagate the interrupt status to upper components to handle it properly.
+            this.interruptedExternally = true;
+            Thread.currentThread().interrupt();
             throw new InterruptedException(String.format("%s was interrupted", getTaskName()));
         }
     }
@@ -180,7 +180,7 @@ class AxonTimeLimitedTask {
     /**
      * If an exception is thrown during the handling of the message and it bubbles up, we check if the thread was
      * interrupted. If it was, we check if the task was interrupted as well. If both hold true, that must mean the
-     * exception was caused by the interruption of the task, and we throw a {@link TimeoutException} to indicate that
+     * exception was caused by the interruption of the task, and we throw a {@link AxonTimeoutException} to indicate that
      * the processing was aborted due to a timeout. If the thread was not interrupted, we simply return the original
      * exception.
      * <p>
@@ -193,11 +193,16 @@ class AxonTimeLimitedTask {
      * @param e The exception that was thrown during the handling of the message.
      */
     public Exception detectInterruptionInsteadOfException(Exception e) {
-        if (!Thread.interrupted()) {
+        if (interruptedExternally) {
+            // Keep the interruption status of the thread intact, as it was interrupted by the ensureNoInterruptionWasSwallowed function
+            Thread.currentThread().interrupt();
+            return e;
+        }
+        if (!Thread.interrupted() && !(e instanceof InterruptedException) && !isInterrupted()) {
             return e;
         }
         if (isInterrupted()) {
-            return new TimeoutException(String.format("%s has timed out.", getTaskName()));
+            return new AxonTimeoutException(String.format("%s has timed out.", getTaskName()));
         } else {
             // If the task was interrupted, we restore the interrupt status and rethrow the exception
             Thread.currentThread().interrupt();
