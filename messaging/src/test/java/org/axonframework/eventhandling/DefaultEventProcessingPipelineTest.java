@@ -38,7 +38,7 @@ import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainE
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class EventProcessorOperationsTest {
+class DefaultEventProcessingPipelineTest {
 
     @Test
     void expectCallbackForAllMessages() throws Exception {
@@ -105,12 +105,12 @@ class EventProcessorOperationsTest {
     private static class TestEventProcessor implements EventProcessor {
 
         private static final SimpleUnitOfWorkFactory UNIT_OF_WORK_FACTORY = new SimpleUnitOfWorkFactory();
-        private final EventProcessorOperations eventProcessorOperations;
+        private final DefaultEventProcessingPipeline defaultEventProcessingPipeline;
 
         private TestEventProcessor(Builder builder) {
             builder.validate();
             var eventHandlingComponent = builder.eventHandlingComponent();
-            this.eventProcessorOperations = new EventProcessorOperations(
+            this.defaultEventProcessingPipeline = new DefaultEventProcessingPipeline(
                     builder.name(),
                     eventHandlingComponent,
                     builder.errorHandler(),
@@ -127,12 +127,12 @@ class EventProcessorOperationsTest {
 
         @Override
         public String getName() {
-            return eventProcessorOperations.name();
+            return defaultEventProcessingPipeline.name();
         }
 
         @Override
         public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-            return eventProcessorOperations.handlerInterceptors();
+            return defaultEventProcessingPipeline.handlerInterceptors();
         }
 
         @Override
@@ -155,14 +155,14 @@ class EventProcessorOperationsTest {
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) {
             var unitOfWork = UNIT_OF_WORK_FACTORY.create();
-            unitOfWork.onPreInvocation(processingContext -> eventProcessorOperations.process(eventMessages, processingContext).asCompletableFuture());
+            unitOfWork.onPreInvocation(processingContext -> defaultEventProcessingPipeline.process(eventMessages, processingContext).asCompletableFuture());
             unitOfWork.execute().join();
         }
 
         @Override
         public Registration registerHandlerInterceptor(
                 @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-            return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
+            return defaultEventProcessingPipeline.registerHandlerInterceptor(handlerInterceptor);
         }
 
         private static class Builder extends EventProcessorBuilder {

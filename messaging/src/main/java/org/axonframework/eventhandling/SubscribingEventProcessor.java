@@ -50,7 +50,7 @@ public class SubscribingEventProcessor implements EventProcessor {
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
     private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
-    private final EventProcessorOperations eventProcessorOperations;
+    private final DefaultEventProcessingPipeline defaultEventProcessingPipeline;
 
     private volatile Registration eventBusRegistration;
 
@@ -70,7 +70,7 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
         var eventHandlingComponent = builder.eventHandlingComponent();
         var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
-        this.eventProcessorOperations = new EventProcessorOperations(
+        this.defaultEventProcessingPipeline = new DefaultEventProcessingPipeline(
                 builder.name(),
                 eventHandlingComponent,
                 builder.errorHandler(),
@@ -100,12 +100,12 @@ public class SubscribingEventProcessor implements EventProcessor {
 
     @Override
     public String getName() {
-        return eventProcessorOperations.name();
+        return defaultEventProcessingPipeline.name();
     }
 
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-        return eventProcessorOperations.handlerInterceptors();
+        return defaultEventProcessingPipeline.handlerInterceptors();
     }
 
     /**
@@ -146,7 +146,7 @@ public class SubscribingEventProcessor implements EventProcessor {
         try {
             var unitOfWork = transactionalUnitOfWorkFactory.create();
             FutureUtils.joinAndUnwrap(
-                    unitOfWork.executeWithResult(processingContext -> eventProcessorOperations.process(eventMessages, processingContext).asCompletableFuture())
+                    unitOfWork.executeWithResult(processingContext -> defaultEventProcessingPipeline.process(eventMessages, processingContext).asCompletableFuture())
             );
         } catch (RuntimeException e) {
             throw e;
@@ -181,7 +181,7 @@ public class SubscribingEventProcessor implements EventProcessor {
     @Override
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-        return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
+        return defaultEventProcessingPipeline.registerHandlerInterceptor(handlerInterceptor);
     }
 
     /**

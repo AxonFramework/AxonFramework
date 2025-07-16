@@ -52,7 +52,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @since 3.0
  */
 @Internal
-public final class EventProcessorOperations implements EventProcessingPipeline {
+public final class DefaultEventProcessingPipeline implements EventProcessingPipeline {
 
     private final String name;
     private final EventHandlingComponent eventHandlingComponent;
@@ -64,7 +64,7 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
     private final SegmentMatcher segmentMatcher;
 
     /**
-     * Instantiate a {@link EventProcessorOperations} directly with the required components.
+     * Instantiate a {@link DefaultEventProcessingPipeline} directly with the required components.
      * <p>
      * Will assert that the Event Processor {@code name}, {@link EventHandlingComponent}, {@link ErrorHandler},
      * {@link MessageMonitor} and {@link EventProcessorSpanFactory} are not {@code null}, and will throw an
@@ -84,13 +84,13 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
      * @param segmentMatcher         The {@link SegmentMatcher} used to determine if an event should be processed by
      *                               this segment.
      */
-    public EventProcessorOperations(@Nonnull String name,
-                                    @Nonnull EventHandlingComponent eventHandlingComponent,
-                                    @Nonnull ErrorHandler errorHandler,
-                                    @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor,
-                                    @Nonnull EventProcessorSpanFactory spanFactory,
-                                    @Nonnull SegmentMatcher segmentMatcher,
-                                    boolean streamingProcessor
+    public DefaultEventProcessingPipeline(@Nonnull String name,
+                                          @Nonnull EventHandlingComponent eventHandlingComponent,
+                                          @Nonnull ErrorHandler errorHandler,
+                                          @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor,
+                                          @Nonnull EventProcessorSpanFactory spanFactory,
+                                          @Nonnull SegmentMatcher segmentMatcher,
+                                          boolean streamingProcessor
     ) {
         this.name = Objects.requireNonNull(name,
                                            "The EventProcessor name is a hard requirement and should be provided");

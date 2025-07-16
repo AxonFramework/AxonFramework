@@ -21,13 +21,13 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorBuilder;
-import org.axonframework.eventhandling.EventProcessorOperations;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -99,7 +99,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final EventProcessorOperations eventProcessorOperations;
+    private final DefaultEventProcessingPipeline defaultEventProcessingPipeline;
     private final String name;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final TokenStore tokenStore;
@@ -140,7 +140,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         var eventHandlingComponent = builder.eventHandlingComponent();
         var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
         this.messageMonitor = builder.messageMonitor();
-        this.eventProcessorOperations = new EventProcessorOperations(
+        this.defaultEventProcessingPipeline = new DefaultEventProcessingPipeline(
                 builder.name(),
                 builder.eventHandlingComponent(),
                 builder.errorHandler(),
@@ -243,12 +243,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public String getName() {
-        return eventProcessorOperations.name();
+        return defaultEventProcessingPipeline.name();
     }
 
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-        return eventProcessorOperations.handlerInterceptors();
+        return defaultEventProcessingPipeline.handlerInterceptors();
     }
 
     @Override
@@ -419,8 +419,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> eventProcessorOperations.process(events, ctx, s)
-                                                                                                .asCompletableFuture();
+        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> defaultEventProcessingPipeline.process(events, ctx, s)
+                                                                                                      .asCompletableFuture();
         return WorkPackage.builder()
                           .name(name)
                           .tokenStore(tokenStore)
@@ -470,7 +470,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     @Override
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-        return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
+        return defaultEventProcessingPipeline.registerHandlerInterceptor(handlerInterceptor);
     }
 
     /**
