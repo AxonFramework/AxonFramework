@@ -18,6 +18,8 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
+import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -105,18 +107,23 @@ class DefaultEventProcessingPipelineTest {
     private static class TestEventProcessor implements EventProcessor {
 
         private static final SimpleUnitOfWorkFactory UNIT_OF_WORK_FACTORY = new SimpleUnitOfWorkFactory();
-        private final DefaultEventProcessingPipeline defaultEventProcessingPipeline;
+        private final String name;
+        private final EventProcessingPipeline eventProcessingPipeline;
+        private final MessageHandlerInterceptors messageHandlerInterceptors;
 
         private TestEventProcessor(Builder builder) {
             builder.validate();
+            this.name = builder.name;
             var eventHandlingComponent = builder.eventHandlingComponent();
-            this.defaultEventProcessingPipeline = new DefaultEventProcessingPipeline(
+            this.messageHandlerInterceptors = new MessageHandlerInterceptors();
+            this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
                     builder.name(),
                     eventHandlingComponent,
                     builder.errorHandler(),
                     builder.messageMonitor(),
                     builder.spanFactory(),
                     new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e))),
+                    messageHandlerInterceptors,
                     true
             );
         }
@@ -127,12 +134,12 @@ class DefaultEventProcessingPipelineTest {
 
         @Override
         public String getName() {
-            return defaultEventProcessingPipeline.name();
+            return name;
         }
 
         @Override
         public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-            return defaultEventProcessingPipeline.handlerInterceptors();
+            return messageHandlerInterceptors.toList();
         }
 
         @Override
@@ -155,14 +162,15 @@ class DefaultEventProcessingPipelineTest {
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) {
             var unitOfWork = UNIT_OF_WORK_FACTORY.create();
-            unitOfWork.onPreInvocation(processingContext -> defaultEventProcessingPipeline.process(eventMessages, processingContext).asCompletableFuture());
-            unitOfWork.execute().join();
+            unitOfWork.executeWithResult(ctx -> eventProcessingPipeline.process(
+                    eventMessages, ctx, Segment.ROOT_SEGMENT).asCompletableFuture()
+            ).join();
         }
 
         @Override
         public Registration registerHandlerInterceptor(
                 @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-            return defaultEventProcessingPipeline.registerHandlerInterceptor(handlerInterceptor);
+            return messageHandlerInterceptors.register(handlerInterceptor);
         }
 
         private static class Builder extends EventProcessorBuilder {

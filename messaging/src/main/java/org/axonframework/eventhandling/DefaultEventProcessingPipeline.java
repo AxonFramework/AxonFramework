@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
@@ -33,10 +32,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Support class containing common {@link EventProcessor} functionality.
@@ -45,8 +42,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * these events are obtained they can be passed to method {@link #process(List, ProcessingContext, Segment)} for
  * processing.
  * <p>
- * Actual handling of events is deferred to an {@link EventHandlerInvoker}. Before each message is handled by the
- * invoker this event processor creates an interceptor chain containing all registered
+ * Actual handling of events is deferred to an {@link EventHandlingComponent}. Before each message is handled by the
+ * component this event processor creates an interceptor chain containing all registered
  * {@link MessageHandlerInterceptor interceptors}.
  *
  * @author Rene de Waele
@@ -59,7 +56,7 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
     private final EventHandlingComponent eventHandlingComponent;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
-    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
+    private final MessageHandlerInterceptors messageHandlerInterceptors;
     private final EventProcessorSpanFactory spanFactory;
     private final boolean streamingProcessor;
     private final SegmentMatcher segmentMatcher;
@@ -91,6 +88,7 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
                                           @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor,
                                           @Nonnull EventProcessorSpanFactory spanFactory,
                                           @Nonnull SegmentMatcher segmentMatcher,
+                                          @Nonnull MessageHandlerInterceptors messageHandlerInterceptors,
                                           boolean streamingProcessor
     ) {
         this.name = Objects.requireNonNull(name,
@@ -105,6 +103,8 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
         this.spanFactory = Objects.requireNonNull(spanFactory, "SpanFactory may not be null");
         this.streamingProcessor = streamingProcessor;
         this.segmentMatcher = Objects.requireNonNull(segmentMatcher, "SegmentMatcher may not be null");
+        this.messageHandlerInterceptors = Objects.requireNonNull(messageHandlerInterceptors,
+                                                                 "MessageHandlerInterceptors may not be null");
     }
 
     /**
@@ -118,31 +118,8 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
         return name;
     }
 
-    /**
-     * Registers a {@link MessageHandlerInterceptor} for the event processor. The interceptor will be applied to all
-     * messages handled by this event processor.
-     *
-     * @param interceptor The interceptor to register.
-     * @return A {@link Registration} that can be used to unregister the interceptor.
-     */
-    public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
-        interceptors.add(interceptor);
-        return () -> interceptors.remove(interceptor);
-    }
-
-    /**
-     * Return the list of already registered {@link MessageHandlerInterceptor}s for the event processor. To register a
-     * new interceptor use {@link EventProcessor#registerHandlerInterceptor(MessageHandlerInterceptor)}
-     *
-     * @return The list of registered interceptors of the event processor.
-     */
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> handlerInterceptors() {
-        return Collections.unmodifiableList(interceptors);
-    }
-
     public String toString() {
-        return name();
+        return name;
     }
 
     /**
@@ -178,7 +155,7 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
                                         new SegmentMatchingEventHandlingComponent(
                                                 this.eventHandlingComponent, segmentMatcher, () -> segment
                                         ),
-                                        new MessageHandlerInterceptors(interceptors)
+                                        messageHandlerInterceptors
                                 ),
                                 messageMonitor
                         ),
@@ -186,6 +163,7 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
                 );
         var pipeline =
                 new ErrorHandlingEventProcessingPipeline(
+                        // todo: add pipeline that parallelize processing for events with different sequence identifiers!
                         new TrackingEventProcessingPipeline(
                                 new HandlingEventProcessingPipeline(eventHandlingComponent),
                                 (eventsList) -> spanFactory.createBatchSpan(streamingProcessor, eventsList)

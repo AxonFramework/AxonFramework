@@ -39,6 +39,7 @@ import org.axonframework.eventhandling.SegmentMatcher;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
@@ -117,6 +118,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
     private final WorkPackage.EventFilter workPackageEventFilter;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
+    private final MessageHandlerInterceptors messageHandlerInterceptors;
 
     /**
      * Instantiate a {@code PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -140,6 +142,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         var eventHandlingComponent = builder.eventHandlingComponent();
         var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
         this.messageMonitor = builder.messageMonitor();
+        this.messageHandlerInterceptors = new MessageHandlerInterceptors();
         this.defaultEventProcessingPipeline = new DefaultEventProcessingPipeline(
                 builder.name(),
                 builder.eventHandlingComponent(),
@@ -147,6 +150,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                 messageMonitor,
                 builder.spanFactory(),
                 segmentMatcher,
+                messageHandlerInterceptors,
                 true
         );
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
@@ -248,7 +252,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-        return defaultEventProcessingPipeline.handlerInterceptors();
+        return messageHandlerInterceptors.toList();
     }
 
     @Override
@@ -470,7 +474,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     @Override
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-        return defaultEventProcessingPipeline.registerHandlerInterceptor(handlerInterceptor);
+        return messageHandlerInterceptors.register(handlerInterceptor);
     }
 
     /**
