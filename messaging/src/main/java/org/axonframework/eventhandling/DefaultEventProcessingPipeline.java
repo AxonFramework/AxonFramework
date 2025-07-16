@@ -137,7 +137,7 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
                 new TrackingEventHandlingComponent(
                         new MonitoringEventHandlingComponent(
                                 new InterceptingEventHandlingComponent(
-                                        new SegmentMatchingEventHandlingComponent(
+                                        new SegmentMatchingEventHandlingComponent( // todo: do I need to check the message after intercepting or before?
                                                 this.eventHandlingComponent, segmentMatcher, () -> segment
                                         ),
                                         messageHandlerInterceptors
