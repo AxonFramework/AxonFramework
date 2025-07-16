@@ -44,6 +44,14 @@ public class ErrorHandlingEventProcessingPipeline implements EventProcessingPipe
     private final String eventProcessor;
     private final ErrorHandler errorHandler;
 
+    /**
+     * Constructs an {@link ErrorHandlingEventProcessingPipeline} with the given {@code next} pipeline,
+     * {@code eventProcessor} name, and {@code errorHandler}.
+     *
+     * @param next            The next {@link EventProcessingPipeline} to delegate to.
+     * @param eventProcessor  The name of the event processor.
+     * @param errorHandler    The {@link ErrorHandler} to handle errors.
+     */
     public ErrorHandlingEventProcessingPipeline(@Nonnull EventProcessingPipeline next,
                                                 @Nonnull String eventProcessor,
                                                 @Nonnull ErrorHandler errorHandler

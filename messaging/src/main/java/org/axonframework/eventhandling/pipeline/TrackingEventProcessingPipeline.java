@@ -14,54 +14,53 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.pipeline;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.Span;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * An {@link EventHandlingComponent} that tracks the handling of events using a {@link Span} supplier.
+ * An {@link EventProcessingPipeline} that tracks the processing of the event batch using a {@link Span} provider.
  * <p>
- * It delegates the actual event handling to another {@link EventHandlingComponent} while tracking the events
- * processed.
+ * It delegates the actual event processing to another {@link EventProcessingPipeline} while tracking the event batch.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class TrackingEventHandlingComponent extends DelegatingEventHandlingComponent {
+public class TrackingEventProcessingPipeline implements EventProcessingPipeline {
 
-    private final Function<EventMessage<?>, Span> spanProvider;
+    private final EventProcessingPipeline next;
+    private final Function<List<? extends EventMessage<?>>, Span> spanProvider;
 
     /**
-     * Constructs the DelegatingEventHandlingComponent with given {@code delegate} to receive calls.
+     * Constructs the {@link TrackingEventProcessingPipeline} with given {@code next} pipeline to delegate calls to and
+     * a {@code spanProvider} to create spans for the event batch.
      *
-     * @param delegate     The instance to delegate calls to.
-     * @param spanProvider The provider of {@link Span} to track the event handling.
+     * @param next         The instance to delegate calls to.
+     * @param spanProvider The provider of {@link Span} to track the event batch.
      */
-    public TrackingEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
-                                          @Nonnull Function<EventMessage<?>, Span> spanProvider) {
-        super(delegate);
+    public TrackingEventProcessingPipeline(EventProcessingPipeline next,
+                                           Function<List<? extends EventMessage<?>>, Span> spanProvider) {
+        this.next = Objects.requireNonNull(next, "Next may not be null");
         this.spanProvider = Objects.requireNonNull(spanProvider, "Span provider may not be null");
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
-                                                     @Nonnull ProcessingContext context) {
-        return trackMessageStream(spanProvider.apply(event), () -> {
-            try {
-                return delegate.handle(event, context).cast();
-            } catch (Exception e) {
-                return MessageStream.failed(e);
-            }
-        });
+    public MessageStream.Empty<Message<Void>> process(
+            List<? extends EventMessage<?>> events,
+            ProcessingContext context,
+            Segment segment
+    ) {
+        return trackMessageStream(spanProvider.apply(events), () -> next.process(events, context, segment).cast());
     }
 
     // todo: I'm not sure about that, it had some thread local used inside runSupplierAsync. Maybe we need to take the parent from ProcessingContext?

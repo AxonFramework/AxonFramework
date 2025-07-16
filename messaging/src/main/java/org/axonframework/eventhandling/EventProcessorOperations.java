@@ -24,19 +24,18 @@ import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingCom
 import org.axonframework.eventhandling.pipeline.ErrorHandlingEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.TrackingEventProcessingPipeline;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.tracing.Span;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 
 /**
  * Support class containing common {@link EventProcessor} functionality.
@@ -171,14 +170,6 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
     public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events,
                                                       ProcessingContext context,
                                                       Segment segment) {
-        return trackBatchProcessing(events, () -> processEach(events, context, segment))
-                .ignoreEntries()
-                .cast();
-    }
-
-    @Nonnull
-    private MessageStream<Message<?>> processEach(List<? extends EventMessage<?>> events, ProcessingContext ctx,
-                                                  Segment segment) {
         var eventHandlingComponent =
                 new TrackingEventHandlingComponent(
                         new MonitoringEventHandlingComponent(
@@ -192,31 +183,15 @@ public final class EventProcessorOperations implements EventProcessingPipeline {
                         ),
                         (event) -> spanFactory.createProcessEventSpan(streamingProcessor, event)
                 );
-        var pipeline = new ErrorHandlingEventProcessingPipeline(
-                new HandlingEventProcessingPipeline(eventHandlingComponent),
-                name,
-                errorHandler
-        );
-        return pipeline.process(events, ctx, segment).cast();
-    }
-
-    // todo: I'm not sure about that, it had some thread local used inside runSupplierAsync
-    private MessageStream<Message<?>> trackBatchProcessing(List<? extends EventMessage<?>> eventMessages,
-                                                           Supplier<MessageStream<Message<?>>> messageStreamSupplier) {
-        var span = spanFactory.createBatchSpan(streamingProcessor, eventMessages);
-        return trackMessageStream(span, messageStreamSupplier);
-    }
-
-    private MessageStream<Message<?>> trackMessageStream(Span span,
-                                                         Supplier<MessageStream<Message<?>>> messageStreamSupplier) {
-        span.start();
-        var messageStream = messageStreamSupplier.get();
-        return messageStream
-                .whenComplete(span::end)
-                .onErrorContinue(ex -> {
-                    span.recordException(ex);
-                    span.end();
-                    return MessageStream.failed(ex);
-                });
+        var pipeline =
+                new ErrorHandlingEventProcessingPipeline(
+                        new TrackingEventProcessingPipeline(
+                                new HandlingEventProcessingPipeline(eventHandlingComponent),
+                                (eventsList) -> spanFactory.createBatchSpan(streamingProcessor, eventsList)
+                        ),
+                        name,
+                        errorHandler
+                );
+        return pipeline.process(events, context, segment).cast();
     }
 }

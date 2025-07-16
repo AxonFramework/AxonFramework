@@ -22,6 +22,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -40,7 +41,7 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
      * @param delegate The instance to delegate calls to.
      */
     public DelegatingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
-        this.delegate = delegate;
+        this.delegate = Objects.requireNonNull(delegate, "Delegate may not be null");
     }
 
     @Nonnull
