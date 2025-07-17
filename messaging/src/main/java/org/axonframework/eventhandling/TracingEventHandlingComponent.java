@@ -45,8 +45,10 @@ public class TracingEventHandlingComponent extends DelegatingEventHandlingCompon
      * @param delegate     The instance to delegate calls to.
      * @param spanProvider The provider of {@link Span} to track the event handling.
      */
-    public TracingEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
-                                         @Nonnull Function<EventMessage<?>, Span> spanProvider) {
+    public TracingEventHandlingComponent(
+            @Nonnull Function<EventMessage<?>, Span> spanProvider,
+            @Nonnull EventHandlingComponent delegate
+    ) {
         super(delegate);
         this.spanProvider = Objects.requireNonNull(spanProvider, "Span provider may not be null");
     }

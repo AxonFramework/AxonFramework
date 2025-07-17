@@ -35,7 +35,6 @@ import java.util.Objects;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-// TODO: Refactor to new interceptor support.
 public class InterceptingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
     private final MessageHandlerInterceptors messageHandlerInterceptors;
@@ -46,8 +45,10 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
      * @param delegate     The EventHandlingComponent to delegate to.
      * @param messageHandlerInterceptors The list of interceptors to initialize with.
      */
-    public InterceptingEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
-                                              @Nonnull MessageHandlerInterceptors messageHandlerInterceptors) {
+    public InterceptingEventHandlingComponent(
+            @Nonnull MessageHandlerInterceptors messageHandlerInterceptors,
+            @Nonnull EventHandlingComponent delegate
+    ) {
         super(delegate);
         this.messageHandlerInterceptors = Objects.requireNonNull(messageHandlerInterceptors, "InterceptorsList may not be null");
     }

@@ -80,23 +80,22 @@ public class SubscribingEventProcessor implements EventProcessor {
         var spanFactory = builder.spanFactory;
         var eventHandlingComponent =
                 new TracingEventHandlingComponent(
+                        (event) -> spanFactory.createProcessEventSpan(false, event),
                         new MonitoringEventHandlingComponent(
+                                builder.messageMonitor(),
                                 new InterceptingEventHandlingComponent(
-                                        builder.eventHandlingComponent(),
-                                        messageHandlerInterceptors
-                                ),
-                                builder.messageMonitor
-                        ),
-                        (event) -> spanFactory.createProcessEventSpan(true, event)
+                                        messageHandlerInterceptors,
+                                        builder.eventHandlingComponent()
+                                )
+                        )
                 );
         this.eventProcessingPipeline = new ErrorHandlingEventProcessingPipeline(
-                // todo: add pipeline that parallelize processing for events with different sequence identifiers! BranchingProcessingPipeline
-                new TracingEventProcessingPipeline(
-                        new HandlingEventProcessingPipeline(eventHandlingComponent),
-                        (eventsList) -> spanFactory.createBatchSpan(true, eventsList)
-                ),
                 name,
-                builder.errorHandler
+                builder.errorHandler,
+                new TracingEventProcessingPipeline(
+                        (eventsList) -> spanFactory.createBatchSpan(false, eventsList),
+                        new HandlingEventProcessingPipeline(eventHandlingComponent)
+                )
         );
     }
 
@@ -166,9 +165,9 @@ public class SubscribingEventProcessor implements EventProcessor {
             var unitOfWork = transactionalUnitOfWorkFactory.create();
             FutureUtils.joinAndUnwrap(
                     unitOfWork.executeWithResult(processingContext -> eventProcessingPipeline.process(
-                                                                                                            eventMessages,
-                                                                                                            processingContext,
-                                                                                                            Segment.ROOT_SEGMENT)
+                                                                                                     eventMessages,
+                                                                                                     processingContext,
+                                                                                                     Segment.ROOT_SEGMENT)
                                                                                              .asCompletableFuture())
             );
         } catch (RuntimeException e) {

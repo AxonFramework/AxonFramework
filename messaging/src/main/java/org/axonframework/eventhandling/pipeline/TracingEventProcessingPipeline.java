@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.pipeline;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.Message;
@@ -48,8 +49,10 @@ public class TracingEventProcessingPipeline implements EventProcessingPipeline {
      * @param next         The instance to delegate calls to.
      * @param spanProvider The provider of {@link Span} to track the event batch.
      */
-    public TracingEventProcessingPipeline(EventProcessingPipeline next,
-                                          Function<List<? extends EventMessage<?>>, Span> spanProvider) {
+    public TracingEventProcessingPipeline(
+            @Nonnull Function<List<? extends EventMessage<?>>, Span> spanProvider,
+            @Nonnull EventProcessingPipeline next
+    ) {
         this.next = Objects.requireNonNull(next, "Next may not be null");
         this.spanProvider = Objects.requireNonNull(spanProvider, "Span provider may not be null");
     }

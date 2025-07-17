@@ -117,7 +117,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
             var eventHandlingComponent = builder.eventHandlingComponent();
             this.messageHandlerInterceptors = new MessageHandlerInterceptors();
             this.eventProcessingPipeline = new HandlingEventProcessingPipeline(
-                    new MonitoringEventHandlingComponent(eventHandlingComponent, builder.messageMonitor)
+                    new MonitoringEventHandlingComponent(builder.messageMonitor, eventHandlingComponent)
             );
         }
 

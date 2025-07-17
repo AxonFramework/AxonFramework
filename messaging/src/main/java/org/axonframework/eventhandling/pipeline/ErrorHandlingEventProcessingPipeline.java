@@ -48,13 +48,14 @@ public class ErrorHandlingEventProcessingPipeline implements EventProcessingPipe
      * Constructs an {@link ErrorHandlingEventProcessingPipeline} with the given {@code next} pipeline,
      * {@code eventProcessor} name, and {@code errorHandler}.
      *
-     * @param next            The next {@link EventProcessingPipeline} to delegate to.
-     * @param eventProcessor  The name of the event processor.
-     * @param errorHandler    The {@link ErrorHandler} to handle errors.
+     * @param next           The next {@link EventProcessingPipeline} to delegate to.
+     * @param eventProcessor The name of the event processor.
+     * @param errorHandler   The {@link ErrorHandler} to handle errors.
      */
-    public ErrorHandlingEventProcessingPipeline(@Nonnull EventProcessingPipeline next,
-                                                @Nonnull String eventProcessor,
-                                                @Nonnull ErrorHandler errorHandler
+    public ErrorHandlingEventProcessingPipeline(
+            @Nonnull String eventProcessor,
+            @Nonnull ErrorHandler errorHandler,
+            @Nonnull EventProcessingPipeline next
     ) {
         this.next = Objects.requireNonNull(next, "Next may not be null");
         this.eventProcessor = Objects.requireNonNull(eventProcessor, "EventProcessor may not be null");

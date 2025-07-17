@@ -149,23 +149,22 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         var spanFactory = builder.spanFactory();
         var eventHandlingComponent =
                 new TracingEventHandlingComponent(
+                        (event) -> spanFactory.createProcessEventSpan(true, event),
                         new MonitoringEventHandlingComponent(
+                                builder.messageMonitor(),
                                 new InterceptingEventHandlingComponent(
-                                        builder.eventHandlingComponent(),
-                                        messageHandlerInterceptors
-                                ),
-                                messageMonitor
-                        ),
-                        (event) -> spanFactory.createProcessEventSpan(true, event)
+                                        messageHandlerInterceptors,
+                                        builder.eventHandlingComponent()
+                                )
+                        )
                 );
         this.eventProcessingPipeline = new ErrorHandlingEventProcessingPipeline(
-                // todo: add pipeline that parallelize processing for events with different sequence identifiers! BranchingProcessingPipeline
-                new TracingEventProcessingPipeline(
-                        new HandlingEventProcessingPipeline(eventHandlingComponent),
-                        (eventsList) -> spanFactory.createBatchSpan(true, eventsList)
-                ),
                 name,
-                builder.errorHandler()
+                builder.errorHandler(),
+                new TracingEventProcessingPipeline(
+                        (eventsList) -> spanFactory.createBatchSpan(true, eventsList),
+                        new HandlingEventProcessingPipeline(eventHandlingComponent)
+                )
         );
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 builder.name(),
@@ -835,8 +834,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          * function receives the set of supported event types from the assigned EventHandlingComponent.
          * <p>
          * <b>Intention:</b> This function is mainly intended to allow you to specify the tags for filtering or to
-         * build
-         * more complex criteria. For example, if not all supported event types share the same tag, you may use
+         * build more complex criteria. For example, if not all supported event types share the same tag, you may use
          * {@link EventCriteria#either(EventCriteria...)} to construct a disjunction of criteria for different event
          * types and tags. See {@link org.axonframework.eventstreaming.EventCriteria} for advanced usage and examples.
          * <p>

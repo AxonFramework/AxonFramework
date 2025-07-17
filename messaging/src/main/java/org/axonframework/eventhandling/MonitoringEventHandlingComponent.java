@@ -43,8 +43,9 @@ public class MonitoringEventHandlingComponent extends DelegatingEventHandlingCom
      * @param delegate The instance to delegate calls to.
      * @param messageMonitor The {@link MessageMonitor} to monitor the events processed by this component.
      */
-    public MonitoringEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
-                                            @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
+    public MonitoringEventHandlingComponent( @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor,
+                                             @Nonnull EventHandlingComponent delegate
+    ) {
         super(delegate);
         this.messageMonitor = Objects.requireNonNull(messageMonitor, "MessageMonitor may not be null");
     }
