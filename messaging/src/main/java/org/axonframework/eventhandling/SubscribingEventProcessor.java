@@ -22,8 +22,12 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pipeline.ErrorHandlingEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.TracingEventProcessingPipeline;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -72,16 +76,27 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
-        var eventHandlingComponent = builder.eventHandlingComponent();
         this.messageHandlerInterceptors = new MessageHandlerInterceptors();
-        this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
-                builder.name(),
-                eventHandlingComponent,
-                builder.errorHandler(),
-                builder.messageMonitor(),
-                builder.spanFactory(),
-                messageHandlerInterceptors,
-                false
+        var spanFactory = builder.spanFactory;
+        var eventHandlingComponent =
+                new TracingEventHandlingComponent(
+                        new MonitoringEventHandlingComponent(
+                                new InterceptingEventHandlingComponent(
+                                        builder.eventHandlingComponent(),
+                                        messageHandlerInterceptors
+                                ),
+                                builder.messageMonitor
+                        ),
+                        (event) -> spanFactory.createProcessEventSpan(true, event)
+                );
+        this.eventProcessingPipeline = new ErrorHandlingEventProcessingPipeline(
+                // todo: add pipeline that parallelize processing for events with different sequence identifiers! BranchingProcessingPipeline
+                new TracingEventProcessingPipeline(
+                        new HandlingEventProcessingPipeline(eventHandlingComponent),
+                        (eventsList) -> spanFactory.createBatchSpan(true, eventsList)
+                ),
+                name,
+                builder.errorHandler
         );
     }
 

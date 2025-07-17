@@ -21,7 +21,6 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventHandlingComponent;
@@ -31,15 +30,21 @@ import org.axonframework.eventhandling.EventProcessorBuilder;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
+import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pipeline.ErrorHandlingEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.TracingEventProcessingPipeline;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
@@ -138,24 +143,35 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      */
     protected PooledStreamingEventProcessor(Builder builder) {
         builder.validate();
-        var eventHandlingComponent = builder.eventHandlingComponent();
+        this.name = builder.name();
         this.messageMonitor = builder.messageMonitor();
         this.messageHandlerInterceptors = new MessageHandlerInterceptors();
-        this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
-                builder.name(),
-                builder.eventHandlingComponent(),
-                builder.errorHandler(),
-                messageMonitor,
-                builder.spanFactory(),
-                messageHandlerInterceptors,
-                true
+        var spanFactory = builder.spanFactory();
+        var eventHandlingComponent =
+                new TracingEventHandlingComponent(
+                        new MonitoringEventHandlingComponent(
+                                new InterceptingEventHandlingComponent(
+                                        builder.eventHandlingComponent(),
+                                        messageHandlerInterceptors
+                                ),
+                                messageMonitor
+                        ),
+                        (event) -> spanFactory.createProcessEventSpan(true, event)
+                );
+        this.eventProcessingPipeline = new ErrorHandlingEventProcessingPipeline(
+                // todo: add pipeline that parallelize processing for events with different sequence identifiers! BranchingProcessingPipeline
+                new TracingEventProcessingPipeline(
+                        new HandlingEventProcessingPipeline(eventHandlingComponent),
+                        (eventsList) -> spanFactory.createBatchSpan(true, eventsList)
+                ),
+                name,
+                builder.errorHandler()
         );
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 builder.name(),
                 eventHandlingComponent,
                 builder.errorHandler()
         );
-        this.name = builder.name();
         this.eventSource = builder.eventSource;
         this.tokenStore = builder.tokenStore;
         this.unitOfWorkFactory = builder.transactionManager == NoTransactionManager.instance()

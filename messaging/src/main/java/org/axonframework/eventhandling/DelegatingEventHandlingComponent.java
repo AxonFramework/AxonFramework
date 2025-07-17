@@ -41,7 +41,7 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
      * @param delegate The instance to delegate calls to.
      */
     public DelegatingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
-        this.delegate = Objects.requireNonNull(delegate, "Delegate may not be null");
+        this.delegate = Objects.requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }
 
     @Nonnull

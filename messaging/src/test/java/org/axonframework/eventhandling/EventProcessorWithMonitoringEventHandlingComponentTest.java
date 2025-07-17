@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -39,7 +40,7 @@ import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainE
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class DefaultEventProcessingPipelineTest {
+class EventProcessorWithMonitoringEventHandlingComponentTest {
 
     @Test
     void expectCallbackForAllMessages() throws Exception {
@@ -115,14 +116,8 @@ class DefaultEventProcessingPipelineTest {
             this.name = builder.name;
             var eventHandlingComponent = builder.eventHandlingComponent();
             this.messageHandlerInterceptors = new MessageHandlerInterceptors();
-            this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
-                    builder.name(),
-                    eventHandlingComponent,
-                    builder.errorHandler(),
-                    builder.messageMonitor(),
-                    builder.spanFactory(),
-                    messageHandlerInterceptors,
-                    true
+            this.eventProcessingPipeline = new HandlingEventProcessingPipeline(
+                    new MonitoringEventHandlingComponent(eventHandlingComponent, builder.messageMonitor)
             );
         }
 

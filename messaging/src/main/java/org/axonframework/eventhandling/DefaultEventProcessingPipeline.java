@@ -19,8 +19,6 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
-import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pipeline.ErrorHandlingEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
@@ -55,8 +53,6 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
     private final String name;
     private final EventHandlingComponent eventHandlingComponent;
     private final ErrorHandler errorHandler;
-    private final MessageMonitor<? super EventMessage<?>> messageMonitor;
-    private final MessageHandlerInterceptors messageHandlerInterceptors;
     private final EventProcessorSpanFactory spanFactory;
     private final boolean streamingProcessor;
 
@@ -72,21 +68,15 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
      *                               {@link EventMessage}s.
      * @param errorHandler           The {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception
      *                               during processing.
-     * @param messageMonitor         The {@link MessageMonitor} to monitor {@link EventMessage}s before and after
-     *                               they're processed.
      * @param spanFactory            The {@link EventProcessorSpanFactory} implementation to use for providing tracing
      *                               capabilities.
      * @param streamingProcessor     The boolean indicating whether this processor which uses the operations is a
      *                               streaming processor.
-     * @param segmentMatcher         The {@link SegmentMatcher} used to determine if an event should be processed by
-     *                               this segment.
      */
     public DefaultEventProcessingPipeline(@Nonnull String name,
                                           @Nonnull EventHandlingComponent eventHandlingComponent,
                                           @Nonnull ErrorHandler errorHandler,
-                                          @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor,
                                           @Nonnull EventProcessorSpanFactory spanFactory,
-                                          @Nonnull MessageHandlerInterceptors messageHandlerInterceptors,
                                           boolean streamingProcessor
     ) {
         this.name = Objects.requireNonNull(name,
@@ -97,24 +87,8 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
         this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent,
                                                              "EventHandlingComponent may not be null");
         this.errorHandler = Objects.requireNonNull(errorHandler, "ErrorHandler may not be null");
-        this.messageMonitor = Objects.requireNonNull(messageMonitor, "MessageMonitor may not be null");
         this.spanFactory = Objects.requireNonNull(spanFactory, "SpanFactory may not be null");
         this.streamingProcessor = streamingProcessor;
-        this.messageHandlerInterceptors = Objects.requireNonNull(messageHandlerInterceptors,
-                                                                 "MessageHandlerInterceptors may not be null");
-    }
-
-    /**
-     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
-     * the event processor creates an interceptor chain containing all registered
-     * {@link MessageHandlerInterceptor interceptors}.
-     *
-     * @param eventMessages     The batch of messages that is to be processed
-     * @param processingContext The Processing Context that has been prepared to process the messages
-     */
-    public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> eventMessages,
-                                                      ProcessingContext processingContext) {
-        return process(eventMessages, processingContext, Segment.ROOT_SEGMENT);
     }
 
     /**
@@ -130,17 +104,6 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
     public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events,
                                                       ProcessingContext context,
                                                       Segment segment) {
-        var eventHandlingComponent =
-                new TracingEventHandlingComponent(
-                        new MonitoringEventHandlingComponent(
-                                new InterceptingEventHandlingComponent(
-                                        this.eventHandlingComponent,
-                                        messageHandlerInterceptors
-                                ),
-                                messageMonitor
-                        ),
-                        (event) -> spanFactory.createProcessEventSpan(streamingProcessor, event)
-                );
         var pipeline =
                 new ErrorHandlingEventProcessingPipeline(
                         // todo: add pipeline that parallelize processing for events with different sequence identifiers! BranchingProcessingPipeline
