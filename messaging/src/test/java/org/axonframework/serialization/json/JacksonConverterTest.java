@@ -16,13 +16,24 @@
 
 package org.axonframework.serialization.json;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.axonframework.serialization.ConversionException;
+import org.axonframework.serialization.ConverterTestSuite;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.provider.*;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.params.provider.Arguments.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link JacksonConverter}.
@@ -31,104 +42,114 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Mateusz Nowak
  * @author Steven van Beelen
  */
-class JacksonConverterTest {
+class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
 
-    private JacksonConverter converter;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
 
-    record TestEvent(String id, String name, int value) {}
-    record AnotherEvent(String userId, String description) {}
+    @Override
+    protected JacksonConverter buildConverter() {
+        return new JacksonConverter(OBJECT_MAPPER);
+    }
 
-    @BeforeEach
-    void setUp() {
-        converter = new JacksonConverter();
+    @SuppressWarnings("unused") // Used by ConverterTestSuite
+    static Stream<Arguments> supportedConversions() {
+        return Stream.of(
+                // Convert from concrete type:
+                arguments(SomeInput.class, byte[].class),
+                arguments(SomeInput.class, String.class),
+                arguments(SomeInput.class, InputStream.class),
+                arguments(SomeInput.class, JsonNode.class),
+                arguments(SomeInput.class, ObjectNode.class),
+                // Convert to concrete type:
+                arguments(byte[].class, SomeInput.class),
+                arguments(String.class, SomeInput.class),
+                arguments(InputStream.class, SomeInput.class),
+                arguments(JsonNode.class, SomeInput.class),
+                arguments(ObjectNode.class, SomeInput.class),
+                // Convert from another concrete type:
+                arguments(SomeOtherInput.class, String.class),
+                arguments(SomeOtherInput.class, byte[].class),
+                arguments(SomeOtherInput.class, InputStream.class),
+                arguments(SomeOtherInput.class, JsonNode.class),
+                arguments(SomeOtherInput.class, ObjectNode.class),
+                // Intermediate conversion levels:
+                arguments(String.class, JsonNode.class),
+                arguments(JsonNode.class, String.class),
+                arguments(ObjectNode.class, JsonNode.class),
+                arguments(ObjectNode.class, String.class),
+                arguments(JsonNode.class, ObjectNode.class),
+                arguments(String.class, ObjectNode.class),
+                arguments(byte[].class, ObjectNode.class),
+                arguments(ObjectNode.class, byte[].class),
+                // Same type:
+                arguments(SomeInput.class, SomeInput.class),
+                arguments(SomeOtherInput.class, SomeOtherInput.class),
+                arguments(byte[].class, byte[].class),
+                arguments(String.class, String.class),
+                arguments(JsonNode.class, JsonNode.class),
+                arguments(ObjectNode.class, ObjectNode.class)
+        );
+    }
+
+    @SuppressWarnings("unused") // Used by ConverterTestSuite
+    static Stream<Arguments> unsupportedConversions() {
+        return Stream.of(
+                arguments(SomeInput.class, Integer.class),
+                arguments(SomeOtherInput.class, Double.class),
+                arguments(Integer.class, SomeInput.class),
+                arguments(Double.class, SomeOtherInput.class)
+        );
+    }
+
+    @SuppressWarnings("unused") // Used by ConverterTestSuite
+    static Stream<Arguments> sameTypeConversions() {
+        return Stream.of(
+                arguments("Lorem Ipsum", String.class),
+                arguments(42L, Long.class),
+                arguments(new SomeInput("ID789", "SameType", 123), SomeInput.class),
+                arguments(new SomeOtherInput("USR002", "No conversion"), SomeOtherInput.class)
+        );
+    }
+
+    @SuppressWarnings("unused") // Used by ConverterTestSuite
+    static Stream<Arguments> conversionScenarios() throws JsonProcessingException {
+        byte[] jsonCompliantBytes = OBJECT_MAPPER.writeValueAsBytes("Lorem Ipsum");
+        ObjectNode objectNode = OBJECT_MAPPER.createObjectNode();
+        objectNode.put("property", "value");
+        return Stream.of(
+                arguments(new SomeInput("ID123", "TestName", 42), String.class, SomeInput.class),
+                arguments(new SomeInput("ID456", "OtherName", 99), byte[].class, SomeInput.class),
+                arguments(new SomeInput("ID789", "JsonName", 1337), JsonNode.class, SomeInput.class),
+                arguments(new SomeOtherInput("USR001", "Some description"), String.class, SomeOtherInput.class),
+                arguments(new SomeOtherInput("USR002", "Another description"), byte[].class, SomeOtherInput.class),
+                arguments(new SomeOtherInput("USR003", "Json description"), JsonNode.class, SomeOtherInput.class),
+                arguments("Lorem Ipsum", byte[].class, String.class),
+                arguments("Lorem Ipsum".getBytes(StandardCharsets.UTF_8), InputStream.class, byte[].class),
+                arguments(jsonCompliantBytes, JsonNode.class, byte[].class),
+                arguments(objectNode, JsonNode.class, ObjectNode.class)
+        );
     }
 
     @Test
-    void shouldConvertTestEventToStringAndBack() {
-        // given
-        TestEvent original = new TestEvent("ID123", "TestName", 42);
+    void convertThrowsConversionExceptionOnIOExceptionFromObjectMapper() throws IOException {
+        ObjectMapper mockedObjectMapper = mock(ObjectMapper.class);
+        when(mockedObjectMapper.constructType(SomeInput.class))
+                .thenReturn(OBJECT_MAPPER.constructType(SomeInput.class));
+        when(mockedObjectMapper.readValue((byte[]) any(), (JavaType) any())).thenThrow(new IOException());
 
-        // when
-        String serialized = converter.convert(original, String.class);
-        TestEvent deserialized = converter.convert(serialized, TestEvent.class);
+        JacksonConverter failingTestSubject = new JacksonConverter(mockedObjectMapper);
 
-        // then
-        assertThat(deserialized).isEqualTo(original);
+        byte[] testInput = OBJECT_MAPPER.writeValueAsBytes(new SomeInput("id", "name", 42));
+
+        assertThatThrownBy(() -> failingTestSubject.convert(testInput, byte[].class, SomeInput.class))
+                .isExactlyInstanceOf(ConversionException.class);
     }
 
-    @Test
-    void shouldConvertTestEventToByteArrayAndBack() {
-        // given
-        TestEvent original = new TestEvent("ID456", "OtherName", 99);
+    record SomeInput(String id, String name, int value) {
 
-        // when
-        byte[] serialized = converter.convert(original, byte[].class);
-        TestEvent deserialized = converter.convert(serialized, TestEvent.class);
-
-        // then
-        assertThat(deserialized).isEqualTo(original);
     }
 
-    @Test
-    void shouldConvertAnotherEventToStringAndBack() {
-        // given
-        AnotherEvent original = new AnotherEvent("USR001", "Some description");
+    record SomeOtherInput(String userId, String description) {
 
-        // when
-        String serialized = converter.convert(original, String.class);
-        AnotherEvent deserialized = converter.convert(serialized, AnotherEvent.class);
-
-        // then
-        assertThat(deserialized).isEqualTo(original);
-    }
-
-    @Test
-    void shouldReturnTrueForSupportedConversions() {
-        // Convert from concrete type:
-        assertThat(converter.canConvert(TestEvent.class, byte[].class)).isTrue();
-        assertThat(converter.canConvert(TestEvent.class, String.class)).isTrue();
-        assertThat(converter.canConvert(TestEvent.class, InputStream.class)).isTrue();
-        assertThat(converter.canConvert(TestEvent.class, JsonNode.class)).isTrue();
-        assertThat(converter.canConvert(TestEvent.class, ObjectNode.class)).isTrue();
-        // Convert to concrete type:
-        assertThat(converter.canConvert(byte[].class, TestEvent.class)).isTrue();
-        assertThat(converter.canConvert(String.class, TestEvent.class)).isTrue();
-        assertThat(converter.canConvert(InputStream.class, TestEvent.class)).isTrue();
-        assertThat(converter.canConvert(JsonNode.class, TestEvent.class)).isTrue();
-        assertThat(converter.canConvert(ObjectNode.class, TestEvent.class)).isTrue();
-        // Convert from another concrete type:
-        assertThat(converter.canConvert(AnotherEvent.class, String.class)).isTrue();
-        assertThat(converter.canConvert(AnotherEvent.class, byte[].class)).isTrue();
-        assertThat(converter.canConvert(AnotherEvent.class, InputStream.class)).isTrue();
-        assertThat(converter.canConvert(AnotherEvent.class, JsonNode.class)).isTrue();
-        assertThat(converter.canConvert(AnotherEvent.class, ObjectNode.class)).isTrue();
-        // Intermediate conversion levels:
-        assertThat(converter.canConvert(String.class, JsonNode.class)).isTrue();
-        assertThat(converter.canConvert(JsonNode.class, String.class)).isTrue();
-        assertThat(converter.canConvert(ObjectNode.class, JsonNode.class)).isTrue();
-        assertThat(converter.canConvert(ObjectNode.class, String.class)).isTrue();
-        assertThat(converter.canConvert(JsonNode.class, ObjectNode.class)).isTrue();
-        assertThat(converter.canConvert(String.class, ObjectNode.class)).isTrue();
-        assertThat(converter.canConvert(byte[].class, ObjectNode.class)).isTrue();
-        assertThat(converter.canConvert(ObjectNode.class, byte[].class)).isTrue();
-    }
-
-    @Test
-    void shouldReturnFalseForUnsupportedConversions() {
-        assertThat(converter.canConvert(TestEvent.class, Integer.class)).isFalse();
-        assertThat(converter.canConvert(AnotherEvent.class, Double.class)).isFalse();
-        assertThat(converter.canConvert(Integer.class, TestEvent.class)).isFalse();
-        assertThat(converter.canConvert(Double.class, AnotherEvent.class)).isFalse();
-    }
-
-    @Test
-    void shouldReturnSameInstanceIfSourceAndTargetTypeAreEqual() {
-        TestEvent testEvent = new TestEvent("ID789", "SameType", 123);
-        TestEvent result = converter.convert(testEvent, TestEvent.class, TestEvent.class);
-        assertThat(result).isSameAs(testEvent);
-
-        AnotherEvent anotherEvent = new AnotherEvent("USR002", "No conversion");
-        AnotherEvent anotherResult = converter.convert(anotherEvent, AnotherEvent.class, AnotherEvent.class);
-        assertThat(anotherResult).isSameAs(anotherEvent);
     }
 }
