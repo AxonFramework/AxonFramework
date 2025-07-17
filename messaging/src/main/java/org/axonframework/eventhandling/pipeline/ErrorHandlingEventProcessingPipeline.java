@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.pipeline;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessingException;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.Message;
@@ -64,11 +63,14 @@ public class ErrorHandlingEventProcessingPipeline implements EventProcessingPipe
 
     @Override
     public MessageStream.Empty<Message<Void>> process(
-            List<? extends EventMessage<?>> events,
+            List<Item> items,
             ProcessingContext context,
             Segment segment
     ) {
-        return next.process(events, context, segment)
+        var events = items.stream()
+                          .map(EventProcessingPipeline.Item::event)
+                          .toList();
+        return next.process(items, context, segment)
                    .onErrorContinue(ex -> {
                        try {
                            errorHandler.handleError(new ErrorContext(eventProcessor, ex, events));

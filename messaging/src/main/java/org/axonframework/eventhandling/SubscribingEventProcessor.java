@@ -58,6 +58,7 @@ public class SubscribingEventProcessor implements EventProcessor {
     private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
     private final MessageHandlerInterceptors messageHandlerInterceptors;
     private final EventProcessingPipeline eventProcessingPipeline;
+    private final EventHandlingComponent eventHandlingComponent;
 
     private volatile Registration eventBusRegistration;
 
@@ -78,7 +79,7 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
         this.messageHandlerInterceptors = new MessageHandlerInterceptors();
         var spanFactory = builder.spanFactory;
-        var eventHandlingComponent =
+        this.eventHandlingComponent =
                 new TracingEventHandlingComponent(
                         (event) -> spanFactory.createProcessEventSpan(false, event),
                         new MonitoringEventHandlingComponent(
@@ -163,9 +164,15 @@ public class SubscribingEventProcessor implements EventProcessor {
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
             var unitOfWork = transactionalUnitOfWorkFactory.create();
+            var items = eventMessages.stream()
+                                     .map(event -> new EventProcessingPipeline.Item(
+                                                  event,
+                                                  eventHandlingComponent.sequenceIdentifierFor(event)
+                                          )
+                                     ).toList();
             FutureUtils.joinAndUnwrap(
                     unitOfWork.executeWithResult(processingContext -> eventProcessingPipeline.process(
-                                                                                                     eventMessages,
+                                                                                                     items,
                                                                                                      processingContext,
                                                                                                      Segment.ROOT_SEGMENT)
                                                                                              .asCompletableFuture())

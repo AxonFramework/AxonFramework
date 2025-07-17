@@ -110,11 +110,12 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         private final String name;
         private final EventProcessingPipeline eventProcessingPipeline;
         private final MessageHandlerInterceptors messageHandlerInterceptors;
+        private final EventHandlingComponent eventHandlingComponent;
 
         private TestEventProcessor(Builder builder) {
             builder.validate();
             this.name = builder.name;
-            var eventHandlingComponent = builder.eventHandlingComponent();
+            this.eventHandlingComponent = builder.eventHandlingComponent();
             this.messageHandlerInterceptors = new MessageHandlerInterceptors();
             this.eventProcessingPipeline = new HandlingEventProcessingPipeline(
                     new MonitoringEventHandlingComponent(builder.messageMonitor, eventHandlingComponent)
@@ -155,8 +156,13 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) {
             var unitOfWork = UNIT_OF_WORK_FACTORY.create();
+            var items = eventMessages.stream()
+                                     .map(event -> new EventProcessingPipeline.Item(
+                                                  event, eventHandlingComponent.sequenceIdentifierFor(event)
+                                          )
+                                     ).toList();
             unitOfWork.executeWithResult(ctx -> eventProcessingPipeline.process(
-                    eventMessages, ctx, Segment.ROOT_SEGMENT).asCompletableFuture()
+                    items, ctx, Segment.ROOT_SEGMENT).asCompletableFuture()
             ).join();
         }
 

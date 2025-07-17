@@ -49,8 +49,11 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -123,6 +126,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final WorkPackage.EventFilter workPackageEventFilter;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final MessageHandlerInterceptors messageHandlerInterceptors;
+    private final TracingEventHandlingComponent eventHandlingComponent;
 
     /**
      * Instantiate a {@code PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -147,7 +151,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         this.messageMonitor = builder.messageMonitor();
         this.messageHandlerInterceptors = new MessageHandlerInterceptors();
         var spanFactory = builder.spanFactory();
-        var eventHandlingComponent =
+        this.eventHandlingComponent =
                 new TracingEventHandlingComponent(
                         (event) -> spanFactory.createProcessEventSpan(true, event),
                         new MonitoringEventHandlingComponent(
@@ -434,8 +438,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> eventProcessingPipeline.process(events, ctx, s)
-                                                                                               .asCompletableFuture();
+        WorkPackage.BatchProcessor batchProcessor = this::processEventsBatch;
         return WorkPackage.builder()
                           .name(name)
                           .tokenStore(tokenStore)
@@ -452,6 +455,19 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                           ))
                           .clock(clock)
                           .build();
+    }
+
+    private CompletableFuture<MessageStream.Entry<Message<Void>>> processEventsBatch(
+            List<? extends EventMessage<?>> events,
+            ProcessingContext ctx,
+            Segment s
+    ) {
+        var items = events.stream()
+                          .map(event -> new EventProcessingPipeline.Item(
+                                       event, eventHandlingComponent.sequenceIdentifierFor(event)
+                               )
+                          ).toList();
+        return eventProcessingPipeline.process(items, ctx, s).asCompletableFuture();
     }
 
     /**
