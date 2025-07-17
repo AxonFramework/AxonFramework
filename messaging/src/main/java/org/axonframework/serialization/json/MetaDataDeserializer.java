@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.Converter;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -32,7 +31,7 @@ import java.util.Map;
  *
  * @author Allard Buijze
  * @since 2.4.2
- * @deprecated in favor of a Jackson-specific {@link Converter} implementation.
+ * @deprecated in favor of the {@link JacksonConverter}.
  */
 @Deprecated(forRemoval = true, since = "5.0.0")
 public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
