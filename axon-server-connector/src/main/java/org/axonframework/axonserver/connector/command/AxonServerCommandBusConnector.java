@@ -181,6 +181,8 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         // Make sure that when we subscribe and immediately send a command, it can be handled.
         if (registration instanceof AsyncRegistration asyncRegistration) {
             try {
+                // Waiting synchronously for the subscription to be acknowledged, this should be improved
+                // TODO https://github.com/AxonFramework/AxonFramework/issues/3544
                 asyncRegistration.awaitAck(2000, TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
                 throw new RuntimeException(
