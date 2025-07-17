@@ -35,6 +35,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.GenericMessage;
@@ -174,6 +175,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
     @Override
     public void subscribe(@Nonnull String commandName, int loadFactor) {
+        Assert.isTrue(loadFactor >= 0, () -> "Load factor must be greater than 0.");
         logger.info("Subscribing to command [{}] with load factor [{}]", commandName, loadFactor);
         Registration registration = connection.commandChannel()
                                               .registerCommandHandler(this::incoming, loadFactor, commandName);

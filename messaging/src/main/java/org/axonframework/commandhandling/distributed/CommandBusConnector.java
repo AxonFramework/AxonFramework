@@ -56,7 +56,7 @@ public interface CommandBusConnector {
      * @param commandName The name of the command to subscribe to, typically derived from the command's
      *                    {@link org.axonframework.messaging.QualifiedName}.
      * @param loadFactor  The load factor for the command, which can be used to control the distribution of command
-     *                    handling across multiple instances.
+     *                    handling across multiple instances. The load factor should be a positive integer.
      */
     void subscribe(@Nonnull String commandName, int loadFactor);
 
