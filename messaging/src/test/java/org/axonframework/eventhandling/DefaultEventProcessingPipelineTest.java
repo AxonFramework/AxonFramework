@@ -32,7 +32,6 @@ import org.junit.jupiter.api.*;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
@@ -122,7 +121,6 @@ class DefaultEventProcessingPipelineTest {
                     builder.errorHandler(),
                     builder.messageMonitor(),
                     builder.spanFactory(),
-                    new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e))),
                     messageHandlerInterceptors,
                     true
             );
