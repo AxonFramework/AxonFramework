@@ -36,7 +36,7 @@ import java.util.function.Supplier;
  * @since 5.0.0
  */
 public class TrackingEventHandlingComponent extends DelegatingEventHandlingComponent {
-
+// todo: tracing
     private final Function<EventMessage<?>, Span> spanProvider;
 
     /**

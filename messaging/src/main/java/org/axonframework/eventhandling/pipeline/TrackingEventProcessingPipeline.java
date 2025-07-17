@@ -22,11 +22,11 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanScope;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * An {@link EventProcessingPipeline} that tracks the processing of the event batch using a {@link Span} provider.
@@ -60,22 +60,19 @@ public class TrackingEventProcessingPipeline implements EventProcessingPipeline 
             ProcessingContext context,
             Segment segment
     ) {
-        return trackMessageStream(spanProvider.apply(events), () -> next.process(events, context, segment).cast());
-    }
-
-    // todo: I'm not sure about that, it had some thread local used inside runSupplierAsync. Maybe we need to take the parent from ProcessingContext?
-    private MessageStream.Empty<Message<Void>> trackMessageStream(
-            Span span,
-            Supplier<MessageStream<Message<?>>> messageStreamSupplier
-    ) {
+        Span span = spanProvider.apply(events);
         span.start();
-        var messageStream = messageStreamSupplier.get();
-        return messageStream
-                .whenComplete(span::end)
-                .onErrorContinue(ex -> {
-                    span.recordException(ex);
-                    span.end();
-                    return MessageStream.failed(ex);
-                }).ignoreEntries().cast();
+        try (SpanScope ignored = span.makeCurrent()) {
+            return next.process(events, context, segment)
+                       .whenComplete(span::end)
+                       .onErrorContinue(ex -> {
+                           span.recordException(ex);
+                           span.end();
+                           return MessageStream.failed(ex);
+                       }).ignoreEntries().cast();
+        } catch (Exception e) {
+            span.recordException(e);
+            throw e;
+        }
     }
 }

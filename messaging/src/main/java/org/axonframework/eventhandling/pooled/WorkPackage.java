@@ -331,7 +331,7 @@ class WorkPackage {
                     ctx.putResource(Segment.RESOURCE_KEY, segment);
                     ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
                 });
-                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
+                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken)); // todo: track the whole unit of work.
                 unitOfWork.runOnAfterCommit(
                         u -> {
                             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
