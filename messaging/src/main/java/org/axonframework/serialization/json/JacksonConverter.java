@@ -111,10 +111,8 @@ public class JacksonConverter implements Converter {
                 if (logger.isTraceEnabled()) {
                     logger.trace(
                             "Converter [{}] will do the entire conversion from source [{}] to target [{}] for [{}].",
-                            converter,
-                            sourceType,
-                            targetType,
-                            input);
+                            converter, sourceType, targetType, input
+                    );
                 }
                 //noinspection unchecked
                 return (T) converter.convert(input, targetJavaType.getRawClass());
