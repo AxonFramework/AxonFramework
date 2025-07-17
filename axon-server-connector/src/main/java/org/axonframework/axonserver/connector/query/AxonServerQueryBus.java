@@ -34,12 +34,10 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerRegistration;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.util.PriorityRunnable;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.util.ExecutorServiceFactory;
 import org.axonframework.axonserver.connector.util.PriorityTaskSchedulers;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.common.Assert;
@@ -76,6 +74,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanScope;
+import org.axonframework.util.ExecutorServiceFactory;
+import org.axonframework.util.PriorityRunnable;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +97,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -577,11 +576,23 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         private TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver =
                 q -> configuration.getContext();
         private BiFunction<AxonServerConfiguration, BlockingQueue<Runnable>, ExecutorService> queryExecutorServiceBuilder =
-                (axonServerConfiguration, runnables) -> Executors.newFixedThreadPool(axonServerConfiguration.getQueryThreads(),
-                                                                                  new AxonThreadFactory("QueryProcessor"));
+                (axonServerConfiguration, queue) -> new ThreadPoolExecutor(
+                        axonServerConfiguration.getQueryThreads(),
+                        axonServerConfiguration.getQueryThreads(),
+                        0L,
+                        TimeUnit.MILLISECONDS,
+                        queue,
+                        new AxonThreadFactory("QueryProcessor")
+                );
         private BiFunction<AxonServerConfiguration, BlockingQueue<Runnable>, ExecutorService> queryResponseExecutorServiceBuilder =
-                (axonServerConfiguration, runnables) -> Executors.newFixedThreadPool(axonServerConfiguration.getQueryThreads(),
-                                                                                     new AxonThreadFactory("QueryResponseProcessor"));
+                (axonServerConfiguration, queue) -> new ThreadPoolExecutor(
+                        axonServerConfiguration.getQueryResponseThreads(),
+                        axonServerConfiguration.getQueryResponseThreads(),
+                        0L,
+                        TimeUnit.MILLISECONDS,
+                        queue,
+                        new AxonThreadFactory("QueryResponseProcessor")
+                );
         private String defaultContext;
         private QueryBusSpanFactory spanFactory = DefaultQueryBusSpanFactory.builder()
                                                                             .spanFactory(NoOpSpanFactory.INSTANCE)
