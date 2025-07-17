@@ -20,7 +20,12 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.*;
 
 /**
  * Test suite to validate {@link Converter} implementations.
@@ -30,8 +35,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * mindful to implement the following {@code static} methods:
  * <ol>
  *     <li>{@code supportedConversions}</li>
- *     <li>{@code unsupportedConversions}</li>
- *     <li>{@code sameTypeConversions}</li>
  *     <li>{@code conversionScenarios}</li>
  * </ol>
  * Forgetting to do so will result in a {@link org.junit.platform.commons.PreconditionViolationException} when running the tests.
@@ -60,10 +63,49 @@ public abstract class ConverterTestSuite<C extends Converter> {
         assertThat(testSubject.canConvert(sourceType, targetType)).isTrue();
     }
 
+    @SuppressWarnings("unused") // Used by child classes
+    protected static Stream<Arguments> commonConversions() {
+        return Stream.of(
+                // Convert from concrete type:
+                arguments(SomeInput.class, byte[].class),
+                arguments(SomeInput.class, String.class),
+                arguments(SomeInput.class, InputStream.class),
+                // Convert to concrete type:
+                arguments(byte[].class, SomeInput.class),
+                arguments(String.class, SomeInput.class),
+                arguments(InputStream.class, SomeInput.class),
+                // Convert from another concrete type:
+                arguments(SomeOtherInput.class, String.class),
+                arguments(SomeOtherInput.class, byte[].class),
+                arguments(SomeOtherInput.class, InputStream.class),
+                // Intermediate conversion levels:
+                arguments(String.class, byte[].class),
+                arguments(byte[].class, String.class),
+                arguments(byte[].class, InputStream.class),
+                arguments(InputStream.class, byte[].class),
+                arguments(String.class, InputStream.class),
+                arguments(InputStream.class, String.class),
+                // Same type:
+                arguments(SomeInput.class, SomeInput.class),
+                arguments(SomeOtherInput.class, SomeOtherInput.class),
+                arguments(byte[].class, byte[].class),
+                arguments(String.class, String.class)
+        );
+    }
+
     @ParameterizedTest
     @MethodSource("unsupportedConversions")
     void canConvertReturnsFalseForUnsupportedConversions(Class<?> sourceType, Class<?> targetType) {
         assertThat(testSubject.canConvert(sourceType, targetType)).isFalse();
+    }
+
+    static Stream<Arguments> unsupportedConversions() {
+        return Stream.of(
+                arguments(SomeInput.class, Integer.class),
+                arguments(SomeOtherInput.class, Double.class),
+                arguments(Integer.class, SomeInput.class),
+                arguments(Double.class, SomeOtherInput.class)
+        );
     }
 
     @ParameterizedTest
@@ -71,6 +113,16 @@ public abstract class ConverterTestSuite<C extends Converter> {
     <I> void shouldReturnSameInstanceIfSourceAndTargetTypeAreEqual(I input, Class<I> eventType) {
         Object result = testSubject.convert(input, eventType, eventType);
         assertThat(result).isSameAs(input);
+    }
+
+    @SuppressWarnings("unused") // Used by ConverterTestSuite
+    static Stream<Arguments> sameTypeConversions() {
+        return Stream.of(
+                arguments("Lorem Ipsum", String.class),
+                arguments(42L, Long.class),
+                arguments(new SomeInput("ID789", "SameType", 123), SomeInput.class),
+                arguments(new SomeOtherInput("USR002", "No conversion"), SomeOtherInput.class)
+        );
     }
 
     @Test
@@ -105,5 +157,25 @@ public abstract class ConverterTestSuite<C extends Converter> {
         O targetConversion = testSubject.convert(input, sourceType, targetType);
         I sourceConversion = testSubject.convert(targetConversion, sourceType);
         assertThat(sourceConversion).isEqualTo(input);
+    }
+
+    @SuppressWarnings("unused") // Used by ConverterTestSuite
+    protected static Stream<Arguments> commonConversionScenarios() {
+        return Stream.of(
+                arguments(new SomeInput("ID123", "TestName", 42), String.class, SomeInput.class),
+                arguments(new SomeInput("ID456", "OtherName", 99), byte[].class, SomeInput.class),
+                arguments(new SomeOtherInput("USR001", "Some description"), String.class, SomeOtherInput.class),
+                arguments(new SomeOtherInput("USR002", "Another description"), byte[].class, SomeOtherInput.class),
+                arguments("Lorem Ipsum", byte[].class, String.class),
+                arguments("Lorem Ipsum".getBytes(StandardCharsets.UTF_8), InputStream.class, byte[].class)
+        );
+    }
+
+    public record SomeInput(String id, String name, int value) {
+
+    }
+
+    public record SomeOtherInput(String userId, String description) {
+
     }
 }

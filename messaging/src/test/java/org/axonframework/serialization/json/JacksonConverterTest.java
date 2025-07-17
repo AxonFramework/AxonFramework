@@ -27,8 +27,6 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.provider.*;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -53,23 +51,18 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
 
     @SuppressWarnings("unused") // Used by ConverterTestSuite
     static Stream<Arguments> supportedConversions() {
+        return Stream.concat(commonConversions(), subjectSpecificSupportedConversions());
+    }
+
+    private static Stream<Arguments> subjectSpecificSupportedConversions() {
         return Stream.of(
                 // Convert from concrete type:
-                arguments(SomeInput.class, byte[].class),
-                arguments(SomeInput.class, String.class),
-                arguments(SomeInput.class, InputStream.class),
                 arguments(SomeInput.class, JsonNode.class),
                 arguments(SomeInput.class, ObjectNode.class),
                 // Convert to concrete type:
-                arguments(byte[].class, SomeInput.class),
-                arguments(String.class, SomeInput.class),
-                arguments(InputStream.class, SomeInput.class),
                 arguments(JsonNode.class, SomeInput.class),
                 arguments(ObjectNode.class, SomeInput.class),
                 // Convert from another concrete type:
-                arguments(SomeOtherInput.class, String.class),
-                arguments(SomeOtherInput.class, byte[].class),
-                arguments(SomeOtherInput.class, InputStream.class),
                 arguments(SomeOtherInput.class, JsonNode.class),
                 arguments(SomeOtherInput.class, ObjectNode.class),
                 // Intermediate conversion levels:
@@ -82,49 +75,23 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
                 arguments(byte[].class, ObjectNode.class),
                 arguments(ObjectNode.class, byte[].class),
                 // Same type:
-                arguments(SomeInput.class, SomeInput.class),
-                arguments(SomeOtherInput.class, SomeOtherInput.class),
-                arguments(byte[].class, byte[].class),
-                arguments(String.class, String.class),
                 arguments(JsonNode.class, JsonNode.class),
                 arguments(ObjectNode.class, ObjectNode.class)
         );
     }
 
     @SuppressWarnings("unused") // Used by ConverterTestSuite
-    static Stream<Arguments> unsupportedConversions() {
-        return Stream.of(
-                arguments(SomeInput.class, Integer.class),
-                arguments(SomeOtherInput.class, Double.class),
-                arguments(Integer.class, SomeInput.class),
-                arguments(Double.class, SomeOtherInput.class)
-        );
-    }
-
-    @SuppressWarnings("unused") // Used by ConverterTestSuite
-    static Stream<Arguments> sameTypeConversions() {
-        return Stream.of(
-                arguments("Lorem Ipsum", String.class),
-                arguments(42L, Long.class),
-                arguments(new SomeInput("ID789", "SameType", 123), SomeInput.class),
-                arguments(new SomeOtherInput("USR002", "No conversion"), SomeOtherInput.class)
-        );
-    }
-
-    @SuppressWarnings("unused") // Used by ConverterTestSuite
     static Stream<Arguments> conversionScenarios() throws JsonProcessingException {
+        return Stream.concat(commonConversionScenarios(), subjectSpecificConversionScenarios());
+    }
+
+    static Stream<Arguments> subjectSpecificConversionScenarios() throws JsonProcessingException {
         byte[] jsonCompliantBytes = OBJECT_MAPPER.writeValueAsBytes("Lorem Ipsum");
         ObjectNode objectNode = OBJECT_MAPPER.createObjectNode();
         objectNode.put("property", "value");
         return Stream.of(
-                arguments(new SomeInput("ID123", "TestName", 42), String.class, SomeInput.class),
-                arguments(new SomeInput("ID456", "OtherName", 99), byte[].class, SomeInput.class),
                 arguments(new SomeInput("ID789", "JsonName", 1337), JsonNode.class, SomeInput.class),
-                arguments(new SomeOtherInput("USR001", "Some description"), String.class, SomeOtherInput.class),
-                arguments(new SomeOtherInput("USR002", "Another description"), byte[].class, SomeOtherInput.class),
                 arguments(new SomeOtherInput("USR003", "Json description"), JsonNode.class, SomeOtherInput.class),
-                arguments("Lorem Ipsum", byte[].class, String.class),
-                arguments("Lorem Ipsum".getBytes(StandardCharsets.UTF_8), InputStream.class, byte[].class),
                 arguments(jsonCompliantBytes, JsonNode.class, byte[].class),
                 arguments(objectNode, JsonNode.class, ObjectNode.class)
         );
@@ -143,13 +110,5 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
 
         assertThatThrownBy(() -> failingTestSubject.convert(testInput, byte[].class, SomeInput.class))
                 .isExactlyInstanceOf(ConversionException.class);
-    }
-
-    record SomeInput(String id, String name, int value) {
-
-    }
-
-    record SomeOtherInput(String userId, String description) {
-
     }
 }
