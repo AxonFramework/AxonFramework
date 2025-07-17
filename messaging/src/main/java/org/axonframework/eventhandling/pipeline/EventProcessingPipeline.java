@@ -24,7 +24,26 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
 
+/**
+ * The EventProcessingPipeline interface defines a contract for processing a list of events in the context of a specific
+ * segment and processing context. It allows for the processing of events in a pipeline manner.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 public interface EventProcessingPipeline {
 
-    MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context, Segment segment);
+    /**
+     * Processes a list of events in the context of a specific segment and processing context.
+     *
+     * @param events  the list of messages to be processed
+     * @param context the processing context in which the items are processed
+     * @param segment the segment associated with the processing
+     * @return a stream of messages resulting from the processing of the items
+     */
+    MessageStream.Empty<Message<Void>> process(
+            List<? extends EventMessage<?>> events,
+            ProcessingContext context,
+            Segment segment
+    );
 }
