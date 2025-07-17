@@ -104,10 +104,10 @@ public class DistributedCommandBus implements CommandBus {
         @Override
         public void handle(@Nonnull CommandMessage<?> commandMessage,
                            @Nonnull CommandBusConnector.ResultCallback callback) {
-            Long priority = commandMessage.priority().orElse(0L);
+            int priority = commandMessage.priority().orElse(0);
             if (logger.isDebugEnabled()) {
                 logger.debug("Received command [{}] for processing with priority [{}] and routing key [{}]", commandMessage.type(),
-                                 commandMessage.priority().orElse(null),
+                                 commandMessage.priority().orElse(0),
                                  commandMessage.routingKey().orElse(null)
                 );
             }
@@ -121,7 +121,7 @@ public class DistributedCommandBus implements CommandBus {
                                      CommandBusConnector.ResultCallback callback) {
             logger.info("Processing incoming command [{}] with priority [{}] and routing key [{}]",
                         commandMessage.type(),
-                        commandMessage.priority().orElse(null),
+                        commandMessage.priority().orElse(0),
                         commandMessage.routingKey().orElse(null)
             );
             delegate.dispatch(commandMessage, null).whenComplete((resultMessage, e) -> {

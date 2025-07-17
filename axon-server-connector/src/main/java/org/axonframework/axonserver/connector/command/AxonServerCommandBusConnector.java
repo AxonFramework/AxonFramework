@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -153,13 +154,13 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     private void addPriority(Command.Builder builder, CommandMessage<?> command) {
-        Optional<Long> priority = command.priority();
+        OptionalInt priority = command.priority();
         if (priority.isEmpty()) {
             return;
         }
         var instruction = createProcessingInstruction(
                 ProcessingKey.PRIORITY,
-                MetaDataValue.newBuilder().setNumberValue(priority.get()));
+                MetaDataValue.newBuilder().setNumberValue(priority.getAsInt()));
         builder.addProcessingInstructions(instruction).build();
     }
 
@@ -216,7 +217,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
     private CommandMessage<?> convertToCommandMessage(Command command) {
         SerializedObject commandPayload = command.getPayload();
-        long priority = priority(command.getProcessingInstructionsList());
+        int priority = priority(command.getProcessingInstructionsList());
         String routingKey = ProcessingInstructionHelper.routingKey(command.getProcessingInstructionsList());
         return new GenericCommandMessage<>(
                 new GenericMessage<>(

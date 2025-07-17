@@ -26,6 +26,7 @@ import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Function;
 
 /**
@@ -39,7 +40,7 @@ import java.util.function.Function;
 public class GenericCommandMessage<P> extends MessageDecorator<P> implements CommandMessage<P> {
 
     private final String routingKey;
-    private final Long priority;
+    private final Integer priority;
 
     /**
      * Constructs a {@code GenericCommandMessage} for the given {@code type} and {@code payload}.
@@ -81,7 +82,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
                                  @Nonnull P payload,
                                  @Nonnull Map<String, String> metaData,
                                  @Nullable String routingKey,
-                                 @Nullable Long priority
+                                 @Nullable Integer priority
     ) {
         this(new GenericMessage<>(type, payload, metaData), routingKey, priority);
     }
@@ -122,7 +123,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * @param routingKey The routing key for this {@link CommandMessage}, if any.
      * @param priority   The priority for this {@link CommandMessage}, if any.
      */
-    public GenericCommandMessage(@Nonnull Message<P> delegate, @Nullable String routingKey, @Nullable Long priority) {
+    public GenericCommandMessage(@Nonnull Message<P> delegate, @Nullable String routingKey, @Nullable Integer priority) {
         super(delegate);
         this.routingKey = routingKey;
         this.priority = priority;
@@ -134,8 +135,11 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
     }
 
     @Override
-    public Optional<Long> priority() {
-        return Optional.ofNullable(priority);
+    public OptionalInt priority() {
+        if(priority == null) {
+            return OptionalInt.empty();
+        }
+        return OptionalInt.of(priority);
     }
 
     @Override

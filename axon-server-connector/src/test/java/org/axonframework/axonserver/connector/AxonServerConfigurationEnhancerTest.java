@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-class ServerConnectorConfigurationEnhancerTest {
+class AxonServerConfigurationEnhancerTest {
 
     private AxonServerConfigurationEnhancer testSubject;
 

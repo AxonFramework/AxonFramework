@@ -30,6 +30,8 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -164,7 +166,7 @@ public class DefaultCommandGateway implements CommandGateway {
         return new GenericCommandMessage<>(
                 commandMessage,
                 commandMessage.routingKey().orElse(resolveRoutingKey(commandMessage)),
-                commandMessage.priority().orElse(resolvePriority(commandMessage))
+                commandMessage.priority().orElse(resolvePriority(commandMessage).orElse(0))
         );
     }
 
@@ -175,10 +177,11 @@ public class DefaultCommandGateway implements CommandGateway {
         return routingKeyResolver.getRoutingKey(commandMessage);
     }
 
-    private Long resolvePriority(CommandMessage<?> commandMessage) {
+    private OptionalInt resolvePriority(CommandMessage<?> commandMessage) {
         if (priorityCalculator == null) {
-            return null;
+            return OptionalInt.empty();
         }
-        return priorityCalculator.determinePriority(commandMessage);
+        int priority = priorityCalculator.determinePriority(commandMessage);
+        return OptionalInt.of(priority);
     }
 }

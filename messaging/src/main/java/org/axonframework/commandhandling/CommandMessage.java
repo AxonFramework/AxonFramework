@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Function;
 
 /**
@@ -48,9 +49,9 @@ public interface CommandMessage<P> extends Message<P> {
      * handled before commands with a lower priority. Commands without a priority are considered to have to lowest
      * priority.
      *
-     * @return The priority of this command message, or an empty {@link Optional} if no priority is set.
+     * @return The priority of this command message, or an empty {@link OptionalInt} if no priority is set.
      */
-    Optional<Long> priority();
+    OptionalInt priority();
 
     @Override
     CommandMessage<P> withMetaData(@Nonnull Map<String, String> metaData);

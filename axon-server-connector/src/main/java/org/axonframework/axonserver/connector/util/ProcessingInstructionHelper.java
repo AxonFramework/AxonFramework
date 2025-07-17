@@ -54,8 +54,8 @@ public abstract class ProcessingInstructionHelper {
      *                               ProcessingKey#PRIORITY} from
      * @return a {@code long} specifying the priority of a given operation
      */
-    public static long priority(List<ProcessingInstruction> processingInstructions) {
-        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY).orElse(0L);
+    public static int priority(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY).orElse(0L).intValue();
     }
 
     /**
