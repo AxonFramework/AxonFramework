@@ -56,11 +56,11 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                 .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity(), SearchScope.ALL)
                 .registerIfNotPresent(eventStorageEngineDefinition(), SearchScope.ALL)
                 .registerIfNotPresent(commandBusConnectorDefinition(), SearchScope.ALL)
-                .registerDecorator(CommandBusConnector.class, 0, getPayloadConvertingConnectorComponentDecorator())
+                .registerDecorator(CommandBusConnector.class, 0, payloadConvertingConnectorComponentDecorator())
                 .registerFactory(new AxonServerEventStorageEngineFactory());
     }
 
-    private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector<Object>> getPayloadConvertingConnectorComponentDecorator() {
+    private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector<Object>> payloadConvertingConnectorComponentDecorator() {
         return (config, name, delegate) -> new PayloadConvertingCommandBusConnector<>(
                 delegate,
                 config.getComponent(Converter.class),
