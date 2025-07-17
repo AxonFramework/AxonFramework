@@ -70,8 +70,8 @@ public class DistributedCommandBus implements CommandBus {
                                  @Nonnull DistributedCommandBusConfiguration configuration) {
         this.delegate = Objects.requireNonNull(delegate, "The given CommandBus delegate cannot be null.");
         this.connector = Objects.requireNonNull(connector, "The given Connector cannot be null.");
-        this.loadFactor = configuration.getLoadFactor();
-        this.executorService = configuration.getExecutorServiceFactory()
+        this.loadFactor = configuration.loadFactor();
+        this.executorService = configuration.executorServiceFactory()
                                             .createExecutorService(configuration, new PriorityBlockingQueue<>(1000));
         connector.onIncomingCommand(new DistributedHandler());
     }

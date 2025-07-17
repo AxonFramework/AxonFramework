@@ -36,8 +36,8 @@ public class DistributedCommandBusConfiguration {
     private int numberOfThreads = 10;
     private ExecutorServiceFactory<DistributedCommandBusConfiguration> executorServiceFactory =
             (configuration, commandProcessQueue) -> new ThreadPoolExecutor(
-                    configuration.getNumberOfThreads(),
-                    configuration.getNumberOfThreads(),
+                    configuration.numberOfThreads(),
+                    configuration.numberOfThreads(),
                     0L,
                     TimeUnit.MILLISECONDS,
                     commandProcessQueue,
@@ -65,7 +65,7 @@ public class DistributedCommandBusConfiguration {
      *
      * @return The load factor for the distributed command bus.
      */
-    public int getLoadFactor() {
+    public int loadFactor() {
         return loadFactor;
     }
 
@@ -86,7 +86,7 @@ public class DistributedCommandBusConfiguration {
      *
      * @return The {@link ExecutorService} used by the distributed command bus.
      */
-    public ExecutorServiceFactory<DistributedCommandBusConfiguration> getExecutorServiceFactory() {
+    public ExecutorServiceFactory<DistributedCommandBusConfiguration> executorServiceFactory() {
         return executorServiceFactory;
     }
 
@@ -109,7 +109,7 @@ public class DistributedCommandBusConfiguration {
      *
      * @return The number of threads used by the distributed command bus.
      */
-    public int getNumberOfThreads() {
+    public int numberOfThreads() {
         return numberOfThreads;
     }
 }

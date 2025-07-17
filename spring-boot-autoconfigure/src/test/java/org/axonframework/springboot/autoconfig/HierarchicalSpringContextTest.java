@@ -94,7 +94,6 @@ public class HierarchicalSpringContextTest {
             assertThat(busFromRegistry).isInstanceOf(DistributedCommandBus.class);
 
             assertThat(busFromParentRegistry).isEqualTo(busFromParentAppContext);
-            // TODO: Why is the decorator no longer invoked?!
             assertThat(busFromParentRegistry).isInstanceOf(InterceptingCommandBus.class);
 
             assertThat(busFromAppContext).isNotEqualTo(busFromParentAppContext);
