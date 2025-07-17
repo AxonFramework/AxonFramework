@@ -56,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.axonserver.connector.AxonServerMetadataConverter.convertFromMetaDataValues;
+import static org.axonframework.axonserver.connector.AxonServerMetadataConverter.convertFromGrpcMetaDataValues;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.createProcessingInstruction;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -107,7 +107,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
         MessageType messageType = new MessageType(commandResponse.getPayload().getType(),
                                                   commandResponse.getPayload().getRevision());
-        Map<String, String> metadata = convertFromMetaDataValues(commandResponse.getMetaDataMap());
+        Map<String, String> metadata = convertFromGrpcMetaDataValues(commandResponse.getMetaDataMap());
         return CompletableFuture.completedFuture(new GenericCommandResultMessage<>(new GenericMessage<>(
                 commandResponse.getMessageIdentifier(),
                 messageType,
@@ -143,7 +143,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         return builder
                 .setMessageIdentifier(command.getIdentifier())
                 .setName(command.type().name())
-                .putAllMetaData(AxonServerMetadataConverter.convertToMetaDataValues(command.getMetaData()))
+                .putAllMetaData(AxonServerMetadataConverter.convertToGrpcMetaDataValues(command.getMetaData()))
                 .setPayload(SerializedObject.newBuilder()
                                             .setData(ByteString.copyFrom(payloadAsBytes))
                                             .setType(command.type().name())
@@ -223,7 +223,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
                         command.getMessageIdentifier(),
                         new MessageType(commandPayload.getType(), commandPayload.getRevision()),
                         commandPayload.getData().toByteArray(),
-                        convertFromMetaDataValues(command.getMetaDataMap())
+                        convertFromGrpcMetaDataValues(command.getMetaDataMap())
                 ),
                 routingKey,
                 priority
@@ -241,16 +241,19 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         CommandResponse.Builder responseBuilder = CommandResponse
                 .newBuilder()
                 .setMessageIdentifier(messageId)
-                .putAllMetaData(AxonServerMetadataConverter.convertToMetaDataValues(resultMessage.getMetaData()))
+                .putAllMetaData(AxonServerMetadataConverter.convertToGrpcMetaDataValues(resultMessage.getMetaData()))
                 .setRequestIdentifier(command.getMessageIdentifier());
-        if (resultMessage.getPayload() instanceof byte[] payload) {
-            responseBuilder.setPayload(SerializedObject.newBuilder()
+        if (!(resultMessage.getPayload() instanceof byte[] payloadAsBytes)) {
+            throw new IllegalArgumentException(
+                    "Payload must be of type byte[] for AxonServerConnector, but was: %s".formatted(
+                            resultMessage.getPayload().getClass().getName())
+            );
+        }
+        return responseBuilder.setPayload(SerializedObject.newBuilder()
                                                        .setType(resultMessage.type().name())
                                                        .setRevision(resultMessage.type().version())
-                                                       .setData(ByteString.copyFrom(payload)));
-        }
-
-        return responseBuilder.build();
+                                                          .setData(ByteString.copyFrom(payloadAsBytes)))
+                              .build();
     }
 
     @Override
