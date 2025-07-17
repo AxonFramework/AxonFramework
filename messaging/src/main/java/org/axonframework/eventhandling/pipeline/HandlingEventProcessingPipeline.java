@@ -51,8 +51,7 @@ public class HandlingEventProcessingPipeline implements EventProcessingPipeline 
     }
 
     @Override
-    public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context,
-                                                      Segment segment) {
+    public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context, Segment segment) {
         MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
         for (var event : events) {
             var eventResult = eventHandlingComponent.handle(event, context);

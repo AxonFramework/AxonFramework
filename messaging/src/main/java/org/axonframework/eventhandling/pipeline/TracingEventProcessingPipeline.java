@@ -36,20 +36,20 @@ import java.util.function.Function;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class TrackingEventProcessingPipeline implements EventProcessingPipeline {
+public class TracingEventProcessingPipeline implements EventProcessingPipeline {
 
     private final EventProcessingPipeline next;
     private final Function<List<? extends EventMessage<?>>, Span> spanProvider;
 
     /**
-     * Constructs the {@link TrackingEventProcessingPipeline} with given {@code next} pipeline to delegate calls to and
-     * a {@code spanProvider} to create spans for the event batch.
+     * Constructs the {@link TracingEventProcessingPipeline} with given {@code next} pipeline to delegate calls to and a
+     * {@code spanProvider} to create spans for the event batch.
      *
      * @param next         The instance to delegate calls to.
      * @param spanProvider The provider of {@link Span} to track the event batch.
      */
-    public TrackingEventProcessingPipeline(EventProcessingPipeline next,
-                                           Function<List<? extends EventMessage<?>>, Span> spanProvider) {
+    public TracingEventProcessingPipeline(EventProcessingPipeline next,
+                                          Function<List<? extends EventMessage<?>>, Span> spanProvider) {
         this.next = Objects.requireNonNull(next, "Next may not be null");
         this.spanProvider = Objects.requireNonNull(spanProvider, "Span provider may not be null");
     }
@@ -62,7 +62,7 @@ public class TrackingEventProcessingPipeline implements EventProcessingPipeline 
     ) {
         Span span = spanProvider.apply(events);
         span.start();
-        try (SpanScope ignored = span.makeCurrent()) {
+        try (SpanScope ignored = span.makeCurrent()) { // works as long as the MessageStream doesn't change threads
             return next.process(events, context, segment)
                        .whenComplete(span::end)
                        .onErrorContinue(ex -> {
@@ -72,7 +72,8 @@ public class TrackingEventProcessingPipeline implements EventProcessingPipeline 
                        }).ignoreEntries().cast();
         } catch (Exception e) {
             span.recordException(e);
-            throw e;
+            span.end();
+            return MessageStream.failed(e);
         }
     }
 }

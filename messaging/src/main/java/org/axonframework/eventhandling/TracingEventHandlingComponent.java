@@ -21,10 +21,10 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanScope;
 
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * An {@link EventHandlingComponent} that tracks the handling of events using a {@link Span} supplier.
@@ -35,8 +35,8 @@ import java.util.function.Supplier;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class TrackingEventHandlingComponent extends DelegatingEventHandlingComponent {
-// todo: tracing
+public class TracingEventHandlingComponent extends DelegatingEventHandlingComponent {
+
     private final Function<EventMessage<?>, Span> spanProvider;
 
     /**
@@ -45,8 +45,8 @@ public class TrackingEventHandlingComponent extends DelegatingEventHandlingCompo
      * @param delegate     The instance to delegate calls to.
      * @param spanProvider The provider of {@link Span} to track the event handling.
      */
-    public TrackingEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
-                                          @Nonnull Function<EventMessage<?>, Span> spanProvider) {
+    public TracingEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
+                                         @Nonnull Function<EventMessage<?>, Span> spanProvider) {
         super(delegate);
         this.spanProvider = Objects.requireNonNull(spanProvider, "Span provider may not be null");
     }
@@ -55,28 +55,20 @@ public class TrackingEventHandlingComponent extends DelegatingEventHandlingCompo
     @Override
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
-        return trackMessageStream(spanProvider.apply(event), () -> {
-            try {
-                return delegate.handle(event, context).cast();
-            } catch (Exception e) {
-                return MessageStream.failed(e);
-            }
-        });
-    }
-
-    // todo: I'm not sure about that, it had some thread local used inside runSupplierAsync. Maybe we need to take the parent from ProcessingContext?
-    private MessageStream.Empty<Message<Void>> trackMessageStream(
-            Span span,
-            Supplier<MessageStream<Message<?>>> messageStreamSupplier
-    ) {
+        Span span = spanProvider.apply(event);
         span.start();
-        var messageStream = messageStreamSupplier.get();
-        return messageStream
-                .whenComplete(span::end)
-                .onErrorContinue(ex -> {
-                    span.recordException(ex);
-                    span.end();
-                    return MessageStream.failed(ex);
-                }).ignoreEntries().cast();
+        try (SpanScope ignored = span.makeCurrent()) { // works as long as the MessageStream doesn't change threads
+            return delegate.handle(event, context)
+                           .whenComplete(span::end)
+                           .onErrorContinue(ex -> {
+                               span.recordException(ex);
+                               span.end();
+                               return MessageStream.failed(ex);
+                           }).ignoreEntries().cast();
+        } catch (Exception e) {
+            span.recordException(e);
+            span.end();
+            return MessageStream.failed(e);
+        }
     }
 }

@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pipeline.ErrorHandlingEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
-import org.axonframework.eventhandling.pipeline.TrackingEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.TracingEventProcessingPipeline;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -59,7 +59,6 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
     private final MessageHandlerInterceptors messageHandlerInterceptors;
     private final EventProcessorSpanFactory spanFactory;
     private final boolean streamingProcessor;
-    private final SegmentMatcher segmentMatcher;
 
     /**
      * Instantiate a {@link DefaultEventProcessingPipeline} directly with the required components.
@@ -87,7 +86,6 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
                                           @Nonnull ErrorHandler errorHandler,
                                           @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor,
                                           @Nonnull EventProcessorSpanFactory spanFactory,
-                                          @Nonnull SegmentMatcher segmentMatcher,
                                           @Nonnull MessageHandlerInterceptors messageHandlerInterceptors,
                                           boolean streamingProcessor
     ) {
@@ -102,7 +100,6 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
         this.messageMonitor = Objects.requireNonNull(messageMonitor, "MessageMonitor may not be null");
         this.spanFactory = Objects.requireNonNull(spanFactory, "SpanFactory may not be null");
         this.streamingProcessor = streamingProcessor;
-        this.segmentMatcher = Objects.requireNonNull(segmentMatcher, "SegmentMatcher may not be null");
         this.messageHandlerInterceptors = Objects.requireNonNull(messageHandlerInterceptors,
                                                                  "MessageHandlerInterceptors may not be null");
     }
@@ -134,7 +131,7 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
                                                       ProcessingContext context,
                                                       Segment segment) {
         var eventHandlingComponent =
-                new TrackingEventHandlingComponent(
+                new TracingEventHandlingComponent(
                         new MonitoringEventHandlingComponent(
                                 new InterceptingEventHandlingComponent(
                                         this.eventHandlingComponent,
@@ -147,7 +144,7 @@ public final class DefaultEventProcessingPipeline implements EventProcessingPipe
         var pipeline =
                 new ErrorHandlingEventProcessingPipeline(
                         // todo: add pipeline that parallelize processing for events with different sequence identifiers! BranchingProcessingPipeline
-                        new TrackingEventProcessingPipeline(
+                        new TracingEventProcessingPipeline(
                                 new HandlingEventProcessingPipeline(eventHandlingComponent),
                                 (eventsList) -> spanFactory.createBatchSpan(streamingProcessor, eventsList)
                         ),
