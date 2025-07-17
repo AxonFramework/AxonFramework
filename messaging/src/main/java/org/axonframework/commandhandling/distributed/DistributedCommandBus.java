@@ -81,7 +81,7 @@ public class DistributedCommandBus implements CommandBus {
                                            @Nonnull CommandHandler handler) {
         CommandHandler commandHandler = Objects.requireNonNull(handler, "The given handler cannot be null.");
         delegate.subscribe(name, commandHandler);
-        connector.subscribe(name.toString(), loadFactor);
+        connector.subscribe(name, loadFactor);
         return this;
     }
 

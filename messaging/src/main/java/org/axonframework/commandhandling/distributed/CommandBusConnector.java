@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -53,20 +54,19 @@ public interface CommandBusConnector {
     /**
      * Subscribes to a command with the given {@code commandName} and a {@code loadFactor}.
      *
-     * @param commandName The name of the command to subscribe to, typically derived from the command's
-     *                    {@link org.axonframework.messaging.QualifiedName}.
+     * @param commandName The {@link QualifiedName} of the command to subscribe to.
      * @param loadFactor  The load factor for the command, which can be used to control the distribution of command
      *                    handling across multiple instances. The load factor should be a positive integer.
      */
-    void subscribe(@Nonnull String commandName, int loadFactor);
+    void subscribe(@Nonnull QualifiedName commandName, int loadFactor);
 
     /**
      * Unsubscribes from a command with the given {@code commandName}.
      *
-     * @param commandName The name of the command to unsubscribe from.
+     * @param commandName The {@link QualifiedName} of the command to unsubscribe from.
      * @return {@code true} if the unsubscription was successful, {@code false} otherwise.
      */
-    boolean unsubscribe(@Nonnull String commandName);
+    boolean unsubscribe(@Nonnull QualifiedName commandName);
 
     /**
      * Registers a handler that will be called when an incoming command is received. The handler should process the

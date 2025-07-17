@@ -28,6 +28,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -112,7 +113,7 @@ class DistributedCommandBusTest {
     private static class StubConnector implements CommandBusConnector {
 
         private final Map<CommandMessage<?>, CompletableFuture<?>> dispatchedCommands = new ConcurrentHashMap<>();
-        private final Map<String, Integer> subscriptions = new ConcurrentHashMap<>();
+        private final Map<QualifiedName, Integer> subscriptions = new ConcurrentHashMap<>();
         private final AtomicReference<Handler> handler = new AtomicReference<>();
 
 
@@ -126,12 +127,12 @@ class DistributedCommandBusTest {
         }
 
         @Override
-        public void subscribe(@Nonnull String commandName, int loadFactor) {
+        public void subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
             subscriptions.put(commandName, loadFactor);
         }
 
         @Override
-        public boolean unsubscribe(@Nonnull String commandName) {
+        public boolean unsubscribe(@Nonnull QualifiedName commandName) {
             return subscriptions.remove(commandName) != null;
         }
 
@@ -144,7 +145,7 @@ class DistributedCommandBusTest {
             return dispatchedCommands;
         }
 
-        public Map<String, Integer> getSubscriptions() {
+        public Map<QualifiedName, Integer> getSubscriptions() {
             return subscriptions;
         }
 

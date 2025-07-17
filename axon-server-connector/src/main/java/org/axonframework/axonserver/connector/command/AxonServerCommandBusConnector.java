@@ -41,6 +41,7 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +75,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
     private final AxonServerConnection connection;
     private final AtomicReference<CommandBusConnector.Handler> incomingHandler = new AtomicReference<>();
-    private final Map<String, Registration> subscriptions = new ConcurrentHashMap<>();
+    private final Map<QualifiedName, Registration> subscriptions = new ConcurrentHashMap<>();
 
     /**
      * Creates a new {@code AxonServerConnector} that communicate with Axon Server using the provided
@@ -174,11 +175,11 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public void subscribe(@Nonnull String commandName, int loadFactor) {
+    public void subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
         Assert.isTrue(loadFactor >= 0, () -> "Load factor must be greater than 0.");
         logger.info("Subscribing to command [{}] with load factor [{}]", commandName, loadFactor);
         Registration registration = connection.commandChannel()
-                                              .registerCommandHandler(this::incoming, loadFactor, commandName);
+                                              .registerCommandHandler(this::incoming, loadFactor, commandName.name());
 
         // Make sure that when we subscribe and immediately send a command, it can be handled.
         if (registration instanceof AsyncRegistration asyncRegistration) {
@@ -253,7 +254,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public boolean unsubscribe(@Nonnull String commandName) {
+    public boolean unsubscribe(@Nonnull QualifiedName commandName) {
         Registration subscription = subscriptions.remove(commandName);
         if (subscription != null) {
             subscription.cancel();

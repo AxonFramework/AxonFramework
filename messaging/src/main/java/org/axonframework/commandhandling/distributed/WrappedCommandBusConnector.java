@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -55,12 +56,12 @@ public abstract class WrappedCommandBusConnector implements CommandBusConnector,
     }
 
     @Override
-    public void subscribe(@Nonnull String commandName, int loadFactor) {
+    public void subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
         delegate.subscribe(commandName, loadFactor);
     }
 
     @Override
-    public boolean unsubscribe(@Nonnull String commandName) {
+    public boolean unsubscribe(@Nonnull QualifiedName commandName) {
         return delegate.unsubscribe(commandName);
     }
 
