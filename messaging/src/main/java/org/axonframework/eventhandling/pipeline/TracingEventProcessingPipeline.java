@@ -59,17 +59,14 @@ public class TracingEventProcessingPipeline implements EventProcessingPipeline {
 
     @Override
     public MessageStream.Empty<Message<Void>> process(
-            List<EventProcessingPipeline.Item> items,
+            List<? extends EventMessage<?>> events,
             ProcessingContext context,
             Segment segment
     ) {
-        var events = items.stream()
-                .map(EventProcessingPipeline.Item::event)
-                .toList();
         Span span = spanProvider.apply(events);
         span.start();
         try (SpanScope ignored = span.makeCurrent()) { // works as long as the MessageStream doesn't change threads
-            return next.process(items, context, segment)
+            return next.process(events, context, segment)
                        .whenComplete(span::end)
                        .onErrorContinue(ex -> {
                            span.recordException(ex);
