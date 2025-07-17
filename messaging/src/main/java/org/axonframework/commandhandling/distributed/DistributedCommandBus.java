@@ -141,13 +141,13 @@ public class DistributedCommandBus implements CommandBus {
         private void handleError(CommandMessage<?> commandMessage, CommandBusConnector.ResultCallback callback,
                                  Throwable e) {
             logger.error("Error processing incoming command [{}]", commandMessage.type(), e);
-            callback.error(e);
+            callback.onError(e);
         }
 
         private void handleSuccess(CommandMessage<?> commandMessage, CommandBusConnector.ResultCallback callback,
                                    CommandResultMessage<?> resultMessage) {
             logger.debug("Successfully processed command [{}] with result [{}]", commandMessage.type(), resultMessage);
-            callback.success(resultMessage);
+            callback.onSuccess(resultMessage);
         }
     }
 }

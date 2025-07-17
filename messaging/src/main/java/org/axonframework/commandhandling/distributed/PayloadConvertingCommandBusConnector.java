@@ -88,17 +88,17 @@ public class PayloadConvertingCommandBusConnector<T> extends WrappedCommandBusCo
         }
 
         @Override
-        public void success(Message<?> resultMessage) {
+        public void onSuccess(Message<?> resultMessage) {
             if(resultMessage == null || resultMessage.getPayload() == null) {
-                callback.success(resultMessage);
+                callback.onSuccess(resultMessage);
                 return;
             }
-            callback.success(resultMessage.withConvertedPayload(c -> converter.convert(c, representation)));
+            callback.onSuccess(resultMessage.withConvertedPayload(c -> converter.convert(c, representation)));
         }
 
         @Override
-        public void error(@Nonnull Throwable cause) {
-            callback.error(cause);
+        public void onError(@Nonnull Throwable cause) {
+            callback.onError(cause);
         }
     }
 }

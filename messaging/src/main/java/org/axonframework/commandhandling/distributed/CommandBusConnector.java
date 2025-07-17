@@ -104,13 +104,13 @@ public interface CommandBusConnector {
          * @param resultMessage The result message containing the outcome of the command processing. If the message
          *                      handling yielded no result message, a {@code null} should be passed.
          */
-        void success(@Nullable Message<?> resultMessage);
+        void onSuccess(@Nullable Message<?> resultMessage);
 
         /**
          * Called when an error occurs during command processing.
          *
          * @param cause The exception that caused the error.
          */
-        void error(@Nonnull Throwable cause);
+        void onError(@Nonnull Throwable cause);
     }
 }

@@ -283,13 +283,13 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         }
 
         @Override
-        public void success(Message<?> resultMessage) {
+        public void onSuccess(Message<?> resultMessage) {
             logger.info("Command [{}] completed successfully with result [{}]", command.getName(), resultMessage);
             result.complete(createResult(command, resultMessage));
         }
 
         @Override
-        public void error(@Nonnull Throwable cause) {
+        public void onError(@Nonnull Throwable cause) {
 
             result.completeExceptionally(cause);
         }

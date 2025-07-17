@@ -82,7 +82,7 @@ class DistributedCommandBusTest {
         connector.handler.get().handle(testCommand, mockCallback);
 
         await().untilAsserted(() -> {
-            verify(mockCallback).error(isA(NoHandlerForCommandException.class));
+            verify(mockCallback).onError(isA(NoHandlerForCommandException.class));
         });
     }
 
@@ -96,7 +96,7 @@ class DistributedCommandBusTest {
         CommandBusConnector.ResultCallback mockCallback = mock();
         connector.handler.get().handle(testCommand, mockCallback);
         await().untilAsserted(() -> {
-            verify(mockCallback).success(same(resultMessage));
+            verify(mockCallback).onSuccess(same(resultMessage));
         });
 
     }
