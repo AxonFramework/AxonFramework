@@ -247,7 +247,7 @@ public class JacksonSerializer implements Serializer {
                 return getReader(type)
                         .readValue((JsonNode) serializedObject.getData());
             }
-            SerializedObject<byte[]> byteSerialized = converter.convert(serializedObject, byte[].class);
+            SerializedObject<byte[]> byteSerialized = converter.convertSerializedObject(serializedObject, byte[].class);
             return getReader(type).readValue(byteSerialized.getData());
         } catch (IOException e) {
             throw new SerializationException("Error while deserializing object", e);

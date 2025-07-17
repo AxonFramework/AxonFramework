@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.util;
 
+import org.axonframework.util.PriorityTask;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
@@ -33,13 +34,13 @@ public interface PriorityTaskSchedulers {
 
     /**
      * Creates a {@link Scheduler} that is compatible with an {@link ExecutorService} that needs tasks that are
-     * submitted to be a {@link org.axonframework.axonserver.connector.PriorityTask} so that they can be prioritized.
+     * submitted to be a {@link PriorityTask} so that they can be prioritized.
      *
      * @param delegate     The delegate {@link ExecutorService} to use when submitting tasks.
      * @param priority     The priority that any tasks submitted to the delegate will have.
      * @param taskSequence The task sequence used for ordering items with the same priority.
      * @return The {@link Scheduler} object that is compatible with
-     * {@link org.axonframework.axonserver.connector.PriorityTask}.
+     * {@link PriorityTask}.
      * @see PriorityExecutorService
      */
     static Scheduler forPriority(ExecutorService delegate, long priority, AtomicLong taskSequence) {
