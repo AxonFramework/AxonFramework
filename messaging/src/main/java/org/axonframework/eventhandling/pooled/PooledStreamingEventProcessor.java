@@ -35,7 +35,6 @@ import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.SegmentMatcher;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
@@ -61,7 +60,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -141,7 +139,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     protected PooledStreamingEventProcessor(Builder builder) {
         builder.validate();
         var eventHandlingComponent = builder.eventHandlingComponent();
-        var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
         this.messageMonitor = builder.messageMonitor();
         this.messageHandlerInterceptors = new MessageHandlerInterceptors();
         this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
@@ -150,14 +147,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                 builder.errorHandler(),
                 messageMonitor,
                 builder.spanFactory(),
-                segmentMatcher,
                 messageHandlerInterceptors,
                 true
         );
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 builder.name(),
                 eventHandlingComponent,
-                segmentMatcher,
                 builder.errorHandler()
         );
         this.name = builder.name();

@@ -27,6 +27,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Default implementation of a {@link WorkPackage.EventFilter} that filters events based on the
@@ -47,12 +48,11 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
     DefaultWorkPackageEventFilter(
             @Nonnull String eventProcessor,
             @Nonnull EventHandlingComponent eventHandlingComponent,
-            @Nonnull SegmentMatcher segmentMatcher,
             @Nonnull ErrorHandler errorHandler
     ) {
         this.eventProcessor = Objects.requireNonNull(eventProcessor, "EventProcessor name may not be null");
         this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
-        this.segmentMatcher = Objects.requireNonNull(segmentMatcher, "SegmentMatcher may not be null");
+        this.segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
         this.errorHandler = Objects.requireNonNull(errorHandler, "ErrorHandler may not be null");
     }
 
