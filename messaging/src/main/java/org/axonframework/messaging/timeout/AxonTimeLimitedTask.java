@@ -27,10 +27,12 @@ import java.util.concurrent.TimeUnit;
  * until the timeout is reached. All times are in milliseconds.
  * <p>
  * Warning logging will include the task's name, the current time taken by the task and its remaining time to execute.
- * The stack trace of the thread handling the message will also be included in the log, up to the point where the task was started.
+ * The stack trace of the thread handling the message will also be included in the log, up to the point where the task
+ * was started.
  * <p>
- * Once the {@code timeout} is reached, a message will be logged with the current stack trace of the thread handling the message,
- * and the thread will be interrupted. If the task is completed before the timeout, the task should be marked as completed.
+ * Once the {@code timeout} is reached, a message will be logged with the current stack trace of the thread handling the
+ * message, and the thread will be interrupted. If the task is completed before the timeout, the task should be marked
+ * as completed.
  *
  * @author Mitchell Herrijgers
  * @since 4.11.0
@@ -104,7 +106,7 @@ class AxonTimeLimitedTask {
                                int warningInterval,
                                ScheduledExecutorService scheduledExecutorService,
                                Logger logger) {
-        if(taskName == null || taskName.isEmpty()) {
+        if (taskName == null || taskName.isEmpty()) {
             throw new IllegalArgumentException("Task name cannot be null or empty");
         }
         this.taskName = taskName;
@@ -118,8 +120,10 @@ class AxonTimeLimitedTask {
 
     /**
      * Starts the task, scheduling the first warning or immediate interrupt. Once the task is completed, the
-     * {@link #complete()} method should be called.
-     * Once started, the task cannot be started again.
+     * {@link #complete()} method should be called. At completion, the caller should also call
+     * {@link #ensureNoInterruptionWasSwallowed()} to ensure that any swallowed interruptions are properly handled. In
+     * addition, any exceptions thrown during the handling of the message should be passed to
+     * {@link #detectInterruptionInsteadOfException(Exception)} to ensure that the proper error status is restored.
      */
     public void start() {
         if (startTimeMs != -1) {
@@ -154,10 +158,11 @@ class AxonTimeLimitedTask {
      * exception might have been caught and swallowed by a lower component. This happens, for example, by the
      * {@link org.axonframework.eventhandling.LoggingErrorHandler} , which is the default in event processors.
      * <p>
-     * This function checks if the task was interrupted, and if so, it throws a {@link AxonTimeoutException} to indicate
-     * that the processing was aborted due to a timeout. If the task was not interrupted, it checks if the thread was
-     * interrupted. If it was, it throws an {@link InterruptedException} to indicate that the processing was aborted due
-     * to an interrupt. This effectively restores the proper error status, so upper components can handle it.
+     * This function checks if the task was interrupted, and if so, it throws an {@link AxonTimeoutException} to
+     * indicate that the processing was aborted due to a timeout. If the task was not interrupted, it checks if the
+     * thread was interrupted. If it was, it throws an {@link InterruptedException} to indicate that the processing was
+     * aborted due to an interrupt. This effectively restores the proper error status, so upper components can handle
+     * it.
      */
     public void ensureNoInterruptionWasSwallowed() throws InterruptedException {
         if (isInterrupted()) {
@@ -180,11 +185,11 @@ class AxonTimeLimitedTask {
     /**
      * If an exception is thrown during the handling of the message and it bubbles up, we check if the thread was
      * interrupted. If it was, we check if the task was interrupted as well. If both hold true, that must mean the
-     * exception was caused by the interruption of the task, and we throw a {@link AxonTimeoutException} to indicate that
-     * the processing was aborted due to a timeout. If the thread was not interrupted, we simply return the original
-     * exception.
+     * exception was caused by the interruption of the task, and we throw an {@link AxonTimeoutException} to indicate
+     * that the processing was aborted due to a timeout. If the thread was not interrupted, we simply return the
+     * original exception.
      * <p>
-     * This might happen is someone catches the {@link InterruptedException} and wraps it using a different exception,
+     * This might happen if someone catches the {@link InterruptedException} and wraps it using a different exception,
      * or throws a different exception altogether.
      * <p>
      * Creators of this task should use this method in their catch block to ensure that the exception is properly

@@ -102,9 +102,16 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
 
     private static void completeSafely(AxonTimeLimitedTask task, UnitOfWork<? extends Message<?>> u) {
         try {
-            task.ensureNoInterruptionWasSwallowed();
-            task.complete();
+            try {
+                task.ensureNoInterruptionWasSwallowed();
+                task.complete();
+            } catch (Exception e) {
+                throw task.detectInterruptionInsteadOfException(e);
+            }
         } catch (Exception e) {
+            if(e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
             throw new RuntimeException(e);
         }
     }
