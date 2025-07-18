@@ -18,15 +18,20 @@ package org.axonframework.spring.authorization;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 
-import javax.annotation.Nonnull;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 /**
  * A {@link MessageDispatchInterceptor} that adds the {$code username} and {$code authorities} from the authorized
@@ -39,6 +44,18 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> imple
 
     private static final Logger logger = LoggerFactory.getLogger(MessageAuthorizationDispatchInterceptor.class);
 
+    private final Serializer serializer;
+
+    /**
+     * Constructs a {@code MessageAuthorizationDispatchInterceptor} with the given {@code serializer}.
+     *
+     * @param serializer The serializer used to serialize the {@link Authentication#getPrincipal()} to a
+     *                   {@code String}.
+     */
+    public MessageAuthorizationDispatchInterceptor(Serializer serializer) {
+        this.serializer = serializer;
+    }
+
     @Nonnull
     @Override
     public T handle(@Nonnull T message) {
@@ -49,9 +66,17 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> imple
         }
 
         logger.debug("Adding message metadata for username & authorities.");
-        Map<String, Object> authenticationDetails = new java.util.HashMap<>();
-        authenticationDetails.put("username", authentication.getPrincipal());
-        authenticationDetails.put("authorities", authentication.getAuthorities());
+        Map<String, String> authenticationDetails = new HashMap<>();
+        authenticationDetails.put(
+                "username",
+                serializer.serialize(((User) authentication.getPrincipal()).getUsername(), String.class)
+                          .getData()
+        );
+        String authorities = authentication.getAuthorities()
+                                           .stream()
+                                           .map(GrantedAuthority::getAuthority)
+                                           .collect(Collectors.joining(","));
+        authenticationDetails.put("authorities", authorities);
         //noinspection unchecked
         return (T) message.andMetaData(authenticationDetails);
     }
