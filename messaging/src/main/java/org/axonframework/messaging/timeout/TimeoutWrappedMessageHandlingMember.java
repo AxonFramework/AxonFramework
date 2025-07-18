@@ -65,19 +65,21 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
         String taskName = String.format("Message [%s] for handler [%s]",
                                         message.getPayloadType().getName(),
                                         target != null ? target.getClass().getName() : null);
-        AxonTimeLimitedTask taskTimeout = new AxonTimeLimitedTask(
+        AxonTimeLimitedTask task = new AxonTimeLimitedTask(
                 taskName,
                 timeout,
                 warningThreshold,
                 warningInterval
         );
-        taskTimeout.start();
+        task.start();
         try {
-            return super.handle(message, target);
-        } catch (InterruptedException e) {
-            throw new TimeoutException(String.format("%s has timed out", taskName));
+            Object result = super.handle(message, target);
+            task.ensureNoInterruptionWasSwallowed();
+            return result;
+        } catch (Exception e) {
+            throw task.detectInterruptionInsteadOfException(e);
         } finally {
-            taskTimeout.complete();
+            task.complete();
         }
     }
 
