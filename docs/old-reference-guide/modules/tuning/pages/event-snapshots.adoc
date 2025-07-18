@@ -51,18 +51,23 @@ The `AggregateSnapshotter` provides one more property:
  Both provide the factory through the `EventSourcingRepository#getAggregateFactory` and `AggregateConfiguration#aggregateFactory` methods respectively.
  The result from either can be used to configure the same aggregate factories in the `Snapshotter` as the ones used by the Aggregate.
 
-____
+=== Snapshotter Configuration
 
-*Snapshotter Configuration*
+==== Executor
 
 If you use an executor that executes snapshot creation in another thread, make sure you configure the correct transaction management for your underlying event store, if necessary.
+
+==== Default Snapshotter
 
 For both non-Spring and Spring users a default `Snapshotter` is provided.
 The former uses the Configuration API to provide a default `AggregateSnapshotter`, retrieving the aggregate factories from the registered Aggregates / `AggregateConfiguration`s.
 Spring uses a `SpringAggregateSnapshotter`, which will automatically looks up the right `AggregateFactory` instances from the application context when a snapshot needs to be created.
 
+==== Revision-based snapshot filter
+
 The `@Revision` annotation has a dedicated, automatically configured `SnapshotFilter` implementation. This implementation is used to filter out non-matching snapshots from the `Repository`'s loading process.
 So when the `@Revision` annotation is used on an aggregate the snapshots will be filtered out automatically. When the`@Revision` on an aggregate is missing a `RevisionSnapshotFilter` is configured for revision `null`.
+For more details on snapshot filtering, please read xref:_filtering_snapshot_events[here]
 
 ____
 
