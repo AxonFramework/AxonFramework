@@ -69,9 +69,11 @@ The `@Revision` annotation has a dedicated, automatically configured `SnapshotFi
 So when the `@Revision` annotation is used on an aggregate the snapshots will be filtered out automatically. When the`@Revision` on an aggregate is missing a `RevisionSnapshotFilter` is configured for revision `null`.
 For more details on snapshot filtering, please read xref:_filtering_snapshot_events[here]
 
-____
-
-==== Axon Configuration API
+[tabs]
+====
+Axon Configuration API::
++
+--
 
 [source,java]
 ----
@@ -83,8 +85,11 @@ AggregateConfigurer<GiftCard> giftCardConfigurer =
 Configurer configurer = DefaultConfigurer.defaultConfiguration()
                                          .configureAggregate(giftCardConfigurer);
 ----
+--
 
-==== Spring Boot auto configuration
+Spring Boot auto configuration::
++
+--
 It is possible to define a custom `SnapshotTriggerDefinition` for an aggregate as a Spring bean.
 In order to tie the `SnapshotTriggerDefinition` bean to an aggregate, use the `snapshotTriggerDefinition` attribute on `@Aggregate` annotation.
 Listing below shows how to define a custom `EventCountSnapshotTriggerDefinition` which will take a snapshot every 500 events.
@@ -104,6 +109,8 @@ public SnapshotTriggerDefinition giftCardSnapshotTrigger(Snapshotter snapshotter
 @Aggregate(snapshotTriggerDefinition = "giftCardSnapshotTrigger")
 public class GiftCard {...}
 ----
+--
+====
 
 === Storing snapshot events
 
@@ -145,7 +152,11 @@ The latter allows combining several `SnapshotFilter`s together.
 
 The following snippets show how to configure a `SnapshotFilter`:
 
-==== Axon Configuration API
+[tabs]
+====
+Axon Configuration API::
++
+--
 
 [source,java]
 ----
@@ -157,8 +168,11 @@ AggregateConfigurer<GiftCard> giftCardConfigurer =
 Configurer configurer = DefaultConfigurer.defaultConfiguration()
                                          .configureAggregate(giftCardConfigurer);
 ----
+--
 
-==== Spring Boot auto configuration
+Spring Boot auto configuration::
++
+--
 It is possible to define a custom `SnapshotFilter` for an aggregate as a Spring bean.
 In order to tie the `SnapshotFilter` bean to an aggregate, use the `snapshotFilter` attribute on `@Aggregate` annotation. 
 
@@ -174,6 +188,8 @@ public SnapshotFilter giftCardSnapshotFilter() {
 @Aggregate(snapshotFilter = "giftCardSnapshotFilter")
 public class GiftCard {...}
 ----
+--
+====
 
 The above snippet would be feasible to follow _if_ fine-grained control is required when filtering snapshots from the store.
 For example, when your snapshots are not based on the Aggregate class (which is the default).
