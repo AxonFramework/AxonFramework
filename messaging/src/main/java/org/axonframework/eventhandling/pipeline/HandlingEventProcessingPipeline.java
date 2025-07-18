@@ -31,7 +31,10 @@ import java.util.Objects;
  * iterates over the provided events and handles each one using the given component. This should be the last step in the
  * event processing pipeline, as it directly handles the events.
  *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public class HandlingEventProcessingPipeline implements EventProcessingPipeline {
@@ -39,7 +42,7 @@ public class HandlingEventProcessingPipeline implements EventProcessingPipeline 
     private final EventHandlingComponent eventHandlingComponent;
 
     /**
-     * Creates a new {@link HandlingEventProcessingPipeline} that processes events using the given
+     * Constructs a new pipeline that processes events using the given
      * {@link EventHandlingComponent}.
      *
      * @param eventHandlingComponent The component to handle events.

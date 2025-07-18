@@ -30,7 +30,10 @@ import java.util.Objects;
  * It delegates the actual event handling to another {@link EventHandlingComponent} while monitoring the events
  * processed.
  *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public class MonitoringEventHandlingComponent extends DelegatingEventHandlingComponent {
@@ -38,7 +41,7 @@ public class MonitoringEventHandlingComponent extends DelegatingEventHandlingCom
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
 
     /**
-     * Constructs the DelegatingEventHandlingComponent with given {@code delegate} to receive calls.
+     * Constructs the component with given {@code delegate} to receive calls.
      *
      * @param delegate The instance to delegate calls to.
      * @param messageMonitor The {@link MessageMonitor} to monitor the events processed by this component.

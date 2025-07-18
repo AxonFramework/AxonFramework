@@ -34,7 +34,10 @@ import java.util.Objects;
  * If an error occurs during the processing of events, it will call the provided {@link ErrorHandler} with an
  * {@link ErrorContext} containing the name of the event processor, the exception, and the events being processed.
  *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public class ErrorHandlingEventProcessingPipeline implements EventProcessingPipeline {
@@ -44,8 +47,8 @@ public class ErrorHandlingEventProcessingPipeline implements EventProcessingPipe
     private final ErrorHandler errorHandler;
 
     /**
-     * Constructs an {@link ErrorHandlingEventProcessingPipeline} with the given {@code next} pipeline,
-     * {@code eventProcessor} name, and {@code errorHandler}.
+     * Constructs the pipeline with the given {@code next} pipeline, {@code eventProcessor} name, and
+     * {@code errorHandler}.
      *
      * @param next           The next {@link EventProcessingPipeline} to delegate to.
      * @param eventProcessor The name of the event processor.

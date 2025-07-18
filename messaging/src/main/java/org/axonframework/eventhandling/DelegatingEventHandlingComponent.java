@@ -28,7 +28,10 @@ import java.util.Set;
 /**
  * Abstract implementation of an EventHandlingComponent that delegates calls to a given delegate.
  *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public abstract class DelegatingEventHandlingComponent implements EventHandlingComponent {
@@ -36,7 +39,7 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     protected final EventHandlingComponent delegate;
 
     /**
-     * Constructs the DelegatingEventHandlingComponent with given {@code delegate} to receive calls.
+     * Constructs the component with given {@code delegate} to receive calls.
      *
      * @param delegate The instance to delegate calls to.
      */

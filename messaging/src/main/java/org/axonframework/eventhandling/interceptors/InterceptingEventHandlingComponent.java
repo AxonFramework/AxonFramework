@@ -28,11 +28,14 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Objects;
 
 /**
- * An EventHandlingComponent implementation that supports intercepting event handling through
- * MessageHandlerInterceptors. This component delegates actual event handling to another EventHandlingComponent while
+ * An {@link EventHandlingComponent} implementation that supports intercepting event handling through
+ * MessageHandlerInterceptors. This component delegates actual event handling to another {@link EventHandlingComponent} while
  * applying configured interceptors to the message handling process.
  *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public class InterceptingEventHandlingComponent extends DelegatingEventHandlingComponent {
@@ -40,7 +43,7 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
     private final MessageHandlerInterceptors messageHandlerInterceptors;
 
     /**
-     * Constructs an InterceptingEventHandlingComponent with the given delegate and interceptors.
+     * Constructs the component with the given delegate and interceptors.
      *
      * @param delegate     The EventHandlingComponent to delegate to.
      * @param messageHandlerInterceptors The list of interceptors to initialize with.

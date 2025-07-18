@@ -32,7 +32,10 @@ import java.util.function.Function;
  * It delegates the actual event handling to another {@link EventHandlingComponent} while tracking the events
  * processed.
  *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public class TracingEventHandlingComponent extends DelegatingEventHandlingComponent {
@@ -40,7 +43,7 @@ public class TracingEventHandlingComponent extends DelegatingEventHandlingCompon
     private final Function<EventMessage<?>, Span> spanProvider;
 
     /**
-     * Constructs the DelegatingEventHandlingComponent with given {@code delegate} to receive calls.
+     * Constructs the component with given {@code delegate} to receive calls.
      *
      * @param delegate     The instance to delegate calls to.
      * @param spanProvider The provider of {@link Span} to track the event handling.

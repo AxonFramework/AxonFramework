@@ -33,7 +33,10 @@ import java.util.function.Function;
  * <p>
  * It delegates the actual event processing to another {@link EventProcessingPipeline} while tracking the event batch.
  *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public class TracingEventProcessingPipeline implements EventProcessingPipeline {
@@ -42,7 +45,7 @@ public class TracingEventProcessingPipeline implements EventProcessingPipeline {
     private final Function<List<? extends EventMessage<?>>, Span> spanProvider;
 
     /**
-     * Constructs the {@link TracingEventProcessingPipeline} with given {@code next} pipeline to delegate calls to and a
+     * Constructs the pipeline with given {@code next} pipeline to delegate calls to and a
      * {@code spanProvider} to create spans for the event batch.
      *
      * @param next         The instance to delegate calls to.
