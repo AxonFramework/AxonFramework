@@ -22,7 +22,7 @@ Moreover, upcasters are processed in a chain, meaning that the output of one upc
 This allows you to update events in an incremental manner, writing an upcaster for each new event revision, making them small, isolated, and easy to understand.
 
 [TIP]
-.Benefits if Upcasters
+.Benefits of Upcasters
 ====
 Perhaps the greatest benefit of upcasting is that it allows you to do non-destructive refactoring.
 In other words, the complete event history remains intact.
@@ -65,6 +65,7 @@ During upcasting it is important to note what the format is of the `Intermediate
 To validate if the intermediate representation supports a given type, you can invoke `IntermediateEventRepresentation#canConvertDataTo(Class<?>)`.
 ====
 
+[#provided_abstract_upcaster_implementations]
 === Provided abstract Upcaster implementations
 
 As described earlier, the `Upcaster` interface does not upcast a single event; it requires a `Stream<IntermediateEventRepresentation>` and returns one.
