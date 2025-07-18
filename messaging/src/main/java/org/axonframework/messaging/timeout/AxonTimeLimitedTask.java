@@ -142,7 +142,7 @@ class AxonTimeLimitedTask {
     /**
      * Marks the task as completed. Cancels the current future warning or interrupt if any exists.
      */
-    public void complete() throws InterruptedException {
+    public void complete() {
         completed = true;
         if (currentScheduledFuture != null) {
             currentScheduledFuture.cancel(false);
