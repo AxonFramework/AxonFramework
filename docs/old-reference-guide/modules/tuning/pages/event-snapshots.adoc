@@ -195,6 +195,14 @@ The above snippet would be feasible to follow _if_ fine-grained control is requi
 For example, when your snapshots are not based on the Aggregate class (which is the default).
 When this is not required, you can base yourself on the default `SnapshotFilter` - the `RevisionSnapshotFilter`.
 
+[WARNING]
+====
+If you have defined an xref:events:event-versioning.adoc#upcasting_snapshots[upcaster] for your snapshots, you must define the revision of the snapshots as well. As described, any use of the `@Revision` annotation automatically results in a `RevisionSnapshotFilter`.
+
+Any `SnapshotFilter` present will impact the snapshot events given to your upcasters!
+Hence, it is advised to override the default `SnapshotFilter` to a no-op entry when you prefer to upcast your snapshots instead.
+====
+
 To configure this `SnapshotFilter`, all you have to do is use the `@Revision` annotation on your Aggregate class.
 In doing so, the `RevisionSnapshotFilter` is set, filtering non-matching snapshots from the `Repository`'s loading process, based on the value maintained within the `@Revision` annotation.
 
