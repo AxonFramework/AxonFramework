@@ -104,9 +104,10 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
     public Object handle(@Nonnull UnitOfWork<? extends Message<?>> unitOfWork,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         UnitOfWork<?> root = unitOfWork.root();
+        String taskName = "UnitOfWork of " + componentName;
         if (!root.resources().containsKey(TRANSACTION_TIME_LIMIT_RESOURCE_KEY)) {
             AxonTimeLimitedTask taskTimeout = new AxonTimeLimitedTask(
-                    "UnitOfWork of " + componentName,
+                    taskName,
                     timeout,
                     warningThreshold,
                     warningInterval,
@@ -115,10 +116,33 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
             );
             root.resources().put(TRANSACTION_TIME_LIMIT_RESOURCE_KEY, taskTimeout);
             taskTimeout.start();
-            unitOfWork.afterCommit(u -> taskTimeout.complete());
+            unitOfWork.afterCommit(u -> completeSafely(taskTimeout));
             unitOfWork.onRollback(u -> taskTimeout.complete());
         }
 
-        return interceptorChain.proceed();
+        AxonTimeLimitedTask task = (AxonTimeLimitedTask) root.resources().get(TRANSACTION_TIME_LIMIT_RESOURCE_KEY);
+        try {
+            Object proceed = interceptorChain.proceed();
+            task.ensureNoInterruptionWasSwallowed();
+            return proceed;
+        } catch (Exception e) {
+            throw task.detectInterruptionInsteadOfException(e);
+        }
+    }
+
+    private static void completeSafely(AxonTimeLimitedTask task) {
+        try {
+            try {
+                task.ensureNoInterruptionWasSwallowed();
+                task.complete();
+            } catch (Exception e) {
+                throw task.detectInterruptionInsteadOfException(e);
+            }
+        } catch (Exception e) {
+            if(e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
+            throw new RuntimeException(e);
+        }
     }
 }

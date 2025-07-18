@@ -23,8 +23,6 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.junit.jupiter.api.*;
 
-import java.util.concurrent.TimeoutException;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class TimeoutWrappedMessageHandlingMemberTest {
@@ -50,7 +48,7 @@ class TimeoutWrappedMessageHandlingMemberTest {
                 original, 300, 200, 50
         );
 
-        assertThrows(TimeoutException.class,
+        assertThrows(AxonTimeoutException.class,
                      () -> wrappedHandler.handle(GenericEventMessage.asEventMessage("my-message"),
                                                  new TestMessageHandler()));
     }
