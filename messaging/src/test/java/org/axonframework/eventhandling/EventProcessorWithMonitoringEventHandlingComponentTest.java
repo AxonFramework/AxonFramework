@@ -156,7 +156,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) {
             var unitOfWork = UNIT_OF_WORK_FACTORY.create();
             unitOfWork.executeWithResult(ctx -> eventProcessingPipeline.process(
-                    eventMessages, ctx, Segment.ROOT_SEGMENT).asCompletableFuture()
+                    eventMessages, ctx).asCompletableFuture()
             ).join();
         }
 

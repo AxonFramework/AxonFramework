@@ -166,9 +166,8 @@ public class SubscribingEventProcessor implements EventProcessor {
             FutureUtils.joinAndUnwrap(
                     unitOfWork.executeWithResult(processingContext -> eventProcessingPipeline.process(
                                                                                                      eventMessages,
-                                                                                                     processingContext,
-                                                                                                     Segment.ROOT_SEGMENT)
-                                                                                             .asCompletableFuture())
+                                                                                                     processingContext
+                            ).asCompletableFuture())
             );
         } catch (RuntimeException e) {
             throw e;

@@ -434,7 +434,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> eventProcessingPipeline.process(events, ctx, s)
+        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> eventProcessingPipeline.process(events, ctx)
                                                                                                .asCompletableFuture();
         return WorkPackage.builder()
                           .name(name)

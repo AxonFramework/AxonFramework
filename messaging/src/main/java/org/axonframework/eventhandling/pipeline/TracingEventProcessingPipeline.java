@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.pipeline;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -60,13 +59,12 @@ public class TracingEventProcessingPipeline implements EventProcessingPipeline {
     @Override
     public MessageStream.Empty<Message<Void>> process(
             List<? extends EventMessage<?>> events,
-            ProcessingContext context,
-            Segment segment
+            ProcessingContext context
     ) {
         Span span = spanProvider.apply(events);
         span.start();
         try (SpanScope ignored = span.makeCurrent()) { // works as long as the MessageStream doesn't change threads
-            return next.process(events, context, segment)
+            return next.process(events, context)
                        .whenComplete(span::end)
                        .onErrorContinue(ex -> {
                            span.recordException(ex);

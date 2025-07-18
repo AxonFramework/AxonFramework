@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.pipeline;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -51,7 +50,7 @@ public class HandlingEventProcessingPipeline implements EventProcessingPipeline 
     }
 
     @Override
-    public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context, Segment segment) {
+    public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context) {
         MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
         for (var event : events) {
             var eventResult = eventHandlingComponent.handle(event, context);
