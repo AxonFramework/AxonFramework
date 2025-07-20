@@ -87,7 +87,7 @@ import static org.axonframework.config.EventProcessingConfigurer.PooledStreaming
  * @author Milan Savic
  * @since 4.0
  */
-public class EventProcessingModule
+public class LegacyEventProcessingModule
         implements ModuleConfiguration, EventProcessingConfiguration, EventProcessingConfigurer {
 
     private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
@@ -105,7 +105,7 @@ public class EventProcessingModule
     private TypeProcessingGroupSelector typeFallback =
             TypeProcessingGroupSelector.defaultSelector(DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION);
     private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(
-            EventProcessingModule::packageOfObject);
+            LegacyEventProcessingModule::packageOfObject);
 
     private final Map<String, SagaConfigurer<?>> sagaConfigurations = new HashMap<>();
     private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
