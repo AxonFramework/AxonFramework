@@ -88,7 +88,7 @@ class SagaConfigurerTest {
         SagaStore<Object> sagaStore = new InMemorySagaStore();
         String processingGroup = "myProcessingGroup";
 
-        EventProcessingModule eventProcessingModule = new EventProcessingModule();
+        LegacyEventProcessingModule eventProcessingModule = new LegacyEventProcessingModule();
         eventProcessingModule.registerSaga(Object.class, sc -> sc.configureSagaStore(c -> sagaStore)
                                                                  .configureRepository(c -> repository)
                                                                  .configureSagaManager(c -> manager));
@@ -117,7 +117,7 @@ class SagaConfigurerTest {
                                         .storageEngine(new LegacyInMemoryEventStorageEngine())
                                         .build();
         SagaStore<Object> sagaStore = new InMemorySagaStore();
-        EventProcessingModule eventProcessingModule = new EventProcessingModule();
+        LegacyEventProcessingModule eventProcessingModule = new LegacyEventProcessingModule();
         eventProcessingModule
                 .registerSaga(TestSaga.class)
                 .registerSaga(TestSaga.class, sc -> sc.configureSagaStore(c -> sagaStore))

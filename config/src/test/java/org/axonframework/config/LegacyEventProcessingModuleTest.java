@@ -94,12 +94,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link EventProcessingModule}.
+ * Test class validating the {@link LegacyEventProcessingModule}.
  *
  * @author Allard Buijze
  */
 @ExtendWith(MockitoExtension.class)
-class EventProcessingModuleTest {
+class LegacyEventProcessingModuleTest {
 
     private LegacyEventStore eventStoreOne;
     private LegacyEventStore eventStoreTwo;
@@ -598,8 +598,8 @@ class EventProcessingModuleTest {
 
     @Test
     void packageOfObject() {
-        String expectedPackageName = EventProcessingModule.class.getPackage().getName();
-        assertEquals(expectedPackageName, EventProcessingModule.packageOfObject(this));
+        String expectedPackageName = LegacyEventProcessingModule.class.getPackage().getName();
+        assertEquals(expectedPackageName, LegacyEventProcessingModule.packageOfObject(this));
     }
 
     @Test

@@ -21,7 +21,7 @@ import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.config.EventProcessingConfiguration;
-import org.axonframework.config.EventProcessingModule;
+import org.axonframework.config.LegacyEventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -34,8 +34,8 @@ import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jdbc.JdbcSagaStore;
@@ -195,7 +195,7 @@ public class JdbcAutoConfigurationTest {
                    .run(context -> {
                        assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
 
-                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+                       LegacyEventProcessingModule eventProcessingConfig = context.getBean(LegacyEventProcessingModule.class);
                        assertNotNull(eventProcessingConfig);
 
                        Optional<SequencedDeadLetterQueue<EventMessage<?>>> dlq =
@@ -215,7 +215,7 @@ public class JdbcAutoConfigurationTest {
                        assertNotNull(context.getBean("deadLetterQueueProviderConfigurerModule",
                                                      DeadLetterQueueProviderConfigurerModule.class));
 
-                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+                       LegacyEventProcessingModule eventProcessingConfig = context.getBean(LegacyEventProcessingModule.class);
                        assertNotNull(eventProcessingConfig);
 
                        Optional<SequencedDeadLetterQueue<EventMessage<?>>> dlq =
