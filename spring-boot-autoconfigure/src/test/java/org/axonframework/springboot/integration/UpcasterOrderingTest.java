@@ -17,7 +17,7 @@
 package org.axonframework.springboot.integration;
 
 import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.EventProcessingModule;
+import org.axonframework.config.LegacyEventProcessingModule;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
@@ -79,8 +79,8 @@ class UpcasterOrderingTest {
         // Normally constructed through Spring Boot autoconfig.
         // As this is the plain Spring module, we need to construct it ourselves.
         @Bean
-        public EventProcessingModule eventProcessingModule() {
-            return new EventProcessingModule();
+        public LegacyEventProcessingModule eventProcessingModule() {
+            return new LegacyEventProcessingModule();
         }
 
         @SuppressWarnings({"unused", "RedundantStreamOptionalCall", "ResultOfMethodCallIgnored", "DataFlowIssue"})

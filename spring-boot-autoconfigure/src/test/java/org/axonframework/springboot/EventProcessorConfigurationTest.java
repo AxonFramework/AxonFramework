@@ -17,7 +17,7 @@
 package org.axonframework.springboot;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.config.EventProcessingModule;
+import org.axonframework.config.LegacyEventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventProcessor;
@@ -63,8 +63,8 @@ class EventProcessorConfigurationTest {
                         "axon.eventhandling.processors.first.sequencingPolicy=customPolicy"
                 )
                 .run(context -> {
-                    assertThat(context).hasSingleBean(EventProcessingModule.class);
-                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+                    assertThat(context).hasSingleBean(LegacyEventProcessingModule.class);
+                    LegacyEventProcessingModule eventProcessingConfig = context.getBean(LegacyEventProcessingModule.class);
 
                     Map<String, EventProcessor> processors = eventProcessingConfig.eventProcessors();
                     assertEquals(3, processors.size());
@@ -106,8 +106,8 @@ class EventProcessorConfigurationTest {
                         "axon.eventhandling.processors.non_default_token_claim_interval.tokenClaimIntervalTimeUnit=MINUTES"
                 )
                 .run(context -> {
-                    assertThat(context).hasSingleBean(EventProcessingModule.class);
-                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+                    assertThat(context).hasSingleBean(LegacyEventProcessingModule.class);
+                    LegacyEventProcessingModule eventProcessingConfig = context.getBean(LegacyEventProcessingModule.class);
 
                     Map<String, EventProcessor> processors = eventProcessingConfig.eventProcessors();
                     assertEquals(3, processors.size());
@@ -138,8 +138,8 @@ class EventProcessorConfigurationTest {
                         "axon.eventhandling.processors.second.batchSize=1024"
                 )
                 .run(context -> {
-                    assertThat(context).hasSingleBean(EventProcessingModule.class);
-                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+                    assertThat(context).hasSingleBean(LegacyEventProcessingModule.class);
+                    LegacyEventProcessingModule eventProcessingConfig = context.getBean(LegacyEventProcessingModule.class);
 
                     Map<String, EventProcessor> processors = eventProcessingConfig.eventProcessors();
                     assertEquals(3, processors.size());
@@ -173,8 +173,8 @@ class EventProcessorConfigurationTest {
                         "axon.eventhandling.processors.first.dlq.enabled=true"
                 )
                 .run(context -> {
-                    assertThat(context).hasSingleBean(EventProcessingModule.class);
-                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+                    assertThat(context).hasSingleBean(LegacyEventProcessingModule.class);
+                    LegacyEventProcessingModule eventProcessingConfig = context.getBean(LegacyEventProcessingModule.class);
 
                     assertTrue(eventProcessingConfig.deadLetterQueue("first").isPresent());
                     assertFalse(eventProcessingConfig.deadLetterQueue("second").isPresent());
@@ -192,8 +192,8 @@ class EventProcessorConfigurationTest {
                         "axon.eventhandling.processors.first.dlq.cache.size=10"
                 )
                 .run(context -> {
-                    assertThat(context).hasSingleBean(EventProcessingModule.class);
-                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+                    assertThat(context).hasSingleBean(LegacyEventProcessingModule.class);
+                    LegacyEventProcessingModule eventProcessingConfig = context.getBean(LegacyEventProcessingModule.class);
 
                     Optional<EventProcessor> eventProcessor = eventProcessingConfig.eventProcessorByProcessingGroup(
                             "first");

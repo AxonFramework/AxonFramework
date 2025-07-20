@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonConfigurationException;
@@ -45,7 +46,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 /**
  * Entry point of the Axon Configuration API.
@@ -488,7 +488,7 @@ public interface LegacyConfigurer extends LifecycleOperations {
 
     /**
      * Retrieve the {@link EventProcessingConfigurer} registered as a module with this Configurer. If there aren't any,
-     * it will create an {@link EventProcessingModule} and register it as a module. If there are multiple, an
+     * it will create an {@link LegacyEventProcessingModule} and register it as a module. If there are multiple, an
      * {@link AxonConfigurationException} is thrown.
      *
      * @return an instance of Event Processing Configurer
@@ -499,7 +499,7 @@ public interface LegacyConfigurer extends LifecycleOperations {
     /**
      * Locates the {@link EventProcessingConfigurer} registered as a module with this Configurer and provides it to the
      * given consumer for configuration. If there aren't any pre-registered instances of
-     * {@link EventProcessingConfigurer}, it will create an {@link EventProcessingModule} and register it as a module.
+     * {@link EventProcessingConfigurer}, it will create an {@link LegacyEventProcessingModule} and register it as a module.
      * If there are multiple, an {@link AxonConfigurationException} is thrown.
      * <p>
      * This method is identical to using {@link #eventProcessing()}, except that this variant allows for easier fluent
