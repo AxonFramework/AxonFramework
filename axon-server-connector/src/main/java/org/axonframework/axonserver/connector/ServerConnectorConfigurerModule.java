@@ -40,6 +40,7 @@ import org.axonframework.config.TagsConfiguration;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
@@ -76,6 +77,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
         });
         configurer.registerComponent(TargetContextResolver.class, configuration -> TargetContextResolver.noOp());
         configurer.registerComponent(AxonServerEventStoreFactory.class, this::buildEventStoreFactory);
+        configurer.onInitialize(this::registerTopologyChangeListenerWhenPresent);
     }
 
     private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration c) {
@@ -184,6 +186,19 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                           )
                                           .spanFactory(config.getComponent(EventBusSpanFactory.class))
                                           .build();
+    }
+
+    private void registerTopologyChangeListenerWhenPresent(Configuration config) {
+        TopologyChangeListener changeListener = config.getComponent(TopologyChangeListener.class);
+        if (changeListener == null) {
+            return;
+        }
+
+        AxonServerConnectionManager connectionManager = config.getComponent(AxonServerConnectionManager.class);
+        config.onStart(Phase.INSTRUCTION_COMPONENTS,
+                       () -> connectionManager.getConnection()
+                                              .controlChannel()
+                                              .registerTopologyChangeHandler(changeListener));
     }
 
     @Override
