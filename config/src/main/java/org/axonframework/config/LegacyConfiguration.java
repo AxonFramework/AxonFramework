@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.AxonConfigurationException;
@@ -49,7 +50,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
@@ -183,19 +183,19 @@ public interface LegacyConfiguration extends LifecycleOperations {
     }
 
     /**
-     * Returns the {@link EventProcessingConfiguration} defined in this Configuration. If there aren't any defined,
+     * Returns the {@link LegacyEventProcessingConfiguration} defined in this Configuration. If there aren't any defined,
      * {@code null} will be returned. If there is exactly one, it will be returned. For case when there are multiple, an
      * {@link AxonConfigurationException} is thrown and the {@link #getModules()} API should be used instead.
      *
-     * @return the {@link EventProcessingConfiguration} defined in this Configuration
+     * @return the {@link LegacyEventProcessingConfiguration} defined in this Configuration
      * @throws AxonConfigurationException thrown if there are more than one Event Processing Configurations defined with
      *                                    this configuration
      */
-    default EventProcessingConfiguration eventProcessingConfiguration() throws AxonConfigurationException {
-        List<EventProcessingConfiguration> eventProcessingModules =
+    default LegacyEventProcessingConfiguration eventProcessingConfiguration() throws AxonConfigurationException {
+        List<LegacyEventProcessingConfiguration> eventProcessingModules =
                 getModules().stream()
-                            .filter(module -> module.isType(EventProcessingConfiguration.class))
-                            .map(module -> (EventProcessingConfiguration) module.unwrap())
+                            .filter(module -> module.isType(LegacyEventProcessingConfiguration.class))
+                            .map(module -> (LegacyEventProcessingConfiguration) module.unwrap())
                             .collect(Collectors.toList());
         switch (eventProcessingModules.size()) {
             case 0:
