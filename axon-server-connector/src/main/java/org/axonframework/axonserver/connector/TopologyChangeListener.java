@@ -25,6 +25,17 @@ import java.util.function.Consumer;
  *     <li>{@link TopologyChange#getComponentName() The component name} - The name of the component (e.g., the Axon Framework node) for which a topology change occurred.</li>
  *     <li>{@link TopologyChange#getCommand() The command subscription identifier} <b>or</b> {@link TopologyChange#getQuery() The query subscription identifier} - The identifier of the handler that was added or removed</li>
  * </ul>
+ * Here is an example {@code TopologyChange} for a command subscription:
+ * <pre>{@code
+ * context: "axoniq-university"
+ * client_id: "149466@axoniq-uni"
+ * client_stream_id: "149466@axoniq-uni.2bb5c0b4-59d9-4396-ad14-a32059f71d9a"
+ * component_name: "AxonIQ University"
+ * command {
+ *   name: "io.axoniq.demo.university.faculty.write.createcourse.CreateCourse"
+ *   load_factor: 100
+ * }
+ * }</pre>
  * <p>
  * An example use case of this functional interface, is to get notified when a new instance connects or disconnects. A
  * newly connecting instance would mean a new {@link TopologyChange#getClientId()} entered, while a disconnect is
@@ -38,6 +49,8 @@ import java.util.function.Consumer;
  * {@link io.axoniq.axonserver.connector.control.ControlChannel} from the {@code AxonServerConnectionManager} manually,
  * and invoke {@link io.axoniq.axonserver.connector.control.ControlChannel#registerTopologyChangeHandler(Consumer)} for
  * each change listener separately.
+ * <p>
+ * Note that Axon Server 2025.1.2 or up is required to use this feature!
  *
  * @author Steven van Beelen
  * @since 4.12.0
