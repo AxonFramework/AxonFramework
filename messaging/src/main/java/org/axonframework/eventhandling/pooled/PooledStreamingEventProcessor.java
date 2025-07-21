@@ -35,9 +35,7 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
-import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -96,13 +94,14 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final EventProcessingPipeline eventProcessingPipeline;
     private final String name;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
+    private final EventProcessingPipeline eventProcessingPipeline;
     private final EventHandlingComponent eventHandlingComponent;
-    private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
+    private final TokenStore tokenStore;
     private final ScheduledExecutorService workerExecutor;
+
     private final Coordinator coordinator;
     private final Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken;
     private final long tokenClaimInterval;
@@ -111,10 +110,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final int batchSize;
     private final Clock clock;
 
-    private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
-    private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
     private final WorkPackage.EventFilter workPackageEventFilter;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
+
+    private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
+    private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
 
 //    public PooledStreamingEventProcessor(
 //            @Nonnull String name,
@@ -156,15 +156,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         builder.validate();
         this.name = builder.name();
         this.messageMonitor = builder.messageMonitor();
-        var messageHandlerInterceptors = new MessageHandlerInterceptors(builder.interceptors());
         var spanFactory = builder.spanFactory();
-        this.eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
-                builder.spanFactory(),
-                builder.messageMonitor(),
-                messageHandlerInterceptors,
-                builder.eventHandlingComponent(),
-                true
-        );
+        this.eventHandlingComponent = builder.eventHandlingComponent();
         this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
                 this.name,
                 builder.errorHandler(),
