@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
@@ -46,8 +45,6 @@ import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -176,15 +173,13 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                 true
         );
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
-                builder.name(),
+                this.name,
                 eventHandlingComponent,
                 builder.errorHandler()
         );
         this.eventSource = builder.eventSource;
         this.tokenStore = builder.tokenStore;
-        this.unitOfWorkFactory = builder.transactionManager == NoTransactionManager.instance()
-                ? new SimpleUnitOfWorkFactory()
-                : new TransactionalUnitOfWorkFactory(builder.transactionManager);
+        this.unitOfWorkFactory = builder.unitOfWorkFactory();
         this.workerExecutor = builder.workerExecutorBuilder.apply(name);
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
@@ -519,7 +514,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
         private StreamableEventSource<? extends EventMessage<?>> eventSource;
         private TokenStore tokenStore;
-        private TransactionManager transactionManager;
         private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder;
         private Function<String, ScheduledExecutorService> workerExecutorBuilder;
         private int initialSegmentCount = 16;
@@ -579,6 +573,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             return this;
         }
 
+        @Override
+        public Builder unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+            super.unitOfWorkFactory(unitOfWorkFactory);
+            return this;
+        }
+
         /**
          * Sets the {@link StreamableEventSource} (e.g. the {@code EventStore}) which this {@link EventProcessor} will
          * track.
@@ -604,18 +604,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         public Builder tokenStore(@Nonnull TokenStore tokenStore) {
             assertNonNull(tokenStore, "TokenStore may not be null");
             this.tokenStore = tokenStore;
-            return this;
-        }
-
-        /**
-         * Sets the {@link TransactionManager} used when processing {@link EventMessage}s.
-         *
-         * @param transactionManager the {@link TransactionManager} used when processing {@link EventMessage}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
-            assertNonNull(transactionManager, "TransactionManager may not be null");
-            this.transactionManager = transactionManager;
             return this;
         }
 
@@ -867,7 +855,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             super.validate();
             assertNonNull(eventSource, "The StreamableEventSource is a hard requirement and should be provided");
             assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
-            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
+            assertNonNull(unitOfWorkFactory, "The UnitOfWorkFactory is a hard requirement and should be provided");
             assertNonNull(
                     coordinatorExecutorBuilder,
                     "The Coordinator ScheduledExecutorService is a hard requirement and should be provided"
