@@ -59,7 +59,6 @@ import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,13 +81,14 @@ import static org.axonframework.config.EventProcessingConfigurer.PooledStreaming
 
 /**
  * Event processing module configuration. Registers all configuration components within itself, builds the
- * {@link EventProcessingConfiguration} and takes care of module lifecycle.
+ * {@link LegacyEventProcessingConfiguration} and takes care of module lifecycle.
  *
  * @author Milan Savic
  * @since 4.0
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class LegacyEventProcessingModule
-        implements ModuleConfiguration, EventProcessingConfiguration, EventProcessingConfigurer {
+        implements ModuleConfiguration, LegacyEventProcessingConfiguration, EventProcessingConfigurer {
 
     private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
     private static final PooledStreamingProcessorConfiguration DEFAULT_SAGA_PSEP_CONFIG =
@@ -390,7 +390,8 @@ public class LegacyEventProcessingModule
                 .getOrDefault(processorName, defaultEventProcessorBuilder)
                 .build(processorName, configuration, multiEventHandlerInvoker);
 
-        addInterceptors(processorName, eventProcessor);
+        // todo: implement differently!
+//        addInterceptors(processorName, eventProcessor);
 
         return eventProcessor;
     }
@@ -432,13 +433,6 @@ public class LegacyEventProcessingModule
         return selectProcessingGroupByType(sagaType);
     }
     //</editor-fold>
-
-    @Override
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
-        validateConfigInitialization();
-        return eventProcessor(processorName).map(EventProcessor::getHandlerInterceptors)
-                                            .orElse(Collections.emptyList());
-    }
 
     @Override
     public ListenerInvocationErrorHandler listenerInvocationErrorHandler(String processingGroup) {
@@ -721,7 +715,8 @@ public class LegacyEventProcessingModule
                                                                 Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         Component<EventProcessor> eps = eventProcessors.get(processorName);
         if (eps != null && eps.isInitialized()) {
-            eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
+            // todo: implement differently!
+//            eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
         }
         this.handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
                                         .add(interceptorBuilder);

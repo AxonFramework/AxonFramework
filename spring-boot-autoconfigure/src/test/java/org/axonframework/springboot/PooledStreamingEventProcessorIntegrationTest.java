@@ -18,7 +18,7 @@ package org.axonframework.springboot;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.LegacyEventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
@@ -81,7 +81,7 @@ class PooledStreamingEventProcessorIntegrationTest {
     @Test
     void allEventsFromMultiUpcasterAreHandled() {
         testApplicationContext.withPropertyValues("upcaster-test=true").run(context -> {
-            EventProcessingConfiguration processingConfig = context.getBean(EventProcessingConfiguration.class);
+            LegacyEventProcessingConfiguration processingConfig = context.getBean(LegacyEventProcessingConfiguration.class);
             Optional<PooledStreamingEventProcessor> optionalProcessor =
                     processingConfig.eventProcessor("upcaster-test", PooledStreamingEventProcessor.class);
 
@@ -111,7 +111,7 @@ class PooledStreamingEventProcessorIntegrationTest {
         int numberOfEvents = 100;
 
         testApplicationContext.withPropertyValues("once-test=true", "errorCount=2").run(context -> {
-            EventProcessingConfiguration processingConfig = context.getBean(EventProcessingConfiguration.class);
+            LegacyEventProcessingConfiguration processingConfig = context.getBean(LegacyEventProcessingConfiguration.class);
             Optional<PooledStreamingEventProcessor> optionalProcessor =
                     processingConfig.eventProcessor("once-test", PooledStreamingEventProcessor.class);
 

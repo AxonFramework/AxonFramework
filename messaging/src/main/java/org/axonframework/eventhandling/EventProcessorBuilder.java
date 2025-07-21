@@ -18,12 +18,15 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -49,6 +52,7 @@ public abstract class EventProcessorBuilder {
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
                                                                                       .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                       .build();
+    private List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
 
     /**
      * Sets the {@code name} of this {@link EventProcessor} implementation.
@@ -131,6 +135,12 @@ public abstract class EventProcessorBuilder {
         return this;
     }
 
+    public EventProcessorBuilder interceptors(@Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+        assertNonNull(spanFactory, "interceptors may not be null");
+        this.interceptors = interceptors;
+        return this;
+    }
+
     /**
      * Validates whether the fields contained in this Builder are set accordingly.
      *
@@ -189,5 +199,9 @@ public abstract class EventProcessorBuilder {
      */
     public EventHandlingComponent eventHandlingComponent() {
         return eventHandlingComponent;
+    }
+
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors() {
+        return interceptors;
     }
 }

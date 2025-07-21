@@ -1300,27 +1300,32 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void existingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
-        setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
-
         CountDownLatch countDownLatch = new CountDownLatch(3);
-        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {
-            @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @Nonnull ProcessingContext context,
-                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
-                unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-                return interceptorChain.proceedSync(context);
-            }
+        setTestSubject(
+                createTestSubject(b -> b.initialSegmentCount(1)
+                        .interceptors(List.of(
+                                new MessageHandlerInterceptor<>() {
+                                    @Override
+                                    public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                                         @Nonnull ProcessingContext context,
+                                                         @Nonnull InterceptorChain interceptorChain) throws Exception {
+                                        unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+                                        return interceptorChain.proceedSync(context);
+                                    }
 
-            @Override
-            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message,
-                    @Nonnull ProcessingContext context,
-                    @Nonnull InterceptorChain<M, R> interceptorChain) {
-                context.doFinally(uow -> countDownLatch.countDown());
-                return interceptorChain.proceed(message, context);
-            }
-        });
+                                    @Override
+                                    public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                                            @Nonnull M message,
+                                            @Nonnull ProcessingContext context,
+                                            @Nonnull InterceptorChain<M, R> interceptorChain) {
+                                        context.doFinally(uow -> countDownLatch.countDown());
+                                        return interceptorChain.proceed(message, context);
+                                    }
+                                }
+                        ))
+                )
+        );
+
         createEvents(3).forEach(stubMessageSource::publishMessage);
 
         testSubject.start();
@@ -1333,26 +1338,30 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void eventsPublishedAfterProcessorStartAreNotConsideredReplayed() throws Exception {
-        setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
-
         CountDownLatch countDownLatch = new CountDownLatch(3);
-        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
-            @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @Nonnull ProcessingContext context,
-                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
-                unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-                return interceptorChain.proceedSync(context);
-            }
+        setTestSubject(
+                createTestSubject(b -> b.initialSegmentCount(1)
+                                        .interceptors(List.of(
+                                                new MessageHandlerInterceptor<>() {
+                                                    @Override
+                                                    public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                                                         @Nonnull ProcessingContext context,
+                                                                         @Nonnull InterceptorChain interceptorChain) throws Exception {
+                                                        unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+                                                        return interceptorChain.proceedSync(context);
+                                                    }
 
-            @Override
-            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message, @Nonnull ProcessingContext context,
-                    @Nonnull InterceptorChain<M, R> interceptorChain) {
-                context.doFinally(uow -> countDownLatch.countDown());
-                return interceptorChain.proceed(message, context);
-            }
-        });
+                                                    @Override
+                                                    public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+                                                            @Nonnull M message, @Nonnull ProcessingContext context,
+                                                            @Nonnull InterceptorChain<M, R> interceptorChain) {
+                                                        context.doFinally(uow -> countDownLatch.countDown());
+                                                        return interceptorChain.proceed(message, context);
+                                                    }
+                                                }
+                                        ))
+                )
+        );
         stubMessageSource.publishMessage(EventTestUtils.asEventMessage(0));
         stubMessageSource.publishMessage(EventTestUtils.asEventMessage(1));
 

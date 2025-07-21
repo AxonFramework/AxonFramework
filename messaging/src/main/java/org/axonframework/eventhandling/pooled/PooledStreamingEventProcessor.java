@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -30,21 +29,17 @@ import org.axonframework.eventhandling.EventProcessorBuilder;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
-import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.pipeline.ErrorHandlingEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
-import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
-import org.axonframework.eventhandling.pipeline.TracingEventProcessingPipeline;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
@@ -107,6 +102,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final EventProcessingPipeline eventProcessingPipeline;
     private final String name;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
+    private final EventHandlingComponent eventHandlingComponent;
     private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService workerExecutor;
@@ -122,7 +118,24 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
     private final WorkPackage.EventFilter workPackageEventFilter;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
-    private final MessageHandlerInterceptors messageHandlerInterceptors;
+
+//    public PooledStreamingEventProcessor(
+//            @Nonnull String name,
+//            @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource,
+//            @Nonnull EventProcessingPipeline eventProcessingPipeline,
+//            @Nonnull EventHandlingComponent eventHandlingComponent,
+//            @Nonnull UnitOfWorkFactory unitOfWorkFactory,
+//            @Nonnull TokenStore tokenStore,
+//            @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder,
+//            @Nonnull Function<String, ScheduledExecutorService> workerExecutorBuilder
+//    ) {
+//        this.name = name;
+//        this.eventSource = eventSource;
+//        this.eventProcessingPipeline = eventProcessingPipeline;
+//        this.eventHandlingComponent = eventHandlingComponent;
+//        this.unitOfWorkFactory = unitOfWorkFactory;
+//        this.tokenStore = tokenStore;
+//    }
 
     /**
      * Instantiate a {@code PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -141,30 +154,26 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      *
      * @param builder the {@link Builder} used to instantiate a {@code PooledStreamingEventProcessor} instance
      */
+    @Deprecated(since = "5.0.0", forRemoval = true)
     protected PooledStreamingEventProcessor(Builder builder) {
         builder.validate();
         this.name = builder.name();
         this.messageMonitor = builder.messageMonitor();
-        this.messageHandlerInterceptors = new MessageHandlerInterceptors();
+        var messageHandlerInterceptors = new MessageHandlerInterceptors(builder.interceptors());
         var spanFactory = builder.spanFactory();
-        var eventHandlingComponent =
-                new TracingEventHandlingComponent(
-                        (event) -> spanFactory.createProcessEventSpan(true, event),
-                        new MonitoringEventHandlingComponent(
-                                builder.messageMonitor(),
-                                new InterceptingEventHandlingComponent(
-                                        messageHandlerInterceptors,
-                                        builder.eventHandlingComponent()
-                                )
-                        )
-                );
-        this.eventProcessingPipeline = new ErrorHandlingEventProcessingPipeline(
-                name,
+        this.eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
+                builder.spanFactory(),
+                builder.messageMonitor(),
+                messageHandlerInterceptors,
+                builder.eventHandlingComponent(),
+                true
+        );
+        this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
+                this.name,
                 builder.errorHandler(),
-                new TracingEventProcessingPipeline(
-                        (eventsList) -> spanFactory.createBatchSpan(true, eventsList),
-                        new HandlingEventProcessingPipeline(eventHandlingComponent)
-                )
+                spanFactory,
+                eventHandlingComponent,
+                true
         );
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 builder.name(),
@@ -259,11 +268,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-        return messageHandlerInterceptors.toList();
     }
 
     @Override
@@ -482,12 +486,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         processingStatus.computeIfPresent(segmentId, (s, ts) -> segmentUpdater.apply(ts));
     }
 
-    @Override
-    public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-        return messageHandlerInterceptors.register(handlerInterceptor);
-    }
-
     /**
      * Builder class to instantiate a {@link PooledStreamingEventProcessor}.
      * <p>
@@ -572,6 +570,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         @Override
         public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
+            return this;
+        }
+
+        @Override
+        public Builder interceptors(@Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+            super.interceptors(interceptors);
             return this;
         }
 

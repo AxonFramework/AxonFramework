@@ -100,4 +100,5 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
 
         // EventHandlersPhase eventHandlingComponent(@Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder);
     }
+
 }

@@ -230,7 +230,7 @@ Returns `true` if it processes a sequence successfully.
 If the processing of a dead letter fails, the event will be offered to the dead-letter queue again.
 How the dead-lettering process reacts to this depends on the <<Enqueue policy,enqueue policy>>.
 
-You can retrieve a `SequencedDeadLetterProcessor` from the `EventProcessingConfiguration` based on a processing group name _if_ you have configured a dead-letter queue for this processing group.
+You can retrieve a `SequencedDeadLetterProcessor` from the `LegacyEventProcessingConfiguration` based on a processing group name _if_ you have configured a dead-letter queue for this processing group.
 Below are a couple of examples of how to process dead-letter sequences:
 
 [tabs]
