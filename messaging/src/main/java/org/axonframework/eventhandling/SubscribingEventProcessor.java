@@ -35,7 +35,10 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
+import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -52,11 +55,43 @@ public class SubscribingEventProcessor implements EventProcessor {
 
     private final String name;
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
-    private final EventProcessingStrategy processingStrategy;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final EventProcessingPipeline eventProcessingPipeline;
+    private final EventProcessingStrategy processingStrategy;
+    private final EventHandlingComponent eventHandlingComponent;
 
     private volatile Registration eventBusRegistration;
+
+    public SubscribingEventProcessor(
+            @Nonnull String name,
+            @Nonnull SubscribableMessageSource<? extends EventMessage<?>> messageSource,
+            @Nonnull EventProcessingPipeline eventProcessingPipeline,
+            @Nonnull EventHandlingComponent eventHandlingComponent,
+            @Nonnull UnitOfWorkFactory unitOfWorkFactory,
+            @Nonnull UnaryOperator<Customization> configurationOverride
+    ) {
+        this.name = name;
+        this.messageSource = messageSource;
+        this.eventProcessingPipeline = eventProcessingPipeline;
+        this.eventHandlingComponent = eventHandlingComponent;
+        this.unitOfWorkFactory = unitOfWorkFactory;
+        var customization = requireNonNull(configurationOverride, "configurationOverride may not be null")
+                .apply(Customization.defaultValues());
+        this.processingStrategy = customization.processingStrategy();
+    }
+
+    public record Customization(EventProcessingStrategy processingStrategy) {
+
+        static Customization defaultValues() {
+            return new Customization(
+                    DirectEventProcessingStrategy.INSTANCE
+            );
+        }
+
+        public Customization processingStrategy(EventProcessingStrategy processingStrategy) {
+            return new Customization(processingStrategy);
+        }
+    }
 
     /**
      * Instantiate a {@code SubscribingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -75,7 +110,7 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.unitOfWorkFactory = builder.unitOfWorkFactory;
         var messageHandlerInterceptors = new MessageHandlerInterceptors(builder.interceptors());
         var spanFactory = builder.spanFactory;
-        var eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
+        this.eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
                 builder.spanFactory,
                 builder.messageMonitor,
                 messageHandlerInterceptors,
@@ -221,6 +256,13 @@ public class SubscribingEventProcessor implements EventProcessor {
         @Override
         public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
             super.eventHandlingComponent(eventHandlingComponent);
+            return this;
+        }
+
+        @Override
+        public Builder eventProcessingPipeline(
+                @Nonnull Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipelineBuilder) {
+            super.eventProcessingPipeline(eventProcessingPipelineBuilder);
             return this;
         }
 

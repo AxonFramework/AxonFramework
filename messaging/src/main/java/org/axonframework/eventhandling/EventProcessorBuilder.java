@@ -18,6 +18,8 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -30,6 +32,7 @@ import org.axonframework.tracing.SpanFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -49,6 +52,13 @@ public abstract class EventProcessorBuilder {
 
     protected String name;
     private EventHandlingComponent eventHandlingComponent;
+    private Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipelineBuilder = (builder) -> new DefaultEventProcessingPipeline(
+            builder.name,
+            builder.errorHandler,
+            builder.spanFactory,
+            builder.eventHandlingComponent,
+            builder.streaming()
+    );
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
     protected MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
@@ -96,6 +106,12 @@ public abstract class EventProcessorBuilder {
         return this;
     }
 
+    public EventProcessorBuilder eventProcessingPipeline(@Nonnull Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipelineBuilder) {
+        assertNonNull(this.eventProcessingPipelineBuilder, "EventProcessingPipeline may not be null");
+        this.eventProcessingPipelineBuilder = eventProcessingPipelineBuilder;
+        return this;
+    }
+
     /**
      * Sets the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during processing. Defaults
      * to a {@link PropagatingErrorHandler}.
@@ -132,12 +148,14 @@ public abstract class EventProcessorBuilder {
      * @param spanFactory The {@link SpanFactory} implementation
      * @return The current Builder instance, for fluent interfacing.
      */
+    @Deprecated(since = "5.0.0", forRemoval = true)
     public EventProcessorBuilder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
         assertNonNull(spanFactory, "SpanFactory may not be null");
         this.spanFactory = spanFactory;
         return this;
     }
 
+    @Deprecated(since = "5.0.0", forRemoval = true)
     public EventProcessorBuilder interceptors(@Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
         assertNonNull(spanFactory, "interceptors may not be null");
         this.interceptors = interceptors;
@@ -224,5 +242,13 @@ public abstract class EventProcessorBuilder {
 
     public UnitOfWorkFactory unitOfWorkFactory() {
         return unitOfWorkFactory;
+    }
+
+    public Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipeline() {
+        return eventProcessingPipelineBuilder;
+    }
+
+    public boolean streaming() {
+        return false;
     }
 }

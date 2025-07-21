@@ -64,7 +64,7 @@ public class MessageHandlerInterceptors {
 
     /**
      * Return the list of already registered {@link MessageHandlerInterceptor}s for the event processor. To register a
-     * new interceptor use {@link EventProcessor#registerHandlerInterceptor(MessageHandlerInterceptor)}
+     * new interceptor use {@link MessageHandlerInterceptors#register(MessageHandlerInterceptor)}
      *
      * @return The list of registered interceptors of the event processor.
      */
