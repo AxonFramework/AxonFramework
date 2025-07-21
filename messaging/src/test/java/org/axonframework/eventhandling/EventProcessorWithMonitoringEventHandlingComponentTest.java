@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Registration;
+import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
@@ -72,32 +72,37 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         when(mockEventHandlingComponent.sequenceIdentifierFor(any())).thenAnswer(
                 e -> e.getArgument(0, EventMessage.class).identifier()
         );
-        TestEventProcessor testSubject = TestEventProcessor.builder()
-                                                           .name("test")
-                                                           .eventHandlingComponent(mockEventHandlingComponent)
-                                                           .messageMonitor(messageMonitor)
-                                                           .build();
 
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
-        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {
+        MessageHandlerInterceptor<EventMessage<?>> interceptor = new MessageHandlerInterceptor<>() {
             @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @Nonnull ProcessingContext context,
-                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
+            public Object handle(
+                    @Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                    @Nonnull ProcessingContext context,
+                    @Nonnull InterceptorChain interceptorChain)
+                    throws Exception {
                 unitOfWork.transformMessage(m -> createDomainEvent());
-                return interceptorChain.proceedSync(context);
+                return interceptorChain.proceedSync(
+                        context);
             }
 
             @Override
             public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message, @Nonnull ProcessingContext context,
+                    @Nonnull M message,
+                    @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain<M, R> interceptorChain) {
                 var event = createDomainEvent();
                 //noinspection unchecked
-                return interceptorChain.proceed((M) event, context);
+                return interceptorChain.proceed((M) event,
+                                                context);
             }
-        });
+        };
+        TestEventProcessor testSubject = TestEventProcessor.builder()
+                                                           .name("test")
+                                                           .eventHandlingComponent(mockEventHandlingComponent)
+                                                           .messageMonitor(messageMonitor)
+                                                           .interceptors(List.of(interceptor)).build();
 
         testSubject.processInBatchingUnitOfWork(events);
 
@@ -109,13 +114,11 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         private static final SimpleUnitOfWorkFactory UNIT_OF_WORK_FACTORY = new SimpleUnitOfWorkFactory();
         private final String name;
         private final EventProcessingPipeline eventProcessingPipeline;
-        private final MessageHandlerInterceptors messageHandlerInterceptors;
 
         private TestEventProcessor(Builder builder) {
             builder.validate();
             this.name = builder.name;
-            var eventHandlingComponent = builder.eventHandlingComponent();
-            this.messageHandlerInterceptors = new MessageHandlerInterceptors();
+            var eventHandlingComponent = new InterceptingEventHandlingComponent(new MessageHandlerInterceptors(builder.interceptors()), builder.eventHandlingComponent());
             this.eventProcessingPipeline = new HandlingEventProcessingPipeline(
                     new MonitoringEventHandlingComponent(builder.messageMonitor, eventHandlingComponent)
             );
@@ -128,11 +131,6 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         @Override
         public String getName() {
             return name;
-        }
-
-        @Override
-        public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-            return messageHandlerInterceptors.toList();
         }
 
         @Override
@@ -158,12 +156,6 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
             unitOfWork.executeWithResult(ctx -> eventProcessingPipeline.process(
                     eventMessages, ctx).asCompletableFuture()
             ).join();
-        }
-
-        @Override
-        public Registration registerHandlerInterceptor(
-                @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-            return messageHandlerInterceptors.register(handlerInterceptor);
         }
 
         private static class Builder extends EventProcessorBuilder {
@@ -193,6 +185,13 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
             @Override
             public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
                 super.eventHandlingComponent(eventHandlingComponent);
+                return this;
+            }
+
+            @Override
+            public Builder interceptors(
+                    @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+                super.interceptors(interceptors);
                 return this;
             }
 

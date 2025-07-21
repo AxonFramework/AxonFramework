@@ -22,12 +22,10 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.pipeline.ErrorHandlingEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
-import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
-import org.axonframework.eventhandling.pipeline.TracingEventProcessingPipeline;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -56,7 +54,6 @@ public class SubscribingEventProcessor implements EventProcessor {
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
     private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
-    private final MessageHandlerInterceptors messageHandlerInterceptors;
     private final EventProcessingPipeline eventProcessingPipeline;
 
     private volatile Registration eventBusRegistration;
@@ -76,26 +73,21 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
         this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
-        this.messageHandlerInterceptors = new MessageHandlerInterceptors();
+        var messageHandlerInterceptors = new MessageHandlerInterceptors(builder.interceptors());
         var spanFactory = builder.spanFactory;
-        var eventHandlingComponent =
-                new TracingEventHandlingComponent(
-                        (event) -> spanFactory.createProcessEventSpan(false, event),
-                        new MonitoringEventHandlingComponent(
-                                builder.messageMonitor(),
-                                new InterceptingEventHandlingComponent(
-                                        messageHandlerInterceptors,
-                                        builder.eventHandlingComponent()
-                                )
-                        )
-                );
-        this.eventProcessingPipeline = new ErrorHandlingEventProcessingPipeline(
-                name,
+        var eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
+                builder.spanFactory,
+                builder.messageMonitor,
+                messageHandlerInterceptors,
+                builder.eventHandlingComponent(),
+                false
+        );
+        this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
+                this.name,
                 builder.errorHandler,
-                new TracingEventProcessingPipeline(
-                        (eventsList) -> spanFactory.createBatchSpan(false, eventsList),
-                        new HandlingEventProcessingPipeline(eventHandlingComponent)
-                )
+                spanFactory,
+                eventHandlingComponent,
+                false
         );
     }
 
@@ -119,11 +111,6 @@ public class SubscribingEventProcessor implements EventProcessor {
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-        return messageHandlerInterceptors.toList();
     }
 
     /**
@@ -165,9 +152,9 @@ public class SubscribingEventProcessor implements EventProcessor {
             var unitOfWork = transactionalUnitOfWorkFactory.create();
             FutureUtils.joinAndUnwrap(
                     unitOfWork.executeWithResult(processingContext -> eventProcessingPipeline.process(
-                                                                                                     eventMessages,
-                                                                                                     processingContext
-                            ).asCompletableFuture())
+                            eventMessages,
+                            processingContext
+                    ).asCompletableFuture())
             );
         } catch (RuntimeException e) {
             throw e;
@@ -197,12 +184,6 @@ public class SubscribingEventProcessor implements EventProcessor {
      */
     public SubscribableMessageSource<? extends EventMessage<?>> getMessageSource() {
         return messageSource;
-    }
-
-    @Override
-    public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-        return messageHandlerInterceptors.register(handlerInterceptor);
     }
 
     /**
@@ -300,6 +281,13 @@ public class SubscribingEventProcessor implements EventProcessor {
         public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
+            return this;
+        }
+
+        @Override
+        public Builder interceptors(
+                @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+            super.interceptors(interceptors);
             return this;
         }
 
