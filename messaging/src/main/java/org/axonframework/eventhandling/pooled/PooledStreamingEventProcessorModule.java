@@ -24,18 +24,23 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessorModule;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Function;
 
 public class PooledStreamingEventProcessorModule
         extends BaseModule<PooledStreamingEventProcessorModule>
@@ -46,6 +51,11 @@ public class PooledStreamingEventProcessorModule
     private final String processorName;
     private final Map<QualifiedName, ComponentBuilder<EventHandler>> handlerBuilders;
     private ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder;
+
+    // todo: defaults - should be configurable
+    private final PooledStreamingEventProcessorsCustomization eventProcessorsCustomization = new PooledStreamingEventProcessorsCustomization();
+    private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
+
 
     public PooledStreamingEventProcessorModule(@Nonnull String processorName) {
         super(processorName);
@@ -75,25 +85,51 @@ public class PooledStreamingEventProcessorModule
 
         var eventSource = streamableEventSourceBuilder.build(parent);
 
-        var processor = PooledStreamingEventProcessor.builder()
-                .name(processorName)
-                .eventHandlingComponent(eventHandlingComponent)
-                .eventSource(eventSource)
-                .tokenStore(parent.getOptionalComponent(TokenStore.class).orElse(new InMemoryTokenStore()))
-                .unitOfWorkFactory(new SimpleUnitOfWorkFactory()) // todo: configure!
-                .workerExecutor(processorName -> {
-                    ScheduledExecutorService workerExecutor =
-                            defaultExecutor(4, "WorkPackage[" + processorName + "]");
-                    lifecycleRegistry.onShutdown(1, workerExecutor::shutdown);
-                    return workerExecutor;
-                })
-                .coordinatorExecutor(processorName -> {
-                    ScheduledExecutorService coordinatorExecutor =
-                            defaultExecutor(1, "Coordinator[" + processorName + "]");
-                    lifecycleRegistry.onShutdown(1, coordinatorExecutor::shutdown);
-                    return coordinatorExecutor;
-                })
-                .build();
+        // todo: get from global configuration, but allow overriding
+        var tokenStore = parent.getOptionalComponent(TokenStore.class).orElse(new InMemoryTokenStore());
+        var unitOfWorkFactory = parent.getOptionalComponent(UnitOfWorkFactory.class).orElse(new SimpleUnitOfWorkFactory()); // todo: default - transcaitonal
+        Function<String, ScheduledExecutorService> workerExecutorBuilder = processorName -> {
+            ScheduledExecutorService workerExecutor =
+                    defaultExecutor(4, "WorkPackage[" + processorName + "]");
+            lifecycleRegistry.onShutdown(1, workerExecutor::shutdown);
+            return workerExecutor;
+        };
+        Function<String, ScheduledExecutorService> coordinatorExecutorBuilder = processorName -> {
+            ScheduledExecutorService coordinatorExecutor =
+                    defaultExecutor(1, "Coordinator[" + processorName + "]");
+            lifecycleRegistry.onShutdown(1, coordinatorExecutor::shutdown);
+            return coordinatorExecutor;
+        };
+
+        var spanFactory = eventProcessorsCustomization.spanFactory();
+        var messageMonitor = eventProcessorsCustomization.messageMonitor();
+        var errorHandler = eventProcessorsCustomization.errorHandler();
+        var decoratedEventHandlingComponent = new DefaultEventProcessorHandlingComponent(
+                spanFactory,
+                messageMonitor,
+                messageHandlerInterceptors,
+                eventHandlingComponent,
+                true
+        );
+        var decoratedEventProcessingPipeline = new DefaultEventProcessingPipeline(
+                processorName,
+                errorHandler,
+                spanFactory,
+                eventHandlingComponent,
+                true
+        );
+        var processor = new PooledStreamingEventProcessor(
+                processorName,
+                eventSource,
+                decoratedEventProcessingPipeline,
+                decoratedEventHandlingComponent,
+                unitOfWorkFactory,
+                tokenStore,
+                coordinatorExecutorBuilder,
+                workerExecutorBuilder,
+                eventProcessorsCustomization
+        );
+
         lifecycleRegistry.onStart(2, processor::start);
         lifecycleRegistry.onShutdown(2, processor::shutDown);
         return super.build(parent, lifecycleRegistry);

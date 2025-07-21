@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.junit.jupiter.api.*;
 

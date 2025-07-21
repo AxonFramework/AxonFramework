@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.eventhandling.EventProcessorModule;
+import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;

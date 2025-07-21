@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SubscribableMessageSource;
