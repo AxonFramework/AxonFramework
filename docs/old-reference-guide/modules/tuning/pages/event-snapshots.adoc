@@ -51,7 +51,7 @@ The `AggregateSnapshotter` provides one more property:
  Both provide the factory through the `EventSourcingRepository#getAggregateFactory` and `AggregateConfiguration#aggregateFactory` methods respectively.
  The result from either can be used to configure the same aggregate factories in the `Snapshotter` as the ones used by the Aggregate.
 
-=== Snapshotter Configuration
+=== Snapshotter configuration
 
 ==== Executor
 

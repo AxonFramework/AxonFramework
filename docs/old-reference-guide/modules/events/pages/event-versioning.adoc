@@ -313,7 +313,7 @@ public class AxonConfig {
 ====
 
 [#upcasting_snapshots]
-=== Upcasting Snapshots
+=== Upcasting snapshots
 
 Although the description above leans towards event upcasting, note that all the given constructs can be used to upcast a xref:tuning:event-snapshots.adoc[snapshot].
 
