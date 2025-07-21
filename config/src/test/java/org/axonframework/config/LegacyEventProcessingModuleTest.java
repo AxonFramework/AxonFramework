@@ -18,7 +18,6 @@ package org.axonframework.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -1461,13 +1460,6 @@ class LegacyEventProcessingModuleTest {
                         }
                     })
                     .collect(Collectors.toList());
-        }
-
-        @Override
-        public Registration registerHandlerInterceptor(
-                @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
-            interceptors.add(interceptor);
-            return () -> interceptors.remove(interceptor);
         }
 
         @Override

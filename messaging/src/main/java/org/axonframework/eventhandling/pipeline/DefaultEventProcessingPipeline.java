@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.pipeline;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
@@ -33,15 +34,17 @@ public class DefaultEventProcessingPipeline implements EventProcessingPipeline {
     private final EventProcessingPipeline delegate;
 
     public DefaultEventProcessingPipeline(
-            String processorName, ErrorHandler errorHandler,
-            EventProcessorSpanFactory spanFactory,
-            EventHandlingComponent eventHandlingComponent
+            @Nonnull String processorName,
+            @Nonnull ErrorHandler errorHandler,
+            @Nonnull EventProcessorSpanFactory spanFactory,
+            @Nonnull EventHandlingComponent eventHandlingComponent,
+            boolean streaming
     ) {
         this.delegate = new ErrorHandlingEventProcessingPipeline(
                 processorName,
                 errorHandler,
                 new TracingEventProcessingPipeline(
-                        (eventsList) -> spanFactory.createBatchSpan(true, eventsList),
+                        (eventsList) -> spanFactory.createBatchSpan(streaming, eventsList),
                         new HandlingEventProcessingPipeline(eventHandlingComponent)
                 )
         );

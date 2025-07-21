@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -58,6 +57,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -118,7 +118,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
     private final WorkPackage.EventFilter workPackageEventFilter;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
-    private final MessageHandlerInterceptors messageHandlerInterceptors;
 
 //    public PooledStreamingEventProcessor(
 //            @Nonnull String name,
@@ -160,19 +159,21 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         builder.validate();
         this.name = builder.name();
         this.messageMonitor = builder.messageMonitor();
-        this.messageHandlerInterceptors = new MessageHandlerInterceptors();
+        var messageHandlerInterceptors = new MessageHandlerInterceptors(builder.interceptors());
         var spanFactory = builder.spanFactory();
         this.eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
                 builder.spanFactory(),
                 builder.messageMonitor(),
-                this.messageHandlerInterceptors,
-                builder.eventHandlingComponent()
+                messageHandlerInterceptors,
+                builder.eventHandlingComponent(),
+                true
         );
         this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
                 this.name,
                 builder.errorHandler(),
                 spanFactory,
-                eventHandlingComponent
+                eventHandlingComponent,
+                true
         );
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 builder.name(),
@@ -485,12 +486,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         processingStatus.computeIfPresent(segmentId, (s, ts) -> segmentUpdater.apply(ts));
     }
 
-    @Override
-    public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
-        return messageHandlerInterceptors.register(handlerInterceptor);
-    }
-
     /**
      * Builder class to instantiate a {@link PooledStreamingEventProcessor}.
      * <p>
@@ -575,6 +570,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         @Override
         public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
+            return this;
+        }
+
+        @Override
+        public Builder interceptors(@Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+            super.interceptors(interceptors);
             return this;
         }
 

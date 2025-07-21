@@ -40,11 +40,12 @@ public class DefaultEventProcessorHandlingComponent extends DelegatingEventHandl
             @Nonnull EventProcessorSpanFactory spanFactory,
             @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor,
             @Nonnull MessageHandlerInterceptors messageHandlerInterceptors,
-            @Nonnull EventHandlingComponent delegate
+            @Nonnull EventHandlingComponent delegate,
+            boolean streaming
     ) {
         super(
                 new TracingEventHandlingComponent(
-                        (event) -> spanFactory.createProcessEventSpan(false, event),
+                        (event) -> spanFactory.createProcessEventSpan(streaming, event),
                         new MonitoringEventHandlingComponent(
                                 messageMonitor,
                                 new InterceptingEventHandlingComponent(

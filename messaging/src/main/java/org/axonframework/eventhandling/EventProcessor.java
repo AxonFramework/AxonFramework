@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.MessageHandlerInterceptorSupport;
-
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -30,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Allard Buijze
  * @since 1.2
  */
-public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMessage<?>> {
+public interface EventProcessor {
 
     /**
      * Returns the name of this event processor. This name is used to detect distributed instances of the
