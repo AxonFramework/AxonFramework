@@ -98,11 +98,12 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
                                                 context);
             }
         };
+        MonitoringEventHandlingComponent monitoredEventHandlingComponent = new MonitoringEventHandlingComponent(messageMonitor, mockEventHandlingComponent);
         TestEventProcessor testSubject = TestEventProcessor.builder()
                                                            .name("test")
-                                                           .eventHandlingComponent(mockEventHandlingComponent)
-                                                           .messageMonitor(messageMonitor)
-                                                           .interceptors(List.of(interceptor)).build();
+                                                           .eventHandlingComponent(monitoredEventHandlingComponent)
+                                                           .interceptors(List.of(interceptor))
+                                                           .build();
 
         testSubject.processInBatchingUnitOfWork(events);
 

@@ -22,9 +22,14 @@ import org.axonframework.common.AxonException;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsCustomization;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
@@ -185,19 +190,32 @@ public abstract class DeadLetteringEventIntegrationTest {
         deadLetteringInvoker = invokerBuilder.build();
 
         eventSource = new AsyncInMemoryStreamableEventSource();
-        streamingProcessor =
-                PooledStreamingEventProcessor.builder()
-                                             .name(PROCESSING_GROUP)
-                                             .eventHandlerInvoker(deadLetteringInvoker)
-                                             .eventSource(eventSource)
-                                             .tokenStore(new InMemoryTokenStore())
-                                             .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager))
-                                             .coordinatorExecutor(Executors.newSingleThreadScheduledExecutor())
-                                             .workerExecutor(Executors.newSingleThreadScheduledExecutor())
-                                             .initialSegmentCount(1)
-                                             .claimExtensionThreshold(1000)
-                                             .build();
-
+        var interceptors = new MessageHandlerInterceptors();
+        var customization = new PooledStreamingEventProcessorsCustomization();
+        var eventHandlingComponent = new LegacyEventHandlingComponent(deadLetteringInvoker);
+        streamingProcessor = new PooledStreamingEventProcessor(
+                PROCESSING_GROUP,
+                eventSource,
+                new DefaultEventProcessingPipeline(
+                        PROCESSING_GROUP,
+                        customization.errorHandler(),
+                        customization.spanFactory(),
+                        new DefaultEventProcessorHandlingComponent(
+                                customization.spanFactory(),
+                                customization.messageMonitor(),
+                                interceptors,
+                                eventHandlingComponent,
+                                true
+                        ),
+                        true
+                ),
+                eventHandlingComponent,
+                new TransactionalUnitOfWorkFactory(transactionManager),
+                new InMemoryTokenStore(),
+                ignored -> Executors.newSingleThreadScheduledExecutor(),
+                ignored -> Executors.newSingleThreadScheduledExecutor(),
+                customization.initialSegmentCount(1).claimExtensionThreshold(1000)
+        );
         executor = Executors.newScheduledThreadPool(2);
     }
 
