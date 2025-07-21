@@ -17,7 +17,6 @@
 package org.axonframework.integrationtests.eventsourcing.eventstore.benchmark;
 
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
@@ -30,6 +29,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventstreaming.LegacyStreamableEventSource;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +111,7 @@ public abstract class AbstractEventStoreBenchmark {
                                                     .eventHandlerInvoker(eventHandlerInvoker)
                                                     .eventSource(new LegacyStreamableEventSource<>(eventStore))
                                                     .tokenStore(new InMemoryTokenStore())
-                                                    .transactionManager(NoTransactionManager.INSTANCE)
+                                                    .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                                                     .coordinatorExecutor(coordinatorExecutor)
                                                     .workerExecutor(workerExecutor)
                                                     .build();

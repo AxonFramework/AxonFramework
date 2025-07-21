@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -43,6 +42,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.axonframework.utils.DelegateScheduledExecutorService;
@@ -144,7 +144,7 @@ class PooledStreamingEventProcessorTest {
                                              .errorHandler(PropagatingErrorHandler.instance())
                                              .eventSource(stubMessageSource)
                                              .tokenStore(tokenStore)
-                                             .transactionManager(NoTransactionManager.instance())
+                                             .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                                              .coordinatorExecutor(coordinatorExecutor)
                                              .workerExecutor(workerExecutor)
                                              .initialSegmentCount(8)
@@ -1070,7 +1070,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder builderTestSubject =
                 PooledStreamingEventProcessor.builder()
                                              .tokenStore(new InMemoryTokenStore())
-                                             .transactionManager(NoTransactionManager.INSTANCE);
+                                             .unitOfWorkFactory(new SimpleUnitOfWorkFactory());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
@@ -1090,17 +1090,17 @@ class PooledStreamingEventProcessorTest {
                                              .name(PROCESSOR_NAME)
                                              .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
-                                             .transactionManager(NoTransactionManager.INSTANCE);
+                                             .unitOfWorkFactory(new SimpleUnitOfWorkFactory());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
     @Test
-    void buildWithNullTransactionManagerThrowsAxonConfigurationException() {
+    void buildWithNullUnitOfWorkFactoryThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         //noinspection ConstantConditions
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.transactionManager(null));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.unitOfWorkFactory(null));
     }
 
     @Test
@@ -1111,7 +1111,7 @@ class PooledStreamingEventProcessorTest {
                                              .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
                                              .tokenStore(new InMemoryTokenStore())
-                                             .transactionManager(NoTransactionManager.instance());
+                                             .unitOfWorkFactory(new SimpleUnitOfWorkFactory());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
@@ -1146,7 +1146,7 @@ class PooledStreamingEventProcessorTest {
                                              .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
                                              .tokenStore(new InMemoryTokenStore())
-                                             .transactionManager(NoTransactionManager.instance())
+                                             .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                                              .coordinatorExecutor(coordinatorExecutor);
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
@@ -1182,7 +1182,7 @@ class PooledStreamingEventProcessorTest {
                                              .eventHandlingComponent(stubEventHandlingComponent)
                                              .eventSource(stubMessageSource)
                                              .tokenStore(new InMemoryTokenStore())
-                                             .transactionManager(NoTransactionManager.instance())
+                                             .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                                              .coordinatorExecutor(coordinatorExecutor);
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);

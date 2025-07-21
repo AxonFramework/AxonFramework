@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
@@ -53,7 +53,7 @@ public class SubscribingEventProcessor implements EventProcessor {
     private final String name;
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
-    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
+    private final UnitOfWorkFactory unitOfWorkFactory;
     private final EventProcessingPipeline eventProcessingPipeline;
 
     private volatile Registration eventBusRegistration;
@@ -72,7 +72,7 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.name = builder.name;
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
-        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
+        this.unitOfWorkFactory = builder.unitOfWorkFactory;
         var messageHandlerInterceptors = new MessageHandlerInterceptors(builder.interceptors());
         var spanFactory = builder.spanFactory;
         var eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
@@ -149,7 +149,7 @@ public class SubscribingEventProcessor implements EventProcessor {
      */
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
-            var unitOfWork = transactionalUnitOfWorkFactory.create();
+            var unitOfWork = unitOfWorkFactory.create();
             FutureUtils.joinAndUnwrap(
                     unitOfWork.executeWithResult(processingContext -> eventProcessingPipeline.process(
                             eventMessages,
@@ -201,7 +201,6 @@ public class SubscribingEventProcessor implements EventProcessor {
 
         private SubscribableMessageSource<? extends EventMessage<?>> messageSource;
         private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
-        private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
 
         public Builder() {
             super();
@@ -272,15 +271,9 @@ public class SubscribingEventProcessor implements EventProcessor {
             return this;
         }
 
-        /**
-         * Sets the {@link TransactionManager} used when processing {@link EventMessage}s.
-         *
-         * @param transactionManager the {@link TransactionManager} used when processing {@link EventMessage}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
-            assertNonNull(transactionManager, "TransactionManager may not be null");
-            this.transactionManager = transactionManager;
+        @Override
+        public Builder unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+            super.unitOfWorkFactory(unitOfWorkFactory);
             return this;
         }
 

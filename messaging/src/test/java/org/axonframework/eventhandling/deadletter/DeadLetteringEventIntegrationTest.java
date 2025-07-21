@@ -35,6 +35,7 @@ import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -190,7 +191,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                                              .eventHandlerInvoker(deadLetteringInvoker)
                                              .eventSource(eventSource)
                                              .tokenStore(new InMemoryTokenStore())
-                                             .transactionManager(transactionManager)
+                                             .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager))
                                              .coordinatorExecutor(Executors.newSingleThreadScheduledExecutor())
                                              .workerExecutor(Executors.newSingleThreadScheduledExecutor())
                                              .initialSegmentCount(1)

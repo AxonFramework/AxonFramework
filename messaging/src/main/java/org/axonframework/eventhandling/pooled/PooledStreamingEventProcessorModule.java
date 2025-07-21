@@ -18,8 +18,6 @@ package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
@@ -32,6 +30,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -81,7 +80,7 @@ public class PooledStreamingEventProcessorModule
                 .eventHandlingComponent(eventHandlingComponent)
                 .eventSource(eventSource)
                 .tokenStore(parent.getOptionalComponent(TokenStore.class).orElse(new InMemoryTokenStore()))
-                .transactionManager(parent.getOptionalComponent(TransactionManager.class).orElse(NoTransactionManager.instance()))
+                .unitOfWorkFactory(new SimpleUnitOfWorkFactory()) // todo: configure!
                 .workerExecutor(processorName -> {
                     ScheduledExecutorService workerExecutor =
                             defaultExecutor(4, "WorkPackage[" + processorName + "]");
