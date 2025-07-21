@@ -31,6 +31,13 @@ import java.util.function.Consumer;
  * signaled by the {@code RESET_ALL} {@link TopologyChange#getUpdateType()}. Such a coarse topology change means the
  * routing of commands will change, which impacts {@link org.axonframework.common.caching.Cache} hits for your
  * aggregates or sagas, for example.
+ * <p>
+ * Registering this interface with the {@link org.axonframework.config.Configurer} will ensure it is registered with the
+ * {@link AxonServerConfiguration#getContext() default context} <b>only</b>! If you need to register several change
+ * listeners, either with the same context or with different contexts, you are required to retrieve the
+ * {@link io.axoniq.axonserver.connector.control.ControlChannel} from the {@code AxonServerConnectionManager} manually,
+ * and invoke {@link io.axoniq.axonserver.connector.control.ControlChannel#registerTopologyChangeHandler(Consumer)} for
+ * each change listener separately.
  *
  * @author Steven van Beelen
  * @since 4.12.0
