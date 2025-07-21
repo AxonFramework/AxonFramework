@@ -29,6 +29,7 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
@@ -60,7 +61,7 @@ class SubscribingEventProcessorTest {
                                                .name("test")
                                                .eventHandlerInvoker(eventHandlerInvoker)
                                                .messageSource(eventBus)
-                                               .transactionManager(transactionManager)
+                                               .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager))
                                                .spanFactory(DefaultEventProcessorSpanFactory.builder()
                                                                                             .spanFactory(spanFactory)
                                                                                             .build())
@@ -113,10 +114,10 @@ class SubscribingEventProcessorTest {
     }
 
     @Test
-    void buildWithNullTransactionManagerThrowsAxonConfigurationException() {
+    void buildWithNullUnitOfWorkFactoryThrowsAxonConfigurationException() {
         SubscribingEventProcessor.Builder builder = SubscribingEventProcessor.builder();
 
-        assertThrows(AxonConfigurationException.class,  () -> builder.transactionManager(null));
+        assertThrows(AxonConfigurationException.class,  () -> builder.unitOfWorkFactory(null));
     }
 
     static class TestingTransactionManager implements TransactionManager {
