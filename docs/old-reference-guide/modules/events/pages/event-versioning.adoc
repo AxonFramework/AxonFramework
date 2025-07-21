@@ -319,7 +319,7 @@ Although the description above leans towards event upcasting, note that all the 
 
 From the `abstract` upcaster implementations shared xref:provided_abstract_upcaster_implementations[earlier], the only feasible upcaster is the `SingleEventUpcaster`. We can logically deduce that a multi-upcaster would be incorrect, as only the last returned snapshot is used to load an aggregate. Furthermore, context-aware upcasters aren't necessary either, as any context-specific information in a snapshot is generated during event sourcing. Hence, if any data should carry over, simply reconstruct the snapshot instead.
 
-When upcasting events, the *type* to upcaster equals the fully qualified class name of the event itself.When upcasting snapshots, the type is the fully qualified class name of the *aggregate*.Knowing this detail, let's look at an example of a snapshot upcaster for the `GiftCard` aggregate (as exemplified xref:axon-framework-commands:modeling/aggregate.adoc[here]):
+When upcasting events, the *type* to upcaster equals the fully qualified class name of the event itself. When upcasting snapshots, the type is the fully qualified class name of the *aggregate*. Knowing this detail, let's look at an example of a snapshot upcaster for the `GiftCard` aggregate (as exemplified xref:axon-framework-commands:modeling/aggregate.adoc[here]):
 
 [source,java]
 ----
