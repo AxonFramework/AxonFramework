@@ -35,6 +35,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static java.util.Objects.requireNonNull;
@@ -259,8 +260,9 @@ public class SubscribingEventProcessor implements EventProcessor {
         }
 
         @Override
-        public Builder eventProcessingPipeline(@Nonnull EventProcessingPipeline eventProcessingPipeline) {
-            super.eventProcessingPipeline(eventProcessingPipeline);
+        public Builder eventProcessingPipeline(
+                @Nonnull Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipelineBuilder) {
+            super.eventProcessingPipeline(eventProcessingPipelineBuilder);
             return this;
         }
 

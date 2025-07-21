@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.subscribing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.configuration.EventProcessorsCustomization;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.NoOpSpanFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,11 +47,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     private ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> subscribableMessageSourceBuilder;
 
     // todo: defaults - should be configurable
-    private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
-    private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-    private final EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
-                                                                                          .spanFactory(NoOpSpanFactory.INSTANCE)
-                                                                                          .build();
+    private final EventProcessorsCustomization eventProcessorsCustomization = new EventProcessorsCustomization();
     private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
 
     public SubscribingEventProcessorModule(String processorName) {
@@ -79,7 +78,9 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
         var eventSource = subscribableMessageSourceBuilder.build(parent);
 
-
+        var spanFactory = eventProcessorsCustomization.spanFactory();
+        var errorHandler = eventProcessorsCustomization.errorHandler();
+        var messageMonitor = eventProcessorsCustomization.messageMonitor();
         var decoratedEventHandlingComponent = new DefaultEventProcessorHandlingComponent(
                 spanFactory,
                 messageMonitor,

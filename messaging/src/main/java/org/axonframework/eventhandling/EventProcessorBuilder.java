@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -31,6 +32,7 @@ import org.axonframework.tracing.SpanFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -50,7 +52,13 @@ public abstract class EventProcessorBuilder {
 
     protected String name;
     private EventHandlingComponent eventHandlingComponent;
-    private EventProcessingPipeline eventProcessingPipeline;
+    private Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipelineBuilder = (builder) -> new DefaultEventProcessingPipeline(
+            builder.name,
+            builder.errorHandler,
+            builder.spanFactory,
+            builder.eventHandlingComponent,
+            builder.streaming()
+    );
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
     protected MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
@@ -98,9 +106,9 @@ public abstract class EventProcessorBuilder {
         return this;
     }
 
-    public EventProcessorBuilder eventProcessingPipeline(@Nonnull EventProcessingPipeline eventProcessingPipeline) {
-        assertNonNull(eventProcessingPipeline, "EventProcessingPipeline may not be null");
-        this.eventProcessingPipeline = eventProcessingPipeline;
+    public EventProcessorBuilder eventProcessingPipeline(@Nonnull Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipelineBuilder) {
+        assertNonNull(this.eventProcessingPipelineBuilder, "EventProcessingPipeline may not be null");
+        this.eventProcessingPipelineBuilder = eventProcessingPipelineBuilder;
         return this;
     }
 
@@ -236,7 +244,11 @@ public abstract class EventProcessorBuilder {
         return unitOfWorkFactory;
     }
 
-    public EventProcessingPipeline eventProcessingPipeline() {
-        return eventProcessingPipeline;
+    public Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipeline() {
+        return eventProcessingPipelineBuilder;
+    }
+
+    public boolean streaming() {
+        return false;
     }
 }
