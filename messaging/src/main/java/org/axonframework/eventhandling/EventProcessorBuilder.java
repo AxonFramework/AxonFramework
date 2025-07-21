@@ -19,7 +19,9 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -53,6 +55,7 @@ public abstract class EventProcessorBuilder {
                                                                                       .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                       .build();
     private List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
+    protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory();
 
     /**
      * Sets the {@code name} of this {@link EventProcessor} implementation.
@@ -142,6 +145,20 @@ public abstract class EventProcessorBuilder {
     }
 
     /**
+     * A {@link UnitOfWorkFactory} that spawns {@link org.axonframework.messaging.unitofwork.UnitOfWork} used to
+     * process an events batch.
+     *
+     * @param unitOfWorkFactory A {@link UnitOfWorkFactory} that spawns
+     *                          {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
+     * @return The current Builder instance, for fluent interfacing.
+     */
+    public EventProcessorBuilder unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+        assertNonNull(unitOfWorkFactory, "UnitOfWorkFactory may not be null");
+        this.unitOfWorkFactory = unitOfWorkFactory;
+        return this;
+    }
+
+    /**
      * Validates whether the fields contained in this Builder are set accordingly.
      *
      * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
@@ -203,5 +220,9 @@ public abstract class EventProcessorBuilder {
 
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors() {
         return interceptors;
+    }
+
+    public UnitOfWorkFactory unitOfWorkFactory() {
+        return unitOfWorkFactory;
     }
 }

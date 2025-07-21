@@ -54,6 +54,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.monitoring.MessageMonitor;
@@ -887,7 +888,7 @@ public class LegacyEventProcessingModule
                                         .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
                                         .messageSource(messageSource)
                                         .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
-                                        .transactionManager(transactionManager(name))
+                                        .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
                                         .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
                                         .build();
     }
@@ -917,7 +918,7 @@ public class LegacyEventProcessingModule
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
                                              .eventSource(new LegacyStreamableEventSource<>(messageSource))
                                              .tokenStore(tokenStore(name))
-                                             .transactionManager(transactionManager(name))
+                                             .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
                                              .coordinatorExecutor(processorName -> {
                                                  ScheduledExecutorService coordinatorExecutor =
                                                          defaultExecutor(1, "Coordinator[" + processorName + "]");
