@@ -151,7 +151,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .unitOfWorkFactory(unitOfWorkFactory)
                                       .executorService(coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
-                                      .onMessageIgnored(this::reportIgnored)
+                                      .onMessageIgnored(customization.ignoredMessageHandler())
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
                                       .claimExtensionThreshold(claimExtensionThreshold)
@@ -163,20 +163,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .eventCriteria(eventCriteria)
                                       // .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment)) // TODO #3304 - Integrate event replay logic into Event Handling Component
                                       .build();
-    }
-
-    /**
-     * Report the given {@code eventMessage} as ignored. Any registered {@link MessageMonitor} shall be notified of the
-     * ignored message.
-     * <p>
-     * Typically, messages are ignored when they are received by a processor that has no suitable Handler for the type
-     * of Event received.
-     *
-     * @param eventMessage the message that has been ignored.
-     */
-    private void reportIgnored(EventMessage<?> eventMessage) {
-        var messageMonitor = customization.messageMonitor();
-        messageMonitor.onMessageIngested(eventMessage).reportIgnored();
     }
 
     /**

@@ -35,6 +35,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import java.time.Clock;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -75,6 +76,8 @@ public class PooledStreamingEventProcessorsCustomization extends EventProcessors
     private boolean coordinatorExtendsClaims = false;
     private Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider =
             (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
+    private Consumer<? super EventMessage<?>> ignoredMessageHandler = eventMessage -> messageMonitor.onMessageIngested(eventMessage).reportIgnored();
+    // todo: builder with monitor from config???
 
 
     public PooledStreamingEventProcessorsCustomization() {
@@ -182,6 +185,16 @@ public class PooledStreamingEventProcessorsCustomization extends EventProcessors
 
     public EventProcessorsCustomization spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
         super.spanFactory(spanFactory);
+        return this;
+    }
+
+    public Consumer<? super EventMessage<?>> ignoredMessageHandler() {
+        return ignoredMessageHandler;
+    }
+
+    public PooledStreamingEventProcessorsCustomization ignoredMessageHandler(
+            Consumer<? super EventMessage<?>> ignoredMessageHandler) {
+        this.ignoredMessageHandler = ignoredMessageHandler;
         return this;
     }
 }
