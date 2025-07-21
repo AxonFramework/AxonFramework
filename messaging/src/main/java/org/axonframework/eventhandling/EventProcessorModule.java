@@ -46,7 +46,7 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @return A builder phase to configure a subscribing event processor.
      */
     static SubscribingSourcePhase subscribing(String processorName) {
-        return null;
+        return new SubscribingEventProcessorModule(processorName);
     }
 
     /**

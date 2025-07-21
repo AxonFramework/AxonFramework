@@ -14,36 +14,31 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.pooled;
+package org.axonframework.eventhandling;
 
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.eventhandling.EventProcessorModule;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
+import org.axonframework.messaging.SubscribableMessageSource;
 import org.junit.jupiter.api.*;
 
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
-class PooledStreamingEventProcessorModuleTest {
+class SubscribingEventProcessorModuleTest {
 
     @Test
     void registersWithLifecycleHooks() {
         // given
         AtomicBoolean started = new AtomicBoolean(false);
         AtomicBoolean stopped = new AtomicBoolean(false);
-        AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
-        eventSource.setOnOpen(() -> started.set(true));
-        eventSource.setOnClose(() -> stopped.set(true));
 
-        var module = EventProcessorModule.pooledStreaming("test-processor")
-                                         .eventSource(c -> eventSource)
-                                         .eventHandler(new QualifiedName(String.class),
-                                                       c -> (event, context) -> MessageStream.empty())
+        SubscribableMessageSource<EventMessage<?>> messageSource = handler -> {
+            started.set(true);
+            return () -> stopped.getAndSet(true);
+        };
+
+        var module = EventProcessorModule.subscribing("test-processor")
+                                         .eventSource(c -> messageSource)
                                          .build();
 
         var configuration = MessagingConfigurer.create()
@@ -54,13 +49,12 @@ class PooledStreamingEventProcessorModuleTest {
         configuration.start();
 
         // then
-        await().atMost(Duration.ofSeconds(1))
-               .untilAsserted(() -> assertThat(started).isTrue());
+        assertThat(started).isTrue();
 
         // when
         configuration.shutdown();
 
         // then
-        await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertThat(stopped).isTrue());
+        assertThat(stopped).isTrue();
     }
 }
