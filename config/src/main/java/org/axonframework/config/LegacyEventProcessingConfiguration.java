@@ -42,6 +42,7 @@ import java.util.function.Function;
  * @author Milan Savic
  * @since 4.0
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface LegacyEventProcessingConfiguration {
 
     /**

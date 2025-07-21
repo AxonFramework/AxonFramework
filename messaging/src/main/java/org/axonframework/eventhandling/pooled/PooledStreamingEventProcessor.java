@@ -58,7 +58,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -268,11 +267,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-        return messageHandlerInterceptors.toList();
     }
 
     @Override

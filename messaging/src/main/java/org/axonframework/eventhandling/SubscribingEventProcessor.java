@@ -112,11 +112,6 @@ public class SubscribingEventProcessor implements EventProcessor {
         return name;
     }
 
-    @Override
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-        return messageHandlerInterceptors.toList();
-    }
-
     /**
      * Start this processor. This will register the processor with the {@link EventBus}.
      * <p>
