@@ -59,7 +59,6 @@ import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -432,13 +431,6 @@ public class LegacyEventProcessingModule
         return selectProcessingGroupByType(sagaType);
     }
     //</editor-fold>
-
-    @Override
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
-        validateConfigInitialization();
-        return eventProcessor(processorName).map(EventProcessor::getHandlerInterceptors)
-                                            .orElse(Collections.emptyList());
-    }
 
     @Override
     public ListenerInvocationErrorHandler listenerInvocationErrorHandler(String processingGroup) {
