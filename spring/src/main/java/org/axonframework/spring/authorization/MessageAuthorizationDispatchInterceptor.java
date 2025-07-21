@@ -18,13 +18,11 @@ package org.axonframework.spring.authorization;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 
 import java.util.HashMap;
 import java.util.List;
@@ -44,18 +42,6 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> imple
 
     private static final Logger logger = LoggerFactory.getLogger(MessageAuthorizationDispatchInterceptor.class);
 
-    private final Serializer serializer;
-
-    /**
-     * Constructs a {@code MessageAuthorizationDispatchInterceptor} with the given {@code serializer}.
-     *
-     * @param serializer The serializer used to serialize the {@link Authentication#getPrincipal()} to a
-     *                   {@code String}.
-     */
-    public MessageAuthorizationDispatchInterceptor(Serializer serializer) {
-        this.serializer = serializer;
-    }
-
     @Nonnull
     @Override
     public T handle(@Nonnull T message) {
@@ -67,11 +53,6 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> imple
 
         logger.debug("Adding message metadata for username & authorities.");
         Map<String, String> authenticationDetails = new HashMap<>();
-        authenticationDetails.put(
-                "username",
-                serializer.serialize(((User) authentication.getPrincipal()).getUsername(), String.class)
-                          .getData()
-        );
         String authorities = authentication.getAuthorities()
                                            .stream()
                                            .map(GrantedAuthority::getAuthority)
