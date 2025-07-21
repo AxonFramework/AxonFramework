@@ -21,8 +21,15 @@ import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.NoOpSpanFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +42,14 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     private final String processorName;
     private final Map<QualifiedName, ComponentBuilder<EventHandler>> handlerBuilders;
     private ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> subscribableMessageSourceBuilder;
+
+    // todo: defaults - should be configurable
+    private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
+    private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+    private final EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
+                                                                                          .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                          .build();
+    private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
 
     public SubscribingEventProcessorModule(String processorName) {
         super(processorName);
@@ -64,11 +79,29 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
         var eventSource = subscribableMessageSourceBuilder.build(parent);
 
-        var processor = SubscribingEventProcessor.builder()
-                                                 .name(processorName)
-                                                 .eventHandlingComponent(eventHandlingComponent)
-                                                 .messageSource(eventSource)
-                                                 .build();
+
+        var decoratedEventHandlingComponent = new DefaultEventProcessorHandlingComponent(
+                spanFactory,
+                messageMonitor,
+                messageHandlerInterceptors,
+                eventHandlingComponent,
+                false
+        );
+        var decoratedEventProcessingPipeline = new DefaultEventProcessingPipeline(
+                processorName,
+                errorHandler,
+                spanFactory,
+                eventHandlingComponent,
+                false
+        );
+        var processor = new SubscribingEventProcessor(
+                processorName,
+                eventSource,
+                decoratedEventProcessingPipeline,
+                decoratedEventHandlingComponent,
+                new SimpleUnitOfWorkFactory(),
+                c -> c
+        );
         lifecycleRegistry.onStart(2, processor::start);
         lifecycleRegistry.onShutdown(2, processor::shutDown);
         return super.build(parent, lifecycleRegistry);

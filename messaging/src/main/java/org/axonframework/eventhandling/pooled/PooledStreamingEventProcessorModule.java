@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -111,7 +112,6 @@ public class PooledStreamingEventProcessorModule
             return coordinatorExecutor;
         };
 
-
         var decoratedEventHandlingComponent = new DefaultEventProcessorHandlingComponent(
                 spanFactory,
                 messageMonitor,
@@ -119,14 +119,24 @@ public class PooledStreamingEventProcessorModule
                 eventHandlingComponent,
                 true
         );
+        var decoratedEventProcessingPipeline = new DefaultEventProcessingPipeline(
+                processorName,
+                errorHandler,
+                spanFactory,
+                eventHandlingComponent,
+                true
+        );
         var processor = PooledStreamingEventProcessor.builder()
                 .name(processorName)
                 .eventHandlingComponent(decoratedEventHandlingComponent)
+                .eventProcessingPipeline(decoratedEventProcessingPipeline)
                 .eventSource(eventSource)
                 .tokenStore(tokenStore)
                 .unitOfWorkFactory(unitOfWorkFactory)
                 .workerExecutor(workerExecutorBuilder)
                 .coordinatorExecutor(coordinatorExecutorBuilder)
+                .errorHandler(errorHandler)
+                .messageMonitor(messageMonitor)
                 .build();
         lifecycleRegistry.onStart(2, processor::start);
         lifecycleRegistry.onShutdown(2, processor::shutDown);

@@ -35,8 +35,8 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
@@ -156,15 +156,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         builder.validate();
         this.name = builder.name();
         this.messageMonitor = builder.messageMonitor();
-        var spanFactory = builder.spanFactory();
         this.eventHandlingComponent = builder.eventHandlingComponent();
-        this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
-                this.name,
-                builder.errorHandler(),
-                spanFactory,
-                eventHandlingComponent,
-                true
-        );
+        this.eventProcessingPipeline = builder.eventProcessingPipeline() == null ? new HandlingEventProcessingPipeline(eventHandlingComponent) : builder.eventProcessingPipeline();
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 this.name,
                 eventHandlingComponent,
@@ -533,6 +526,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         @Override
         public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
             super.eventHandlingComponent(eventHandlingComponent);
+            return this;
+        }
+
+        @Override
+        public Builder eventProcessingPipeline(@Nonnull EventProcessingPipeline eventProcessingPipeline) {
+            super.eventProcessingPipeline(eventProcessingPipeline);
             return this;
         }
 
