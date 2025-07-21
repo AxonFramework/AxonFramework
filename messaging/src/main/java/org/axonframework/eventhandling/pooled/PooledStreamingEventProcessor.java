@@ -120,23 +120,23 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final MessageHandlerInterceptors messageHandlerInterceptors;
 
-    public PooledStreamingEventProcessor(
-            @Nonnull String name,
-            @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource,
-            @Nonnull EventProcessingPipeline eventProcessingPipeline,
-            @Nonnull EventHandlingComponent eventHandlingComponent,
-            @Nonnull UnitOfWorkFactory unitOfWorkFactory,
-            @Nonnull TokenStore tokenStore,
-            @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder,
-            @Nonnull Function<String, ScheduledExecutorService> workerExecutorBuilder
-    ) {
-        this.name = name;
-        this.eventSource = eventSource;
-        this.eventProcessingPipeline = eventProcessingPipeline;
-        this.eventHandlingComponent = eventHandlingComponent;
-        this.unitOfWorkFactory = unitOfWorkFactory;
-        this.tokenStore = tokenStore;
-    }
+//    public PooledStreamingEventProcessor(
+//            @Nonnull String name,
+//            @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource,
+//            @Nonnull EventProcessingPipeline eventProcessingPipeline,
+//            @Nonnull EventHandlingComponent eventHandlingComponent,
+//            @Nonnull UnitOfWorkFactory unitOfWorkFactory,
+//            @Nonnull TokenStore tokenStore,
+//            @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder,
+//            @Nonnull Function<String, ScheduledExecutorService> workerExecutorBuilder
+//    ) {
+//        this.name = name;
+//        this.eventSource = eventSource;
+//        this.eventProcessingPipeline = eventProcessingPipeline;
+//        this.eventHandlingComponent = eventHandlingComponent;
+//        this.unitOfWorkFactory = unitOfWorkFactory;
+//        this.tokenStore = tokenStore;
+//    }
 
     /**
      * Instantiate a {@code PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -162,7 +162,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         this.messageMonitor = builder.messageMonitor();
         this.messageHandlerInterceptors = new MessageHandlerInterceptors();
         var spanFactory = builder.spanFactory();
-        var eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
+        this.eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
                 builder.spanFactory(),
                 builder.messageMonitor(),
                 this.messageHandlerInterceptors,
@@ -615,6 +615,20 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Specifies the {@link ScheduledExecutorService} used by the coordinator of this
+         * {@link PooledStreamingEventProcessor}.
+         *
+         * @param coordinatorExecutor the {@link ScheduledExecutorService} to be used by the coordinator of this
+         *                            {@link PooledStreamingEventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder coordinatorExecutor(@Nonnull ScheduledExecutorService coordinatorExecutor) {
+            assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
+            this.coordinatorExecutorBuilder = ignored -> coordinatorExecutor;
             return this;
         }
 

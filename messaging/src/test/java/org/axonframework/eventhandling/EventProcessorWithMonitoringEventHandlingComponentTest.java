@@ -131,11 +131,6 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         }
 
         @Override
-        public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-            return messageHandlerInterceptors.toList();
-        }
-
-        @Override
         public void start() {
         }
 
