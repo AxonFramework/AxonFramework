@@ -192,7 +192,7 @@ class LegacyEventProcessingModuleTest {
                                                                 .registerEventHandler(c -> new TrackingEventHandler()))
                                        .start();
 
-        EventProcessingConfiguration processingConfig = configuration.eventProcessingConfiguration();
+        LegacyEventProcessingConfiguration processingConfig = configuration.eventProcessingConfiguration();
 
         assertTrue(processingConfig.eventProcessor("subscribing").isPresent());
         assertTrue(processingConfig.eventProcessor("subscribing")
@@ -283,7 +283,7 @@ class LegacyEventProcessingModuleTest {
                   .registerSaga(ConcurrentMap.class)
                   .registerSaga(String.class)
                   .registerEventHandler(c -> new HashMap<>());
-        EventProcessingConfiguration configuration = configurer.start()
+        LegacyEventProcessingConfiguration configuration = configurer.start()
                                                                .eventProcessingConfiguration();
 
         assertEquals("myGroup", configuration.sagaProcessingGroup(String.class));
@@ -305,7 +305,7 @@ class LegacyEventProcessingModuleTest {
                   .registerSaga(ConcurrentMap.class)
                   .registerSaga(String.class)
                   .registerEventHandler(c -> new HashMap<>());
-        EventProcessingConfiguration configuration = configurer.start()
+        LegacyEventProcessingConfiguration configuration = configurer.start()
                                                                .eventProcessingConfiguration();
 
         assertEquals("myGroup", configuration.sagaProcessingGroup(String.class));
@@ -1275,7 +1275,7 @@ class LegacyEventProcessingModuleTest {
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
 
         LegacyConfiguration config = configurer.start();
-        EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
+        LegacyEventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
 
         Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
                 eventProcessingConfig.deadLetterQueue(processingGroup);
@@ -1311,7 +1311,7 @@ class LegacyEventProcessingModuleTest {
                   .registerDefaultHandlerInterceptor((c, n) -> interceptor2);
 
         LegacyConfiguration config = configurer.start();
-        EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
+        LegacyEventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
 
         Optional<SequencedDeadLetterProcessor<EventMessage<?>>> optionalDeadLetterProcessor =
                 eventProcessingConfig.sequencedDeadLetterProcessor(processingGroup);

@@ -81,13 +81,13 @@ import static org.axonframework.config.EventProcessingConfigurer.PooledStreaming
 
 /**
  * Event processing module configuration. Registers all configuration components within itself, builds the
- * {@link EventProcessingConfiguration} and takes care of module lifecycle.
+ * {@link LegacyEventProcessingConfiguration} and takes care of module lifecycle.
  *
  * @author Milan Savic
  * @since 4.0
  */
 public class LegacyEventProcessingModule
-        implements ModuleConfiguration, EventProcessingConfiguration, EventProcessingConfigurer {
+        implements ModuleConfiguration, LegacyEventProcessingConfiguration, EventProcessingConfigurer {
 
     private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
     private static final PooledStreamingProcessorConfiguration DEFAULT_SAGA_PSEP_CONFIG =

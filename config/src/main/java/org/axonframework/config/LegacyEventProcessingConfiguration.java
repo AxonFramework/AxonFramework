@@ -42,7 +42,7 @@ import java.util.function.Function;
  * @author Milan Savic
  * @since 4.0
  */
-public interface EventProcessingConfiguration {
+public interface LegacyEventProcessingConfiguration {
 
     /**
      * Obtains an {@link EventProcessor} through the given {@code name}.

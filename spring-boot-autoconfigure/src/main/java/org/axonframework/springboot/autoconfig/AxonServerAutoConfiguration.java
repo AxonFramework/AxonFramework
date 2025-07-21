@@ -36,8 +36,8 @@ import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.PriorityResolver;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.LegacyEventProcessingConfiguration;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -178,7 +178,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @ConditionalOnMissingClass("org.axonframework.extensions.multitenancy.autoconfig.MultiTenancyAxonServerAutoConfiguration")
     public EventProcessorInfoConfiguration processorInfoConfiguration(
-            EventProcessingConfiguration eventProcessingConfiguration,
+            LegacyEventProcessingConfiguration eventProcessingConfiguration,
             AxonServerConnectionManager connectionManager,
             AxonServerConfiguration configuration
     ) {
