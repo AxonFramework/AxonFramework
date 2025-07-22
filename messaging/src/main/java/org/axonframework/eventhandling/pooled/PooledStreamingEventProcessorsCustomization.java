@@ -61,6 +61,7 @@ import java.util.function.Function;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+// todo: I believe customization is on the component level, but some Configuration needs to be higher level, on the module level and access components!!! like MessageMonitor etc.
 public class PooledStreamingEventProcessorsCustomization extends EventProcessorsCustomization {
 
     // todo: tokenStore?
