@@ -110,7 +110,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             @Nonnull String name,
             @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource,
             @Nonnull EventProcessingPipeline eventProcessingPipeline,
-            @Nonnull EventHandlingComponent eventHandlingComponent,
+            @Nonnull EventHandlingComponent eventHandlingComponent, // todo: multiple, sequence while checking  -set of sequence itendifier per message
             @Nonnull UnitOfWorkFactory unitOfWorkFactory,
             @Nonnull TokenStore tokenStore,
             @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder,
