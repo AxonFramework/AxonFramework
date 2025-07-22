@@ -47,7 +47,6 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
 
     private final String eventProcessor;
     private final EventHandlingComponent eventHandlingComponent;
-    private final SegmentMatcher segmentMatcher;
     private final ErrorHandler errorHandler;
 
     DefaultWorkPackageEventFilter(
@@ -58,7 +57,6 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
         this.eventProcessor = Objects.requireNonNull(eventProcessor, "EventProcessor name may not be null");
         this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent,
                                                              "EventHandlingComponent may not be null");
-        this.segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
         this.errorHandler = Objects.requireNonNull(errorHandler, "ErrorHandler may not be null");
     }
 
@@ -82,6 +80,8 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
         try {
             var eventMessageQualifiedName = eventMessage.type().qualifiedName();
             var eventSupported = eventHandlingComponent.supports(eventMessageQualifiedName);
+            var segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
+
             return eventSupported && segmentMatcher.matches(segment, eventMessage);
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(eventProcessor, e, Collections.singletonList(eventMessage)));
