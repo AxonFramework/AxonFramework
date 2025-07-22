@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.*;
 import static org.mockito.Mockito.*;
 
@@ -49,12 +50,8 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
         return new JacksonConverter(OBJECT_MAPPER);
     }
 
-    @SuppressWarnings("unused") // Used by ConverterTestSuite
-    static Stream<Arguments> supportedConversions() {
-        return Stream.concat(commonConversions(), subjectSpecificSupportedConversions());
-    }
-
-    private static Stream<Arguments> subjectSpecificSupportedConversions() {
+    @Override
+    protected Stream<Arguments> specificSupportedConversions() {
         return Stream.of(
                 // Convert from concrete type:
                 arguments(SomeInput.class, JsonNode.class),
@@ -80,13 +77,25 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
         );
     }
 
-    @SuppressWarnings("unused") // Used by ConverterTestSuite
-    static Stream<Arguments> conversionScenarios() throws JsonProcessingException {
-        return Stream.concat(commonConversionScenarios(), subjectSpecificConversionScenarios());
+    @Override
+    protected Stream<Arguments> specificUnsupportedConversions() {
+        return Stream.empty();
     }
 
-    static Stream<Arguments> subjectSpecificConversionScenarios() throws JsonProcessingException {
-        byte[] jsonCompliantBytes = OBJECT_MAPPER.writeValueAsBytes("Lorem Ipsum");
+    @Override
+    protected Stream<Arguments> specificSameTypeConversions() {
+        return Stream.empty();
+    }
+
+    @Override
+    protected Stream<Arguments> specificConversionScenarios() {
+        byte[] jsonCompliantBytes = null;
+        try {
+            jsonCompliantBytes = OBJECT_MAPPER.writeValueAsBytes("Lorem Ipsum");
+        } catch (JsonProcessingException e) {
+            fail("Could not write given variable to a JSON compliant byte array.");
+            throw new RuntimeException(e);
+        }
         ObjectNode objectNode = OBJECT_MAPPER.createObjectNode();
         objectNode.put("property", "value");
         return Stream.of(
