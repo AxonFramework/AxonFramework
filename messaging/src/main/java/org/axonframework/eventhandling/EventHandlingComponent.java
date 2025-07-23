@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
 
 import java.util.Set;
@@ -38,4 +39,31 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * @return All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
      */
     Set<QualifiedName> supportedEvents();
+
+    /**
+     * Checks whether the given {@code eventName} is supported by this component.
+     *
+     * @param eventName The name of the event to check for support.
+     * @return {@code true} if the given {@code eventName} is supported, {@code false} otherwise.
+     */
+    default boolean supports(@Nonnull QualifiedName eventName) {
+        return supportedEvents().contains(eventName);
+    }
+
+    /**
+     * Returns the sequence identifier for the given {@code event}. When two events have the same sequence identifier
+     * (as defined by their equals method), they will be executed sequentially.
+     * <p>
+     * The default implementation returns the event's identifier, which effectively means no specific sequencing is
+     * applied (full concurrency). Override this method to provide custom sequencing behavior, such as handling events
+     * for the same aggregate sequentially. Or use a {@link SequenceOverridingEventHandlingComponent} if you cannot
+     * inherit from a certain {@code EventHandlingComponent} implementation.
+     *
+     * @param event The event for which to get the sequencing identifier.
+     * @return A sequence identifier for the given event.
+     */
+    @Nonnull
+    default Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+        return event.getIdentifier();
+    }
 }

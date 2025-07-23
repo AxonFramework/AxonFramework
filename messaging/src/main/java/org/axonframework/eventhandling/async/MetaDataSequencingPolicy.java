@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package org.axonframework.eventhandling.async;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 
-import jakarta.annotation.Nonnull;
+import java.util.Optional;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -32,7 +33,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Lucas Campos
  * @since 4.6.0
  */
-public class MetaDataSequencingPolicy implements SequencingPolicy<EventMessage<?>> {
+public class MetaDataSequencingPolicy implements SequencingPolicy {
 
     private final String metaDataKey;
 
@@ -66,9 +67,11 @@ public class MetaDataSequencingPolicy implements SequencingPolicy<EventMessage<?
     }
 
     @Override
-    public Object getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
-        return event.getMetaData()
-                    .getOrDefault(metaDataKey, event.getIdentifier());
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+        return Optional.ofNullable(
+                event.getMetaData()
+                     .getOrDefault(metaDataKey, event.getIdentifier())
+        );
     }
 
     /**

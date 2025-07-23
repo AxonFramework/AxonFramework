@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
@@ -24,6 +25,7 @@ import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context;
@@ -87,7 +89,6 @@ class CoordinatorTest {
                                  .executorService(executorService)
                                  .workPackageFactory((segment, trackingToken) -> workPackage)
                                  .initialToken(es -> es.firstToken().thenApply(ReplayToken::createReplayToken))
-                                 .eventFilter(eventMessage -> true)
                                  .maxSegmentProvider(e -> SEGMENT_IDS.length)
                                  .build();
     }
@@ -160,7 +161,7 @@ class CoordinatorTest {
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(SEGMENT_IDS);
         when(tokenStore.fetchAvailableSegments(PROCESSOR_NAME)).thenReturn(Collections.singletonList(SEGMENT_ONE));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ONE)).thenReturn(testToken);
-        when(messageSource.open(StreamingCondition.startingFrom(testToken))).thenReturn(testStream);
+        when(messageSource.open(streamingFrom(testToken))).thenReturn(testStream);
 
         testSubject.start();
 
@@ -168,7 +169,7 @@ class CoordinatorTest {
 
         assertWithin(500,
                      TimeUnit.MILLISECONDS,
-                     () -> verify(messageSource).open(StreamingCondition.startingFrom(testToken)));
+                     () -> verify(messageSource).open(streamingFrom(testToken)));
 
         //noinspection unchecked
         ArgumentCaptor<List<MessageStream.Entry<? extends EventMessage<?>>>> eventsCaptor = ArgumentCaptor.forClass(List.class);
@@ -220,5 +221,10 @@ class CoordinatorTest {
     private static Context trackingTokenContext(TrackingToken token) {
         return TrackingToken.addToContext(
                 Context.empty(), token);
+    }
+
+    @Nonnull
+    private static StreamingCondition streamingFrom(TrackingToken testToken) {
+        return StreamingCondition.conditionFor(testToken, EventCriteria.havingAnyTag());
     }
 }

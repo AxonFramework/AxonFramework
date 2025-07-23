@@ -37,6 +37,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -218,5 +220,20 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
                         .stream()
                         .flatMap(Collection::stream)
                         .anyMatch(AnnotationEventHandlerAdapter::supportsReplay);
+    }
+
+    /**
+     * Returns the set of event payload types that this adapter can handle.
+     *
+     * @return A set of classes representing the event types this adapter can handle.
+     */
+    public Set<Class<?>> supportedEventTypes() {
+        return inspector.getAllHandlers()
+                        .values()
+                        .stream()
+                        .flatMap(Collection::stream)
+                        .filter(handlingMember -> handlingMember.canHandleMessageType(EventMessage.class))
+                        .map(MessageHandlingMember::payloadType)
+                        .collect(Collectors.toSet());
     }
 }

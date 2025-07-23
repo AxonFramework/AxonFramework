@@ -35,4 +35,31 @@ public record Artifact(
         @Nonnull String version
 ) {
 
+    /**
+     * Returns a short version of the group ID, to save bytes over the wire.
+     *
+     * @return The short version of the group ID, or the original if it can't be shortened.
+     */
+    public String shortGroupId() {
+        if (groupId.startsWith("org.axonframework.extensions")) {
+            if(groupId.length() == 28) {
+                return "ext";
+            }
+            return "ext." + groupId.substring(29);
+        }
+        if (groupId.startsWith("org.axonframework")) {
+            if(groupId.length() == 17) {
+                return "fw";
+            }
+            return "fw." + groupId.substring(18);
+        }
+        if (groupId.startsWith("io.axoniq")) {
+            if(groupId.length() == 9) {
+                return "iq";
+            }
+            return "iq." + groupId.substring(10);
+        }
+        return groupId;
+    }
+
 }
