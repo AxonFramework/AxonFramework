@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -40,6 +41,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * timeout behavior works as expected when both are used together.
  */
 class CombinedTimeoutTests {
+
+    @AfterEach
+    void tearDown() throws InterruptedException {
+        //noinspection ResultOfMethodCallIgnored | Awaiting termination to ensure none of the AxonTimeLimitedTask hang
+        AxonTaskJanitor.INSTANCE
+                .awaitTermination(250, TimeUnit.MILLISECONDS);
+    }
 
     /**
      * Simple test where the message handling member takes longer than the timeout specified, and the batch fits inside

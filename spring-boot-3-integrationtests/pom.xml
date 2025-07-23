@@ -20,12 +20,12 @@
     <parent>
         <artifactId>axon</artifactId>
         <groupId>org.axonframework</groupId>
-        <version>4.11.3-SNAPSHOT</version>
+        <version>4.11.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>axon-spring-boot-3-integrationtests</artifactId>
-    <version>4.11.3-SNAPSHOT</version>
+    <version>4.11.4-SNAPSHOT</version>
 
     <name>Axon Framework - Spring Boot 3 Integration Tests</name>
     <description>
@@ -37,13 +37,13 @@
         <axon.version>${project.version}</axon.version>
         <spring-boot-3.version>3.4.1</spring-boot-3.version>
         <!-- Database -->
-        <mysql-connector-java.version>9.2.0</mysql-connector-java.version>
+        <mysql-connector-java.version>9.3.0</mysql-connector-java.version>
         <!-- Scheduling -->
-        <jobrunr.version>7.4.0</jobrunr.version>
+        <jobrunr.version>8.0.1</jobrunr.version>
         <!-- Build / Plugin -->
-        <jacoco-maven.version>0.8.12</jacoco-maven.version>
-        <maven-compiler.version>3.13.0</maven-compiler.version>
-        <maven-surefire.version>3.5.2</maven-surefire.version>
+        <jacoco-maven.version>0.8.13</jacoco-maven.version>
+        <maven-compiler.version>3.14.0</maven-compiler.version>
+        <maven-surefire.version>3.5.3</maven-surefire.version>
     </properties>
 
     <dependencies>
@@ -158,7 +158,7 @@
         <dependency>
             <groupId>com.mchange</groupId>
             <artifactId>c3p0</artifactId>
-            <version>0.10.2</version>
+            <version>0.11.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>

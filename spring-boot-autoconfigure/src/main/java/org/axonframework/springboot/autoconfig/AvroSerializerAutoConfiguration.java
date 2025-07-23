@@ -22,6 +22,7 @@ import org.axonframework.spring.serialization.avro.AvroSchemaPackages;
 import org.axonframework.spring.serialization.avro.ClasspathAvroSchemaLoader;
 import org.axonframework.spring.serialization.avro.SpecificRecordBaseClasspathAvroSchemaLoader;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;

@@ -23,4 +23,5 @@ org.axonframework.springboot.autoconfig.CBORMapperAutoConfiguration
 org.axonframework.springboot.autoconfig.OpenTelemetryAutoConfiguration
 org.axonframework.springboot.autoconfig.SecurityAutoConfiguration
 org.axonframework.springboot.autoconfig.TransactionAutoConfiguration
+org.axonframework.springboot.autoconfig.UpdateCheckerAutoConfiguration
 org.axonframework.springboot.autoconfig.XStreamAutoConfiguration
