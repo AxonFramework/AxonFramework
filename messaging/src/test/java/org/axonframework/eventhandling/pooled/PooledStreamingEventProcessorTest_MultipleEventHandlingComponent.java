@@ -89,12 +89,11 @@ import static org.mockito.Mockito.*;
 /**
  * Test class validating the {@link PooledStreamingEventProcessor}.
  *
- * @author Allard Buijze
- * @author Steven van Beelen
+ * @author Mateusz Nowak
  */
-class PooledStreamingEventProcessorTest {
+class PooledStreamingEventProcessorTest_MultipleEventHandlingComponent {
 
-    private static final Logger logger = LoggerFactory.getLogger(PooledStreamingEventProcessorTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(PooledStreamingEventProcessorTest_MultipleEventHandlingComponent.class);
 
     private static final String PROCESSOR_NAME = "test";
 

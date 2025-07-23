@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SegmentMatcher;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -46,19 +47,17 @@ import java.util.Optional;
 class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
 
     private final String eventProcessor;
-    private final EventHandlingComponent eventHandlingComponent;
-    private final SegmentMatcher segmentMatcher;
+    private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final ErrorHandler errorHandler;
 
     DefaultWorkPackageEventFilter(
             @Nonnull String eventProcessor,
-            @Nonnull EventHandlingComponent eventHandlingComponent,
+            @Nonnull ProcessorEventHandlingComponents eventHandlingComponents,
             @Nonnull ErrorHandler errorHandler
     ) {
         this.eventProcessor = Objects.requireNonNull(eventProcessor, "EventProcessor name may not be null");
-        this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent,
-                                                             "EventHandlingComponent may not be null");
-        this.segmentMatcher = new SegmentMatcher(e -> Optional.of(eventHandlingComponent.sequenceIdentifierFor(e)));
+        this.eventHandlingComponents = Objects.requireNonNull(eventHandlingComponents,
+                                                              "ProcessorEventHandlingComponents may not be null");
         this.errorHandler = Objects.requireNonNull(errorHandler, "ErrorHandler may not be null");
     }
 
@@ -75,14 +74,19 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
      */
     @Override
     public boolean canHandle(
-            EventMessage<?> eventMessage,
-            ProcessingContext context,
-            Segment segment
+            @Nonnull EventMessage<?> eventMessage,
+            @Nonnull ProcessingContext context,
+            @Nonnull Segment segment
     ) throws Exception {
         try {
             var eventMessageQualifiedName = eventMessage.type().qualifiedName();
-            var eventSupported = eventHandlingComponent.supports(eventMessageQualifiedName);
-            return eventSupported && segmentMatcher.matches(segment, eventMessage);
+            var eventSupported = eventHandlingComponents.supports(eventMessageQualifiedName);
+            if (!eventSupported) {
+                return false;
+            }
+            var sequenceIdentifiers = eventHandlingComponents.sequenceIdentifiersFor(eventMessage, context);
+            return sequenceIdentifiers.stream()
+                                      .anyMatch(identifier -> new SegmentMatcher(e -> Optional.of(identifier)).matches(segment, eventMessage));
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(eventProcessor, e, Collections.singletonList(eventMessage)));
             return false;

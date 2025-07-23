@@ -166,7 +166,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(simpleInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event, );
 
             //then
             assertThat(result).isEqualTo(expectedSequenceId);
@@ -187,7 +187,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(simpleInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event, );
 
             //then
             assertThat(result).isEqualTo(event.getIdentifier());
@@ -211,7 +211,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event, );
 
             //then
             assertThat(result).isEqualTo(expectedSequenceId);
@@ -230,7 +230,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event, );
 
             //then
             assertThat(result).isEqualTo(event.getIdentifier());
@@ -247,7 +247,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event, );
 
             //then
             assertThat(result).isEqualTo(event.getIdentifier());
@@ -262,7 +262,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(unsupportedInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event, );
 
             //then
             assertThat(result).isEqualTo(event.getIdentifier());
@@ -281,7 +281,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event, );
 
             //then
             assertThat(result).isEqualTo(event.getIdentifier());
@@ -300,7 +300,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event);
+            var result = component.sequenceIdentifierFor(event, );
 
             //then
             assertThat(result).isEqualTo(event.getIdentifier());
