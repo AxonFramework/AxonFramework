@@ -5,6 +5,43 @@ Any patch release made for an Axon project is tailored towards resolving bugs. T
 
 == Release 4.11
 
+=== Release 4.11.2
+
+==== Features
+
+- [#3170] Persistent streams - auto configuration link:https://github.com/AxonFramework/AxonFramework/pull/3339[#3339]
+- [#3170] Persistent streams - automatic configuration link:https://github.com/AxonFramework/AxonFramework/pull/3184[#3184]
+- Persistent streams - automatic configuration link:https://github.com/AxonFramework/AxonFramework/issues/3170[#3170]
+
+==== Enhancements
+
+- Ignore aggregates that have been `AggregateLifecycle#markDeleted` when using the Create-if-missing policy. link:https://github.com/AxonFramework/AxonFramework/pull/3333[#3333]
+- Split default Avro schema store creation from the schema scan link:https://github.com/AxonFramework/AxonFramework/pull/3329[#3329]
+- Separate AvroSchemaScan based detection of schemas and creation of a default Avro SchemaStore link:https://github.com/AxonFramework/AxonFramework/issues/3328[#3328]
+- Proper handling of attempts to recreate event sourcing aggregates marked as deleted link:https://github.com/AxonFramework/AxonFramework/issues/3323[#3323]
+
+==== Bug fixes
+
+- [#3385] Align interceptor behavior for Aggregate Members link:https://github.com/AxonFramework/AxonFramework/pull/3404[#3404]
+- CommandHandlerInterceptor on Aggregate Member only called if Aggregate has CommandHandlerInterceptor as well link:https://github.com/AxonFramework/AxonFramework/issues/3385[#3385]
+- Fix default Snapshotter throwing `IndexOutOfBoundsException` link:https://github.com/AxonFramework/AxonFramework/pull/3375[#3375]
+- fix Correlation data table link:https://github.com/AxonFramework/AxonFramework/pull/3370[#3370]
+- Fixes subscription query update permits issue link:https://github.com/AxonFramework/AxonFramework/pull/3356[#3356]
+- [#3171] Support `@CreationPolicy` annotated interface methods __again__ link:https://github.com/AxonFramework/AxonFramework/pull/3335[#3335]
+- Reset the `Coordinator's` processing gate if the `Coordinator` was aborted and rescheduled link:https://github.com/AxonFramework/AxonFramework/pull/3307[#3307]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+- link:https://github.com/zambrovski[@zambrovski]
+- link:https://github.com/smcvb[@smcvb]
+- link:https://github.com/MGathier[@MGathier]
+- link:https://github.com/rsobies[@rsobies]
+- link:https://github.com/corradom[@corradom]
+- link:https://github.com/abuijze[@abuijze]
+- link:https://github.com/CodeDrivenMitch[@CodeDrivenMitch]
+
 === Release 4.11.1
 
 ==== Bug fixes
