@@ -24,6 +24,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
@@ -37,6 +38,7 @@ import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -111,18 +113,20 @@ public class PooledStreamingEventProcessorModule
                 eventHandlingComponent,
                 true
         );
+        var eventHandlingComponents =
+                new ProcessorEventHandlingComponents(List.of(decoratedEventHandlingComponent));
         var decoratedEventProcessingPipeline = new DefaultEventProcessingPipeline(
                 processorName,
                 errorHandler,
                 spanFactory,
-                eventHandlingComponent,
+                eventHandlingComponents,
                 true
         );
         var processor = new PooledStreamingEventProcessor(
                 processorName,
                 eventSource,
                 decoratedEventProcessingPipeline,
-                decoratedEventHandlingComponent,
+                eventHandlingComponents,
                 unitOfWorkFactory,
                 tokenStore,
                 coordinatorExecutorBuilder,

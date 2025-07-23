@@ -121,7 +121,7 @@ class PooledStreamingEventProcessorTest {
 
         when(stubEventHandlingComponent.supports(any())).thenReturn(true);
         when(stubEventHandlingComponent.handle(any(), any())).thenReturn(MessageStream.empty());
-        when(stubEventHandlingComponent.sequenceIdentifierFor(any())).thenAnswer(
+        when(stubEventHandlingComponent.sequenceIdentifierFor(any(), any())).thenAnswer(
                 e -> e.getArgument(0, EventMessage.class).getIdentifier()
         );
     }

@@ -68,7 +68,7 @@ public class TracingEventProcessingPipeline implements EventProcessingPipeline {
         span.start();
         try (SpanScope ignored = span.makeCurrent()) { // works as long as the MessageStream doesn't change threads
             return next.process(events, context)
-                       .whenComplete(span::end)
+                       .whenComplete(span::end) // todo: think about TracingUnitOfWorks
                        .onErrorContinue(ex -> {
                            span.recordException(ex);
                            span.end();
