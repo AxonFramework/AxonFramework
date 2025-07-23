@@ -33,7 +33,7 @@ public class ProcessorEventHandlingComponents {
     private final List<EventHandlingComponent> components;
 
     public ProcessorEventHandlingComponents(List<EventHandlingComponent> components) {
-        this.components = components;
+        this.components = List.copyOf(components);
     }
 
     /**
@@ -71,5 +71,9 @@ public class ProcessorEventHandlingComponents {
         return components.stream()
                          .map(c -> c.sequenceIdentifierFor(event, context))
                          .collect(Collectors.toSet());
+    }
+
+    public List<EventHandlingComponent> toList() {
+        return components;
     }
 }

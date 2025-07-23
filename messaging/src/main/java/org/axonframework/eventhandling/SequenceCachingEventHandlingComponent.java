@@ -21,14 +21,14 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 public class SequenceCachingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
-    private final SequenceIdentifiersCache cache;
+    private final int cacheSize;
+    private final Context.ResourceKey<SequenceIdentifiersCache> resourceKey;
 
     /**
      * Constructs the component with given {@code delegate} to receive calls.
@@ -47,7 +47,8 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
      */
     public SequenceCachingEventHandlingComponent(@Nonnull EventHandlingComponent delegate, int cacheSize) {
         super(delegate);
-        this.cache = new SequenceIdentifiersCache(cacheSize);
+        this.cacheSize = cacheSize;
+        this.resourceKey = Context.ResourceKey.withLabel("sequenceIdentifiersCache");
     }
 
     @Override
@@ -60,27 +61,18 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
     public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         String eventIdentifier = event.getIdentifier();
 
-        // Try to get cache from context
-        Optional<Map<String, Object>> cacheFromContext = SequenceIdentifiersCache.fromContext(context);
-        if (cacheFromContext.isPresent()) {
-            Map<String, Object> contextCache = cacheFromContext.get();
-            Object cachedSequenceId = contextCache.get(eventIdentifier);
-            if (cachedSequenceId != null) {
-                return cachedSequenceId;
-            }
+        SequenceIdentifiersCache cache = context.computeResourceIfAbsent(
+                resourceKey,
+                () -> new SequenceIdentifiersCache(cacheSize)
+        );
+
+        var cachedSequenceId = cache.get(eventIdentifier);
+        if (cachedSequenceId.isPresent()) {
+            return cachedSequenceId;
         }
 
-        // Cache miss - get sequence identifier from delegate
         Object sequenceIdentifier = super.sequenceIdentifierFor(event, context);
-
-        // Add to cache - either update existing context cache or use instance cache
-        if (cacheFromContext.isPresent()) {
-            cacheFromContext.get().put(eventIdentifier, sequenceIdentifier);
-        } else {
-            // No cache in context yet, add our instance cache to context
-            cache.put(eventIdentifier, sequenceIdentifier);
-        }
-
+        cache.put(eventIdentifier, sequenceIdentifier);
         return sequenceIdentifier;
     }
 
@@ -90,14 +82,7 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
      */
     public static final class SequenceIdentifiersCache {
 
-        /**
-         * The {@link Context.ResourceKey} used whenever a {@link Context} would contain sequence identifiers.
-         */
-        private static final Context.ResourceKey<Map<String, Object>> RESOURCE_KEY =
-            Context.ResourceKey.withLabel("sequenceIdentifiersCache");
-
         private final Map<String, Object> cache;
-        private final int maxSize;
 
         /**
          * Constructs a new sequence identifiers cache with the specified maximum size.
@@ -108,10 +93,9 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
             if (maxSize <= 0) {
                 throw new IllegalArgumentException("Cache size must be positive");
             }
-            this.maxSize = maxSize;
 
             // Use LinkedHashMap with access-order for LRU eviction
-            this.cache = new LinkedHashMap<>(16, 0.75f, true) {
+            this.cache = new java.util.LinkedHashMap<>(16, 0.75f, true) {
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<String, Object> eldest) {
                     return size() > maxSize;
@@ -141,48 +125,12 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
         }
 
         /**
-         * Removes a sequence identifier from the cache.
+         * Returns the current number of entries in the cache.
          *
-         * @param eventIdentifier The event identifier to remove.
-         * @return An {@link Optional} containing the removed sequence identifier if it was present, empty otherwise.
+         * @return The current cache size.
          */
-        @Nonnull
-        public Optional<Object> remove(@Nonnull String eventIdentifier) {
-            return Optional.ofNullable(cache.remove(eventIdentifier));
-        }
-
-        /**
-         * Checks if the cache contains an entry for the given event identifier.
-         *
-         * @param eventIdentifier The event identifier to check.
-         * @return {@code true} if the cache contains the identifier, {@code false} otherwise.
-         */
-        public boolean containsKey(@Nonnull String eventIdentifier) {
-            return cache.containsKey(eventIdentifier);
-        }
-
-        /**
-         * Adds the sequence identifiers from this cache to the given {@code context} using the {@link #RESOURCE_KEY}.
-         *
-         * @param context The {@link Context} to add the sequence identifiers to.
-         * @return A new {@link Context} with the sequence identifiers added.
-         */
-        @Nonnull
-        public Context addToContext(@Nonnull Context context) {
-            return context.withResource(RESOURCE_KEY, cache);
-        }
-
-        /**
-         * Returns an {@link Optional} of sequence identifiers {@link Map}, returning the resource keyed under the
-         * {@link #RESOURCE_KEY} in the given {@code context}.
-         *
-         * @param context The {@link Context} to retrieve the sequence identifiers from.
-         * @return An {@link Optional} of sequence identifiers {@link Map}, returning the resource keyed under the
-         * {@link #RESOURCE_KEY} in the given {@code context}.
-         */
-        @Nonnull
-        public static Optional<Map<String, Object>> fromContext(@Nonnull Context context) {
-            return Optional.ofNullable(context.getResource(RESOURCE_KEY));
+        public int size() {
+            return cache.size();
         }
     }
 }

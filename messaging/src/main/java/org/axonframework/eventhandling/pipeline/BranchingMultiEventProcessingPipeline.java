@@ -17,14 +17,21 @@
 package org.axonframework.eventhandling.pipeline;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * TBD
@@ -37,20 +44,82 @@ import java.util.Objects;
  */
 public class BranchingMultiEventProcessingPipeline implements EventProcessingPipeline {
 
-    private final ProcessorEventHandlingComponents eventHandlingComponents;
+    private final EventHandlingComponent eventHandlingComponent;
+    private final ExecutorService executorService;
 
-    public BranchingMultiEventProcessingPipeline(@Nonnull ProcessorEventHandlingComponents eventHandlingComponents) {
-        this.eventHandlingComponents = Objects.requireNonNull(eventHandlingComponents,
-                                                             "ProcessorEventHandlingComponents must not be null");
+    // todo: configure better the scheduled thread pool!
+    public BranchingMultiEventProcessingPipeline(@Nonnull EventHandlingComponent eventHandlingComponent) {
+        this(eventHandlingComponent, Executors.newScheduledThreadPool(4, new AxonThreadFactory("BranchingEventProcessingPipeline")));
+    }
+
+    public BranchingMultiEventProcessingPipeline(@Nonnull EventHandlingComponent eventHandlingComponent,
+                                            @Nonnull ExecutorService executorService) {
+        this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent,
+                                                             "EventHandlingComponent must not be null");
+        this.executorService = Objects.requireNonNull(executorService,
+                                                      "ExecutorService must not be null");
     }
 
     @Override
     public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context) {
-        MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
-        for (var event : events) {
-            var eventResult = eventHandlingComponents.handle(event, context);
-            batchResult = batchResult.concatWith(eventResult).ignoreEntries();
+        if (events.isEmpty()) {
+            return MessageStream.empty();
         }
-        return batchResult;
+
+        // Group events by sequence identifier
+        Map<Object, List<EventMessage<?>>> eventGroups = groupEventsBySequenceIdentifier(events, context);
+
+        // If there's only one group, process it directly without thread pool
+        if (eventGroups.size() == 1) {
+            return processEventGroup(eventGroups.values().iterator().next(), context);
+        }
+
+        // Process multiple groups in parallel
+        List<CompletableFuture<MessageStream.Empty<Message<Void>>>> futures = new ArrayList<>();
+
+        for (List<EventMessage<?>> eventGroup : eventGroups.values()) {
+            CompletableFuture<MessageStream.Empty<Message<Void>>> future =
+                    CompletableFuture.supplyAsync(() -> processEventGroup(eventGroup, context), executorService);
+            futures.add(future);
+        }
+
+        // Wait for all futures to complete in parallel, then gather results
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+
+        try {
+            allFutures.get(); // Wait for all to complete
+
+            // Now gather results from all completed futures
+            MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
+            for (CompletableFuture<MessageStream.Empty<Message<Void>>> future : futures) {
+                MessageStream.Empty<Message<Void>> groupResult = future.get(); // This won't block since all are complete
+                batchResult = batchResult.concatWith(groupResult).ignoreEntries();
+            }
+
+            return batchResult;
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing event groups", e);
+        }
+    }
+
+    private Map<Object, List<EventMessage<?>>> groupEventsBySequenceIdentifier(List<? extends EventMessage<?>> events,
+                                                                               ProcessingContext context) {
+        Map<Object, List<EventMessage<?>>> eventGroups = new LinkedHashMap<>();
+
+        for (EventMessage<?> event : events) {
+            Object sequenceId = eventHandlingComponent.sequenceIdentifierFor(event, context);
+            eventGroups.computeIfAbsent(sequenceId, k -> new ArrayList<>()).add(event);
+        }
+
+        return eventGroups;
+    }
+
+    private MessageStream.Empty<Message<Void>> processEventGroup(List<EventMessage<?>> events, ProcessingContext context) {
+        MessageStream.Empty<Message<Void>> groupResult = MessageStream.empty();
+        for (EventMessage<?> event : events) {
+            var eventResult = eventHandlingComponent.handle(event, context);
+            groupResult = groupResult.concatWith(eventResult).ignoreEntries();
+        }
+        return groupResult;
     }
 }
