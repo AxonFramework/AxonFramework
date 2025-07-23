@@ -56,7 +56,7 @@ public abstract class EventProcessorBuilder {
             builder.name,
             builder.errorHandler,
             builder.spanFactory,
-            builder.eventHandlingComponent,
+            new ProcessorEventHandlingComponents(List.of(builder.eventHandlingComponent)),
             builder.streaming()
     );
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;

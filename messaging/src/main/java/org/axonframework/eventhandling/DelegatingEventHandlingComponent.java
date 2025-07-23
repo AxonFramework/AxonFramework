@@ -71,7 +71,7 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
 
     @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
-        return delegate.sequenceIdentifierFor(event);
+    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+        return delegate.sequenceIdentifierFor(event, context);
     }
 }

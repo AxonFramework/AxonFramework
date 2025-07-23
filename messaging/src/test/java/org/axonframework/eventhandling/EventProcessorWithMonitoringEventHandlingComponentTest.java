@@ -69,8 +69,8 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         EventHandlingComponent mockEventHandlingComponent = mock(EventHandlingComponent.class);
         when(mockEventHandlingComponent.handle(any(), any())).thenReturn(MessageStream.empty());
         when(mockEventHandlingComponent.supports(any())).thenReturn(true);
-        when(mockEventHandlingComponent.sequenceIdentifierFor(any())).thenAnswer(
-                e -> e.getArgument(0, EventMessage.class).identifier()
+        when(mockEventHandlingComponent.sequenceIdentifierFor(any(), any())).thenAnswer(
+                e -> e.getArgument(0, EventMessage.class).getIdentifier()
         );
 
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
