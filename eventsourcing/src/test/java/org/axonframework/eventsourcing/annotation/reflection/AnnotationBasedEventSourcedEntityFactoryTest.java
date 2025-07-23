@@ -51,7 +51,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
     @Mock
     private EventMessage<?> eventMessage;
 
-    private Converter converter = new PassThroughConverter();
+    private final Converter converter = PassThroughConverter.INSTANCE;
 
 
     @BeforeEach
