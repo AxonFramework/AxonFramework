@@ -10,7 +10,7 @@ updates:
     labels:
       - "Type: Dependency Upgrade"
       - "Priority 1: Must"
-    milestone: 114
+    milestone: 116
     groups:
       github-dependencies:
         update-types:
@@ -30,7 +30,7 @@ updates:
     labels:
       - "Type: Dependency Upgrade"
       - "Priority 1: Must"
-    milestone: 114
+    milestone: 116
     groups:
       maven-dependencies:
         update-types:
