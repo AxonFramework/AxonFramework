@@ -36,7 +36,7 @@ public class HierarchicalUsagePropertyProvider implements UsagePropertyProvider 
     private final List<UsagePropertyProvider> providers;
 
     /**
-     * Creates a new {@code HierachicalUsagePropertyProvider} with the given list of providers.
+     * Creates a new {@code HierarchicalUsagePropertyProvider} with the given list of providers.
      * The providers will be sorted by their priority in descending order, meaning the highest priority provider
      * will be checked first.
      *

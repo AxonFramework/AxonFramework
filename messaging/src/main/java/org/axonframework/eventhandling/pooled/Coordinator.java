@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
@@ -25,6 +26,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.TrackingTokenSource;
@@ -86,7 +88,6 @@ class Coordinator {
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService executorService;
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
-    private final EventFilter eventFilter;
     private final Consumer<? super EventMessage<?>> ignoredMessageHandler;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private final long tokenClaimInterval;
@@ -97,6 +98,7 @@ class Coordinator {
     private final Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken;
     private final boolean coordinatorExtendsClaims;
     private final Consumer<Segment> segmentReleasedAction;
+    private final EventCriteria eventCriteria;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState;
@@ -123,7 +125,6 @@ class Coordinator {
         this.unitOfWorkFactory = builder.unitOfWorkFactory;
         this.executorService = builder.executorService;
         this.workPackageFactory = builder.workPackageFactory;
-        this.eventFilter = builder.eventFilter;
         this.ignoredMessageHandler = builder.ignoredMessageHandler;
         this.processingStatusUpdater = builder.processingStatusUpdater;
         this.tokenClaimInterval = builder.tokenClaimInterval;
@@ -135,6 +136,7 @@ class Coordinator {
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
         this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
         this.segmentReleasedAction = builder.segmentReleasedAction;
+        this.eventCriteria = builder.eventCriteria;
     }
 
     /**
@@ -384,24 +386,6 @@ class Coordinator {
     }
 
     /**
-     * Functional interface defining a validation if a given {@link EventMessage} can be handled by all
-     * {@link WorkPackage}s this {@link Coordinator} could ever service.
-     */
-    @FunctionalInterface
-    interface EventFilter {
-
-        /**
-         * Checks whether the given {@code eventMessage} contains a type of message that can be handled by any of the
-         * event handlers this processor coordinates.
-         *
-         * @param eventMessage the {@link EventMessage} to validate whether it can be handled
-         * @return {@code true} if the processor contains a handler for given {@code eventMessage}'s type, {@code false}
-         * otherwise
-         */
-        boolean canHandleTypeOf(EventMessage<?> eventMessage);
-    }
-
-    /**
      * Package private builder class to construct a {@link Coordinator}. Not used for validation of the fields as is the
      * case with most builders, but purely to clarify the construction of a {@code WorkPackage}.
      */
@@ -413,7 +397,6 @@ class Coordinator {
         private UnitOfWorkFactory unitOfWorkFactory;
         private ScheduledExecutorService executorService;
         private BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
-        private EventFilter eventFilter;
         private Consumer<? super EventMessage<?>> ignoredMessageHandler = i -> {
         };
         private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
@@ -428,6 +411,7 @@ class Coordinator {
         private boolean coordinatorExtendsClaims = false;
         private Consumer<Segment> segmentReleasedAction = segment -> {
         };
+        private EventCriteria eventCriteria = EventCriteria.havingAnyTag();
 
         /**
          * The name of the processor this service coordinates for.
@@ -497,20 +481,6 @@ class Coordinator {
             this.workPackageFactory = workPackageFactory;
             return this;
         }
-
-        /**
-         * A {@link EventFilter} used to check whether {@link EventMessage} must be ignored by all
-         * {@link WorkPackage}s.
-         *
-         * @param eventFilter a {@link EventFilter} used to check whether {@link EventMessage} must be ignored by all
-         *                    {@link WorkPackage}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder eventFilter(EventFilter eventFilter) {
-            this.eventFilter = eventFilter;
-            return this;
-        }
-
 
         /**
          * A {@link Consumer} of {@link EventMessage} that is invoked when the event is ignored by all
@@ -651,6 +621,21 @@ class Coordinator {
          */
         Builder segmentReleasedAction(Consumer<Segment> segmentReleasedAction) {
             this.segmentReleasedAction = segmentReleasedAction;
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventCriteria} used to filter events when opening the event stream. This allows the
+         * coordinator to only process events that match the specified criteria, reducing the amount of data processed
+         * and potentially improving performance.
+         * <p>
+         * By default, this is set to {@link EventCriteria#havingAnyTag()}, which means all events are processed.
+         * 
+         * @param eventCriteria the {@link EventCriteria} to use for filtering events
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder eventCriteria(EventCriteria eventCriteria) {
+            this.eventCriteria = eventCriteria;
             return this;
         }
 
@@ -985,9 +970,9 @@ class Coordinator {
             }
 
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
-                // TODO #3098 - Support ignoring events by mean of the EventCriteria API
-                eventStream = eventSource.open(StreamingCondition.startingFrom(trackingToken));
-                logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
+                var startStreamingFrom = Objects.requireNonNullElse(trackingToken, new GlobalSequenceTrackingToken(-1));
+                eventStream = eventSource.open(StreamingCondition.conditionFor(startStreamingFrom, eventCriteria));
+                logger.debug("Processor [{}] opened stream with tracking token [{}] and criteria [{}].", name, trackingToken, eventCriteria);
                 availabilityCallbackSupported = true;
                 eventStream.onAvailable(this::scheduleImmediateCoordinationTask);
                 lastScheduledToken = trackingToken;
@@ -1100,9 +1085,6 @@ class Coordinator {
             if (!anyScheduled) {
                 EventMessage<?> event = eventEntry.message();
                 ignoredMessageHandler.accept(event);
-                if (!eventFilter.canHandleTypeOf(event)) {
-                    // TODO #3098 - Support ignoring events by mean of the EventCriteria API
-                }
             }
         }
 
@@ -1116,9 +1098,6 @@ class Coordinator {
                 eventEntries.forEach(eventEntry -> {
                     EventMessage<?> event = eventEntry.message();
                     ignoredMessageHandler.accept(event);
-                    if (!eventFilter.canHandleTypeOf(event)) {
-                        // TODO #3098 - Support ignoring events by mean of the EventCriteria API
-                    }
                 });
             }
         }

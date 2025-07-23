@@ -38,6 +38,11 @@ class UpdateCheckRequestTest {
                 "1.8.22",
                 List.of(
                         new Artifact("org.axonframework", "axon-core", "5.0.0"),
+                        new Artifact("org.axonframework.something", "axon-something", "5.0.0"),
+                        new Artifact("org.axonframework.extensions", "axon-ext-bland", "5.0.0"),
+                        new Artifact("org.axonframework.extensions.kafka", "axon-ext-kafka", "5.0.0"),
+                        new Artifact("io.axoniq", "top-level-axoniq", "5.0.0"),
+                        new Artifact("io.axoniq.sub", "sub-level-axoniq", "5.0.0"),
                         new Artifact("org.example", "example-lib", "1.2.3")
                 )
         );
@@ -48,8 +53,13 @@ class UpdateCheckRequestTest {
         assertTrue(queryString.contains("os=Linux%3B+6.11.0-26-generic%3B+amd64"));
         assertTrue(queryString.contains("java=17.0.2%3B+AdoptOpenJDK"));
         assertTrue(queryString.contains("kotlin=1.8.22"));
-        assertTrue(queryString.contains("lib=org.axonframework%3Aaxon-core%3A5.0.0"));
-        assertTrue(queryString.contains("lib=org.example%3Aexample-lib%3A1.2.3"));
+        assertTrue(queryString.contains("lib-fw.axon-core=5.0.0"), queryString);
+        assertTrue(queryString.contains("lib-fw.something.axon-something=5.0.0"), queryString);
+        assertTrue(queryString.contains("lib-ext.axon-ext-bland=5.0.0"), queryString);
+        assertTrue(queryString.contains("lib-ext.kafka.axon-ext-kafka=5.0.0"), queryString);
+        assertTrue(queryString.contains("lib-iq.top-level-axoniq=5.0.0"), queryString);
+        assertTrue(queryString.contains("lib-iq.sub.sub-level-axoniq=5.0.0"), queryString);
+        assertTrue(queryString.contains("lib-org.example.example-lib=1.2.3"));
     }
 
     @Test

@@ -20,7 +20,6 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
@@ -81,14 +80,14 @@ class EventProcessorConfigurationTest {
 
                     assertThat(context).hasSingleBean(SequencingPolicy.class);
                     //noinspection unchecked
-                    SequencingPolicy<? super EventMessage<?>> expectedPolicy = context.getBean(SequencingPolicy.class);
+                    SequencingPolicy expectedPolicy = context.getBean(SequencingPolicy.class);
 
                     MultiEventHandlerInvoker invoker = (MultiEventHandlerInvoker) ensureAccessible(
                             eventProcessor.getClass().getDeclaredMethod("eventHandlerInvoker")
                     ).invoke(eventProcessor);
                     SimpleEventHandlerInvoker simpleEventHandlerInvoker =
                             (SimpleEventHandlerInvoker) invoker.delegates().get(0);
-                    SequencingPolicy<? super EventMessage<?>> policy = ReflectionUtils.getFieldValue(
+                    SequencingPolicy policy = ReflectionUtils.getFieldValue(
                             SimpleEventHandlerInvoker.class.getDeclaredField("sequencingPolicy"),
                             simpleEventHandlerInvoker
                     );
@@ -229,7 +228,7 @@ class EventProcessorConfigurationTest {
     private static class Context {
 
         @Bean
-        public SequencingPolicy<?> customPolicy() {
+        public SequencingPolicy customPolicy() {
             return new FullConcurrencyPolicy();
         }
 
