@@ -44,18 +44,21 @@ import java.util.concurrent.Executors;
  */
 public class BranchingMultiEventProcessingPipeline implements EventProcessingPipeline {
 
-    private final EventHandlingComponent eventHandlingComponent;
+    private final List<EventHandlingComponent> eventHandlingComponents;
     private final ExecutorService executorService;
 
     // todo: configure better the scheduled thread pool!
-    public BranchingMultiEventProcessingPipeline(@Nonnull EventHandlingComponent eventHandlingComponent) {
-        this(eventHandlingComponent, Executors.newScheduledThreadPool(4, new AxonThreadFactory("BranchingEventProcessingPipeline")));
+    public BranchingMultiEventProcessingPipeline(@Nonnull List<EventHandlingComponent> eventHandlingComponents) {
+        this(eventHandlingComponents, Executors.newScheduledThreadPool(4, new AxonThreadFactory("BranchingMultiEventProcessingPipeline")));
     }
 
-    public BranchingMultiEventProcessingPipeline(@Nonnull EventHandlingComponent eventHandlingComponent,
+    public BranchingMultiEventProcessingPipeline(@Nonnull List<EventHandlingComponent> eventHandlingComponents,
                                             @Nonnull ExecutorService executorService) {
-        this.eventHandlingComponent = Objects.requireNonNull(eventHandlingComponent,
-                                                             "EventHandlingComponent must not be null");
+        this.eventHandlingComponents = Objects.requireNonNull(eventHandlingComponents,
+                                                             "EventHandlingComponents list must not be null");
+        if (eventHandlingComponents.isEmpty()) {
+            throw new IllegalArgumentException("EventHandlingComponents list must not be empty");
+        }
         this.executorService = Objects.requireNonNull(executorService,
                                                       "ExecutorService must not be null");
     }
@@ -66,58 +69,97 @@ public class BranchingMultiEventProcessingPipeline implements EventProcessingPip
             return MessageStream.empty();
         }
 
-        // Group events by sequence identifier
-        Map<Object, List<EventMessage<?>>> eventGroups = groupEventsBySequenceIdentifier(events, context);
-
-        // If there's only one group, process it directly without thread pool
-        if (eventGroups.size() == 1) {
-            return processEventGroup(eventGroups.values().iterator().next(), context);
+        // If there's only one component, use simplified processing without extra parallelization
+        if (eventHandlingComponents.size() == 1) {
+            return processSingleComponent(eventHandlingComponents.getFirst(), events, context);
         }
 
-        // Process multiple groups in parallel
-        List<CompletableFuture<MessageStream.Empty<Message<Void>>>> futures = new ArrayList<>();
+        // Process each component in parallel
+        List<CompletableFuture<MessageStream.Empty<Message<Void>>>> componentFutures = new ArrayList<>();
 
-        for (List<EventMessage<?>> eventGroup : eventGroups.values()) {
-            CompletableFuture<MessageStream.Empty<Message<Void>>> future =
-                    CompletableFuture.supplyAsync(() -> processEventGroup(eventGroup, context), executorService);
-            futures.add(future);
+        for (EventHandlingComponent component : eventHandlingComponents) {
+            CompletableFuture<MessageStream.Empty<Message<Void>>> componentFuture =
+                CompletableFuture.supplyAsync(() -> processSingleComponent(component, events, context), executorService);
+            componentFutures.add(componentFuture);
         }
 
-        // Wait for all futures to complete in parallel, then gather results
-        CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        // Wait for all component futures to complete in parallel, then gather results
+        CompletableFuture<Void> allComponentFutures = CompletableFuture.allOf(componentFutures.toArray(new CompletableFuture[0]));
 
         try {
-            allFutures.get(); // Wait for all to complete
+            allComponentFutures.get(); // Wait for all to complete
 
-            // Now gather results from all completed futures
+            // Now gather results from all completed component futures
             MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
-            for (CompletableFuture<MessageStream.Empty<Message<Void>>> future : futures) {
-                MessageStream.Empty<Message<Void>> groupResult = future.get(); // This won't block since all are complete
-                batchResult = batchResult.concatWith(groupResult).ignoreEntries();
+            for (CompletableFuture<MessageStream.Empty<Message<Void>>> future : componentFutures) {
+                MessageStream.Empty<Message<Void>> componentResult = future.get(); // This won't block since all are complete
+                batchResult = batchResult.concatWith(componentResult).ignoreEntries();
             }
 
             return batchResult;
         } catch (Exception e) {
-            throw new RuntimeException("Error processing event groups", e);
+            throw new RuntimeException("Error processing components", e);
+        }
+    }
+
+    private MessageStream.Empty<Message<Void>> processSingleComponent(EventHandlingComponent component,
+                                                                     List<? extends EventMessage<?>> events,
+                                                                     ProcessingContext context) {
+        // Group events by sequence identifier for this component
+        Map<Object, List<EventMessage<?>>> eventGroups = groupEventsBySequenceIdentifier(events, component, context);
+
+        // If there's only one group, process it directly without thread pool
+        if (eventGroups.size() == 1) {
+            return processEventGroup(component, eventGroups.values().iterator().next(), context);
+        }
+
+        // Process multiple groups in parallel for this component
+        List<CompletableFuture<MessageStream.Empty<Message<Void>>>> groupFutures = new ArrayList<>();
+
+        for (List<EventMessage<?>> eventGroup : eventGroups.values()) {
+            CompletableFuture<MessageStream.Empty<Message<Void>>> groupFuture =
+                CompletableFuture.supplyAsync(() -> processEventGroup(component, eventGroup, context), executorService);
+            groupFutures.add(groupFuture);
+        }
+
+        // Wait for all group futures to complete in parallel, then gather results
+        CompletableFuture<Void> allGroupFutures = CompletableFuture.allOf(groupFutures.toArray(new CompletableFuture[0]));
+
+        try {
+            allGroupFutures.get(); // Wait for all to complete
+
+            // Now gather results from all completed group futures
+            MessageStream.Empty<Message<Void>> componentResult = MessageStream.empty();
+            for (CompletableFuture<MessageStream.Empty<Message<Void>>> future : groupFutures) {
+                MessageStream.Empty<Message<Void>> groupResult = future.get(); // This won't block since all are complete
+                componentResult = componentResult.concatWith(groupResult).ignoreEntries();
+            }
+
+            return componentResult;
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing event groups for component", e);
         }
     }
 
     private Map<Object, List<EventMessage<?>>> groupEventsBySequenceIdentifier(List<? extends EventMessage<?>> events,
+                                                                               EventHandlingComponent component,
                                                                                ProcessingContext context) {
         Map<Object, List<EventMessage<?>>> eventGroups = new LinkedHashMap<>();
 
         for (EventMessage<?> event : events) {
-            Object sequenceId = eventHandlingComponent.sequenceIdentifierFor(event, context);
+            Object sequenceId = component.sequenceIdentifierFor(event, context);
             eventGroups.computeIfAbsent(sequenceId, k -> new ArrayList<>()).add(event);
         }
 
         return eventGroups;
     }
 
-    private MessageStream.Empty<Message<Void>> processEventGroup(List<EventMessage<?>> events, ProcessingContext context) {
+    private MessageStream.Empty<Message<Void>> processEventGroup(EventHandlingComponent component,
+                                                               List<EventMessage<?>> events,
+                                                               ProcessingContext context) {
         MessageStream.Empty<Message<Void>> groupResult = MessageStream.empty();
         for (EventMessage<?> event : events) {
-            var eventResult = eventHandlingComponent.handle(event, context);
+            var eventResult = component.handle(event, context);
             groupResult = groupResult.concatWith(eventResult).ignoreEntries();
         }
         return groupResult;
