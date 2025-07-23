@@ -23,6 +23,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
@@ -35,6 +36,7 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SubscribingEventProcessorModule extends BaseModule<SubscribingEventProcessorModule>
@@ -88,11 +90,12 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                 eventHandlingComponent,
                 false
         );
+        var processorEventHandlingComponents = new ProcessorEventHandlingComponents(List.of(decoratedEventHandlingComponent));
         var decoratedEventProcessingPipeline = new DefaultEventProcessingPipeline(
                 processorName,
                 errorHandler,
                 spanFactory,
-                eventHandlingComponent,
+                processorEventHandlingComponents,
                 false
         );
         var processor = new SubscribingEventProcessor(

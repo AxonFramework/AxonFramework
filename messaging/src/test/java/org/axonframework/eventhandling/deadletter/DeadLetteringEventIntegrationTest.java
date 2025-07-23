@@ -23,6 +23,7 @@ import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
+import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
@@ -47,6 +48,7 @@ import org.junit.jupiter.api.*;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -192,7 +194,14 @@ public abstract class DeadLetteringEventIntegrationTest {
         eventSource = new AsyncInMemoryStreamableEventSource();
         var interceptors = new MessageHandlerInterceptors();
         var customization = new PooledStreamingEventProcessorsCustomization();
-        var eventHandlingComponent = new LegacyEventHandlingComponent(deadLetteringInvoker);
+        var eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
+                customization.spanFactory(),
+                customization.messageMonitor(),
+                interceptors,
+                new LegacyEventHandlingComponent(deadLetteringInvoker),
+                true
+        );
+        var processorEventHandlingComponents = new ProcessorEventHandlingComponents(List.of(eventHandlingComponent));
         streamingProcessor = new PooledStreamingEventProcessor(
                 PROCESSING_GROUP,
                 eventSource,
@@ -200,16 +209,10 @@ public abstract class DeadLetteringEventIntegrationTest {
                         PROCESSING_GROUP,
                         customization.errorHandler(),
                         customization.spanFactory(),
-                        new DefaultEventProcessorHandlingComponent(
-                                customization.spanFactory(),
-                                customization.messageMonitor(),
-                                interceptors,
-                                eventHandlingComponent,
-                                true
-                        ),
+                        processorEventHandlingComponents,
                         true
                 ),
-                eventHandlingComponent,
+                processorEventHandlingComponents,
                 new TransactionalUnitOfWorkFactory(transactionManager),
                 new InMemoryTokenStore(),
                 ignored -> Executors.newSingleThreadScheduledExecutor(),
