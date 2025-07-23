@@ -5,6 +5,19 @@ Any patch release made for an Axon project is tailored towards resolving bugs. T
 
 == Release 4.11
 
+=== Release 4.11.3
+
+==== Bug fixes
+
+- Fix interruption handling in message handling link:https://github.com/AxonFramework/AxonFramework/pull/3542[#3542]
+- Unexpected Error Handling behavior with Spring Retry and Timeouts link:https://github.com/AxonFramework/AxonFramework/issues/3519[#3519]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+- link:https://github.com/CodeDrivenMitch[@CodeDrivenMitch]
+
 === Release 4.11.2
 
 ==== Features
