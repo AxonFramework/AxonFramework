@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -47,15 +48,20 @@ public class BranchingMultiEventProcessingPipeline implements EventProcessingPip
     private final List<EventHandlingComponent> eventHandlingComponents;
     private final ExecutorService executorService;
 
+    public BranchingMultiEventProcessingPipeline(@Nonnull ProcessorEventHandlingComponents components) {
+        this(components.toList());
+    }
+
     // todo: configure better the scheduled thread pool!
     public BranchingMultiEventProcessingPipeline(@Nonnull List<EventHandlingComponent> eventHandlingComponents) {
-        this(eventHandlingComponents, Executors.newScheduledThreadPool(4, new AxonThreadFactory("BranchingMultiEventProcessingPipeline")));
+        this(eventHandlingComponents,
+             Executors.newScheduledThreadPool(4, new AxonThreadFactory("BranchingMultiEventProcessingPipeline")));
     }
 
     public BranchingMultiEventProcessingPipeline(@Nonnull List<EventHandlingComponent> eventHandlingComponents,
-                                            @Nonnull ExecutorService executorService) {
+                                                 @Nonnull ExecutorService executorService) {
         this.eventHandlingComponents = Objects.requireNonNull(eventHandlingComponents,
-                                                             "EventHandlingComponents list must not be null");
+                                                              "EventHandlingComponents list must not be null");
         if (eventHandlingComponents.isEmpty()) {
             throw new IllegalArgumentException("EventHandlingComponents list must not be empty");
         }
@@ -64,7 +70,8 @@ public class BranchingMultiEventProcessingPipeline implements EventProcessingPip
     }
 
     @Override
-    public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context) {
+    public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events,
+                                                      ProcessingContext context) {
         if (events.isEmpty()) {
             return MessageStream.empty();
         }
@@ -79,7 +86,9 @@ public class BranchingMultiEventProcessingPipeline implements EventProcessingPip
 
         for (EventHandlingComponent component : eventHandlingComponents) {
             CompletableFuture<MessageStream.Empty<Message<Void>>> componentFuture =
-                CompletableFuture.supplyAsync(() -> processSingleComponent(component, events, context), executorService);
+                    CompletableFuture.supplyAsync(() -> processSingleComponent(component, events, context),
+                                                  executorService);
+            // new BranchingEventProcessingPipeline(component).process(events, context)
             componentFutures.add(componentFuture);
         }
 
@@ -103,8 +112,8 @@ public class BranchingMultiEventProcessingPipeline implements EventProcessingPip
     }
 
     private MessageStream.Empty<Message<Void>> processSingleComponent(EventHandlingComponent component,
-                                                                     List<? extends EventMessage<?>> events,
-                                                                     ProcessingContext context) {
+                                                                      List<? extends EventMessage<?>> events,
+                                                                      ProcessingContext context) {
         // Group events by sequence identifier for this component
         Map<Object, List<EventMessage<?>>> eventGroups = groupEventsBySequenceIdentifier(events, component, context);
 
@@ -118,7 +127,8 @@ public class BranchingMultiEventProcessingPipeline implements EventProcessingPip
 
         for (List<EventMessage<?>> eventGroup : eventGroups.values()) {
             CompletableFuture<MessageStream.Empty<Message<Void>>> groupFuture =
-                CompletableFuture.supplyAsync(() -> processEventGroup(component, eventGroup, context), executorService);
+                    CompletableFuture.supplyAsync(() -> processEventGroup(component, eventGroup, context),
+                                                  executorService);
             groupFutures.add(groupFuture);
         }
 
@@ -155,8 +165,8 @@ public class BranchingMultiEventProcessingPipeline implements EventProcessingPip
     }
 
     private MessageStream.Empty<Message<Void>> processEventGroup(EventHandlingComponent component,
-                                                               List<EventMessage<?>> events,
-                                                               ProcessingContext context) {
+                                                                 List<EventMessage<?>> events,
+                                                                 ProcessingContext context) {
         MessageStream.Empty<Message<Void>> groupResult = MessageStream.empty();
         for (EventMessage<?> event : events) {
             var eventResult = component.handle(event, context);
