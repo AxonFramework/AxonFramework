@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.EventProcessorBuilder;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.ResetNotSupportedException;
@@ -95,6 +96,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final String name;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final EventProcessingPipeline eventProcessingPipeline;
+    private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final TokenStore tokenStore;
     private final PooledStreamingEventProcessorsCustomization customization;
@@ -110,7 +112,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             @Nonnull String name,
             @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource,
             @Nonnull EventProcessingPipeline eventProcessingPipeline,
-            @Nonnull EventHandlingComponent eventHandlingComponent, // todo: multiple, sequence while checking  -set of sequence itendifier per message
+            @Nonnull ProcessorEventHandlingComponents eventHandlingComponents, // todo: multiple, sequence while checking  -set of sequence itendifier per message
             @Nonnull UnitOfWorkFactory unitOfWorkFactory,
             @Nonnull TokenStore tokenStore,
             @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder,
@@ -119,6 +121,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     ) {
         this.name = name;
         this.eventSource = eventSource;
+        this.eventHandlingComponents = eventHandlingComponents;
         this.eventProcessingPipeline = eventProcessingPipeline;
         this.unitOfWorkFactory = unitOfWorkFactory;
         this.tokenStore = tokenStore;
@@ -127,11 +130,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 this.name,
-                eventHandlingComponent,
+                this.eventHandlingComponents,
                 customization.errorHandler()
         );
 
-        var supportedEvents = eventHandlingComponent.supportedEvents();
+        var supportedEvents = this.eventHandlingComponents.supportedEvents();
         var eventCriteria = Objects.requireNonNull(
                 customization.eventCriteriaProvider().apply(supportedEvents),
                 "EventCriteriaProvider function must not return null"
@@ -804,7 +807,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                     name,
                     eventSource,
                     eventProcessingPipeline().apply(this),
-                    eventHandlingComponent(),
+                    new ProcessorEventHandlingComponents(List.of(eventHandlingComponent())),
                     unitOfWorkFactory,
                     tokenStore,
                     coordinatorExecutorBuilder,

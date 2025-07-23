@@ -338,6 +338,8 @@ class WorkPackage {
                             batchProcessedCallback.run();
                         }
                 );
+                // plan: preInvocation - batch processing,
+                // other: in onInvocations per event
                 FutureUtils.joinAndUnwrap(
                         unitOfWork.executeWithResult(ctx -> batchProcessor.processBatch(eventBatch, ctx, segment))
                 );

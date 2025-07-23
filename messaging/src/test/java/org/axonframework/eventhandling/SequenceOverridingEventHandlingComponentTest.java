@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -49,7 +50,7 @@ class SequenceOverridingEventHandlingComponentTest {
         );
 
         //when
-        var result = testSubject.sequenceIdentifierFor(testEvent);
+        var result = testSubject.sequenceIdentifierFor(testEvent, new StubProcessingContext());
 
         //then
         assertThat(result).isEqualTo(policySequenceId);
@@ -68,7 +69,7 @@ class SequenceOverridingEventHandlingComponentTest {
         );
 
         //when
-        var result = testSubject.sequenceIdentifierFor(testEvent);
+        var result = testSubject.sequenceIdentifierFor(testEvent, new StubProcessingContext());
 
         //then
         assertThat(result).isEqualTo(delegateSequenceId);
@@ -79,7 +80,7 @@ class SequenceOverridingEventHandlingComponentTest {
         return new EventHandlingComponent() {
             @Nonnull
             @Override
-            public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+            public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
                 return delegateSequenceId;
             }
 

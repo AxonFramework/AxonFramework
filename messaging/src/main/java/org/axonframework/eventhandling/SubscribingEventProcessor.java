@@ -121,7 +121,7 @@ public class SubscribingEventProcessor implements EventProcessor {
                 this.name,
                 builder.errorHandler,
                 spanFactory,
-                eventHandlingComponent,
+                new ProcessorEventHandlingComponents(List.of(eventHandlingComponent)),
                 false
         );
     }
