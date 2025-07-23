@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.pipeline;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.messaging.Message;
@@ -36,17 +35,11 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class MultiHandlingEventProcessingPipeline implements EventProcessingPipeline {
+public class BranchingMultiEventProcessingPipeline implements EventProcessingPipeline {
 
     private final ProcessorEventHandlingComponents eventHandlingComponents;
 
-    /**
-     * Constructs a new pipeline that processes events using the given
-     * {@link EventHandlingComponent}.
-     *
-     * @param eventHandlingComponent The component to handle events.
-     */
-    public MultiHandlingEventProcessingPipeline(@Nonnull ProcessorEventHandlingComponents eventHandlingComponents) {
+    public BranchingMultiEventProcessingPipeline(@Nonnull ProcessorEventHandlingComponents eventHandlingComponents) {
         this.eventHandlingComponents = Objects.requireNonNull(eventHandlingComponents,
                                                              "ProcessorEventHandlingComponents must not be null");
     }

@@ -98,7 +98,7 @@ class PooledStreamingEventProcessorTest_MultipleEventHandlingComponent {
     }
 
     @Test
-    void handlingMessageTypeSupportedByEventHandlingComponentWillAdvanceToken() {
+    void handlingSingleEventByMultipleEventHandlingComponents() {
         // given
         var eventHandlingComponent1 = spy(new SimpleEventHandlingComponent());
         eventHandlingComponent1.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
@@ -118,15 +118,17 @@ class PooledStreamingEventProcessorTest_MultipleEventHandlingComponent {
         // then
         await().atMost(1, TimeUnit.SECONDS)
                .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
+
+        // then
+        verify(eventHandlingComponent1, times(1)).handle(eq(supportedEvent), any());
+        verify(eventHandlingComponent2, times(1)).handle(eq(supportedEvent), any());
+
+        // then
         await().atMost(200, TimeUnit.MILLISECONDS)
                .untilAsserted(() -> {
                    long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
                    assertThat(currentPosition).isEqualTo(1);
                });
-
-        // then
-        verify(eventHandlingComponent1, times(1)).handle(eq(supportedEvent), any());
-        verify(eventHandlingComponent2, times(1)).handle(eq(supportedEvent), any());
     }
 }
 
