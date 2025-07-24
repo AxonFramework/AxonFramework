@@ -28,19 +28,26 @@ import java.util.ServiceLoader;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Converter implementation that will combine converters to form chains of converters to be able to convert from one
- * type to another, for which there is no suitable single converter.
+ * A {@link Converter} implementation that will combine {@link ContentTypeConverter ContentTypeConverters} to form
+ * chains of converters to be able to convert from one type to another, for which there is no suitable single
+ * converter.
  * <p/>
- * This implementation will also autodetect ContentTypeConverter implementations by scanning
+ * This implementation will also autodetect {@code ContentTypeConverter} implementations by scanning
  * {@code /META-INF/services/org.axonframework.serialization.ContentTypeConverter} files on the classpath. These files
  * must contain the fully qualified class names of the implementations to use.
+ * <p>
+ * Note that since this {@code Converter} acts on the {@code ContentTypeConverter}, and a {@code ContentTypeConverter}
+ * only works with {@link Class Classes}, that the {@code ChainingContentTypeConverter} can only work with source and
+ * target types that are a {@link Class}. Hence, if the {@link Type} that is given to {@link #canConvert(Type, Type)} or
+ * {@link #convert(Object, Type, Type)} is <b>not</b> a {@code Class}, those methods return early. In case of
+ * {@code canConvert}, {@code false} will be returned. For {@code convert}, an {@link ConversionException} is thrown.
  *
  * @author Allard Buijze
  * @since 2.0.0
  */
-public class ChainingConverter implements Converter {
+public class ChainingContentTypeConverter implements Converter {
 
-    private static final Logger logger = LoggerFactory.getLogger(ChainingConverter.class);
+    private static final Logger logger = LoggerFactory.getLogger(ChainingContentTypeConverter.class);
 
     private final List<ContentTypeConverter<?, ?>> converters = new CopyOnWriteArrayList<>();
 
@@ -54,7 +61,7 @@ public class ChainingConverter implements Converter {
      * Instances of {@code ChainingConverter} are safe for use in a multithreaded environment, except for the
      * {@link #registerConverter(ContentTypeConverter)} method.
      */
-    public ChainingConverter() {
+    public ChainingContentTypeConverter() {
         this(Thread.currentThread().getContextClassLoader());
     }
 
@@ -69,7 +76,7 @@ public class ChainingConverter implements Converter {
      *
      * @param classLoader The class loader used to load the {@link ContentTypeConverter ContentTypeConverters}.
      */
-    public ChainingConverter(ClassLoader classLoader) {
+    public ChainingContentTypeConverter(ClassLoader classLoader) {
         //noinspection rawtypes
         ServiceLoader<ContentTypeConverter> converterLoader =
                 ServiceLoader.load(ContentTypeConverter.class, classLoader);
@@ -78,7 +85,6 @@ public class ChainingConverter implements Converter {
         }
     }
 
-    // TODO change this class into a ChainedContentTypeConverter, enforcing the use of Class i.o. Type
     @Override
     public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
         if (sourceType.equals(targetType)) {
