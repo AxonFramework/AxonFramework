@@ -21,10 +21,10 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
 import org.axonframework.test.matchers.Matchers;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.security.core.userdetails.User;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -39,10 +39,7 @@ import static org.hamcrest.core.StringStartsWith.startsWith;
  * @author Roald Bankras
  */
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {
-        MessageAuthorizationDispatchInterceptor.class,
-        MessageAuthorizationHandlerInterceptor.class
-})
+@ContextConfiguration(classes = MessageAuthorizationDispatchInterceptorTest.TestContext.class)
 class MessageAuthorizationDispatchInterceptorTest {
 
     private FixtureConfiguration<TestAggregate> fixture;
@@ -53,18 +50,22 @@ class MessageAuthorizationDispatchInterceptorTest {
     }
 
     @Test
-    @WithMockUser(username = "admin", authorities = {"ROLE_aggregate.create"})
-    public void shouldAuthorizeAndPropagateUsername() {
+    @WithMockUser(username = "admin", authorities = {"ROLE_aggregate.create", "ROLE_aggregate.update"})
+    public void shouldAuthorizeAndPropagateAuthorities() {
+        // We expect concatenated roles, separating by commas.
+        String expectedAuthorities = "ROLE_aggregate.create,ROLE_aggregate.update";
         UUID aggregateId = UUID.randomUUID();
+
         fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>())
                .registerCommandHandlerInterceptor(new MessageAuthorizationHandlerInterceptor<>())
-               .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
-                       "username")))
+               .registerCommandHandlerInterceptor(
+                       new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider("authorities"))
+               )
                .given()
                .when(new CreateAggregateCommand(aggregateId))
                .expectSuccessfulHandlerExecution()
                .expectResultMessageMatching(Matchers.matches(
-                       message -> ((User) message.getMetaData().get("username")).getUsername().equals("admin")
+                       message -> message.getMetaData().get("authorities").equals(expectedAuthorities)
                ));
     }
 
@@ -73,8 +74,9 @@ class MessageAuthorizationDispatchInterceptorTest {
         UUID aggregateId = UUID.randomUUID();
         fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>())
                .registerCommandHandlerInterceptor(new MessageAuthorizationHandlerInterceptor<>())
-               .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
-                       "username")))
+               .registerCommandHandlerInterceptor(
+                       new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider("authorities"))
+               )
                .given()
                .when(new CreateAggregateCommand(aggregateId))
                .expectException(UnauthorizedMessageException.class)
@@ -87,11 +89,26 @@ class MessageAuthorizationDispatchInterceptorTest {
         UUID aggregateId = UUID.randomUUID();
         fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>())
                .registerCommandHandlerInterceptor(new MessageAuthorizationHandlerInterceptor<>())
-               .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
-                       "username")))
+               .registerCommandHandlerInterceptor(
+                       new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider("authorities"))
+               )
                .given()
                .when(new CreateAggregateCommand(aggregateId))
                .expectException(UnauthorizedMessageException.class)
                .expectExceptionMessage(startsWith("Unauthorized message "));
+    }
+
+    @Configuration
+    static class TestContext {
+
+        @Bean
+        public MessageAuthorizationDispatchInterceptor<?> messageAuthorizationDispatchInterceptor() {
+            return new MessageAuthorizationDispatchInterceptor<>();
+        }
+
+        @Bean
+        public MessageAuthorizationHandlerInterceptor<?> messageAuthorizationHandlerInterceptor() {
+            return new MessageAuthorizationHandlerInterceptor<>();
+        }
     }
 }

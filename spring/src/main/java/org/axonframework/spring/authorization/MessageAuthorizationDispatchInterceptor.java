@@ -21,12 +21,15 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.annotation.Nonnull;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 /**
  * A {@link MessageDispatchInterceptor} that adds the {$code username} and {$code authorities} from the authorized
@@ -49,9 +52,12 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> imple
         }
 
         logger.debug("Adding message metadata for username & authorities.");
-        Map<String, Object> authenticationDetails = new java.util.HashMap<>();
-        authenticationDetails.put("username", authentication.getPrincipal());
-        authenticationDetails.put("authorities", authentication.getAuthorities());
+        Map<String, String> authenticationDetails = new HashMap<>();
+        String authorities = authentication.getAuthorities()
+                                           .stream()
+                                           .map(GrantedAuthority::getAuthority)
+                                           .collect(Collectors.joining(","));
+        authenticationDetails.put("authorities", authorities);
         //noinspection unchecked
         return (T) message.andMetaData(authenticationDetails);
     }

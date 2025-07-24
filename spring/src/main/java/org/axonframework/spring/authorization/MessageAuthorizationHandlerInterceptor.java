@@ -24,18 +24,18 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 
 /**
- * A {@link MessageHandlerInterceptor} that verifies authorization based on
- * {@link org.springframework.security.access.annotation.Secured} annotations on the payload of
- * {@link Message Messages}.
+ * A {@link MessageHandlerInterceptor} that verifies authorization based on {@link Secured} annotations on the payload
+ * of {@link Message Messages}.
  *
  * @author Roald Bankras
  * @since 4.11.0
@@ -54,14 +54,15 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
         Secured annotation = message.getPayloadType()
                                     .getAnnotation(Secured.class);
 
-        Set<GrantedAuthority> authorities =
+        Set<String> authorities =
                 Optional.ofNullable(message.getMetaData().get("authorities"))
                         .map(authorityMetaData -> {
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Found authorities [{}]", authorityMetaData);
                             }
-                            //noinspection unchecked
-                            return new HashSet<>((List<GrantedAuthority>) authorityMetaData);
+                            return new HashSet<>(Arrays.asList(
+                                    ((String) message.getMetaData().get("authorities")).split(",")
+                            ));
                         })
                         .orElseThrow(() -> new UnauthorizedMessageException(
                                 "No authorities found for message with identifier [" + message.getIdentifier() + "]"
@@ -71,9 +72,7 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
             logger.debug("Authorizing for [{}] and [{}]", message.getPayloadType().getName(), annotation.value());
         }
 
-        authorities.retainAll(Arrays.stream(annotation.value())
-                                    .map(SimpleGrantedAuthority::new)
-                                    .collect(Collectors.toSet()));
+        authorities.retainAll(Arrays.stream(annotation.value()).collect(Collectors.toSet()));
         if (!authorities.isEmpty()) {
             return interceptorChain.proceed();
         }
