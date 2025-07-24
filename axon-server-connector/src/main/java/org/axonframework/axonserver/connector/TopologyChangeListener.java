@@ -17,7 +17,7 @@ import java.util.function.Consumer;
  *     <li>{@code RESET_ALL} - This signals the connection broke down of a specific instance for the context the listener is attached to.</li>
  * </ol>
  * <p>
- * A {@code TopologyChange} includes more information to better comprehend the actual switch, being:
+ * A {@code TopologyChange} includes more information to better comprehend the actual change, being:
  * <ul>
  *     <li>{@link TopologyChange#getContext() The context} - The context from which the change originates.</li>
  *     <li>{@link TopologyChange#getClientId() The client id} - The {@link AxonServerConfiguration#getClientId() identifier of the client} for which a topology change occurred.</li>
