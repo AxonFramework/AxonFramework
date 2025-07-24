@@ -112,7 +112,10 @@ public class ChainingContentTypeConverter implements Converter {
         }
 
         if (!(sourceType instanceof Class<?> sourceClass) || !(targetType instanceof Class<?> targetClass)) {
-            throw new ConversionException("Cannot convert from " + sourceType + " to " + targetType);
+            throw new ConversionException(
+                    "Either sourceType [" + sourceType + "] or targetType [" + targetType
+                            + "] is not of type Class<?>, while the ChainingContentTypeConverter can only deal with Class<?>."
+            );
         }
 
         for (ContentTypeConverter<?, ?> converter : converters) {
