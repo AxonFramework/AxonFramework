@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 
+import java.lang.reflect.Type;
+
 /**
  * A {@link Converter} implementation that only "passes through" input object if the {@code sourceType} and
  * {@code targetType} are the identical.
@@ -47,28 +49,30 @@ public final class PassThroughConverter implements Converter {
     }
 
     @Override
-    public boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType) {
+    public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
         return sourceType.equals(targetType);
     }
 
     @Override
     @Nullable
-    public <S, T> T convert(@Nullable S input, @Nonnull Class<T> targetType) {
+    public <S, T> T convert(@Nullable S input, @Nonnull Type targetType) {
         return this.convert(input, ObjectUtils.nullSafeTypeOf(input), targetType);
     }
 
     @Override
     @Nullable
-    public <S, T> T convert(@Nullable S input, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
+    public <S, T> T convert(@Nullable S input, @Nonnull Type sourceType, @Nonnull Type targetType) {
         if (input == null) {
             return null;
         }
         if (sourceType.equals(targetType)) {
-            return targetType.cast(input);
+            //noinspection unchecked
+            return (T) input;
         }
         throw new IllegalArgumentException(
                 "This Converter only supports same-type conversion, while the unidentical source type ["
-                        + sourceType.getName() + "] and target type [" + targetType.getName() + "] have been given."
+                        + sourceType.getTypeName() + "] and target type [" + targetType.getTypeName()
+                        + "] have been given."
         );
     }
 }

@@ -19,6 +19,8 @@ package org.axonframework.serialization;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
+import java.lang.reflect.Type;
+
 /**
  * Interface describing a mechanism that can convert data from one to another type.
  * <p>
@@ -39,12 +41,24 @@ public interface Converter {
      * @param targetType The type of data to convert to.
      * @return {@code true} if conversion is possible, {@code false} otherwise.
      */
-    boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType);
+    default boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType) {
+        return canConvert(sourceType, (Type) targetType);
+    }
+
+    /**
+     * Indicates whether this {@code Converter} is capable of converting the given {@code sourceType} to the
+     * {@code targetType}.
+     *
+     * @param sourceType The type of data to convert from.
+     * @param targetType The type of data to convert to.
+     * @return {@code true} if conversion is possible, {@code false} otherwise.
+     */
+    boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType);
 
     /**
      * Converts the given {@code input} object into an object of the given {@code targetType}.
      *
-     * @param input   The value to convert.
+     * @param input      The value to convert.
      * @param targetType The type to convert the given {@code input} into.
      * @param <T>        The target data type.
      * @param <S>        The source data type.
@@ -52,6 +66,20 @@ public interface Converter {
      */
     @Nullable
     default <S, T> T convert(@Nullable S input, @Nonnull Class<T> targetType) {
+        return convert(input, (Type) targetType);
+    }
+
+    /**
+     * Converts the given {@code input} object into an object of the given {@code targetType}.
+     *
+     * @param input      The value to convert.
+     * @param targetType The type to convert the given {@code input} into.
+     * @param <T>        The target data type.
+     * @param <S>        The source data type.
+     * @return A converted version of the given {@code input} into the given {@code targetType}.
+     */
+    @Nullable
+    default <S, T> T convert(@Nullable S input, @Nonnull Type targetType) {
         //noinspection unchecked
         return input != null ? convert(input, (Class<S>) input.getClass(), targetType) : null;
     }
@@ -60,7 +88,7 @@ public interface Converter {
      * Converts the given {@code input} object into an object of the given {@code targetType}, using the given
      * {@code sourceType} to deduce the conversion path.
      *
-     * @param input   The value to convert.
+     * @param input      The value to convert.
      * @param sourceType The type of data to convert.
      * @param targetType The type to convert the given {@code input} into.
      * @param <T>        The target data type.
@@ -68,7 +96,22 @@ public interface Converter {
      * @return A converted version of the given {@code input} into the given {@code targetType}.
      */
     @Nullable
-    <S, T> T convert(@Nullable S input, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType);
+    default <S, T> T convert(@Nullable S input, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
+        return convert(input, sourceType, (Type) targetType);
+    }
+
+    /**
+     * Converts the given {@code input} object into an object of the given {@code targetType}, using the given
+     * {@code sourceType} to deduce the conversion path.
+     *
+     * @param input      The value to convert.
+     * @param sourceType The type of data to convert.
+     * @param targetType The type to convert the given {@code input} into.
+     * @param <T>        The target data type.
+     * @param <S>        The source data type.
+     * @return A converted version of the given {@code input} into the given {@code targetType}.
+     */
+    <S, T> T convert(@Nullable S input, @Nonnull Type sourceType, @Nonnull Type targetType);
 
     /**
      * Converts the data format of the given {@code original} IntermediateRepresentation to the target data type.

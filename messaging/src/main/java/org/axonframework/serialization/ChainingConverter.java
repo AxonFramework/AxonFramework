@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -77,37 +78,48 @@ public class ChainingConverter implements Converter {
         }
     }
 
+    // TODO change this class into a ChainedContentTypeConverter, enforcing the use of Class i.o. Type
     @Override
-    public boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType) {
+    public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
         if (sourceType.equals(targetType)) {
             return true;
         }
 
+        if (!(sourceType instanceof Class<?> sourceClass) || !(targetType instanceof Class<?> targetClass)) {
+            return false;
+        }
+
         for (ContentTypeConverter<?, ?> converter : converters) {
-            if (canConvert(converter, sourceType, targetType)) {
+            if (canConvert(converter, sourceClass, targetClass)) {
                 return true;
             }
         }
-        return ChainedConverter.canConvert(sourceType, targetType, converters);
+        return ChainedConverter.canConvert(sourceClass, targetClass, converters);
     }
 
     @Override
     @Nullable
-    public <S, T> T convert(@Nullable S input, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
+    public <S, T> T convert(@Nullable S input, @Nonnull Type sourceType, @Nonnull Type targetType) {
         if (sourceType.equals(targetType) || input == null) {
             //noinspection unchecked
             return (T) input;
         }
 
+        if (!(sourceType instanceof Class<?> sourceClass) || !(targetType instanceof Class<?> targetClass)) {
+            throw new ConversionException("Cannot convert from " + sourceType + " to " + targetType);
+        }
+
         for (ContentTypeConverter<?, ?> converter : converters) {
-            if (canConvert(converter, sourceType, targetType)) {
+            if (canConvert(converter, sourceClass, targetClass)) {
                 //noinspection unchecked
                 ContentTypeConverter<S, T> typedConverter = (ContentTypeConverter<S, T>) converter;
                 return typedConverter.convert(input);
             }
         }
 
-        ChainedConverter<S, T> converter = ChainedConverter.calculateChain(sourceType, targetType, converters);
+        //noinspection unchecked,rawtypes | calculateChain expects generic Class i.o. wildcard, which we cannot provide.
+        ChainedConverter<S, T> converter =
+                ChainedConverter.calculateChain((Class) sourceClass, (Class) targetClass, converters);
         converters.addFirst(converter);
         return converter.convert(input);
     }

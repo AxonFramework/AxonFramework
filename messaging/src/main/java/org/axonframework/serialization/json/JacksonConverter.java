@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.Objects;
 
 /**
@@ -74,8 +75,8 @@ public class JacksonConverter implements Converter {
     }
 
     @Override
-    public boolean canConvert(@Nonnull Class<?> sourceType,
-                              @Nonnull Class<?> targetType) {
+    public boolean canConvert(@Nonnull Type sourceType,
+                              @Nonnull Type targetType) {
         if (logger.isTraceEnabled()) {
             logger.trace("Validating if we can convert from source type [{}] to target type [{}].",
                          sourceType, targetType);
@@ -89,8 +90,8 @@ public class JacksonConverter implements Converter {
     @Nullable
     @Override
     public <S, T> T convert(@Nullable S input,
-                            @Nonnull Class<S> sourceType,
-                            @Nonnull Class<T> targetType) {
+                            @Nonnull Type sourceType,
+                            @Nonnull Type targetType) {
         if (input == null) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Input to convert is null, so returning null immediately.");
@@ -102,7 +103,8 @@ public class JacksonConverter implements Converter {
             if (logger.isTraceEnabled()) {
                 logger.trace("Casting given input since source and target type are identical.");
             }
-            return targetType.cast(input);
+            //noinspection unchecked
+            return (T) input;
         }
 
         try {
