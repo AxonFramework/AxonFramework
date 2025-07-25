@@ -150,7 +150,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * @return The converted object
      */
     protected <S, T> T convert(S source, Class<S> sourceType, Class<T> targetType) {
-        return getConverter().convert(source, sourceType, targetType);
+        return getConverter().convert(source, targetType);
     }
 
     private String revisionOf(Class<?> type) {

@@ -162,8 +162,8 @@ public abstract class ConverterTestSuite<C extends Converter> {
 
     @ParameterizedTest
     @MethodSource("sameTypeConversions")
-    <I> void shouldReturnSameInstanceIfSourceAndTargetTypeAreEqual(I input, Type sourceAndTargetType) {
-        Object result = testSubject.convert(input, sourceAndTargetType, sourceAndTargetType);
+    void shouldReturnSameInstanceIfSourceAndTargetTypeAreEqual(Object input, Type sourceAndTargetType) {
+        Object result = testSubject.convert(input, sourceAndTargetType);
         assertThat(result).isSameAs(input);
     }
 
@@ -176,9 +176,9 @@ public abstract class ConverterTestSuite<C extends Converter> {
      * {@link Converter} implementation.
      * <p>
      * Any {@link Arguments argument} consists out of one {@code Object} and one {@link Type}. The first parameter
-     * refers to the {@code input} for the {@link Converter#convert(Object, Type, Type)} operation, while the second
-     * parameter is used as <b>both</b> the {@code sourceType} and {@code targetType}. Note that the {@code input} type
-     * is expected to be identical to the given {@code Type}.
+     * refers to the {@code input} for the {@link Converter#convert(Object, Type)} operation, while the second parameter
+     * is used as <b>both</b> the {@code sourceType} and {@code targetType}. Note that the {@code input} type is
+     * expected to be identical to the given {@code Type}.
      * <p>
      * Can be overridden when needed for the {@code Converter} under tests.
      *
@@ -199,9 +199,9 @@ public abstract class ConverterTestSuite<C extends Converter> {
      * {@link Converter} implementations.
      * <p>
      * Any {@link Arguments argument} consists out of one {@code Object} and one {@link Type}. The first parameter
-     * refers to the {@code input} for the {@link Converter#convert(Object, Type, Type)} operation, while the second
-     * parameter is used as <b>both</b> the {@code sourceType} and {@code targetType}. Note that the {@code input} type
-     * is expected to be identical to the given {@code Type}.
+     * refers to the {@code input} for the {@link Converter#convert(Object, Type)} operation, while the second parameter
+     * is used as <b>both</b> the {@code sourceType} and {@code targetType}. Note that the {@code input} type is
+     * expected to be identical to the given {@code Type}.
      *
      * @return The {@code Stream} of {@link Arguments} containing same type conversion scenarios for <b>specific</b>
      * {@link Converter} implementations.
@@ -209,37 +209,37 @@ public abstract class ConverterTestSuite<C extends Converter> {
     protected abstract Stream<Arguments> specificSameTypeConversions();
 
     @Test
-    <I> void convertForTargetTypeReturnsNullForNullInput() {
-        Object result = testSubject.convert((I) null, Object.class);
+    void convertForTargetTypeReturnsNullForNullInput() {
+        Object result = testSubject.convert((Object) null, Object.class);
         assertThat(result).isNull();
 
-        result = testSubject.convert((I) null, Object.class);
+        result = testSubject.convert((Object) null, Object.class);
         assertThat(result).isNull();
     }
 
     @Test
     void convertForSourceAndTargetTypeReturnsNullForNullInput() {
-        Object result = testSubject.convert(null, Object.class, Object.class);
+        Object result = testSubject.convert((Object) null, Object.class);
         assertThat(result).isNull();
     }
 
     @ParameterizedTest
     @MethodSource("conversionScenarios")
-    <I, O> void convertForTargetTypeCanConvertBackToSource(I input,
-                                                           Type sourceType,
-                                                           Type targetType) {
-        O targetConversion = testSubject.convert(input, targetType);
+    void convertForTargetTypeCanConvertBackToSource(Object input,
+                                                    Type sourceType,
+                                                    Type targetType) {
+        Object targetConversion = testSubject.convert(input, targetType);
         Object sourceConversion = testSubject.convert(targetConversion, sourceType);
         assertThat(sourceConversion).isEqualTo(input);
     }
 
     @ParameterizedTest
     @MethodSource("conversionScenarios")
-    <I, O> void convertForSourceAndTargetTypeCanConvertBackToSource(I input,
-                                                                    Type sourceType,
-                                                                    Type targetType) {
-        O targetConversion = testSubject.convert(input, sourceType, targetType);
-        I sourceConversion = testSubject.convert(targetConversion, sourceType);
+    void convertForSourceAndTargetTypeCanConvertBackToSource(Object input,
+                                                             Type sourceType,
+                                                             Type targetType) {
+        Object targetConversion = testSubject.convert(input, targetType);
+        Object sourceConversion = testSubject.convert(targetConversion, sourceType);
         assertThat(sourceConversion).isEqualTo(input);
     }
 
@@ -252,7 +252,7 @@ public abstract class ConverterTestSuite<C extends Converter> {
      * {@link Converter} implementation.
      * <p>
      * Any {@link Arguments argument} consists out of one {@code Object} and two {@link Type Types}. The first parameter
-     * refers to the {@code input} for the {@link Converter#convert(Object, Type, Type)} operation. The second and third
+     * refers to the {@code input} for the {@link Converter#convert(Object, Type)} operation. The second and third
      * parameter refer to the {@code sourceType} and {@code targetType} respectively.
      * <p>
      * Can be overridden when needed for the {@code Converter} under tests.
@@ -276,7 +276,7 @@ public abstract class ConverterTestSuite<C extends Converter> {
      * {@link Converter} implementations.
      * <p>
      * Any {@link Arguments argument} consists out of one {@code Object} and two {@link Type Types}. The first parameter
-     * refers to the {@code input} for the {@link Converter#convert(Object, Type, Type)} operation. The second and third
+     * refers to the {@code input} for the {@link Converter#convert(Object, Type)} operation. The second and third
      * parameter refer to the {@code sourceType} and {@code targetType} respectively.
      *
      * @return The {@code Stream} of {@link Arguments} containing conversion scenarios for <b>specific</b>

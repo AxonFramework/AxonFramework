@@ -39,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Note that since this {@code Converter} acts on the {@code ContentTypeConverter}, and a {@code ContentTypeConverter}
  * only works with {@link Class Classes}, that the {@code ChainingContentTypeConverter} can only work with source and
  * target types that are a {@link Class}. Hence, if the {@link Type} that is given to {@link #canConvert(Type, Type)} or
- * {@link #convert(Object, Type, Type)} is <b>not</b> a {@code Class}, those methods return early. In case of
+ * {@link #convert(Object, Type)} is <b>not</b> a {@code Class}, those methods return early. In case of
  * {@code canConvert}, {@code false} will be returned. For {@code convert}, an {@link ConversionException} is thrown.
  *
  * @author Allard Buijze
@@ -105,30 +105,34 @@ public class ChainingContentTypeConverter implements Converter {
 
     @Override
     @Nullable
-    public <S, T> T convert(@Nullable S input, @Nonnull Type sourceType, @Nonnull Type targetType) {
-        if (sourceType.equals(targetType) || input == null) {
+    public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
+        if (input == null) {
+            return null;
+        }
+        Class<?> sourceType = input.getClass();
+        if (sourceType.equals(targetType)) {
             //noinspection unchecked
             return (T) input;
         }
 
-        if (!(sourceType instanceof Class<?> sourceClass) || !(targetType instanceof Class<?> targetClass)) {
+        if (!(targetType instanceof Class<?> targetClass)) {
             throw new ConversionException(
-                    "Either sourceType [" + sourceType + "] or targetType [" + targetType
+                    "The targetType [" + targetType
                             + "] is not of type Class<?>, while the ChainingContentTypeConverter can only deal with Class<?>."
             );
         }
 
         for (ContentTypeConverter<?, ?> converter : converters) {
-            if (canConvert(converter, sourceClass, targetClass)) {
+            if (canConvert(converter, input.getClass(), targetClass)) {
                 //noinspection unchecked
-                ContentTypeConverter<S, T> typedConverter = (ContentTypeConverter<S, T>) converter;
+                ContentTypeConverter<Object, T> typedConverter = (ContentTypeConverter<Object, T>) converter;
                 return typedConverter.convert(input);
             }
         }
 
         //noinspection unchecked,rawtypes | calculateChain expects generic Class i.o. wildcard, which we cannot provide.
-        ChainedConverter<S, T> converter =
-                ChainedConverter.calculateChain((Class) sourceClass, (Class) targetClass, converters);
+        ChainedConverter<Object, T> converter =
+                ChainedConverter.calculateChain(input.getClass(), (Class) targetClass, converters);
         converters.addFirst(converter);
         return converter.convert(input);
     }

@@ -89,9 +89,8 @@ public class JacksonConverter implements Converter {
 
     @Nullable
     @Override
-    public <S, T> T convert(@Nullable S input,
-                            @Nonnull Type sourceType,
-                            @Nonnull Type targetType) {
+    public <T> T convert(@Nullable Object input,
+                         @Nonnull Type targetType) {
         if (input == null) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Input to convert is null, so returning null immediately.");
@@ -99,6 +98,7 @@ public class JacksonConverter implements Converter {
             return null;
         }
 
+        Class<?> sourceType = input.getClass();
         if (sourceType.equals(targetType)) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Casting given input since source and target type are identical.");

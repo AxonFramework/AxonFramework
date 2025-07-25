@@ -133,7 +133,7 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
 
         byte[] testInput = OBJECT_MAPPER.writeValueAsBytes(new SomeInput("id", "name", 42));
 
-        assertThatThrownBy(() -> failingTestSubject.convert(testInput, byte[].class, SomeInput.class))
+        assertThatThrownBy(() -> failingTestSubject.convert(testInput, SomeInput.class))
                 .isExactlyInstanceOf(ConversionException.class);
     }
 }
