@@ -226,17 +226,18 @@ public abstract class ConverterTestSuite<C extends Converter> {
     @ParameterizedTest
     @MethodSource("conversionScenarios")
     <I, O> void convertForTargetTypeCanConvertBackToSource(I input,
+                                                           Type sourceType,
                                                            Type targetType) {
         O targetConversion = testSubject.convert(input, targetType);
-        Object sourceConversion = testSubject.convert(targetConversion, input.getClass());
+        Object sourceConversion = testSubject.convert(targetConversion, sourceType);
         assertThat(sourceConversion).isEqualTo(input);
     }
 
     @ParameterizedTest
     @MethodSource("conversionScenarios")
     <I, O> void convertForSourceAndTargetTypeCanConvertBackToSource(I input,
-                                                                    Type targetType,
-                                                                    Type sourceType) {
+                                                                    Type sourceType,
+                                                                    Type targetType) {
         O targetConversion = testSubject.convert(input, sourceType, targetType);
         I sourceConversion = testSubject.convert(targetConversion, sourceType);
         assertThat(sourceConversion).isEqualTo(input);
@@ -250,9 +251,9 @@ public abstract class ConverterTestSuite<C extends Converter> {
      * Returns the {@code Stream} of {@link Arguments} containing common conversion scenarios for <b>any</b>
      * {@link Converter} implementation.
      * <p>
-     * Any {@link Arguments argument} consists out of one {@code Object} and two {@link Type Types}. The first
-     * parameter refers to the {@code input} for the {@link Converter#convert(Object, Type, Type)} operation. The
-     * second and third parameter refer to the {@code targetType} and {@code sourceType} respectively.
+     * Any {@link Arguments argument} consists out of one {@code Object} and two {@link Type Types}. The first parameter
+     * refers to the {@code input} for the {@link Converter#convert(Object, Type, Type)} operation. The second and third
+     * parameter refer to the {@code sourceType} and {@code targetType} respectively.
      * <p>
      * Can be overridden when needed for the {@code Converter} under tests.
      *
@@ -261,12 +262,12 @@ public abstract class ConverterTestSuite<C extends Converter> {
      */
     protected Stream<Arguments> commonConversionScenarios() {
         return Stream.of(
-                arguments(new SomeInput("ID123", "TestName", 42), String.class, SomeInput.class),
-                arguments(new SomeInput("ID456", "OtherName", 99), byte[].class, SomeInput.class),
-                arguments(new SomeOtherInput("USR001", "Some description"), String.class, SomeOtherInput.class),
-                arguments(new SomeOtherInput("USR002", "Another description"), byte[].class, SomeOtherInput.class),
-                arguments("Lorem Ipsum", byte[].class, String.class),
-                arguments("Lorem Ipsum".getBytes(StandardCharsets.UTF_8), InputStream.class, byte[].class)
+                arguments(new SomeInput("ID123", "TestName", 42), SomeInput.class, String.class),
+                arguments(new SomeInput("ID456", "OtherName", 99), SomeInput.class, byte[].class),
+                arguments(new SomeOtherInput("USR001", "Some description"), SomeOtherInput.class, String.class),
+                arguments(new SomeOtherInput("USR002", "Another description"), SomeOtherInput.class, byte[].class),
+                arguments("Lorem Ipsum", String.class, byte[].class),
+                arguments("Lorem Ipsum".getBytes(StandardCharsets.UTF_8), byte[].class, InputStream.class)
         );
     }
 
@@ -274,9 +275,9 @@ public abstract class ConverterTestSuite<C extends Converter> {
      * Returns the {@code Stream} of {@link Arguments} containing conversion scenarios for <b>specific</b>
      * {@link Converter} implementations.
      * <p>
-     * Any {@link Arguments argument} consists out of one {@code Object} and two {@link Type Types}. The first
-     * parameter refers to the {@code input} for the {@link Converter#convert(Object, Type, Type)} operation. The
-     * second and third parameter refer to the {@code targetType} and {@code sourceType} respectively.
+     * Any {@link Arguments argument} consists out of one {@code Object} and two {@link Type Types}. The first parameter
+     * refers to the {@code input} for the {@link Converter#convert(Object, Type, Type)} operation. The second and third
+     * parameter refer to the {@code sourceType} and {@code targetType} respectively.
      *
      * @return The {@code Stream} of {@link Arguments} containing conversion scenarios for <b>specific</b>
      * {@link Converter} implementations.
