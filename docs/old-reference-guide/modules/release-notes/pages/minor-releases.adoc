@@ -15,12 +15,11 @@ Any patch release made for an Axon project is tailored towards resolving bugs. T
 ==== Enhancements
 
 - link:https://github.com/AxonFramework/AxonFramework/pull/3431[#3431] Added caching for unknown classes
-- link:https://github.com/AxonFramework/AxonFramework/issues/3530[#3530] Incompatibility of MessageAuthorizationDispatchInterceptor and Tracing (DataDog)
+- link:https://github.com/AxonFramework/AxonFramework/issues/3530[#3530] Incompatibility of MessageAuthorizationDispatchInterceptor and Tracing (Datadog)
 - link:https://github.com/AxonFramework/AxonFramework/pull/3549[#3549] Spring Authorization intercepting simplification
 
 ==== Bug fixes
 
-- link:https://github.com/AxonFramework/AxonFramework/issues/3530[#3530] Incompatibility of MessageAuthorizationDispatchInterceptor and Tracing (DataDog)
 - link:https://github.com/AxonFramework/AxonFramework/issues/3551[#3551] - TrackingEventProcessor does not restart after janitor timeout interruption
 - link:https://github.com/AxonFramework/AxonFramework/issues/3532[#3532] Duplicate call to `Eventstream.excludePayloadType()` in `EventBuffer.skipMessagesWithPayloadTypeOf()`
 - link:https://github.com/AxonFramework/AxonFramework/pull/3533[#3533] Remove duplicate call to `Eventstream.excludePayloadType` when skipping an `UnknownSerializedType`
