@@ -18,7 +18,8 @@ package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.ObjectUtils;
+
+import java.lang.reflect.Type;
 
 /**
  * A {@link Converter} implementation that only "passes through" input object if the {@code sourceType} and
@@ -26,7 +27,7 @@ import org.axonframework.common.ObjectUtils;
  * <p>
  * As such, no conversion is performed by this {@code Converter}! The {@link #canConvert(Class, Class)} operation will
  * <b>only</b> return {@code true} whenever both types are identical. Furthermore, both {@link #convert(Object, Class)}
- * and {@link #convert(Object, Class, Class)} will expect identical typing too, otherwise resulting in an
+ * and {@link #convert(Object, Type)} will expect identical typing too, otherwise resulting in an
  * {@link IllegalArgumentException}.
  * <p>
  * As such, this {@code Converter} is only useful when conversion is not necessary (e.g. during testing) for the
@@ -47,28 +48,25 @@ public final class PassThroughConverter implements Converter {
     }
 
     @Override
-    public boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType) {
+    public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
         return sourceType.equals(targetType);
     }
 
     @Override
     @Nullable
-    public <S, T> T convert(@Nullable S input, @Nonnull Class<T> targetType) {
-        return this.convert(input, ObjectUtils.nullSafeTypeOf(input), targetType);
-    }
-
-    @Override
-    @Nullable
-    public <S, T> T convert(@Nullable S input, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
+    public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
         if (input == null) {
             return null;
         }
+        Class<?> sourceType = input.getClass();
         if (sourceType.equals(targetType)) {
-            return targetType.cast(input);
+            //noinspection unchecked
+            return (T) input;
         }
         throw new IllegalArgumentException(
                 "This Converter only supports same-type conversion, while the unidentical source type ["
-                        + sourceType.getName() + "] and target type [" + targetType.getName() + "] have been given."
+                        + sourceType + "] and target type [" + targetType.getTypeName()
+                        + "] have been given."
         );
     }
 }

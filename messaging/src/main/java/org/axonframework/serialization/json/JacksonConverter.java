@@ -21,13 +21,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.Objects;
 
 /**
@@ -47,7 +48,7 @@ public class JacksonConverter implements Converter {
     private static final Logger logger = LoggerFactory.getLogger(JacksonConverter.class);
 
     private final ObjectMapper objectMapper;
-    private final ChainingConverter converter;
+    private final ChainingContentTypeConverter converter;
 
     /**
      * Constructs a {@code JacksonConverter} with a default {@link ObjectMapper} that
@@ -66,7 +67,7 @@ public class JacksonConverter implements Converter {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
         this.objectMapper.registerModule(new JavaTimeModule());
         // TODO The Converter used to be configurable for the JacksonSerializer. I don't think we need that anymore. Thoughts?
-        this.converter = new ChainingConverter();
+        this.converter = new ChainingContentTypeConverter();
         this.converter.registerConverter(new JsonNodeToByteArrayConverter(this.objectMapper));
         this.converter.registerConverter(new ByteArrayToJsonNodeConverter(this.objectMapper));
         this.converter.registerConverter(new JsonNodeToObjectNodeConverter());
@@ -74,8 +75,8 @@ public class JacksonConverter implements Converter {
     }
 
     @Override
-    public boolean canConvert(@Nonnull Class<?> sourceType,
-                              @Nonnull Class<?> targetType) {
+    public boolean canConvert(@Nonnull Type sourceType,
+                              @Nonnull Type targetType) {
         if (logger.isTraceEnabled()) {
             logger.trace("Validating if we can convert from source type [{}] to target type [{}].",
                          sourceType, targetType);
@@ -88,9 +89,8 @@ public class JacksonConverter implements Converter {
 
     @Nullable
     @Override
-    public <S, T> T convert(@Nullable S input,
-                            @Nonnull Class<S> sourceType,
-                            @Nonnull Class<T> targetType) {
+    public <T> T convert(@Nullable Object input,
+                         @Nonnull Type targetType) {
         if (input == null) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Input to convert is null, so returning null immediately.");
@@ -98,11 +98,13 @@ public class JacksonConverter implements Converter {
             return null;
         }
 
+        Class<?> sourceType = input.getClass();
         if (sourceType.equals(targetType)) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Casting given input since source and target type are identical.");
             }
-            return targetType.cast(input);
+            //noinspection unchecked
+            return (T) input;
         }
 
         try {

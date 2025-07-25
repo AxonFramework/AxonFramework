@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,7 +161,7 @@ public class AvroSerializerTest {
     @Test
     void deliverCorrectConverter() {
         Converter converter = testSubject.getConverter();
-        assertInstanceOf(ChainingConverter.class, converter);
+        assertInstanceOf(ChainingContentTypeConverter.class, converter);
         assertTrue(converter.canConvert(byte[].class, GenericRecord.class)); // this is registered by AvroSerializer
         assertTrue(converter.canConvert(byte[].class, JsonNode.class)); // this is registered by the JacksonSerializer
     }

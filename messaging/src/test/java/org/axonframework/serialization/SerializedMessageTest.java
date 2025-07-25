@@ -48,7 +48,7 @@ class SerializedMessageTest {
         when(serializer.deserialize(serializedMetaData)).thenReturn(deserializedMetaData);
         when(serializer.deserialize(serializedPayload)).thenReturn(deserializedPayload);
         when(serializer.classForType(isA(SerializedType.class))).thenReturn(Object.class);
-        when(serializer.getConverter()).thenReturn(new ChainingConverter());
+        when(serializer.getConverter()).thenReturn(new ChainingContentTypeConverter());
     }
 
     @Test

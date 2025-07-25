@@ -21,25 +21,33 @@ import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Converter implementation that will combine converters to form chains of converters to be able to convert from one
- * type to another, for which there is no suitable single converter.
+ * A {@link Converter} implementation that will combine {@link ContentTypeConverter ContentTypeConverters} to form
+ * chains of converters to be able to convert from one type to another, for which there is no suitable single
+ * converter.
  * <p/>
- * This implementation will also autodetect ContentTypeConverter implementations by scanning
+ * This implementation will also autodetect {@code ContentTypeConverter} implementations by scanning
  * {@code /META-INF/services/org.axonframework.serialization.ContentTypeConverter} files on the classpath. These files
  * must contain the fully qualified class names of the implementations to use.
+ * <p>
+ * Note that since this {@code Converter} acts on the {@code ContentTypeConverter}, and a {@code ContentTypeConverter}
+ * only works with {@link Class Classes}, that the {@code ChainingContentTypeConverter} can only work with source and
+ * target types that are a {@link Class}. Hence, if the {@link Type} that is given to {@link #canConvert(Type, Type)} or
+ * {@link #convert(Object, Type)} is <b>not</b> a {@code Class}, those methods return early. In case of
+ * {@code canConvert}, {@code false} will be returned. For {@code convert}, an {@link ConversionException} is thrown.
  *
  * @author Allard Buijze
  * @since 2.0.0
  */
-public class ChainingConverter implements Converter {
+public class ChainingContentTypeConverter implements Converter {
 
-    private static final Logger logger = LoggerFactory.getLogger(ChainingConverter.class);
+    private static final Logger logger = LoggerFactory.getLogger(ChainingContentTypeConverter.class);
 
     private final List<ContentTypeConverter<?, ?>> converters = new CopyOnWriteArrayList<>();
 
@@ -53,7 +61,7 @@ public class ChainingConverter implements Converter {
      * Instances of {@code ChainingConverter} are safe for use in a multithreaded environment, except for the
      * {@link #registerConverter(ContentTypeConverter)} method.
      */
-    public ChainingConverter() {
+    public ChainingContentTypeConverter() {
         this(Thread.currentThread().getContextClassLoader());
     }
 
@@ -68,7 +76,7 @@ public class ChainingConverter implements Converter {
      *
      * @param classLoader The class loader used to load the {@link ContentTypeConverter ContentTypeConverters}.
      */
-    public ChainingConverter(ClassLoader classLoader) {
+    public ChainingContentTypeConverter(ClassLoader classLoader) {
         //noinspection rawtypes
         ServiceLoader<ContentTypeConverter> converterLoader =
                 ServiceLoader.load(ContentTypeConverter.class, classLoader);
@@ -78,36 +86,53 @@ public class ChainingConverter implements Converter {
     }
 
     @Override
-    public boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType) {
+    public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
         if (sourceType.equals(targetType)) {
             return true;
         }
 
+        if (!(sourceType instanceof Class<?> sourceClass) || !(targetType instanceof Class<?> targetClass)) {
+            return false;
+        }
+
         for (ContentTypeConverter<?, ?> converter : converters) {
-            if (canConvert(converter, sourceType, targetType)) {
+            if (canConvert(converter, sourceClass, targetClass)) {
                 return true;
             }
         }
-        return ChainedConverter.canConvert(sourceType, targetType, converters);
+        return ChainedConverter.canConvert(sourceClass, targetClass, converters);
     }
 
     @Override
     @Nullable
-    public <S, T> T convert(@Nullable S input, @Nonnull Class<S> sourceType, @Nonnull Class<T> targetType) {
-        if (sourceType.equals(targetType) || input == null) {
+    public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
+        if (input == null) {
+            return null;
+        }
+        Class<?> sourceType = input.getClass();
+        if (sourceType.equals(targetType)) {
             //noinspection unchecked
             return (T) input;
         }
 
+        if (!(targetType instanceof Class<?> targetClass)) {
+            throw new ConversionException(
+                    "The targetType [" + targetType
+                            + "] is not of type Class<?>, while the ChainingContentTypeConverter can only deal with Class<?>."
+            );
+        }
+
         for (ContentTypeConverter<?, ?> converter : converters) {
-            if (canConvert(converter, sourceType, targetType)) {
+            if (canConvert(converter, input.getClass(), targetClass)) {
                 //noinspection unchecked
-                ContentTypeConverter<S, T> typedConverter = (ContentTypeConverter<S, T>) converter;
+                ContentTypeConverter<Object, T> typedConverter = (ContentTypeConverter<Object, T>) converter;
                 return typedConverter.convert(input);
             }
         }
 
-        ChainedConverter<S, T> converter = ChainedConverter.calculateChain(sourceType, targetType, converters);
+        //noinspection unchecked,rawtypes | calculateChain expects generic Class i.o. wildcard, which we cannot provide.
+        ChainedConverter<Object, T> converter =
+                ChainedConverter.calculateChain(input.getClass(), (Class) targetClass, converters);
         converters.addFirst(converter);
         return converter.convert(input);
     }

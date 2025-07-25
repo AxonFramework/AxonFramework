@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -78,7 +78,7 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
                                                            axonServerContainer.getHttpPort(),
                                                            "default",
                                                            AxonServerContainerUtils.NO_DCB_CONTEXT);
-        return new AggregateBasedAxonServerEventStorageEngine(connection, new ChainingConverter());
+        return new AggregateBasedAxonServerEventStorageEngine(connection, new ChainingContentTypeConverter());
     }
 
     @Override
