@@ -331,6 +331,7 @@ class WorkPackage {
                     ctx.putResource(Segment.RESOURCE_KEY, segment);
                     ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
                 });
+                unitOfWork.onPreInvocation(ctx -> batchProcessor.processBatch(eventBatch, ctx, segment));
                 unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken)); // todo: track the whole unit of work.
                 unitOfWork.runOnAfterCommit(
                         u -> {
@@ -338,11 +339,7 @@ class WorkPackage {
                             batchProcessedCallback.run();
                         }
                 );
-                // plan: preInvocation - batch processing,
-                // other: in onInvocations per event
-                FutureUtils.joinAndUnwrap(
-                        unitOfWork.executeWithResult(ctx -> batchProcessor.processBatch(eventBatch, ctx, segment))
-                );
+                FutureUtils.joinAndUnwrap(unitOfWork.execute());
             } finally {
                 processingEvents.set(false);
             }

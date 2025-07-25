@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.pipeline.BranchingMultiEventProcessingPipeline;
+import org.axonframework.eventhandling.pipeline.MultiHandlingEventProcessingPipeline;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -80,7 +80,7 @@ class PooledStreamingEventProcessorTest_MultipleEventHandlingComponent {
         return new PooledStreamingEventProcessor(
                 PROCESSOR_NAME,
                 stubMessageSource,
-                new BranchingMultiEventProcessingPipeline(eventHandlingComponents),// new MultiHandlingEventProcessingPipeline(eventHandlingComponents)
+                new MultiHandlingEventProcessingPipeline(eventHandlingComponents),// new MultiHandlingEventProcessingPipeline(eventHandlingComponents)
                 eventHandlingComponents,
                 new SimpleUnitOfWorkFactory(),
                 tokenStore,
