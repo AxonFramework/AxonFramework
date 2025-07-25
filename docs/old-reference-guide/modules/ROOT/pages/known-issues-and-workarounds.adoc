@@ -56,3 +56,37 @@ With the recent move to Hibernate 6, which defaults the increment value to 50, t
 Especially when combining this with Axon's xref:multitenancy-extension-reference::index.adoc[multitenancy] extension, the new default behavior of Hibernate 6 might cause uniqueness issues in this way.
 
 Hence, given the history on the subject, and the Axon-team having explained this predicament more frequent than they can count, we intend to address the sequence generation behavior in Axon Framework 5.
+
+== Protobuf version conflicts with Axon Server Connector
+
+When using Axon Framework 4.11+ with Axon Server Connector, you might encounter startup failures with this error:
+
+```
+java.lang.NoClassDefFoundError: com/google/protobuf/RuntimeVersion$RuntimeDomain
+```
+
+This occurs due to a version conflict between the `protobuf-java` dependency required by Axon Server Connector (4.29.3 or newer) and other dependencies in your project that might pull in older protobuf versions (such as 3.x).
+
+The Axon Server Connector uses protobuf 4.x features, specifically the `RuntimeVersion` class which doesn't exist in protobuf 3.x. Maven's dependency resolution might select the older version due to its "nearest definition" strategy, causing runtime failures.
+
+[NOTE]
+.Maven dependency mediation
+====
+Maven's dependency mediation using the "nearest definition" strategy often favors dependencies closer to your project root over Axon's deeper dependencies, causing your runtime failure. There might be another dependency in your project—closer to the root that depends on protobuf-java 3.x.
+
+Read more:
+https://cwiki.apache.org/confluence/display/MAVENOLD/Dependency+Mediation+and+Conflict+Resolution[Dependency Mediation and Conflict Resolution - Maven - Apache Software Foundation]
+====
+
+To resolve this issue, explicitly override the protobuf version in your project:
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.google.protobuf</groupId>
+    <artifactId>protobuf-java</artifactId>
+    <version>4.29.3</version>
+</dependency>
+----
+
+According to gRPC-Java maintainers, any protobuf 4.x version above 4.27.4 will work and remain backwards compatible with libraries depending on protobuf 3.x.

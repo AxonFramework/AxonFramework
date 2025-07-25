@@ -63,7 +63,7 @@ class TimeoutWrappedMessageHandlingMemberTest {
 
         EventMessage<Object> eventMessage = EventTestUtils.asEventMessage("my-message");
         assertThrows(
-                TimeoutException.class,
+                AxonTimeoutException.class,
                 () -> wrappedHandler.handleSync(eventMessage,
                                                 StubProcessingContext.forMessage(eventMessage),
                                                 new TestMessageHandler())

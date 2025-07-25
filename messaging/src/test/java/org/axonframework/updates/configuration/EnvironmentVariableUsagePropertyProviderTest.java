@@ -24,6 +24,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EnvironmentVariableUsagePropertyProviderTest {
+
     private final Map<String, String> env = new HashMap<>();
     private EnvironmentVariableUsagePropertyProvider provider;
 

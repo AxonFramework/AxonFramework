@@ -32,12 +32,12 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 
 /**
- * A {@link MessageHandlerInterceptor} that verifies authorization based on
- * {@link org.springframework.security.access.annotation.Secured} annotations on the payload of
- * {@link Message Messages}.
+ * A {@link MessageHandlerInterceptor} that verifies authorization based on {@link Secured} annotations on the payload
+ * of {@link Message Messages}.
  *
  * @param <T> The message type this interceptor can process
  * @author Roald Bankras

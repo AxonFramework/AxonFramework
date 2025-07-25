@@ -79,7 +79,7 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hikari.version>6.2.1</hikari.version>
         <hsqldb.version>2.7.2</hsqldb.version>
-        <hibernate-core.version>6.6.18.Final</hibernate-core.version>
+        <hibernate-core.version>6.6.22.Final</hibernate-core.version>
         <mysql-connector-java.version>9.3.0</mysql-connector-java.version>
         <postgresql.version>42.7.7</postgresql.version>
         <!-- Jakarta -->
@@ -90,30 +90,30 @@
         <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
         <jakarta.validation.version>3.1.1</jakarta.validation.version>
         <!-- Logging -->
-        <log4j.version>2.24.3</log4j.version>
+        <log4j.version>2.25.1</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
-        <dropwizard.metrics.version>4.2.32</dropwizard.metrics.version>
-        <micrometer.version>1.15.1</micrometer.version>
+        <dropwizard.metrics.version>4.2.33</dropwizard.metrics.version>
+        <micrometer.version>1.15.2</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.17.5</byte-buddy.version>
-        <commons-io.version>2.19.0</commons-io.version>
+        <byte-buddy.version>1.17.6</byte-buddy.version>
+        <commons-io.version>2.20.0</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.7.7</projectreactor.version>
+        <projectreactor.version>3.7.8</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
         <avro.version>1.12.0</avro.version>
-        <dom4j.version>2.1.4</dom4j.version>
+        <dom4j.version>2.1.5</dom4j.version>
         <gson.version>2.13.1</gson.version>
-        <jackson.version>2.19.1</jackson.version>
+        <jackson.version>2.19.2</jackson.version>
         <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version>
-        <jobrunr.version>7.5.1</jobrunr.version>
+        <jobrunr.version>8.0.1</jobrunr.version>
         <quartz.version>2.4.0</quartz.version>
         <!-- Spring -->
         <spring.version>6.2.5</spring.version>
@@ -123,23 +123,23 @@
         <awaitility.version>4.3.0</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.13.1</junit.jupiter.version>
+        <junit.jupiter.version>5.13.4</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
-        <testcontainers.version>1.21.1</testcontainers.version>
+        <testcontainers.version>1.21.3</testcontainers.version>
         <assertj.version>3.27.3</assertj.version>
         <!-- Validation -->
         <hibernate-validator.version>8.0.2.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
-        <central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
+        <central-publishing-maven-plugin.version>0.8.0</central-publishing-maven-plugin.version>
         <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
         <felix.maven-bundle-plugin.version>5.1.9</felix.maven-bundle-plugin.version>
         <jacoco-maven.version>0.8.13</jacoco-maven.version>
         <maven-assembly.version>3.7.1</maven-assembly.version>
         <maven-clean.version>3.5.0</maven-clean.version>
         <maven-compiler.version>3.14.0</maven-compiler.version>
-        <maven-enforcer.version>3.5.0</maven-enforcer.version>
+        <maven-enforcer.version>3.6.1</maven-enforcer.version>
         <maven-failsafe.version>3.5.3</maven-failsafe.version>
-        <maven-gpg.version>3.2.7</maven-gpg.version>
+        <maven-gpg.version>3.2.8</maven-gpg.version>
         <maven-install.version>3.1.4</maven-install.version>
         <maven-jar.version>3.4.2</maven-jar.version>
         <maven-javadoc.version>3.11.2</maven-javadoc.version>
