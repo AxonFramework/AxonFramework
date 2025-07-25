@@ -25,6 +25,7 @@ import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.annotation.InjectEntity;
+import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,7 +43,8 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
                 new QualifiedName(ChangeStudentNameCommand.class),
                 c -> (command, state, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context, c);
-                    ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                    Converter converter = c.getComponent(Converter.class);
+                    ChangeStudentNameCommand payload = converter.convert(command.getPayload(), ChangeStudentNameCommand.class);
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
                     eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
                     // Entity through magic of repository automatically updated

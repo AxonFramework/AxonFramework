@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.util;
 
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.ProcessingInstruction;
 import io.axoniq.axonserver.grpc.ProcessingKey;
 
@@ -35,6 +36,17 @@ public abstract class ProcessingInstructionHelper {
     }
 
     /**
+     * Creates a new {@link ProcessingInstruction.Builder} with the given {@code key} and {@code value}.
+     * @param key The {@link ProcessingKey} to set on the {@link ProcessingInstruction.Builder}
+     * @param value The {@link MetaDataValue.Builder} to set on the {@link ProcessingInstruction.Builder}.
+     * @return A {@link ProcessingInstruction.Builder} initialized with the given {@code key} and {@code value}.
+     */
+    public static ProcessingInstruction.Builder createProcessingInstruction(ProcessingKey key,
+                                                                            MetaDataValue.Builder value) {
+        return ProcessingInstruction.newBuilder().setKey(key).setValue(value);
+    }
+
+    /**
      * Retrieve the priority as a {@code long} from the given {@code processingInstructions}, by searching for the
      * {@link ProcessingInstruction} who's key equals the {@link ProcessingKey#PRIORITY}.
      *
@@ -42,8 +54,20 @@ public abstract class ProcessingInstructionHelper {
      *                               ProcessingKey#PRIORITY} from
      * @return a {@code long} specifying the priority of a given operation
      */
-    public static long priority(List<ProcessingInstruction> processingInstructions) {
-        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY).orElse(0L);
+    public static int priority(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY).orElse(0L).intValue();
+    }
+
+    /**
+     * Retrieve the routing key as a {@link String} from the given {@code processingInstructions}, by searching for the
+     * {@link ProcessingInstruction} who's key equals the {@link ProcessingKey#ROUTING_KEY}.
+     *
+     * @param processingInstructions The {@link List} of {@link ProcessingInstruction}s to retrieve the
+     *                               {@link ProcessingKey#ROUTING_KEY} from.
+     * @return A {@link String} specifying the routing key for a given operation, or {@code null} if not found.
+     */
+    public static String routingKey(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionString(processingInstructions, ProcessingKey.ROUTING_KEY).orElse(null);
     }
 
     /**
@@ -109,6 +133,14 @@ public abstract class ProcessingInstructionHelper {
         return processingInstructions.stream()
                                      .filter(instruction -> processingKey.equals(instruction.getKey()))
                                      .map(instruction -> instruction.getValue().getBooleanValue())
+                                     .findFirst();
+    }
+
+    private static Optional<String> getProcessingInstructionString(List<ProcessingInstruction> processingInstructions,
+                                                                   ProcessingKey processingKey) {
+        return processingInstructions.stream()
+                                     .filter(instruction -> processingKey.equals(instruction.getKey()))
+                                     .map(instruction -> instruction.getValue().getTextValue())
                                      .findFirst();
     }
 }

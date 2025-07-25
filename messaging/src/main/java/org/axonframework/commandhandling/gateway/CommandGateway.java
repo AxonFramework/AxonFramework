@@ -119,20 +119,15 @@ public interface CommandGateway {
                        @Nullable ProcessingContext context);
 
     /**
-     * Send the given command and waits for the result.
-     * <p>
-     * The payload of the resulting message is returned, or a {@link CommandExecutionException} is thrown when the
-     * command completed with an exception.
+     * Send the given command and waits for completion, disregarding the result. To retrieve the result, use
+     * {@link #sendAndWait(Object, Class)} instead, as it allows for type conversion of the result payload.
      *
      * @param command The payload or Command Message to send
-     * @return The payload of the result message.
      * @throws CommandExecutionException When an exception occurs while handling the command.
      */
-    default Object sendAndWait(@Nonnull Object command) {
+    default void sendAndWait(@Nonnull Object command) {
         try {
-            return send(command, null).getResultMessage()
-                                      .thenApply(Message::getPayload)
-                                      .get();
+            send(command, null).getResultMessage().get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CommandExecutionException("Thread interrupted while waiting for result", e);
@@ -142,21 +137,22 @@ public interface CommandGateway {
     }
 
     /**
-     * Send the given command and waits for the result.
+     * Send the given command and waits for the result. The result will be converted to the specified {@code returnType}
+     * if possible.
      * <p>
      * The payload of the resulting message is returned, or a {@link CommandExecutionException} is thrown when the
      * command completed with an exception.
      *
      * @param command    The command to dispatch.
-     * @param returnType The class representing the expected response type.
+     * @param resultType The class representing the type of the expected command result.
      * @param <R>        The generic type of the expected response.
      * @return The payload of the result message of type {@code R}.
      * @throws CommandExecutionException When an exception occurs while handling the command.
      */
     default <R> R sendAndWait(@Nonnull Object command,
-                              @Nonnull Class<R> returnType) {
+                              @Nonnull Class<R> resultType) {
         try {
-            return send(command, null).resultAs(returnType).get();
+            return send(command, null).resultAs(resultType).get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CommandExecutionException("Thread interrupted while waiting for result", e);

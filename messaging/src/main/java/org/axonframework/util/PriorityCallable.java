@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector;
+package org.axonframework.util;
 
 import java.util.Objects;
+import java.util.concurrent.Callable;
 
 /**
- * A wrapper class of {@link Runnable Runnables} that adheres to a priority by implementing {@link PriorityTask}. Uses a
+ * A wrapper class of {@link Callable Callables} that adheres to a priority by implementing {@link PriorityTask}. Uses a
  * combination of {@code priority} and {@code index} to compare between {@code this} and other priority task instances.
- * A calculator (e.g. {@link org.axonframework.axonserver.connector.command.CommandPriorityCalculator}) defines the
+ * A calculator (e.g. {@link org.axonframework.commandhandling.CommandPriorityCalculator}) defines the
  * priority of the task. This task uses the {@code index} to differentiate between tasks with the same priority,
  * ensuring the insert order is leading in those scenarios.
  *
@@ -29,33 +30,33 @@ import java.util.Objects;
  * @author Milan Savic
  * @author Allard Buijze
  * @author Steven van Beelen
- * @see org.axonframework.axonserver.connector.command.CommandPriorityCalculator
- * @see org.axonframework.axonserver.connector.query.QueryPriorityCalculator
+ * @author Mitchell Herrijgers
  * @since 4.6.0
+ * @param <T> The type of the result returned by the {@link Callable#call()} method.
  */
-public class PriorityRunnable implements Runnable, PriorityTask {
+public class PriorityCallable<T> implements Callable<T>, PriorityTask {
 
-    private final Runnable task;
+    private final Callable<T> task;
     private final long priority;
     private final long sequence;
 
     /**
      * Construct a priority task.
      *
-     * @param task     The {@link Runnable} that should be executed with a {@code priority}.
+     * @param task     The {@link Callable<T>} that should be executed with a {@code priority}.
      * @param priority The priority of the {@code task} to execute, dedicating the order among tasks.
      * @param sequence The sequence of the {@code task} to execute, dedicating the order among equal {@code priority}
      *                 tasks.
      */
-    public PriorityRunnable(Runnable task, long priority, long sequence) {
+    public PriorityCallable(Callable<T> task, long priority, long sequence) {
         this.task = task;
         this.priority = priority;
         this.sequence = sequence;
     }
 
     @Override
-    public void run() {
-        task.run();
+    public T call() throws Exception {
+        return task.call();
     }
 
     public long priority() {
@@ -74,7 +75,7 @@ public class PriorityRunnable implements Runnable, PriorityTask {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        PriorityRunnable that = (PriorityRunnable) o;
+        PriorityCallable<?> that = (PriorityCallable<?>) o;
         return priority == that.priority && sequence == that.sequence && Objects.equals(task, that.task);
     }
 
@@ -85,7 +86,7 @@ public class PriorityRunnable implements Runnable, PriorityTask {
 
     @Override
     public String toString() {
-        return "PriorityRunnable{" +
+        return "PriorityCallable{" +
                 "task=" + task +
                 ", priority=" + priority +
                 ", sequence=" + sequence +
