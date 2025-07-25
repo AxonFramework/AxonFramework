@@ -27,6 +27,7 @@ import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -63,7 +64,7 @@ class EventConverterTest {
 
     @BeforeEach
     void setUp() {
-        converter = spy(new TestConverter());
+        converter = spy(new JacksonConverter());
 
         testSubject = new EventConverter(converter);
 
