@@ -82,7 +82,7 @@ class PooledStreamingEventProcessorTest_MultipleEventHandlingComponent {
                 stubMessageSource,
                 new MultiHandlingEventProcessingPipeline(eventHandlingComponents),// new MultiHandlingEventProcessingPipeline(eventHandlingComponents)
                 eventHandlingComponents,
-                new SimpleUnitOfWorkFactory(),
+                new SimpleUnitOfWorkFactory(), // todo: this will be BatchUnitOfWorkFactory
                 tokenStore,
                 processorName -> coordinatorExecutor,
                 processorName -> workerExecutor,
