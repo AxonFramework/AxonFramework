@@ -79,8 +79,8 @@ class ChainingContentTypeConverterTest extends ConverterTestSuite<ChainingConten
     @Override
     protected Stream<Arguments> commonConversionScenarios() {
         return Stream.of(
-                arguments("Lorem Ipsum", byte[].class, String.class),
-                arguments("Lorem Ipsum".getBytes(StandardCharsets.UTF_8), InputStream.class, byte[].class)
+                arguments("Lorem Ipsum", String.class, byte[].class),
+                arguments("Lorem Ipsum".getBytes(StandardCharsets.UTF_8), byte[].class, InputStream.class)
         );
     }
 }
