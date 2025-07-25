@@ -17,10 +17,10 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
-import org.axonframework.axonserver.connector.event.TestConverter;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.serialization.ChainingConverter;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
@@ -50,7 +50,7 @@ class ServerConnectorConfigurationEnhancerTest {
         ApplicationConfigurer configurer =
                 EventSourcingConfigurer.create()
                                        .componentRegistry(registry -> registry.registerComponent(
-                                               Converter.class, c -> new TestConverter()
+                                               Converter.class, c -> new ChainingConverter()
                                        ));
         configurer.componentRegistry(cr -> testSubject.enhance(cr));
         Configuration result = configurer.build();
