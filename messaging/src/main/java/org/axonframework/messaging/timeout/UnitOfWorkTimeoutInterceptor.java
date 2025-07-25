@@ -15,6 +15,7 @@
  */
 package org.axonframework.messaging.timeout;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -25,7 +26,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ScheduledExecutorService;
-import jakarta.annotation.Nonnull;
 
 /**
  * Message handler interceptor that sets a timeout on the processing of the current {@link LegacyUnitOfWork}. If the
@@ -121,7 +121,7 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
 
         AxonTimeLimitedTask task = (AxonTimeLimitedTask) root.resources().get(TRANSACTION_TIME_LIMIT_RESOURCE_KEY);
         try {
-            Object proceed = interceptorChain.proceed();
+            Object proceed = interceptorChain.proceedSync(context);
             task.ensureNoInterruptionWasSwallowed();
             return proceed;
         } catch (Exception e) {
@@ -142,13 +142,13 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
             context.onError((ctx, phase, error) -> taskTimeout.complete());
         }
 
-        AxonTimeLimitedTask task = (AxonTimeLimitedTask) root.resources().get(TRANSACTION_TIME_LIMIT_RESOURCE_KEY);
+        AxonTimeLimitedTask task = context.getResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY);
         try {
-            Object proceed = interceptorChain.proceed();
+            MessageStream<R> proceed = interceptorChain.proceed(message, context);
             task.ensureNoInterruptionWasSwallowed();
             return proceed;
         } catch (Exception e) {
-            throw task.detectInterruptionInsteadOfException(e);
+            return MessageStream.failed(task.detectInterruptionInsteadOfException(e));
         }
     }
 
@@ -161,7 +161,7 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
                 throw task.detectInterruptionInsteadOfException(e);
             }
         } catch (Exception e) {
-            if(e instanceof RuntimeException) {
+            if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             }
             throw new RuntimeException(e);
