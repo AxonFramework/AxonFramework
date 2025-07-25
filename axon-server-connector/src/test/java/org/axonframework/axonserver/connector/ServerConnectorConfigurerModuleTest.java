@@ -31,7 +31,12 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
 
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link ServerConnectorConfigurerModule}.
@@ -98,5 +103,71 @@ class ServerConnectorConfigurerModuleTest {
                 AxonServerCommandBus.class.getDeclaredField("loadFactorProvider"), commandBus
         );
         assertEquals(expected, result);
+    }
+
+    @Test
+    void noRegisteredTopologyChangeListenerInvokesConnectionManagerGetConnectionOnce() {
+        Configuration config =
+                DefaultConfigurer.defaultConfiguration()
+                                 .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                 .configureLifecyclePhaseTimeout(25, TimeUnit.MILLISECONDS)
+                                 .registerComponent(AxonServerConnectionManager.class, c -> {
+                                     AxonServerConnectionManager connectionManager =
+                                             AxonServerConnectionManager.builder()
+                                                                        .axonServerConfiguration(c.getComponent(
+                                                                                AxonServerConfiguration.class
+                                                                        ))
+                                                                        .build();
+                                     return spy(connectionManager);
+                                 })
+                                 .buildConfiguration();
+
+        // Retrieving the CommandBus ensure the AxonServerCommandBus triggers "a" start of the AxonServerConnectionManager.
+        config.commandBus();
+        config.start();
+
+        AxonServerConnectionManager connectionManager = config.getComponent(AxonServerConnectionManager.class);
+        assertNotNull(connectionManager);
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofMillis(500))
+               .untilAsserted(() -> verify(connectionManager).getConnection());
+    }
+
+    /**
+     * This test would ideally verify a {@link TopologyChangeListener} got registered with the
+     * {@link io.axoniq.axonserver.connector.control.ControlChannel} of the default context of the
+     * {@link AxonServerConnectionManager}. However, this test class is not set up to spin an actual Axon Server
+     * instance. Hence, I have decided to only verify if the {@link AxonServerConnectionManager#getConnection()} was
+     * invoked twice, where the first occurrence comes from the {@link AxonServerCommandBus} and the second from
+     * registering the {@code TopologyChangeListener}.
+     */
+    @Test
+    void registeredTopologyChangeListenerInvokesConnectionManagerGetConnectionTwice() {
+        Configuration config =
+                DefaultConfigurer.defaultConfiguration()
+                                 .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                 .configureLifecyclePhaseTimeout(25, TimeUnit.MILLISECONDS)
+                                 .registerComponent(TopologyChangeListener.class,
+                                                    c -> mock(TopologyChangeListener.class))
+                                 .registerComponent(AxonServerConnectionManager.class, c -> {
+                                     AxonServerConnectionManager connectionManager =
+                                             AxonServerConnectionManager.builder()
+                                                                        .axonServerConfiguration(c.getComponent(
+                                                                                AxonServerConfiguration.class
+                                                                        ))
+                                                                        .build();
+                                     return spy(connectionManager);
+                                 })
+                                 .buildConfiguration();
+
+        // Retrieving the CommandBus ensure the AxonServerCommandBus triggers "a" start of the AxonServerConnectionManager.
+        config.commandBus();
+        config.start();
+
+        AxonServerConnectionManager connectionManager = config.getComponent(AxonServerConnectionManager.class);
+        assertNotNull(connectionManager);
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofMillis(500))
+               .untilAsserted(() -> verify(connectionManager, times(2)).getConnection());
     }
 }
