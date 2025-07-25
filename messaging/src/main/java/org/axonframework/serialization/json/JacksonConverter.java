@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
@@ -48,7 +48,7 @@ public class JacksonConverter implements Converter {
     private static final Logger logger = LoggerFactory.getLogger(JacksonConverter.class);
 
     private final ObjectMapper objectMapper;
-    private final ChainingConverter converter;
+    private final ChainingContentTypeConverter converter;
 
     /**
      * Constructs a {@code JacksonConverter} with a default {@link ObjectMapper} that
@@ -67,7 +67,7 @@ public class JacksonConverter implements Converter {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
         this.objectMapper.registerModule(new JavaTimeModule());
         // TODO The Converter used to be configurable for the JacksonSerializer. I don't think we need that anymore. Thoughts?
-        this.converter = new ChainingConverter();
+        this.converter = new ChainingContentTypeConverter();
         this.converter.registerConverter(new JsonNodeToByteArrayConverter(this.objectMapper));
         this.converter.registerConverter(new ByteArrayToJsonNodeConverter(this.objectMapper));
         this.converter.registerConverter(new JsonNodeToObjectNodeConverter());
