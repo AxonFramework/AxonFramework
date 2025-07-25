@@ -3,6 +3,44 @@
 
 All the enhancements and features which have been introduced to our major releases of the Axon Framework are noted here.
 
+== Release 4.12
+
+=== _Features_
+
+- link:https://github.com/AxonFramework/AxonFramework/pull/3543[#3543] Update Checker with Anonymous Usage Analytics
+- link:https://github.com/AxonFramework/AxonFramework/pull/3556[#3556] - Introduce the `TopologyChangeListener`
+
+=== _Enhancements_
+
+- link:https://github.com/AxonFramework/AxonFramework/pull/3431[#3431] Added caching for unknown classes
+- link:https://github.com/AxonFramework/AxonFramework/issues/3530[#3530] Incompatibility of MessageAuthorizationDispatchInterceptor and Tracing (Datadog)
+- link:https://github.com/AxonFramework/AxonFramework/pull/3549[#3549] Spring Authorization intercepting simplification
+
+=== _Bug fixes_
+
+- link:https://github.com/AxonFramework/AxonFramework/issues/3551[#3551] - TrackingEventProcessor does not restart after janitor timeout interruption
+- link:https://github.com/AxonFramework/AxonFramework/issues/3532[#3532] Duplicate call to `Eventstream.excludePayloadType()` in `EventBuffer.skipMessagesWithPayloadTypeOf()`
+- link:https://github.com/AxonFramework/AxonFramework/pull/3533[#3533] Remove duplicate call to `Eventstream.excludePayloadType` when skipping an `UnknownSerializedType`
+
+=== _Documentation_
+
+- link:https://github.com/AxonFramework/AxonFramework/pull/3374[#3374] docs: fix broken link for allocation-size details in "Auto-increment and sequences" section
+- link:https://github.com/AxonFramework/AxonFramework/issues/3391[#3391] Spring Boot App Fails to Start: Missing RuntimeDomain Class from Protobuf After Axonframework Update from 4.10.3 to 4.11.1
+- link:https://github.com/AxonFramework/AxonFramework/issues/3518[#3518] Upcasting snapshots documentation
+- link:https://github.com/AxonFramework/AxonFramework/pull/3531[#3531] docs(event-snapshots): add warning - make it clear that SnapshotFilter implementations should check the aggregate type
+- link:https://github.com/AxonFramework/AxonFramework/pull/3534[#3534] docs(known-issues): describe `Protobuf version conflicts with Axon Server Connector`
+- link:https://github.com/AxonFramework/AxonFramework/pull/3546[#3546] Add Snapshot Event Upcasting section and `SnapshotFilter` usage warning
+
+=== _Contributors_
+
+We'd like to thank all the contributors who worked on this release!
+
+- link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
+- link:https://github.com/OLibutzki[@OLibutzki]
+- link:https://github.com/abuijze[@abuijze]
+- link:https://github.com/hahawin[@hahawin]
+- link:https://github.com/smcvb[@smcvb]
+
 == Release 4.11
 
 === _Features_
