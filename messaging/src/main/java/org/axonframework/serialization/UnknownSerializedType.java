@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class UnknownSerializedType {
      * @return the data in the desired format
      */
     public <T> T readData(Class<T> desiredFormat) {
-        return serializer.getConverter().convert(serializedObject, desiredFormat).getData();
+        return serializer.getConverter().convertSerializedObject(serializedObject, desiredFormat).getData();
     }
 
     /**

@@ -19,6 +19,9 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
+import org.axonframework.commandhandling.RoutingStrategy;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.FutureUtils;
@@ -55,6 +58,7 @@ import org.axonframework.serialization.json.JacksonConverter;
  *     <li>Registers a {@link org.axonframework.queryhandling.DefaultQueryGateway} for class {@link org.axonframework.queryhandling.QueryGateway}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryBus} for class {@link QueryBus}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryUpdateEmitter} for class {@link QueryUpdateEmitter}</li>
+ *     <li>Registers a {@link org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy} for class {@link RoutingStrategy}</li>
  * </ul>
  *
  * @author Steven van Beelen
@@ -74,13 +78,13 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(Converter.class, c -> new JacksonConverter())
                 .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
+                .registerIfNotPresent(RoutingStrategy.class, MessagingConfigurationDefaults::defaultRoutingStrategy)
                 .registerIfNotPresent(EventGateway.class, MessagingConfigurationDefaults::defaultEventGateway)
                 .registerIfNotPresent(EventSink.class, MessagingConfigurationDefaults::defaultEventSink)
                 .registerIfNotPresent(EventBus.class, MessagingConfigurationDefaults::defaultEventBus)
                 .registerIfNotPresent(QueryGateway.class, MessagingConfigurationDefaults::defaultQueryGateway)
                 .registerIfNotPresent(QueryBus.class, MessagingConfigurationDefaults::defaultQueryBus)
-                .registerIfNotPresent(QueryUpdateEmitter.class,
-                                      MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
+                .registerIfNotPresent(QueryUpdateEmitter.class, MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {
@@ -96,7 +100,9 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     private static CommandGateway defaultCommandGateway(Configuration config) {
         return new DefaultCommandGateway(
                 config.getComponent(CommandBus.class),
-                config.getComponent(MessageTypeResolver.class)
+                config.getComponent(MessageTypeResolver.class),
+                config.getOptionalComponent(CommandPriorityCalculator.class).orElse(null),
+                config.getOptionalComponent(RoutingStrategy.class).orElse(null)
         );
     }
 
@@ -143,5 +149,9 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     private static QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
         return SimpleQueryUpdateEmitter.builder().build();
+    }
+
+    private static RoutingStrategy defaultRoutingStrategy(Configuration config) {
+        return new AnnotationRoutingStrategy();
     }
 }

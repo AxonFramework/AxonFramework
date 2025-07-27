@@ -81,7 +81,7 @@ public interface Converter {
      */
     @Deprecated(forRemoval = true, since = "5.0.0")
     @SuppressWarnings("unchecked")
-    default <T, S> SerializedObject<T> convert(SerializedObject<S> original, Class<T> targetType) {
+    default <T, S> SerializedObject<T> convertSerializedObject(SerializedObject<S> original, Class<T> targetType) {
         if (original.getContentType().equals(targetType)) {
             return (SerializedObject<T>) original;
         }

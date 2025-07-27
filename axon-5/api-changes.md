@@ -1226,7 +1226,7 @@ This section contains five tables:
 | org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityCollectionDefinition | org.axonframework.modelling.entity.annotation.ListEntityModelDefinition          | No                             |
 | org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityDefinition           | org.axonframework.modelling.entity.annotation.SingleEntityChildModelDefinition   | No                             |
 | org.axonframework.modelling.command.inspection.AbstractChildEntityDefinition                           | org.axonframework.modelling.entity.annotation.AbstractEntityChildModelDefinition | No                             |
-| org.axonframework.axonserver.connector.ServerConnectorConfigurerModule                                 | org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer      | No                             |
+| org.axonframework.axonserver.connector.ServerConnectorConfigurerModule                                 | org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer           | No                             |
 | org.axonframework.serialization.CannotConvertBetweenTypesException                                     | org.axonframework.serialization.ConversionException                              | No                             |
 
 ### Removed Classes

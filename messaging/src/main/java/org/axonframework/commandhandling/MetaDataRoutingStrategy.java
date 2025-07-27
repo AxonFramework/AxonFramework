@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
+package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonConfigurationException;
 
 import jakarta.annotation.Nonnull;
@@ -39,9 +38,9 @@ public class MetaDataRoutingStrategy implements RoutingStrategy {
      * Will assert that the {@code metaDataKey} is not an empty {@link String} or {@code null} and will throw an
      * {@link AxonConfigurationException} if this is the case.
      *
-     * @param metaDataKey
+     * @param metaDataKey The key in the {@link org.axonframework.messaging.MetaData} to use for routing.
      */
-    protected MetaDataRoutingStrategy(String metaDataKey) {
+    public MetaDataRoutingStrategy(String metaDataKey) {
         this.metaDataKey = metaDataKey;
     }
 

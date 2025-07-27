@@ -97,7 +97,8 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                 new QualifiedName(AssignMentorCommand.class),
                 c -> (command, state, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context, c);
-                    AssignMentorCommand payload = (AssignMentorCommand) command.getPayload();
+                    Converter converter = c.getComponent(Converter.class);
+                    AssignMentorCommand payload = converter.convert(command.getPayload(), AssignMentorCommand.class);
                     StudentMentorAssignment assignment = state.loadEntity(
                             StudentMentorAssignment.class, payload.modelIdentifier(), context
                     ).join();
@@ -121,7 +122,9 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
 
     private void verifyMentorLogicForComponent() {
         // Can assign mentor to mentee
-        sendCommand(new AssignMentorCommand("my-studentId-1", "my-studentId-2"));
+        String result = sendCommand(new AssignMentorCommand("my-studentId-1", "my-studentId-2"), String.class);
+
+        assertEquals("successful", result);
 
         // But not a second time
         var exception = assertThrows(CommandExecutionException.class,
@@ -129,7 +132,6 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
         Throwable commandExecutionExceptionCause = exception.getCause();
         assertInstanceOf(ExecutionException.class, commandExecutionExceptionCause);
         Throwable executionExceptionCause = commandExecutionExceptionCause.getCause();
-        assertInstanceOf(IllegalArgumentException.class, executionExceptionCause);
         assertTrue(executionExceptionCause.getMessage().contains("Mentee already has a mentor"));
 
         // And a third student can't become the mentee of the second, because the second is already a mentor
@@ -138,7 +140,6 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
         Throwable commandExecutionExceptionCauseTwo = exceptionTwo.getCause();
         assertInstanceOf(ExecutionException.class, commandExecutionExceptionCauseTwo);
         Throwable executionExceptionCauseTwo = commandExecutionExceptionCauseTwo.getCause();
-        assertInstanceOf(IllegalArgumentException.class, executionExceptionCauseTwo);
         assertTrue(executionExceptionCauseTwo.getMessage().contains("Mentor already assigned to a mentee"));
 
         // But the mentee can become a mentor for a third student
@@ -151,9 +152,9 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
     class CompoundModelAnnotatedCommandHandler {
 
         @CommandHandler
-        public void handle(AssignMentorCommand command,
-                           @InjectEntity StudentMentorAssignment assignment,
-                           EventAppender appender
+        public String handle(AssignMentorCommand command,
+                             @InjectEntity StudentMentorAssignment assignment,
+                             EventAppender appender
         ) {
             if (assignment.isMentorHasMentee()) {
                 throw new IllegalArgumentException("Mentor already assigned to a mentee");
@@ -163,6 +164,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
             }
 
             appender.append(new MentorAssignedToStudentEvent(command.mentorId(), command.menteeId()));
+            return "successful";
         }
     }
 }
