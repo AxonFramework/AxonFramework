@@ -342,11 +342,12 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
-        List<Long> results = entityManager().createQuery(
-                                                    "SELECT MAX(e.sequenceNumber) FROM " + domainEventEntryEntityName()
-                                                            + " e WHERE e.aggregateIdentifier = :aggregateId", Long.class)
-                                            .setParameter("aggregateId", aggregateIdentifier)
-                                            .getResultList();
+        List<Long> results = entityManager()
+                .createQuery(
+                        "SELECT MAX(e.sequenceNumber) FROM " + domainEventEntryEntityName()
+                                + " e WHERE e.aggregateIdentifier = :aggregateId", Long.class)
+                .setParameter("aggregateId", aggregateIdentifier)
+                .getResultList();
         if (results.isEmpty()) {
             return Optional.empty();
         }
