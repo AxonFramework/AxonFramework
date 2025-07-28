@@ -59,10 +59,11 @@ class SequencingEventHandlingComponentTest {
     void setUp() {
         delegate = new SimpleEventHandlingComponent();
         //noinspection unchecked
-        sequencingComponent = new SequenceOverridingEventHandlingComponent(
-                (event) -> Optional.of(asTestMessage(event).getPayload().sequenceId),
-                delegate //     delegate
-        );
+        sequencingComponent =
+                new SequencingEventHandlingComponent(
+                        (event) -> Optional.of(asTestMessage(event).getPayload().sequenceId),
+                        delegate
+                );
         executorService = Executors.newFixedThreadPool(20);
     }
 
@@ -78,7 +79,7 @@ class SequencingEventHandlingComponentTest {
         }
     }
 
-    @Test
+    @RepeatedTest(3)
     void testSequentialProcessingWithSameSequenceIdentifier() {
         // Given
         List<String> executionOrder = new ArrayList<>();
@@ -120,7 +121,7 @@ class SequencingEventHandlingComponentTest {
                 .containsExactly("event-1", "event-2", "event-3", "event-4", "event-5");
     }
 
-    @Test
+    @RepeatedTest(3)
     void testSequentialProcessingWithMixedSequenceIdentifiers() {
         // Given
         List<String> executionOrder = new CopyOnWriteArrayList<>();
@@ -130,7 +131,7 @@ class SequencingEventHandlingComponentTest {
             // todo: too fast?
             CompletableFuture<Message<Void>> future = CompletableFuture.supplyAsync(() -> {
                 try {
-                    Thread.sleep(10);
+                    Thread.sleep(50);
                     executionOrder.add(eventString);
                     return EventTestUtils.asEventMessage("sample-response");
                 } catch (InterruptedException e) {
@@ -159,7 +160,7 @@ class SequencingEventHandlingComponentTest {
 
         // Then - Wait for all events to be processed
         Awaitility.await()
-                  .atMost(Duration.ofSeconds(10))
+                  .atMost(Duration.ofSeconds(2))
                   .untilAsserted(() -> assertThat(executionOrder).hasSameSizeAs(sequenceIds));
 
         assertThat(executionOrder).hasSize(sequenceIds.length);
