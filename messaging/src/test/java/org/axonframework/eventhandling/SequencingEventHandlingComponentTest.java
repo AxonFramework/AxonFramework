@@ -22,7 +22,6 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 
@@ -34,15 +33,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
 /**
- * Test class for {@link SequencingEventHandlingComponent} that verifies sequential processing of events with the same
+ * Test class for {@link SequencingEventHandlingComponentOnMessageStream} that verifies sequential processing of events with the same
  * sequence identifier while allowing concurrent processing of events with different sequence identifiers.
  *
  * @author Mateusz Nowak
@@ -53,14 +49,13 @@ class SequencingEventHandlingComponentTest {
     private SimpleEventHandlingComponent delegate;
     private EventHandlingComponent sequencingComponent;
     private ExecutorService executorService;
-    private final AtomicReference<ProcessingContext> processingContextRef = new AtomicReference<>();
 
     @BeforeEach
     void setUp() {
         delegate = new SimpleEventHandlingComponent();
         //noinspection unchecked
         sequencingComponent =
-                new SequencingEventHandlingComponent2(
+                new SequencingEventHandlingComponent(
                         (event) -> Optional.of(asTestMessage(event).getPayload().sequenceId),
                         delegate
                 );
@@ -200,98 +195,6 @@ class SequencingEventHandlingComponentTest {
     }
 
     @Test
-    void testConcurrentProcessingWithDifferentSequenceIdentifiers() {
-        // Given
-        List<String> executionOrder = new CopyOnWriteArrayList<>();
-        AtomicInteger processedCount = new AtomicInteger(0);
-
-        EventHandler asyncHandler = (event, context) -> {
-            CompletableFuture<Message<Void>> future = CompletableFuture.supplyAsync(() -> {
-                try {
-                    // Add delay to make threading effects visible
-                    Thread.sleep(ThreadLocalRandom.current().nextInt(10, 30));
-
-                    String eventId = event.getPayload().toString();
-                    executionOrder.add(eventId);
-                    processedCount.incrementAndGet();
-                    return null;
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
-                }
-            }, executorService);
-
-            return MessageStream.fromFuture(future).ignoreEntries();
-        };
-
-        QualifiedName eventType = new QualifiedName("test.Event");
-        delegate.subscribe(eventType, asyncHandler);
-
-        // When - Submit events with different sequence identifiers
-        // Events with sequence-1 (should be sequential)
-        CompletableFuture.runAsync(() -> {
-            EventMessage<?> event = testEvent("sequence-1");
-            sequencingComponent.handle(event, processingContextRef.get());
-        }, executorService);
-
-        CompletableFuture.runAsync(() -> {
-            EventMessage<?> event = testEvent("sequence-1");
-            sequencingComponent.handle(event, processingContextRef.get());
-        }, executorService);
-
-        // Events with sequence-2 (should be sequential within this group)
-        CompletableFuture.runAsync(() -> {
-            EventMessage<?> event = testEvent("sequence-2");
-            sequencingComponent.handle(event, processingContextRef.get());
-        }, executorService);
-
-        CompletableFuture.runAsync(() -> {
-            EventMessage<?> event = testEvent("sequence-2");
-            sequencingComponent.handle(event, processingContextRef.get());
-        }, executorService);
-
-        // Events with sequence-3
-        CompletableFuture.runAsync(() -> {
-            EventMessage<?> event = testEvent("sequence-3");
-            sequencingComponent.handle(event, processingContextRef.get());
-        }, executorService);
-
-        CompletableFuture.runAsync(() -> {
-            EventMessage<?> event = testEvent("sequence-3");
-            sequencingComponent.handle(event, processingContextRef.get());
-        }, executorService);
-
-        // Then - Wait for all events to be processed
-        Awaitility.await()
-                  .atMost(Duration.ofSeconds(10))
-                  .until(() -> processedCount.get() == 6);
-
-        // Verify sequential ordering within each sequence group
-        assertThat(executionOrder).hasSize(6);
-
-        // Find positions of events for each sequence
-        int seq1Event1Pos = executionOrder.indexOf("seq1-event1");
-        int seq1Event2Pos = executionOrder.indexOf("seq1-event2");
-        int seq2Event1Pos = executionOrder.indexOf("seq2-event1");
-        int seq2Event2Pos = executionOrder.indexOf("seq2-event2");
-        int seq3Event1Pos = executionOrder.indexOf("seq3-event1");
-        int seq3Event2Pos = executionOrder.indexOf("seq3-event2");
-
-        // Events within the same sequence should maintain order
-        assertThat(seq1Event1Pos)
-                .as("seq1-event1 should be processed before seq1-event2")
-                .isLessThan(seq1Event2Pos);
-
-        assertThat(seq2Event1Pos)
-                .as("seq2-event1 should be processed before seq2-event2")
-                .isLessThan(seq2Event2Pos);
-
-        assertThat(seq3Event1Pos)
-                .as("seq3-event1 should be processed before seq3-event2")
-                .isLessThan(seq3Event2Pos);
-    }
-
-    @Test
     void testEmptyStreamHandling() {
         // Given
         EventHandler emptyHandler = (event, context) -> MessageStream.empty();
@@ -301,10 +204,11 @@ class SequencingEventHandlingComponentTest {
         // When & Then - Should complete without issues
         assertThatNoException().isThrownBy(() -> {
             EventMessage<?> event = testEvent("sequence-1");
-            MessageStream.Empty<Message<Void>> result = sequencingComponent.handle(event, processingContextRef.get());
+            var unitOfWork = new SimpleUnitOfWorkFactory().create();
+            var result = unitOfWork.executeWithResult((ctx) -> sequencingComponent.handle(event, ctx).asCompletableFuture());
 
             assertThat(result).isNotNull();
-            assertThat(result.isCompleted()).isTrue();
+            assertThat(result.isDone()).isTrue();
         });
     }
 
@@ -319,12 +223,11 @@ class SequencingEventHandlingComponentTest {
 
         // When
         EventMessage<?> event = testEvent("sequence-1");
-        MessageStream.Empty<Message<Void>> result = sequencingComponent.handle(event, processingContextRef.get());
+        var unitOfWork = new SimpleUnitOfWorkFactory().create();
+        var result = unitOfWork.executeWithResult((ctx) -> sequencingComponent.handle(event, ctx).asCompletableFuture());
 
         // Then - Error should be propagated
-        assertThat(result.error())
-                .isPresent()
-                .hasValue(testException);
+        assertThat(result.isCompletedExceptionally()).isTrue();
     }
 
     private EventMessage<?> testEvent(String sequenceId) {

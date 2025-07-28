@@ -54,9 +54,4 @@ class IgnoredEntriesMessageStream<M extends Message<?>>
     public Optional<Entry<Message<M>>> peek() {
         return delegate().peek().flatMap(r -> Optional.empty());
     }
-
-    @Override
-    public MessageStream<Message<M>> concatWith(@Nonnull MessageStream<Message<M>> other) {
-        return new ConcatenatingMessageStream<>(this, other);
-    }
 }

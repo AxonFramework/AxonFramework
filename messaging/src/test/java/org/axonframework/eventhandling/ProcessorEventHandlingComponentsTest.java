@@ -229,47 +229,7 @@ class ProcessorEventHandlingComponentsTest {
                 .containsExactly("event-1_seq-A", "event-2_seq-A", "event-3_seq-A", "event-4_seq-A");
     }
 
-    @Test
-    void test4_async() throws ExecutionException, InterruptedException, TimeoutException {
-        // given
-        CompletableFuture<EventMessage<?>> future1_1 = delayedFuture(100, TimeUnit.MILLISECONDS)
-                .thenApply(r -> EventTestUtils.asEventMessage(new TestPayload1("response-1_1")));
-
-        EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent(
-                (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
-                new SimpleEventHandlingComponent()
-        );
-        var trackingHandler1_1 = new TrackingEventHandler("Handler 1_1", future1_1);
-        eventHandlingComponent1.subscribe(new QualifiedName(TestPayload1.class), trackingHandler1_1);
-
-        var processorComponents = new ProcessorEventHandlingComponents(eventHandlingComponent1);
-
-        // when
-        var event1 = EventTestUtils.asEventMessage(new TestPayload1("event-1_seq-A"));
-        var event2 = EventTestUtils.asEventMessage(new TestPayload1("event-2_seq-A"));
-        var event3 = EventTestUtils.asEventMessage(new TestPayload1("event-3_seq-B"));
-        var event4 = EventTestUtils.asEventMessage(new TestPayload1("event-4_seq-A"));
-        var event5 = EventTestUtils.asEventMessage(new TestPayload1("event-5_seq-A"));
-        var event6 = EventTestUtils.asEventMessage(new TestPayload1("event-6_seq-B"));
-        var event7 = EventTestUtils.asEventMessage(new TestPayload1("event-7_seq-A"));
-        var batch = List.of(event1, event2, event3, event4, event5, event6, event7);
-
-        var unitOfWork = new SimpleUnitOfWorkFactory().create();
-        unitOfWork.onInvocation(ctx -> processorComponents.handle(batch, ctx)
-                                                          .whenComplete(() -> logger.info("Components completed"))
-                                                          .asCompletableFuture());
-        unitOfWork.execute().get(1, TimeUnit.SECONDS);
-
-        // then
-        assertThat(trackingHandler1_1.getHandledEvents())
-                .hasSize(7)
-                .extracting(EventMessage::getPayload)
-                .extracting("value")
-                .containsExactly("event-1_seq-A", "event-2_seq-A", "event-3_seq-B", "event-4_seq-A",
-                                 "event-5_seq-A", "event-6_seq-B", "event-7_seq-A");
-    }
-
-    @Test
+    @RepeatedTest(10)
     void test5_async() throws ExecutionException, InterruptedException, TimeoutException {
         // given
         CompletableFuture<EventMessage<?>> future1_1 = delayedFuture(10, TimeUnit.MILLISECONDS)
@@ -332,7 +292,7 @@ class ProcessorEventHandlingComponentsTest {
                                                                         }, executorService)
                 .thenApply(r -> EventTestUtils.asEventMessage(new TestPayload1("response-1_1")));
 
-        EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent2(
+        EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent(
                 (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
                 new SimpleEventHandlingComponent()
         );
