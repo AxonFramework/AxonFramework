@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -332,7 +333,7 @@ class WorkPackage {
                     ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
                 });
 
-                unitOfWork.onInvocation(ctx -> batchProcessor.processBatch(eventBatch, ctx, segment));
+                unitOfWork.onInvocation(ctx -> batchProcessor.process(eventBatch, ctx).asCompletableFuture());
 
                 unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
                 unitOfWork.runOnAfterCommit(
@@ -535,18 +536,13 @@ class WorkPackage {
 
         /**
          * Processes a given batch of {@code eventMessages}. These {@code eventMessages} will be processed within the
-         * given {@code unitOfWork}. The collection of {@link Segment} instances defines the segments for which the
-         * {@code eventMessages} should be processed.
+         * given {@code processingContext}.
          *
          * @param eventMessages     The batch of {@link EventMessage}s that is to be processed.
          * @param processingContext The {@link ProcessingContext} that has been prepared to process the
          *                          {@code eventMessages}.
-         * @param processingSegment The {@link Segment} for which the {@code eventMessages} should be processed in the
-         *                          given {@code unitOfWork}.
          */
-        CompletableFuture<?> processBatch(List<? extends EventMessage<?>> eventMessages,
-                                             ProcessingContext processingContext,
-                                             Segment processingSegment);
+        MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext);
     }
 
     /**

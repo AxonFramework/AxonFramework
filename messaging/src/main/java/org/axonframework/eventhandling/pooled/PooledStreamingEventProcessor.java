@@ -375,8 +375,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> eventHandlingComponents.handle(events, ctx)
-                                                                                               .asCompletableFuture();
+        WorkPackage.BatchProcessor batchProcessor = eventHandlingComponents::handle;
         var batchSize = customization.batchSize();
         var claimExtensionThreshold = customization.claimExtensionThreshold();
         var clock = customization.clock();
