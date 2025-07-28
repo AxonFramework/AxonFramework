@@ -34,3 +34,6 @@ updates:
         - "patch"
         - "minor"
         - "major"
+    ignore:
+      - dependency-name: "com.github.kagkarlsson:db-scheduler"
+        versions: [ "[14.0.0,)" ] # TODO #3194 Remove ignore rule to auto-update to recent db-scheduler versions
