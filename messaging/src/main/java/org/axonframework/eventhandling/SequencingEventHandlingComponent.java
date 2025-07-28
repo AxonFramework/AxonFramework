@@ -22,6 +22,8 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,8 +32,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Implementation of an {@link EventHandlingComponent} that ensures sequential processing of events with the same
- * sequence identifier. This component wraps a delegate {@code EventHandlingComponent} and coordinates event handling
- * to maintain ordering guarantees.
+ * sequence identifier. This component wraps a delegate {@code EventHandlingComponent} and coordinates event handling to
+ * maintain ordering guarantees.
  * <p>
  * Events are processed sequentially when they share the same sequence identifier (as determined by
  * {@link #sequenceIdentifierFor(EventMessage, ProcessingContext)}). Events with different sequence identifiers can be
@@ -56,9 +58,11 @@ import static java.util.Objects.requireNonNull;
  */
 public class SequencingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
+    private static final Logger logger = LoggerFactory.getLogger(SequencingEventHandlingComponent.class);
+
     /**
-     * The {@link Context.ResourceKey} used to store the map of sequence identifiers to their ongoing invocations
-     * in the {@link ProcessingContext}.
+     * The {@link Context.ResourceKey} used to store the map of sequence identifiers to their ongoing invocations in the
+     * {@link ProcessingContext}.
      */
     private final Context.ResourceKey<Map<Object, MessageStream.Empty<Message<Void>>>> sequencedHandlingKey =
             Context.ResourceKey.withLabel("sequencedHandling");
@@ -67,49 +71,67 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
     /**
      * Constructs a {@code SequencingEventHandlingComponent} with the given {@code delegate} to receive calls.
      * <p>
-     * The delegate will handle the actual event processing, while this component ensures proper sequencing based on
-     * the sequence identifiers.
+     * The delegate will handle the actual event processing, while this component ensures proper sequencing based on the
+     * sequence identifiers.
      *
      * @param delegate The {@link EventHandlingComponent} instance to delegate event handling calls to.
      */
-    public SequencingEventHandlingComponent(@Nonnull SequencingPolicy sequencingPolicy, @Nonnull EventHandlingComponent delegate) {
+    public SequencingEventHandlingComponent(@Nonnull SequencingPolicy sequencingPolicy,
+                                            @Nonnull EventHandlingComponent delegate) {
         super(delegate);
         this.sequencingPolicy = sequencingPolicy;
     }
 
     /**
-     * Handles the given {@code event} within the given {@code context}, ensuring sequential processing for events
-     * with the same sequence identifier.
+     * Handles the given {@code event} within the given {@code context}, ensuring sequential processing for events with
+     * the same sequence identifier.
      * <p>
      * This method maintains a map of ongoing invocations per sequence identifier in the {@code ProcessingContext}.
-     * Events with the same sequence identifier are processed sequentially using {@link MessageStream#whenComplete()}
-     * to chain their execution. Events with different sequence identifiers can be processed concurrently.
+     * Events with the same sequence identifier are processed sequentially using {@link MessageStream#whenComplete()} to
+     * chain their execution. Events with different sequence identifiers can be processed concurrently.
      * <p>
-     * The sequencing logic is thread-safe through the use of {@link ConcurrentHashMap#compute(Object, java.util.function.BiFunction)},
-     * which provides atomic check-and-update semantics.
+     * The sequencing logic is thread-safe through the use of
+     * {@link ConcurrentHashMap#compute(Object, java.util.function.BiFunction)}, which provides atomic check-and-update
+     * semantics.
      *
      * @param event   The {@link EventMessage} to handle.
      * @param context The {@link ProcessingContext} in which the {@code event} is handled.
      * @return A {@link MessageStream.Empty} that completes when the event handling is finished. For sequenced events,
-     * this may complete later than the actual delegate invocation if the event is waiting for a previous event
-     * with the same sequence identifier to complete.
+     * this may complete later than the actual delegate invocation if the event is waiting for a previous event with the
+     * same sequence identifier to complete.
      */
     @Nonnull
     @Override
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
         Object eventSequenceIdentifier = sequenceIdentifierFor(event, context);
+        logger.info("Handling event [{}] with sequence identifier [{}]", event, eventSequenceIdentifier);
 
         Map<Object, MessageStream.Empty<Message<Void>>> sequenceMap = context.computeResourceIfAbsent(
                 sequencedHandlingKey,
                 ConcurrentHashMap::new
         );
 
-        return sequenceMap.compute(eventSequenceIdentifier, (key, previousInvocation) ->
-                previousInvocation == null
-                        ? delegate.handle(event, context)
-                        : previousInvocation.whenComplete(() -> delegate.handle(event, context))
-//                        : previousInvocation.concatWith(delegate.handle(event, context)).ignoreEntries().cast()
+        return sequenceMap.compute(eventSequenceIdentifier, (key, previousInvocation) -> {
+                                       if (previousInvocation == null) {
+                                           logger.info("No previous invocation for sequence identifier [{}], processing event [{}] immediately",
+                                                       eventSequenceIdentifier, event);
+                                           return delegate.handle(event, context)
+                                                          .whenComplete(() -> {
+                                                          });
+                                       } else {
+                                           logger.info("Chaining event [{}] to previous invocation for sequence identifier [{}]",
+                                                       event, eventSequenceIdentifier);
+                                           var nextInvocation = delegate.handle(event, context)
+                                                                        .whenComplete(() -> {
+                                                                        });
+                                           return previousInvocation.concatWith(nextInvocation)
+                                                                    .whenComplete(() -> {
+                                                                    })
+                                                                    .ignoreEntries()
+                                                                    .cast();
+                                       }
+                                   }
         );
     }
 
@@ -120,5 +142,4 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
         return sequencingPolicy.getSequenceIdentifierFor(event)
                                .orElseGet(() -> delegate.sequenceIdentifierFor(event, context));
     }
-
 }
