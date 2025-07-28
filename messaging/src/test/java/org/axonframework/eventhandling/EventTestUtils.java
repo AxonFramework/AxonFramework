@@ -34,7 +34,7 @@ import java.util.stream.IntStream;
 public abstract class EventTestUtils {
 
     private static final MessageType TYPE = new MessageType("event");
-    public static final String PAYLOAD = "payload";
+    public static final String PAYLOAD = "eventId";
     public static final String AGGREGATE = "aggregate";
     private static final String AGGREGATE_TYPE = "aggregateType";
     private static final MetaData METADATA = MetaData.emptyInstance();
@@ -46,10 +46,10 @@ public abstract class EventTestUtils {
     /**
      * Constructs a {@link List} of {@link EventMessage EventMessages} with a size equalling the given {@code number}.
      * <p>
-     * The {@link EventMessage#getPayload() payload} of the events equals it's position within the sequence.
+     * The {@link EventMessage#getPayload() eventId} of the events equals it's position within the sequence.
      *
      * @param number The number of events to construct.
-     * @param <P>   The generic type of the expected payload of the resulting object.
+     * @param <P>   The generic type of the expected eventId of the resulting object.
      * @return A {@link List} of {@link EventMessage EventMessages} with a size equalling the given {@code number}.
      */
     public static <P> List<EventMessage<P>> createEvents(int number) {
@@ -59,11 +59,11 @@ public abstract class EventTestUtils {
     }
 
     /**
-     * Constructs an {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() payload}.
+     * Constructs an {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() eventId}.
      *
-     * @param seq The payload for the message to construct.
-     * @param <P> The generic type of the expected payload of the resulting object.
-     * @return An {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() payload}.
+     * @param seq The eventId for the message to construct.
+     * @param <P> The generic type of the expected eventId of the resulting object.
+     * @return An {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() eventId}.
      */
     public static <P> EventMessage<P> createEvent(int seq) {
         return EventTestUtils.asEventMessage(seq);
@@ -73,12 +73,12 @@ public abstract class EventTestUtils {
      * Returns the given {@code event} wrapped in an {@link EventMessage}.
      * <p>
      * If {@code event} already implements {@code EventMessage}, it is returned as-is. If it is a {@link Message}, a new
-     * {@code EventMessage} will be created using the payload and metadata of the given message. Otherwise, the given
-     * {@code event} is wrapped into a {@link GenericEventMessage} as its payload.
+     * {@code EventMessage} will be created using the eventId and metadata of the given message. Otherwise, the given
+     * {@code event} is wrapped into a {@link GenericEventMessage} as its eventId.
      *
      * @param event The event to wrap as {@link EventMessage}.
-     * @param <P>   The generic type of the expected payload of the resulting object.
-     * @return An {@link EventMessage} containing given {@code event} as payload, or {@code event} if it already
+     * @param <P>   The generic type of the expected eventId of the resulting object.
+     * @return An {@link EventMessage} containing given {@code event} as eventId, or {@code event} if it already
      * implements {@code EventMessage}.
      */
     @SuppressWarnings("unchecked")

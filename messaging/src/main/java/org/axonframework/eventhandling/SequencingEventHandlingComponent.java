@@ -25,41 +25,85 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Implementation of an {@link EventHandlingComponent} that ensures sequential processing of events with the same
+ * sequence identifier. This component wraps a delegate {@code EventHandlingComponent} and coordinates event handling
+ * to maintain ordering guarantees.
+ * <p>
+ * Events are processed sequentially when they share the same sequence identifier (as determined by
+ * {@link #sequenceIdentifierFor(EventMessage, ProcessingContext)}). Events with different sequence identifiers can be
+ * processed concurrently. This is particularly useful for maintaining consistency within aggregates or other logical
+ * groupings where event ordering matters.
+ * <p>
+ * The sequencing is achieved by maintaining a map of ongoing invocations per sequence identifier in the
+ * {@link ProcessingContext}. When an event arrives:
+ * <ul>
+ *     <li>If no previous invocation exists for its sequence identifier, the event is processed immediately</li>
+ *     <li>If a previous invocation exists, the new event is chained to execute after the previous one completes</li>
+ * </ul>
+ * <p>
+ * This implementation is thread-safe and uses atomic operations to prevent race conditions when multiple threads
+ * attempt to process events with the same sequence identifier concurrently.
+ * <p>
+ * <b>Note:</b> The sequencing only applies within a single {@code ProcessingContext}. Events processed in different
+ * contexts (e.g., different batches) are not coordinated with each other.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 public class SequencingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
-    private static final Context.ResourceKey<Map<Object, MessageStream.Empty<Message<Void>>>> SEQUENCE_TRACKING_KEY =
-            Context.ResourceKey.withLabel("SequenceTrackingMap");
+    /**
+     * The {@link Context.ResourceKey} used to store the map of sequence identifiers to their ongoing invocations
+     * in the {@link ProcessingContext}.
+     */
+    private final Context.ResourceKey<Map<Object, MessageStream.Empty<Message<Void>>>> sequencedHandlingKey =
+            Context.ResourceKey.withLabel("sequencedHandling");
 
     /**
-     * Constructs the component with given {@code delegate} to receive calls.
+     * Constructs a {@code SequencingEventHandlingComponent} with the given {@code delegate} to receive calls.
+     * <p>
+     * The delegate will handle the actual event processing, while this component ensures proper sequencing based on
+     * the sequence identifiers.
      *
-     * @param delegate The instance to delegate calls to.
+     * @param delegate The {@link EventHandlingComponent} instance to delegate event handling calls to.
      */
     public SequencingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
         super(delegate);
     }
 
+    /**
+     * Handles the given {@code event} within the given {@code context}, ensuring sequential processing for events
+     * with the same sequence identifier.
+     * <p>
+     * This method maintains a map of ongoing invocations per sequence identifier in the {@code ProcessingContext}.
+     * Events with the same sequence identifier are processed sequentially using {@link MessageStream#whenComplete()}
+     * to chain their execution. Events with different sequence identifiers can be processed concurrently.
+     * <p>
+     * The sequencing logic is thread-safe through the use of {@link ConcurrentHashMap#compute(Object, java.util.function.BiFunction)},
+     * which provides atomic check-and-update semantics.
+     *
+     * @param event   The {@link EventMessage} to handle.
+     * @param context The {@link ProcessingContext} in which the {@code event} is handled.
+     * @return A {@link MessageStream.Empty} that completes when the event handling is finished. For sequenced events,
+     * this may complete later than the actual delegate invocation if the event is waiting for a previous event
+     * with the same sequence identifier to complete.
+     */
     @Nonnull
     @Override
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
-        Object sequenceIdentifier = sequenceIdentifierFor(event, context);
+        Object eventSequenceIdentifier = sequenceIdentifierFor(event, context);
 
         Map<Object, MessageStream.Empty<Message<Void>>> sequenceMap = context.computeResourceIfAbsent(
-                SEQUENCE_TRACKING_KEY,
+                sequencedHandlingKey,
                 ConcurrentHashMap::new
         );
 
-        MessageStream.Empty<Message<Void>> previousInvocation = sequenceMap.get(sequenceIdentifier);
-
-        if (previousInvocation == null) {
-            MessageStream.Empty<Message<Void>> currentInvocation = delegate.handle(event, context);
-            sequenceMap.put(sequenceIdentifier, currentInvocation);
-            return currentInvocation;
-        } else {
-            var chainedInvocation = previousInvocation.whenComplete(() -> delegate.handle(event, context));
-            sequenceMap.put(sequenceIdentifier, chainedInvocation);
-            return chainedInvocation;
-        }
+        return sequenceMap.compute(eventSequenceIdentifier, (key, previousInvocation) ->
+                previousInvocation == null
+                        ? delegate.handle(event, context)
+                        : previousInvocation.whenComplete(() -> delegate.handle(event, context))
+        );
     }
 }

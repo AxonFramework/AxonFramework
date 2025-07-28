@@ -35,7 +35,7 @@ import java.util.stream.IntStream;
 public abstract class DomainEventTestUtils {
 
     private static final MessageType TYPE = new MessageType("event");
-    public static final String PAYLOAD = "payload";
+    public static final String PAYLOAD = "eventId";
     public static final String AGGREGATE = "aggregate";
     private static final String AGGREGATE_TYPE = "aggregateType";
     private static final MetaData METADATA = MetaData.emptyInstance();

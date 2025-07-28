@@ -38,7 +38,7 @@ class SegmentMatcherTest {
     void matchesReturnsTrueWhenSegmentMatchesEventBasedOnSequenceIdentifier() {
         //given
         SegmentMatcher testSubject = new SegmentMatcher(message -> Optional.of("sample-identifier"));
-        EventMessage<?> testMessage = EventTestUtils.asEventMessage("test-payload");
+        EventMessage<?> testMessage = EventTestUtils.asEventMessage("test-eventId");
         Segment segment = new Segment(0, 0); // Root segment matches everything
 
         //when
@@ -57,7 +57,7 @@ class SegmentMatcherTest {
         EventMessage<?> testMessage = EventTestUtils.asEventMessage(
                 new GenericEventMessage<>(messageId,
                                           messageType,
-                                          "test-payload",
+                                          "test-eventId",
                                           MetaData.emptyInstance(),
                                           Instant.now()));
         Segment segment = Segment.ROOT_SEGMENT; // Matches everything
@@ -75,7 +75,7 @@ class SegmentMatcherTest {
         Segment segmentEven = new Segment(1, 1); // Will match events with odd hash
         String sequenceId = "even"; // "even" has a hash code of 3021508, which is even
         SegmentMatcher testSubject = new SegmentMatcher(message -> Optional.of(sequenceId));
-        EventMessage<?> oddMessage = EventTestUtils.asEventMessage("test-payload");
+        EventMessage<?> oddMessage = EventTestUtils.asEventMessage("test-eventId");
 
         //when
         boolean result = testSubject.matches(segmentEven, oddMessage);
