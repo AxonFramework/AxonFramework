@@ -122,12 +122,9 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
                                        } else {
                                            logger.info("Chaining event [{}] to previous invocation for sequence identifier [{}]",
                                                        event, eventSequenceIdentifier);
-                                           var nextInvocation = delegate.handle(event, context)
-                                                                        .whenComplete(() -> {
-                                                                        });
+                                           var nextInvocation = delegate.handle(event, context);
                                            return previousInvocation.concatWith(nextInvocation)
-                                                                    .whenComplete(() -> {
-                                                                    })
+                                                   .whenComplete(() -> {})
                                                                     .ignoreEntries()
                                                                     .cast();
                                        }
