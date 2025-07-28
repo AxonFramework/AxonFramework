@@ -51,10 +51,15 @@ public class ProcessorEventHandlingComponents {
      * @return A stream of messages resulting from the processing of the event messages.
      */
     public MessageStream.Empty<Message<Void>> handle(List<? extends EventMessage<?>> events, ProcessingContext context) {
+//        MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
+//        for (var event : events) {
+//            var eventResult = this.handle(event, context);
+//            batchResult = batchResult.concatWith(eventResult).ignoreEntries();
+//        }
+//        return batchResult;
         MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
         for (var event : events) {
-            var eventResult = this.handle(event, context);
-            batchResult = batchResult.concatWith(eventResult).ignoreEntries();
+            handle(event, context);
         }
         return batchResult;
     }
