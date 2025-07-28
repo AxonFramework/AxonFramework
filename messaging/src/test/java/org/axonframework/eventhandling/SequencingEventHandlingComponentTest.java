@@ -60,7 +60,7 @@ class SequencingEventHandlingComponentTest {
         delegate = new SimpleEventHandlingComponent();
         //noinspection unchecked
         sequencingComponent =
-                new SequencingEventHandlingComponent(
+                new SequencingEventHandlingComponent2(
                         (event) -> Optional.of(asTestMessage(event).getPayload().sequenceId),
                         delegate
                 );

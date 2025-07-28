@@ -319,7 +319,7 @@ class ProcessorEventHandlingComponentsTest {
                 .containsExactly("event-3_seq-B", "event-6_seq-B");
     }
 
-    @Test
+    @RepeatedTest(3)
     void test6_async() throws ExecutionException, InterruptedException, TimeoutException {
         // given
         CompletableFuture<EventMessage<?>> future1_1 = CompletableFuture.supplyAsync(() -> {
@@ -332,7 +332,7 @@ class ProcessorEventHandlingComponentsTest {
                                                                         }, executorService)
                 .thenApply(r -> EventTestUtils.asEventMessage(new TestPayload1("response-1_1")));
 
-        EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent(
+        EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent2(
                 (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
                 new SimpleEventHandlingComponent()
         );
