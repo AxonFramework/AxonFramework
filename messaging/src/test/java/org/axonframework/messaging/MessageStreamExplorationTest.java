@@ -22,6 +22,9 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,14 +58,13 @@ class MessageStreamExplorationTest {
     @Test
     void concatWith_secondStreamStartsOnlyAfterFirstCompletes() {
         // given
-        AtomicInteger stream1ProcessCount = new AtomicInteger(0);
-        AtomicInteger stream2ProcessCount = new AtomicInteger(0);
+        List<String> processingOrder = new ArrayList<>();
         
         MessageStream<EventMessage<Integer>> stream1 = MessageStream.fromIterable(EventTestUtils.<Integer>createEvents(2))
-            .onNext(entry -> stream1ProcessCount.incrementAndGet());
+            .onNext(entry -> processingOrder.add("stream1-" + entry.message().getPayload()));
         
         MessageStream<EventMessage<Integer>> stream2 = MessageStream.fromIterable(EventTestUtils.<Integer>createEvents(2))
-            .onNext(entry -> stream2ProcessCount.incrementAndGet());
+            .onNext(entry -> processingOrder.add("stream2-" + entry.message().getPayload()));
 
         // when
         MessageStream<EventMessage<Integer>> concatenated = stream1.concatWith(stream2);
@@ -71,18 +73,71 @@ class MessageStreamExplorationTest {
         List<Integer> results = new ArrayList<>();
         concatenated.asFlux()
                    .map(entry -> entry.message().getPayload())
-                   .doOnNext(payload -> {
-                       results.add(payload);
-                       if (payload == 1 && stream1ProcessCount.get() == 2) {
-                           // After first stream completes, second hasn't started yet
-                           assertThat(stream2ProcessCount.get()).isEqualTo(0);
-                       }
-                   })
+                   .doOnNext(results::add)
                    .blockLast();
         
-        assertThat(stream1ProcessCount.get()).isEqualTo(2);
-        assertThat(stream2ProcessCount.get()).isEqualTo(2);
         assertThat(results).containsExactly(0, 1, 0, 1);
+        assertThat(processingOrder).containsExactly("stream1-0", "stream1-1", "stream2-0", "stream2-1");
+    }
+
+    @Test
+    void concatWith_secondAsyncStreamIsLazyAndNotExecutedUntilFirstCompletes() {
+        // given
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+        AtomicBoolean stream1Started = new AtomicBoolean(false);
+        AtomicBoolean stream2Started = new AtomicBoolean(false);
+        AtomicBoolean stream1Completed = new AtomicBoolean(false);
+        
+        try {
+            // First stream completes after 100ms
+            CompletableFuture<EventMessage<String>> future1 = CompletableFuture.supplyAsync(() -> {
+                stream1Started.set(true);
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                stream1Completed.set(true);
+                return EventTestUtils.asEventMessage("first");
+            }, executor);
+            
+            // Second stream should only start executing after first completes
+            CompletableFuture<EventMessage<String>> future2 = CompletableFuture.supplyAsync(() -> {
+                stream2Started.set(true);
+                // This should only be called after stream1 completes
+                assertThat(stream1Completed.get()).isTrue();
+                return EventTestUtils.asEventMessage("second");
+            }, executor);
+            
+            MessageStream<EventMessage<String>> stream1 = MessageStream.fromFuture(future1);
+            MessageStream<EventMessage<String>> stream2 = MessageStream.fromFuture(future2);
+
+            // when
+            MessageStream<EventMessage<String>> concatenated = stream1.concatWith(stream2);
+            
+            // Give some time to ensure second stream doesn't start prematurely
+            Thread.sleep(50);
+            
+            // then - at this point stream1 should have started but stream2 should not
+            assertThat(stream1Started.get()).isTrue();
+            assertThat(stream2Started.get()).isFalse();
+            
+            List<String> results = new ArrayList<>();
+            concatenated.asFlux()
+                       .map(entry -> entry.message().getPayload())
+                       .doOnNext(results::add)
+                       .blockLast();
+            
+            assertThat(results).containsExactly("first", "second");
+            assertThat(stream1Started.get()).isTrue();
+            assertThat(stream2Started.get()).isTrue();
+            assertThat(stream1Completed.get()).isTrue();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } finally {
+            executor.shutdown();
+        }
     }
 
     @Test
