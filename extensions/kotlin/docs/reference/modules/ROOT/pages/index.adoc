@@ -5,7 +5,7 @@ link:https://kotlinlang.org/[Kotlin,window=_blank,role=external] is a programmin
 
 Some of Axon's API's work perfectly well in Java, but have a rather awkward feel when transitioning over to Kotlin. The goal of the link:https://github.com/AxonFramework/extension-kotlin[Kotlin Extension,window=_blank,role=external] is to remove that awkwardness, by providing link:https://kotlinlang.org/docs/reference/inline-functions.html[inline and reified,window=_blank,role=external] methods of Axon's API.
 
-Several solutions are currently given, which can roughly be segregated into the distinct types of messages used by Axon. This thus provides a xref:commands.adoc[], xref:events.adoc[] and xref:queries.adoc[] section on this guide.
+Several solutions are currently given, which can roughly be segregated into the distinct types of messages used by Axon. This thus provides a command, events, and queries section on this guide.
 
 [NOTE]
 .Experimental Release
