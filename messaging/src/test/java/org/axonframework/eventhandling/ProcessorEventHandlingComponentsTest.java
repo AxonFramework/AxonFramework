@@ -30,8 +30,11 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,13 +42,36 @@ class ProcessorEventHandlingComponentsTest {
 
     private static final Logger logger = LoggerFactory.getLogger(ProcessorEventHandlingComponentsTest.class);
 
+    private ScheduledExecutorService executorService;
+
+    @BeforeEach
+    void setUp() {
+        var threadNumber = new AtomicInteger(1);
+        executorService = Executors.newScheduledThreadPool(20, (runnable) -> {
+            Thread thread = new Thread(runnable);
+            thread.setName("Test-Executor-" + threadNumber.getAndIncrement());
+            return thread;
+        });
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+        }
+    }
+
     @Test
     void test1() throws ExecutionException, InterruptedException, TimeoutException {
         // given
-        var future1_1 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1("response-1_1")));
-        var future1_2 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1("response-1_2")));
-        var future2_1 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1("response-2_1")));
-        var future2_2 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1("response-2_2")));
+        var future1_1 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1(
+                "response-1_1")));
+        var future1_2 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1(
+                "response-1_2")));
+        var future2_1 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1(
+                "response-2_1")));
+        var future2_2 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1(
+                "response-2_2")));
 
         EventHandlingComponent eventHandlingComponent1 = new SimpleEventHandlingComponent();
         var trackingHandler1_1 = new TrackingEventHandler("Handler 1_1", future1_1);
@@ -68,7 +94,9 @@ class ProcessorEventHandlingComponentsTest {
         var batch = List.of(event1, event2);
 
         var unitOfWork = new SimpleUnitOfWorkFactory().create();
-        unitOfWork.onInvocation(ctx -> processorComponents.handle(batch, ctx).whenComplete(() -> logger.info("Components completed")).asCompletableFuture());
+        unitOfWork.onInvocation(ctx -> processorComponents.handle(batch, ctx)
+                                                          .whenComplete(() -> logger.info("Components completed"))
+                                                          .asCompletableFuture());
         unitOfWork.execute().get(1, TimeUnit.SECONDS);
 
         // then
@@ -100,10 +128,14 @@ class ProcessorEventHandlingComponentsTest {
     @Test
     void test2() throws ExecutionException, InterruptedException, TimeoutException {
         // given
-        var future1_1 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1("response-1_1")));
-        var future1_2 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1("response-1_2")));
-        var future2_1 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1("response-2_1")));
-        var future2_2 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1("response-2_2")));
+        var future1_1 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1(
+                "response-1_1")));
+        var future1_2 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1(
+                "response-1_2")));
+        var future2_1 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1(
+                "response-2_1")));
+        var future2_2 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1(
+                "response-2_2")));
 
         EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent(
                 (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
@@ -129,7 +161,9 @@ class ProcessorEventHandlingComponentsTest {
         var batch = List.of(event1, event2);
 
         var unitOfWork = new SimpleUnitOfWorkFactory().create();
-        unitOfWork.onInvocation(ctx -> processorComponents.handle(batch, ctx).whenComplete(() -> logger.info("Components completed")).asCompletableFuture());
+        unitOfWork.onInvocation(ctx -> processorComponents.handle(batch, ctx)
+                                                          .whenComplete(() -> logger.info("Components completed"))
+                                                          .asCompletableFuture());
         unitOfWork.execute().get(1, TimeUnit.SECONDS);
 
         // then
@@ -161,7 +195,8 @@ class ProcessorEventHandlingComponentsTest {
     @Test
     void test3() throws ExecutionException, InterruptedException, TimeoutException {
         // given
-        var future1_1 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1("response-1_1")));
+        var future1_1 = CompletableFuture.<EventMessage<?>>completedFuture(EventTestUtils.asEventMessage(new TestPayload1(
+                "response-1_1")));
 
         EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent(
                 (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
@@ -180,7 +215,9 @@ class ProcessorEventHandlingComponentsTest {
         var batch = List.of(event1, event2, event3, event4);
 
         var unitOfWork = new SimpleUnitOfWorkFactory().create();
-        unitOfWork.onInvocation(ctx -> processorComponents.handle(batch, ctx).whenComplete(() -> logger.info("Components completed")).asCompletableFuture());
+        unitOfWork.onInvocation(ctx -> processorComponents.handle(batch, ctx)
+                                                          .whenComplete(() -> logger.info("Components completed"))
+                                                          .asCompletableFuture());
         unitOfWork.execute().get(1, TimeUnit.SECONDS);
 
         // then
@@ -191,9 +228,48 @@ class ProcessorEventHandlingComponentsTest {
                 .containsExactly("event-1_seq-A", "event-2_seq-A", "event-3_seq-A", "event-4_seq-A");
     }
 
+    @Test
+    void test4_async() throws ExecutionException, InterruptedException, TimeoutException {
+        // given
+        CompletableFuture<EventMessage<?>> future1_1 = delayedFuture(100, TimeUnit.MILLISECONDS)
+                .thenApply(r -> EventTestUtils.asEventMessage(new TestPayload1("response-1_1")));
+
+        EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent(
+                (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
+                new SimpleEventHandlingComponent()
+        );
+        var trackingHandler1_1 = new TrackingEventHandler("Handler 1_1", future1_1);
+        eventHandlingComponent1.subscribe(new QualifiedName(TestPayload1.class), trackingHandler1_1);
+
+        var processorComponents = new ProcessorEventHandlingComponents(eventHandlingComponent1);
+
+        // when
+        var event1 = EventTestUtils.asEventMessage(new TestPayload1("event-1_seq-A"));
+        var event2 = EventTestUtils.asEventMessage(new TestPayload1("event-2_seq-A"));
+        var event3 = EventTestUtils.asEventMessage(new TestPayload1("event-3_seq-B"));
+        var event4 = EventTestUtils.asEventMessage(new TestPayload1("event-4_seq-A"));
+        var event5 = EventTestUtils.asEventMessage(new TestPayload1("event-5_seq-A"));
+        var event6 = EventTestUtils.asEventMessage(new TestPayload1("event-6_seq-B"));
+        var event7 = EventTestUtils.asEventMessage(new TestPayload1("event-7_seq-A"));
+        var batch = List.of(event1, event2, event3, event4, event5, event6, event7);
+
+        var unitOfWork = new SimpleUnitOfWorkFactory().create();
+        unitOfWork.onInvocation(ctx -> processorComponents.handle(batch, ctx)
+                                                          .whenComplete(() -> logger.info("Components completed"))
+                                                          .asCompletableFuture());
+        unitOfWork.execute().get(1, TimeUnit.SECONDS);
+
+        // then
+        assertThat(trackingHandler1_1.getHandledEvents())
+                .hasSize(7)
+                .extracting(EventMessage::getPayload)
+                .extracting("value")
+                .containsExactly("event-1_seq-A", "event-2_seq-A", "event-3_seq-A", "event-4_seq-A");
+    }
+
     /**
-     * Test implementation of EventHandler that tracks handled events.
-     * When the internal future completes, the handled event is stored in an internal list.
+     * Test implementation of EventHandler that tracks handled events. When the internal future completes, the handled
+     * event is stored in an internal list.
      */
     static class TrackingEventHandler implements EventHandler {
 
@@ -210,7 +286,8 @@ class ProcessorEventHandlingComponentsTest {
 
         @Nonnull
         @Override
-        public MessageStream.Empty<org.axonframework.messaging.Message<Void>> handle(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+        public MessageStream.Empty<org.axonframework.messaging.Message<Void>> handle(@Nonnull EventMessage<?> event,
+                                                                                     @Nonnull ProcessingContext context) {
             return MessageStream.fromFuture(
                     internalFuture.thenApply(completedEvent -> {
                         logger.info("Handler {}, handled event {}", name, event.getPayload());
@@ -238,8 +315,8 @@ class ProcessorEventHandlingComponentsTest {
     }
 
     /**
-     * Extracts the sequence identifier from a string containing "_seq-" pattern.
-     * For example, "event-1_seq-A" returns "A", "event-2_seq-B" returns "B".
+     * Extracts the sequence identifier from a string containing "_seq-" pattern. For example, "event-1_seq-A" returns
+     * "A", "event-2_seq-B" returns "B".
      *
      * @param input the input string containing the sequence pattern
      * @return the sequence identifier, or empty string if pattern not found
@@ -255,5 +332,19 @@ class ProcessorEventHandlingComponentsTest {
         }
 
         return input.substring(seqIndex + 5); // "_seq-" is 5 characters long
+    }
+
+    /**
+     * Creates a CompletableFuture that completes after the specified delay.
+     *
+     * @param delay    the delay amount
+     * @param timeUnit the time unit of the delay
+     * @param <T>      the type of the result
+     * @return a CompletableFuture that completes with null after the specified delay
+     */
+    <T> CompletableFuture<T> delayedFuture(long delay, TimeUnit timeUnit) {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        executorService.schedule(() -> future.complete(null), delay, timeUnit);
+        return future;
     }
 }
