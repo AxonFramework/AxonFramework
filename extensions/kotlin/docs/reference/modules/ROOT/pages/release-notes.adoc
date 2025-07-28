@@ -6,7 +6,5 @@ For earlier releases, please visit the link:https://legacydocs.axoniq.io/referen
 
 == Release 4.10
 
-. Upgrades the Kotlin Extension to be compatible with Axon Framework 4.10.0
-. Adds a serializer with `kotlin.serialization` support
-
-See the link:https://github.com/AxonFramework/extension-kotlin/releases/tag/axon-kotlin-4.10.0[GitHub release notes] for an exhaustive list of all changes.
+Upgrades the Kotlin Extension to be compatible with Axon Framework 4.10.0.
+Adds a serializer with `kotlin.serialization` support See the link:https://github.com/AxonFramework/extension-kotlin/releases/tag/axon-kotlin-4.10.0[GitHub release notes] for an exhaustive list of all changes.
