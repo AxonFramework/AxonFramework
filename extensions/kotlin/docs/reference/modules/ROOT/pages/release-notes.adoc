@@ -8,8 +8,8 @@ For earlier releases, please visit the link:https://legacydocs.axoniq.io/referen
 
 === _Bug fixes_
 
-- [#380] fix: Kotlin Serializer not available for org.axonframework.messaging.MetaData link:https://github.com/AxonFramework/extension-kotlin/pull/381[#381]
-- Kotlin Serializer not available for org.axonframework.messaging.MetaData link:https://github.com/AxonFramework/extension-kotlin/issues/380[#380]
+- [#380] fix: Kotlin Serializer not available for `MetaData` link:https://github.com/AxonFramework/extension-kotlin/pull/381[#381]
+- Kotlin Serializer not available for `MetaData` link:https://github.com/AxonFramework/extension-kotlin/issues/380[#380]
 
 === _Contributors_
 
