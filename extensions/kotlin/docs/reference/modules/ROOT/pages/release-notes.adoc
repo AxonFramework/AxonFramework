@@ -11,13 +11,6 @@ For earlier releases, please visit the link:https://legacydocs.axoniq.io/referen
 - [#380] fix: add dedicated `JsonMetaDataSerializer` link:https://github.com/AxonFramework/extension-kotlin/pull/382[#382]
 - Kotlin Serializer not available for org.axonframework.messaging.MetaData link:https://github.com/AxonFramework/extension-kotlin/issues/380[#380]
 
-=== _Contributors_
-
-We'd like to thank all the contributors who worked on this release!
-
-- link:https://github.com/smcvb[@smcvb]
-- link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
-
 == Release 4.11.1
 
 === _Bug fixes_
