@@ -27,7 +27,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -81,79 +80,59 @@ class MessageStreamExplorationTest {
         assertThat(processingOrder).containsExactly("stream1-0", "stream1-1", "stream2-0", "stream2-1");
     }
 
+    // not true, CompletableFuture is run immediately when created
     @Test
     void concatWith_secondAsyncStreamIsLazyAndNotExecutedUntilFirstCompletes() {
         // given
-        Logger log = Logger.getLogger("MessageStreamTest");
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
         AtomicBoolean stream1Started = new AtomicBoolean(false);
         AtomicBoolean stream2Started = new AtomicBoolean(false);
         AtomicBoolean stream1Completed = new AtomicBoolean(false);
-        
+
         try {
-            log.info("=== SETUP: Creating futures for both streams ===");
-            
             // First stream completes after 100ms
             CompletableFuture<EventMessage<String>> future1 = CompletableFuture.supplyAsync(() -> {
-                log.info("STREAM1: Started execution on thread: " + Thread.currentThread().getName());
                 stream1Started.set(true);
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                log.info("STREAM1: Completed execution, returning result");
                 stream1Completed.set(true);
                 return EventTestUtils.asEventMessage("first");
             }, executor);
-            
+
             // Second stream should only start executing after first completes
             CompletableFuture<EventMessage<String>> future2 = CompletableFuture.supplyAsync(() -> {
-                log.info("STREAM2: Started execution on thread: " + Thread.currentThread().getName());
                 stream2Started.set(true);
                 // This should only be called after stream1 completes
                 assertThat(stream1Completed.get()).isTrue();
-                log.info("STREAM2: Verified stream1 completed, returning result");
                 return EventTestUtils.asEventMessage("second");
             }, executor);
-            
-            log.info("SETUP: Creating MessageStreams from futures");
+
             MessageStream<EventMessage<String>> stream1 = MessageStream.fromFuture(future1);
             MessageStream<EventMessage<String>> stream2 = MessageStream.fromFuture(future2);
 
             // when
-            log.info("WHEN: Creating concatenated stream");
             MessageStream<EventMessage<String>> concatenated = stream1.concatWith(stream2);
-            
+
             // Give some time to ensure second stream doesn't start prematurely
-            log.info("TIMING: Waiting 50ms to check lazy evaluation");
             Thread.sleep(50);
-            
+
             // then - at this point stream1 should have started but stream2 should not
-            log.info("CHECK: After 50ms - Stream1 started: " + stream1Started.get() + ", Stream2 started: " + stream2Started.get());
             assertThat(stream1Started.get()).isTrue();
             assertThat(stream2Started.get()).isFalse();
-            
-            log.info("EXECUTION: Starting to consume concatenated stream");
+
             List<String> results = new ArrayList<>();
             concatenated.asFlux()
                        .map(entry -> entry.message().getPayload())
-                       .doOnNext(payload -> {
-                           log.info("RESULT: Received payload: " + payload);
-                           results.add(payload);
-                       })
+                       .doOnNext(results::add)
                        .blockLast();
-            
-            log.info("FINAL STATE: Stream1 started: " + stream1Started.get() + 
-                    ", Stream1 completed: " + stream1Completed.get() + 
-                    ", Stream2 started: " + stream2Started.get());
-            
+
             assertThat(results).containsExactly("first", "second");
             assertThat(stream1Started.get()).isTrue();
             assertThat(stream2Started.get()).isTrue();
             assertThat(stream1Completed.get()).isTrue();
-            
-            log.info("=== TEST COMPLETED SUCCESSFULLY ===");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
