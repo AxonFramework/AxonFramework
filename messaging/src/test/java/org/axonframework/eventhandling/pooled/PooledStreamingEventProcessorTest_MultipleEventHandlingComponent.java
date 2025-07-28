@@ -105,27 +105,31 @@ class PooledStreamingEventProcessorTest_MultipleEventHandlingComponent {
 
         var components = new ProcessorEventHandlingComponents(List.of(eventHandlingComponent1, eventHandlingComponent2));
         setTestSubject(
-                createTestSubject(components, customization -> customization.initialSegmentCount(1))
+                createTestSubject(components, customization -> customization.initialSegmentCount(1).batchSize(10))
         );
 
         // when
-        EventMessage<Integer> supportedEvent = EventTestUtils.asEventMessage("Payload");
-        stubMessageSource.publishMessage(supportedEvent);
+        EventMessage<Integer> supportedEvent1 = EventTestUtils.asEventMessage("Payload");
+        EventMessage<Integer> supportedEvent2 = EventTestUtils.asEventMessage("Payload");
+        stubMessageSource.publishMessage(supportedEvent1);
+        stubMessageSource.publishMessage(supportedEvent2);
         testSubject.start();
 
         // then
         await().atMost(1, TimeUnit.SECONDS)
-               .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
+               .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSizeGreaterThan(0));
 
         // then
-        verify(eventHandlingComponent1, times(1)).handle(eq(supportedEvent), any());
-        verify(eventHandlingComponent2, times(1)).handle(eq(supportedEvent), any());
+        verify(eventHandlingComponent1, times(1)).handle(eq(supportedEvent1), any());
+        verify(eventHandlingComponent1, times(1)).handle(eq(supportedEvent2), any());
+        verify(eventHandlingComponent2, times(1)).handle(eq(supportedEvent1), any());
+        verify(eventHandlingComponent2, times(1)).handle(eq(supportedEvent2), any());
 
         // then
         await().atMost(200, TimeUnit.MILLISECONDS)
                .untilAsserted(() -> {
                    long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
-                   assertThat(currentPosition).isEqualTo(1);
+                   assertThat(currentPosition).isEqualTo(2);
                });
     }
 }

@@ -22,6 +22,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +32,8 @@ import java.util.stream.Collectors;
 
 @Internal
 public class ProcessorEventHandlingComponents {
+
+    private static final Logger logger = LoggerFactory.getLogger(ProcessorEventHandlingComponents.class);
 
     private final List<EventHandlingComponent> components;
 
@@ -51,17 +55,15 @@ public class ProcessorEventHandlingComponents {
      * @return A stream of messages resulting from the processing of the event messages.
      */
     public MessageStream.Empty<Message<Void>> handle(List<? extends EventMessage<?>> events, ProcessingContext context) {
-        MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
+        MessageStream<Message<Void>> batchResult = MessageStream.empty().cast();
         for (var event : events) {
-            var eventResult = this.handle(event, context);
-            batchResult = batchResult.concatWith(eventResult).ignoreEntries();
+            var eventResult = handle(event, context)
+                                        .whenComplete(() -> logger.info("handle(BATCH) | completed event: {}", event)); // todo: doesn't work without it!
+            batchResult = batchResult.concatWith(eventResult.cast());
         }
-        return batchResult;
-//        MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
-//        for (var event : events) {
-//            handle(event, context);
-//        }
-//        return batchResult;
+        return batchResult.whenComplete(() -> logger.info("handle(BATCH) | completed batch"))
+                          .ignoreEntries()
+                          .cast();
     }
 
     /**
@@ -76,14 +78,15 @@ public class ProcessorEventHandlingComponents {
     @Nonnull
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
-        MessageStream.Empty<Message<Void>> result = MessageStream.empty();
+        MessageStream<Message<Void>> result = MessageStream.empty();
         for (var component : components) {
             if (component.supports(event.type().qualifiedName())) {
-                var componentResult = component.handle(event, context);
-                result = result.concatWith(componentResult).ignoreEntries();
+                var componentResult = component.handle(event, context)
+                                               .whenComplete(() -> logger.info("handle(EVENT) | completed event: {}", event)); // todo: doesn't work without it!
+                result = result.concatWith(componentResult);
             }
         }
-        return result;
+        return result.ignoreEntries().cast();
     }
 
     public Set<QualifiedName> supportedEvents() {
