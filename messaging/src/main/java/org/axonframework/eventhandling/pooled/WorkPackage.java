@@ -529,20 +529,19 @@ class WorkPackage {
     }
 
     /**
-     * Functional interface defining the processing of a batch of {@link EventMessage}s within a {@link UnitOfWork}.
+     * Functional interface defining the processing of a batch of {@link EventMessage}s within a {@link ProcessingContext}.
      */
     @FunctionalInterface
     interface BatchProcessor {
 
         /**
-         * Processes a given batch of {@code eventMessages}. These {@code eventMessages} will be processed within the
-         * given {@code processingContext}.
+         * Processes a batch of events in the processing context.
          *
-         * @param eventMessages     The batch of {@link EventMessage}s that is to be processed.
-         * @param processingContext The {@link ProcessingContext} that has been prepared to process the
-         *                          {@code eventMessages}.
+         * @param events  The batch of event messages to be processed.
+         * @param context The processing context in which the event messages are processed.
+         * @return A stream of messages resulting from the processing of the event messages.
          */
-        MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext);
+        MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context);
     }
 
     /**

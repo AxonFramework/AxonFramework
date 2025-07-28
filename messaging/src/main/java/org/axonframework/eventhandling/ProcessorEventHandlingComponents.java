@@ -41,8 +41,16 @@ public class ProcessorEventHandlingComponents {
         this.components = List.copyOf(components);
     }
 
-    public MessageStream.Empty<Message<Void>> handle(List<? extends EventMessage<?>> events,
-                                                     ProcessingContext context) {
+    /**
+     * Processes a batch of events in the processing context.
+     * <p>
+     * The result of handling is an {@link MessageStream.Empty empty stream}.
+     *
+     * @param events  The batch of event messages to be processed.
+     * @param context The processing context in which the event messages are processed.
+     * @return A stream of messages resulting from the processing of the event messages.
+     */
+    public MessageStream.Empty<Message<Void>> handle(List<? extends EventMessage<?>> events, ProcessingContext context) {
         MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
         for (var event : events) {
             var eventResult = this.handle(event, context);

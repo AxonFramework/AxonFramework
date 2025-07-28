@@ -543,9 +543,9 @@ class WorkPackageTest {
         private final List<ContextMessage> processedEvents = new ArrayList<>();
 
         @Override
-        public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext) {
-            if (batchProcessorPredicate.test(eventMessages, TrackingToken.fromContext(processingContext).orElse(null))) {
-                processedEvents.addAll(eventMessages.stream().map(m -> new ContextMessage(m, processingContext)).toList());
+        public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context) {
+            if (batchProcessorPredicate.test(events, TrackingToken.fromContext(context).orElse(null))) {
+                processedEvents.addAll(events.stream().map(m -> new ContextMessage(m, context)).toList());
             }
             return MessageStream.empty();
         }
