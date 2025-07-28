@@ -23,7 +23,6 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SequencingEventHandlingComponent extends DelegatingEventHandlingComponent {
@@ -46,37 +45,20 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
                                                      @Nonnull ProcessingContext context) {
         Object sequenceIdentifier = sequenceIdentifierFor(event, context);
 
-        // Get or create the sequence tracking map
         Map<Object, MessageStream.Empty<Message<Void>>> sequenceMap = context.computeResourceIfAbsent(
                 SEQUENCE_TRACKING_KEY,
                 ConcurrentHashMap::new
         );
 
-        // Check if there's an ongoing invocation for this sequence
         MessageStream.Empty<Message<Void>> previousInvocation = sequenceMap.get(sequenceIdentifier);
 
         if (previousInvocation == null) {
-            // No previous invocation - execute immediately
             MessageStream.Empty<Message<Void>> currentInvocation = delegate.handle(event, context);
             sequenceMap.put(sequenceIdentifier, currentInvocation);
             return currentInvocation;
         } else {
-            // Previous invocation exists - chain after it completes
-            CompletableFuture<Message<Void>> chainedFuture =
-                    previousInvocation.asCompletableFuture()
-                            .thenCompose(ignored -> {
-                                // Execute the current event after the previous one completes
-                                MessageStream.Empty<Message<Void>> currentInvocation = delegate.handle(event, context);
-                                return currentInvocation.asCompletableFuture();
-                            })
-                            .thenApply(ignored -> null);
-
-            // Create a new stream from the chained future
-            MessageStream.Empty<Message<Void>> chainedInvocation = MessageStream.fromFuture(chainedFuture).ignoreEntries();
-
-            // Update the sequence map with the new invocation
+            var chainedInvocation = previousInvocation.whenComplete(() -> delegate.handle(event, context));
             sequenceMap.put(sequenceIdentifier, chainedInvocation);
-
             return chainedInvocation;
         }
     }
