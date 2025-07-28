@@ -4,6 +4,20 @@
 You can find the release notes for the Kotlin Extension of version 4.10.0 below.
 For earlier releases, please go to the link:https://legacydocs.axoniq.io/reference-guide/release-notes/rn-extensions/rn-kotlin[legacy documentation].
 
+== Release 4.12.0
+
+=== _Bug fixes_
+
+- [#380] fix: add dedicated `JsonMetaDataSerializer` link:https://github.com/AxonFramework/extension-kotlin/pull/382[#382]
+- Kotlin Serializer not available for org.axonframework.messaging.MetaData link:https://github.com/AxonFramework/extension-kotlin/issues/380[#380]
+
+=== _Contributors_
+
+We'd like to thank all the contributors who worked on this release!
+
+- link:https://github.com/smcvb[@smcvb]
+- link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
+
 == Release 4.11.1
 
 === _Bug fixes_
