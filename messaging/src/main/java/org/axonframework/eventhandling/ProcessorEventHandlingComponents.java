@@ -26,7 +26,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Internal
@@ -51,13 +50,18 @@ public class ProcessorEventHandlingComponents {
      * @param context The processing context in which the event messages are processed.
      * @return A stream of messages resulting from the processing of the event messages.
      */
-    public CompletableFuture<?> handle(List<? extends EventMessage<?>> events, ProcessingContext context) {
-//        MessageStream<Message<?>> batchResult = MessageStream.empty().cast();
+    public MessageStream.Empty<Message<Void>> handle(List<? extends EventMessage<?>> events, ProcessingContext context) {
+        MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
+        for (var event : events) {
+            var eventResult = this.handle(event, context);
+            batchResult = batchResult.concatWith(eventResult).ignoreEntries();
+        }
+        return batchResult;
+//        MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
 //        for (var event : events) {
-//            MessageStream<Message<?>> eventResult = handle(event, context).cast();
-//            batchResult = batchResult.concatWith(eventResult);
+//            handle(event, context);
 //        }
-//        return batchResult.ignoreEntries().asCompletableFuture();
+//        return batchResult;
     }
 
     /**
@@ -70,13 +74,13 @@ public class ProcessorEventHandlingComponents {
      * @return An {@link MessageStream.Empty empty stream} containing nothing.
      */
     @Nonnull
-    public MessageStream<Message<?>> handle(@Nonnull EventMessage<?> event,
+    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
-        MessageStream<Message<?>> result = MessageStream.empty().cast();
+        MessageStream.Empty<Message<Void>> result = MessageStream.empty();
         for (var component : components) {
             if (component.supports(event.type().qualifiedName())) {
-                MessageStream<Message<?>> componentResult = component.handle(event, context).cast();
-                result = result.concatWith(componentResult);
+                var componentResult = component.handle(event, context);
+                result = result.concatWith(componentResult).ignoreEntries();
             }
         }
         return result;

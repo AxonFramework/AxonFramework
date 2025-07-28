@@ -25,8 +25,6 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -61,7 +59,6 @@ class SequencingEventHandlingComponentTest {
     void setUp() {
         delegate = new SimpleEventHandlingComponent();
         //noinspection unchecked
-//        sequencingComponent = delegate;
         sequencingComponent =
                 new SequencingEventHandlingComponent(
                         (event) -> Optional.of(asTestMessage(event).getPayload().sequenceId),
@@ -124,10 +121,7 @@ class SequencingEventHandlingComponentTest {
                 .containsExactly("event-1", "event-2", "event-3", "event-4", "event-5");
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(SequencingEventHandlingComponentTest.class);
-
-
-    @RepeatedTest(1)
+    @RepeatedTest(3)
     void testSequentialProcessingWithMixedSequenceIdentifiers() {
         // Given
         List<String> executionOrder = new CopyOnWriteArrayList<>();
@@ -136,9 +130,8 @@ class SequencingEventHandlingComponentTest {
             String eventString = asTestMessage(event).getPayload().toString();
             // todo: too fast?
             CompletableFuture<Message<Void>> future = CompletableFuture.supplyAsync(() -> {
-                logger.info("future Processing event: {}", eventString);
                 try {
-                    Thread.sleep(20);
+                    Thread.sleep(50);
                     executionOrder.add(eventString);
                     return EventTestUtils.asEventMessage("sample-response");
                 } catch (InterruptedException e) {
@@ -147,10 +140,6 @@ class SequencingEventHandlingComponentTest {
             }, executorService);
 
             return MessageStream.fromFuture(future)
-                                .whenComplete(() -> {
-                                    logger.info("whenComplete Processing event: {}", eventString);
-                                    executionOrder.add(eventString);
-                                })
                                 .ignoreEntries();
         };
 
@@ -206,7 +195,7 @@ class SequencingEventHandlingComponentTest {
     private void handleInUnitOfWork(List<EventMessage<?>> events) {
         var unitOfWork = new SimpleUnitOfWorkFactory().create();
         var components = new ProcessorEventHandlingComponents(sequencingComponent);
-        unitOfWork.onInvocation(ctx -> components.handle(events, ctx));
+        unitOfWork.onInvocation(ctx -> components.handle(events, ctx).asCompletableFuture());
         FutureUtils.joinAndUnwrap(unitOfWork.execute());
     }
 
