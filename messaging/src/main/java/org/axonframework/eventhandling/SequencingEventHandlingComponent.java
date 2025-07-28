@@ -64,7 +64,7 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
      * The {@link Context.ResourceKey} used to store the map of sequence identifiers to their ongoing invocations in the
      * {@link ProcessingContext}.
      */
-    private final Context.ResourceKey<Map<Object, MessageStream.Empty<Message<Void>>>> sequencedHandlingKey =
+    private final Context.ResourceKey<Map<Object, MessageStream<Message<?>>>> sequencedHandlingKey =
             Context.ResourceKey.withLabel("sequencedHandling");
     private final SequencingPolicy sequencingPolicy;
 
@@ -107,7 +107,7 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
         Object eventSequenceIdentifier = sequenceIdentifierFor(event, context);
         logger.info("Handling event [{}] with sequence identifier [{}]", event, eventSequenceIdentifier);
 
-        Map<Object, MessageStream.Empty<Message<Void>>> sequenceMap = context.computeResourceIfAbsent(
+        Map<Object, MessageStream<Message<?>>> sequenceMap = context.computeResourceIfAbsent(
                 sequencedHandlingKey,
                 ConcurrentHashMap::new
         );
@@ -116,20 +116,17 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
                                        if (previousInvocation == null) {
                                            logger.info("No previous invocation for sequence identifier [{}], processing event [{}] immediately",
                                                        eventSequenceIdentifier, event);
-                                           return delegate.handle(event, context)
+                                           return delegate.handle(event, context).cast()
                                                           .whenComplete(() -> {
                                                           });
                                        } else {
                                            logger.info("Chaining event [{}] to previous invocation for sequence identifier [{}]",
                                                        event, eventSequenceIdentifier);
-                                           var nextInvocation = delegate.handle(event, context);
-                                           return previousInvocation.concatWith(nextInvocation)
-                                                   .whenComplete(() -> {})
-                                                                    .ignoreEntries()
-                                                                    .cast();
+                                           return previousInvocation.concatWith(delegate.handle(event, context).cast())
+                                                   .whenComplete(() -> {});
                                        }
                                    }
-        );
+        ).ignoreEntries().cast();
     }
 
     @Nonnull

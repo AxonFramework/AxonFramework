@@ -176,7 +176,7 @@ class ProcessorEventHandlingComponentsTest {
         var event1 = EventTestUtils.asEventMessage(new TestPayload1("event-1_seq-A"));
         var event2 = EventTestUtils.asEventMessage(new TestPayload1("event-2_seq-A"));
         var event3 = EventTestUtils.asEventMessage(new TestPayload1("event-3_seq-A"));
-        var batch = List.of(event1, event2);
+        var batch = List.of(event1, event2, event3);
 
         var unitOfWork = new SimpleUnitOfWorkFactory().create();
         unitOfWork.onInvocation(ctx -> processorComponents.handle(batch, ctx).whenComplete(() -> logger.info("Components completed")).asCompletableFuture());
