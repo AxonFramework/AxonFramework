@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
@@ -30,8 +29,6 @@ import java.lang.invoke.MethodHandles;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * An {@link EventHandlingComponent} wrapper that ensures events with the same sequence identifier are handled
@@ -51,7 +48,6 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
 
     private final Context.ResourceKey<Map<Object, CompletableFuture<?>>> sequencedInvocationsKey =
             Context.ResourceKey.withLabel("sequencedInvocations");
-    private final SequencingPolicy sequencingPolicy;
 
     /**
      * Constructs the component with given {@code delegate} to receive calls.
@@ -60,11 +56,9 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
      * @param sequencingPolicy The policy to determine the sequence identifier for events.
      */
     public SequencingEventHandlingComponent(
-            @Nonnull SequencingPolicy sequencingPolicy,
             @Nonnull EventHandlingComponent delegate
     ) {
         super(delegate);
-        this.sequencingPolicy = requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
     }
 
     @Nonnull
@@ -85,7 +79,7 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
                         context
                 ).whenComplete((r, e) -> {
                     if (e != null) {
-                        resultFuture.completeExceptionally(e);
+                        resultFuture.completeExceptionally(e); // is it OK?
                     } else {
                         resultFuture.complete(null);
                     }
@@ -113,13 +107,5 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
                     (r) -> delegate.handle(event, context).asCompletableFuture()
             );
         }
-    }
-
-    @Nonnull
-    @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-        requireNonNull(event, "Event Message may not be null");
-        return sequencingPolicy.getSequenceIdentifierFor(event)
-                               .orElseGet(() -> delegate.sequenceIdentifierFor(event, context));
     }
 }

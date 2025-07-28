@@ -139,8 +139,10 @@ class ProcessorEventHandlingComponentsTest {
                 "response-2_2")));
 
         EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent(
-                (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
-                new SimpleEventHandlingComponent()
+                new SequenceOverridingEventHandlingComponent(
+                        (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
+                        new SimpleEventHandlingComponent()
+                )
         );
         var trackingHandler1_1 = new TrackingEventHandler("Handler 1_1", future1_1);
         eventHandlingComponent1.subscribe(new QualifiedName(TestPayload1.class), trackingHandler1_1);
@@ -200,8 +202,10 @@ class ProcessorEventHandlingComponentsTest {
                 "response-1_1")));
 
         EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent(
-                (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
-                new SimpleEventHandlingComponent()
+                new SequenceOverridingEventHandlingComponent(
+                        (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
+                        new SimpleEventHandlingComponent()
+                )
         );
         var trackingHandler1_1 = new TrackingEventHandler("Handler 1_1", future1_1);
         eventHandlingComponent1.subscribe(new QualifiedName(TestPayload1.class), trackingHandler1_1);
@@ -236,8 +240,10 @@ class ProcessorEventHandlingComponentsTest {
                 .thenApply(r -> EventTestUtils.asEventMessage(new TestPayload1("response-1_1")));
 
         EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent(
-                (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
-                new SimpleEventHandlingComponent()
+                new SequenceOverridingEventHandlingComponent(
+                        (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
+                        new SimpleEventHandlingComponent()
+                )
         );
         var trackingHandler1_1 = new TrackingEventHandler("Handler 1_1", () -> future1_1);
         eventHandlingComponent1.subscribe(new QualifiedName(TestPayload1.class), trackingHandler1_1);
@@ -293,8 +299,10 @@ class ProcessorEventHandlingComponentsTest {
                 .thenApply(r -> EventTestUtils.asEventMessage(new TestPayload1("response-1_1")));
 
         EventHandlingComponent eventHandlingComponent1 = new SequencingEventHandlingComponent(
-                (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
-                new SimpleEventHandlingComponent()
+                new SequenceOverridingEventHandlingComponent(
+                        (event) -> Optional.of(extractSequenceFromString(event.getPayload().toString())),
+                        new SimpleEventHandlingComponent()
+                )
         );
         var trackingHandler1_1 = new TrackingEventHandler("Handler 1_1", () -> future1_1);
         eventHandlingComponent1.subscribe(new QualifiedName(TestPayload1.class), trackingHandler1_1);

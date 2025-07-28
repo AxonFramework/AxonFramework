@@ -31,14 +31,18 @@ import java.util.stream.Collectors;
 @Internal
 public class ProcessorEventHandlingComponents {
 
-    private final List<EventHandlingComponent> components;
+    private final List<SequencingEventHandlingComponent> components;
 
-    public ProcessorEventHandlingComponents(EventHandlingComponent... components) {
-        this.components = Arrays.stream(components).toList();
+    public ProcessorEventHandlingComponents(@Nonnull EventHandlingComponent... components) {
+        this(Arrays.stream(components).toList());
     }
 
-    public ProcessorEventHandlingComponents(List<EventHandlingComponent> components) {
-        this.components = List.copyOf(components);
+    public ProcessorEventHandlingComponents(@Nonnull List<EventHandlingComponent> components) {
+        this.components = components.stream()
+                                    .map(c -> c instanceof SequencingEventHandlingComponent seq
+                                            ? seq
+                                            : new SequencingEventHandlingComponent(c)
+                                    ).toList();
     }
 
     /**
@@ -50,7 +54,10 @@ public class ProcessorEventHandlingComponents {
      * @param context The processing context in which the event messages are processed.
      * @return A stream of messages resulting from the processing of the event messages.
      */
-    public MessageStream.Empty<Message<Void>> handle(List<? extends EventMessage<?>> events, ProcessingContext context) {
+    @Nonnull
+    public MessageStream.Empty<Message<Void>> handle(@Nonnull List<? extends EventMessage<?>> events,
+                                                     @Nonnull ProcessingContext context
+    ) {
         MessageStream<Message<Void>> batchResult = MessageStream.empty().cast();
         for (var event : events) {
             var eventResult = handle(event, context);
@@ -70,13 +77,14 @@ public class ProcessorEventHandlingComponents {
      * @return An {@link MessageStream.Empty empty stream} containing nothing.
      */
     @Nonnull
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
-                                                     @Nonnull ProcessingContext context) {
+    private MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+                                                      @Nonnull ProcessingContext context
+    ) {
         MessageStream<Message<Void>> result = MessageStream.empty();
         for (var component : components) {
             if (component.supports(event.type().qualifiedName())) {
                 var componentResult = component.handle(event, context);
-                result = result.concatWith(componentResult);
+                result = result.concatWith(componentResult); // todo: IS IT OK? DO we need any sequencing BETWEEN COMPONENTS? Now if async many components in the same time.
             }
         }
         return result.ignoreEntries().cast();
@@ -98,7 +106,7 @@ public class ProcessorEventHandlingComponents {
                          .collect(Collectors.toSet());
     }
 
-    public List<EventHandlingComponent> toList() {
+    public List<SequencingEventHandlingComponent> toList() {
         return components;
     }
 }

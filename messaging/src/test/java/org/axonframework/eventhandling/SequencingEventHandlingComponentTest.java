@@ -38,8 +38,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
 /**
- * Test class for {@link SequencingEventHandlingComponentOnMessageStream} that verifies sequential processing of events with the same
- * sequence identifier while allowing concurrent processing of events with different sequence identifiers.
+ * Test class for {@link SequencingEventHandlingComponentOnMessageStream} that verifies sequential processing of events
+ * with the same sequence identifier while allowing concurrent processing of events with different sequence
+ * identifiers.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -56,8 +57,10 @@ class SequencingEventHandlingComponentTest {
         //noinspection unchecked
         sequencingComponent =
                 new SequencingEventHandlingComponent(
-                        (event) -> Optional.of(asTestMessage(event).getPayload().sequenceId),
-                        delegate
+                        new SequenceOverridingEventHandlingComponent(
+                                (event) -> Optional.of(asTestMessage(event).getPayload().sequenceId),
+                                delegate
+                        )
                 );
         executorService = Executors.newFixedThreadPool(20);
     }
@@ -205,7 +208,8 @@ class SequencingEventHandlingComponentTest {
         assertThatNoException().isThrownBy(() -> {
             EventMessage<?> event = testEvent("sequence-1");
             var unitOfWork = new SimpleUnitOfWorkFactory().create();
-            var result = unitOfWork.executeWithResult((ctx) -> sequencingComponent.handle(event, ctx).asCompletableFuture());
+            var result = unitOfWork.executeWithResult((ctx) -> sequencingComponent.handle(event, ctx)
+                                                                                  .asCompletableFuture());
 
             assertThat(result).isNotNull();
             assertThat(result.isDone()).isTrue();
@@ -224,7 +228,8 @@ class SequencingEventHandlingComponentTest {
         // When
         EventMessage<?> event = testEvent("sequence-1");
         var unitOfWork = new SimpleUnitOfWorkFactory().create();
-        var result = unitOfWork.executeWithResult((ctx) -> sequencingComponent.handle(event, ctx).asCompletableFuture());
+        var result = unitOfWork.executeWithResult((ctx) -> sequencingComponent.handle(event, ctx)
+                                                                              .asCompletableFuture());
 
         // Then - Error should be propagated
         assertThat(result.isCompletedExceptionally()).isTrue();
