@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,8 +33,22 @@ public class ProcessorEventHandlingComponents {
 
     private final List<EventHandlingComponent> components;
 
+    public ProcessorEventHandlingComponents(EventHandlingComponent... components) {
+        this.components = Arrays.stream(components).toList();
+    }
+
     public ProcessorEventHandlingComponents(List<EventHandlingComponent> components) {
         this.components = List.copyOf(components);
+    }
+
+    public MessageStream.Empty<Message<Void>> handle(List<? extends EventMessage<?>> events,
+                                                     ProcessingContext context) {
+        MessageStream.Empty<Message<Void>> batchResult = MessageStream.empty();
+        for (var event : events) {
+            var eventResult = this.handle(event, context);
+            batchResult = batchResult.concatWith(eventResult).ignoreEntries();
+        }
+        return batchResult;
     }
 
     /**
@@ -46,7 +61,8 @@ public class ProcessorEventHandlingComponents {
      * @return An {@link MessageStream.Empty empty stream} containing nothing.
      */
     @Nonnull
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+                                                     @Nonnull ProcessingContext context) {
         MessageStream.Empty<Message<Void>> result = MessageStream.empty();
         for (var component : components) {
             if (component.supports(event.type().qualifiedName())) {

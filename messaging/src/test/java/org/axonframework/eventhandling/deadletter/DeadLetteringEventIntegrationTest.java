@@ -27,7 +27,6 @@ import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsCustomization;
@@ -205,13 +204,6 @@ public abstract class DeadLetteringEventIntegrationTest {
         streamingProcessor = new PooledStreamingEventProcessor(
                 PROCESSING_GROUP,
                 eventSource,
-                new DefaultEventProcessingPipeline(
-                        PROCESSING_GROUP,
-                        customization.errorHandler(),
-                        customization.spanFactory(),
-                        processorEventHandlingComponents,
-                        true
-                ),
                 processorEventHandlingComponents,
                 new TransactionalUnitOfWorkFactory(transactionManager),
                 new InMemoryTokenStore(),

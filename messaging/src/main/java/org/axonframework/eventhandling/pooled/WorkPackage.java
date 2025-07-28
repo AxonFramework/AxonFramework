@@ -331,8 +331,10 @@ class WorkPackage {
                     ctx.putResource(Segment.RESOURCE_KEY, segment);
                     ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
                 });
-                unitOfWork.onPreInvocation(ctx -> batchProcessor.processBatch(eventBatch, ctx, segment));
-                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken)); // todo: track the whole unit of work.
+
+                unitOfWork.onInvocation(ctx -> batchProcessor.processBatch(eventBatch, ctx, segment));
+
+                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
                 unitOfWork.runOnAfterCommit(
                         u -> {
                             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));

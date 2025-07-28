@@ -28,7 +28,6 @@ import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -115,17 +114,9 @@ public class PooledStreamingEventProcessorModule
         );
         var eventHandlingComponents =
                 new ProcessorEventHandlingComponents(List.of(decoratedEventHandlingComponent));
-        var decoratedEventProcessingPipeline = new DefaultEventProcessingPipeline(
-                processorName,
-                errorHandler,
-                spanFactory,
-                eventHandlingComponents,
-                true
-        );
         var processor = new PooledStreamingEventProcessor(
                 processorName,
                 eventSource,
-                decoratedEventProcessingPipeline,
                 eventHandlingComponents,
                 unitOfWorkFactory,
                 tokenStore,

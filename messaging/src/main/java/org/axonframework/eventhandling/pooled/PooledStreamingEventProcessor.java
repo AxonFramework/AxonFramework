@@ -95,7 +95,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private final String name;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
-    private final EventProcessingPipeline eventProcessingPipeline;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final TokenStore tokenStore;
@@ -111,7 +110,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     public PooledStreamingEventProcessor(
             @Nonnull String name,
             @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource,
-            @Nonnull EventProcessingPipeline eventProcessingPipeline,
             @Nonnull ProcessorEventHandlingComponents eventHandlingComponents, // todo: multiple, sequence while checking  -set of sequence itendifier per message
             @Nonnull UnitOfWorkFactory unitOfWorkFactory,
             @Nonnull TokenStore tokenStore,
@@ -122,7 +120,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         this.name = name;
         this.eventSource = eventSource;
         this.eventHandlingComponents = eventHandlingComponents;
-        this.eventProcessingPipeline = eventProcessingPipeline;
         this.unitOfWorkFactory = unitOfWorkFactory;
         this.tokenStore = tokenStore;
         this.customization = customization;
@@ -378,7 +375,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> eventProcessingPipeline.process(events, ctx)
+        WorkPackage.BatchProcessor batchProcessor = (events, ctx, s) -> eventHandlingComponents.handle(events, ctx)
                                                                                                .asCompletableFuture();
         var batchSize = customization.batchSize();
         var claimExtensionThreshold = customization.claimExtensionThreshold();
@@ -806,8 +803,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             return new PooledStreamingEventProcessor(
                     name,
                     eventSource,
-                    eventProcessingPipeline().apply(this),
-                    new ProcessorEventHandlingComponents(List.of(eventHandlingComponent())),
+                    new ProcessorEventHandlingComponents(eventHandlingComponent()),
                     unitOfWorkFactory,
                     tokenStore,
                     coordinatorExecutorBuilder,
