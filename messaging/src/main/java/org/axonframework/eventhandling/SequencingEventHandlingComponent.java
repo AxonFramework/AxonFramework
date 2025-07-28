@@ -22,6 +22,8 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,11 +58,14 @@ import static java.util.Objects.requireNonNull;
  */
 public class SequencingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
+    private static final Logger logger = LoggerFactory.getLogger(SequencingEventHandlingComponent.class);
+
+
     /**
      * The {@link Context.ResourceKey} used to store the map of sequence identifiers to their ongoing invocations
      * in the {@link ProcessingContext}.
      */
-    private final Context.ResourceKey<Map<Object, MessageStream.Empty<Message<Void>>>> sequencedHandlingKey =
+    private final Context.ResourceKey<Map<Object, MessageStream<Message<?>>>> sequencedHandlingKey =
             Context.ResourceKey.withLabel("sequencedHandling");
     private final SequencingPolicy sequencingPolicy;
 
@@ -98,19 +103,20 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
     @Override
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
+        logger.info("Handling event [{}]", event);
         Object eventSequenceIdentifier = sequenceIdentifierFor(event, context);
 
-        Map<Object, MessageStream.Empty<Message<Void>>> sequenceMap = context.computeResourceIfAbsent(
+        Map<Object, MessageStream<Message<?>>> sequenceMap = context.computeResourceIfAbsent(
                 sequencedHandlingKey,
                 ConcurrentHashMap::new
         );
 
         return sequenceMap.compute(eventSequenceIdentifier, (key, previousInvocation) ->
                 previousInvocation == null
-                        ? delegate.handle(event, context)
-                        : previousInvocation.whenComplete(() -> delegate.handle(event, context))
-//                        : previousInvocation.concatWith(delegate.handle(event, context)).ignoreEntries().cast()
-        );
+                        ? delegate.handle(event, context).cast()
+//                        : previousInvocation.whenComplete(() -> delegate.handle(event, context))
+                        : previousInvocation.concatWith(delegate.handle(event, context).cast())
+        ).ignoreEntries().cast();
     }
 
     @Nonnull

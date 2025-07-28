@@ -18,12 +18,10 @@ package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessingException;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorBuilder;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
@@ -42,11 +40,8 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -382,7 +377,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = this::processWithErrorHandling;
+//        WorkPackage.BatchProcessor batchProcessor = eventHandlingComponents::handle;
         var batchSize = customization.batchSize();
         var claimExtensionThreshold = customization.claimExtensionThreshold();
         var clock = customization.clock();
@@ -392,7 +387,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                           .unitOfWorkFactory(unitOfWorkFactory)
                           .executorService(workerExecutor)
                           .eventFilter(workPackageEventFilter)
-                          .batchProcessor(batchProcessor)
+                          .batchProcessor(null)
                           .segment(segment)
                           .initialToken(initialToken)
                           .batchSize(batchSize)
@@ -404,23 +399,23 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                           .build();
     }
 
-    private MessageStream.Empty<Message<Void>> processWithErrorHandling(List<? extends EventMessage<?>> events, ProcessingContext context) {
-        return eventHandlingComponents.handle(events, context)
-                      .onErrorContinue(ex -> {
-                          try {
-                              errorHandler.handleError(new ErrorContext(name, ex, events));
-                          } catch (RuntimeException re) {
-                              return MessageStream.failed(re);
-                          } catch (Exception e) {
-                              return MessageStream.failed(new EventProcessingException(
-                                      "Exception occurred while processing events",
-                                      e));
-                          }
-                          return MessageStream.empty().cast();
-                      })
-                      .ignoreEntries()
-                      .cast();
-    }
+//    private MessageStream.Empty<Message<Void>> processWithErrorHandling(List<? extends EventMessage<?>> events, ProcessingContext context) {
+//        return eventHandlingComponents.handle(events, context);
+//                      .onErrorContinue(ex -> {
+//                          try {
+//                              errorHandler.handleError(new ErrorContext(name, ex, events));
+//                          } catch (RuntimeException re) {
+//                              return MessageStream.failed(re);
+//                          } catch (Exception e) {
+//                              return MessageStream.failed(new EventProcessingException(
+//                                      "Exception occurred while processing events",
+//                                      e));
+//                          }
+//                          return MessageStream.empty().cast();
+//                      })
+//                      .ignoreEntries()
+//                      .cast();
+//    }
 
     /**
      * A {@link Consumer} of a {@link TrackerStatus} update method. To be used by a {@link WorkPackage} to update the
