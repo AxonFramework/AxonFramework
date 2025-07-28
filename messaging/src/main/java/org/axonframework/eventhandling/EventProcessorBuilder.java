@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -52,13 +51,6 @@ public abstract class EventProcessorBuilder {
 
     protected String name;
     private EventHandlingComponent eventHandlingComponent;
-    private Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipelineBuilder = (builder) -> new DefaultEventProcessingPipeline(
-            builder.name,
-            builder.errorHandler,
-            builder.spanFactory,
-            new ProcessorEventHandlingComponents(List.of(builder.eventHandlingComponent)),
-            builder.streaming()
-    );
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
     protected MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
@@ -103,12 +95,6 @@ public abstract class EventProcessorBuilder {
     public EventProcessorBuilder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
         assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
         this.eventHandlingComponent = eventHandlingComponent;
-        return this;
-    }
-
-    public EventProcessorBuilder eventProcessingPipeline(@Nonnull Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipelineBuilder) {
-        assertNonNull(this.eventProcessingPipelineBuilder, "EventProcessingPipeline may not be null");
-        this.eventProcessingPipelineBuilder = eventProcessingPipelineBuilder;
         return this;
     }
 

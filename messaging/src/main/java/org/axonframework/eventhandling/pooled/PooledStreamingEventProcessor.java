@@ -37,7 +37,6 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
@@ -510,13 +509,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         @Override
         public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
             super.eventHandlingComponent(eventHandlingComponent);
-            return this;
-        }
-
-        @Override
-        public Builder eventProcessingPipeline(
-                @Nonnull Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipeline) {
-            super.eventProcessingPipeline(eventProcessingPipeline);
             return this;
         }
 
