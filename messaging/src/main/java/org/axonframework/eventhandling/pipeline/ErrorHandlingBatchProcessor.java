@@ -27,6 +27,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 
 /**
  * An {@link EventProcessingPipeline} that handles errors by delegating to an {@link ErrorHandler}.
@@ -40,10 +41,10 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class ErrorHandlingEventProcessingPipeline implements EventProcessingPipeline {
+public class ErrorHandlingBatchProcessor implements EventProcessingPipeline {
 
     private final EventProcessingPipeline next;
-    private final String eventProcessor;
+    private final BiFunction<List<? extends EventMessage<?>>, Throwable, ErrorContext> batchErrorContextFactory;
     private final ErrorHandler errorHandler;
 
     /**
@@ -54,13 +55,13 @@ public class ErrorHandlingEventProcessingPipeline implements EventProcessingPipe
      * @param eventProcessor The name of the event processor.
      * @param errorHandler   The {@link ErrorHandler} to handle errors.
      */
-    public ErrorHandlingEventProcessingPipeline(
-            @Nonnull String eventProcessor,
+    public ErrorHandlingBatchProcessor(
             @Nonnull ErrorHandler errorHandler,
+            @Nonnull BiFunction<List<? extends EventMessage<?>>, Throwable, ErrorContext> batchErrorContextFactory,
             @Nonnull EventProcessingPipeline next
     ) {
         this.next = Objects.requireNonNull(next, "Next may not be null");
-        this.eventProcessor = Objects.requireNonNull(eventProcessor, "EventProcessor may not be null");
+        this.batchErrorContextFactory = Objects.requireNonNull(batchErrorContextFactory, "BatchErrorContextFactory may not be null");
         this.errorHandler = Objects.requireNonNull(errorHandler, "ErrorHandler may not be null");
     }
 
@@ -72,7 +73,7 @@ public class ErrorHandlingEventProcessingPipeline implements EventProcessingPipe
         return next.process(events, context)
                    .onErrorContinue(ex -> {
                        try {
-                           errorHandler.handleError(new ErrorContext(eventProcessor, ex, events));
+                           errorHandler.handleError(batchErrorContextFactory.apply(events, ex));
                        } catch (RuntimeException re) {
                            return MessageStream.failed(re);
                        } catch (Exception e) {

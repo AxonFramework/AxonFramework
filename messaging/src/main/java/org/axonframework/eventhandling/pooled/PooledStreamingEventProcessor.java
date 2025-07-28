@@ -18,10 +18,12 @@ package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessingException;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorBuilder;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
@@ -40,8 +42,11 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -60,6 +65,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -99,6 +105,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final TokenStore tokenStore;
     private final PooledStreamingEventProcessorsCustomization customization;
+    private final ErrorHandler errorHandler;
 
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
@@ -110,7 +117,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     public PooledStreamingEventProcessor(
             @Nonnull String name,
             @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource,
-            @Nonnull ProcessorEventHandlingComponents eventHandlingComponents, // todo: multiple, sequence while checking  -set of sequence itendifier per message
+            @Nonnull ProcessorEventHandlingComponents eventHandlingComponents,
             @Nonnull UnitOfWorkFactory unitOfWorkFactory,
             @Nonnull TokenStore tokenStore,
             @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder,
@@ -125,10 +132,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         this.customization = customization;
         this.workerExecutor = workerExecutorBuilder.apply(name);
 
+        this.errorHandler = customization.errorHandler();
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 this.name,
                 this.eventHandlingComponents,
-                customization.errorHandler()
+                errorHandler
         );
 
         var supportedEvents = this.eventHandlingComponents.supportedEvents();
@@ -375,7 +383,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = eventHandlingComponents::handle;
+        WorkPackage.BatchProcessor batchProcessor = (events, context) -> processBatchWithErrorHandling(
+                events,
+                context,
+                eventHandlingComponents::handle
+        );
         var batchSize = customization.batchSize();
         var claimExtensionThreshold = customization.claimExtensionThreshold();
         var clock = customization.clock();
@@ -395,6 +407,28 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                           ))
                           .clock(clock)
                           .build();
+    }
+
+    private MessageStream.Empty<Message<Void>> processBatchWithErrorHandling(
+            List<? extends EventMessage<?>> events,
+            ProcessingContext context,
+            BiFunction<List<? extends EventMessage<?>>, ProcessingContext, MessageStream.Empty<Message<Void>>> handler
+    ) {
+        return handler.apply(events, context)
+                      .onErrorContinue(ex -> {
+                          try {
+                              errorHandler.handleError(new ErrorContext(name, ex, events));
+                          } catch (RuntimeException re) {
+                              return MessageStream.failed(re);
+                          } catch (Exception e) {
+                              return MessageStream.failed(new EventProcessingException(
+                                      "Exception occurred while processing events",
+                                      e));
+                          }
+                          return MessageStream.empty().cast();
+                      })
+                      .ignoreEntries()
+                      .cast();
     }
 
     /**
