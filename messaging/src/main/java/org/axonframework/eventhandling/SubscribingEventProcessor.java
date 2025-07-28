@@ -37,7 +37,6 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -199,12 +198,7 @@ public class SubscribingEventProcessor implements EventProcessor {
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
             var unitOfWork = unitOfWorkFactory.create();
-            unitOfWork.onInvocation(processingContext ->
-                                            processBatchWithErrorHandling(eventMessages,
-                                                                          processingContext,
-                                                                          eventProcessingPipeline::process)
-                                                    .asCompletableFuture()
-            );
+            unitOfWork.onInvocation(processingContext -> processWithErrorHandling(eventMessages, processingContext).asCompletableFuture());
             FutureUtils.joinAndUnwrap(unitOfWork.execute());
         } catch (RuntimeException e) {
             throw e;
@@ -213,26 +207,22 @@ public class SubscribingEventProcessor implements EventProcessor {
         }
     }
 
-    private MessageStream.Empty<Message<Void>> processBatchWithErrorHandling(
-            List<? extends EventMessage<?>> events,
-            ProcessingContext context,
-            BiFunction<List<? extends EventMessage<?>>, ProcessingContext, MessageStream.Empty<Message<Void>>> handler
-    ) {
-        return handler.apply(events, context)
-                      .onErrorContinue(ex -> {
-                          try {
-                              errorHandler.handleError(new ErrorContext(name, ex, events));
-                          } catch (RuntimeException re) {
-                              return MessageStream.failed(re);
-                          } catch (Exception e) {
-                              return MessageStream.failed(new EventProcessingException(
-                                      "Exception occurred while processing events",
-                                      e));
-                          }
-                          return MessageStream.empty().cast();
-                      })
-                      .ignoreEntries()
-                      .cast();
+    private MessageStream.Empty<Message<Void>> processWithErrorHandling(List<? extends EventMessage<?>> events, ProcessingContext context) {
+        return eventProcessingPipeline.process(events, context)
+                                      .onErrorContinue(ex -> {
+                                          try {
+                                              errorHandler.handleError(new ErrorContext(name, ex, events));
+                                          } catch (RuntimeException re) {
+                                              return MessageStream.failed(re);
+                                          } catch (Exception e) {
+                                              return MessageStream.failed(new EventProcessingException(
+                                                      "Exception occurred while processing events",
+                                                      e));
+                                          }
+                                          return MessageStream.empty().cast();
+                                      })
+                                      .ignoreEntries()
+                                      .cast();
     }
 
     /**

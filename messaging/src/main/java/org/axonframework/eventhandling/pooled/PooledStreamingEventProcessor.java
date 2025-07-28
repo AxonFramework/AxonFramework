@@ -65,7 +65,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -383,11 +382,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = (events, context) -> processBatchWithErrorHandling(
-                events,
-                context,
-                eventHandlingComponents::handle
-        );
+        WorkPackage.BatchProcessor batchProcessor = this::processWithErrorHandling;
         var batchSize = customization.batchSize();
         var claimExtensionThreshold = customization.claimExtensionThreshold();
         var clock = customization.clock();
@@ -409,12 +404,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                           .build();
     }
 
-    private MessageStream.Empty<Message<Void>> processBatchWithErrorHandling(
-            List<? extends EventMessage<?>> events,
-            ProcessingContext context,
-            BiFunction<List<? extends EventMessage<?>>, ProcessingContext, MessageStream.Empty<Message<Void>>> handler
-    ) {
-        return handler.apply(events, context)
+    private MessageStream.Empty<Message<Void>> processWithErrorHandling(List<? extends EventMessage<?>> events, ProcessingContext context) {
+        return eventHandlingComponents.handle(events, context)
                       .onErrorContinue(ex -> {
                           try {
                               errorHandler.handleError(new ErrorContext(name, ex, events));
