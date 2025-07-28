@@ -115,7 +115,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     public PooledStreamingEventProcessor(
             @Nonnull String name,
             @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource,
-            @Nonnull ProcessorEventHandlingComponents eventHandlingComponents,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
             @Nonnull UnitOfWorkFactory unitOfWorkFactory,
             @Nonnull TokenStore tokenStore,
             @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder,
@@ -124,7 +124,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     ) {
         this.name = name;
         this.eventSource = eventSource;
-        this.eventHandlingComponents = eventHandlingComponents;
+        this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
         this.unitOfWorkFactory = unitOfWorkFactory;
         this.tokenStore = tokenStore;
         this.customization = customization;
@@ -819,7 +819,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             return new PooledStreamingEventProcessor(
                     name,
                     eventSource,
-                    new ProcessorEventHandlingComponents(eventHandlingComponent()),
+                    List.of(eventHandlingComponent()),
                     unitOfWorkFactory,
                     tokenStore,
                     coordinatorExecutorBuilder,

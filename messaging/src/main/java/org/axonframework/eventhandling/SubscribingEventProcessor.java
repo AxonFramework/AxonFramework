@@ -65,13 +65,13 @@ public class SubscribingEventProcessor implements EventProcessor {
     public SubscribingEventProcessor(
             @Nonnull String name,
             @Nonnull SubscribableMessageSource<? extends EventMessage<?>> messageSource,
-            @Nonnull ProcessorEventHandlingComponents eventHandlingComponents,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
             @Nonnull UnitOfWorkFactory unitOfWorkFactory,
             @Nonnull UnaryOperator<Customization> configurationOverride
     ) {
         this.name = name;
         this.messageSource = messageSource;
-        this.eventHandlingComponents = eventHandlingComponents;
+        this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
         this.unitOfWorkFactory = unitOfWorkFactory;
         var customization = requireNonNull(configurationOverride, "configurationOverride may not be null")
                 .apply(Customization.defaultValues());

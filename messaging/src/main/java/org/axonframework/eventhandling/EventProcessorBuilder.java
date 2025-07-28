@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -31,7 +30,6 @@ import org.axonframework.tracing.SpanFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -228,10 +226,6 @@ public abstract class EventProcessorBuilder {
 
     public UnitOfWorkFactory unitOfWorkFactory() {
         return unitOfWorkFactory;
-    }
-
-    public Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipeline() {
-        return eventProcessingPipelineBuilder;
     }
 
     public boolean streaming() {

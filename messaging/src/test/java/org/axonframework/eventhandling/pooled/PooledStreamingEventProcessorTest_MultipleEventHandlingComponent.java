@@ -16,9 +16,9 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
@@ -72,7 +72,7 @@ class PooledStreamingEventProcessorTest_MultipleEventHandlingComponent {
     }
 
     private PooledStreamingEventProcessor createTestSubject(
-            ProcessorEventHandlingComponents eventHandlingComponents,
+            List<EventHandlingComponent> eventHandlingComponents,
             UnaryOperator<PooledStreamingEventProcessorsCustomization> configOverride
     ) {
         var customization = configOverride.apply(new PooledStreamingEventProcessorsCustomization());
@@ -103,7 +103,7 @@ class PooledStreamingEventProcessorTest_MultipleEventHandlingComponent {
         var eventHandlingComponent2 = spy(new SimpleEventHandlingComponent());
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
 
-        var components = new ProcessorEventHandlingComponents(List.of(eventHandlingComponent1, eventHandlingComponent2));
+        List<EventHandlingComponent> components = List.of(eventHandlingComponent1, eventHandlingComponent2);
         setTestSubject(
                 createTestSubject(components, customization -> customization.initialSegmentCount(1).batchSize(10))
         );
