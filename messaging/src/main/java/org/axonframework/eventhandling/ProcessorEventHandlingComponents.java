@@ -55,8 +55,9 @@ public class ProcessorEventHandlingComponents {
      * @return A stream of messages resulting from the processing of the event messages.
      */
     @Nonnull
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull List<? extends EventMessage<?>> events,
-                                                     @Nonnull ProcessingContext context
+    public MessageStream.Empty<Message<Void>> handle(
+            @Nonnull List<? extends EventMessage<?>> events,
+            @Nonnull ProcessingContext context
     ) {
         MessageStream<Message<Void>> batchResult = MessageStream.empty().cast();
         for (var event : events) {
