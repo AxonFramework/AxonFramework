@@ -21,11 +21,14 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedObjectHolder;
 import org.axonframework.serialization.Serializer;
 
+import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -190,6 +193,16 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     @Override
     public P getPayload() {
         return this.payload;
+    }
+
+    @Override
+    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+        //noinspection unchecked,rawtypes
+        return type instanceof Class clazz && getPayloadType().isAssignableFrom(clazz)
+                ? (T) getPayload()
+                : Objects.requireNonNull(converter,
+                                         "Cannot convert payload to [" + type.getTypeName() + "] with null Converter.")
+                         .convert(getPayload(), type);
     }
 
     @Override
