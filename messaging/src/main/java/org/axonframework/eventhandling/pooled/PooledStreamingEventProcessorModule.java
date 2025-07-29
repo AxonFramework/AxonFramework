@@ -24,10 +24,12 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.QualifiedName;
@@ -102,12 +104,15 @@ public class PooledStreamingEventProcessorModule
 
         var spanFactory = eventProcessorsCustomization.spanFactory();
         var messageMonitor = eventProcessorsCustomization.messageMonitor();
-        var decoratedEventHandlingComponent = new DefaultEventProcessorHandlingComponent(
-                spanFactory,
-                messageMonitor,
-                messageHandlerInterceptors,
-                eventHandlingComponent,
-                true
+        var decoratedEventHandlingComponent = new TracingEventHandlingComponent(
+                (event) -> spanFactory.createProcessEventSpan(true, event),
+                new MonitoringEventHandlingComponent(
+                        messageMonitor,
+                        new InterceptingEventHandlingComponent(
+                                messageHandlerInterceptors,
+                                eventHandlingComponent
+                        )
+                )
         );
         var processor = new PooledStreamingEventProcessor(
                 processorName,

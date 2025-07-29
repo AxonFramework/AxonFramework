@@ -23,12 +23,14 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.configuration.EventProcessorsCustomization;
+import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -80,12 +82,15 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
         var spanFactory = eventProcessorsCustomization.spanFactory();
         var messageMonitor = eventProcessorsCustomization.messageMonitor();
-        var decoratedEventHandlingComponent = new DefaultEventProcessorHandlingComponent(
-                spanFactory,
-                messageMonitor,
-                messageHandlerInterceptors,
-                eventHandlingComponent,
-                false
+        var decoratedEventHandlingComponent = new TracingEventHandlingComponent(
+                (event) -> spanFactory.createProcessEventSpan(false, event),
+                new MonitoringEventHandlingComponent(
+                        messageMonitor,
+                        new InterceptingEventHandlingComponent(
+                                messageHandlerInterceptors,
+                                eventHandlingComponent
+                        )
+                )
         );
         var processor = new SubscribingEventProcessor(
                 processorName,

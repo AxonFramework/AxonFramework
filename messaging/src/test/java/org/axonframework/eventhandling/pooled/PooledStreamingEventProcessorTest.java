@@ -69,11 +69,11 @@ class PooledStreamingEventProcessorTest {
         workerExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(8));
     }
 
-    private void setTestSubject(PooledStreamingEventProcessor testSubject) {
+    private void withTestSubject(PooledStreamingEventProcessor testSubject) {
         this.testSubject = testSubject;
     }
 
-    private PooledStreamingEventProcessor createTestSubject(
+    private PooledStreamingEventProcessor processor(
             List<EventHandlingComponent> eventHandlingComponents,
             UnaryOperator<PooledStreamingEventProcessorsCustomization> configOverride
     ) {
@@ -106,8 +106,8 @@ class PooledStreamingEventProcessorTest {
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
 
         List<EventHandlingComponent> components = List.of(eventHandlingComponent1, eventHandlingComponent2);
-        setTestSubject(
-                createTestSubject(components, customization -> customization.initialSegmentCount(1))
+        withTestSubject(
+                processor(components, customization -> customization.initialSegmentCount(1))
         );
 
         // when

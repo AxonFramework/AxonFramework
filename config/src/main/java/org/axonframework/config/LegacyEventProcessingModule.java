@@ -21,7 +21,6 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DirectEventProcessingStrategy;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
@@ -881,16 +880,17 @@ public class LegacyEventProcessingModule
     protected EventProcessor subscribingEventProcessor(String name,
                                                        EventHandlerInvoker eventHandlerInvoker,
                                                        SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
-        return SubscribingEventProcessor.builder()
-                                        .name(name)
-                                        .eventHandlerInvoker(eventHandlerInvoker)
-                                        .errorHandler(errorHandler(name))
-                                        .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
-                                        .messageSource(messageSource)
-                                        .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
-                                        .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
-                                        .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
-                                        .build();
+        return null;
+//        return SubscribingEventProcessor.builder()
+//                                        .name(name)
+//                                        .eventHandlerInvoker(eventHandlerInvoker)
+//                                        .errorHandler(errorHandler(name))
+//                                        .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
+//                                        .messageSource(messageSource)
+//                                        .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
+//                                        .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
+//                                        .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
+//                                        .build();
     }
 
     /**
