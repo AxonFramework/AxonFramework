@@ -22,21 +22,22 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Class testing the {@link SequencingEventHandlingComponent} to ensure it correctly handles event sequencing.
@@ -142,6 +143,22 @@ class SequencingEventHandlingComponentTest {
                         "event-8_seq-B",
                         "event-9_seq-B"
                 );
+    }
+
+    @Test
+    void whenHandlerFailsThenErrorIsPropagated() {
+        // given
+        EventHandlingComponent eventHandlingComponent = sequencingEventHandlingComponent();
+        eventHandlingComponent.subscribe(new QualifiedName(TestPayload.class), (event, ctx) -> MessageStream.failed(new RuntimeException("Test exception")));
+
+        // when
+        var event1 = testEvent("event-1_seq-A");
+        var batch = List.of(event1);
+
+        // then
+        assertThatThrownBy(() -> handleInUnitOfWork(eventHandlingComponent, batch))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Test exception");;
     }
 
     @Nonnull

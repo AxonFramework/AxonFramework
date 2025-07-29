@@ -217,10 +217,6 @@ class LegacyPooledStreamingEventProcessorTest {
 
     @Test
     void startingProcessorClaimsAllAvailableTokens() {
-        startAndAssertProcessorClaimsAllTokens();
-    }
-
-    private void startAndAssertProcessorClaimsAllTokens() {
         List<EventMessage<Integer>> events =
                 createEvents(100);
         events.forEach(stubMessageSource::publishMessage);
@@ -267,7 +263,7 @@ class LegacyPooledStreamingEventProcessorTest {
     }
 
     @Test
-    void handlingEventsHaveSegmentAndTokenInUnitOfWork() throws Exception {
+    void handlingEventsHaveSegmentAndTokenInProcessingContext() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(8);
         doAnswer(
                 answer -> {
@@ -276,11 +272,11 @@ class LegacyPooledStreamingEventProcessorTest {
                     boolean containsToken = TrackingToken.fromContext(processingContext).isPresent();
                     if (!containsSegment) {
                         logger.error("UoW didn't contain the segment!");
-                        return null;
+                        return MessageStream.empty();
                     }
                     if (!containsToken) {
                         logger.error("UoW didn't contain the token!");
-                        return null;
+                        return MessageStream.empty();
                     }
                     countDownLatch.countDown();
                     return MessageStream.empty();
