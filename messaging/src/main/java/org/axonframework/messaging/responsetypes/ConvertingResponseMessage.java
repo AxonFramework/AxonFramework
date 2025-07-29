@@ -17,13 +17,16 @@
 package org.axonframework.messaging.responsetypes;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Optional;
 
@@ -107,6 +110,18 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
             );
         }
         return expectedResponseType.convert(responseMessage.getPayload());
+    }
+
+    @Override
+    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+        if (isExceptional()) {
+            throw new IllegalPayloadAccessException(
+                    "This result completed exceptionally, payload is not available. "
+                            + "Try calling 'exceptionResult' to see the cause of failure.",
+                    optionalExceptionResult().orElse(null)
+            );
+        }
+        return responseMessage.payloadAs(type, converter);
     }
 
     @Override
