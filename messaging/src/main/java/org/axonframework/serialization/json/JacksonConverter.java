@@ -34,9 +34,6 @@ import java.util.Objects;
 /**
  * A {@link Converter} implementation that uses Jackson's {@link com.fasterxml.jackson.databind.ObjectMapper} to convert
  * objects into and from a JSON format.
- * <p>
- * Although the Jackson {@code Converter} requires classes to be compatible with this specific serializer, it provides
- * much more compact serialization, while still being human-readable.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -66,7 +63,6 @@ public class JacksonConverter implements Converter {
     public JacksonConverter(@Nonnull ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
         this.objectMapper.registerModule(new JavaTimeModule());
-        // TODO The Converter used to be configurable for the JacksonSerializer. I don't think we need that anymore. Thoughts?
         this.converter = new ChainingContentTypeConverter();
         this.converter.registerConverter(new JsonNodeToByteArrayConverter(this.objectMapper));
         this.converter.registerConverter(new ByteArrayToJsonNodeConverter(this.objectMapper));
