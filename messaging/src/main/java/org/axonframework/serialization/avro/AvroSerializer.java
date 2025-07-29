@@ -85,8 +85,7 @@ public class AvroSerializer implements Serializer {
         this.serializerStrategies.addAll(builder.serializerStrategies);
         this.converter = builder.converter;
         // converter registration
-        if (this.converter instanceof ChainingContentTypeConverter) {
-            ChainingContentTypeConverter chainingConverter = (ChainingContentTypeConverter) this.converter;
+        if (this.converter instanceof ChainingContentTypeConverter chainingConverter) {
             chainingConverter.registerConverter(new ByteArrayToGenericRecordConverter(builder.schemaStore));
             Converter delegateConverter = serializerDelegate.getConverter();
             if (delegateConverter instanceof ChainingContentTypeConverter) {

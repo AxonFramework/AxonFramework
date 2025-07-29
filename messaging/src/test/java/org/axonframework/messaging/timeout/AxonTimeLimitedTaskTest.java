@@ -16,27 +16,37 @@
 package org.axonframework.messaging.timeout;
 
 import org.junit.jupiter.api.*;
-import org.mockito.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Test class validating the {@link AxonTimeLimitedTask}.
+ *
+ * @author Mitchell Herrijgers
+ */
 class AxonTimeLimitedTaskTest {
+
+    @AfterEach
+    void tearDown() throws InterruptedException {
+        //noinspection ResultOfMethodCallIgnored | Awaiting termination to ensure none of the AxonTimeLimitedTask hang
+        AxonTaskJanitor.INSTANCE
+                .awaitTermination(250, TimeUnit.MILLISECONDS);
+    }
 
     @Test
     void correctlyInterruptsTaskWhenNoWarningWasConfiguredOnUncustomizedConstructor() {
-        AxonTimeLimitedTask testSubject = new AxonTimeLimitedTask(
-                "My test task",
-                100,
-                100,
-                1
-        );
-
+        AxonTimeLimitedTask testSubject = new AxonTimeLimitedTask("My test task", 100, 100, 1);
 
         assertThrows(InterruptedException.class, () -> {
             testSubject.start();
-            // Even though the timeout is 100ms, the InterruptedException apparently needs time to travel up. We accept a 50ms delay.
+            // Even though the timeout is 100ms, the InterruptedException apparently needs time to travel up.
+            // We accept a 150ms delay.
             Thread.sleep(150);
         });
 
@@ -47,17 +57,12 @@ class AxonTimeLimitedTaskTest {
 
     @Test
     void correctlyInterruptsTaskWithWarningWasConfiguredOnUncustomizedConstructor() {
-        AxonTimeLimitedTask testSubject = new AxonTimeLimitedTask(
-                "My test task",
-                100,
-                50,
-                10
-        );
-
+        AxonTimeLimitedTask testSubject = new AxonTimeLimitedTask("My test task", 100, 50, 10);
 
         assertThrows(InterruptedException.class, () -> {
             testSubject.start();
-            // Even though the timeout is 100ms, the InterruptedException apparently needs time to travel up. We accept a 50ms delay.
+            // Even though the timeout is 100ms, the InterruptedException apparently needs time to travel up.
+            // We accept a 150ms delay.
             Thread.sleep(150);
         });
 
@@ -67,46 +72,37 @@ class AxonTimeLimitedTaskTest {
 
     @Test
     void correctlyLogsWarningsAndInterruptsWhenWarningWasConfiguredOnCustomizedConstructor() {
-        Logger logger = Mockito.spy(LoggerFactory.getLogger("MyLogger"));
-        AxonTimeLimitedTask testSubject = new AxonTimeLimitedTask(
-                "My test task",
-                1000,
-                100,
-                100,
-                AxonTaskJanitor.INSTANCE,
-                logger
-        );
+        Logger logger = spy(LoggerFactory.getLogger("MyLogger"));
+        AxonTimeLimitedTask testSubject =
+                new AxonTimeLimitedTask("My test task", 1000, 100, 100, AxonTaskJanitor.INSTANCE, logger);
 
         assertThrows(InterruptedException.class, () -> {
             testSubject.start();
-            // Even though the timeout is 100ms, the InterruptedException apparently needs time to travel up. We accept a 50ms delay.
+            // Even though the timeout is 100ms, the InterruptedException apparently needs time to travel up.
+            // We accept a 1500ms delay.
             Thread.sleep(1500);
         });
 
         assertTrue(testSubject.isInterrupted());
         assertFalse(testSubject.isCompleted());
-        Mockito.verify(logger, Mockito.atLeast(8)).warn(Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any(),  Mockito.any());
+        verify(logger, atLeast(8)).warn(anyString(), any(), any(), any(), any(), any());
     }
-
 
     @Test
     void doesNotInterruptButLogsWarningsIfProcessWasCompletedBeforeTimeout() throws InterruptedException {
-        Logger logger = Mockito.spy(LoggerFactory.getLogger("MyLogger"));
-        AxonTimeLimitedTask testSubject = new AxonTimeLimitedTask(
-                "My test task",
-                1000,
-                100,
-                100,
-                AxonTaskJanitor.INSTANCE,
-                logger
-        );
+        Logger logger = spy(LoggerFactory.getLogger("MyLogger"));
+        AxonTimeLimitedTask testSubject =
+                new AxonTimeLimitedTask("My test task", 1000, 100, 100, AxonTaskJanitor.INSTANCE, logger);
 
         testSubject.start();
-        // Even though the timeout is 100ms, the InterruptedException apparently needs time to travel up. We accept a 50ms delay.
+        // Even though the timeout is 100ms, the InterruptedException apparently needs time to travel up.
+        // We accept a 500ms delay.
         Thread.sleep(500);
 
         assertFalse(testSubject.isInterrupted());
         assertFalse(testSubject.isCompleted());
-        Mockito.verify(logger, Mockito.atLeast(3)).warn(Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any(),  Mockito.any());
+        // Complete manually to ensure it does not block the AxonTaskJanitor!
+        testSubject.complete();
+        verify(logger, atLeast(3)).warn(anyString(), any(), any(), any(), any(), any());
     }
 }

@@ -51,7 +51,7 @@ class UnitOfWorkTimeoutInterceptorTest {
         uow.executeWithResult(interceptorChain::proceedSync);
         assertTrue(uow.isRolledBack());
         assertTrue(uow.getExecutionResult().isExceptionResult());
-        assertInstanceOf(InterruptedException.class, uow.getExecutionResult().getExceptionResult());
+        assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
     }
 
 

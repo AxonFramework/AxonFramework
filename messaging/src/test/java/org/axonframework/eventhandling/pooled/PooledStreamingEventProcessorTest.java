@@ -162,7 +162,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void retriesWhenTokenInitializationInitiallyFails() {
-        InMemoryTokenStore spy = spy(tokenStore);
+        InMemoryTokenStore spy = tokenStore;
         setTestSubject(createTestSubject(b -> b.tokenStore(spy)));
 
         doThrow(new RuntimeException("Simulated failure")).doCallRealMethod()
@@ -394,7 +394,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void workPackageIsAbortedWhenExtendingClaimFails() {
-        InMemoryTokenStore spy = spy(tokenStore);
+        InMemoryTokenStore spy = tokenStore;
         setTestSubject(createTestSubject(b -> b.tokenStore(spy)
                                                .eventSource(new AsyncInMemoryStreamableEventSource(true))
                                                .claimExtensionThreshold(10)));

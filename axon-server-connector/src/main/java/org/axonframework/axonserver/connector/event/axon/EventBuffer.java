@@ -124,7 +124,6 @@ public class EventBuffer implements TrackingEventStream {
             if (UnknownSerializedType.class.equals(ignoredMessage.getPayloadType())) {
                 UnknownSerializedType unknownSerializedType = (UnknownSerializedType) ignoredMessage.getPayload();
                 serializedType = unknownSerializedType.serializedType();
-                delegate.excludePayloadType(serializedType.getName(), serializedType.getRevision());
             } else {
                 serializedType = serializer.typeForClass(ignoredMessage.getPayloadType());
             }
