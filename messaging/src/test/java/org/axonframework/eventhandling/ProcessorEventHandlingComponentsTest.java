@@ -290,7 +290,7 @@ class ProcessorEventHandlingComponentsTest {
         // given
         CompletableFuture<EventMessage<?>> future1_1 = CompletableFuture.supplyAsync(() -> {
                                                                             try {
-                                                                                Thread.sleep(50);
+                                                                                Thread.sleep(50); // todo: CountdownLatch?
                                                                                 return EventTestUtils.asEventMessage("sample-response");
                                                                             } catch (InterruptedException e) {
                                                                                 throw new RuntimeException(e);
