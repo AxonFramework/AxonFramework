@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,8 +38,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * This component uses the {@link ProcessingContext} to track the last invocation for each sequence identifier. When a
  * new event arrives, it checks if there's an ongoing process for its sequence identifier. If so, it chains the new
  * event's handling to occur after the previous one completes. If not, it handles the event immediately.
+ * <p>
+ * This class is marked as {@link Internal}, as users are not expected to interact with it directly. Instead,
+ * {@link EventProcessor}s will wrap an {@link EventHandlingComponent} in this component to preserve the ordering.
  *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 @Internal
@@ -53,7 +59,6 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
      * Constructs the component with given {@code delegate} to receive calls.
      *
      * @param delegate         The instance to delegate calls to.
-     * @param sequencingPolicy The policy to determine the sequence identifier for events.
      */
     public SequencingEventHandlingComponent(
             @Nonnull EventHandlingComponent delegate
@@ -65,26 +70,20 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
     @Override
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
-        Map<Object, CompletableFuture<?>> invocations =
+        Objects.requireNonNull(event, "Event may not be null");
+        Objects.requireNonNull(context, "ProcessingContext may not be null");
+        Map<Object, CompletableFuture<?>> invocationsBySequenceIdentifier =
                 context.computeResourceIfAbsent(sequencedInvocationsKey, ConcurrentHashMap::new);
 
-        CompletableFuture<Message<Void>> resultFuture = new CompletableFuture<>();
-
-        invocations.compute(
+        //noinspection unchecked
+        CompletableFuture<Message<Void>> resultFuture = (CompletableFuture<Message<Void>>) invocationsBySequenceIdentifier.compute(
                 sequenceIdentifierFor(event, context),
                 (sequenceIdentifier, previousInvocation) -> chainedSequenceInvocations(
                         sequenceIdentifier,
                         previousInvocation,
                         event,
                         context
-                ).whenComplete((r, e) -> {
-                    if (e != null) {
-                        resultFuture.completeExceptionally(e);
-                    } else {
-                        resultFuture.complete(null);
-                    }
-                }));
-
+                ));
         return MessageStream.fromFuture(resultFuture).ignoreEntries();
     }
 

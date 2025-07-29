@@ -22,9 +22,11 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * TODO This should be regarded as a playground object to verify the API. Feel free to remove, adjust, or replicate this class to your needs.
@@ -34,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SimpleEventHandlingComponent implements EventHandlingComponent {
 
-    private final ConcurrentHashMap<QualifiedName, EventHandler> eventHandlers;
+    private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers;
 
     public SimpleEventHandlingComponent() {
         this.eventHandlers = new ConcurrentHashMap<>();
@@ -46,20 +48,32 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
                                                      @Nonnull ProcessingContext context) {
         QualifiedName name = event.type().qualifiedName();
         // TODO #3103 - add interceptor knowledge
-        EventHandler handler = eventHandlers.get(name);
-        if (handler == null) {
+        List<EventHandler> handlers = eventHandlers.get(name);
+        if (handlers == null || handlers.isEmpty()) {
             // TODO this would benefit from a dedicate exception
             return MessageStream.failed(new IllegalArgumentException(
                     "No handler found for event with name [" + name + "]"
             ));
         }
-        return handler.handle(event, context);
+        MessageStream<Message<Void>> result = MessageStream.empty();
+        for (var handler : handlers) {
+            var handlerResult = handler.handle(event, context);
+            result = result.concatWith(handlerResult);
+        }
+        return result.ignoreEntries().cast();
     }
 
     @Override
     public SimpleEventHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
                                                   @Nonnull EventHandler handler) {
-        names.forEach(name -> eventHandlers.put(name, Objects.requireNonNull(handler, "TODO")));
+        Objects.requireNonNull(handler, "The given handler cannot be null.");
+        names.forEach(name -> eventHandlers.compute(name, (q, handlers) -> {
+            if (handlers == null) {
+                handlers = new CopyOnWriteArrayList<>();
+            }
+            handlers.add(handler);
+            return handlers;
+        }));
         return this;
     }
 

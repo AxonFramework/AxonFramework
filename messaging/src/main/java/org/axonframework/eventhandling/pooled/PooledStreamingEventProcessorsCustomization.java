@@ -38,6 +38,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+
 /**
  * Configuration class used to instantiate a {@link PooledStreamingEventProcessor}.
  * <p>
@@ -62,6 +65,7 @@ import java.util.function.Function;
  * @since 5.0.0
  */
 // todo: I believe customization is on the component level, but some Configuration needs to be higher level, on the module level and access components!!! like MessageMonitor etc.
+    // todo: I think needs to be immutable, because changing customization may change all processors!
 public class PooledStreamingEventProcessorsCustomization extends EventProcessorsCustomization {
 
     // todo: tokenStore?
@@ -91,37 +95,55 @@ public class PooledStreamingEventProcessorsCustomization extends EventProcessors
     }
 
     public PooledStreamingEventProcessorsCustomization initialSegmentCount(int initialSegmentCount) {
+        assertStrictPositive(initialSegmentCount, "The initial segment count should be a higher valuer than zero");
         this.initialSegmentCount = initialSegmentCount;
         return this;
     }
 
     public PooledStreamingEventProcessorsCustomization initialToken(
-            Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken) {
+            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken) {
+        assertNonNull(initialToken, "The initial token builder Function may not be null");
         this.initialToken = initialToken;
         return this;
     }
 
     public PooledStreamingEventProcessorsCustomization tokenClaimInterval(long tokenClaimInterval) {
+        assertStrictPositive(tokenClaimInterval, "Token claim interval should be a higher valuer than zero");
         this.tokenClaimInterval = tokenClaimInterval;
         return this;
     }
 
+    public PooledStreamingEventProcessorsCustomization maxClaimedSegments(int maxClaimedSegments) {
+        return maxSegmentProvider(n -> maxClaimedSegments);
+    }
+
+    // todo: work on that!
     public PooledStreamingEventProcessorsCustomization maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
+        assertNonNull(maxSegmentProvider,
+                      "The max segment provider may not be null. "
+                              + "Provide a lambda of type (processorName: String) -> maxSegmentsToClaim");
+        assertStrictPositive(maxSegmentProvider.getMaxSegments("ignored"),
+                             "Max claimed segments should be a higher valuer than zero");
         this.maxSegmentProvider = maxSegmentProvider;
         return this;
     }
 
     public PooledStreamingEventProcessorsCustomization claimExtensionThreshold(long claimExtensionThreshold) {
+        assertStrictPositive(
+                claimExtensionThreshold, "The claim extension threshold should be a higher valuer than zero"
+        );
         this.claimExtensionThreshold = claimExtensionThreshold;
         return this;
     }
 
     public PooledStreamingEventProcessorsCustomization batchSize(int batchSize) {
+        assertStrictPositive(batchSize, "The batch size should be a higher valuer than zero");
         this.batchSize = batchSize;
         return this;
     }
 
     public PooledStreamingEventProcessorsCustomization clock(Clock clock) {
+        assertNonNull(clock, "Clock may not be null");
         this.clock = clock;
         return this;
     }

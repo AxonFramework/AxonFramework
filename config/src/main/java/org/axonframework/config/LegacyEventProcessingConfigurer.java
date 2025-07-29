@@ -686,6 +686,7 @@ public interface LegacyEventProcessingConfigurer {
      * {@link PooledStreamingEventProcessor}.
      */
     @FunctionalInterface
+    @Deprecated(since = "5.0.0", forRemoval = true)
     interface PooledStreamingProcessorConfiguration extends
             BiFunction<LegacyConfiguration, PooledStreamingEventProcessor.Builder, PooledStreamingEventProcessor.Builder> {
 

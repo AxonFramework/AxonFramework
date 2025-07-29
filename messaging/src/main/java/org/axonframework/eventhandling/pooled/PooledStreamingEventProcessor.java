@@ -171,39 +171,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .build();
     }
 
-    /**
-     * Instantiate a Builder to be able to create a {@link PooledStreamingEventProcessor}.
-     * <p>
-     * Upon initialization of this builder, the following fields are defaulted:
-     * <ul>
-     *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
-     *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
-     *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
-     *     <li>The {@code initialToken} function defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming from the {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the {@link StreamableEventSource#firstToken() head} at the moment of initialization is reached.</li>     *
-     *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
-     *     <li>The {@link MaxSegmentProvider} (used by {@link #maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
-     *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
-     *     <li>The {@code batchSize} defaults to {@code 1}.</li>
-     *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
-     *     <li>The {@link EventProcessorSpanFactory} defaults to a {@link org.axonframework.eventhandling.DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
-     *     <li>The {@code coordinatorExtendsClaims} defaults to a {@code false}.</li>
-     * </ul>
-     * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
-     * <ul>
-     *     <li>The name of this {@link EventProcessor}.</li>
-     *     <li>An {@link EventHandlerInvoker} which will be given the events handled by this processor</li>
-     *     <li>A {@link StreamableEventSource} used to retrieve events.</li>
-     *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
-     *     <li>A {@link ScheduledExecutorService} to coordinate events and segment operations.</li>
-     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
-     * </ul>
-     *
-     * @return a Builder to be able to create a {@code PooledStreamingEventProcessor}
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
     @Override
     public String getName() {
         return name;

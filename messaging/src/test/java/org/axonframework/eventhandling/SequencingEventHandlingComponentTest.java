@@ -17,57 +17,44 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.awaitility.Awaitility;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.awaitility.Awaitility.await;
 
 /**
- * Test class for {@link SequencingEventHandlingComponentOnMessageStream} that verifies sequential processing of events
- * with the same sequence identifier while allowing concurrent processing of events with different sequence
- * identifiers.
+ * Class testing the {@link SequencingEventHandlingComponent} to ensure it correctly handles event sequencing.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 class SequencingEventHandlingComponentTest {
 
-    private SimpleEventHandlingComponent delegate;
-    private EventHandlingComponent sequencingComponent;
+    private static final Logger logger = LoggerFactory.getLogger(SequencingEventHandlingComponentTest.class);
+
+    private RecordingEventHandlingComponent internal;
     private ExecutorService executorService;
 
     @BeforeEach
     void setUp() {
-        delegate = new SimpleEventHandlingComponent();
-        //noinspection unchecked
-        sequencingComponent =
-                new SequencingEventHandlingComponent(
-                        new SequenceOverridingEventHandlingComponent(
-                                (event) -> Optional.of(asTestMessage(event).getPayload().sequenceId),
-                                delegate
-                        )
-                );
-        executorService = Executors.newFixedThreadPool(20);
-    }
-
-    EventMessage<TestPayload> asTestMessage(EventMessage<?> message) {
-        //noinspection unchecked
-        return (EventMessage<TestPayload>) message;
+        internal = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
+        executorService = Executors.newFixedThreadPool(2);
     }
 
     @AfterEach
@@ -77,139 +64,101 @@ class SequencingEventHandlingComponentTest {
         }
     }
 
-    @RepeatedTest(3)
-    void testSequentialProcessingWithSameSequenceIdentifier() {
-        // Given
-        List<String> executionOrder = new ArrayList<>();
+    @RepeatedTest(10)
+    void whenHandlersAreAsyncOrderingIsPreservedAmongEventsWithSameSequenceIdentifier() {
+        // given
+        EventHandlingComponent eventHandlingComponent = sequencingEventHandlingComponent();
 
-        EventHandler asyncHandler = (event, context) -> {
-            String eventId = asTestMessage(event).getPayload().eventId;
-            CompletableFuture<Message<Void>> future = CompletableFuture.supplyAsync(() -> {
-                executionOrder.add(eventId);
-                return EventTestUtils.asEventMessage("sample-response");
-            }, executorService);
+        EventHandler eventHandler1_1 = (event, context) -> MessageStream.fromFuture(
+                CompletableFuture.supplyAsync(() -> testEvent("sample"), executorService)
+        ).ignoreEntries().cast();
+        eventHandlingComponent.subscribe(new QualifiedName(TestPayload.class), eventHandler1_1);
 
-            return MessageStream.fromFuture(future)
-                                .ignoreEntries();
-        };
+        // when
+        var event1 = testEvent("event-1_seq-A");
+        var event2 = testEvent("event-2_seq-A");
+        var event3 = testEvent("event-3_seq-B");
+        var event4 = testEvent("event-4_seq-A");
+        var event5 = testEvent("event-5_seq-A");
+        var event6 = testEvent("event-6_seq-B");
+        var event7 = testEvent("event-7_seq-A");
+        var event8 = testEvent("event-8_seq-B");
+        var event9 = testEvent("event-9_seq-B");
+        var batch = List.of(event1, event2, event3, event4, event5, event6, event7, event8, event9);
 
-        QualifiedName eventType = new QualifiedName(TestPayload.class);
-        delegate.subscribe(eventType, asyncHandler);
+        handleInUnitOfWork(eventHandlingComponent, batch);
 
-        // When - Submit multiple events with the same sequence identifier concurrently
-        String sameSequenceId = "sequence-1";
+        // then
+        await().atMost(Duration.ofSeconds(1))
+               .pollDelay(Duration.ofMillis(100))
+               .untilAsserted(() -> assertThat(internal.recorded()).hasSameSizeAs(batch));
+        var handledEvents = internal.recorded();
+        logger.info("Handled events: {}", handledEvents.stream().map(it -> it.getPayload().toString()).toList());
+        var seqAEvents = payloadsOfSequence(handledEvents, "A");
+        var seqBEvents = payloadsOfSequence(handledEvents, "B");
 
-        var events = new ArrayList<EventMessage<?>>();
-        for (int i = 1; i <= 5; i++) {
-            EventMessage<?> event = testEvent(sameSequenceId, "event-" + i);
-            events.add(event);
-        }
-
-        handleInUnitOfWork(events);
-
-
-        // Then - Wait for all events to be processed and verify order
-        Awaitility.await()
-                  .atMost(Duration.ofSeconds(2))
-                  .untilAsserted(() -> assertThat(executionOrder).hasSize(5));
-
-        // Events should be processed in the order they were submitted (sequentially)
-        assertThat(executionOrder)
-                .hasSize(5)
-                .containsExactly("event-1", "event-2", "event-3", "event-4", "event-5");
-    }
-
-    @RepeatedTest(3)
-    void testSequentialProcessingWithMixedSequenceIdentifiers() {
-        // Given
-        List<String> executionOrder = new CopyOnWriteArrayList<>();
-
-        EventHandler asyncHandler = (event, context) -> {
-            String eventString = asTestMessage(event).getPayload().toString();
-            // todo: too fast?
-            CompletableFuture<Message<Void>> future = CompletableFuture.supplyAsync(() -> {
-                try {
-                    Thread.sleep(50);
-                    executionOrder.add(eventString);
-                    return EventTestUtils.asEventMessage("sample-response");
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }, executorService);
-
-            return MessageStream.fromFuture(future)
-                                .ignoreEntries();
-        };
-
-        QualifiedName eventType = new QualifiedName(TestPayload.class);
-        delegate.subscribe(eventType, asyncHandler);
-
-        // When - Submit events with alternating sequence identifiers
-        String[] sequenceIds = {"seq-A", "seq-B", "seq-A", "seq-C", "seq-B", "seq-A", "seq-C"};
-
-        var events = new ArrayList<EventMessage<?>>();
-        for (int i = 0; i < sequenceIds.length; i++) {
-            final String sequenceId = sequenceIds[i];
-            EventMessage<?> event = testEvent(sequenceId, "event" + (i + 1));
-            events.add(event);
-        }
-        handleInUnitOfWork(events);
-
-
-        // Then - Wait for all events to be processed
-        Awaitility.await()
-                  .atMost(Duration.ofSeconds(2))
-                  .untilAsserted(() -> assertThat(executionOrder).hasSameSizeAs(sequenceIds));
-
-        assertThat(executionOrder).hasSize(sequenceIds.length);
-
-        // Verify sequential ordering within each sequence group
-        List<String> seqAEvents = executionOrder.stream()
-                                                .filter(event -> event.startsWith("seq-A"))
-                                                .toList();
-
-        List<String> seqBEvents = executionOrder.stream()
-                                                .filter(event -> event.startsWith("seq-B"))
-                                                .toList();
-
-        List<String> seqCEvents = executionOrder.stream()
-                                                .filter(event -> event.startsWith("seq-C"))
-                                                .toList();
-
-        // Events within the same sequence should maintain their submission order
         assertThat(seqAEvents)
-                .as("seq-A events should maintain order")
-                .containsExactly("seq-A-event1", "seq-A-event3", "seq-A-event6");
-
+                .containsExactly("event-1_seq-A",
+                                 "event-2_seq-A",
+                                 "event-4_seq-A",
+                                 "event-5_seq-A",
+                                 "event-7_seq-A");
         assertThat(seqBEvents)
-                .as("seq-B events should maintain order")
-                .containsExactly("seq-B-event2", "seq-B-event5");
-
-        assertThat(seqCEvents)
-                .as("seq-C events should maintain order")
-                .containsExactly("seq-C-event4", "seq-C-event7");
+                .containsExactly("event-3_seq-B", "event-6_seq-B", "event-8_seq-B", "event-9_seq-B");
     }
 
-    private void handleInUnitOfWork(List<EventMessage<?>> events) {
-        var unitOfWork = new SimpleUnitOfWorkFactory().create();
-        var components = new ProcessorEventHandlingComponents(sequencingComponent);
-        unitOfWork.onInvocation(ctx -> components.handle(events, ctx).asCompletableFuture());
-        FutureUtils.joinAndUnwrap(unitOfWork.execute());
+    @RepeatedTest(3)
+    void whenHandlersAreSyncOrderingIsPreservedInEntireBatch() {
+        // given
+        EventHandlingComponent eventHandlingComponent = sequencingEventHandlingComponent();
+        eventHandlingComponent.subscribe(new QualifiedName(TestPayload.class), (event, context) -> MessageStream.empty());
+
+        // when
+        var event1 = testEvent("event-1_seq-A");
+        var event2 = testEvent("event-2_seq-A");
+        var event3 = testEvent("event-3_seq-B");
+        var event4 = testEvent("event-4_seq-A");
+        var event5 = testEvent("event-5_seq-A");
+        var event6 = testEvent("event-6_seq-B");
+        var event7 = testEvent("event-7_seq-A");
+        var event8 = testEvent("event-8_seq-B");
+        var event9 = testEvent("event-9_seq-B");
+        var batch = List.of(event1, event2, event3, event4, event5, event6, event7, event8, event9);
+
+        handleInUnitOfWork(eventHandlingComponent, batch);
+
+        // then
+        assertThat(internal.recorded())
+                .hasSize(9)
+                .extracting(EventMessage::getPayload)
+                .extracting("value")
+                .containsExactly(
+                        "event-1_seq-A",
+                        "event-2_seq-A",
+                        "event-3_seq-B",
+                        "event-4_seq-A",
+                        "event-5_seq-A",
+                        "event-6_seq-B",
+                        "event-7_seq-A",
+                        "event-8_seq-B",
+                        "event-9_seq-B"
+                );
     }
 
     @Test
-    void testEmptyStreamHandling() {
-        // Given
+    void shouldHandleEmptyMessageStreamFromHandler() {
+        // given
+        EventHandlingComponent eventHandlingComponent = sequencingEventHandlingComponent();
         EventHandler emptyHandler = (event, context) -> MessageStream.empty();
         QualifiedName eventType = new QualifiedName(TestPayload.class);
-        delegate.subscribe(eventType, emptyHandler);
+        eventHandlingComponent.subscribe(eventType, emptyHandler);
 
-        // When & Then - Should complete without issues
+        // when & then - Should complete without issues
         assertThatNoException().isThrownBy(() -> {
-            EventMessage<?> event = testEvent("sequence-1");
+            EventMessage<?> event = testEvent("event-1_seq-A");
             var unitOfWork = new SimpleUnitOfWorkFactory().create();
-            var result = unitOfWork.executeWithResult((ctx) -> sequencingComponent.handle(event, ctx)
-                                                                                  .asCompletableFuture());
+            var result = unitOfWork.executeWithResult((ctx) -> eventHandlingComponent.handle(event, ctx)
+                                                                                     .asCompletableFuture());
 
             assertThat(result).isNotNull();
             assertThat(result.isDone()).isTrue();
@@ -217,39 +166,97 @@ class SequencingEventHandlingComponentTest {
     }
 
     @Test
-    void testErrorPropagation() {
-        // Given
+    void shouldPropagateException() {
+        // given
+        EventHandlingComponent eventHandlingComponent = sequencingEventHandlingComponent();
         RuntimeException testException = new RuntimeException("Test exception");
         EventHandler failingHandler = (event, context) -> MessageStream.failed(testException);
 
         QualifiedName eventType = new QualifiedName(TestPayload.class);
-        delegate.subscribe(eventType, failingHandler);
+        eventHandlingComponent.subscribe(eventType, failingHandler);
 
-        // When
-        EventMessage<?> event = testEvent("sequence-1");
+        // when
+        EventMessage<?> event = testEvent("event-1_seq-A");
         var unitOfWork = new SimpleUnitOfWorkFactory().create();
-        var result = unitOfWork.executeWithResult((ctx) -> sequencingComponent.handle(event, ctx)
-                                                                              .asCompletableFuture());
+        var result = unitOfWork.executeWithResult((ctx) -> eventHandlingComponent.handle(event, ctx)
+                                                                                 .asCompletableFuture());
 
-        // Then - Error should be propagated
-        assertThat(result.isCompletedExceptionally()).isTrue();
+        // then
+        assertThat(result)
+                .failsWithin(Duration.ofSeconds(1))
+                .withThrowableThat()
+                .isInstanceOf(ExecutionException.class)
+                .havingCause()
+                .isInstanceOf(RuntimeException.class)
+                .withMessage("Test exception");
     }
 
-    private EventMessage<?> testEvent(String sequenceId) {
-        return EventTestUtils.asEventMessage(new TestPayload(sequenceId, sequenceId));
+    @Nonnull
+    private static EventMessage<Object> testEvent(String payload) {
+        return EventTestUtils.asEventMessage(new TestPayload(payload));
+    }
+
+    @Nonnull
+    private EventHandlingComponent sequencingEventHandlingComponent() {
+        return new SequencingEventHandlingComponent(
+                new SequenceOverridingEventHandlingComponent(
+                        (event) -> Optional.of(sequenceOf(event)),
+                        internal
+                )
+        );
+    }
+
+    private static void handleInUnitOfWork(EventHandlingComponent component, List<EventMessage<Object>> batch) {
+        var unitOfWork = new SimpleUnitOfWorkFactory().create();
+        unitOfWork.onInvocation(context -> {
+            MessageStream<Message<Void>> batchResult = MessageStream.empty().cast();
+            for (var event : batch) {
+                var eventResult = component.handle(event, context);
+                batchResult = batchResult.concatWith(eventResult.cast());
+            }
+            return batchResult.ignoreEntries().asCompletableFuture();
+        });
+        try {
+            unitOfWork.execute().get(2, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Nonnull
+    private List<String> payloadsOfSequence(List<EventMessage<?>> handledEvents, String sequence) {
+        return handledEvents.stream()
+                            .filter(event -> event.getPayload().toString().contains("seq-" + sequence))
+                            .map(Message::getPayload)
+                            .map(Object::toString)
+                            .toList();
     }
 
 
-    private EventMessage<?> testEvent(String sequenceId, String payload) {
-        return EventTestUtils.asEventMessage(new TestPayload(sequenceId, payload));
+    /**
+     * Extracts the sequence identifier from an event with string representation containing "_seq-" pattern. For
+     * example, "event-1_seq-A" returns "A", "event-2_seq-B" returns "B".
+     */
+    private static String sequenceOf(EventMessage<?> event) {
+        var input = event.getPayload().toString();
+        if (input == null) {
+            return "";
+        }
+
+        int seqIndex = input.indexOf("_seq-");
+        if (seqIndex == -1) {
+            return "";
+        }
+
+        return input.substring(seqIndex + 5); // "_seq-" is 5 characters long
     }
 
-    record TestPayload(String sequenceId, String eventId) {
+    record TestPayload(String value) {
 
         @Nonnull
         @Override
         public String toString() {
-            return sequenceId + "-" + eventId;
+            return value;
         }
     }
 }

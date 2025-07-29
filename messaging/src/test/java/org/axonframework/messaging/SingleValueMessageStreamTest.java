@@ -81,6 +81,24 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
     }
 
     @Test
+    void shouldPropagateErrorWhenFutureFailed() {
+        CompletableFuture<MessageStream.Entry<Message<?>>> future = new CompletableFuture<>();
+        SingleValueMessageStream<Message<?>> testSubject = new SingleValueMessageStream<>(future);
+
+        assertFalse(testSubject.hasNextAvailable());
+        assertFalse(testSubject.next().isPresent());
+
+        RuntimeException expected = new RuntimeException("Expected");
+        future.completeExceptionally(expected);
+
+        assertFalse(testSubject.hasNextAvailable());
+        assertFalse(testSubject.next().isPresent());
+        assertTrue(testSubject.isCompleted());
+        assertTrue(testSubject.error().isPresent());
+        assertEquals(testSubject.error().get(), expected);
+    }
+
+    @Test
     void shouldInvokeOnAvailableWhenFutureCompletes() {
         CompletableFuture<MessageStream.Entry<Message<?>>> future = new CompletableFuture<>();
         SingleValueMessageStream<Message<?>> testSubject = new SingleValueMessageStream<>(future);
