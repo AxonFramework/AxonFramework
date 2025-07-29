@@ -16,9 +16,11 @@
 
 package org.axonframework.springboot.util;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.LegacyEventProcessingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.springboot.EventProcessorProperties;
@@ -26,14 +28,13 @@ import org.axonframework.springboot.EventProcessorProperties;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 /**
  * A {@link ConfigurerModule} implementation dedicated towards registering a {@link SequencedDeadLetterQueue} provider
- * with the {@link org.axonframework.config.EventProcessingConfigurer}.
+ * with the {@link LegacyEventProcessingConfigurer}.
  * <p>
  * Does so through invoking the
- * {@link org.axonframework.config.EventProcessingConfigurer#registerDeadLetterQueueProvider(Function)} operation,
+ * {@link LegacyEventProcessingConfigurer#registerDeadLetterQueueProvider(Function)} operation,
  * utilizing the given {@code deadLetterQueueProvider}. Only processing groups for which the dead-letter queue is
  * {@link EventProcessorProperties.Dlq#isEnabled() enabled} will receive the provided dead-letter queue.
  *

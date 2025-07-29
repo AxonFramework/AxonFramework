@@ -487,19 +487,19 @@ public interface LegacyConfigurer extends LifecycleOperations {
     }
 
     /**
-     * Retrieve the {@link EventProcessingConfigurer} registered as a module with this Configurer. If there aren't any,
+     * Retrieve the {@link LegacyEventProcessingConfigurer} registered as a module with this Configurer. If there aren't any,
      * it will create an {@link LegacyEventProcessingModule} and register it as a module. If there are multiple, an
      * {@link AxonConfigurationException} is thrown.
      *
      * @return an instance of Event Processing Configurer
-     * @throws AxonConfigurationException thrown if there are multiple {@link EventProcessingConfigurer}s
+     * @throws AxonConfigurationException thrown if there are multiple {@link LegacyEventProcessingConfigurer}s
      */
-    EventProcessingConfigurer eventProcessing() throws AxonConfigurationException;
+    LegacyEventProcessingConfigurer eventProcessing() throws AxonConfigurationException;
 
     /**
-     * Locates the {@link EventProcessingConfigurer} registered as a module with this Configurer and provides it to the
+     * Locates the {@link LegacyEventProcessingConfigurer} registered as a module with this Configurer and provides it to the
      * given consumer for configuration. If there aren't any pre-registered instances of
-     * {@link EventProcessingConfigurer}, it will create an {@link LegacyEventProcessingModule} and register it as a module.
+     * {@link LegacyEventProcessingConfigurer}, it will create an {@link LegacyEventProcessingModule} and register it as a module.
      * If there are multiple, an {@link AxonConfigurationException} is thrown.
      * <p>
      * This method is identical to using {@link #eventProcessing()}, except that this variant allows for easier fluent
@@ -507,9 +507,9 @@ public interface LegacyConfigurer extends LifecycleOperations {
      *
      * @param eventProcessingConfigurer a consumer to configure the
      * @return an instance of Event Processing Configurer
-     * @throws AxonConfigurationException thrown if there are multiple {@link EventProcessingConfigurer}s
+     * @throws AxonConfigurationException thrown if there are multiple {@link LegacyEventProcessingConfigurer}s
      */
-    default LegacyConfigurer eventProcessing(@Nonnull Consumer<EventProcessingConfigurer> eventProcessingConfigurer)
+    default LegacyConfigurer eventProcessing(@Nonnull Consumer<LegacyEventProcessingConfigurer> eventProcessingConfigurer)
             throws AxonConfigurationException {
         eventProcessingConfigurer.accept(eventProcessing());
         return this;

@@ -32,8 +32,8 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyEventProcessingConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
@@ -351,7 +351,7 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
 
     @SuppressWarnings("unchecked")
     @Autowired
-    public void configureEventHandling(EventProcessingConfigurer eventProcessingConfigurer,
+    public void configureEventHandling(LegacyEventProcessingConfigurer eventProcessingConfigurer,
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((name, settings) -> {
             Function<LegacyConfiguration, SequencingPolicy> sequencingPolicy =

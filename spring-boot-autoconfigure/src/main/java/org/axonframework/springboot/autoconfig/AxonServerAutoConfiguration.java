@@ -36,8 +36,8 @@ import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.PriorityResolver;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.LegacyEventProcessingConfiguration;
+import org.axonframework.config.LegacyEventProcessingConfigurer;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -257,7 +257,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     /**
-     * Creates a {@link ConfigurerModule} to invoke {@link EventProcessingConfigurer::usingSubscribingEventProcessors}
+     * Creates a {@link ConfigurerModule} to invoke {@link LegacyEventProcessingConfigurer ::usingSubscribingEventProcessors}
      *
      * @param executorBuilder         The {@link java.util.concurrent.ScheduledExecutorService} builder used during
      *                                construction of the {@link PersistentStreamMessageSourceDefinition}.
