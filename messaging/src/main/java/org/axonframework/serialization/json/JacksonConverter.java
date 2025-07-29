@@ -117,7 +117,7 @@ public class JacksonConverter implements Converter {
                     logger.trace("Converts input [{}] to byte[] before reading it into [{}].", input, targetJavaType);
                 }
                 return objectMapper.readValue(converter.convert(input, byte[].class), targetJavaType);
-            } else if (converter.canConvert(targetJavaType.getRawClass(), byte[].class)) {
+            } else if (converter.canConvert(byte[].class, targetJavaType.getRawClass())) {
                 if (logger.isTraceEnabled()) {
                     logger.trace("Writes input [{}] as a byte[] before converting to [{}].", input, targetJavaType);
                 }
