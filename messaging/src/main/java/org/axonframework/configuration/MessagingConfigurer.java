@@ -88,6 +88,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
         return new MessagingConfigurer(applicationConfigurer)
                 .componentRegistry(cr -> cr
                         .registerEnhancer(new MessagingConfigurationDefaults())
+                        .registerEnhancer(new EventProcessingConfigurationDefaults())
                 );
     }
 
@@ -108,7 +109,8 @@ public class MessagingConfigurer implements ApplicationConfigurer {
 
     /**
      * Registers the given {@link MessageTypeResolver} factory in this {@code Configurer}. This is the global
-     * {@link MessageTypeResolver}, whose mappings can be accessed by all Modules and Components within the application.
+     * {@link MessageTypeResolver}, whose mappings can be accessed by all Modules and Components within the
+     * application.
      * <p>
      * The {@code commandBusFactory} receives the {@link Configuration} as input and is expected to return a
      * {@link MessageTypeResolver} instance.
@@ -219,6 +221,18 @@ public class MessagingConfigurer implements ApplicationConfigurer {
         );
         return this;
     }
+
+//    public MessagingConfigurer eventProcessors(
+//            @Nonnull UnaryOperator<EventProcessingDefaultsEnhancer> eventProcessingConfiguration
+//    ) {
+//        applicationConfigurer.componentRegistry(
+//                cr -> cr.registerEnhancer(
+//                        EventProcessingDefaultsEnhancer.class,
+//                        config -> eventProcessingConfiguration.apply(new EventProcessingDefaultsEnhancer(config))
+//                )
+//        );
+//        return this;
+//    }
 
     @Override
     public AxonConfiguration build() {

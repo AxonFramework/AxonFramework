@@ -235,7 +235,7 @@ We'd like to thank all the contributors who worked on this release!
 * Improve error message in case a streaming query gives an error. https://github.com/AxonFramework/AxonFramework/pull/2662[#2662]
 * Error handling of Streaming queries is less than ideal https://github.com/AxonFramework/AxonFramework/issues/2660[#2660]
 * Add a warning to the creation of the in memory token store. https://github.com/AxonFramework/AxonFramework/pull/2650[#2650]
-* Add a `registerDeadLetterQueueProvider` method in the `EventProcessingConfigurer`. https://github.com/AxonFramework/AxonFramework/pull/2633[#2633]
+* Add a `registerDeadLetterQueueProvider` method in the `LegacyEventProcessingConfigurer`. https://github.com/AxonFramework/AxonFramework/pull/2633[#2633]
 * [#2628] Extended support for Spring application context hierarchy https://github.com/AxonFramework/AxonFramework/pull/2629[#2629]
 * ObjectMapper cannot be resolved from Spring Parent Context https://github.com/AxonFramework/AxonFramework/issues/2628[#2628]
 * Move AbstractDeadlineManagerTestSuite to spring module so it's deployed. https://github.com/AxonFramework/AxonFramework/pull/2622[#2622]
@@ -726,7 +726,7 @@ We refer to https://github.com/AxonFramework/AxonFramework/milestone/31?closed=1
 * In part with the package restructure, all components which leverage another framework to provide something extra have been given their own repository.
  These repositories are called the https://github.com/AxonFramework?utf8=%E2%9C%93&q=extensions&type=&language=[Axon Framework Extensions].
 
-* The configuration of Event Processor has been replaced and greatly fine tuned with the addition of the `EventProcessingConfigurer`.
+* The configuration of Event Processor has been replaced and greatly fine tuned with the addition of the `LegacyEventProcessingConfigurer`.
 
 * Some new defaults have been introduced in release 4.0, like a bias towards expecting a connection with Axon Server.
  Another important chance is the switch from defaulting to Tracking Processors instead of Subscribing Processors.
