@@ -26,6 +26,14 @@ import java.util.OptionalLong;
  */
 public interface TrackingToken {
 
+    static TrackingToken firstToken() {
+        return FirstTrackingToken.INSTANCE;
+    }
+
+    static TrackingToken latestToken() {
+        return LatestTrackingToken.INSTANCE;
+    }
+
     /**
      * Returns a token that represents the lower bound between this and the {@code other} token. Effectively, the
      * returned token will cause messages not received by both this and the {@code other} token to be redelivered.
