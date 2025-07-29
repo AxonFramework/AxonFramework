@@ -20,6 +20,8 @@ import org.junit.jupiter.api.*;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * Test class validating the {@link FailedMessageStream} through the {@link MessageStreamTest} suite.
  *
@@ -57,5 +59,14 @@ class FailedMessageStreamTest extends MessageStreamTest<Message<Void>> {
     Message<Void> createRandomMessage() {
         Assumptions.abort("FailedMessageStream doesn't support content");
         return null;
+    }
+
+    @Test
+    void shouldPropagateErrorToCompletableFuture() {
+        var testSubject = new FailedMessageStream<>(new RuntimeException("Expected"));
+
+        var future = testSubject.asCompletableFuture();
+
+        assertTrue(future.isCompletedExceptionally());
     }
 }
