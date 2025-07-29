@@ -20,8 +20,10 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsCustomization;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
@@ -90,7 +92,7 @@ public abstract class AbstractEventStoreBenchmark {
         this.coordinatorExecutor = Executors.newSingleThreadScheduledExecutor(
                 new AxonThreadFactory("benchmark-coordinator"));
         this.workerExecutor = Executors.newScheduledThreadPool(2,
-                new AxonThreadFactory("benchmark-worker"));
+                                                               new AxonThreadFactory("benchmark-worker"));
 
         SimpleEventHandlerInvoker eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
@@ -106,15 +108,16 @@ public abstract class AbstractEventStoreBenchmark {
                                                  }
 
                                          ).build();
-        this.eventProcessor = PooledStreamingEventProcessor.builder()
-                                                    .name("benchmark")
-                                                    .eventHandlerInvoker(eventHandlerInvoker)
-                                                    .eventSource(new LegacyStreamableEventSource<>(eventStore))
-                                                    .tokenStore(new InMemoryTokenStore())
-                                                    .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
-                                                    .coordinatorExecutor(coordinatorExecutor)
-                                                    .workerExecutor(workerExecutor)
-                                                    .build();
+        this.eventProcessor = new PooledStreamingEventProcessor(
+                "benchmark",
+                new LegacyStreamableEventSource<>(eventStore),
+                List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                new SimpleUnitOfWorkFactory(),
+                new InMemoryTokenStore(),
+                ignored -> coordinatorExecutor,
+                ignored -> workerExecutor,
+                new PooledStreamingEventProcessorsCustomization()
+        );
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }
 

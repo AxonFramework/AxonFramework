@@ -65,6 +65,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * @since 5.0.0
  */
 // todo: I believe customization is on the component level, but some Configuration needs to be higher level, on the module level and access components!!! like MessageMonitor etc.
+    // todo: I think needs to be immutable, because changing customization may change all processors!
 public class PooledStreamingEventProcessorsCustomization extends EventProcessorsCustomization {
 
     // todo: tokenStore?
