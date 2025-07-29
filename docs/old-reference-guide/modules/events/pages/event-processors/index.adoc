@@ -27,8 +27,8 @@ Streaming Event Processors, on the other hand, pull their messages from a source
 
 For more specifics on either type, consult their respective sections xref:event-processors/subscribing.adoc[here] and xref:event-processors/streaming.adoc[here].
 The rest of this page dedicates itself to describing the Event Processor's common concepts and configuration options.
-Note that throughout, the `EventProcessingConfigurer` is used.
-The `EventProcessingConfigurer` is part of Axon's Configuration API, dedicated to configuring Event Processors.
+Note that throughout, the `LegacyEventProcessingConfigurer` is used.
+The `LegacyEventProcessingConfigurer` is part of Axon's Configuration API, dedicated to configuring Event Processors.
 
 == Assigning handlers to processors
 
@@ -90,7 +90,7 @@ If more control is required to group Event Handling Components, we recommend con
 
 The Configuration API allows you to configure other strategies for assigning event handling classes to processors or assigning specific handler instances to particular processors.
 We can separate these assignment rules into roughly two groups: Event Handler to Processing Group and Processing Group to Event Processor.
-Below is an exhaustive list of all the assignment rules the `EventProcessingConfigurer` exposes:
+Below is an exhaustive list of all the assignment rules the `LegacyEventProcessingConfigurer` exposes:
 
 *Event Handler to Processing Group*
 
@@ -334,7 +334,7 @@ The remainder of this page will cover the generic configuration options for each
 
 === Event processor builders
 
-The `EventProcessingConfigurer` provides access to a lot of configurable components for Event Processors.
+The `LegacyEventProcessingConfigurer` provides access to a lot of configurable components for Event Processors.
 Sometimes it is easier or preferable to provide an entire function to construct an Event Processor, however.
 To that end, we can configure a custom `EventProcessorBuilder`:
 
@@ -353,7 +353,7 @@ interface EventProcessorBuilder {
 The `EventProcessorBuilder` functional interface provides the event processor's name, the `Configuration` and the `EventHandlerInvoker`, and requires returning an `EventProcessor` instance.
 Note that any Axon component that an Event Processor requires (for example, an `EventStore`) is retrievable from the `Configuration`.
 
-The `EventProcessingConfigurer` provides two methods to configure an `EventProcessorBuilder`:
+The `LegacyEventProcessingConfigurer` provides two methods to configure an `EventProcessorBuilder`:
 
 . `registerEventProcessorFactory(EventProcessorBuilder)`: allows you to define a default factory method that creates event processors for which no explicit factories are defined
 . `registerEventProcessor(String, EventProcessorBuilder)`: defines the factory method to use to create a processor with given `name`
@@ -364,7 +364,7 @@ Since the Event Processor is the invoker of event handling methods, it is a spot
 Since Event Processors are dedicated to event handling, the `MessageHandlerInterceptor` is required to deal with an `EventMessage`.
 Differently put, an xref:messaging-concepts:message-intercepting.adoc#event-handler-interceptors[EventHandlerInterceptor] can be registered to Event Processors.
 
-The `EventProcessingConfigurer` provides two methods to configure `MessageHandlerInterceptor` instances:
+The `LegacyEventProcessingConfigurer` provides two methods to configure `MessageHandlerInterceptor` instances:
 
 * `registerDefaultHandlerInterceptor(BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>)`: registers a default `MessageHandlerInterceptor` that will be configured on every Event Processor instance
 * `registerHandlerInterceptor(String, Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>)`: registers a `MessageHandlerInterceptor` that will be configured for the Event Processor matching the given `String`
@@ -375,7 +375,7 @@ Any Event Processor instance provides the means to contain a Message Monitor.
 Message Monitors (discussed in more detail xref:monitoring:metrics.adoc[here]) allow for monitoring the flow of messages throughout an Axon application.
 For Event Processors, the message monitor deals explicitly with the events flowing through the Event Processor towards the event handling functions.
 
-The `EventProcessingConfigurer` provides two approaches towards configuring a `MessageMonitor`:
+The `LegacyEventProcessingConfigurer` provides two approaches towards configuring a `MessageMonitor`:
 
 * `registerMessageMonitor(String, Function<Configuration, MessageMonitor<Message<?>>>)`: registers the given `MessageMonitor` to the Event Processor matching the given `String`
 * `registerMessageMonitorFactory(String, MessageMonitorFactory)`: registers the given `MessageMonitorFactory` to construct a `MessageMonitor` for the Event Processor matching the given `String`
@@ -409,9 +409,9 @@ Axon uses the `TransactionManager` to attach a transaction to every xref:messagi
 Within a Spring environment, the `TransactionManager` defaults to a `SpringTransactionManager`, which uses Spring's `PlatformTransactionManager` under the hood.
 In non Spring environments, it would be wise to build a `TransactionManager` implement if transaction management is required, of course.
 Such an implementation only requires the definition of the `TransactionManager#startTransaction()` method.
-To adjust the transaction manager for an Event Processor, the `registerTransactionManager(String, Function<Configuration, TransactionManager>)` on the `EventProcessingConfigurer` should be used.
+To adjust the transaction manager for an Event Processor, the `registerTransactionManager(String, Function<Configuration, TransactionManager>)` on the `LegacyEventProcessingConfigurer` should be used.
 
 Secondly, you can adjust the desired `RollbackConfiguration` per Event Processor.
 It is the `RollbackConfiguration` that decide when a xref:messaging-concepts:unit-of-work.adoc[Unit of Work] should rollback the transaction.
 The default `RollbackConfiguration` is to rollback on any type of `Throwable`; the xref:messaging-concepts:unit-of-work.adoc[Unit of Work] page describes the other options you can choose.
-To adjust the default behaviour, the `registerRollbackConfiguration(String, Function<Configuration, RollbackConfiguration>)` function should be invoked on the `EventProcessingConfigurer`.
+To adjust the default behaviour, the `registerRollbackConfiguration(String, Function<Configuration, RollbackConfiguration>)` function should be invoked on the `LegacyEventProcessingConfigurer`.

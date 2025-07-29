@@ -37,8 +37,8 @@ public class EventProcessorsCustomization {
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
     protected MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
-                                                                                    .spanFactory(NoOpSpanFactory.INSTANCE)
-                                                                                    .build();
+                                                                                      .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                      .build();
 
     public EventProcessorsCustomization() {
         // Default constructor

@@ -356,7 +356,7 @@ class LegacyEventProcessingModuleTest {
 
     @Test
     void createSubscribingEventProcessorIfSubscribableMessageSourceDefinitionBuilderPresent(
-            @Mock EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder mockBuilder,
+            @Mock LegacyEventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder mockBuilder,
             @Mock SubscribableMessageSourceDefinition<EventMessage<?>> definition,
             @Mock SubscribableMessageSource source) {
         when(mockBuilder.build("pooled-streaming")).thenReturn(definition);
@@ -660,7 +660,7 @@ class LegacyEventProcessingModuleTest {
     @Test
     void sagaPooledStreamingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomPooledStreamingProcessorBuilder()
             throws NoSuchFieldException {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration testPsepConfig =
+        LegacyEventProcessingConfigurer.PooledStreamingProcessorConfiguration testPsepConfig =
                 (config, builder) -> builder.maxClaimedSegments(4);
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor("ObjectProcessor", config -> eventStoreOne, testPsepConfig)
@@ -686,7 +686,7 @@ class LegacyEventProcessingModuleTest {
     @Test
     void sagaPooledStreamingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomConfigInstance()
             throws NoSuchFieldException {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration testPsepConfig =
+        LegacyEventProcessingConfigurer.PooledStreamingProcessorConfiguration testPsepConfig =
                 (config, builder) -> builder.maxClaimedSegments(4);
         configurer.eventProcessing()
                   .usingPooledStreamingEventProcessors()
@@ -715,7 +715,7 @@ class LegacyEventProcessingModuleTest {
     @Test
     void sagaPooledStreamingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomDefaultConfig()
             throws NoSuchFieldException {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
+        LegacyEventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
                 (config, builder) -> builder.maxClaimedSegments(4);
         configurer.eventProcessing()
                   .usingPooledStreamingEventProcessors(psepConfig)
