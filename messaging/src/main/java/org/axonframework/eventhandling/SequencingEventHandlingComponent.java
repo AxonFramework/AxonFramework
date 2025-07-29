@@ -79,7 +79,7 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
                         context
                 ).whenComplete((r, e) -> {
                     if (e != null) {
-                        resultFuture.completeExceptionally(e); // is it OK?
+                        resultFuture.completeExceptionally(e);
                     } else {
                         resultFuture.complete(null);
                     }
