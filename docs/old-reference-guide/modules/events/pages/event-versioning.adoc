@@ -22,7 +22,7 @@ Moreover, upcasters are processed in a chain, meaning that the output of one upc
 This allows you to update events in an incremental manner, writing an upcaster for each new event revision, making them small, isolated, and easy to understand.
 
 [TIP]
-.Benefits if Upcasters
+.Benefits of Upcasters
 ====
 Perhaps the greatest benefit of upcasting is that it allows you to do non-destructive refactoring.
 In other words, the complete event history remains intact.
@@ -64,6 +64,7 @@ During upcasting it is important to note what the format is of the `Intermediate
 To validate if the intermediate representation supports a given type, you can invoke `IntermediateEventRepresentation#canConvertDataTo(Class<?>)`.
 ====
 
+[#provided_abstract_upcaster_implementations]
 === Provided abstract Upcaster implementations
 
 As described earlier, the `Upcaster` interface does not upcast a single event; it requires a `Stream<IntermediateEventRepresentation>` and returns one.
@@ -308,4 +309,51 @@ public class AxonConfig {
 }
 ----
 --
+====
+
+[#upcasting_snapshots]
+=== Upcasting snapshots
+
+Although the description above leans towards event upcasting, note that all the given constructs can be used to upcast a xref:tuning:event-snapshots.adoc[snapshot].
+
+From the `abstract` upcaster implementations shared xref:provided_abstract_upcaster_implementations[earlier], the only feasible upcaster is the `SingleEventUpcaster`. We can logically deduce that a multi-upcaster would be incorrect, as only the last returned snapshot is used to load an aggregate. Furthermore, context-aware upcasters aren't necessary either, as any context-specific information in a snapshot is generated during event sourcing. Hence, if any data should carry over, simply reconstruct the snapshot instead.
+
+When upcasting events, the *type* to upcaster equals the fully qualified class name of the event itself. When upcasting snapshots, the type is the fully qualified class name of the *aggregate*. Knowing this detail, let's look at an example of a snapshot upcaster for the `GiftCard` aggregate (as exemplified xref:axon-framework-commands:modeling/aggregate.adoc[here]):
+
+[source,java]
+----
+public class GiftCardSnapshotNull_to_1Upcaster extends SingleEventUpcaster {
+
+   private static final SimpleSerializedType TARGET_TYPE =
+           new SimpleSerializedType(GiftCard.class.getTypeName(), null);
+
+   @Override
+   protected boolean canUpcast(IntermediateEventRepresentation intermediateRepresentation) {
+      return intermediateRepresentation.getType().equals(TARGET_TYPE);
+   }
+
+   @Override
+   protected IntermediateEventRepresentation doUpcast(
+           IntermediateEventRepresentation intermediateRepresentation
+   ) {
+      return intermediateRepresentation.upcastPayload(
+              new SimpleSerializedType(TARGET_TYPE.getName(), "1"),
+              org.dom4j.Document.class,
+                            com.fasterxml.jackson.databind.JsonNode.class,
+              event -> {
+                  ((ObjectNode) event).put("owner", "[owner-id]");
+                  return event;
+              }
+      );
+   }
+}
+----
+
+[WARNING]
+====
+Whenever constructing a snapshot upcaster, be mindful of xref:tuning:event-snapshots.adoc#_filtering_snapshot_events[`SnapshotFilters`].
+When using the `@Revision` annotation on your Aggregate, a `RevisionSnapshotFilter` is constructed by default.
+The `RevisionSnapshotFilter` will make it so that snapshot events *never* reach your upcaster.
+
+As such, it is advised to override the `SnapshotFilter` of an Aggregate to a no-op entry when you prefer to upcaster your snapshots.
 ====

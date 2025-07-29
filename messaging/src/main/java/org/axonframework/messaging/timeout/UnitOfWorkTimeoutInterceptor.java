@@ -15,6 +15,7 @@
  */
 package org.axonframework.messaging.timeout;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -25,7 +26,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ScheduledExecutorService;
-import jakarta.annotation.Nonnull;
 
 /**
  * Message handler interceptor that sets a timeout on the processing of the current {@link LegacyUnitOfWork}. If the
@@ -110,35 +110,67 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
                          @Nonnull ProcessingContext context,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         LegacyUnitOfWork<?> root = unitOfWork.root();
+        String taskName = "UnitOfWork of " + componentName;
         if (!root.resources().containsKey(TRANSACTION_TIME_LIMIT_RESOURCE_KEY)) {
-            AxonTimeLimitedTask taskTimeout = taskTimeout();
+            AxonTimeLimitedTask taskTimeout = taskTimeout(taskName);
             root.resources().put(TRANSACTION_TIME_LIMIT_RESOURCE_KEY, taskTimeout);
             taskTimeout.start();
-            unitOfWork.afterCommit(u -> taskTimeout.complete());
+            unitOfWork.afterCommit(u -> completeSafely(taskTimeout));
             unitOfWork.onRollback(u -> taskTimeout.complete());
         }
 
-        return interceptorChain.proceedSync(context);
+        AxonTimeLimitedTask task = (AxonTimeLimitedTask) root.resources().get(TRANSACTION_TIME_LIMIT_RESOURCE_KEY);
+        try {
+            Object proceed = interceptorChain.proceedSync(context);
+            task.ensureNoInterruptionWasSwallowed();
+            return proceed;
+        } catch (Exception e) {
+            throw task.detectInterruptionInsteadOfException(e);
+        }
     }
 
     @Override
     public <M extends Message<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
                                                                                            @Nonnull ProcessingContext context,
                                                                                            @Nonnull InterceptorChain<M, R> interceptorChain) {
+        String taskName = "UnitOfWork of " + componentName;
         if (!context.containsResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY)) {
-            AxonTimeLimitedTask taskTimeout = taskTimeout();
+            AxonTimeLimitedTask taskTimeout = taskTimeout(taskName);
             context.putResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY, taskTimeout);
             taskTimeout.start();
             context.runOnAfterCommit(u -> taskTimeout.complete());
             context.onError((ctx, phase, error) -> taskTimeout.complete());
         }
 
-        return interceptorChain.proceed(message, context);
+        AxonTimeLimitedTask task = context.getResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY);
+        try {
+            MessageStream<R> proceed = interceptorChain.proceed(message, context);
+            task.ensureNoInterruptionWasSwallowed();
+            return proceed;
+        } catch (Exception e) {
+            return MessageStream.failed(task.detectInterruptionInsteadOfException(e));
+        }
     }
 
-    private AxonTimeLimitedTask taskTimeout() {
+    private static void completeSafely(AxonTimeLimitedTask task) {
+        try {
+            try {
+                task.ensureNoInterruptionWasSwallowed();
+                task.complete();
+            } catch (Exception e) {
+                throw task.detectInterruptionInsteadOfException(e);
+            }
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
+            throw new RuntimeException(e);
+        }
+    }
+
+    private AxonTimeLimitedTask taskTimeout(String taskName) {
         return new AxonTimeLimitedTask(
-                "UnitOfWork of " + componentName,
+                taskName,
                 timeout,
                 warningThreshold,
                 warningInterval,

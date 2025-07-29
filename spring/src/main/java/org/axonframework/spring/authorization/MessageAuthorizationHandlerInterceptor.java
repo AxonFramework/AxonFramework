@@ -35,9 +35,8 @@ import java.util.stream.Collectors;
 
 
 /**
- * A {@link MessageHandlerInterceptor} that verifies authorization based on
- * {@link org.springframework.security.access.annotation.Secured} annotations on the payload of
- * {@link Message Messages}.
+ * A {@link MessageHandlerInterceptor} that verifies authorization based on {@link Secured} annotations on the payload
+ * of {@link Message Messages}.
  *
  * @param <T> The message type this interceptor can process
  * @author Roald Bankras

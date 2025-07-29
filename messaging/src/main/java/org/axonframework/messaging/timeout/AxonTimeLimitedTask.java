@@ -27,10 +27,12 @@ import java.util.concurrent.TimeUnit;
  * until the timeout is reached. All times are in milliseconds.
  * <p>
  * Warning logging will include the task's name, the current time taken by the task and its remaining time to execute.
- * The stack trace of the thread handling the message will also be included in the log, up to the point where the task was started.
+ * The stack trace of the thread handling the message will also be included in the log, up to the point where the task
+ * was started.
  * <p>
- * Once the {@code timeout} is reached, a message will be logged with the current stack trace of the thread handling the message,
- * and the thread will be interrupted. If the task is completed before the timeout, the task should be marked as completed.
+ * Once the {@code timeout} is reached, a message will be logged with the current stack trace of the thread handling the
+ * message, and the thread will be interrupted. If the task is completed before the timeout, the task should be marked
+ * as completed.
  *
  * @author Mitchell Herrijgers
  * @since 4.11.0
@@ -46,6 +48,7 @@ class AxonTimeLimitedTask {
     private final Logger logger;
     private boolean completed = false;
     private boolean interrupted = false;
+    private boolean interruptedExternally = false;
     private long startTimeMs = -1;
     private Future<?> currentScheduledFuture = null;
     private String startStackTrace;
@@ -103,7 +106,7 @@ class AxonTimeLimitedTask {
                                int warningInterval,
                                ScheduledExecutorService scheduledExecutorService,
                                Logger logger) {
-        if(taskName == null || taskName.isEmpty()) {
+        if (taskName == null || taskName.isEmpty()) {
             throw new IllegalArgumentException("Task name cannot be null or empty");
         }
         this.taskName = taskName;
@@ -117,8 +120,10 @@ class AxonTimeLimitedTask {
 
     /**
      * Starts the task, scheduling the first warning or immediate interrupt. Once the task is completed, the
-     * {@link #complete()} method should be called.
-     * Once started, the task cannot be started again.
+     * {@link #complete()} method should be called. At completion, the caller should also call
+     * {@link #ensureNoInterruptionWasSwallowed()} to ensure that any swallowed interruptions are properly handled. In
+     * addition, any exceptions thrown during the handling of the message should be passed to
+     * {@link #detectInterruptionInsteadOfException(Exception)} to ensure that the proper error status is restored.
      */
     public void start() {
         if (startTimeMs != -1) {
@@ -145,6 +150,68 @@ class AxonTimeLimitedTask {
         }
         if (logger.isTraceEnabled()) {
             logger.trace("{} completed", taskName);
+        }
+    }
+
+    /**
+     * Even though the task was processed successfully, it might have been interrupted while processing, and the
+     * exception might have been caught and swallowed by a lower component. This happens, for example, by the
+     * {@link org.axonframework.eventhandling.LoggingErrorHandler} , which is the default in event processors.
+     * <p>
+     * This function checks if the task was interrupted, and if so, it throws an {@link AxonTimeoutException} to
+     * indicate that the processing was aborted due to a timeout. If the task was not interrupted, it checks if the
+     * thread was interrupted. If it was, it throws an {@link InterruptedException} to indicate that the processing was
+     * aborted due to an interrupt. This effectively restores the proper error status, so upper components can handle
+     * it.
+     */
+    public void ensureNoInterruptionWasSwallowed() throws InterruptedException {
+        if (isInterrupted()) {
+            AxonTaskJanitor.LOGGER.info(
+                    "Task [{}] was completed successfully, but was interrupted by the janitor because it was processing for too long. The exception was swallowed by a lower component. Throwing TimeoutException.",
+                    getTaskName()
+            );
+            //noinspection ResultOfMethodCallIgnored
+            Thread.interrupted(); // Clear the interrupt status
+            throw new AxonTimeoutException(String.format("%s has timed out", getTaskName()));
+        } else if (Thread.interrupted()) {
+            // Something was interrupted while processing the task, so we don't need to interrupt it ourselves anymore.
+            this.interrupted = true;
+            this.interruptedExternally = true;
+            Thread.currentThread().interrupt();
+            throw new InterruptedException(String.format("%s was interrupted", getTaskName()));
+        }
+    }
+
+    /**
+     * If an exception is thrown during the handling of the message and it bubbles up, we check if the thread was
+     * interrupted. If it was, we check if the task was interrupted as well. If both hold true, that must mean the
+     * exception was caused by the interruption of the task, and we throw an {@link AxonTimeoutException} to indicate
+     * that the processing was aborted due to a timeout. If the thread was not interrupted, we simply return the
+     * original exception.
+     * <p>
+     * This might happen if someone catches the {@link InterruptedException} and wraps it using a different exception,
+     * or throws a different exception altogether.
+     * <p>
+     * Creators of this task should use this method in their catch block to ensure that the exception is properly
+     * handled and the interrupt status is restored.
+     *
+     * @param e The exception that was thrown during the handling of the message.
+     */
+    public Exception detectInterruptionInsteadOfException(Exception e) {
+        if (interruptedExternally) {
+            // Keep the interruption status of the thread intact, as it was interrupted by the ensureNoInterruptionWasSwallowed function
+            Thread.currentThread().interrupt();
+            return e;
+        }
+        if (!Thread.interrupted() && !(e instanceof InterruptedException) && !isInterrupted()) {
+            return e;
+        }
+        if (isInterrupted()) {
+            return new AxonTimeoutException(String.format("%s has timed out.", getTaskName()));
+        } else {
+            // If the task was interrupted, we restore the interrupt status and rethrow the exception
+            Thread.currentThread().interrupt();
+            return new InterruptedException(String.format("%s was interrupted.", getTaskName()));
         }
     }
 
@@ -198,8 +265,9 @@ class AxonTimeLimitedTask {
     private void scheduleWarningOrInterrupt() {
         long takenTime = System.currentTimeMillis() - startTimeMs;
         logger.warn(
-                "{} is taking a long time to process. Current time: [{}ms]. Will be interrupted in [{}ms].\nStacktrace of current thread:\n{}",
+                "{} on thread [{}] is taking a long time to process. Current time: [{}ms]. Will be interrupted in [{}ms].\nStacktrace of current thread:\n{}",
                 taskName,
+                thread.getName(),
                 takenTime,
                 timeout - takenTime,
                 getCurrentStackTrace());
@@ -217,14 +285,14 @@ class AxonTimeLimitedTask {
      */
     private void scheduleInterrupt(long remainingTimeout) {
         currentScheduledFuture = scheduledExecutorService.schedule(() -> {
-            if (!completed) {
+            if (!completed && !interrupted) {
                 logger.error(
                         "{} has exceeded its timeout of [{}ms]. Interrupting thread.\nStacktrace of current thread:\n{}",
                         taskName,
                         timeout,
                         getCurrentStackTrace());
-                thread.interrupt();
                 interrupted = true;
+                thread.interrupt();
             }
         }, remainingTimeout, TimeUnit.MILLISECONDS);
     }
@@ -266,5 +334,14 @@ class AxonTimeLimitedTask {
      */
     public boolean isInterrupted() {
         return interrupted;
+    }
+
+    /**
+     * Returns the name of the task. This is used in logging to identify the task.
+     *
+     * @return The name of the task.
+     */
+    public String getTaskName() {
+        return taskName;
     }
 }
