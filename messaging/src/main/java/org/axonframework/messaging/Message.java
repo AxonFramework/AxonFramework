@@ -142,10 +142,7 @@ public interface Message<P> {
      *                              {@code converter} is given.
      */
     default <T> T payloadAs(@Nonnull Class<T> type, @Nullable Converter converter) {
-        if (getPayloadType().isAssignableFrom(type)) {
-            return type.cast(getPayload());
-        }
-        return payloadAs(new TypeReference<>() {}, converter);
+        return getPayloadType().isAssignableFrom(type) ? type.cast(getPayload()) : payloadAs((Type) type, converter);
     }
 
     /**
