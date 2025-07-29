@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @Internal
 public class ProcessorEventHandlingComponents {
 
-    private final List<SequencingEventHandlingComponent> components;
+    private final List<? extends EventHandlingComponent> components;
 
     public ProcessorEventHandlingComponents(@Nonnull EventHandlingComponent... components) {
         this(Arrays.stream(components).toList());
@@ -110,7 +110,7 @@ public class ProcessorEventHandlingComponents {
                          .collect(Collectors.toSet());
     }
 
-    public List<SequencingEventHandlingComponent> toList() {
+    public List<? extends EventHandlingComponent> toList() {
         return components;
     }
 }
