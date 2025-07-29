@@ -22,6 +22,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -47,8 +48,17 @@ public class RecordingEventHandlingComponent extends DelegatingEventHandlingComp
     @Override
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
-        return super.handle(event, context)
-                    .whenComplete(() -> recorded.add(event));
+        CompletableFuture<Message<Void>> resultFuture = new CompletableFuture<>();
+        delegate.handle(event, context).asCompletableFuture()
+                .whenComplete((r, e) -> {
+                    recorded.add(event);
+                    if (e != null) {
+                        resultFuture.completeExceptionally(e);
+                    } else {
+                        resultFuture.complete(null);
+                    }
+                });
+        return MessageStream.fromFuture(resultFuture).ignoreEntries();
     }
 
     public List<EventMessage<?>> recorded() {

@@ -55,8 +55,12 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
                     "No handler found for event with name [" + name + "]"
             ));
         }
-        handlers.forEach(handler -> handler.handle(event, context));
-        return MessageStream.empty();
+        MessageStream<Message<Void>> result = MessageStream.empty();
+        for (var handler : handlers) {
+            var handlerResult = handler.handle(event, context);
+            result = result.concatWith(handlerResult);
+        }
+        return result.ignoreEntries().cast();
     }
 
     @Override

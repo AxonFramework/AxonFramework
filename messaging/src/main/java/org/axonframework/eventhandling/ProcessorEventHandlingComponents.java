@@ -133,7 +133,7 @@ public class ProcessorEventHandlingComponents {
      * @return true if the event name is supported, false otherwise.
      */
     public boolean supports(@Nonnull QualifiedName eventName) {
-        return supportedEvents().contains(eventName);
+        return components.stream().anyMatch(c -> c.supports(eventName));
     }
 
     /**

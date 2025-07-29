@@ -1076,7 +1076,10 @@ class PooledStreamingEventProcessorTest {
             var mockErrorHandler = mock(ErrorHandler.class);
             var expectedError = new RuntimeException("Simulated handling error");
             when(defaultEventHandlingComponent.supports(new QualifiedName(Integer.class))).thenThrow(expectedError);
-            withTestSubject(List.of(), c -> c.errorHandler(mockErrorHandler).initialSegmentCount(1));
+            withTestSubject(List.of(), c -> c.errorHandler(mockErrorHandler)
+                                             .initialSegmentCount(1)
+                                             .eventCriteriaProvider(ignored -> EventCriteria.havingAnyTag())
+            );
 
             // when
             EventMessage<Integer> testEvent = EventTestUtils.asEventMessage(42);
