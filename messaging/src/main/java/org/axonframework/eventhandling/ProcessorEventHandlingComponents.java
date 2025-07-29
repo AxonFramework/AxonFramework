@@ -45,10 +45,27 @@ public class ProcessorEventHandlingComponents {
 
     private final List<? extends EventHandlingComponent> components;
 
+    /**
+     * Constructs a {@code ProcessorEventHandlingComponents} instance by converting the provided varargs of
+     * {@link EventHandlingComponent}s into a list and passing them to the corresponding constructor.
+     *
+     * @param components A varargs array of {@link EventHandlingComponent}s to be used for event processing.
+     *                   Must not be null and is converted into a list of {@link SequencingEventHandlingComponent}s
+     *                   if necessary.
+     */
     public ProcessorEventHandlingComponents(@Nonnull EventHandlingComponent... components) {
         this(Arrays.stream(components).toList());
     }
 
+    /**
+     * Constructs a {@code ProcessorEventHandlingComponents} instance by wrapping the provided list of
+     * {@link EventHandlingComponent}s in SequencingEventHandlingComponent instances for sequential event handling
+     * where needed.
+     *
+     * @param components The list of {@link EventHandlingComponent}s to be used for event processing.
+     *                   Must not be null and is transformed into a list of {@link SequencingEventHandlingComponent}s
+     *                   if necessary.
+     */
     public ProcessorEventHandlingComponents(@Nonnull List<EventHandlingComponent> components) {
         this.components = components.stream()
                                     .map(c -> c instanceof SequencingEventHandlingComponent seq
