@@ -29,10 +29,8 @@ import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.HashMap;
@@ -53,7 +51,6 @@ public class PooledStreamingEventProcessorModule
     private ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder;
 
     // todo: defaults - should be configurable
-    private final PooledStreamingEventProcessorsCustomization eventProcessorsCustomization = new PooledStreamingEventProcessorsCustomization();
     private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
 
 
@@ -86,8 +83,8 @@ public class PooledStreamingEventProcessorModule
         var eventSource = streamableEventSourceBuilder.build(parent);
 
         // todo: get from global configuration, but allow overriding
-        var tokenStore = parent.getOptionalComponent(TokenStore.class).orElse(new InMemoryTokenStore());
-        var unitOfWorkFactory = parent.getOptionalComponent(UnitOfWorkFactory.class).orElse(new SimpleUnitOfWorkFactory()); // todo: default - transcaitonal
+        var tokenStore = parent.getComponent(TokenStore.class);
+        var unitOfWorkFactory = parent.getComponent(UnitOfWorkFactory.class);
         Function<String, ScheduledExecutorService> workerExecutorBuilder = processorName -> {
             ScheduledExecutorService workerExecutor =
                     defaultExecutor(4, "WorkPackage[" + processorName + "]");
@@ -100,6 +97,8 @@ public class PooledStreamingEventProcessorModule
             lifecycleRegistry.onShutdown(1, coordinatorExecutor::shutdown);
             return coordinatorExecutor;
         };
+
+        var eventProcessorsCustomization = parent.getComponent(PooledStreamingEventProcessorsCustomization.class); // todo: write customization here!
 
         var spanFactory = eventProcessorsCustomization.spanFactory();
         var messageMonitor = eventProcessorsCustomization.messageMonitor();

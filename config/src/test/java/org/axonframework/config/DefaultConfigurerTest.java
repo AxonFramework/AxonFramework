@@ -90,7 +90,7 @@ import java.util.stream.Stream;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
-import static org.axonframework.config.EventProcessingConfigurer.PooledStreamingProcessorConfiguration;
+import static org.axonframework.config.LegacyEventProcessingConfigurer.PooledStreamingProcessorConfiguration;
 import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;

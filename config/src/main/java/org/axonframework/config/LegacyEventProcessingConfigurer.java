@@ -54,16 +54,16 @@ import java.util.function.Predicate;
  * @author Milan Savic
  * @since 4.0
  */
-public interface EventProcessingConfigurer {
+public interface LegacyEventProcessingConfigurer {
 
     /**
      * Registers a Saga with default configuration within this Configurer.
      *
      * @param sagaType the type of Saga
      * @param <T>      the type of Saga
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    default <T> EventProcessingConfigurer registerSaga(Class<T> sagaType) {
+    default <T> LegacyEventProcessingConfigurer registerSaga(Class<T> sagaType) {
         return registerSaga(sagaType, c -> {
         });
     }
@@ -74,25 +74,25 @@ public interface EventProcessingConfigurer {
      * @param <T>            The type of Saga to configure
      * @param sagaType       The type of Saga to configure
      * @param sagaConfigurer a function providing modifications on top of the default configuration
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    <T> EventProcessingConfigurer registerSaga(Class<T> sagaType, Consumer<SagaConfigurer<T>> sagaConfigurer);
+    <T> LegacyEventProcessingConfigurer registerSaga(Class<T> sagaType, Consumer<SagaConfigurer<T>> sagaConfigurer);
 
     /**
      * Registers a {@link Function} that builds a {@link SagaStore}.
      *
      * @param sagaStoreBuilder a {@link Function} that builds a {@link SagaStore}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerSagaStore(Function<LegacyConfiguration, SagaStore> sagaStoreBuilder);
+    LegacyEventProcessingConfigurer registerSagaStore(Function<LegacyConfiguration, SagaStore> sagaStoreBuilder);
 
     /**
      * Registers a {@link Function} that builds an Event Handler instance.
      *
      * @param eventHandlerBuilder a {@link Function} that builds an Event Handler instance
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerEventHandler(Function<LegacyConfiguration, Object> eventHandlerBuilder);
+    LegacyEventProcessingConfigurer registerEventHandler(Function<LegacyConfiguration, Object> eventHandlerBuilder);
 
     /**
      * Registers a {@link Function} that builds the default {@link ListenerInvocationErrorHandler}. Defaults to a
@@ -100,9 +100,9 @@ public interface EventProcessingConfigurer {
      *
      * @param listenerInvocationErrorHandlerBuilder a {@link Function} that builds the default
      *                                              {@link ListenerInvocationErrorHandler}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerDefaultListenerInvocationErrorHandler(
+    LegacyEventProcessingConfigurer registerDefaultListenerInvocationErrorHandler(
             Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder);
 
     /**
@@ -112,10 +112,10 @@ public interface EventProcessingConfigurer {
      * @param processingGroup                       a {@link String} specifying the name of a processing group
      * @param listenerInvocationErrorHandlerBuilder a {@link Function} that builds
      *                                              {@link ListenerInvocationErrorHandler}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerListenerInvocationErrorHandler(String processingGroup,
-                                                                     Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder);
+    LegacyEventProcessingConfigurer registerListenerInvocationErrorHandler(String processingGroup,
+                                                                           Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder);
 
     /**
      * Configures which {@link StreamableMessageSource} to use for Event Processors if none was explicitly
@@ -128,9 +128,9 @@ public interface EventProcessingConfigurer {
      * Processors are the default.
      *
      * @param defaultSource a Function that defines the Message source to use
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer configureDefaultStreamableMessageSource(
+    LegacyEventProcessingConfigurer configureDefaultStreamableMessageSource(
             Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource
     );
 
@@ -145,9 +145,9 @@ public interface EventProcessingConfigurer {
      * Processors are the default.
      *
      * @param defaultSource a Function that defines the Message source to use
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer configureDefaultSubscribableMessageSource(
+    LegacyEventProcessingConfigurer configureDefaultSubscribableMessageSource(
             Function<LegacyConfiguration, SubscribableMessageSource<EventMessage<?>>> defaultSource
     );
 
@@ -156,37 +156,37 @@ public interface EventProcessingConfigurer {
      * be used when there is no specific builder for given processor name.
      *
      * @param eventProcessorBuilder a {@link Function} that builds an {@link EventProcessor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerEventProcessorFactory(EventProcessorBuilder eventProcessorBuilder);
+    LegacyEventProcessingConfigurer registerEventProcessorFactory(EventProcessorBuilder eventProcessorBuilder);
 
     /**
      * Registers an {@link EventProcessorBuilder} for the given processor {@code name}.
      *
      * @param name                  a {@link String} specifying the name of the {@link EventProcessor} being registered
      * @param eventProcessorBuilder a {@link Function} that builds an {@link EventProcessor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerEventProcessor(String name, EventProcessorBuilder eventProcessorBuilder);
+    LegacyEventProcessingConfigurer registerEventProcessor(String name, EventProcessorBuilder eventProcessorBuilder);
 
     /**
      * Register a {@link Function} that builds a {@link TokenStore} for the given {@code processorName}.
      *
      * @param processorName     a {@link String} specifying the name of a event processor
      * @param tokenStoreBuilder a {@link Function} that builds a {@link TokenStore}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerTokenStore(String processorName,
-                                                 Function<LegacyConfiguration, TokenStore> tokenStoreBuilder);
+    LegacyEventProcessingConfigurer registerTokenStore(String processorName,
+                                                       Function<LegacyConfiguration, TokenStore> tokenStoreBuilder);
 
     /**
      * Register a {@link Function} that builds a {@link TokenStore} to use as the default in case no explicit token
      * store was configured for a processor.
      *
      * @param tokenStore a {@link Function} that builds a {@link TokenStore}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, TokenStore> tokenStore);
+    LegacyEventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, TokenStore> tokenStore);
 
     /**
      * Defaults Event Processors builders to use {@link org.axonframework.eventhandling.SubscribingEventProcessor}.
@@ -195,9 +195,9 @@ public interface EventProcessingConfigurer {
      * {@link StreamableMessageSource}, processors are Tracking by default. This method must be used to force the use of
      * Subscribing Processors, unless specifically overridden for individual processors.
      *
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer usingSubscribingEventProcessors();
+    LegacyEventProcessingConfigurer usingSubscribingEventProcessors();
 
     /**
      * Defaults Event Processors builders to use {@link PooledStreamingEventProcessor}.
@@ -206,9 +206,9 @@ public interface EventProcessingConfigurer {
      * {@code EventBus} is a {@link StreamableMessageSource}, processors are Tracking by default. This method must be
      * used to force the use of Pooled Streaming Processors, unless specifically overridden for individual processors.
      *
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer usingPooledStreamingEventProcessors();
+    LegacyEventProcessingConfigurer usingPooledStreamingEventProcessors();
 
     /**
      * Defaults Event Processors builders to construct a {@link PooledStreamingEventProcessor} using the
@@ -220,9 +220,9 @@ public interface EventProcessingConfigurer {
      *
      * @param pooledStreamingProcessorConfiguration configuration used when constructing every
      *                                              {@link PooledStreamingEventProcessor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer usingPooledStreamingEventProcessors(
+    default LegacyEventProcessingConfigurer usingPooledStreamingEventProcessors(
             PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     ) {
         return usingPooledStreamingEventProcessors()
@@ -235,9 +235,9 @@ public interface EventProcessingConfigurer {
      *
      * @param name a {@link String} specyfing the name of the
      *             {@link org.axonframework.eventhandling.SubscribingEventProcessor} being registered
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer registerSubscribingEventProcessor(String name) {
+    default LegacyEventProcessingConfigurer registerSubscribingEventProcessor(String name) {
         return registerSubscribingEventProcessor(name, LegacyConfiguration::eventBus);
     }
 
@@ -248,19 +248,19 @@ public interface EventProcessingConfigurer {
      * @param name          a {@link String} specyfing the name of the
      *                      {@link org.axonframework.eventhandling.SubscribingEventProcessor} being registered
      * @param messageSource a {@link Function} that builds a {@link SubscribableMessageSource}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerSubscribingEventProcessor(String name,
-                                                                Function<LegacyConfiguration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource);
+    LegacyEventProcessingConfigurer registerSubscribingEventProcessor(String name,
+                                                                      Function<LegacyConfiguration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource);
 
     /**
      * Registers a {@link Function} that builds the default {@link ErrorHandler}. Defaults to a
      * {@link org.axonframework.eventhandling.PropagatingErrorHandler}.
      *
      * @param errorHandlerBuilder a {@link Function} that builds an {@link ErrorHandler}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerDefaultErrorHandler(
+    LegacyEventProcessingConfigurer registerDefaultErrorHandler(
             Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder
     );
 
@@ -269,19 +269,19 @@ public interface EventProcessingConfigurer {
      *
      * @param eventProcessorName  a {@link String} specifying the name of an {@link EventProcessor}
      * @param errorHandlerBuilder a {@link Function} that builds an {@link ErrorHandler}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerErrorHandler(String eventProcessorName,
-                                                   Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder);
+    LegacyEventProcessingConfigurer registerErrorHandler(String eventProcessorName,
+                                                         Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder);
 
     /**
      * Registers the {@code processingGroup} name to assign Event Handler and Saga beans to when no other, more
      * explicit, rule matches and no {@link ProcessingGroup} annotation is found.
      *
      * @param processingGroup a {@link String} specifying the name of a processing group
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer byDefaultAssignTo(String processingGroup) {
+    default LegacyEventProcessingConfigurer byDefaultAssignTo(String processingGroup) {
         byDefaultAssignHandlerTypesTo(c -> processingGroup);
         return byDefaultAssignHandlerInstancesTo(o -> processingGroup);
     }
@@ -291,9 +291,9 @@ public interface EventProcessingConfigurer {
      * no other, more explicit, rule matches and no {@link ProcessingGroup} annotation is found.
      *
      * @param assignmentFunction a {@link Function} that returns the Processing Group for each Event Handler bean
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer byDefaultAssignHandlerInstancesTo(Function<Object, String> assignmentFunction);
+    LegacyEventProcessingConfigurer byDefaultAssignHandlerInstancesTo(Function<Object, String> assignmentFunction);
 
     /**
      * Registers a {@link Function} that defines the Event Processing Group name to assign Event Handler and Saga beans
@@ -301,9 +301,9 @@ public interface EventProcessingConfigurer {
      *
      * @param assignmentFunction a {@link Function} that returns the Processing Group for each Event Handler or Saga
      *                           bean
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer byDefaultAssignHandlerTypesTo(Function<Class<?>, String> assignmentFunction);
+    LegacyEventProcessingConfigurer byDefaultAssignHandlerTypesTo(Function<Class<?>, String> assignmentFunction);
 
     /**
      * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
@@ -315,10 +315,10 @@ public interface EventProcessingConfigurer {
      * @param processingGroup a {@link String} specifying the name of a processing group to assign matching Event
      *                        Handlers to
      * @param criteria        a {@link Predicate} defining the criteria for an Event Handler to match
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup,
-                                                                     Predicate<Object> criteria) {
+    default LegacyEventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup,
+                                                                           Predicate<Object> criteria) {
         return assignHandlerInstancesMatching(processingGroup, 0, criteria);
     }
 
@@ -332,9 +332,9 @@ public interface EventProcessingConfigurer {
      * @param processingGroup a {@link String} specifying the name of a processing group to assign matching Event
      *                        Handlers or Sagas to
      * @param criteria        a {@link Predicate} defining the criteria for an Event Handler or Saga to match
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer assignHandlerTypesMatching(String processingGroup, Predicate<Class<?>> criteria) {
+    default LegacyEventProcessingConfigurer assignHandlerTypesMatching(String processingGroup, Predicate<Class<?>> criteria) {
         return assignHandlerTypesMatching(processingGroup, 0, criteria);
     }
 
@@ -350,11 +350,11 @@ public interface EventProcessingConfigurer {
      *                        Handlers to
      * @param priority        The priority for this rule
      * @param criteria        a {@link Predicate} defining the criteria for an Event Handler to match
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup,
-                                                             int priority,
-                                                             Predicate<Object> criteria);
+    LegacyEventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup,
+                                                                   int priority,
+                                                                   Predicate<Object> criteria);
 
     /**
      * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
@@ -368,30 +368,30 @@ public interface EventProcessingConfigurer {
      *                        Handlers or Sagas to
      * @param priority        an {@code int} specifying the priority of this rule
      * @param criteria        a {@link Predicate} defining the criteria for an Event Handler or Saga to match
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer assignHandlerTypesMatching(String processingGroup,
-                                                         int priority,
-                                                         Predicate<Class<?>> criteria);
+    LegacyEventProcessingConfigurer assignHandlerTypesMatching(String processingGroup,
+                                                               int priority,
+                                                               Predicate<Class<?>> criteria);
 
     /**
      * Defines a mapping for assigning processing groups to processors.
      *
      * @param processingGroup a {@link String} specifying the processing group to be assigned
      * @param processorName   a {@link String} specifying the processor name to assign the group to
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer assignProcessingGroup(String processingGroup, String processorName);
+    LegacyEventProcessingConfigurer assignProcessingGroup(String processingGroup, String processorName);
 
     /**
      * Defines a rule for assigning processing groups to processors if processing group to processor name mapping does
      * not contain the entry.
      *
      * @param assignmentRule a {@link Function} which takes a processing group and returns a processor name
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      * @see #assignProcessingGroup(String, String)
      */
-    EventProcessingConfigurer assignProcessingGroup(Function<String, String> assignmentRule);
+    LegacyEventProcessingConfigurer assignProcessingGroup(Function<String, String> assignmentRule);
 
     /**
      * Register the given {@code interceptorBuilder} to build a {@link MessageHandlerInterceptor} for the
@@ -403,10 +403,10 @@ public interface EventProcessingConfigurer {
      *                           {@link MessageHandlerInterceptor} on
      * @param interceptorBuilder a {@link Function} providing the {@link MessageHandlerInterceptor} to register, or
      *                           {@code null}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerHandlerInterceptor(String processorName,
-                                                         Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder);
+    LegacyEventProcessingConfigurer registerHandlerInterceptor(String processorName,
+                                                               Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder);
 
     /**
      * Register the given {@code interceptorBuilder} as a default to build a {@link MessageHandlerInterceptor} for
@@ -417,9 +417,9 @@ public interface EventProcessingConfigurer {
      *
      * @param interceptorBuilder a builder {@link Function} that provides a {@link MessageHandlerInterceptor} for each
      *                           available processor
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerDefaultHandlerInterceptor(
+    LegacyEventProcessingConfigurer registerDefaultHandlerInterceptor(
             BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder
     );
 
@@ -430,10 +430,10 @@ public interface EventProcessingConfigurer {
      * @param processingGroup a {@link String} specifying the name of the processing group to assign the
      *                        {@link SequencingPolicy} for
      * @param policyBuilder   a builder {@link Function} to create the {@link SequencingPolicy} to use
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerSequencingPolicy(String processingGroup,
-                                                       Function<LegacyConfiguration, SequencingPolicy> policyBuilder);
+    LegacyEventProcessingConfigurer registerSequencingPolicy(String processingGroup,
+                                                             Function<LegacyConfiguration, SequencingPolicy> policyBuilder);
 
     /**
      * Registers the {@link SequencingPolicy} created by given {@code policyBuilder} to the processing groups for which
@@ -442,9 +442,9 @@ public interface EventProcessingConfigurer {
      * Defaults to a {@link SequentialPerAggregatePolicy}.
      *
      * @param policyBuilder a builder {@link Function} to create the {@link SequencingPolicy} to use
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerDefaultSequencingPolicy(
+    LegacyEventProcessingConfigurer registerDefaultSequencingPolicy(
             Function<LegacyConfiguration, SequencingPolicy> policyBuilder
     );
 
@@ -454,10 +454,10 @@ public interface EventProcessingConfigurer {
      *
      * @param eventProcessorName    a {@link String} specifying the name of an {@link EventProcessor}
      * @param messageMonitorBuilder a builder {@link Function} to create a {@link MessageMonitor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer registerMessageMonitor(String eventProcessorName,
-                                                             Function<LegacyConfiguration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+    default LegacyEventProcessingConfigurer registerMessageMonitor(String eventProcessorName,
+                                                                   Function<LegacyConfiguration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
         return registerMessageMonitorFactory(
                 eventProcessorName,
                 (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration)
@@ -470,40 +470,40 @@ public interface EventProcessingConfigurer {
      *
      * @param eventProcessorName    a {@link String} specifying the name of an {@link EventProcessor}
      * @param messageMonitorFactory a {@link MessageMonitorFactory} used to create a {@link MessageMonitor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerMessageMonitorFactory(String eventProcessorName,
-                                                            MessageMonitorFactory messageMonitorFactory);
+    LegacyEventProcessingConfigurer registerMessageMonitorFactory(String eventProcessorName,
+                                                                  MessageMonitorFactory messageMonitorFactory);
 
     /**
      * Registers a {@link TransactionManager} for a {@link EventProcessor} of the given {@code name}.
      *
      * @param name                      a {@link String} specifying the name of an {@link EventProcessor}
      * @param transactionManagerBuilder a {@link Function} that builds a {@link TransactionManager}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerTransactionManager(String name,
-                                                         Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder);
+    LegacyEventProcessingConfigurer registerTransactionManager(String name,
+                                                               Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder);
 
     /**
      * Registers a default {@link TransactionManager} for all {@link EventProcessor}s. The provided
      * {@code TransactionManager} is used whenever no processor specific {@code TransactionManager} is configured.
      *
      * @param transactionManagerBuilder a {@link Function} that builds a {@link TransactionManager}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerDefaultTransactionManager(
+    LegacyEventProcessingConfigurer registerDefaultTransactionManager(
             Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder
     );
 
     /**
-     * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
+     * Registers a {@link PooledStreamingEventProcessor} in this {@link LegacyEventProcessingConfigurer}. The processor will
      * receive the given {@code name}.
      *
      * @param name the name of the {@link PooledStreamingEventProcessor} being registered
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer registerPooledStreamingEventProcessor(String name) {
+    default LegacyEventProcessingConfigurer registerPooledStreamingEventProcessor(String name) {
         return registerPooledStreamingEventProcessor(name, c -> {
             EventBus eventBus = c.eventBus();
             if (!(eventBus instanceof StreamableMessageSource)) {
@@ -518,16 +518,16 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
+     * Registers a {@link PooledStreamingEventProcessor} in this {@link LegacyEventProcessingConfigurer}. The processor will
      * receive the given {@code name} and use the outcome of the {@code messageSource} as the
      * {@link StreamableMessageSource}.
      *
      * @param name          the name of the {@link PooledStreamingEventProcessor} being registered
      * @param messageSource constructs a {@link StreamableMessageSource} to be used by the
      *                      {@link PooledStreamingEventProcessor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer registerPooledStreamingEventProcessor(
+    default LegacyEventProcessingConfigurer registerPooledStreamingEventProcessor(
             String name,
             Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource
     ) {
@@ -535,7 +535,7 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
+     * Registers a {@link PooledStreamingEventProcessor} in this {@link LegacyEventProcessingConfigurer}. The processor will
      * receive the given {@code name}  and use the outcome of the {@code messageSource} as the
      * {@link StreamableMessageSource}.
      * <p>
@@ -550,9 +550,9 @@ public interface EventProcessingConfigurer {
      * @param processorConfiguration allows further customization of the {@link PooledStreamingEventProcessor} under
      *                               construction. The given {@link LegacyConfiguration} can be used to extract
      *                               components and use them in the {@link PooledStreamingEventProcessor.Builder}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerPooledStreamingEventProcessor(
+    LegacyEventProcessingConfigurer registerPooledStreamingEventProcessor(
             String name,
             Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource,
             PooledStreamingProcessorConfiguration processorConfiguration
@@ -564,9 +564,9 @@ public interface EventProcessingConfigurer {
      *
      * @param pooledStreamingProcessorConfiguration configuration used when constructing every
      *                                              {@link PooledStreamingEventProcessor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
+    LegacyEventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
             PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     );
 
@@ -577,9 +577,9 @@ public interface EventProcessingConfigurer {
      * @param name                                  the name of an {@link PooledStreamingEventProcessor}
      * @param pooledStreamingProcessorConfiguration configuration used when constructing a
      *                                              {@link PooledStreamingEventProcessor} with the given {@code name}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
+    LegacyEventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
             String name, PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     );
 
@@ -593,9 +593,9 @@ public interface EventProcessingConfigurer {
      * @param queueBuilder    A builder method returning a {@link SequencedDeadLetterQueue} based on a
      *                        {@link LegacyConfiguration}. The outcome is used by the given {@code processingGroup} to
      *                        enqueue and evaluate failed events in.
-     * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
+     * @return The current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing.
      */
-    default EventProcessingConfigurer registerDeadLetterQueue(
+    default LegacyEventProcessingConfigurer registerDeadLetterQueue(
             @Nonnull String processingGroup,
             @Nonnull Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>> queueBuilder
     ) {
@@ -612,9 +612,9 @@ public interface EventProcessingConfigurer {
      * queue.
      *
      * @param policyBuilder A builder method to construct a default {@link EnqueuePolicy dead letter policy}.
-     * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
+     * @return The current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing.
      */
-    default EventProcessingConfigurer registerDefaultDeadLetterPolicy(
+    default LegacyEventProcessingConfigurer registerDefaultDeadLetterPolicy(
             @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
         return this;
@@ -632,9 +632,9 @@ public interface EventProcessingConfigurer {
      * @param processingGroup The name of the processing group to build an {@link EnqueuePolicy} for.
      * @param policyBuilder   A builder method to construct a {@link EnqueuePolicy dead letter policy} for the given
      *                        {@code processingGroup}.
-     * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
+     * @return The current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing.
      */
-    default EventProcessingConfigurer registerDeadLetterPolicy(
+    default LegacyEventProcessingConfigurer registerDeadLetterPolicy(
             @Nonnull String processingGroup,
             @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
@@ -652,9 +652,9 @@ public interface EventProcessingConfigurer {
      *
      * @param processingGroup The name of the processing group to attach additional configuration too.
      * @param configuration   The additional configuration for the dead lettering processing group.
-     * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
+     * @return The current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing.
      */
-    default EventProcessingConfigurer registerDeadLetteringEventHandlerInvokerConfiguration(
+    default LegacyEventProcessingConfigurer registerDeadLetteringEventHandlerInvokerConfiguration(
             @Nonnull String processingGroup,
             @Nonnull DeadLetteringInvokerConfiguration configuration
     ) {
@@ -752,9 +752,9 @@ public interface EventProcessingConfigurer {
      *
      * @param deadLetterQueueProvider a builder {@link Function} that provides a {@link SequencedDeadLetterQueue} for a
      *                                processing group. It's possible to return null depending on the processing group.
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer registerDeadLetterQueueProvider(
+    default LegacyEventProcessingConfigurer registerDeadLetterQueueProvider(
             Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider) {
         return this;
     }
@@ -766,9 +766,9 @@ public interface EventProcessingConfigurer {
      *
      * @param builder a function that creates {@link SubscribableMessageSourceDefinition} for given processing group
      *                name.
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer usingSubscribingEventProcessors(
+    default LegacyEventProcessingConfigurer usingSubscribingEventProcessors(
             SubscribableMessageSourceDefinitionBuilder builder) {
         return this;
     }
