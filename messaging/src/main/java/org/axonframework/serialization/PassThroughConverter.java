@@ -18,20 +18,43 @@ package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 
 /**
- * A Converter implementation that only passes through values if the source and target types are the same. No conversion
- * is performed; otherwise, null is returned.
+ * A {@link Converter} implementation that only "passes through" input object if the {@code sourceType} and
+ * {@code targetType} are the identical.
+ * <p>
+ * As such, no conversion is performed by this {@code Converter}! The {@link #canConvert(Class, Class)} operation will
+ * <b>only</b> return {@code true} whenever both types are identical. Furthermore, both {@link #convert(Object, Class)}
+ * and {@link #convert(Object, Class, Class)} will expect identical typing too, otherwise resulting in an
+ * {@link IllegalArgumentException}.
+ * <p>
+ * As such, this {@code Converter} is only useful when conversion is not necessary (e.g. during testing) for the
+ * component at hand.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
- * TODO #3102 - Validate this Converter as part of #3102
  */
 public final class PassThroughConverter implements Converter {
+
+    /**
+     * The single instance of the {@code PassThroughConverter}.
+     */
+    public static final PassThroughConverter INSTANCE = new PassThroughConverter();
+
+    private PassThroughConverter() {
+        // Private constructor to enforce use of constant.
+    }
 
     @Override
     public boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType) {
         return sourceType.equals(targetType);
+    }
+
+    @Override
+    @Nullable
+    public <S, T> T convert(@Nullable S input, @Nonnull Class<T> targetType) {
+        return this.convert(input, ObjectUtils.nullSafeTypeOf(input), targetType);
     }
 
     @Override
@@ -44,7 +67,8 @@ public final class PassThroughConverter implements Converter {
             return targetType.cast(input);
         }
         throw new IllegalArgumentException(
-                "PassThroughConverter only supports conversion when source and target types are the same. Source: "
-                        + sourceType.getName() + ", Target: " + targetType.getName());
+                "This Converter only supports same-type conversion, while the unidentical source type ["
+                        + sourceType.getName() + "] and target type [" + targetType.getName() + "] have been given."
+        );
     }
 }
