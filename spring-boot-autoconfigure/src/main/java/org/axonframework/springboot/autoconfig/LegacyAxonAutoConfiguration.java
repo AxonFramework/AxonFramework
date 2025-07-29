@@ -69,7 +69,7 @@ import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.avro.AvroSerializer;
@@ -232,7 +232,7 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
                         ? objectMapperBeans.get("defaultAxonObjectMapper")
                         : objectMapperBeans.values().stream().findFirst()
                                            .orElseThrow(() -> new NoSuchBeanDefinitionException(ObjectMapper.class));
-                ChainingConverter converter = new ChainingConverter(beanClassLoader);
+                ChainingContentTypeConverter converter = new ChainingContentTypeConverter(beanClassLoader);
                 return JacksonSerializer.builder()
                                         .revisionResolver(revisionResolver)
                                         .converter(converter)
@@ -245,7 +245,7 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
                         ? cborMapperBeans.get("defaultAxonCborObjectMapper")
                         : cborMapperBeans.values().stream().findFirst()
                                          .orElseThrow(() -> new NoSuchBeanDefinitionException(CBORMapper.class));
-                ChainingConverter cborConverter = new ChainingConverter(beanClassLoader);
+                ChainingContentTypeConverter cborConverter = new ChainingContentTypeConverter(beanClassLoader);
                 return JacksonSerializer.builder()
                                         .revisionResolver(revisionResolver)
                                         .converter(cborConverter)

@@ -25,11 +25,13 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.SerializationException;
@@ -41,11 +43,9 @@ import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.UnknownSerializedType;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.lang.reflect.Type;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -71,13 +71,13 @@ public class JacksonSerializer implements Serializer {
      * Instantiate a Builder to be able to create a {@link JacksonSerializer}.
      * <p>
      * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
-     * {@link ChainingConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()} result and
-     * the {@link ClassLoader} to the ClassLoader of {@code this} class.
+     * {@link ChainingContentTypeConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()}
+     * result and the {@link ClassLoader} to the ClassLoader of {@code this} class.
      * <p>
      * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
      * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
-     * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
-     * {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
+     * ChainingContentTypeConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add
+     * the {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
      *
      * @return a Builder to be able to create a {@link JacksonSerializer}
      */
@@ -89,13 +89,13 @@ public class JacksonSerializer implements Serializer {
      * Instantiate a default {@link JacksonSerializer}.
      * <p>
      * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
-     * {@link ChainingConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()} result and
-     * the {@link ClassLoader} to the ClassLoader of {@code this} class.
+     * {@link ChainingContentTypeConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()}
+     * result and the {@link ClassLoader} to the ClassLoader of {@code this} class.
      * <p>
      * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
      * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
-     * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
-     * {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
+     * ChainingContentTypeConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add
+     * the {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
      *
      * @return a {@link JacksonSerializer}
      */
@@ -108,8 +108,8 @@ public class JacksonSerializer implements Serializer {
      * <p>
      * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
      * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
-     * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
-     * {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
+     * ChainingContentTypeConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add
+     * the {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link JacksonSerializer} instance
      */
@@ -123,8 +123,8 @@ public class JacksonSerializer implements Serializer {
                 new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer())
         );
         this.objectMapper.registerModule(new JavaTimeModule());
-        if (converter instanceof ChainingConverter) {
-            registerConverters((ChainingConverter) converter);
+        if (converter instanceof ChainingContentTypeConverter) {
+            registerConverters((ChainingContentTypeConverter) converter);
         }
         this.cacheUnknownClasses = builder.cacheUnknownClasses;
     }
@@ -133,9 +133,9 @@ public class JacksonSerializer implements Serializer {
      * Registers converters with the given {@code converter} which depend on the actual contents of the serialized form
      * to represent a JSON format.
      *
-     * @param converter The ChainingConverter instance to register the converters with.
+     * @param converter The ChainingContentTypeConverter instance to register the converters with.
      */
-    protected void registerConverters(ChainingConverter converter) {
+    protected void registerConverters(ChainingContentTypeConverter converter) {
         converter.registerConverter(new JsonNodeToByteArrayConverter(objectMapper));
         converter.registerConverter(new ByteArrayToJsonNodeConverter(objectMapper));
         converter.registerConverter(new JsonNodeToObjectNodeConverter());
@@ -308,18 +308,18 @@ public class JacksonSerializer implements Serializer {
      * Builder class to instantiate a {@link JacksonSerializer}.
      * <p>
      * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
-     * {@link ChainingConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()} result and
-     * the {@link ClassLoader} to the ClassLoader of {@code this} class.
+     * {@link ChainingContentTypeConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()}
+     * result and the {@link ClassLoader} to the ClassLoader of {@code this} class.
      * <p>
      * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
      * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
-     * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
-     * {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
+     * ChainingContentTypeConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add
+     * the {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
      */
     public static class Builder {
 
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
-        private Converter converter = new ChainingConverter();
+        private Converter converter = new ChainingContentTypeConverter();
         private ObjectMapper objectMapper = new ObjectMapper();
         private boolean lenientDeserialization = false;
         private boolean defaultTyping = false;
@@ -343,7 +343,7 @@ public class JacksonSerializer implements Serializer {
 
         /**
          * Sets the {@link Converter} used as a converter factory providing converter instances utilized by upcasters to
-         * convert between different content types. Defaults to a {@link ChainingConverter}.
+         * convert between different content types. Defaults to a {@link ChainingContentTypeConverter}.
          *
          * @param converter a {@link Converter} used as a converter factory providing converter instances utilized by
          *                  upcasters to convert between different content types

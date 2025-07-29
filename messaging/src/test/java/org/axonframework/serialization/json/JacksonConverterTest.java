@@ -21,12 +21,15 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.axonframework.common.TypeReference;
 import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.ConverterTestSuite;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.provider.*;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,6 +47,10 @@ import static org.mockito.Mockito.*;
 class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
+    private static final TypeReference<List<SomeInput>> SOME_INPUT_LIST_TYPE_REF = new TypeReference<>() {
+    };
+    private static final TypeReference<Map<String, SomeOtherInput>> SOME_OTHER_INPUT_MAP_TYPE_REF = new TypeReference<>() {
+    };
 
     @Override
     protected JacksonConverter buildConverter() {
@@ -56,12 +63,16 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
                 // Convert from concrete type:
                 arguments(SomeInput.class, JsonNode.class),
                 arguments(SomeInput.class, ObjectNode.class),
+                arguments(SOME_INPUT_LIST_TYPE_REF.getType(), JsonNode.class),
                 // Convert to concrete type:
                 arguments(JsonNode.class, SomeInput.class),
                 arguments(ObjectNode.class, SomeInput.class),
+                arguments(JsonNode.class, SOME_INPUT_LIST_TYPE_REF.getType()),
                 // Convert from another concrete type:
                 arguments(SomeOtherInput.class, JsonNode.class),
                 arguments(SomeOtherInput.class, ObjectNode.class),
+                arguments(SOME_OTHER_INPUT_MAP_TYPE_REF.getType(), ObjectNode.class),
+                arguments(ObjectNode.class, SOME_OTHER_INPUT_MAP_TYPE_REF.getType()),
                 // Intermediate conversion levels:
                 arguments(String.class, JsonNode.class),
                 arguments(JsonNode.class, String.class),
@@ -89,7 +100,9 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
 
     @Override
     protected Stream<Arguments> specificConversionScenarios() {
-        byte[] jsonCompliantBytes = null;
+        SomeInput someInput = new SomeInput("ID789", "JsonName", 1337);
+        SomeOtherInput someOtherInput = new SomeOtherInput("USR003", "Json description");
+        byte[] jsonCompliantBytes;
         try {
             jsonCompliantBytes = OBJECT_MAPPER.writeValueAsBytes("Lorem Ipsum");
         } catch (JsonProcessingException e) {
@@ -98,11 +111,14 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
         }
         ObjectNode objectNode = OBJECT_MAPPER.createObjectNode();
         objectNode.put("property", "value");
+
         return Stream.of(
-                arguments(new SomeInput("ID789", "JsonName", 1337), JsonNode.class, SomeInput.class),
-                arguments(new SomeOtherInput("USR003", "Json description"), JsonNode.class, SomeOtherInput.class),
-                arguments(jsonCompliantBytes, JsonNode.class, byte[].class),
-                arguments(objectNode, JsonNode.class, ObjectNode.class)
+                arguments(someInput, SomeInput.class, JsonNode.class),
+                arguments(someOtherInput, SomeOtherInput.class, JsonNode.class),
+                arguments(List.of(someInput), SOME_INPUT_LIST_TYPE_REF.getType(), JsonNode.class),
+                arguments(Map.of("USR003", someOtherInput), SOME_OTHER_INPUT_MAP_TYPE_REF.getType(), JsonNode.class),
+                arguments(jsonCompliantBytes, byte[].class, JsonNode.class),
+                arguments(objectNode, ObjectNode.class, JsonNode.class)
         );
     }
 
@@ -117,7 +133,7 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
 
         byte[] testInput = OBJECT_MAPPER.writeValueAsBytes(new SomeInput("id", "name", 42));
 
-        assertThatThrownBy(() -> failingTestSubject.convert(testInput, byte[].class, SomeInput.class))
+        assertThatThrownBy(() -> failingTestSubject.convert(testInput, SomeInput.class))
                 .isExactlyInstanceOf(ConversionException.class);
     }
 }

@@ -197,7 +197,7 @@ class JacksonSerializerTest {
     @Test
     void customObjectMapperRevisionResolverAndConverter() {
         RevisionResolver revisionResolver = spy(new AnnotationRevisionResolver());
-        ChainingConverter converter = spy(new ChainingConverter());
+        ChainingContentTypeConverter converter = spy(new ChainingContentTypeConverter());
         ObjectMapper objectMapper = spy(new ObjectMapper());
 
         testSubject = JacksonSerializer.builder()
@@ -233,7 +233,7 @@ class JacksonSerializerTest {
         SimpleSerializableType actual = testSubject.deserialize(serialized);
 
         assertNotNull(actual);
-        assertTrue(testSubject.getConverter() instanceof ChainingConverter);
+        assertTrue(testSubject.getConverter() instanceof ChainingContentTypeConverter);
         verify(objectMapper).readerFor(SimpleSerializableType.class);
         verify(objectMapper).writer();
         verify(revisionResolver).revisionOf(SimpleSerializableType.class);
@@ -252,7 +252,7 @@ class JacksonSerializerTest {
         SimpleSerializableType actual = testSubject.deserialize(serialized);
 
         assertNotNull(actual);
-        assertTrue(testSubject.getConverter() instanceof ChainingConverter);
+        assertTrue(testSubject.getConverter() instanceof ChainingContentTypeConverter);
         verify(objectMapper).readerFor(SimpleSerializableType.class);
         verify(objectMapper).writer();
     }
