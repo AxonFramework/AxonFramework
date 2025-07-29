@@ -21,12 +21,10 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DirectEventProcessingStrategy;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
@@ -40,7 +38,6 @@ import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvok
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventstreaming.LegacyStreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -54,7 +51,6 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.monitoring.MessageMonitor;
@@ -881,16 +877,17 @@ public class LegacyEventProcessingModule
     protected EventProcessor subscribingEventProcessor(String name,
                                                        EventHandlerInvoker eventHandlerInvoker,
                                                        SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
-        return SubscribingEventProcessor.builder()
-                                        .name(name)
-                                        .eventHandlerInvoker(eventHandlerInvoker)
-                                        .errorHandler(errorHandler(name))
-                                        .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
-                                        .messageSource(messageSource)
-                                        .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
-                                        .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
-                                        .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
-                                        .build();
+        return null;
+//        return SubscribingEventProcessor.builder()
+//                                        .name(name)
+//                                        .eventHandlerInvoker(eventHandlerInvoker)
+//                                        .errorHandler(errorHandler(name))
+//                                        .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
+//                                        .messageSource(messageSource)
+//                                        .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
+//                                        .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
+//                                        .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
+//                                        .build();
     }
 
     /**
@@ -910,34 +907,35 @@ public class LegacyEventProcessingModule
             StreamableMessageSource<TrackedEventMessage<?>> messageSource,
             PooledStreamingProcessorConfiguration processorConfiguration
     ) {
-        PooledStreamingEventProcessor.Builder builder =
-                PooledStreamingEventProcessor.builder()
-                                             .name(name)
-                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                             .errorHandler(errorHandler(name))
-                                             .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
-                                             .eventSource(new LegacyStreamableEventSource<>(messageSource))
-                                             .tokenStore(tokenStore(name))
-                                             .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
-                                             .coordinatorExecutor(processorName -> {
-                                                 ScheduledExecutorService coordinatorExecutor =
-                                                         defaultExecutor(1, "Coordinator[" + processorName + "]");
-                                                 config.onShutdown(coordinatorExecutor::shutdown);
-                                                 return coordinatorExecutor;
-                                             })
-                                             .workerExecutor(processorName -> {
-                                                 ScheduledExecutorService workerExecutor =
-                                                         defaultExecutor(4, "WorkPackage[" + processorName + "]");
-                                                 config.onShutdown(workerExecutor::shutdown);
-                                                 return workerExecutor;
-                                             })
-                                             .spanFactory(config.getComponent(EventProcessorSpanFactory.class));
-
-        return pooledStreamingProcessorConfig(CONFIGURED_DEFAULT_PSEP_CONFIG)
-                          .andThen(pooledStreamingProcessorConfig(name))
-                          .andThen(processorConfiguration)
-                          .apply(config, builder)
-                          .build();
+        return null;
+//        PooledStreamingEventProcessor.Builder builder =
+//                PooledStreamingEventProcessor.builder()
+//                                             .name(name)
+//                                             .eventHandlerInvoker(eventHandlerInvoker)
+//                                             .errorHandler(errorHandler(name))
+//                                             .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
+//                                             .eventSource(new LegacyStreamableEventSource<>(messageSource))
+//                                             .tokenStore(tokenStore(name))
+//                                             .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
+//                                             .coordinatorExecutor(processorName -> {
+//                                                 ScheduledExecutorService coordinatorExecutor =
+//                                                         defaultExecutor(1, "Coordinator[" + processorName + "]");
+//                                                 config.onShutdown(coordinatorExecutor::shutdown);
+//                                                 return coordinatorExecutor;
+//                                             })
+//                                             .workerExecutor(processorName -> {
+//                                                 ScheduledExecutorService workerExecutor =
+//                                                         defaultExecutor(4, "WorkPackage[" + processorName + "]");
+//                                                 config.onShutdown(workerExecutor::shutdown);
+//                                                 return workerExecutor;
+//                                             })
+//                                             .spanFactory(config.getComponent(EventProcessorSpanFactory.class));
+//
+//        return pooledStreamingProcessorConfig(CONFIGURED_DEFAULT_PSEP_CONFIG)
+//                          .andThen(pooledStreamingProcessorConfig(name))
+//                          .andThen(processorConfiguration)
+//                          .apply(config, builder)
+//                          .build();
     }
 
     private ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {

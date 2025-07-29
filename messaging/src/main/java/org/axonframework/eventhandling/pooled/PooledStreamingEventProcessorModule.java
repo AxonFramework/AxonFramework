@@ -22,33 +22,38 @@ import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
+import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 public class PooledStreamingEventProcessorModule
         extends BaseModule<PooledStreamingEventProcessorModule>
         implements EventProcessorModule,
-        EventProcessorModule.StreamingSourcePhase,
-        EventProcessorModule.EventHandlersPhase {
+        EventProcessorModule.StreamingSourcePhase<PooledStreamingEventProcessorsCustomization>,
+        EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorsCustomization>,
+        EventProcessorModule.EventHandlingComponentsPhase<PooledStreamingEventProcessorsCustomization>,
+        EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorsCustomization>,
+        EventProcessorModule.BuildPhase {
 
     private final String processorName;
-    private final Map<QualifiedName, ComponentBuilder<EventHandler>> handlerBuilders;
+    private final List<ComponentBuilder<EventHandlingComponent>> eventHandlingBuilders;
     private ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder;
+    private UnaryOperator<PooledStreamingEventProcessorsCustomization> customizationOverride = c -> c;
 
     // todo: defaults - should be configurable
     private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
@@ -57,29 +62,19 @@ public class PooledStreamingEventProcessorModule
     public PooledStreamingEventProcessorModule(@Nonnull String processorName) {
         super(processorName);
         this.processorName = processorName;
-        this.handlerBuilders = new HashMap<>();
+        this.eventHandlingBuilders = new ArrayList<>();
     }
 
     @Override
-    public EventHandlersPhase eventSource(
+    public EventHandlingPhase<PooledStreamingEventProcessorsCustomization> eventSource(
             @Nonnull ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder) {
         this.streamableEventSourceBuilder = streamableEventSourceBuilder;
         return this;
     }
 
     @Override
-    public EventHandlersPhase eventHandler(@Nonnull QualifiedName eventName,
-                                           @Nonnull ComponentBuilder<EventHandler> eventHandler) {
-        handlerBuilders.put(eventName, eventHandler);
-        return this;
-    }
-
-    @Override
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         // todo: move it to the component registry!
-        var eventHandlingComponent = new SimpleEventHandlingComponent();
-        handlerBuilders.forEach((key, value) -> eventHandlingComponent.subscribe(key, value.build(parent)));
-
         var eventSource = streamableEventSourceBuilder.build(parent);
 
         // todo: get from global configuration, but allow overriding
@@ -98,21 +93,32 @@ public class PooledStreamingEventProcessorModule
             return coordinatorExecutor;
         };
 
-        var eventProcessorsCustomization = parent.getComponent(PooledStreamingEventProcessorsCustomization.class); // todo: write customization here!
+        var eventProcessorsCustomization = customizationOverride.apply(
+                parent.getComponent(PooledStreamingEventProcessorsCustomization.class)
+        ); // todo: write customization here!
 
         var spanFactory = eventProcessorsCustomization.spanFactory();
         var messageMonitor = eventProcessorsCustomization.messageMonitor();
-        var decoratedEventHandlingComponent = new DefaultEventProcessorHandlingComponent(
-                spanFactory,
-                messageMonitor,
-                messageHandlerInterceptors,
-                eventHandlingComponent,
-                true
-        );
+
+        var eventHandlingComponents = eventHandlingBuilders.stream()
+                                                          .map(hb -> hb.build(parent))
+                                                          .toList();
+        List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
+                .stream()
+                .map(c -> new TracingEventHandlingComponent(
+                        (event) -> spanFactory.createProcessEventSpan(true, event),
+                        new MonitoringEventHandlingComponent(
+                                messageMonitor,
+                                new InterceptingEventHandlingComponent(
+                                        messageHandlerInterceptors,
+                                        c
+                                )
+                        )
+                )).collect(Collectors.toUnmodifiableList());
         var processor = new PooledStreamingEventProcessor(
                 processorName,
                 eventSource,
-                List.of(decoratedEventHandlingComponent),
+                decoratedEventHandlingComponents,
                 unitOfWorkFactory,
                 tokenStore,
                 coordinatorExecutorBuilder,
@@ -127,6 +133,35 @@ public class PooledStreamingEventProcessorModule
 
     private static ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {
         return Executors.newScheduledThreadPool(poolSize, new AxonThreadFactory(factoryName));
+    }
+
+    @Override
+    public EventHandlingPhase<PooledStreamingEventProcessorsCustomization> and() {
+        return this;
+    }
+
+    @Override
+    public EventHandlingComponentsPhase<PooledStreamingEventProcessorsCustomization> eventHandlingComponent(
+            @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder) {
+        eventHandlingBuilders.add(eventHandlingComponentBuilder);
+        return this;
+    }
+
+    @Override
+    public CustomizationPhase<PooledStreamingEventProcessorsCustomization> customization() {
+        return this;
+    }
+
+    @Override
+    public BuildPhase override(
+            @Nonnull UnaryOperator<PooledStreamingEventProcessorsCustomization> customizationOverride) {
+        this.customizationOverride = customizationOverride;
+        return this;
+    }
+
+    @Override
+    public BuildPhase defaults() {
+        return this;
     }
 
     @Override
