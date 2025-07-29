@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -40,10 +41,16 @@ class PooledStreamingEventProcessorModuleTest {
         eventSource.setOnOpen(() -> started.set(true));
         eventSource.setOnClose(() -> stopped.set(true));
 
+        var eventHandlingComponent1 = new SimpleEventHandlingComponent();
+        eventHandlingComponent1.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+        var eventHandlingComponent2 = new SimpleEventHandlingComponent();
+        eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         var module = EventProcessorModule.pooledStreaming("test-processor")
                                          .eventSource(c -> eventSource)
-                                         .eventHandler(new QualifiedName(String.class),
-                                                       c -> (event, context) -> MessageStream.empty())
+                                         .eventHandlingComponent(c -> eventHandlingComponent1)
+                                         .and()
+                                         .eventHandlingComponent(c -> eventHandlingComponent2)
+                                         .customization().defaults()
                                          .build();
 
         var configuration = MessagingConfigurer.create()

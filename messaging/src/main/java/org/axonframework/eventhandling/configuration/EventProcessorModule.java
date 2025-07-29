@@ -20,15 +20,16 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsCustomization;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
+import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorsCustomization;
 import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SubscribableMessageSource;
 
-import static java.util.Objects.requireNonNull;
+import java.util.function.UnaryOperator;
 
 /**
  * TBD
@@ -48,7 +49,7 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor processorName, must not be null or empty.
      * @return A builder phase to configure a subscribing event processor.
      */
-    static SubscribingSourcePhase subscribing(String processorName) {
+    static SubscribingSourcePhase<SubscribingEventProcessorsCustomization> subscribing(String processorName) {
         return new SubscribingEventProcessorModule(processorName);
     }
 
@@ -59,11 +60,11 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor name, must not be null or empty.
      * @return A builder phase to configure a pooled streaming event processor.
      */
-    static StreamingSourcePhase pooledStreaming(String processorName) {
+    static StreamingSourcePhase<PooledStreamingEventProcessorsCustomization> pooledStreaming(String processorName) {
         return new PooledStreamingEventProcessorModule(processorName);
     }
 
-    interface StreamingSourcePhase {
+    interface StreamingSourcePhase<T extends EventProcessorsCustomization> {
 
         /**
          * Specify the {@link StreamableEventSource} to use for this event processor.
@@ -71,11 +72,11 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
          * @param streamableEventSourceBuilder A builder for the {@link StreamableEventSource}.
          * @return A builder phase to configure the event processor.
          */
-        EventHandlersPhase eventSource(
+        EventHandlingPhase<T> eventSource(
                 @Nonnull ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder);
     }
 
-    interface SubscribingSourcePhase {
+    interface SubscribingSourcePhase<T extends EventProcessorsCustomization> {
 
         /**
          * Specify the {@link SubscribableMessageSource} to use for this event processor.
@@ -83,25 +84,37 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
          * @param subscribableMessageSourceBuilder A builder for the {@link SubscribableMessageSource}.
          * @return A builder phase to configure the event processor.
          */
-        EventHandlersPhase eventSource(
+        EventHandlingPhase<T> eventSource(
                 @Nonnull ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> subscribableMessageSourceBuilder);
     }
 
     // todo: all other components in default
-    interface EventHandlersPhase {
+    interface EventHandlingPhase<T extends EventProcessorsCustomization> {
 
-        default EventHandlersPhase eventHandler(@Nonnull QualifiedName eventName, @Nonnull EventHandler eventHandler) {
-            requireNonNull(eventName, "The event name cannot be null.");
-            requireNonNull(eventHandler, "The event handler cannot be null.");
-            return eventHandler(eventName, c -> eventHandler);
-        }
+        EventHandlingComponentsPhase<T> eventHandlingComponent(@Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder);
 
-        EventHandlersPhase eventHandler(@Nonnull QualifiedName eventName,
-                                        @Nonnull ComponentBuilder<EventHandler> eventHandler);
+    }
+
+    interface EventHandlingComponentsPhase<T extends EventProcessorsCustomization> {
+
+        EventHandlingPhase<T> and();
+
+        CustomizationPhase<T> customization();
+
+    }
+
+    interface CustomizationPhase<T extends EventProcessorsCustomization> {
+
+        BuildPhase defaults();
+
+        BuildPhase override(@Nonnull UnaryOperator<T> customizationOverride);
+
+    }
+
+    interface BuildPhase {
 
         EventProcessorModule build();
 
-        // EventHandlersPhase eventHandlingComponent(@Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder);
     }
 
 }
