@@ -72,6 +72,9 @@ public class ProcessorEventHandlingComponents {
      * Handles the given {@code event} within the given {@code context}.
      * <p>
      * The result of handling is an {@link MessageStream.Empty empty stream}.
+     * <p>
+     * Sequencing of event processing is not preserved between different event handling components. This is intentional,
+     * as they may have different sequencing policies.
      *
      * @param event   The event to handle.
      * @param context The context to the given {@code event} is handled in.
@@ -85,7 +88,7 @@ public class ProcessorEventHandlingComponents {
         for (var component : components) {
             if (component.supports(event.type().qualifiedName())) {
                 var componentResult = component.handle(event, context);
-                result = result.concatWith(componentResult); // todo: IS IT OK? DO we need any sequencing BETWEEN COMPONENTS? Now if async many components in the same time.
+                result = result.concatWith(componentResult);
             }
         }
         return result.ignoreEntries().cast();
