@@ -47,7 +47,6 @@ public class PooledStreamingEventProcessorModule
         EventProcessorModule.StreamingSourcePhase<PooledStreamingEventProcessorsCustomization>,
         EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorsCustomization>,
         EventProcessorModule.EventHandlingComponentsPhase<PooledStreamingEventProcessorsCustomization>,
-        EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorsCustomization>,
         EventProcessorModule.BuildPhase {
 
     private final String processorName;
@@ -101,8 +100,8 @@ public class PooledStreamingEventProcessorModule
         var messageMonitor = eventProcessorsCustomization.messageMonitor();
 
         var eventHandlingComponents = eventHandlingBuilders.stream()
-                                                          .map(hb -> hb.build(parent))
-                                                          .toList();
+                                                           .map(hb -> hb.build(parent))
+                                                           .toList();
         List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
                 .stream()
                 .map(c -> new TracingEventHandlingComponent(
@@ -136,31 +135,21 @@ public class PooledStreamingEventProcessorModule
     }
 
     @Override
-    public EventHandlingPhase<PooledStreamingEventProcessorsCustomization> and() {
-        return this;
-    }
-
-    @Override
-    public EventHandlingComponentsPhase<PooledStreamingEventProcessorsCustomization> eventHandlingComponent(
+    public EventHandlingComponentsPhase<PooledStreamingEventProcessorsCustomization> component(
             @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder) {
         eventHandlingBuilders.add(eventHandlingComponentBuilder);
         return this;
     }
 
     @Override
-    public CustomizationPhase<PooledStreamingEventProcessorsCustomization> customization() {
+    public EventHandlingComponentsPhase<PooledStreamingEventProcessorsCustomization> eventHandling() {
         return this;
     }
 
     @Override
-    public BuildPhase override(
-            @Nonnull UnaryOperator<PooledStreamingEventProcessorsCustomization> customizationOverride) {
-        this.customizationOverride = customizationOverride;
-        return this;
-    }
-
-    @Override
-    public BuildPhase defaults() {
+    public BuildPhase customized(
+            @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorsCustomization>> customizationOverride) {
+        this.customizationOverride = customizationOverride.build(null);
         return this;
     }
 

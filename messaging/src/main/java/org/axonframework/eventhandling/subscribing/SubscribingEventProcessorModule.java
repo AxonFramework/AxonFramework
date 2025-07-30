@@ -42,7 +42,6 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         EventProcessorModule.SubscribingSourcePhase<SubscribingEventProcessorsCustomization>,
         EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorsCustomization>,
         EventProcessorModule.EventHandlingComponentsPhase<SubscribingEventProcessorsCustomization>,
-        EventProcessorModule.CustomizationPhase<SubscribingEventProcessorsCustomization>,
         EventProcessorModule.BuildPhase {
 
     private final String processorName;
@@ -68,7 +67,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
     @Override
-    public EventHandlingComponentsPhase<SubscribingEventProcessorsCustomization> eventHandlingComponent(
+    public EventHandlingComponentsPhase<SubscribingEventProcessorsCustomization> component(
             @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder) {
         eventHandlingBuilders.add(eventHandlingComponentBuilder);
         return this;
@@ -114,24 +113,16 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         return super.build(parent, lifecycleRegistry);
     }
 
+
     @Override
-    public BuildPhase defaults() {
+    public BuildPhase customized(
+            @Nonnull ComponentBuilder<UnaryOperator<SubscribingEventProcessorsCustomization>> customizationOverride) {
+        this.customizationOverride = customizationOverride.build(null);
         return this;
     }
 
     @Override
-    public BuildPhase override(@Nonnull UnaryOperator<SubscribingEventProcessorsCustomization> customizationOverride) {
-        this.customizationOverride = customizationOverride;
-        return this;
-    }
-
-    @Override
-    public EventHandlingPhase<SubscribingEventProcessorsCustomization> and() {
-        return this;
-    }
-
-    @Override
-    public CustomizationPhase<SubscribingEventProcessorsCustomization> customization() {
+    public EventHandlingComponentsPhase<SubscribingEventProcessorsCustomization> eventHandling() {
         return this;
     }
 

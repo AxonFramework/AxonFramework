@@ -88,33 +88,23 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
                 @Nonnull ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> subscribableMessageSourceBuilder);
     }
 
-    // todo: all other components in default
     interface EventHandlingPhase<T extends EventProcessorsCustomization> {
 
-        EventHandlingComponentsPhase<T> eventHandlingComponent(@Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder);
-
+        EventHandlingComponentsPhase<T> eventHandling();
     }
 
     interface EventHandlingComponentsPhase<T extends EventProcessorsCustomization> {
 
-        EventHandlingPhase<T> and();
+        EventHandlingComponentsPhase<T> component(
+                @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder);
 
-        CustomizationPhase<T> customization();
+        BuildPhase customized(@Nonnull ComponentBuilder<UnaryOperator<T>> customizationOverride);
 
-    }
-
-    interface CustomizationPhase<T extends EventProcessorsCustomization> {
-
-        BuildPhase defaults();
-
-        BuildPhase override(@Nonnull UnaryOperator<T> customizationOverride);
-
+        EventProcessorModule build();
     }
 
     interface BuildPhase {
 
         EventProcessorModule build();
-
     }
-
 }
