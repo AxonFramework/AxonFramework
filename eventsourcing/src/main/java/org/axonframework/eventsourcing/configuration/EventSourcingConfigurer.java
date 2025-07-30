@@ -34,6 +34,7 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 
@@ -108,7 +109,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      *
      * @param delegate The delegate {@code ModellingConfigurer} the {@code EventSourcingConfigurer} is based on.
      */
-    public EventSourcingConfigurer(@Nonnull ModellingConfigurer delegate) {
+    private EventSourcingConfigurer(@Nonnull ModellingConfigurer delegate) {
         Objects.requireNonNull(delegate, "The delegate ModellingConfigurer may not be null.");
         this.delegate = delegate;
     }
@@ -173,7 +174,13 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerEventStore(@Nonnull ComponentBuilder<EventStore> eventStoreFactory) {
-        delegate.componentRegistry(cr -> cr.registerComponent(EventStore.class, eventStoreFactory));
+        delegate.componentRegistry(cr -> cr.registerComponent(EventStore.class, (config) -> {
+            var eventStore = eventStoreFactory.build(config);
+            if (eventStore instanceof StreamableEventSource<?> streamableEventSource) {
+                cr.registerComponent(StreamableEventSource.class, (c) -> streamableEventSource);
+            }
+            return eventStore;
+        }));
         return this;
     }
 

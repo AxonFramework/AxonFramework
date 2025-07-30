@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * Abstract Builder class to instantiate an {@link EventProcessor} implementation.
@@ -45,10 +44,9 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @author Rene de Waele
  * @since 3.0
  */
-public abstract class EventProcessorBuilder {
+public class EventProcessorConfiguration {
 
-    protected String name;
-    private EventHandlingComponent eventHandlingComponent;
+    protected List<EventHandlingComponent> eventHandlingComponents;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
     protected MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
@@ -57,16 +55,19 @@ public abstract class EventProcessorBuilder {
     private List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory();
 
-    /**
-     * Sets the {@code name} of this {@link EventProcessor} implementation.
-     *
-     * @param name a {@link String} defining this {@link EventProcessor} implementation
-     * @return the current Builder instance, for fluent interfacing
-     */
-    public EventProcessorBuilder name(@Nonnull String name) {
-        assertEventProcessorName(name, "The EventProcessor name may not be null or empty");
-        this.name = name;
-        return this;
+    public EventProcessorConfiguration() {
+        super();
+    }
+
+    public EventProcessorConfiguration(EventProcessorConfiguration base) {
+        Objects.requireNonNull(base, "Base configuration may not be null");
+        assertNonNull(base, "Base configuration may not be null");
+        this.eventHandlingComponents = base.eventHandlingComponents();
+        this.errorHandler = base.errorHandler();
+        this.messageMonitor = base.messageMonitor();
+        this.spanFactory = base.spanFactory();
+        this.interceptors = base.interceptors();
+        this.unitOfWorkFactory = base.unitOfWorkFactory();
     }
 
     /**
@@ -75,24 +76,25 @@ public abstract class EventProcessorBuilder {
      * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
      *                            {@link EventMessage}s
      * @return the current Builder instance, for fluent interfacing
-     * @deprecated in favor of {@link #eventHandlingComponent(EventHandlingComponent)}
+     * @deprecated in favor of {@link #eventHandlingComponents(List)}
      */
     @Deprecated(since = "5.0.0", forRemoval = true)
-    public EventProcessorBuilder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
+    public EventProcessorConfiguration eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
         assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
-        return eventHandlingComponent(new LegacyEventHandlingComponent(eventHandlerInvoker));
+        return eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)));
     }
 
     /**
      * Sets the {@link EventHandlingComponent} which will handle all the individual {@link EventMessage}s.
      *
-     * @param eventHandlingComponent the {@link EventHandlingComponent} which will handle all the individual
-     *                               {@link EventMessage}s
+     * @param eventHandlingComponents the {@link EventHandlingComponent} which will handle all the individual
+     *                                {@link EventMessage}s
      * @return the current Builder instance, for fluent interfacing
      */
-    public EventProcessorBuilder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
-        assertNonNull(eventHandlingComponent, "EventHandlingComponent may not be null");
-        this.eventHandlingComponent = eventHandlingComponent;
+    public EventProcessorConfiguration eventHandlingComponents(
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents) {
+        assertNonNull(eventHandlingComponents, "EventHandlingComponents may not be null");
+        this.eventHandlingComponents = eventHandlingComponents;
         return this;
     }
 
@@ -104,7 +106,7 @@ public abstract class EventProcessorBuilder {
      *                     processing
      * @return the current Builder instance, for fluent interfacing
      */
-    public EventProcessorBuilder errorHandler(@Nonnull ErrorHandler errorHandler) {
+    public EventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
         assertNonNull(errorHandler, "ErrorHandler may not be null");
         this.errorHandler = errorHandler;
         return this;
@@ -118,7 +120,7 @@ public abstract class EventProcessorBuilder {
      *                       processed
      * @return the current Builder instance, for fluent interfacing
      */
-    public EventProcessorBuilder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
+    public EventProcessorConfiguration messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
         assertNonNull(messageMonitor, "MessageMonitor may not be null");
         this.messageMonitor = messageMonitor;
         return this;
@@ -133,28 +135,29 @@ public abstract class EventProcessorBuilder {
      * @return The current Builder instance, for fluent interfacing.
      */
     @Deprecated(since = "5.0.0", forRemoval = true)
-    public EventProcessorBuilder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
+    public EventProcessorConfiguration spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
         assertNonNull(spanFactory, "SpanFactory may not be null");
         this.spanFactory = spanFactory;
         return this;
     }
 
     @Deprecated(since = "5.0.0", forRemoval = true)
-    public EventProcessorBuilder interceptors(@Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+    public EventProcessorConfiguration interceptors(
+            @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
         assertNonNull(spanFactory, "interceptors may not be null");
         this.interceptors = interceptors;
         return this;
     }
 
     /**
-     * A {@link UnitOfWorkFactory} that spawns {@link org.axonframework.messaging.unitofwork.UnitOfWork} used to
-     * process an events batch.
+     * A {@link UnitOfWorkFactory} that spawns {@link org.axonframework.messaging.unitofwork.UnitOfWork} used to process
+     * an events batch.
      *
      * @param unitOfWorkFactory A {@link UnitOfWorkFactory} that spawns
      *                          {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
      * @return The current Builder instance, for fluent interfacing.
      */
-    public EventProcessorBuilder unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+    public EventProcessorConfiguration unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
         assertNonNull(unitOfWorkFactory, "UnitOfWorkFactory may not be null");
         this.unitOfWorkFactory = unitOfWorkFactory;
         return this;
@@ -167,21 +170,8 @@ public abstract class EventProcessorBuilder {
      *                                    specifications
      */
     protected void validate() throws AxonConfigurationException {
-        assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
-        assertNonNull(eventHandlingComponent, "The EventHandlingComponent is a hard requirement and should be provided");
-    }
-
-    private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
-        assertThat(eventProcessorName, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
-    }
-
-    /**
-     * Returns the name of this {@link EventProcessor} implementation.
-     *
-     * @return The {@link String} defining this {@link EventProcessor} implementation's name.
-     */
-    public String name() {
-        return name;
+        assertNonNull(eventHandlingComponents,
+                      "The EventHandlingComponent is a hard requirement and should be provided");
     }
 
     /**
@@ -216,8 +206,8 @@ public abstract class EventProcessorBuilder {
      *
      * @return The {@link EventHandlingComponent} for this {@link EventProcessor} implementation.
      */
-    public EventHandlingComponent eventHandlingComponent() {
-        return eventHandlingComponent;
+    public List<EventHandlingComponent> eventHandlingComponents() {
+        return eventHandlingComponents;
     }
 
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors() {

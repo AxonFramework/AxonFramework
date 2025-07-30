@@ -28,7 +28,7 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsCustomization;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
@@ -191,23 +191,25 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         eventSource = new AsyncInMemoryStreamableEventSource();
         var interceptors = new MessageHandlerInterceptors();
-        var customization = new PooledStreamingEventProcessorsCustomization();
+        var configuration = new PooledStreamingEventProcessorConfiguration()
+                .eventSource(eventSource)
+                .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager))
+                .tokenStore(new InMemoryTokenStore())
+                .coordinatorExecutor(ignored -> Executors.newSingleThreadScheduledExecutor())
+                .workerExecutor(ignored -> Executors.newSingleThreadScheduledExecutor())
+                .initialSegmentCount(1)
+                .claimExtensionThreshold(1000);
         var eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
-                customization.spanFactory(),
-                customization.messageMonitor(),
+                configuration.spanFactory(),
+                configuration.messageMonitor(),
                 interceptors,
                 new LegacyEventHandlingComponent(deadLetteringInvoker),
                 true
         );
+        configuration.eventHandlingComponents(List.of(eventHandlingComponent));
         streamingProcessor = new PooledStreamingEventProcessor(
                 PROCESSING_GROUP,
-                eventSource,
-                List.of(eventHandlingComponent),
-                new TransactionalUnitOfWorkFactory(transactionManager),
-                new InMemoryTokenStore(),
-                ignored -> Executors.newSingleThreadScheduledExecutor(),
-                ignored -> Executors.newSingleThreadScheduledExecutor(),
-                customization.initialSegmentCount(1).claimExtensionThreshold(1000)
+                configuration
         );
         executor = Executors.newScheduledThreadPool(2);
     }

@@ -25,10 +25,11 @@ import org.axonframework.eventhandling.DomainEventTestUtils;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
@@ -57,14 +58,16 @@ class SubscribingEventProcessorTest {
 
     private SubscribingEventProcessor withTestSubject(
             List<EventHandlingComponent> eventHandlingComponents,
-            UnaryOperator<SubscribingEventProcessor.Customization> configOverride
+            UnaryOperator<SubscribingEventProcessorConfiguration> customization
     ) {
+        var configuration = new SubscribingEventProcessorConfiguration()
+                .messageSource(eventBus)
+                .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                .eventHandlingComponents(eventHandlingComponents);
+        var customized = customization.apply(configuration);
         var processor = new SubscribingEventProcessor(
                 "test",
-                eventBus,
-                eventHandlingComponents,
-                new TransactionalUnitOfWorkFactory(transactionManager),
-                configOverride
+                customized
         );
         this.testSubject = processor;
         return processor;
@@ -126,7 +129,7 @@ class SubscribingEventProcessorTest {
 
     @Test
     void buildWithNullUnitOfWorkFactoryThrowsAxonConfigurationException() {
-        SubscribingEventProcessor.Builder builder = SubscribingEventProcessor.builder();
+        SubscribingEventProcessorConfiguration builder = new SubscribingEventProcessorConfiguration();
 
         assertThrows(AxonConfigurationException.class, () -> builder.unitOfWorkFactory(null));
     }

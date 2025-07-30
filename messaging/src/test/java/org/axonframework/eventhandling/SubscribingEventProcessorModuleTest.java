@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,9 +41,10 @@ class SubscribingEventProcessorModuleTest {
 
         var eventHandlingComponent = new SimpleEventHandlingComponent();
         EventProcessorModule module = EventProcessorModule.subscribing("test-processor")
-                                                          .eventSource(cfg -> messageSource)
-                                                          .eventHandling()
-                                                          .component(cfg -> eventHandlingComponent)
+                                                          .customize(cfg -> customization -> customization
+                                                                  .messageSource(messageSource)
+                                                                  .eventHandlingComponents(List.of(eventHandlingComponent))
+                                                          )
                                                           .build();
 
         var configuration = MessagingConfigurer.create()

@@ -30,6 +30,7 @@ import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
@@ -78,6 +79,9 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
 
         Optional<Snapshotter> snapshotter = result.getOptionalComponent(Snapshotter.class);
         assertTrue(snapshotter.isPresent());
+
+        var eventSource = result.getOptionalComponent(StreamableEventSource.class);
+        assertTrue(eventSource.isPresent());
     }
 
     @Test

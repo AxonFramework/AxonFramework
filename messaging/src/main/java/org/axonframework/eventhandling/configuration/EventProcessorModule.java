@@ -20,14 +20,10 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsCustomization;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
-import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorsCustomization;
-import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.function.UnaryOperator;
 
@@ -49,7 +45,7 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor processorName, must not be null or empty.
      * @return A builder phase to configure a subscribing event processor.
      */
-    static SubscribingSourcePhase<SubscribingEventProcessorsCustomization> subscribing(String processorName) {
+    static CustomizationPhase<SubscribingEventProcessorConfiguration> subscribing(String processorName) {
         return new SubscribingEventProcessorModule(processorName);
     }
 
@@ -60,51 +56,16 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor name, must not be null or empty.
      * @return A builder phase to configure a pooled streaming event processor.
      */
-    static StreamingSourcePhase<PooledStreamingEventProcessorsCustomization> pooledStreaming(String processorName) {
+    static CustomizationPhase<PooledStreamingEventProcessorConfiguration> pooledStreaming(
+            String processorName) {
         return new PooledStreamingEventProcessorModule(processorName);
     }
 
-    interface StreamingSourcePhase<T extends EventProcessorsCustomization> {
+    interface CustomizationPhase<T> {
 
-        /**
-         * Specify the {@link StreamableEventSource} to use for this event processor.
-         *
-         * @param streamableEventSourceBuilder A builder for the {@link StreamableEventSource}.
-         * @return A builder phase to configure the event processor.
-         */
-        EventHandlingPhase<T> eventSource(
-                @Nonnull ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder);
+        EventProcessorModule configure(@Nonnull ComponentBuilder<T> configurationBuilder);
+
+        EventProcessorModule customize(@Nonnull ComponentBuilder<UnaryOperator<T>> customizationBuilder);
     }
 
-    interface SubscribingSourcePhase<T extends EventProcessorsCustomization> {
-
-        /**
-         * Specify the {@link SubscribableMessageSource} to use for this event processor.
-         *
-         * @param subscribableMessageSourceBuilder A builder for the {@link SubscribableMessageSource}.
-         * @return A builder phase to configure the event processor.
-         */
-        EventHandlingPhase<T> eventSource(
-                @Nonnull ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> subscribableMessageSourceBuilder);
-    }
-
-    interface EventHandlingPhase<T extends EventProcessorsCustomization> {
-
-        EventHandlingComponentsPhase<T> eventHandling();
-    }
-
-    interface EventHandlingComponentsPhase<T extends EventProcessorsCustomization> {
-
-        EventHandlingComponentsPhase<T> component(
-                @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder);
-
-        BuildPhase customized(@Nonnull ComponentBuilder<UnaryOperator<T>> customizationOverride);
-
-        EventProcessorModule build();
-    }
-
-    interface BuildPhase {
-
-        EventProcessorModule build();
-    }
 }
