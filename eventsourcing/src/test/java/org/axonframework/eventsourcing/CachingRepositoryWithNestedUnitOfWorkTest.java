@@ -134,10 +134,9 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         SubscribingEventProcessor eventProcessor =
                 new SubscribingEventProcessor(
                         "test",
-                        eventStore,
-                        List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                        new SimpleUnitOfWorkFactory(),
-                        c -> c
+                        cfg -> cfg.messageSource(eventStore)
+                                  .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                                  .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
                 );
         eventProcessor.start();
         events.clear();
@@ -203,10 +202,9 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         SubscribingEventProcessor eventProcessor =
                 new SubscribingEventProcessor(
                         "test",
-                        eventStore,
-                        List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                        new SimpleUnitOfWorkFactory(),
-                        c -> c
+                        cfg -> cfg.messageSource(eventStore)
+                                  .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                                  .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
                 );
         eventProcessor.start();
 
@@ -250,10 +248,9 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         SubscribingEventProcessor eventProcessor =
                 new SubscribingEventProcessor(
                         "test",
-                        eventStore,
-                        List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                        new SimpleUnitOfWorkFactory(),
-                        c -> c
+                        cfg -> cfg.messageSource(eventStore)
+                                  .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                                  .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
                 );
         eventProcessor.start();
 
