@@ -121,7 +121,7 @@ class DeadlineJobDataBinderTest {
         assertEquals(testDeadlineMessage.getDeadlineName(), result.getDeadlineName());
         assertEquals(testDeadlineMessage.identifier(), result.identifier());
         assertEquals(testDeadlineMessage.getTimestamp(), result.getTimestamp());
-        assertEquals(testDeadlineMessage.getPayload(), result.getPayload());
+        assertEquals(testDeadlineMessage.payload(), result.payload());
         assertEquals(testDeadlineMessage.getPayloadType(), result.getPayloadType());
         assertEquals(testDeadlineMessage.getMetaData(), result.getMetaData());
 

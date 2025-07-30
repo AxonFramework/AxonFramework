@@ -42,7 +42,7 @@ class AsynchronousEventProcessorConcurrencyTest {
     @BeforeEach
     void setUp() {
         executor = Executors.newCachedThreadPool();
-        testSubject = new AsynchronousEventProcessingStrategy(executor, e -> Optional.of(e.getPayload()));
+        testSubject = new AsynchronousEventProcessingStrategy(executor, e -> Optional.of(e.payload()));
     }
 
     @Test

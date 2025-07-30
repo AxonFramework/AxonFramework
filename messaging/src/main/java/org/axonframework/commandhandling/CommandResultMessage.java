@@ -25,7 +25,7 @@ import java.util.function.Function;
 /**
  * A {@link ResultMessage} that represents a result from handling a {@link CommandMessage}.
  *
- * @param <R> The type of {@link #getPayload() result} contained in this {@link CommandResultMessage}.
+ * @param <R> The type of {@link #payload() result} contained in this {@link CommandResultMessage}.
  * @author Milan Savic
  * @since 4.0.0
  */

@@ -111,7 +111,7 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public R getPayload() {
+    public R payload() {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
                     "This result completed exceptionally, payload is not available. "

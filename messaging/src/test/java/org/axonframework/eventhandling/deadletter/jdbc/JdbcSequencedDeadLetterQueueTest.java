@@ -178,7 +178,7 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
                                 DeadLetter<? extends EventMessage<?>> actual) {
         EventMessage<?> expectedMessage = expected.message();
         EventMessage<?> actualMessage = actual.message();
-        assertEquals(expectedMessage.getPayload(), actualMessage.getPayload());
+        assertEquals(expectedMessage.payload(), actualMessage.payload());
         assertEquals(expectedMessage.getPayloadType(), actualMessage.getPayloadType());
         assertEquals(expectedMessage.getMetaData(), actualMessage.getMetaData());
         assertEquals(expectedMessage.identifier(), actualMessage.identifier());

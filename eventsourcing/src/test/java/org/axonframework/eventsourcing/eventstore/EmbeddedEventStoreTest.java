@@ -135,7 +135,7 @@ public abstract class EmbeddedEventStoreTest {
         assertTrue(stream.hasNextAvailable());
         TrackedEventMessage<?> actual = stream.nextAvailable();
         assertEquals(expected.identifier(), actual.identifier());
-        assertEquals(expected.getPayload(), actual.getPayload());
+        assertEquals(expected.payload(), actual.payload());
         assertTrue(actual instanceof DomainEventMessage<?>);
         assertEquals(expected.getAggregateIdentifier(), ((DomainEventMessage<?>) actual).getAggregateIdentifier());
     }

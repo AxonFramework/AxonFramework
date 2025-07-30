@@ -134,7 +134,7 @@ class PolymorphicEntityMetamodelTest {
                                                                                             entity,
                                                                                             context);
 
-        assertEquals("concrete-one", result.first().asCompletableFuture().join().message().getPayload());
+        assertEquals("concrete-one", result.first().asCompletableFuture().join().message().payload());
         verify(concreteTestEntityOneEntityMetamodel, times(1)).handleInstance(eq(commandMessage), any(), eq(context));
         verify(concreteTestEntityOneEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
         verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
@@ -151,7 +151,7 @@ class PolymorphicEntityMetamodelTest {
         ProcessingContext context = new StubProcessingContext();
         MessageStream<CommandResultMessage<?>> result = polymorphicMetamodel.handleCreate(commandMessage, context);
 
-        assertEquals("concrete-one-create", result.first().asCompletableFuture().join().message().getPayload());
+        assertEquals("concrete-one-create", result.first().asCompletableFuture().join().message().payload());
         verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
         verify(concreteTestEntityOneEntityMetamodel, times(1)).handleCreate(eq(commandMessage), eq(context));
         verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
@@ -172,7 +172,7 @@ class PolymorphicEntityMetamodelTest {
                                                                                             entity,
                                                                                             context);
 
-        assertEquals("concrete-two", result.first().asCompletableFuture().join().message().getPayload());
+        assertEquals("concrete-two", result.first().asCompletableFuture().join().message().payload());
         verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
         verify(concreteTestEntityOneEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
         verify(concreteTestEntityTwoEntityMetamodel, times(1)).handleInstance(eq(commandMessage), any(), eq(context));
@@ -189,7 +189,7 @@ class PolymorphicEntityMetamodelTest {
         ProcessingContext context = new StubProcessingContext();
         MessageStream<CommandResultMessage<?>> result = polymorphicMetamodel.handleCreate(commandMessage, context);
 
-        assertEquals("concrete-two-create", result.first().asCompletableFuture().join().message().getPayload());
+        assertEquals("concrete-two-create", result.first().asCompletableFuture().join().message().payload());
         verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
         verify(concreteTestEntityOneEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
         verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
@@ -209,7 +209,7 @@ class PolymorphicEntityMetamodelTest {
                                                                                             entity,
                                                                                             context);
 
-        assertEquals("super-type", result.first().asCompletableFuture().join().message().getPayload());
+        assertEquals("super-type", result.first().asCompletableFuture().join().message().payload());
         verify(entityInstanceCommandHandler).handle(eq(commandMessage), same(entity), eq(context));
         verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
         verify(concreteTestEntityOneEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
@@ -227,7 +227,7 @@ class PolymorphicEntityMetamodelTest {
         ProcessingContext context = new StubProcessingContext();
         MessageStream<CommandResultMessage<?>> result = polymorphicMetamodel.handleCreate(commandMessage, context);
 
-        assertEquals("super-type-create", result.first().asCompletableFuture().join().message().getPayload());
+        assertEquals("super-type-create", result.first().asCompletableFuture().join().message().payload());
         verify(entityCreationalCommandHandler).handle(eq(commandMessage), eq(context));
         verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
         verify(concreteTestEntityOneEntityMetamodel, times(0)).handleCreate(eq(commandMessage), eq(context));
@@ -248,7 +248,7 @@ class PolymorphicEntityMetamodelTest {
                                                                                             entity,
                                                                                             context);
 
-        assertEquals("super-type", result.first().asCompletableFuture().join().message().getPayload());
+        assertEquals("super-type", result.first().asCompletableFuture().join().message().payload());
         verify(entityInstanceCommandHandler).handle(eq(commandMessage), same(entity), eq(context));
         verify(concreteTestEntityOneEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));
         verify(concreteTestEntityTwoEntityMetamodel, times(0)).handleInstance(eq(commandMessage), any(), eq(context));

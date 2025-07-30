@@ -26,15 +26,15 @@ import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
- * A message containing serialized {@link #getPayload() payload data} and {@link #getMetaData() metadata}.
+ * A message containing serialized {@link #payload() payload data} and {@link #getMetaData() metadata}.
  * <p>
- * A {@link SerializedMessage} will deserialize the payload or metadata on demand when {@link #getPayload()} or
+ * A {@link SerializedMessage} will deserialize the payload or metadata on demand when {@link #payload()} or
  * {@link #getMetaData()} is called.
  * <p>
  * The {@code SerializedMessage} guarantees that the payload and metadata will not be deserialized more than once.
  * Messages of this type  will not be serialized more than once by the same serializer.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link org.axonframework.messaging.Message}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link org.axonframework.messaging.Message}.
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
@@ -93,7 +93,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public P getPayload() {
+    public P payload() {
         try {
             return payload.getObject();
         } catch (SerializationException e) {

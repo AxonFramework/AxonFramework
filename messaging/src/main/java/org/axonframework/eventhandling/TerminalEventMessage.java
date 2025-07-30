@@ -20,7 +20,7 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.MessageType;
 
 /**
- * Empty {@link EventMessage} implementation without any {@link EventMessage#getPayload() payload}, used as the
+ * Empty {@link EventMessage} implementation without any {@link EventMessage#payload() payload}, used as the
  * <b>terminal</b> message of a {@link org.axonframework.messaging.MessageStream}. This thus signals the end of the
  * {@code MessageStream}.
  * <p>

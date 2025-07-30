@@ -57,7 +57,7 @@ public class RecordingCommandBus implements CommandBus {
         dispatchedCommands.add(command);
         try {
             return CompletableFuture.completedFuture(asCommandResultMessage(
-                    callbackBehavior.handle(command.getPayload(), command.getMetaData())
+                    callbackBehavior.handle(command.payload(), command.getMetaData())
             ));
         } catch (Throwable throwable) {
             return CompletableFuture.failedFuture(throwable);

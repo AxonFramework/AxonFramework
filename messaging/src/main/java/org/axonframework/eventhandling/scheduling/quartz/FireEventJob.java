@@ -112,7 +112,7 @@ public class FireEventJob implements Job {
     private EventMessage<?> createMessage(Object event, MessageTypeResolver messageTypeResolver) {
         return event instanceof EventMessage
                 ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
-                                            ((EventMessage<?>) event).getPayload(),
+                                            ((EventMessage<?>) event).payload(),
                                             ((EventMessage<?>) event).getMetaData())
                 : new GenericEventMessage<>(messageTypeResolver.resolveOrThrow(event), event);
     }

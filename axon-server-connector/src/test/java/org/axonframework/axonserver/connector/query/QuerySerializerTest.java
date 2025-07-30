@@ -69,7 +69,7 @@ class QuerySerializerTest {
         assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
         assertTrue(message.getResponseType().matches(deserialized.getResponseType().responseMessagePayloadType()));
-        assertEquals(message.getPayload(), deserialized.getPayload());
+        assertEquals(message.payload(), deserialized.payload());
         assertEquals(message.getPayloadType(), deserialized.getPayloadType());
     }
 
@@ -89,7 +89,7 @@ class QuerySerializerTest {
         assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
         assertEquals(message.getPayloadType(), deserialized.getPayloadType());
-        assertEquals(message.getPayload(), deserialized.getPayload());
+        assertEquals(message.payload(), deserialized.payload());
     }
 
     @Test

@@ -293,7 +293,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                                        e.getPayloadType().getSimpleName(), //
                                        e.getAggregateIdentifier(), //
                                        e.identifier(), //
-                                       e.getPayload());
+                                       e.payload());
             events.add(str);
             return null;
         }
@@ -382,7 +382,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
 
         @Override
         public Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-            Object payload = event.getPayload();
+            Object payload = event.payload();
 
             if (previousToken == null && payload instanceof AggregateCreatedEvent) {
                 AggregateCreatedEvent created = (AggregateCreatedEvent) payload;

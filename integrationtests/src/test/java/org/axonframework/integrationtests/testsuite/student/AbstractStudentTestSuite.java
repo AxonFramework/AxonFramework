@@ -177,7 +177,7 @@ public abstract class AbstractStudentTestSuite {
             if(event.type().name().equals(StudentEnrolledEvent.class.getName())) {
                 // Convert the payload to the expected type
                 Converter converter = config.getComponent(Converter.class);
-                StudentEnrolledEvent convert = converter.convert(event.getPayload(), StudentEnrolledEvent.class);
+                StudentEnrolledEvent convert = converter.convert(event.payload(), StudentEnrolledEvent.class);
                 Objects.requireNonNull(convert, "The converted payload must not be null.");
                 course.handle(convert);
             }

@@ -562,7 +562,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         if (expected.size() != publishedMessages.size()) {
             return false;
         }
-        List<Object> published = publishedMessages.stream().map(Message::getPayload).collect(Collectors.toList());
+        List<Object> published = publishedMessages.stream().map(Message::payload).collect(Collectors.toList());
         return expected.containsAll(published) && published.containsAll(expected);
     }
 

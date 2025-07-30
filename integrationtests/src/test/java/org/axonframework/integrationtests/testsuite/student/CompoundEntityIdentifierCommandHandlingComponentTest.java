@@ -60,7 +60,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                                         new QualifiedName(MentorAssignedToStudentEvent.class),
                                                         (entity, event, context) -> {
                                                             Converter converter = c.getComponent(Converter.class);
-                                                            MentorAssignedToStudentEvent payload = converter.convert(event.getPayload(),
+                                                            MentorAssignedToStudentEvent payload = converter.convert(event.payload(),
                                                                                                                      MentorAssignedToStudentEvent.class);
                                                             entity.handle(payload);
                                                             return entity;
@@ -97,7 +97,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                 new QualifiedName(AssignMentorCommand.class),
                 c -> (command, state, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context, c);
-                    AssignMentorCommand payload = (AssignMentorCommand) command.getPayload();
+                    AssignMentorCommand payload = (AssignMentorCommand) command.payload();
                     StudentMentorAssignment assignment = state.loadEntity(
                             StudentMentorAssignment.class, payload.modelIdentifier(), context
                     ).join();

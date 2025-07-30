@@ -69,7 +69,7 @@ class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    void getPayloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryResponseMessage() {
+    void payloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryResponseMessage() {
         TestQueryResponse expectedQuery = TEST_QUERY_RESPONSE;
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage = asResponseMessage(expectedQuery);
         QueryResponse testQueryResponse =
@@ -77,7 +77,7 @@ class GrpcBackedResponseMessageTest {
         GrpcBackedResponseMessage<TestQueryResponse> testSubject =
                 new GrpcBackedResponseMessage<>(testQueryResponse, serializer);
 
-        assertEquals(expectedQuery, testSubject.getPayload());
+        assertEquals(expectedQuery, testSubject.payload());
     }
 
     @Test
@@ -91,7 +91,7 @@ class GrpcBackedResponseMessageTest {
         GrpcBackedResponseMessage<TestQueryResponse> testSubject =
                 new GrpcBackedResponseMessage<>(testQueryResponse, serializer);
 
-        assertThrows(IllegalPayloadAccessException.class, testSubject::getPayload);
+        assertThrows(IllegalPayloadAccessException.class, testSubject::payload);
     }
 
     @Test
@@ -200,14 +200,14 @@ class GrpcBackedResponseMessageTest {
         } else if (result instanceof ResultMessage) {
             ResultMessage<R> resultMessage = (ResultMessage<R>) result;
             return new GenericQueryResponseMessage<>(
-                    new MessageType(resultMessage.getPayload().getClass()),
-                    resultMessage.getPayload(),
+                    new MessageType(resultMessage.payload().getClass()),
+                    resultMessage.payload(),
                     resultMessage.getMetaData()
             );
         } else if (result instanceof Message) {
             Message<R> message = (Message<R>) result;
-            return new GenericQueryResponseMessage<>(new MessageType(message.getPayload().getClass()),
-                                                     message.getPayload(),
+            return new GenericQueryResponseMessage<>(new MessageType(message.payload().getClass()),
+                                                     message.payload(),
                                                      message.getMetaData());
         } else {
             return new GenericQueryResponseMessage<>(new MessageType(result.getClass()), (R) result);

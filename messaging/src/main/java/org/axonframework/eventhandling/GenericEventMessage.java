@@ -34,7 +34,7 @@ import java.util.function.Supplier;
 /**
  * Generic implementation of the {@link EventMessage} interface.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link EventMessage}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link EventMessage}.
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
@@ -107,7 +107,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate          The {@link Message} containing {@link Message#getPayload() payload},
+     * @param delegate          The {@link Message} containing {@link Message#payload() payload},
      *                          {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                          {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
      * @param timestampSupplier {@link Supplier} for the {@link Instant timestamp} of the
@@ -122,14 +122,14 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     /**
      * Constructs a {@code GenericEventMessage} with given {@code delegate} and {@code timestamp}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
+     * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
      * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericEventMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
+     * @param delegate  The {@link Message} containing {@link Message#payload() payload},
      *                  {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                  {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
      * @param timestamp The {@link Instant timestamp} of this {@link EventMessage GenericEventMessage's} creation.
@@ -176,7 +176,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
 
     @Override
     public <C> EventMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
-        P payload = getPayload();
+        P payload = payload();
         C converted = conversion.apply(payload);
         if (Objects.equals(converted, payload)) {
             //noinspection unchecked

@@ -67,7 +67,7 @@ class SimpleCommandBusTest {
 
         CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(TEST_COMMAND, StubProcessingContext.forMessage(TEST_COMMAND));
 
-        assertEquals("Hi!", actual.get().getPayload());
+        assertEquals("Hi!", actual.get().payload());
     }
 
     @Test
@@ -91,7 +91,7 @@ class SimpleCommandBusTest {
         assertTrue(actual.isDone());
         assertFalse(actual.isCompletedExceptionally());
         Message<?> actualResult = actual.join();
-        assertEquals(PAYLOAD, actualResult.getPayload());
+        assertEquals(PAYLOAD, actualResult.payload());
         assertNotNull(contextRef.get());
     }
 
@@ -297,7 +297,7 @@ class SimpleCommandBusTest {
     }
 
     private static GenericCommandResultMessage<?> asCommandResultMessage(CommandMessage<?> message) {
-        var payload = message.getPayload();
+        var payload = message.payload();
         return new GenericCommandResultMessage<>(new MessageType(payload.getClass()), payload);
     }
 }

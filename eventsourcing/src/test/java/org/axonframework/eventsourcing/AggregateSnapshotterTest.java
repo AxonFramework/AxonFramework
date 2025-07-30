@@ -69,7 +69,7 @@ public class AggregateSnapshotterTest {
         DomainEventMessage<?> snapshot =
                 testSubject.createSnapshot(StubAggregate.class, aggregateIdentifier, eventStream);
         verify(mockAggregateFactory).createAggregateRoot(aggregateIdentifier, firstEvent);
-        assertSame(aggregate, snapshot.getPayload());
+        assertSame(aggregate, snapshot.payload());
     }
 
     @Test
@@ -86,11 +86,11 @@ public class AggregateSnapshotterTest {
         DomainEventStream eventStream = DomainEventStream.of(first, second);
 
         when(mockAggregateFactory.createAggregateRoot(any(), any(DomainEventMessage.class)))
-                .thenAnswer(invocation -> ((DomainEventMessage<?>) invocation.getArguments()[1]).getPayload());
+                .thenAnswer(invocation -> ((DomainEventMessage<?>) invocation.getArguments()[1]).payload());
 
         DomainEventMessage<?> snapshot =
                 testSubject.createSnapshot(StubAggregate.class, aggregateIdentifier.toString(), eventStream);
-        assertSame(aggregate, snapshot.getPayload(), "Snapshotter did not recognize the aggregate snapshot");
+        assertSame(aggregate, snapshot.payload(), "Snapshotter did not recognize the aggregate snapshot");
 
         verify(mockAggregateFactory).createAggregateRoot(any(), any(DomainEventMessage.class));
     }
@@ -141,10 +141,10 @@ public class AggregateSnapshotterTest {
         protected void handle(EventMessage<?> event) {
             identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
             // See Issue #
-            if ("Mock contents".equals(event.getPayload().toString())) {
+            if ("Mock contents".equals(event.payload().toString())) {
                 apply("Another");
             }
-            if ("deleted".equals(event.getPayload().toString())) {
+            if ("deleted".equals(event.payload().toString())) {
                 markDeleted();
             }
         }

@@ -97,7 +97,7 @@ public class DefaultQueryGateway implements QueryGateway {
                              if (queryResponseMessage.isExceptional()) {
                                  result.completeExceptionally(queryResponseMessage.exceptionResult());
                              } else {
-                                 result.complete(queryResponseMessage.getPayload());
+                                 result.complete(queryResponseMessage.payload());
                              }
                          } catch (Exception e) {
                              result.completeExceptionally(e);
@@ -127,7 +127,7 @@ public class DefaultQueryGateway implements QueryGateway {
     public <R, Q> Publisher<R> streamingQuery(Q query, Class<R> responseType) {
         return Mono.fromSupplier(() -> asStreamingQueryMessage(query, responseType))
                    .flatMapMany(queryMessage -> queryBus.streamingQuery(processInterceptors(queryMessage)))
-                   .map(Message::getPayload);
+                   .map(Message::payload);
     }
 
     private <R, Q> StreamingQueryMessage<Q, R> asStreamingQueryMessage(Q query,
@@ -148,7 +148,7 @@ public class DefaultQueryGateway implements QueryGateway {
                                           @Nonnull TimeUnit timeUnit) {
         QueryMessage<Q, R> queryMessage = asQueryMessage(query, responseType);
         return queryBus.scatterGather(processInterceptors(queryMessage), timeout, timeUnit)
-                       .map(QueryResponseMessage::getPayload);
+                       .map(QueryResponseMessage::payload);
     }
 
     private <R, Q> QueryMessage<Q, R> asQueryMessage(Q query,
@@ -197,12 +197,12 @@ public class DefaultQueryGateway implements QueryGateway {
             SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result) {
         return new DefaultSubscriptionQueryResult<>(
                 result.initialResult()
-                      .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
-                      .map(Message::getPayload)
+                      .filter(initialResult -> Objects.nonNull(initialResult.payload()))
+                      .map(Message::payload)
                       .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
                 result.updates()
-                      .filter(update -> Objects.nonNull(update.getPayload()))
-                      .map(SubscriptionQueryUpdateMessage::getPayload),
+                      .filter(update -> Objects.nonNull(update.payload()))
+                      .map(SubscriptionQueryUpdateMessage::payload),
                 result
         );
     }

@@ -112,7 +112,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                                                    entry.getSequenceNumber(),
                                                    serializedMessage.identifier(),
                                                    MessageType.fromString(entry.getType()),
-                                                   serializedMessage.getPayload(),
+                                                   serializedMessage.payload(),
                                                    serializedMessage.getMetaData(),
                                                    timestampSupplier.get());
         } else {

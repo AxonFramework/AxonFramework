@@ -244,7 +244,7 @@ class AbstractEventBusTest {
 
         private void onEvents(List<? extends EventMessage<?>> events) {
             //if the event payload is a number > 0, a new number is published that is 1 smaller than the first number
-            Object payload = events.get(0).getPayload();
+            Object payload = events.get(0).payload();
             if (payload instanceof Integer) {
                 int number = (int) payload;
                 if (number > 0) {
@@ -315,17 +315,17 @@ class AbstractEventBusTest {
                 return false;
             }
             StubNumberedEvent that = (StubNumberedEvent) o;
-            return Objects.equals(getPayload(), that.getPayload());
+            return Objects.equals(payload(), that.payload());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(getPayload());
+            return Objects.hash(payload());
         }
 
         @Override
         public String toString() {
-            return "StubNumberedEvent{" + getPayload() + "}";
+            return "StubNumberedEvent{" + payload() + "}";
         }
     }
 }

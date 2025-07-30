@@ -95,15 +95,15 @@ class ConcatenatingDomainEventStreamTest {
                                                                       DomainEventStream.of(event3, event4));
 
         assertTrue(concat.hasNext());
-        assertSame(event1.getPayload(), concat.next().getPayload());
-        assertSame(event2.getPayload(), concat.next().getPayload());
+        assertSame(event1.payload(), concat.next().payload());
+        assertSame(event2.payload(), concat.next().payload());
 
-        assertSame(event3.getPayload(), concat.peek().getPayload());
+        assertSame(event3.payload(), concat.peek().payload());
 
-        assertSame(event3.getPayload(), concat.next().getPayload());
+        assertSame(event3.payload(), concat.next().payload());
 
-        assertSame(event4.getPayload(), concat.peek().getPayload());
-        assertSame(event4.getPayload(), concat.next().getPayload());
+        assertSame(event4.payload(), concat.peek().payload());
+        assertSame(event4.payload(), concat.next().payload());
         assertFalse(concat.hasNext());
     }
 
@@ -114,11 +114,11 @@ class ConcatenatingDomainEventStreamTest {
                                                                       DomainEventStream.of(event3, event4));
 
         assertTrue(concat.hasNext());
-        assertSame(event1.getPayload(), concat.next().getPayload());
-        assertSame(event1.getPayload(), concat.next().getPayload());
-        assertSame(event2.getPayload(), concat.next().getPayload());
-        assertSame(event3.getPayload(), concat.next().getPayload());
-        assertSame(event4.getPayload(), concat.next().getPayload());
+        assertSame(event1.payload(), concat.next().payload());
+        assertSame(event1.payload(), concat.next().payload());
+        assertSame(event2.payload(), concat.next().payload());
+        assertSame(event3.payload(), concat.next().payload());
+        assertSame(event4.payload(), concat.next().payload());
         assertFalse(concat.hasNext());
     }
 
@@ -132,11 +132,11 @@ class ConcatenatingDomainEventStreamTest {
 
         assertTrue(concat.hasNext());
 
-        assertSame(event1.getPayload(), concat.next().getPayload());
-        assertSame(event2.getPayload(), concat.next().getPayload());
-        assertSame(event3.getPayload(), concat.next().getPayload());
-        assertSame(event4.getPayload(), concat.next().getPayload());
-        assertSame(event5.getPayload(), concat.next().getPayload());
+        assertSame(event1.payload(), concat.next().payload());
+        assertSame(event2.payload(), concat.next().payload());
+        assertSame(event3.payload(), concat.next().payload());
+        assertSame(event4.payload(), concat.next().payload());
+        assertSame(event5.payload(), concat.next().payload());
 
         assertFalse(concat.hasNext());
 
@@ -151,10 +151,10 @@ class ConcatenatingDomainEventStreamTest {
 
         assertTrue(concat.hasNext());
 
-        assertSame(event1.getPayload(), concat.next().getPayload());
-        assertSame(event3.getPayload(), concat.next().getPayload());
-        assertSame(event4.getPayload(), concat.next().getPayload());
-        assertSame(event5.getPayload(), concat.next().getPayload());
+        assertSame(event1.payload(), concat.next().payload());
+        assertSame(event3.payload(), concat.next().payload());
+        assertSame(event4.payload(), concat.next().payload());
+        assertSame(event5.payload(), concat.next().payload());
 
         assertFalse(concat.hasNext());
 

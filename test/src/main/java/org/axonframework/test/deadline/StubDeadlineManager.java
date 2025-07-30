@@ -272,6 +272,6 @@ public class StubDeadlineManager implements DeadlineManager {
             Throwable e = resultMessage.exceptionResult();
             throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
         }
-        return (DeadlineMessage<?>) resultMessage.getPayload();
+        return (DeadlineMessage<?>) resultMessage.payload();
     }
 }

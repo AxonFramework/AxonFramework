@@ -55,7 +55,7 @@ public class AnnotationBasedEntityIdResolver<T> implements EntityIdResolver<T> {
     @Nonnull
     @Override
     public T resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
-        Object payload = message.getPayload();
+        Object payload = message.payload();
         List<Object> identifiers = getIdentifiers(payload)
                 .stream()
                 .filter(Objects::nonNull)

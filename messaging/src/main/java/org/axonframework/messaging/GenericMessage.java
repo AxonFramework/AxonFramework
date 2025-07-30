@@ -32,13 +32,13 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Generic implementation of the {@link Message} interface containing the {@link #getPayload() payload} and
+ * Generic implementation of the {@link Message} interface containing the {@link #payload() payload} and
  * {@link #getMetaData() metadata} in deserialized form.
  * <p>
  * If a {@link GenericMessage} is created while a {@link LegacyUnitOfWork} is active it copies over the correlation data
  * of the {@code UnitOfWork} to the created message.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link Message}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link Message}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 2.0.0
@@ -155,7 +155,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     private GenericMessage(@Nonnull GenericMessage<P> original,
                            @Nonnull MetaData metaData) {
         super(original.identifier(), original.type());
-        this.payload = original.getPayload();
+        this.payload = original.payload();
         this.metaData = metaData;
         this.payloadType = original.getPayloadType();
     }
@@ -178,7 +178,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     /**
      * Construct an empty message.
      *
-     * @return A message with {@code null} {@link Message#getPayload()}, no {@link MetaData}, and a
+     * @return A message with {@code null} {@link Message#payload()}, no {@link MetaData}, and a
      * {@link Message#type()} of {@code "empty"}.
      */
     public static Message<Void> emptyMessage() {
@@ -191,7 +191,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public P getPayload() {
+    public P payload() {
         return this.payload;
     }
 
@@ -199,10 +199,10 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
         //noinspection unchecked,rawtypes
         return type instanceof Class clazz && getPayloadType().isAssignableFrom(clazz)
-                ? (T) getPayload()
+                ? (T) payload()
                 : Objects.requireNonNull(converter,
                                          "Cannot convert payload to [" + type.getTypeName() + "] with null Converter.")
-                         .convert(getPayload(), type);
+                         .convert(payload(), type);
     }
 
     @Override
@@ -234,7 +234,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
 
     @Override
     public <C> Message<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
-        C convertedPayload = conversion.apply(getPayload());
+        C convertedPayload = conversion.apply(payload());
         return new GenericMessage<>(type(),  convertedPayload, MetaData.from(metaData));
     }
 }

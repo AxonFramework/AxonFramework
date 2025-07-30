@@ -54,10 +54,10 @@ public class EventConverter implements DescribableComponent {
 
     /**
      * Constructs an {@code EventConverter} using the given {@code converter} to convert the
-     * {@link EventMessage#getPayload() event payload} and {@link EventMessage#getMetaData() metadata values}.
+     * {@link EventMessage#payload() event payload} and {@link EventMessage#getMetaData() metadata values}.
      *
      * @param converter The converter used to {@link Converter#convert(Object, Class)} the
-     *                  {@link EventMessage#getPayload()} and {@link EventMessage#getMetaData()} for the {@link Event}.
+     *                  {@link EventMessage#payload()} and {@link EventMessage#getMetaData()} for the {@link Event}.
      */
     public EventConverter(@Nonnull Converter converter) {
         this.converter = Objects.requireNonNull(converter, "The converter cannot be null.");
@@ -84,7 +84,7 @@ public class EventConverter implements DescribableComponent {
                     .setTimestamp(eventMessage.getTimestamp().toEpochMilli())
                     .setName(eventMessage.type().name())
                     .setVersion(eventMessage.type().version())
-                    .setPayload(convertPayload(eventMessage.getPayload()))
+                    .setPayload(convertPayload(eventMessage.payload()))
                     .putAllMetadata(convertMetaData(eventMessage.getMetaData()))
                     .build();
     }

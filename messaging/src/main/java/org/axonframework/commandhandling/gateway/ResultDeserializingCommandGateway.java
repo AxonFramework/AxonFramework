@@ -75,7 +75,7 @@ public class ResultDeserializingCommandGateway implements CommandGateway {
         @Override
         public <R> CompletableFuture<R> resultAs(@Nonnull Class<R> type) {
             return delegate.getResultMessage()
-                           .thenApply(Message::getPayload)
+                           .thenApply(Message::payload)
                            .thenApply(payload -> serializer.convert(payload, type));
         }
 
@@ -86,7 +86,7 @@ public class ResultDeserializingCommandGateway implements CommandGateway {
             delegate.getResultMessage()
                     .whenComplete((message, e) -> {
                         if (e == null) {
-                            successHandler.accept(serializer.convert(message.getPayload(), resultType), message);
+                            successHandler.accept(serializer.convert(message.payload(), resultType), message);
                         }
                     });
             return this;

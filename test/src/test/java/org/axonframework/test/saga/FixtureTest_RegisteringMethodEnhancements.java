@@ -70,7 +70,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
                    .published(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
                    .whenPublishingA(new ParameterResolvedEvent(TEST_AGGREGATE_IDENTIFIER))
                    .expectDispatchedCommandsMatching(listWithAnyOf(predicate(commandMessage -> {
-                       Object payload = commandMessage.getPayload();
+                       Object payload = commandMessage.payload();
                        assertTrue(payload instanceof ResolveParameterCommand);
                        AtomicBoolean assertion = ((ResolveParameterCommand) payload).getAssertion();
                        return assertion.get();

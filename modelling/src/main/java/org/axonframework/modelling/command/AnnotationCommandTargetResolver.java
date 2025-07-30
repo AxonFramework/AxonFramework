@@ -101,12 +101,12 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         for (Method m : methodsOf(command.getPayloadType())) {
             if (AnnotationUtils.isAnnotationPresent(m, annotation)) {
                 ensureAccessible(m);
-                return m.invoke(command.getPayload());
+                return m.invoke(command.payload());
             }
         }
         for (Field f : fieldsOf(command.getPayloadType())) {
             if (AnnotationUtils.isAnnotationPresent(f, annotation)) {
-                return getFieldValue(f, command.getPayload());
+                return getFieldValue(f, command.payload());
             }
         }
         return null;

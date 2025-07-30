@@ -80,7 +80,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
             EventMessage<?> actualEvent = iterator.next();
-            if (!verifyPayloadEquality(expectedEvent, actualEvent.getPayload())) {
+            if (!verifyPayloadEquality(expectedEvent, actualEvent.payload())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
@@ -89,7 +89,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T events(@Nonnull EventMessage<?>... expectedEvents) {
-        this.events(Stream.of(expectedEvents).map(org.axonframework.messaging.Message::getPayload).toArray());
+        this.events(Stream.of(expectedEvents).map(org.axonframework.messaging.Message::payload).toArray());
 
         var publishedEvents = eventSink.recorded();
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();

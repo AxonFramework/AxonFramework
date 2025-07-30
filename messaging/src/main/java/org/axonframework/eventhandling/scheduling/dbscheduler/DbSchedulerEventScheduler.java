@@ -26,14 +26,12 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -201,7 +199,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
     }
 
     private DbSchedulerBinaryEventData binaryDataFromEvent(EventMessage<?> eventMessage) {
-        SerializedObject<byte[]> serialized = serializer.serialize(eventMessage.getPayload(), byte[].class);
+        SerializedObject<byte[]> serialized = serializer.serialize(eventMessage.payload(), byte[].class);
         byte[] serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();
@@ -228,7 +226,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
     }
 
     private DbSchedulerHumanReadableEventData humanReadableDataFromEvent(EventMessage<?> eventMessage) {
-        SerializedObject<String> serialized = serializer.serialize(eventMessage.getPayload(), String.class);
+        SerializedObject<String> serialized = serializer.serialize(eventMessage.payload(), String.class);
         String serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();

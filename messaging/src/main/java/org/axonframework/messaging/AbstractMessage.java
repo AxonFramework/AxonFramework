@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * Abstract base class for {@link Message Messages}.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link AbstractMessage}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link AbstractMessage}.
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0

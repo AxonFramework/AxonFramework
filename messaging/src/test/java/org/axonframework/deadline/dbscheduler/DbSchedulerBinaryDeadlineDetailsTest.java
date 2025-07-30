@@ -77,7 +77,7 @@ class DbSchedulerBinaryDeadlineDetailsTest {
         assertEquals(descriptor, result.getDeserializedScopeDescriptor(serializer));
         DeadlineMessage<?> resultMessage = result.asDeadLineMessage(serializer);
         assertNotNull(resultMessage);
-        assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.getPayload());
+        assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.payload());
         assertEquals(META_DATA, resultMessage.getMetaData());
     }
 

@@ -141,7 +141,7 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
             JpaDeadLetter<? extends EventMessage<?>> actual = ((JpaDeadLetter<? extends EventMessage<?>>) result);
 
             assertEquals(expected.getSequenceIdentifier(), actual.getSequenceIdentifier(), assertMessageSupplier);
-            assertEquals(expected.message().getPayload(), actual.message().getPayload(), assertMessageSupplier);
+            assertEquals(expected.message().payload(), actual.message().payload(), assertMessageSupplier);
             assertFalse(result.cause().isPresent(), assertMessageSupplier);
             assertEquals(expected.diagnostics(), actual.diagnostics(), assertMessageSupplier);
             assertEquals(sequenceIndex.longValue(), actual.getIndex(), assertMessageSupplier);

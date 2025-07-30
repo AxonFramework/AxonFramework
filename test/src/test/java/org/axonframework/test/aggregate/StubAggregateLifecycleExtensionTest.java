@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class StubAggregateLifecycleExtensionTest {
 
         assertEquals(1, TEST_SUBJECT.getAppliedEvents().size());
         assertEquals("test", TEST_SUBJECT.getAppliedEventPayloads().get(0));
-        assertEquals("test", TEST_SUBJECT.getAppliedEvents().get(0).getPayload());
+        assertEquals("test", TEST_SUBJECT.getAppliedEvents().get(0).payload());
     }
 
     @Test

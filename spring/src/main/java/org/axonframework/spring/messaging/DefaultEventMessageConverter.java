@@ -63,7 +63,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
             headers.put(AGGREGATE_SEQ, ((DomainEventMessage<?>) event).getSequenceNumber());
             headers.put(AGGREGATE_TYPE, ((DomainEventMessage<?>) event).getType());
         }
-        return new GenericMessage<>(event.getPayload(),
+        return new GenericMessage<>(event.payload(),
                                     new SettableTimestampMessageHeaders(headers, event.getTimestamp().toEpochMilli()));
     }
 

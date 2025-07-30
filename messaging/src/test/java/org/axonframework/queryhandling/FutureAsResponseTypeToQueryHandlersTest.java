@@ -66,7 +66,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
                 multipleInstancesOf(String.class)
         );
 
-        List<String> response = queryBus.query(testQuery).get().getPayload();
+        List<String> response = queryBus.query(testQuery).get().payload();
 
         assertEquals(asList("Response1", "Response2"), response);
     }
@@ -78,7 +78,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
                 instanceOf(String.class)
         );
 
-        String response = queryBus.query(testQuery).get().getPayload();
+        String response = queryBus.query(testQuery).get().payload();
 
         assertEquals("Response", response);
     }
@@ -92,7 +92,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
         List<String> response =
                 queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT * 2, TimeUnit.MILLISECONDS)
-                        .map(Message::getPayload)
+                        .map(Message::payload)
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList());
 
@@ -108,7 +108,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
         String response =
                 queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
-                        .map(Message::getPayload)
+                        .map(Message::payload)
                         .findFirst()
                         .orElse(null);
 
@@ -124,7 +124,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
         Mono<List<String>> response = queryBus.subscriptionQuery(testQuery)
                                               .initialResult()
-                                              .map(Message::getPayload);
+                                              .map(Message::payload);
 
         StepVerifier.create(response)
                     .expectNext(asList("Response1", "Response2"))
@@ -140,7 +140,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
         Mono<String> response = queryBus.subscriptionQuery(testQuery)
                                         .initialResult()
-                                        .map(Message::getPayload);
+                                        .map(Message::payload);
 
         StepVerifier.create(response)
                     .expectNext("Response")
@@ -156,7 +156,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
         List<String> result = queryBus.query(testQuery)
                                       .get()
-                                      .getPayload();
+                                      .payload();
 
         assertEquals(asList("Response1", "Response2"), result);
     }
@@ -170,7 +170,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
         List<String> result =
                 queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
-                        .map(Message::getPayload)
+                        .map(Message::payload)
                         .findFirst()
                         .orElse(null);
 
@@ -186,7 +186,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
         Mono<List<String>> response = queryBus.subscriptionQuery(testQuery)
                                               .initialResult()
-                                              .map(Message::getPayload);
+                                              .map(Message::payload);
 
         StepVerifier.create(response)
                     .expectNext(asList("Response1", "Response2"))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ public class EventBuffer implements TrackingEventStream {
         if (!disableIgnoredEventFiltering) {
             SerializedType serializedType;
             if (UnknownSerializedType.class.equals(ignoredMessage.getPayloadType())) {
-                UnknownSerializedType unknownSerializedType = (UnknownSerializedType) ignoredMessage.getPayload();
+                UnknownSerializedType unknownSerializedType = (UnknownSerializedType) ignoredMessage.payload();
                 serializedType = unknownSerializedType.serializedType();
             } else {
                 serializedType = serializer.typeForClass(ignoredMessage.getPayloadType());

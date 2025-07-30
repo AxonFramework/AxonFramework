@@ -105,7 +105,7 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void getPayloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryRequest() {
+    void payloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryRequest() {
         TestQuery expectedQuery = TEST_QUERY;
         QueryMessage<TestQuery, String> testQueryMessage =
                 new GenericQueryMessage<>(new MessageType("query"), expectedQuery, RESPONSE_TYPE);
@@ -114,7 +114,7 @@ class GrpcBackedQueryMessageTest {
         GrpcBackedQueryMessage<TestQuery, String> testSubject =
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
-        assertEquals(expectedQuery, testSubject.getPayload());
+        assertEquals(expectedQuery, testSubject.payload());
     }
 
     @Test

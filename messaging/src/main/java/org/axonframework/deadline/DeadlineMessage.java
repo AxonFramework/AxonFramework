@@ -28,7 +28,7 @@ import java.util.Map;
  * Implementations of the {@link DeadlineMessage} represent a fact (it's a specialization of {@code EventMessage}) that
  * some deadline was reached. The optional payload contains relevant data of the scheduled deadline.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link DeadlineMessage}. May be {@link Void}
+ * @param <P> The type of {@link #payload() payload} contained in this {@link DeadlineMessage}. May be {@link Void}
  *            if no payload was provided.
  * @author Milan Savic
  * @author Steven van Beelen

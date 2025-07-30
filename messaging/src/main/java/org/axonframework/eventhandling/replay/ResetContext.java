@@ -26,7 +26,7 @@ import jakarta.annotation.Nonnull;
  * <p>
  * A payload of {@code P} can be provided to support the reset operation handling this message.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link Message}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link Message}.
  * @author Steven van Beelen
  * @since 4.4.0
  */

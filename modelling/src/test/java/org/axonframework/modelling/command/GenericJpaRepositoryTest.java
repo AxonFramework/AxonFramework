@@ -158,21 +158,21 @@ class GenericJpaRepositoryTest {
         EventMessage<?> eventOne = publishedEvents.get(0);
         assertTrue(eventOne instanceof DomainEventMessage);
         DomainEventMessage<?> domainEventOne = (DomainEventMessage<?>) eventOne;
-        assertEquals("test1", domainEventOne.getPayload());
+        assertEquals("test1", domainEventOne.payload());
         assertEquals(0, domainEventOne.getSequenceNumber());
         assertEquals("id", domainEventOne.getAggregateIdentifier());
 
         EventMessage<?> eventTwo = publishedEvents.get(1);
         assertTrue(eventTwo instanceof DomainEventMessage);
         DomainEventMessage<?> domainEventTwo = (DomainEventMessage<?>) eventTwo;
-        assertEquals("test2", domainEventTwo.getPayload());
+        assertEquals("test2", domainEventTwo.payload());
         assertEquals(1, domainEventTwo.getSequenceNumber());
         assertEquals("id", domainEventTwo.getAggregateIdentifier());
 
         EventMessage<?> eventThree = publishedEvents.get(2);
         assertTrue(eventThree instanceof DomainEventMessage);
         DomainEventMessage<?> domainEventThree = (DomainEventMessage<?>) eventThree;
-        assertEquals("test3", domainEventThree.getPayload());
+        assertEquals("test3", domainEventThree.payload());
         assertEquals(2, domainEventThree.getSequenceNumber());
         assertEquals("id", domainEventThree.getAggregateIdentifier());
     }
@@ -205,7 +205,7 @@ class GenericJpaRepositoryTest {
         assertEquals(1, capturedEvents.size());
         EventMessage<?> eventOne = capturedEvents.get(0);
         assertFalse(eventOne instanceof DomainEventMessage);
-        assertEquals("test2", eventOne.getPayload());
+        assertEquals("test2", eventOne.payload());
     }
 
     @Test
@@ -237,15 +237,15 @@ class GenericJpaRepositoryTest {
 
         EventMessage<?> eventOne = publishedEvents.get(0);
         assertFalse(eventOne instanceof DomainEventMessage);
-        assertEquals(expectedFirstPayload, eventOne.getPayload());
+        assertEquals(expectedFirstPayload, eventOne.payload());
 
         EventMessage<?> eventTwo = publishedEvents.get(1);
         assertFalse(eventTwo instanceof DomainEventMessage);
-        assertEquals(expectedSecondPayload, eventTwo.getPayload());
+        assertEquals(expectedSecondPayload, eventTwo.payload());
 
         EventMessage<?> eventThree = publishedEvents.get(2);
         assertFalse(eventThree instanceof DomainEventMessage);
-        assertEquals(expectedThirdPayload, eventThree.getPayload());
+        assertEquals(expectedThirdPayload, eventThree.payload());
     }
 
     @Test

@@ -656,13 +656,13 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     @Test
     void shouldReduceToExpectedResult() {
         M randomMessage = createRandomMessage();
-        String expected = randomMessage.getPayload().toString() + randomMessage.getPayload().toString();
+        String expected = randomMessage.payload().toString() + randomMessage.payload().toString();
 
         MessageStream<M> testSubject = completedTestSubject(List.of(randomMessage, randomMessage));
 
         CompletableFuture<String> result = testSubject.reduce(
                 "",
-                (base, entry) -> entry.message().getPayload().toString() + entry.message().getPayload().toString()
+                (base, entry) -> entry.message().payload().toString() + entry.message().payload().toString()
         );
 
         assertTrue(result.isDone());
@@ -700,7 +700,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                 expected,
                 (base, entry) -> {
                     invoked.set(true);
-                    return entry.message().getPayload().toString() + entry.message().getPayload().toString();
+                    return entry.message().payload().toString() + entry.message().payload().toString();
                 }
         );
 
@@ -720,7 +720,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                 "",
                 (base, entry) -> {
                     invoked.set(true);
-                    return entry.message().getPayload().toString() + entry.message().getPayload().toString();
+                    return entry.message().payload().toString() + entry.message().payload().toString();
                 }
         );
 
@@ -741,7 +741,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                 "",
                 (base, entry) -> {
                     invoked.set(true);
-                    return entry.message().getPayload().toString() + entry.message().getPayload().toString();
+                    return entry.message().payload().toString() + entry.message().payload().toString();
                 }
         );
 
@@ -1042,9 +1042,9 @@ public abstract class MessageStreamTest<M extends Message<?>> {
 
             //then
             assertTrue(peeked.isPresent());
-            assertEquals(message.getPayload(), peeked.get().message().getPayload());
+            assertEquals(message.payload(), peeked.get().message().payload());
             assertTrue(peekedAgain.isPresent());
-            assertEquals(message.getPayload(), peekedAgain.get().message().getPayload());
+            assertEquals(message.payload(), peekedAgain.get().message().payload());
         }
 
         @Test
@@ -1071,9 +1071,9 @@ public abstract class MessageStreamTest<M extends Message<?>> {
 
             //then
             assertTrue(peeked.isPresent());
-            assertEquals(messages.getFirst().getPayload(), peeked.get().message().getPayload());
+            assertEquals(messages.getFirst().payload(), peeked.get().message().payload());
             assertTrue(next.isPresent());
-            assertEquals(messages.getFirst().getPayload(), next.get().message().getPayload());
+            assertEquals(messages.getFirst().payload(), next.get().message().payload());
         }
 
         @Test
@@ -1089,7 +1089,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
             //then
             assertTrue(peeked.isPresent());
             assertTrue(next.isPresent());
-            assertEquals(peeked.get().message().getPayload(), next.get().message().getPayload());
+            assertEquals(peeked.get().message().payload(), next.get().message().payload());
         }
 
         @Test
@@ -1143,9 +1143,9 @@ public abstract class MessageStreamTest<M extends Message<?>> {
 
             //then
             assertTrue(peeked.isPresent());
-            assertEquals(message.getPayload(), peeked.get().message().getPayload());
+            assertEquals(message.payload(), peeked.get().message().payload());
             assertTrue(peekedAgain.isPresent());
-            assertEquals(message.getPayload(), peekedAgain.get().message().getPayload());
+            assertEquals(message.payload(), peekedAgain.get().message().payload());
         }
 
         @Test
