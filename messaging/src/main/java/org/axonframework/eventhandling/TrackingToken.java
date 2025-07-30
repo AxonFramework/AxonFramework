@@ -26,13 +26,20 @@ import java.util.OptionalLong;
  */
 public interface TrackingToken {
 
-    static TrackingToken firstToken() {
-        return FirstTrackingToken.INSTANCE;
-    }
+    /**
+     * A special {@link TrackingToken} that indicates the very beginning of an event stream.
+     * <p>
+     * Used to explicitly represent the first position in a stream instead of using {@code null}.
+     */
+    TrackingToken FIRST = FirstTrackingToken.INSTANCE;
 
-    static TrackingToken latestToken() {
-        return LatestTrackingToken.INSTANCE;
-    }
+    /**
+     * A special {@link TrackingToken} that represents the latest (tail) position in an event stream.
+     * <p>
+     * This can be used to indicate that a processor wants to start at the newest available event,
+     * skipping historical events.
+     */
+    TrackingToken LATEST = LatestTrackingToken.INSTANCE;
 
     /**
      * Returns a token that represents the lower bound between this and the {@code other} token. Effectively, the
