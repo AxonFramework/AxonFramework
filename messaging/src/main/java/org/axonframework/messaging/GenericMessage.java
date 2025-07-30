@@ -154,7 +154,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
 
     private GenericMessage(@Nonnull GenericMessage<P> original,
                            @Nonnull MetaData metaData) {
-        super(original.getIdentifier(), original.type());
+        super(original.identifier(), original.type());
         this.payload = original.getPayload();
         this.metaData = metaData;
         this.payloadType = original.getPayloadType();

@@ -61,7 +61,7 @@ class DefaultEventMessageConverterTest {
         assertEquals("100", convertedAxonMessage.getMetaData().get("number"));
         assertEquals("world", convertedAxonMessage.getMetaData().get("string"));
         assertEquals("hello", convertedAxonMessage.getPayload().name);
-        assertEquals(id, convertedAxonMessage.getIdentifier());
+        assertEquals(id, convertedAxonMessage.identifier());
     }
 
     @Test
@@ -88,7 +88,7 @@ class DefaultEventMessageConverterTest {
         assertEquals("100", convertDomainMessage.getMetaData().get("number"));
         assertEquals("world", convertDomainMessage.getMetaData().get("string"));
         assertEquals("hello", convertDomainMessage.getPayload().name);
-        assertEquals(id, convertDomainMessage.getIdentifier());
+        assertEquals(id, convertDomainMessage.identifier());
         assertEquals("foo", convertDomainMessage.getType());
         assertEquals(aggId, convertDomainMessage.getAggregateIdentifier());
         assertEquals(1, convertDomainMessage.getSequenceNumber());

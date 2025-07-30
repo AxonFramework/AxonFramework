@@ -80,7 +80,7 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
-    public String getIdentifier() {
+    public String identifier() {
         return subscriptionQuery.getSubscriptionIdentifier();
     }
 

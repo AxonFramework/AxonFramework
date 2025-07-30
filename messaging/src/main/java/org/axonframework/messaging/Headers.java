@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ public abstract class Headers {
         Assert.notNull(serializedObject, () -> "Serialized Object cannot be null");
         Assert.notNull(serializedObject.getType(), () -> "SerializedObject Type cannot be null");
         HashMap<String, Object> headers = new HashMap<>();
-        headers.put(MESSAGE_ID, message.getIdentifier());
+        headers.put(MESSAGE_ID, message.identifier());
         headers.put(MESSAGE_TYPE, serializedObject.getType().getName());
         headers.put(MESSAGE_REVISION, serializedObject.getType().getRevision());
         headers.put(MESSAGE_TIMESTAMP, message.getTimestamp());

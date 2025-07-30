@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ public class QuerySerializer {
                                                 int priority, boolean stream) {
         return QueryRequest.newBuilder()
                            .setTimestamp(System.currentTimeMillis())
-                           .setMessageIdentifier(queryMessage.getIdentifier())
+                           .setMessageIdentifier(queryMessage.identifier())
                            .setQuery(queryMessage.type().name())
                            .setClientId(configuration.getClientId())
                            .setComponentName(configuration.getComponentName())
@@ -198,7 +198,7 @@ public class QuerySerializer {
         }
 
         return responseBuilder.putAllMetaData(metadataSerializer.apply(queryResponse.getMetaData()))
-                              .setMessageIdentifier(queryResponse.getIdentifier())
+                              .setMessageIdentifier(queryResponse.identifier())
                               .setRequestIdentifier(requestMessageId)
                               .build();
     }

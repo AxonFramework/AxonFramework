@@ -95,7 +95,7 @@ public interface Message<P> {
      *
      * @return The unique identifier of this {@code Message}.
      */
-    String getIdentifier();
+    String identifier();
 
     /**
      * Returns the message {@link QualifiedName qualifiedName} of this {@code Message}.

@@ -25,7 +25,6 @@ import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 /**
  * Generic implementation of the {@link CommandMessage} interface.
@@ -67,14 +66,14 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * Constructs a {@code GenericCommandMessage} with given {@code delegate}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericCommandMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
      * @param delegate The {@link Message} containing {@link Message#getPayload() payload},
-     *                 {@link Message#type() qualifiedName}, {@link Message#getIdentifier() identifier} and
+     *                 {@link Message#type() qualifiedName}, {@link Message#identifier() identifier} and
      *                 {@link Message#getMetaData() metadata} for the {@link CommandMessage} to reconstruct.
      */
     public GenericCommandMessage(@Nonnull Message<P> delegate) {
@@ -94,7 +93,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
     @Override
     public <C> CommandMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
         Message<P> delegate = getDelegate();
-        Message<C> transformed = new GenericMessage<>(delegate.getIdentifier(),
+        Message<C> transformed = new GenericMessage<>(delegate.identifier(),
                                                       delegate.type(),
                                                       conversion.apply(delegate.getPayload()),
                                                       delegate.getMetaData());

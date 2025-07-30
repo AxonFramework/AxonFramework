@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,12 +139,12 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
         Optional<Cause> optionalCause = letter.cause();
         if (optionalCause.isPresent()) {
             logger.info("Adding dead letter with message id [{}] because [{}].",
-                        letter.message().getIdentifier(),
+                        letter.message().identifier(),
                         optionalCause.get().type());
         } else {
             logger.info(
                     "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
-                    letter.message().getIdentifier(),
+                    letter.message().identifier(),
                     stringSequenceIdentifier);
         }
 

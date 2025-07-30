@@ -44,14 +44,14 @@ class GrpcBackedResponseMessageTest {
             new QuerySerializer(serializer, serializer, new AxonServerConfiguration());
 
     @Test
-    void getIdentifierReturnsTheSameIdentifierAsSpecifiedInTheQueryResponseMessage() {
+    void identifierAsSpecifiedInTheQueryResponseMessage() {
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage = asResponseMessage(TEST_QUERY_RESPONSE);
         QueryResponse testQueryResponse =
                 querySerializer.serializeResponse(testQueryResponseMessage, REQUEST_MESSAGE_ID);
         GrpcBackedResponseMessage<TestQueryResponse> testSubject =
                 new GrpcBackedResponseMessage<>(testQueryResponse, serializer);
 
-        assertEquals(testQueryResponse.getMessageIdentifier(), testSubject.getIdentifier());
+        assertEquals(testQueryResponse.getMessageIdentifier(), testSubject.identifier());
     }
 
     @Test

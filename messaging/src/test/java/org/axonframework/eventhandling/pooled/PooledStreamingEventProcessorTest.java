@@ -120,7 +120,7 @@ class PooledStreamingEventProcessorTest {
         when(stubEventHandlingComponent.supports(any())).thenReturn(true);
         when(stubEventHandlingComponent.handle(any(), any())).thenReturn(MessageStream.empty());
         when(stubEventHandlingComponent.sequenceIdentifierFor(any())).thenAnswer(
-                e -> e.getArgument(0, EventMessage.class).getIdentifier()
+                e -> e.getArgument(0, EventMessage.class).identifier()
         );
     }
 
@@ -364,7 +364,7 @@ class PooledStreamingEventProcessorTest {
         doReturn(MessageStream.failed(new RuntimeException("Simulating worker failure")))
                 .doReturn(MessageStream.empty())
                 .when(stubEventHandlingComponent)
-                .handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any());
+                .handle(argThat(em -> em.identifier().equals(events.get(2).identifier())), any());
 
         testSubject.start();
 
@@ -378,7 +378,7 @@ class PooledStreamingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> {
             try {
                 verify(stubEventHandlingComponent).handle(
-                        argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())),
+                        argThat(em -> em.identifier().equals(events.get(2).identifier())),
                         any()
                 );
             } catch (Exception e) {

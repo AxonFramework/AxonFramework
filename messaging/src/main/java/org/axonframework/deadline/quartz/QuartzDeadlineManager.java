@@ -139,7 +139,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                            Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
-        String deadlineId = JOB_NAME_PREFIX + deadlineMessage.getIdentifier();
+        String deadlineId = JOB_NAME_PREFIX + deadlineMessage.identifier();
 
         Span span = spanFactory.createScheduleSpan(deadlineName, deadlineId, deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {

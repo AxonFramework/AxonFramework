@@ -134,7 +134,7 @@ public abstract class EmbeddedEventStoreTest {
         TrackingEventStream stream = testSubject.openStream(null);
         assertTrue(stream.hasNextAvailable());
         TrackedEventMessage<?> actual = stream.nextAvailable();
-        assertEquals(expected.getIdentifier(), actual.getIdentifier());
+        assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.getPayload(), actual.getPayload());
         assertTrue(actual instanceof DomainEventMessage<?>);
         assertEquals(expected.getAggregateIdentifier(), ((DomainEventMessage<?>) actual).getAggregateIdentifier());
@@ -149,7 +149,7 @@ public abstract class EmbeddedEventStoreTest {
         DomainEventMessage<?> expected = createDomainEvent();
         Thread t = new Thread(() -> {
             try {
-                assertEquals(expected.getIdentifier(), stream.nextAvailable().getIdentifier());
+                assertEquals(expected.identifier(), stream.nextAvailable().identifier());
             } catch (InterruptedException e) {
                 fail();
             }
@@ -205,8 +205,8 @@ public abstract class EmbeddedEventStoreTest {
         TrackingToken firstToken = first.trackingToken();
         //noinspection resource
         TrackedEventMessage<?> second = testSubject.openStream(firstToken).nextAvailable();
-        assertEquals(events.get(0).getIdentifier(), first.getIdentifier());
-        assertEquals(events.get(1).getIdentifier(), second.getIdentifier());
+        assertEquals(events.get(0).identifier(), first.identifier());
+        assertEquals(events.get(1).identifier(), second.identifier());
     }
 
     @Test

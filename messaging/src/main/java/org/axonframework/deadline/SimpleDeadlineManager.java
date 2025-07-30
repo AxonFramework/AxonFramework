@@ -118,7 +118,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                            Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
-        String deadlineMessageId = deadlineMessage.getIdentifier();
+        String deadlineMessageId = deadlineMessage.identifier();
         DeadlineId deadlineId = new DeadlineId(deadlineName, deadlineScope, deadlineMessageId);
         Span span = spanFactory.createScheduleSpan(deadlineName, deadlineMessageId, deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {

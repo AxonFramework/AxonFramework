@@ -99,7 +99,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      * of Work.
      *
      * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
-     *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
+     *                 {@link Message#identifier() identifier} and {@link Message#getMetaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
     public GenericResultMessage(@Nonnull Message<R> delegate) {
@@ -114,7 +114,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      * of Work.
      *
      * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
-     *                  {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                  {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                  {@link Message#getMetaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link ResultMessage}.
@@ -210,7 +210,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
                      .append(getMetaData())
                      .append('}')
                      .append(", messageIdentifier='")
-                     .append(getIdentifier())
+                     .append(identifier())
                      .append('\'')
                      .append(", exception='")
                      .append(exception)

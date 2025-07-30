@@ -75,7 +75,7 @@ class GenericMessageTest extends MessageTestSuite {
 
         Message<String> testSubject = new GenericMessage<>(testIdentifier, testType, testPayload, testMetaData);
 
-        assertEquals(testIdentifier, testSubject.getIdentifier());
+        assertEquals(testIdentifier, testSubject.identifier());
         assertEquals(testType, testSubject.type());
         assertEquals(testPayload, testSubject.getPayload());
         assertEquals(testMetaData, testSubject.getMetaData());

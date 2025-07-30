@@ -144,7 +144,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * of Work.
      *
      * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
-     *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
+     *                 {@link Message#identifier() identifier} and {@link Message#getMetaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
     public GenericQueryResponseMessage(@Nonnull Message<R> delegate) {
@@ -159,7 +159,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * of Work.
      *
      * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
-     *                  {@link Message#type() type, {@link Message#getIdentifier() identifier} and {@link
+     *                  {@link Message#type() type, {@link Message#identifier() identifier} and {@link
      *                  Message#getMetaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link QueryResponseMessage}.

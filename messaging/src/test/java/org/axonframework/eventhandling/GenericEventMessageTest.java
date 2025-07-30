@@ -64,9 +64,9 @@ class GenericEventMessageTest extends MessageTestSuite {
         assertEquals(Object.class, message3.getPayload().getClass());
         assertEquals(Object.class, message3.getPayloadType());
 
-        assertNotEquals(message1.getIdentifier(), message2.getIdentifier());
-        assertNotEquals(message1.getIdentifier(), message3.getIdentifier());
-        assertNotEquals(message2.getIdentifier(), message3.getIdentifier());
+        assertNotEquals(message1.identifier(), message2.identifier());
+        assertNotEquals(message1.identifier(), message3.identifier());
+        assertNotEquals(message2.identifier(), message3.identifier());
     }
 
     @Test

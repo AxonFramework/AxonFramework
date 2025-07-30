@@ -89,7 +89,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
 
     private SerializedMessage(@Nonnull SerializedMessage<P> message,
                               @Nonnull LazyDeserializingObject<MetaData> newMetaData) {
-        this(message.getIdentifier(), message.type(), message.payload, newMetaData);
+        this(message.identifier(), message.type(), message.payload, newMetaData);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
         try {
             return payload.getObject();
         } catch (SerializationException e) {
-            throw new SerializationException("Error while deserializing payload of message " + getIdentifier(), e);
+            throw new SerializationException("Error while deserializing payload of message " + identifier(), e);
         }
     }
 
@@ -112,7 +112,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
         try {
             return metaData.getObject();
         } catch (SerializationException e) {
-            throw new SerializationException("Error while deserializing meta data of message " + getIdentifier(), e);
+            throw new SerializationException("Error while deserializing meta data of message " + identifier(), e);
         }
     }
 

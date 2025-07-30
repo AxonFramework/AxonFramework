@@ -95,7 +95,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     public boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage<?, ?, ?> query) {
         return updateHandlers.keySet()
                              .stream()
-                             .anyMatch(m -> m.getIdentifier().equals(query.getIdentifier()));
+                             .anyMatch(m -> m.identifier().equals(query.identifier()));
     }
 
     @Override

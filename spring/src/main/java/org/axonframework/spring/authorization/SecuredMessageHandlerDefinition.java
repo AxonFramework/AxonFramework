@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import jakarta.annotation.Nonnull;
 
 /**
  * MessageHandlerDefinition that verifies authorization based on
@@ -69,7 +68,7 @@ public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinitio
                 throws Exception {
             if (!hasRequiredRoles(message)) {
                 throw new UnauthorizedMessageException(
-                        "Unauthorized message with identifier [" + message.getIdentifier() + "]"
+                        "Unauthorized message with identifier [" + message.identifier() + "]"
                 );
             }
             return super.handleSync(message, context, target);

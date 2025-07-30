@@ -473,7 +473,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
                        .setAggregateType(((GenericDomainEventMessage<?>) eventMessage).getType());
             }
             SerializedObject<byte[]> serializedPayload = eventMessage.serializePayload(serializer, byte[].class);
-            builder.setMessageIdentifier(eventMessage.getIdentifier()).setPayload(
+            builder.setMessageIdentifier(eventMessage.identifier()).setPayload(
                     io.axoniq.axonserver.grpc.SerializedObject.newBuilder()
                                                               .setType(serializedPayload.getType().getName())
                                                               .setRevision(getOrDefault(

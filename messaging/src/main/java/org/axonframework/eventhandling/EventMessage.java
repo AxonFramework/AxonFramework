@@ -56,7 +56,7 @@ public interface EventMessage<P> extends Message<P> {
      * @return The identifier of this {@link EventMessage event}.
      */
     @Override
-    String getIdentifier();
+    String identifier();
 
     /**
      * Returns the timestamp of this {@link EventMessage event}.

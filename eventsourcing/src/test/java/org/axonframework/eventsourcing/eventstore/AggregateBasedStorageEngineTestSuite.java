@@ -555,7 +555,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
     private void assertEvent(EventMessage<?> actual, EventMessage<?> expected) {
         assertEquals(expected.getPayload(), convertPayload(actual).getPayload());
-        assertEquals(expected.getIdentifier(), actual.getIdentifier());
+        assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.getTimestamp().toEpochMilli(), actual.getTimestamp().toEpochMilli());
         assertEquals(expected.getMetaData(), actual.getMetaData());
     }

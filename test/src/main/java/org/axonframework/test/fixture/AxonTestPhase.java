@@ -469,7 +469,7 @@ public interface AxonTestPhase {
              * All events are compared for equality using a shallow equals comparison on all the fields of the events.
              * This means that all assigned values on the events' fields should have a proper equals implementation.
              * <p>
-             * Note that the {@link EventMessage#getIdentifier()} is ignored in the comparison.
+             * Note that the {@link EventMessage#identifier()} is ignored in the comparison.
              *
              * @param expectedEvents The expected events, in the exact order they are expected to be published.
              * @return The current Then instance, for fluent interfacing.
@@ -483,7 +483,7 @@ public interface AxonTestPhase {
              * This means that all assigned values on the events' fields should have a proper equals implementation.
              * Additionally, the metadata will be compared too.
              * <p>
-             * Note that the {@link EventMessage#getIdentifier()} is ignored in the comparison.
+             * Note that the {@link EventMessage#identifier()} is ignored in the comparison.
              *
              * @param expectedEvents The expected event messages, in the exact order they are expected to be published.
              * @return The current Then instance, for fluent interfacing.

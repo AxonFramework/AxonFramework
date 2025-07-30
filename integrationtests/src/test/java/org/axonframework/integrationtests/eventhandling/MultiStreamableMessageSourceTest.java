@@ -152,7 +152,7 @@ class MultiStreamableMessageSourceTest {
         BlockingStream<TrackedEventMessage<?>> actual = testSubject.openStream(null);
         assertNotNull(actual);
         TrackedEventMessage<?> trackedEventMessage = actual.nextAvailable();
-        assertEquals(message.getIdentifier(), trackedEventMessage.getIdentifier());
+        assertEquals(message.identifier(), trackedEventMessage.identifier());
         assertEquals(message.getPayload(), trackedEventMessage.getPayload());
     }
 

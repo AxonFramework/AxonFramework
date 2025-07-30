@@ -46,7 +46,7 @@ public abstract class AbstractMessage<P> implements Message<P> {
     }
 
     @Override
-    public String getIdentifier() {
+    public String identifier() {
         return this.identifier;
     }
 

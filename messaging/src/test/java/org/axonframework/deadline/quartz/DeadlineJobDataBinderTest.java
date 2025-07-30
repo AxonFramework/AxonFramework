@@ -90,7 +90,7 @@ class DeadlineJobDataBinderTest {
         JobDataMap result = toJobData(serializer, testDeadlineMessage, testDeadlineScope);
 
         assertEquals(TEST_DEADLINE_NAME, result.get(DEADLINE_NAME));
-        assertEquals(testDeadlineMessage.getIdentifier(), result.get(MESSAGE_ID));
+        assertEquals(testDeadlineMessage.identifier(), result.get(MESSAGE_ID));
         assertEquals(testDeadlineMessage.getTimestamp().toString(), result.get(MESSAGE_TIMESTAMP));
         String expectedPayloadType = expectedSerializedClassType.apply(testDeadlineMessage.getPayloadType());
         assertEquals(expectedPayloadType, result.get(MESSAGE_TYPE));
@@ -119,7 +119,7 @@ class DeadlineJobDataBinderTest {
         DeadlineMessage<String> result = deadlineMessage(serializer, testJobDataMap);
 
         assertEquals(testDeadlineMessage.getDeadlineName(), result.getDeadlineName());
-        assertEquals(testDeadlineMessage.getIdentifier(), result.getIdentifier());
+        assertEquals(testDeadlineMessage.identifier(), result.identifier());
         assertEquals(testDeadlineMessage.getTimestamp(), result.getTimestamp());
         assertEquals(testDeadlineMessage.getPayload(), result.getPayload());
         assertEquals(testDeadlineMessage.getPayloadType(), result.getPayloadType());

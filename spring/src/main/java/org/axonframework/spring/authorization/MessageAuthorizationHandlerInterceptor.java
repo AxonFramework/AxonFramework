@@ -67,7 +67,7 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
                             return new HashSet<>(Arrays.asList(message.getMetaData().get("authorities").split(",")));
                         })
                         .orElseThrow(() -> new UnauthorizedMessageException(
-                                "No authorities found for message with identifier [" + message.getIdentifier() + "]"
+                                "No authorities found for message with identifier [" + message.identifier() + "]"
                         ));
 
         if (logger.isDebugEnabled()) {
@@ -79,7 +79,7 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
             return interceptorChain.proceedSync(context);
         }
         throw new UnauthorizedMessageException(
-                "Unauthorized message with identifier [" + message.getIdentifier() + "]"
+                "Unauthorized message with identifier [" + message.identifier() + "]"
         );
     }
 }

@@ -189,7 +189,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                         ),
                         e -> new JdbcException(
                                 "Failed to enqueue dead letter with with message id [" +
-                                        letter.message().getIdentifier() + "] during testing", e
+                                        letter.message().identifier() + "] during testing", e
                         )
                 );
             } catch (SQLException e) {

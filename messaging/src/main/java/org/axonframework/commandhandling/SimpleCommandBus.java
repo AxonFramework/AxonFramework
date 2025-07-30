@@ -147,10 +147,10 @@ public class SimpleCommandBus implements CommandBus {
     protected CompletableFuture<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                 @Nonnull CommandHandler handler) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Handling command [{} ({})]", command.getIdentifier(), command.type());
+            logger.debug("Handling command [{} ({})]", command.identifier(), command.type());
         }
 
-        UnitOfWork unitOfWork = new UnitOfWork(command.getIdentifier(), worker);
+        UnitOfWork unitOfWork = new UnitOfWork(command.identifier(), worker);
         processingLifecycleHandlerRegistrars.forEach(it -> it.registerHandlers(unitOfWork));
 
         var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).first().asCompletableFuture());
@@ -158,11 +158,11 @@ public class SimpleCommandBus implements CommandBus {
             result = result.whenComplete((r, e) -> {
                 if (e == null) {
                     logger.debug("Command [{} ({})] completed successfully",
-                                 command.getIdentifier(),
+                                 command.identifier(),
                                  command.type());
                 } else {
                     logger.debug("Command [{} ({})] completed exceptionally",
-                                 command.getIdentifier(),
+                                 command.identifier(),
                                  command.type(),
                                  e);
                 }

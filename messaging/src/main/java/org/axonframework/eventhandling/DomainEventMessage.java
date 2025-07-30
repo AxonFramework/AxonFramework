@@ -60,7 +60,7 @@ public interface DomainEventMessage<P> extends EventMessage<P> {
 
     /**
      * Returns a copy of this DomainEventMessage with the given {@code metaData}. The payload,
-     * {@link #getTimestamp() Timestamp} and {@link #getIdentifier() EventIdentifier}, as well as the
+     * {@link #getTimestamp() Timestamp} and {@link #identifier() EventIdentifier}, as well as the
      * {@link #getAggregateIdentifier() Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain
      * unchanged.
      *
@@ -72,7 +72,7 @@ public interface DomainEventMessage<P> extends EventMessage<P> {
 
     /**
      * Returns a copy of this DomainEventMessage with its MetaData merged with the given {@code metaData}. The payload,
-     * {@link #getTimestamp() Timestamp} and {@link #getIdentifier() EventIdentifier}, as well as the {@link
+     * {@link #getTimestamp() Timestamp} and {@link #identifier() EventIdentifier}, as well as the {@link
      * #getAggregateIdentifier() Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain
      * unchanged.
      *

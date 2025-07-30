@@ -85,8 +85,8 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public String getIdentifier() {
-        return responseMessage.getIdentifier();
+    public String identifier() {
+        return responseMessage.identifier();
     }
 
     @Nonnull

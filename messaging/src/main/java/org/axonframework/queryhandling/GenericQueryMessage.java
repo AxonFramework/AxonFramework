@@ -61,14 +61,14 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
      * Constructs a {@code GenericQueryMessage} with given {@code delegate} and {@code responseType}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
      * @param delegate     The {@link Message} containing {@link Message#getPayload() payload},
-     *                     {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                     {@link Message#getMetaData() metadata} for the {@link QueryMessage} to reconstruct.
      * @param responseType The expected {@link ResponseType response type} for this {@link QueryMessage}.
      */

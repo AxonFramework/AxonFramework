@@ -34,6 +34,6 @@ class MessageIdSpanAttributesProviderTest {
         Message<?> event = EventTestUtils.asEventMessage("Some event");
         Map<String, String> map = provider.provideForMessage(event);
         assertEquals(1, map.size());
-        assertEquals(event.getIdentifier(), map.get("axon_message_id"));
+        assertEquals(event.identifier(), map.get("axon_message_id"));
     }
 }
