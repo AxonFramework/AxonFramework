@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.configuration.EventProcessorsCustomization;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsCustomization;
+import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorsCustomization;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -36,7 +37,11 @@ public class EventProcessingConfigurationDefaults implements ConfigurationEnhanc
                                       c -> c.hasComponent(TransactionManager.class)
                                               ? new TransactionalUnitOfWorkFactory(c.getComponent(TransactionManager.class))
                                               : new SimpleUnitOfWorkFactory()
-                ).registerIfNotPresent(EventProcessorsCustomization.class, c -> eventProcessorsCustomization)
+                )
+                .registerIfNotPresent(EventProcessorsCustomization.class, c -> eventProcessorsCustomization)
+                .registerIfNotPresent(SubscribingEventProcessorsCustomization.class,
+                                      c -> new SubscribingEventProcessorsCustomization(c.getComponent(
+                                              EventProcessorsCustomization.class)))
                 .registerIfNotPresent(PooledStreamingEventProcessorsCustomization.class,
                                       c -> new PooledStreamingEventProcessorsCustomization(c.getComponent(
                                               EventProcessorsCustomization.class)));

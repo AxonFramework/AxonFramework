@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingCom
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.ArrayList;
@@ -46,13 +47,14 @@ public class PooledStreamingEventProcessorModule
         implements EventProcessorModule,
         EventProcessorModule.StreamingSourcePhase<PooledStreamingEventProcessorsCustomization>,
         EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorsCustomization>,
-        EventProcessorModule.EventHandlingComponentsPhase<PooledStreamingEventProcessorsCustomization>,
+        EventProcessorModule.RequiredEventHandlingComponentPhase<PooledStreamingEventProcessorsCustomization>,
+        EventProcessorModule.AdditionalComponentsOrCustomization<PooledStreamingEventProcessorsCustomization>,
         EventProcessorModule.BuildPhase {
 
     private final String processorName;
     private final List<ComponentBuilder<EventHandlingComponent>> eventHandlingBuilders;
     private ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder;
-    private UnaryOperator<PooledStreamingEventProcessorsCustomization> customizationOverride = c -> c;
+    private ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorsCustomization>> customizationOverrideBuilder = cfg -> c -> c;
 
     // todo: defaults - should be configurable
     private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
@@ -82,16 +84,17 @@ public class PooledStreamingEventProcessorModule
         Function<String, ScheduledExecutorService> workerExecutorBuilder = processorName -> {
             ScheduledExecutorService workerExecutor =
                     defaultExecutor(4, "WorkPackage[" + processorName + "]");
-            lifecycleRegistry.onShutdown(1, workerExecutor::shutdown);
+            lifecycleRegistry.onShutdown(workerExecutor::shutdown);
             return workerExecutor;
         };
         Function<String, ScheduledExecutorService> coordinatorExecutorBuilder = processorName -> {
             ScheduledExecutorService coordinatorExecutor =
                     defaultExecutor(1, "Coordinator[" + processorName + "]");
-            lifecycleRegistry.onShutdown(1, coordinatorExecutor::shutdown);
+            lifecycleRegistry.onShutdown(coordinatorExecutor::shutdown);
             return coordinatorExecutor;
         };
 
+        var customizationOverride = customizationOverrideBuilder.build(parent);
         var eventProcessorsCustomization = customizationOverride.apply(
                 parent.getComponent(PooledStreamingEventProcessorsCustomization.class)
         ); // todo: write customization here!
@@ -125,8 +128,8 @@ public class PooledStreamingEventProcessorModule
                 eventProcessorsCustomization
         );
 
-        lifecycleRegistry.onStart(2, processor::start);
-        lifecycleRegistry.onShutdown(2, processor::shutDown);
+        lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, processor::start);
+        lifecycleRegistry.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, processor::shutdownAsync);
         return super.build(parent, lifecycleRegistry);
     }
 
@@ -135,21 +138,21 @@ public class PooledStreamingEventProcessorModule
     }
 
     @Override
-    public EventHandlingComponentsPhase<PooledStreamingEventProcessorsCustomization> component(
+    public AdditionalComponentsOrCustomization<PooledStreamingEventProcessorsCustomization> component(
             @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder) {
         eventHandlingBuilders.add(eventHandlingComponentBuilder);
         return this;
     }
 
     @Override
-    public EventHandlingComponentsPhase<PooledStreamingEventProcessorsCustomization> eventHandling() {
+    public RequiredEventHandlingComponentPhase<PooledStreamingEventProcessorsCustomization> eventHandling() {
         return this;
     }
 
     @Override
-    public BuildPhase customized(
+    public BuildPhase customize(
             @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorsCustomization>> customizationOverride) {
-        this.customizationOverride = customizationOverride.build(null);
+        this.customizationOverrideBuilder = customizationOverride;
         return this;
     }
 

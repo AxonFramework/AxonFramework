@@ -90,15 +90,22 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
 
     interface EventHandlingPhase<T extends EventProcessorsCustomization> {
 
-        EventHandlingComponentsPhase<T> eventHandling();
+        RequiredEventHandlingComponentPhase<T> eventHandling();
     }
 
-    interface EventHandlingComponentsPhase<T extends EventProcessorsCustomization> {
+    interface RequiredEventHandlingComponentPhase<T extends EventProcessorsCustomization> {
 
-        EventHandlingComponentsPhase<T> component(
+        AdditionalComponentsOrCustomization<T> component(
                 @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder);
 
-        BuildPhase customized(@Nonnull ComponentBuilder<UnaryOperator<T>> customizationOverride);
+    }
+
+    interface AdditionalComponentsOrCustomization<T extends EventProcessorsCustomization> {
+
+        AdditionalComponentsOrCustomization<T> component(
+                @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder);
+
+        BuildPhase customize(@Nonnull ComponentBuilder<UnaryOperator<T>> customizationOverride);
 
         EventProcessorModule build();
     }

@@ -47,10 +47,11 @@ class PooledStreamingEventProcessorModuleTest {
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         EventProcessorModule module = EventProcessorModule.pooledStreaming("test-processor")
                                                           .eventSource(cfg -> eventSource)
+                                                          // todo: add tokenStore and executors().coordinator().worker().eventHandling()
                                                           .eventHandling()
                                                           .component(cfg -> eventHandlingComponent1)
                                                           .component(cfg -> eventHandlingComponent2)
-                                                          .customized(cfg -> customization ->
+                                                          .customize(cfg -> customization ->
                                                                   customization.initialSegmentCount(1)
                                                           ).build();
 

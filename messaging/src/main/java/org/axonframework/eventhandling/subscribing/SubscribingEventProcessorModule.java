@@ -29,6 +29,7 @@ import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 
@@ -41,7 +42,8 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         implements EventProcessorModule,
         EventProcessorModule.SubscribingSourcePhase<SubscribingEventProcessorsCustomization>,
         EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorsCustomization>,
-        EventProcessorModule.EventHandlingComponentsPhase<SubscribingEventProcessorsCustomization>,
+        EventProcessorModule.RequiredEventHandlingComponentPhase<SubscribingEventProcessorsCustomization>,
+        EventProcessorModule.AdditionalComponentsOrCustomization<SubscribingEventProcessorsCustomization>,
         EventProcessorModule.BuildPhase {
 
     private final String processorName;
@@ -67,7 +69,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
     @Override
-    public EventHandlingComponentsPhase<SubscribingEventProcessorsCustomization> component(
+    public AdditionalComponentsOrCustomization<SubscribingEventProcessorsCustomization> component(
             @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder) {
         eventHandlingBuilders.add(eventHandlingComponentBuilder);
         return this;
@@ -108,21 +110,21 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                 new SimpleUnitOfWorkFactory(),
                 c -> c
         );
-        lifecycleRegistry.onStart(2, processor::start);
-        lifecycleRegistry.onShutdown(2, processor::shutDown);
+        lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, processor::start);
+        lifecycleRegistry.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, processor::shutdownAsync);
         return super.build(parent, lifecycleRegistry);
     }
 
 
     @Override
-    public BuildPhase customized(
+    public BuildPhase customize(
             @Nonnull ComponentBuilder<UnaryOperator<SubscribingEventProcessorsCustomization>> customizationOverride) {
         this.customizationOverride = customizationOverride.build(null);
         return this;
     }
 
     @Override
-    public EventHandlingComponentsPhase<SubscribingEventProcessorsCustomization> eventHandling() {
+    public RequiredEventHandlingComponentPhase<SubscribingEventProcessorsCustomization> eventHandling() {
         return this;
     }
 
