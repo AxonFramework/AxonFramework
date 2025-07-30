@@ -68,7 +68,7 @@ class QuerySerializerTest {
 
         assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(message.metaData(), deserialized.metaData());
-        assertTrue(message.getResponseType().matches(deserialized.getResponseType().responseMessagePayloadType()));
+        assertTrue(message.responseType().matches(deserialized.responseType().responseMessagePayloadType()));
         assertEquals(message.payload(), deserialized.payload());
         assertEquals(message.payloadType(), deserialized.payloadType());
     }

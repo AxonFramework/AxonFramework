@@ -124,7 +124,7 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
             return super.canHandle(message, context)
                     && message instanceof QueryMessage
                     && queryName.equals(message.type().name())
-                    && ((QueryMessage<?, ?>) message).getResponseType().matches(resultType);
+                    && ((QueryMessage<?, ?>) message).responseType().matches(resultType);
         }
 
         @Override

@@ -106,7 +106,7 @@ public class SubscriptionMessageSerializer {
                            .setClientId(configuration.getClientId())
                            .setComponentName(configuration.getComponentName())
                            .setPayload(payloadSerializer.apply(subscriptionQueryMessage))
-                           .setResponseType(responseTypeSerializer.apply(subscriptionQueryMessage.getResponseType()))
+                           .setResponseType(responseTypeSerializer.apply(subscriptionQueryMessage.responseType()))
                            .putAllMetaData(metadataSerializer.apply(subscriptionQueryMessage.metaData()))
                            .build();
     }
