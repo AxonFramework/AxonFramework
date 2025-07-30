@@ -196,8 +196,6 @@ public interface Message<P> {
      * @return the type of payload.
      * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
      */
-    @Deprecated
-    // TODO #3085 - Replace for getMessageType once fully integrated
     Class<P> getPayloadType();
 
     /**
