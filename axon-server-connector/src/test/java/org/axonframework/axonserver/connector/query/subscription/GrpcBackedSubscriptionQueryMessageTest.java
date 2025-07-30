@@ -48,7 +48,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
             new SubscriptionMessageSerializer(serializer, serializer, new AxonServerConfiguration());
 
     @Test
-    void getUpdateResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
+    void updateResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
         ResponseType<String> expectedUpdateResponseType = RESPONSE_TYPE;
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE, expectedUpdateResponseType

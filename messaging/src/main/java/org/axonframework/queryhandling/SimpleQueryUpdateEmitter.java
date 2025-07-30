@@ -170,16 +170,16 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     private Predicate<SubscriptionQueryMessage<?, ?, ?>> payloadMatchesQueryResponseType(Class<?> payloadType) {
         return sqm -> {
-            if (sqm.getUpdateResponseType() instanceof MultipleInstancesResponseType) {
+            if (sqm.updateResponseType() instanceof MultipleInstancesResponseType) {
                 return payloadType.isArray() || Iterable.class.isAssignableFrom(payloadType);
             }
-            if (sqm.getUpdateResponseType() instanceof OptionalResponseType) {
+            if (sqm.updateResponseType() instanceof OptionalResponseType) {
                 return Optional.class.isAssignableFrom(payloadType);
             }
-            if (sqm.getUpdateResponseType() instanceof PublisherResponseType) {
+            if (sqm.updateResponseType() instanceof PublisherResponseType) {
                 return Publisher.class.isAssignableFrom(payloadType);
             }
-            return sqm.getUpdateResponseType().getExpectedResponseType().isAssignableFrom(payloadType);
+            return sqm.updateResponseType().getExpectedResponseType().isAssignableFrom(payloadType);
         };
     }
 

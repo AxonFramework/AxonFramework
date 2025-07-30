@@ -25,7 +25,7 @@ import java.util.Map;
  * A {@link QueryMessage} type that carries a subscription query: a request for information.
  * <p>
  * Besides a payload, subscription query messages also carry the expected
- * {@link #responseType() initial response type} and {@link #getUpdateResponseType() update type}. The response type
+ * {@link #responseType() initial response type} and {@link #updateResponseType() update type}. The response type
  * is the type of result expected by the caller. The update type is type of incremental updates.
  * <p>
  * Handlers should only answer a query if they can respond with the appropriate response type and update type.
@@ -33,7 +33,7 @@ import java.util.Map;
  * @param <P> The type of {@link #payload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
  * @param <I> The type of {@link #responseType() initial response} expected from this
  *            {@link SubscriptionQueryMessage}.
- * @param <U> The type of {@link #getUpdateResponseType() incremental updates} expected from this
+ * @param <U> The type of {@link #updateResponseType() incremental updates} expected from this
  *            {@link SubscriptionQueryMessage}.
  * @author Allard Buijze
  * @since 3.3.0
@@ -45,7 +45,7 @@ public interface SubscriptionQueryMessage<P, I, U> extends QueryMessage<P, I> {
      *
      * @return The {@link ResponseType type of incremental responses} expected by the sender of the query.
      */
-    ResponseType<U> getUpdateResponseType();
+    ResponseType<U> updateResponseType();
 
     @Override
     SubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData);

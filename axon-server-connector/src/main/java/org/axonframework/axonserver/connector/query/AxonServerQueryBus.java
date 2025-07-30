@@ -468,7 +468,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     ) {
         Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
                        () -> "The subscription Query query does not support Flux as a return type.");
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.updateResponseType().getExpectedResponseType()),
                        () -> "The subscription Query query does not support Flux as an update type.");
         shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"

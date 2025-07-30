@@ -41,7 +41,7 @@ import java.util.Map;
  *            {@link #payload() payload}.
  * @param <I> A generic specifying the type of the {@link #responseType() initial result} of the
  *            {@link SubscriptionQueryResult}.
- * @param <U> A generic specifying the type of the {@link #getUpdateResponseType() subsequent updates} of the
+ * @param <U> A generic specifying the type of the {@link #updateResponseType() subsequent updates} of the
  *            {@link SubscriptionQueryResult}.
  * @author Sara Pellegrini
  * @since 4.0.0
@@ -97,7 +97,7 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
-    public ResponseType<U> getUpdateResponseType() {
+    public ResponseType<U> updateResponseType() {
         return serializedUpdateResponseType.getObject();
     }
 
