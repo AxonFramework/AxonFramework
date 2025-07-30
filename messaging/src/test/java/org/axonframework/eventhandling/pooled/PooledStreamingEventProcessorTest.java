@@ -117,24 +117,25 @@ class PooledStreamingEventProcessorTest {
 
     private PooledStreamingEventProcessor withTestSubject(
             List<EventHandlingComponent> eventHandlingComponents,
-            UnaryOperator<PooledStreamingEventProcessorsCustomization> configOverride
+            UnaryOperator<PooledStreamingEventProcessorConfiguration> configOverride
     ) {
-        var testDefaults = new PooledStreamingEventProcessorsCustomization()
-                .initialSegmentCount(8)
-                .claimExtensionThreshold(500);
-        var customization = configOverride.apply(testDefaults);
-
         var componentsWithDefault = new ArrayList<>(eventHandlingComponents);
         componentsWithDefault.add(defaultEventHandlingComponent);
+
+        var testDefaultConfiguration = new PooledStreamingEventProcessorConfiguration()
+                .eventSource(stubMessageSource)
+                .eventHandlingComponents(componentsWithDefault)
+                .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                .tokenStore(tokenStore)
+                .coordinatorExecutor(ignored -> coordinatorExecutor)
+                .workerExecutor(ignored -> workerExecutor)
+                .initialSegmentCount(8)
+                .claimExtensionThreshold(500);
+        var customizedConfiguration = configOverride.apply(testDefaultConfiguration);
+
         var processor = new PooledStreamingEventProcessor(
                 PROCESSOR_NAME,
-                stubMessageSource,
-                componentsWithDefault,
-                new SimpleUnitOfWorkFactory(), // todo: this will be BatchUnitOfWorkFactory
-                tokenStore,
-                processorName -> coordinatorExecutor,
-                processorName -> workerExecutor,
-                customization
+                customizedConfiguration
         );
         this.testSubject = processor;
         return processor;
@@ -547,7 +548,7 @@ class PooledStreamingEventProcessorTest {
         void coordinatorExtendsClaimsEarlierForBusyWorkPackages() throws Exception {
             withTestSubject(
                     List.of(),
-                    c -> c.initialSegmentCount(1).coordinatorExtendsClaims(true)
+                    c -> c.initialSegmentCount(1).enableCoordinatorClaimExtension()
             );
 
             AtomicBoolean isWaiting = new AtomicBoolean(false);
@@ -590,7 +591,7 @@ class PooledStreamingEventProcessorTest {
         void coordinatorExtendingClaimFailsAndAbortsWorkPackage() throws Exception {
             withTestSubject(
                     List.of(),
-                    c -> c.initialSegmentCount(1).coordinatorExtendsClaims(true)
+                    c -> c.initialSegmentCount(1).enableCoordinatorClaimExtension()
             );
 
             String expectedExceptionMessage = "bummer";
@@ -766,7 +767,7 @@ class PooledStreamingEventProcessorTest {
             withTestSubject(
                     List.of(),
                     c -> c.initialSegmentCount(1)
-                          .eventCriteriaProvider(ignored -> stringOnlyCriteria)
+                          .eventCriteria(ignored -> stringOnlyCriteria)
             );
 
             // when - Publish an Integer event that will be filtered out by EventCriteria before reaching processor
@@ -803,7 +804,7 @@ class PooledStreamingEventProcessorTest {
             withTestSubject(
                     List.of(stringEventHandlingComponent),
                     c -> c.initialSegmentCount(1)
-                          .eventCriteriaProvider(ignored -> stringOnlyCriteria)
+                          .eventCriteria(ignored -> stringOnlyCriteria)
             );
 
             EventMessage<Integer> eventToIgnoreOne = EventTestUtils.asEventMessage(1337);
@@ -1078,7 +1079,7 @@ class PooledStreamingEventProcessorTest {
             when(defaultEventHandlingComponent.supports(new QualifiedName(Integer.class))).thenThrow(expectedError);
             withTestSubject(List.of(), c -> c.errorHandler(mockErrorHandler)
                                              .initialSegmentCount(1)
-                                             .eventCriteriaProvider(ignored -> EventCriteria.havingAnyTag())
+                                             .eventCriteria(ignored -> EventCriteria.havingAnyTag())
             );
 
             // when

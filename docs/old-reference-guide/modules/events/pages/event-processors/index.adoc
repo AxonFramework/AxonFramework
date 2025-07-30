@@ -336,7 +336,7 @@ The remainder of this page will cover the generic configuration options for each
 
 The `LegacyEventProcessingConfigurer` provides access to a lot of configurable components for Event Processors.
 Sometimes it is easier or preferable to provide an entire function to construct an Event Processor, however.
-To that end, we can configure a custom `EventProcessorBuilder`:
+To that end, we can configure a custom `EventProcessorConfiguration`:
 
 [source,java]
 ----
@@ -350,10 +350,10 @@ interface EventProcessorBuilder {
 }
 ----
 
-The `EventProcessorBuilder` functional interface provides the event processor's name, the `Configuration` and the `EventHandlerInvoker`, and requires returning an `EventProcessor` instance.
+The `EventProcessorConfiguration` functional interface provides the event processor's name, the `Configuration` and the `EventHandlerInvoker`, and requires returning an `EventProcessor` instance.
 Note that any Axon component that an Event Processor requires (for example, an `EventStore`) is retrievable from the `Configuration`.
 
-The `LegacyEventProcessingConfigurer` provides two methods to configure an `EventProcessorBuilder`:
+The `LegacyEventProcessingConfigurer` provides two methods to configure an `EventProcessorConfiguration`:
 
 . `registerEventProcessorFactory(EventProcessorBuilder)`: allows you to define a default factory method that creates event processors for which no explicit factories are defined
 . `registerEventProcessor(String, EventProcessorBuilder)`: defines the factory method to use to create a processor with given `name`

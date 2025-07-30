@@ -22,32 +22,26 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.lifecycle.Phase;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 public class SubscribingEventProcessorModule extends BaseModule<SubscribingEventProcessorModule>
         implements EventProcessorModule,
-        EventProcessorModule.SubscribingSourcePhase<SubscribingEventProcessorsCustomization>,
-        EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorsCustomization>,
-        EventProcessorModule.EventHandlingComponentsPhase<SubscribingEventProcessorsCustomization>,
-        EventProcessorModule.BuildPhase {
+        EventProcessorModule.CustomizationPhase<SubscribingEventProcessorConfiguration>
+{
 
     private final String processorName;
-    private final List<ComponentBuilder<EventHandlingComponent>> eventHandlingBuilders;
-    private ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> subscribableMessageSourceBuilder;
-    private UnaryOperator<SubscribingEventProcessorsCustomization> customizationOverride = c -> c;
+    private ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder;
 
     // todo: defaults - should be configurable
     private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
@@ -55,40 +49,16 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     public SubscribingEventProcessorModule(String processorName) {
         super(processorName);
         this.processorName = processorName;
-        this.eventHandlingBuilders = new ArrayList<>();
-    }
-
-    @Override
-    public EventHandlingPhase<SubscribingEventProcessorsCustomization> eventSource(
-            @Nonnull ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> subscribableMessageSourceBuilder
-    ) {
-        this.subscribableMessageSourceBuilder = subscribableMessageSourceBuilder;
-        return this;
-    }
-
-    @Override
-    public EventHandlingComponentsPhase<SubscribingEventProcessorsCustomization> component(
-            @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder) {
-        eventHandlingBuilders.add(eventHandlingComponentBuilder);
-        return this;
     }
 
     @Override
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         // todo: move it to the component registry!
+        var configuration = configurationBuilder.build(parent);
 
-        var eventSource = subscribableMessageSourceBuilder.build(parent);
-
-        var eventProcessorsCustomization = customizationOverride.apply(
-                parent.getComponent(SubscribingEventProcessorsCustomization.class)
-        ); // todo: write customization here!
-
-        var spanFactory = eventProcessorsCustomization.spanFactory();
-        var messageMonitor = eventProcessorsCustomization.messageMonitor();
-
-        var eventHandlingComponents = eventHandlingBuilders.stream()
-                                                           .map(hb -> hb.build(parent))
-                                                           .toList();
+        var spanFactory = configuration.spanFactory();
+        var messageMonitor = configuration.messageMonitor();
+        var eventHandlingComponents = configuration.eventHandlingComponents();
         List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
                 .stream()
                 .map(c -> new TracingEventHandlingComponent(
@@ -103,27 +73,33 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                 )).collect(Collectors.toUnmodifiableList());
         var processor = new SubscribingEventProcessor(
                 processorName,
-                eventSource,
-                decoratedEventHandlingComponents,
-                new SimpleUnitOfWorkFactory(),
-                c -> c
+                configuration.eventHandlingComponents(decoratedEventHandlingComponents)
         );
-        lifecycleRegistry.onStart(2, processor::start);
-        lifecycleRegistry.onShutdown(2, processor::shutDown);
+        lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, processor::start);
+        lifecycleRegistry.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, processor::shutdownAsync);
         return super.build(parent, lifecycleRegistry);
     }
 
 
     @Override
-    public BuildPhase customized(
-            @Nonnull ComponentBuilder<UnaryOperator<SubscribingEventProcessorsCustomization>> customizationOverride) {
-        this.customizationOverride = customizationOverride.build(null);
+    public EventProcessorModule configure(
+            @Nonnull ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder) {
+        this.configurationBuilder = configurationBuilder;
         return this;
     }
 
     @Override
-    public EventHandlingComponentsPhase<SubscribingEventProcessorsCustomization> eventHandling() {
+    public EventProcessorModule customize(
+            @Nonnull ComponentBuilder<UnaryOperator<SubscribingEventProcessorConfiguration>> customizationBuilder) {
+        configure(cfg -> customizationBuilder.build(cfg).apply(parentConfigurationOrDefault(cfg)));
         return this;
+    }
+
+    private static SubscribingEventProcessorConfiguration parentConfigurationOrDefault(
+            Configuration cfg
+    ) {
+        return cfg.getOptionalComponent(SubscribingEventProcessorConfiguration.class)
+                  .orElseGet(SubscribingEventProcessorConfiguration::new);
     }
 
     @Override

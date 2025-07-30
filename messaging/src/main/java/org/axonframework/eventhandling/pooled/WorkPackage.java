@@ -365,7 +365,7 @@ class WorkPackage {
 
     /**
      * Extend the claim of the {@link TrackingToken} owned by this {@code WorkPackage}, if the configurable
-     * {@link PooledStreamingEventProcessor.Builder#claimExtensionThreshold(long) claim extension threshold} is met.
+     * {@link PooledStreamingEventProcessorConfiguration#claimExtensionThreshold(long) claim extension threshold} is met.
      */
     public void extendClaimIfThresholdIsMet() {
         if (now() > nextClaimExtension.get()) {

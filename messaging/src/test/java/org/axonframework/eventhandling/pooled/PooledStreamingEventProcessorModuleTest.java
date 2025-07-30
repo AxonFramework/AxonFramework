@@ -17,14 +17,17 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,17 +48,23 @@ class PooledStreamingEventProcessorModuleTest {
         eventHandlingComponent1.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         var eventHandlingComponent2 = new SimpleEventHandlingComponent();
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-        EventProcessorModule module = EventProcessorModule.pooledStreaming("test-processor")
-                                                          .eventSource(cfg -> eventSource)
-                                                          .eventHandling()
-                                                          .component(cfg -> eventHandlingComponent1)
-                                                          .component(cfg -> eventHandlingComponent2)
-                                                          .customized(cfg -> customization ->
-                                                                  customization.initialSegmentCount(1)
-                                                          ).build();
+        EventProcessorModule module = EventProcessorModule
+                .pooledStreaming("test-processor")
+                .customize(cfg -> customization ->
+                        customization
+                                .eventHandlingComponents(List.of(eventHandlingComponent1, eventHandlingComponent2)) // todo: maybe separated step?
+                                .eventSource(eventSource)
+                                .tokenStore(new InMemoryTokenStore())
+                                .initialSegmentCount(1)
+                );
 
         var configuration = MessagingConfigurer.create()
-                                               .componentRegistry(cr -> cr.registerModule(module))
+                                               .eventProcessing(eventProcessing -> eventProcessing
+                                                       .defaults(defaults -> defaults
+                                                               .shared(p -> p.errorHandler(PropagatingErrorHandler.instance()))
+                                                               .pooledStreaming(p -> p.batchSize(100))
+                                                       ).registerEventProcessorModule(module)
+                                               )
                                                .build();
 
         // when
