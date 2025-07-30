@@ -39,11 +39,11 @@ class SubscribingEventProcessorModuleTest {
         };
 
         var eventHandlingComponent = new SimpleEventHandlingComponent();
-        var module = EventProcessorModule.subscribing("test-processor")
-                                         .eventSource(c -> messageSource)
-                                         .eventHandlingComponent(c -> eventHandlingComponent)
-                                         .customization().defaults()
-                                         .build();
+        EventProcessorModule module = EventProcessorModule.subscribing("test-processor")
+                                                          .eventSource(cfg -> messageSource)
+                                                          .eventHandling()
+                                                          .component(cfg -> eventHandlingComponent)
+                                                          .build();
 
         var configuration = MessagingConfigurer.create()
                                                .componentRegistry(cr -> cr.registerModule(module))
