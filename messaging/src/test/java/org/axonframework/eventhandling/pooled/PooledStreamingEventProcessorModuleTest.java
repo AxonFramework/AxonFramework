@@ -45,13 +45,14 @@ class PooledStreamingEventProcessorModuleTest {
         eventHandlingComponent1.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         var eventHandlingComponent2 = new SimpleEventHandlingComponent();
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-        var module = EventProcessorModule.pooledStreaming("test-processor")
-                                         .eventSource(c -> eventSource)
-                                         .eventHandlingComponent(c -> eventHandlingComponent1)
-                                         .and()
-                                         .eventHandlingComponent(c -> eventHandlingComponent2)
-                                         .customization().defaults()
-                                         .build();
+        EventProcessorModule module = EventProcessorModule.pooledStreaming("test-processor")
+                                                          .eventSource(cfg -> eventSource)
+                                                          .eventHandling()
+                                                          .component(cfg -> eventHandlingComponent1)
+                                                          .component(cfg -> eventHandlingComponent2)
+                                                          .customized(cfg -> customization ->
+                                                                  customization.initialSegmentCount(1)
+                                                          ).build();
 
         var configuration = MessagingConfigurer.create()
                                                .componentRegistry(cr -> cr.registerModule(module))
