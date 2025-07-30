@@ -101,7 +101,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * of Work.
      *
      * @param delegate The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
-     *                 {@link Message#identifier() identifier} and {@link Message#getMetaData() metadata} for the
+     *                 {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
     public GenericCommandResultMessage(@Nonnull Message<R> delegate) {
@@ -117,7 +117,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      *
      * @param delegate  The {@link Message} containing {@link Message#payload() payload},
      *                  {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                  {@link Message#getMetaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
+     *                  {@link Message#metaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link CommandResultMessage}.
      */
@@ -145,7 +145,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
         Message<T> transformed = new GenericMessage<>(delegate.identifier(),
                                                       delegate.type(),
                                                       conversion.apply(delegate.payload()),
-                                                      delegate.getMetaData());
+                                                      delegate.metaData());
         return new GenericCommandResultMessage<>(transformed, exception);
     }
 

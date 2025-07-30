@@ -82,7 +82,7 @@ class DbSchedulerHumanReadableDeadlineDetailsTest {
 
         assertNotNull(resultMessage);
         assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.payload());
-        assertEquals(META_DATA, resultMessage.getMetaData());
+        assertEquals(META_DATA, resultMessage.metaData());
     }
 
     public static Collection<Serializer> dbSchedulerSerializers() {

@@ -203,7 +203,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         byte[] serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();
-        byte[] serializedMetadata = serializer.serialize(eventMessage.getMetaData(), byte[].class).getData();
+        byte[] serializedMetadata = serializer.serialize(eventMessage.metaData(), byte[].class).getData();
         return new DbSchedulerBinaryEventData(serializedPayload, payloadClass, revision, serializedMetadata);
     }
 
@@ -230,7 +230,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         String serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();
-        String serializedMetadata = serializer.serialize(eventMessage.getMetaData(), String.class).getData();
+        String serializedMetadata = serializer.serialize(eventMessage.metaData(), String.class).getData();
         return new DbSchedulerHumanReadableEventData(serializedPayload, payloadClass, revision, serializedMetadata);
     }
 

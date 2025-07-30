@@ -644,7 +644,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         }
         assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.getTimestamp().toEpochMilli(), actual.getTimestamp().toEpochMilli());
-        assertEquals(expected.getMetaData(), actual.getMetaData());
+        assertEquals(expected.metaData(), actual.metaData());
     }
 
     private static void waitUntilHasNextAvailable(MessageStream<EventMessage<?>> stream) {

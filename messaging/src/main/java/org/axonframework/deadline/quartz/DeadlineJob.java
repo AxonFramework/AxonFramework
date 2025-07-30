@@ -252,7 +252,7 @@ public class DeadlineJob implements Job {
             jobData.put(MESSAGE_REVISION, serializedDeadlinePayload.getType().getRevision());
 
             SerializedObject<byte[]> serializedDeadlineMetaData =
-                    serializer.serialize(deadlineMessage.getMetaData(), byte[].class);
+                    serializer.serialize(deadlineMessage.metaData(), byte[].class);
             jobData.put(MESSAGE_METADATA, serializedDeadlineMetaData.getData());
         }
 

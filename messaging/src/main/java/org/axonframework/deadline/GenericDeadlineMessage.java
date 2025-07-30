@@ -120,7 +120,7 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
      * @param deadlineName      The name for this {@link DeadlineMessage}.
      * @param delegate          The {@link Message} containing {@link Message#payload() payload},
      *                          {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                          {@link Message#getMetaData() metadata} for the {@link DeadlineMessage} to reconstruct.
+     *                          {@link Message#metaData() metadata} for the {@link DeadlineMessage} to reconstruct.
      * @param timestampSupplier {@link Supplier} for the {@link Instant timestamp} of the
      *                          {@link DeadlineMessage DeadlineMessage's} creation.
      */

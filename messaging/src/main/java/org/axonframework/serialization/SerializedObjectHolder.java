@@ -76,7 +76,7 @@ public class SerializedObjectHolder {
         synchronized (metaDataGuard) {
             SerializedObject existingForm = serializedMetaData.get(serializer);
             if (existingForm == null) {
-                SerializedObject<T> serialized = serializer.serialize(message.getMetaData(), expectedRepresentation);
+                SerializedObject<T> serialized = serializer.serialize(message.metaData(), expectedRepresentation);
                 serializedMetaData.put(serializer, serialized);
                 return serialized;
             } else {

@@ -218,7 +218,7 @@ class LegacyStreamableEventSourceTest {
             assertEquals(expected.identifier(), actual.identifier());
             assertEquals(expected.payload(), actual.payload());
             assertEquals(expected.getTimestamp(), actual.getTimestamp());
-            assertEquals(expected.getMetaData(), actual.getMetaData());
+            assertEquals(expected.metaData(), actual.metaData());
         }
     }
 

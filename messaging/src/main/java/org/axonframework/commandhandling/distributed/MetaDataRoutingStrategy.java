@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class MetaDataRoutingStrategy implements RoutingStrategy {
 
     @Override
     public String getRoutingKey(@Nonnull CommandMessage<?> command) {
-        Object value = command.getMetaData().get(metaDataKey);
+        Object value = command.metaData().get(metaDataKey);
         return value == null ? null : value.toString();
     }
 }

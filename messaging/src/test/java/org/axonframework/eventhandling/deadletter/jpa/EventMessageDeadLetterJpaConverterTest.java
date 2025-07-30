@@ -147,7 +147,7 @@ class EventMessageDeadLetterJpaConverterTest {
         assertEquals(expected.getTimestamp(), actual.getTimestamp());
         assertEquals(expected.payload(), actual.payload());
         assertEquals(expected.payloadType(), actual.payloadType());
-        assertEquals(expected.getMetaData(), actual.getMetaData());
+        assertEquals(expected.metaData(), actual.metaData());
 
         assertEquals(expected.getClass(), actual.getClass());
         if (expected instanceof DomainEventMessage<?> domainExpected) {

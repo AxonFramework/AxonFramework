@@ -121,7 +121,7 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
             delegate = new GenericMessage<>(resultMessage.identifier(),
                                             new MessageType(responseType),
                                             result.next(),
-                                            resultMessage.getMetaData(),
+                                            resultMessage.metaData(),
                                             responseType);
         } else {
             delegate = new GenericMessage<>(new MessageType(responseType),

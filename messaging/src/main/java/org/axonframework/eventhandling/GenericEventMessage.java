@@ -109,7 +109,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      *
      * @param delegate          The {@link Message} containing {@link Message#payload() payload},
      *                          {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                          {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
+     *                          {@link Message#metaData() metadata} for the {@link EventMessage} to reconstruct.
      * @param timestampSupplier {@link Supplier} for the {@link Instant timestamp} of the
      *                          {@link EventMessage EventMessage's} creation.
      */
@@ -123,7 +123,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * Constructs a {@code GenericEventMessage} with given {@code delegate} and {@code timestamp}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericEventMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -131,7 +131,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      *
      * @param delegate  The {@link Message} containing {@link Message#payload() payload},
      *                  {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                  {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
+     *                  {@link Message#metaData() metadata} for the {@link EventMessage} to reconstruct.
      * @param timestamp The {@link Instant timestamp} of this {@link EventMessage GenericEventMessage's} creation.
      */
     protected GenericEventMessage(@Nonnull Message<P> delegate,
@@ -147,7 +147,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
 
     @Override
     public GenericEventMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
-        if (getMetaData().equals(metaData)) {
+        if (metaData().equals(metaData)) {
             return this;
         }
         return new GenericEventMessage<>(getDelegate().withMetaData(metaData), timestampSupplier);
@@ -156,7 +156,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     @Override
     public GenericEventMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         //noinspection ConstantConditions
-        if (metaData == null || metaData.isEmpty() || getMetaData().equals(metaData)) {
+        if (metaData == null || metaData.isEmpty() || metaData().equals(metaData)) {
             return this;
         }
         return new GenericEventMessage<>(getDelegate().andMetaData(metaData), timestampSupplier);
@@ -182,6 +182,6 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
             //noinspection unchecked
             return (EventMessage<C>) this;
         }
-        return new GenericEventMessage<>(this.identifier(), this.type(), converted, getMetaData(), getTimestamp());
+        return new GenericEventMessage<>(this.identifier(), this.type(), converted, metaData(), getTimestamp());
     }
 }

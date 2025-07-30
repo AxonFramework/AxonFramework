@@ -561,20 +561,20 @@ public class SimpleQueryBus implements QueryBus {
             if (resultMessage.isExceptional()) {
                 Throwable cause = resultMessage.exceptionResult();
                 return new GenericQueryResponseMessage<>(messageTypeResolver.resolveOrThrow(cause), cause,
-                                                         resultMessage.getMetaData(),
+                                                         resultMessage.metaData(),
                                                          declaredType);
             }
             return new GenericQueryResponseMessage<>(
                     messageTypeResolver.resolveOrThrow(resultMessage.payload()),
                     resultMessage.payload(),
-                    resultMessage.getMetaData()
+                    resultMessage.metaData()
             );
         } else if (result instanceof Message) {
             //noinspection unchecked
             Message<R> message = (Message<R>) result;
             return new GenericQueryResponseMessage<>(messageTypeResolver.resolveOrThrow(message.payload()),
                                                      message.payload(),
-                                                     message.getMetaData());
+                                                     message.metaData());
         } else {
             MessageType type = messageTypeResolver.resolveOrThrow(ObjectUtils.nullSafeTypeOf(result));
             //noinspection unchecked
@@ -617,13 +617,13 @@ public class SimpleQueryBus implements QueryBus {
             return new GenericQueryResponseMessage<>(
                     messageTypeResolver.resolveOrThrow(resultMessage.payload()),
                     resultMessage.payload(),
-                    resultMessage.getMetaData()
+                    resultMessage.metaData()
             );
         } else if (result instanceof Message) {
             Message<R> message = (Message<R>) result;
             return new GenericQueryResponseMessage<>(messageTypeResolver.resolveOrThrow(message.payload()),
                                                      message.payload(),
-                                                     message.getMetaData());
+                                                     message.metaData());
         } else {
             return new GenericQueryResponseMessage<>(messageTypeResolver.resolveOrThrow(result), (R) result);
         }
