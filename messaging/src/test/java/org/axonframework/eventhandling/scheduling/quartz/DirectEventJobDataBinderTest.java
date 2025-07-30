@@ -79,7 +79,7 @@ class DirectEventJobDataBinderTest {
         JobDataMap result = testSubject.toJobData(testEventMessage);
 
         assertEquals(testEventMessage.identifier(), result.get(MESSAGE_ID));
-        assertEquals(testEventMessage.getTimestamp().toString(), result.get(MESSAGE_TIMESTAMP));
+        assertEquals(testEventMessage.timestamp().toString(), result.get(MESSAGE_TIMESTAMP));
         String expectedPayloadType = expectedSerializedClassType.apply(testEventMessage.payloadType());
         assertEquals(expectedPayloadType, result.get(MESSAGE_TYPE));
         Object resultRevision = result.get(MESSAGE_REVISION);
@@ -110,7 +110,7 @@ class DirectEventJobDataBinderTest {
         EventMessage<String> resultEventMessage = (EventMessage<String>) result;
 
         assertEquals(testEventMessage.identifier(), resultEventMessage.identifier());
-        assertEquals(testEventMessage.getTimestamp(), resultEventMessage.getTimestamp());
+        assertEquals(testEventMessage.timestamp(), resultEventMessage.timestamp());
         assertEquals(testEventMessage.payload(), resultEventMessage.payload());
         assertEquals(testEventMessage.payloadType(), resultEventMessage.payloadType());
         assertEquals(testEventMessage.metaData(), resultEventMessage.metaData());

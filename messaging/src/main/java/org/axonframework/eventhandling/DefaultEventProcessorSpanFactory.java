@@ -1,5 +1,5 @@
     /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@
             Supplier<String> name = () -> "StreamingEventProcessor.process";
             if (distributedInSameTrace) {
                 // Only create it in the same trace if it falls within the specified time limit.
-                if (eventMessage.getTimestamp().isAfter(Instant.now().minus(distributedInSameTraceTimeLimit))) {
+                if (eventMessage.timestamp().isAfter(Instant.now().minus(distributedInSameTraceTimeLimit))) {
                     return spanFactory.createChildHandlerSpan(name, eventMessage);
                 }
             }

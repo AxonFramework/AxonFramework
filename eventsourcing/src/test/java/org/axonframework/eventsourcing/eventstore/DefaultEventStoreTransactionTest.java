@@ -389,7 +389,7 @@ class DefaultEventStoreTransactionTest {
     private static void assertEvent(EventMessage<?> actual, EventMessage<?> expected) {
         assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.payload(), actual.payload());
-        assertEquals(expected.getTimestamp(), actual.getTimestamp());
+        assertEquals(expected.timestamp(), actual.timestamp());
         assertEquals(expected.metaData(), actual.metaData());
     }
 }

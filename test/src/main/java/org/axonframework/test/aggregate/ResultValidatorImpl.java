@@ -243,7 +243,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant scheduledTime,
                                                                 Matcher<? super DeadlineMessage<?>> matcher) {
         return expectNoScheduledDeadlineMatching(matches(
-                deadlineMessage -> deadlineMessage.getTimestamp().equals(scheduledTime)
+                deadlineMessage -> deadlineMessage.timestamp().equals(scheduledTime)
                         && matcher.matches(deadlineMessage)
         ));
     }
@@ -272,7 +272,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     @Override
     public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher) {
         return expectNoScheduledDeadlineMatching(matches(
-                deadlineMessage -> !(deadlineMessage.getTimestamp().isBefore(from) || deadlineMessage.getTimestamp().isAfter(to))
+                deadlineMessage -> !(deadlineMessage.timestamp().isBefore(from) || deadlineMessage.timestamp().isAfter(to))
                         && matcher.matches(deadlineMessage)
         ));
     }

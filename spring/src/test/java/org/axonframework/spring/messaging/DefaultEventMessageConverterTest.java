@@ -57,7 +57,7 @@ class DefaultEventMessageConverterTest {
                 eventMessageConverter.convertToOutboundMessage(axonMessage)
         );
 
-        assertEquals(instant, convertedAxonMessage.getTimestamp());
+        assertEquals(instant, convertedAxonMessage.timestamp());
         assertEquals("100", convertedAxonMessage.metaData().get("number"));
         assertEquals("world", convertedAxonMessage.metaData().get("string"));
         assertEquals("hello", convertedAxonMessage.payload().name);
@@ -84,7 +84,7 @@ class DefaultEventMessageConverterTest {
         assertInstanceOf(DomainEventMessage.class, convertedAxonMessage);
 
         DomainEventMessage<EventPayload> convertDomainMessage = (DomainEventMessage<EventPayload>) convertedAxonMessage;
-        assertEquals(instant, convertDomainMessage.getTimestamp());
+        assertEquals(instant, convertDomainMessage.timestamp());
         assertEquals("100", convertDomainMessage.metaData().get("number"));
         assertEquals("world", convertDomainMessage.metaData().get("string"));
         assertEquals("hello", convertDomainMessage.payload().name);

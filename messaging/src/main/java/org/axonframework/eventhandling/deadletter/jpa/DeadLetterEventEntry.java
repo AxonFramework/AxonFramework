@@ -180,7 +180,7 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the original {@link EventMessage#getTimestamp()}.
+     * Returns the original {@link EventMessage#timestamp()}.
      *
      * @return The event timestamp.
      */

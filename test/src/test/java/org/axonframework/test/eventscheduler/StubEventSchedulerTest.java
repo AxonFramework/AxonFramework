@@ -57,7 +57,7 @@ class StubEventSchedulerTest {
         testSubject.advanceTimeBy(Duration.ofMinutes(75), triggered::add);
 
         assertEquals(1, triggered.size());
-        assertEquals(triggerTime, triggered.getFirst().getTimestamp());
+        assertEquals(triggerTime, triggered.getFirst().timestamp());
     }
 
     @Test

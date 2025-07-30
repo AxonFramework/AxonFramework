@@ -76,7 +76,7 @@ public class StubSaga {
         }
 
         timer = scheduler.schedule(
-                message.getTimestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
+                message.timestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
                 new GenericEventMessage<>(
                         new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
                 )

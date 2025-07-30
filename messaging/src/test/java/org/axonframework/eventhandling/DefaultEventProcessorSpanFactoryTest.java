@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ class DefaultEventProcessorSpanFactoryTest extends
     @Test
     void createHandleEventSpanWithDistributedInSameTraceWithRecentMessage() {
         EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
-        when(eventMessage.getTimestamp()).thenReturn(Instant.now());
+        when(eventMessage.timestamp()).thenReturn(Instant.now());
         test(
                 builder -> builder.distributedInSameTrace(true),
                 factory -> factory.createProcessEventSpan(true, eventMessage),
@@ -121,7 +121,7 @@ class DefaultEventProcessorSpanFactoryTest extends
     @Test
     void createHandleEventSpanWithDistributedInSameTraceWithOldMessage() {
         EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
-        when(eventMessage.getTimestamp()).thenReturn(Instant.now().minus(Duration.ofSeconds(600)));
+        when(eventMessage.timestamp()).thenReturn(Instant.now().minus(Duration.ofSeconds(600)));
         test(
                 builder -> builder.distributedInSameTrace(true).distributedInSameTraceTimeLimit(Duration.ofSeconds(500)),
                 factory -> factory.createProcessEventSpan(true, eventMessage),
