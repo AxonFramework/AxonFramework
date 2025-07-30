@@ -78,9 +78,9 @@ public class AnnotatedAggregateTest {
 
         InOrder inOrder = inOrder(eventBus);
         inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
-                .equals(x.getPayloadType()) && ((Event_1) x.payload()).value == 1));
+                .equals(x.payloadType()) && ((Event_1) x.payload()).value == 1));
         inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
-                .equals(x.getPayloadType()) && ((Event_1) x.payload()).value == 2));
+                .equals(x.payloadType()) && ((Event_1) x.payload()).value == 2));
     }
 
     @Test
@@ -100,9 +100,9 @@ public class AnnotatedAggregateTest {
 
         InOrder inOrder = inOrder(eventBus);
         inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
-                .equals(x.getPayloadType())));
+                .equals(x.payloadType())));
         inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_2.class
-                .equals(x.getPayloadType())));
+                .equals(x.payloadType())));
     }
 
     // Test for issue #1506 - https://github.com/AxonFramework/AxonFramework/issues/1506
@@ -137,13 +137,13 @@ public class AnnotatedAggregateTest {
 
         InOrder inOrderEvents = inOrder(eventBus);
         inOrderEvents.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
-                .equals(x.getPayloadType())));
+                .equals(x.payloadType())));
         if (applyConditional) {
             inOrderEvents.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_2.class
-                    .equals(x.getPayloadType())));
+                    .equals(x.payloadType())));
         }
         inOrderEvents.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_3.class
-                .equals(x.getPayloadType())));
+                .equals(x.payloadType())));
 
         InOrder inOrderSideEffect = inOrder(sideEffect);
         inOrderSideEffect.verify(sideEffect).doSomething(eq(ID));

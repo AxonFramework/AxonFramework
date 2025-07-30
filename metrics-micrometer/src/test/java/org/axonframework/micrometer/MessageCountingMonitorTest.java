@@ -74,7 +74,7 @@ class MessageCountingMonitorTest {
                                                                                  meterRegistry,
                                                                                  message -> Tags
                                                                                          .of(TagsUtil.PAYLOAD_TYPE_TAG,
-                                                                                             message.getPayloadType()
+                                                                                             message.payloadType()
                                                                                                     .getSimpleName()));
         EventMessage<Object> foo = asEventMessage(1);
         EventMessage<Object> bar = asEventMessage("bar");

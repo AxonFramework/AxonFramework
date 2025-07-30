@@ -95,14 +95,14 @@ class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    void getPayloadTypeReturnsTheTypeOfTheInsertedQueryResponseMessage() {
+    void payloadTypeReturnsTheTypeOfTheInsertedQueryResponseMessage() {
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage = asResponseMessage(TEST_QUERY_RESPONSE);
         QueryResponse testQueryResponse =
                 querySerializer.serializeResponse(testQueryResponseMessage, REQUEST_MESSAGE_ID);
         GrpcBackedResponseMessage<TestQueryResponse> testSubject =
                 new GrpcBackedResponseMessage<>(testQueryResponse, serializer);
 
-        assertEquals(TestQueryResponse.class, testSubject.getPayloadType());
+        assertEquals(TestQueryResponse.class, testSubject.payloadType());
     }
 
     @Test
@@ -116,7 +116,7 @@ class GrpcBackedResponseMessageTest {
         GrpcBackedResponseMessage<TestQueryResponse> testSubject =
                 new GrpcBackedResponseMessage<>(testQueryResponse, serializer);
 
-        assertNull(testSubject.getPayloadType());
+        assertNull(testSubject.payloadType());
     }
 
     @Test

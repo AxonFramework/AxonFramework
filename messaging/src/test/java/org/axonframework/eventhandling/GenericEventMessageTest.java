@@ -53,16 +53,16 @@ class GenericEventMessageTest extends MessageTestSuite {
 
         assertSame(MetaData.emptyInstance(), message1.getMetaData());
         assertEquals(Object.class, message1.payload().getClass());
-        assertEquals(Object.class, message1.getPayloadType());
+        assertEquals(Object.class, message1.payloadType());
 
         assertEquals(metaData, message2.getMetaData());
         assertEquals(Object.class, message2.payload().getClass());
-        assertEquals(Object.class, message2.getPayloadType());
+        assertEquals(Object.class, message2.payloadType());
 
         assertNotSame(metaDataMap, message3.getMetaData());
         assertEquals(metaDataMap, message3.getMetaData());
         assertEquals(Object.class, message3.payload().getClass());
-        assertEquals(Object.class, message3.getPayloadType());
+        assertEquals(Object.class, message3.payloadType());
 
         assertNotEquals(message1.identifier(), message2.identifier());
         assertNotEquals(message1.identifier(), message3.identifier());

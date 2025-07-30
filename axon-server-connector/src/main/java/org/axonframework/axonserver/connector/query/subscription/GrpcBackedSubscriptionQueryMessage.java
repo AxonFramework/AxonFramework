@@ -118,8 +118,8 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
-    public Class<P> getPayloadType() {
-        return grpcBackedQueryMessage.getPayloadType();
+    public Class<P> payloadType() {
+        return grpcBackedQueryMessage.payloadType();
     }
 
     @Override

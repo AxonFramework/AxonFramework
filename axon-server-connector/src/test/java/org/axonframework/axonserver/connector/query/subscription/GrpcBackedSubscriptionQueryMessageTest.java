@@ -159,7 +159,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void getPayloadTypeReturnsTheTypeOfTheInsertedSubscriptionQuery() {
+    void payloadTypeReturnsTheTypeOfTheInsertedSubscriptionQuery() {
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
         );
@@ -172,7 +172,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
         GrpcBackedSubscriptionQueryMessage<TestQuery, String, String> testSubject =
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
-        assertEquals(TestQuery.class, testSubject.getPayloadType());
+        assertEquals(TestQuery.class, testSubject.payloadType());
     }
 
     @Test

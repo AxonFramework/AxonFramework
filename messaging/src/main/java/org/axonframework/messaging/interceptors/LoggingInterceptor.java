@@ -72,7 +72,7 @@ public class LoggingInterceptor<T extends Message<?>>
     public <M extends T, R extends Message<?>> MessageStream<R> interceptOnDispatch(@Nonnull M message,
                                                                                     @Nullable ProcessingContext context,
                                                                                     @Nonnull InterceptorChain<M, R> interceptorChain) {
-        logger.info("Dispatched message: [{}]", message.getPayloadType().getSimpleName());
+        logger.info("Dispatched message: [{}]", message.type().name());
         return interceptorChain.proceed(message, context);
     }
 
@@ -80,17 +80,17 @@ public class LoggingInterceptor<T extends Message<?>>
     public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
                                                                                   @Nonnull ProcessingContext context,
                                                                                   @Nonnull InterceptorChain<M, R> interceptorChain) {
-        logger.info("Incoming message: [{}]", message.getPayloadType().getSimpleName());
+        logger.info("Incoming message: [{}]", message.type().name());
         return interceptorChain.proceed(message, context)
                                .map(returnValue -> {
                                    logger.info("[{}] executed successfully with a [{}] return value",
-                                               message.getPayloadType().getSimpleName(),
+                                               message.type().name(),
                                                returnValue == null ? "null" : returnValue.getClass().getSimpleName());
                                    return returnValue;
                                })
                                .onErrorContinue(e -> {
                                    logger.info("[{}] resulted in an error",
-                                               message.getPayloadType().getSimpleName(),
+                                               message.type().name(),
                                                e);
                                    return MessageStream.failed(e);
                                });
@@ -101,7 +101,7 @@ public class LoggingInterceptor<T extends Message<?>>
     @Nonnull
     public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
         return (i, message) -> {
-            logger.info("Dispatched messages: [{}]", message.getPayloadType().getSimpleName());
+            logger.info("Dispatched messages: [{}]", message.type().name());
             return message;
         };
     }
@@ -112,15 +112,15 @@ public class LoggingInterceptor<T extends Message<?>>
                          @Nonnull ProcessingContext context,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         T message = unitOfWork.getMessage();
-        logger.info("Incoming message: [{}]", message.getPayloadType().getSimpleName());
+        logger.info("Incoming message: [{}]", message.payloadType().getSimpleName());
         try {
             Object returnValue = interceptorChain.proceedSync(context);
             logger.info("[{}] executed successfully with a [{}] return value",
-                        message.getPayloadType().getSimpleName(),
+                        message.payloadType().getSimpleName(),
                         returnValue == null ? "null" : returnValue.getClass().getSimpleName());
             return returnValue;
         } catch (Exception t) {
-            logger.warn("[{}] execution failed:", message.getPayloadType().getSimpleName(), t);
+            logger.warn("[{}] execution failed:", message.payloadType().getSimpleName(), t);
             throw t;
         }
     }

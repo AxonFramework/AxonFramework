@@ -162,7 +162,7 @@ class AggregatePolymorphismAutoConfigurationTest {
                                   DomainEventMessage<?> firstCatEvent = catStream.next();
                                   assertThat(catStream.hasNext()).isFalse();
                                   // Validate whether the payload equals the Cat, as aggregate == snapshot.
-                                  assertThat(firstCatEvent.getPayloadType()).isEqualTo(CatCreatedEvent.class);
+                                  assertThat(firstCatEvent.payloadType()).isEqualTo(CatCreatedEvent.class);
                                   assertThat(firstCatEvent.getType()).isEqualTo(Cat.class.getSimpleName());
 
                                   DomainEventStream dogStream = eventStore.readEvents(dogId);
@@ -170,7 +170,7 @@ class AggregatePolymorphismAutoConfigurationTest {
                                   DomainEventMessage<?> firstDogEvent = dogStream.next();
                                   assertThat(dogStream.hasNext()).isFalse();
                                   // Validate whether the payload equals the Dog, as aggregate == snapshot.
-                                  assertThat(firstDogEvent.getPayloadType()).isEqualTo(DogCreatedEvent.class);
+                                  assertThat(firstDogEvent.payloadType()).isEqualTo(DogCreatedEvent.class);
                                   assertThat(firstDogEvent.getType()).isEqualTo(Dog.class.getSimpleName());
 
                                   assertDoesNotThrow(
@@ -209,7 +209,7 @@ class AggregatePolymorphismAutoConfigurationTest {
                                   DomainEventMessage<?> firstCatEvent = catStream.next();
                                   assertThat(catStream.hasNext()).isFalse();
                                   // Validate whether the payload equals the Cat, as aggregate == snapshot.
-                                  assertThat(firstCatEvent.getPayloadType()).isEqualTo(Cat.class);
+                                  assertThat(firstCatEvent.payloadType()).isEqualTo(Cat.class);
                                   assertThat(firstCatEvent.getType()).isEqualTo(expectedAggregateType);
 
                                   DomainEventStream dogStream = eventStore.readEvents(dogId);
@@ -217,7 +217,7 @@ class AggregatePolymorphismAutoConfigurationTest {
                                   DomainEventMessage<?> firstDogEvent = dogStream.next();
                                   assertThat(dogStream.hasNext()).isFalse();
                                   // Validate whether the payload equals the Dog, as aggregate == snapshot.
-                                  assertThat(firstDogEvent.getPayloadType()).isEqualTo(Dog.class);
+                                  assertThat(firstDogEvent.payloadType()).isEqualTo(Dog.class);
                                   assertThat(firstDogEvent.getType()).isEqualTo(expectedAggregateType);
 
                                   assertDoesNotThrow(

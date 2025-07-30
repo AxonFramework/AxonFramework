@@ -116,7 +116,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     }
 
     @Override
-    public Class<P> getPayloadType() {
+    public Class<P> payloadType() {
         return serializedPayload.getType();
     }
 

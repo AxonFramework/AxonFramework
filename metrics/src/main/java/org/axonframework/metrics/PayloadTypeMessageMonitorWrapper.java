@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
 
     @Override
     public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
-        String monitorName = monitorNameBuilder.apply(message.getPayloadType());
+        String monitorName = monitorNameBuilder.apply(message.payloadType());
 
         MessageMonitor<Message<?>> messageMonitorForPayloadType =
                 payloadTypeMonitors.computeIfAbsent(monitorName, payloadType -> monitorSupplier.get());

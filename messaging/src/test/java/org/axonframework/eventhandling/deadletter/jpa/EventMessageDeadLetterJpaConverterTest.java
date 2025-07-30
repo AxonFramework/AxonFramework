@@ -146,7 +146,7 @@ class EventMessageDeadLetterJpaConverterTest {
         assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.getTimestamp(), actual.getTimestamp());
         assertEquals(expected.payload(), actual.payload());
-        assertEquals(expected.getPayloadType(), actual.getPayloadType());
+        assertEquals(expected.payloadType(), actual.payloadType());
         assertEquals(expected.getMetaData(), actual.getMetaData());
 
         assertEquals(expected.getClass(), actual.getClass());

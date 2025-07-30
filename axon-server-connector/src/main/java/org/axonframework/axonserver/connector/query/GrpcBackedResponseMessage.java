@@ -129,7 +129,7 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public Class<R> getPayloadType() {
+    public Class<R> payloadType() {
         return serializedPayload == null ? null : serializedPayload.getType();
     }
 

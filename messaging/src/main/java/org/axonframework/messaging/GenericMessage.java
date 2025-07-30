@@ -157,7 +157,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         super(original.identifier(), original.type());
         this.payload = original.payload();
         this.metaData = metaData;
-        this.payloadType = original.getPayloadType();
+        this.payloadType = original.payloadType();
     }
 
     /**
@@ -167,7 +167,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * @param payload the payload of this {@link Message}
      * @return the declared type of the given {@code payload} or {@link Void} if {@code payload == null}
      * @deprecated Remove this method entirely once the {@link Message#type()} has taken over the
-     * {@link #getPayloadType()} entirely.
+     * {@link #payloadType()} entirely.
      */
     @Deprecated
     @SuppressWarnings("unchecked")
@@ -198,7 +198,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     @Override
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
         //noinspection unchecked,rawtypes
-        return type instanceof Class clazz && getPayloadType().isAssignableFrom(clazz)
+        return type instanceof Class clazz && payloadType().isAssignableFrom(clazz)
                 ? (T) payload()
                 : Objects.requireNonNull(converter,
                                          "Cannot convert payload to [" + type.getTypeName() + "] with null Converter.")
@@ -206,7 +206,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public Class<P> getPayloadType() {
+    public Class<P> payloadType() {
         return this.payloadType;
     }
 

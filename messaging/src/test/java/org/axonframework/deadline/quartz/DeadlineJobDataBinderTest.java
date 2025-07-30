@@ -92,7 +92,7 @@ class DeadlineJobDataBinderTest {
         assertEquals(TEST_DEADLINE_NAME, result.get(DEADLINE_NAME));
         assertEquals(testDeadlineMessage.identifier(), result.get(MESSAGE_ID));
         assertEquals(testDeadlineMessage.getTimestamp().toString(), result.get(MESSAGE_TIMESTAMP));
-        String expectedPayloadType = expectedSerializedClassType.apply(testDeadlineMessage.getPayloadType());
+        String expectedPayloadType = expectedSerializedClassType.apply(testDeadlineMessage.payloadType());
         assertEquals(expectedPayloadType, result.get(MESSAGE_TYPE));
         Object resultRevision = result.get(MESSAGE_REVISION);
         assertTrue(revisionMatcher.test(resultRevision));
@@ -122,7 +122,7 @@ class DeadlineJobDataBinderTest {
         assertEquals(testDeadlineMessage.identifier(), result.identifier());
         assertEquals(testDeadlineMessage.getTimestamp(), result.getTimestamp());
         assertEquals(testDeadlineMessage.payload(), result.payload());
-        assertEquals(testDeadlineMessage.getPayloadType(), result.getPayloadType());
+        assertEquals(testDeadlineMessage.payloadType(), result.payloadType());
         assertEquals(testDeadlineMessage.getMetaData(), result.getMetaData());
 
         verify(serializer, times(2))

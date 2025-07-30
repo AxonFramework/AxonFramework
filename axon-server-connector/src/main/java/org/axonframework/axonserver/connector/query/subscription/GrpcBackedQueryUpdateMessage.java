@@ -129,7 +129,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     @Override
-    public Class<U> getPayloadType() {
+    public Class<U> payloadType() {
         return serializedPayload.getType();
     }
 
