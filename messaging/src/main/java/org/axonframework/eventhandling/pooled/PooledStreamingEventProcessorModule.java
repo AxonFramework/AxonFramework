@@ -45,14 +45,14 @@ import java.util.stream.Collectors;
 public class PooledStreamingEventProcessorModule
         extends BaseModule<PooledStreamingEventProcessorModule>
         implements EventProcessorModule,
-        EventProcessorModule.StreamingSourcePhase<PooledStreamingEventProcessorsCustomization>,
+        EventProcessorModule.PooledStreaming.SourcePhase<PooledStreamingEventProcessorsCustomization>,
         EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorsCustomization>,
         EventProcessorModule.RequiredEventHandlingComponentPhase<PooledStreamingEventProcessorsCustomization>,
         EventProcessorModule.AdditionalComponentsOrCustomization<PooledStreamingEventProcessorsCustomization>,
         EventProcessorModule.BuildPhase {
 
     private final String processorName;
-    private final List<ComponentBuilder<EventHandlingComponent>> eventHandlingBuilders;
+    private final List<ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
     private ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder;
     private ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorsCustomization>> customizationOverrideBuilder = cfg -> c -> c;
 
@@ -63,7 +63,7 @@ public class PooledStreamingEventProcessorModule
     public PooledStreamingEventProcessorModule(@Nonnull String processorName) {
         super(processorName);
         this.processorName = processorName;
-        this.eventHandlingBuilders = new ArrayList<>();
+        this.eventHandlingComponentBuilders = new ArrayList<>();
     }
 
     @Override
@@ -102,9 +102,9 @@ public class PooledStreamingEventProcessorModule
         var spanFactory = eventProcessorsCustomization.spanFactory();
         var messageMonitor = eventProcessorsCustomization.messageMonitor();
 
-        var eventHandlingComponents = eventHandlingBuilders.stream()
-                                                           .map(hb -> hb.build(parent))
-                                                           .toList();
+        var eventHandlingComponents = eventHandlingComponentBuilders.stream()
+                                                                    .map(hb -> hb.build(parent))
+                                                                    .toList();
         List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
                 .stream()
                 .map(c -> new TracingEventHandlingComponent(
@@ -117,6 +117,7 @@ public class PooledStreamingEventProcessorModule
                                 )
                         )
                 )).collect(Collectors.toUnmodifiableList());
+        // todo: register as component!
         var processor = new PooledStreamingEventProcessor(
                 processorName,
                 eventSource,
@@ -140,7 +141,7 @@ public class PooledStreamingEventProcessorModule
     @Override
     public AdditionalComponentsOrCustomization<PooledStreamingEventProcessorsCustomization> component(
             @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder) {
-        eventHandlingBuilders.add(eventHandlingComponentBuilder);
+        eventHandlingComponentBuilders.add(eventHandlingComponentBuilder);
         return this;
     }
 

@@ -26,9 +26,13 @@ import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModul
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsCustomization;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorsCustomization;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
@@ -49,7 +53,7 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor processorName, must not be null or empty.
      * @return A builder phase to configure a subscribing event processor.
      */
-    static SubscribingSourcePhase<SubscribingEventProcessorsCustomization> subscribing(String processorName) {
+    static Subscribing.SourcePhase<SubscribingEventProcessorsCustomization> subscribing(String processorName) {
         return new SubscribingEventProcessorModule(processorName);
     }
 
@@ -60,32 +64,78 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor name, must not be null or empty.
      * @return A builder phase to configure a pooled streaming event processor.
      */
-    static StreamingSourcePhase<PooledStreamingEventProcessorsCustomization> pooledStreaming(String processorName) {
+    static PooledStreaming.SourcePhase<PooledStreamingEventProcessorsCustomization> pooledStreaming(String processorName) {
         return new PooledStreamingEventProcessorModule(processorName);
     }
 
-    interface StreamingSourcePhase<T extends EventProcessorsCustomization> {
+    interface Subscribing {
 
-        /**
-         * Specify the {@link StreamableEventSource} to use for this event processor.
-         *
-         * @param streamableEventSourceBuilder A builder for the {@link StreamableEventSource}.
-         * @return A builder phase to configure the event processor.
-         */
-        EventHandlingPhase<T> eventSource(
-                @Nonnull ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder);
+        interface SourcePhase<T extends EventProcessorsCustomization> {
+
+            /**
+             * Specify the {@link SubscribableMessageSource} to use for this event processor.
+             *
+             * @param subscribableMessageSourceBuilder A builder for the {@link SubscribableMessageSource}.
+             * @return A builder phase to configure the event processor.
+             */
+            UnitOfWorkFactoryPhase<T> eventSource(
+                    @Nonnull ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> subscribableMessageSourceBuilder);
+        }
     }
 
-    interface SubscribingSourcePhase<T extends EventProcessorsCustomization> {
+    interface PooledStreaming {
 
-        /**
-         * Specify the {@link SubscribableMessageSource} to use for this event processor.
-         *
-         * @param subscribableMessageSourceBuilder A builder for the {@link SubscribableMessageSource}.
-         * @return A builder phase to configure the event processor.
-         */
-        EventHandlingPhase<T> eventSource(
-                @Nonnull ComponentBuilder<SubscribableMessageSource<? extends EventMessage<?>>> subscribableMessageSourceBuilder);
+        interface SourcePhase<T extends EventProcessorsCustomization> {
+
+            /**
+             * Specify the {@link StreamableEventSource} to use for this event processor.
+             *
+             * @param streamableEventSourceBuilder A builder for the {@link StreamableEventSource}.
+             * @return A builder phase to configure the event processor.
+             */
+            TokenStorePhase<T> eventSource(
+                    @Nonnull ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder);
+        }
+
+        interface TokenStorePhase<T extends EventProcessorsCustomization> {
+
+            /**
+             * Specify the token store to use for this event processor.
+             *
+             * @param tokenStoreBuilder A builder for the token store.
+             * @return A builder phase to configure the event processor.
+             */
+            ExecutorsPhase<T> tokenStore(@Nonnull ComponentBuilder<? extends TokenStore> tokenStoreBuilder);
+        }
+
+        interface ExecutorsPhase<T extends EventProcessorsCustomization> {
+
+            CoordinatorExecutorPhase<T> executors();
+        }
+
+        interface CoordinatorExecutorPhase<T extends EventProcessorsCustomization> {
+
+            /**
+             * Specify the coordinator executor to use for this event processor.
+             *
+             * @param coordinatorExecutorBuilder A builder for the coordinator executor.
+             * @return A builder phase to configure the event processor.
+             */
+            WorkerExecutorPhase<T> coordinator(
+                    @Nonnull ComponentBuilder<Function<String, ScheduledExecutorService>> coordinatorExecutorBuilder);
+        }
+
+        interface WorkerExecutorPhase<T extends EventProcessorsCustomization> {
+
+            UnitOfWorkFactoryPhase<T> worker(
+                    @Nonnull ComponentBuilder<Function<String, ScheduledExecutorService>> workerExecutorBuilder);
+        }
+
+    }
+
+    interface UnitOfWorkFactoryPhase<T extends EventProcessorsCustomization> {
+        EventHandlingPhase<T> unitOfWorkFactory(
+                @Nonnull ComponentBuilder<UnitOfWorkFactory> unitOfWorkFactoryBuilder);
     }
 
     interface EventHandlingPhase<T extends EventProcessorsCustomization> {

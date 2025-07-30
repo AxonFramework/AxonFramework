@@ -29,6 +29,9 @@ import org.axonframework.monitoring.MessageMonitor;
  */
 public class SubscribingEventProcessorsCustomization extends EventProcessorsCustomization {
 
+    public SubscribingEventProcessorsCustomization() {
+    }
+
     public SubscribingEventProcessorsCustomization(@Nonnull EventProcessorsCustomization eventProcessorsCustomization) {
         super(eventProcessorsCustomization);
     }

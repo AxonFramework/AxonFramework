@@ -27,23 +27,30 @@ import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
-public class EventProcessingConfigurationDefaults implements ConfigurationEnhancer {
+import java.util.Optional;
+
+public class EventProcessingDefaultsEnhancer implements ConfigurationEnhancer {
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
         EventProcessorsCustomization eventProcessorsCustomization = new EventProcessorsCustomization();
         registry.registerIfNotPresent(TokenStore.class, c -> new InMemoryTokenStore())
                 .registerIfNotPresent(UnitOfWorkFactory.class,
-                                      c -> c.hasComponent(TransactionManager.class)
-                                              ? new TransactionalUnitOfWorkFactory(c.getComponent(TransactionManager.class))
-                                              : new SimpleUnitOfWorkFactory()
-                )
+                                      c -> {
+                                          Optional<UnitOfWorkFactory> unitOfWorkFactory = c.getOptionalComponent(TransactionManager.class)
+                                                                                           .map(TransactionalUnitOfWorkFactory::new);
+                                          return unitOfWorkFactory.orElseGet(SimpleUnitOfWorkFactory::new);
+                                      })
                 .registerIfNotPresent(EventProcessorsCustomization.class, c -> eventProcessorsCustomization)
                 .registerIfNotPresent(SubscribingEventProcessorsCustomization.class,
-                                      c -> new SubscribingEventProcessorsCustomization(c.getComponent(
-                                              EventProcessorsCustomization.class)))
+                                      c -> new SubscribingEventProcessorsCustomization(
+                                              c.getComponent(EventProcessorsCustomization.class)
+                                      )
+                )
                 .registerIfNotPresent(PooledStreamingEventProcessorsCustomization.class,
-                                      c -> new PooledStreamingEventProcessorsCustomization(c.getComponent(
-                                              EventProcessorsCustomization.class)));
+                                      c -> new PooledStreamingEventProcessorsCustomization(
+                                              c.getComponent(EventProcessorsCustomization.class)
+                                      )
+                );
     }
 }

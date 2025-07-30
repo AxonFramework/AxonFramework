@@ -16,15 +16,20 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,19 +50,26 @@ class PooledStreamingEventProcessorModuleTest {
         eventHandlingComponent1.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         var eventHandlingComponent2 = new SimpleEventHandlingComponent();
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-        EventProcessorModule module = EventProcessorModule.pooledStreaming("test-processor")
-                                                          .eventSource(cfg -> eventSource)
-                                                          // todo: add tokenStore and executors().coordinator().worker().eventHandling()
-                                                          .eventHandling()
-                                                          .component(cfg -> eventHandlingComponent1)
-                                                          .component(cfg -> eventHandlingComponent2)
-                                                          .customize(cfg -> customization ->
-                                                                  customization.initialSegmentCount(1)
-                                                          ).build();
+        EventProcessorModule module = EventProcessorModule
+                .pooledStreaming("test-processor")
+                .eventSource(cfg -> eventSource)
+                .tokenStore(cfg -> new InMemoryTokenStore())
+                .executors()
+                .coordinator(cfg -> processorName -> defaultExecutor(1, "Coordinator[" + processorName + "]"))
+                .worker(cfg -> processorName -> defaultExecutor(4, "WorkPackage[" + processorName + "]"))
+                .unitOfWorkFactory(cfg -> new SimpleUnitOfWorkFactory())
+                .eventHandling()
+                .component(cfg -> eventHandlingComponent1)
+                .component(cfg -> eventHandlingComponent2)
+                .customize(cfg -> customization ->
+                        customization.initialSegmentCount(1)
+                ).build(); // doubt? really remove the builder!? Now I have problem how to override per module?
 
         var configuration = MessagingConfigurer.create()
-                                               .componentRegistry(cr -> cr.registerModule(module))
-                                               .build();
+                                               .eventProcessing(eventProcessing -> eventProcessing
+                                                       .defaults(defaults -> defaults)
+                                                       .registerEventProcessorModule(module)
+                                               ).build();
 
         // when
         configuration.start();
@@ -71,5 +83,9 @@ class PooledStreamingEventProcessorModuleTest {
 
         // then
         await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertThat(stopped).isTrue());
+    }
+
+    private static ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {
+        return Executors.newScheduledThreadPool(poolSize, new AxonThreadFactory(factoryName));
     }
 }

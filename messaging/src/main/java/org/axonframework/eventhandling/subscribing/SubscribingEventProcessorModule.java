@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 public class SubscribingEventProcessorModule extends BaseModule<SubscribingEventProcessorModule>
         implements EventProcessorModule,
-        EventProcessorModule.SubscribingSourcePhase<SubscribingEventProcessorsCustomization>,
+        EventProcessorModule.Subscribing.SourcePhase<SubscribingEventProcessorsCustomization>,
         EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorsCustomization>,
         EventProcessorModule.RequiredEventHandlingComponentPhase<SubscribingEventProcessorsCustomization>,
         EventProcessorModule.AdditionalComponentsOrCustomization<SubscribingEventProcessorsCustomization>,
