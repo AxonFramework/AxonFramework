@@ -23,6 +23,9 @@ import java.util.OptionalLong;
  * A special {@link TrackingToken} that indicates the very beginning of an event stream.
  * <p>
  * Used to explicitly represent the first position in a stream instead of using {@code null}.
+ *
+ * @author TeraSeo
+ * @since 5.0.0
  */
 final class FirstTrackingToken implements TrackingToken {
 

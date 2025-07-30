@@ -24,6 +24,9 @@ import java.util.OptionalLong;
  * <p>
  * This can be used to indicate that a processor wants to start at the newest available event,
  * skipping historical events.
+ *
+ * @author TeraSeo
+ * @since 5.0.0
  */
 final class LatestTrackingToken implements TrackingToken {
 
