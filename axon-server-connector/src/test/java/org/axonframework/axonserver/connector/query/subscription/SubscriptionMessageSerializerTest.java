@@ -73,7 +73,7 @@ class SubscriptionMessageSerializerTest {
     void exceptionalUpdate() {
         MetaData metaData = MetaData.with("k1", "v1");
         SubscriptionQueryUpdateMessage<String> message = new GenericSubscriptionQueryUpdateMessage<>(
-                new MessageType("query"), new RuntimeException("oops"), metaData, String.class
+                new MessageType("query"), new RuntimeException("oops"), String.class, metaData
         );
         QueryUpdate result = testSubject.serialize(message);
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
@@ -89,7 +89,7 @@ class SubscriptionMessageSerializerTest {
     void nonTransientExceptionalUpdate() {
         MetaData metaData = MetaData.with("k1", "v1");
         SubscriptionQueryUpdateMessage<String> message = new GenericSubscriptionQueryUpdateMessage<>(
-                new MessageType("query"), new SerializationException("oops"), metaData, String.class
+                new MessageType("query"), new SerializationException("oops"), String.class, metaData
         );
         QueryUpdate result = testSubject.serialize(message);
         assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), result.getErrorCode());

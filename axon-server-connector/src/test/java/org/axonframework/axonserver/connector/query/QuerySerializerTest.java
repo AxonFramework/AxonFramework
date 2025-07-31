@@ -80,7 +80,7 @@ class QuerySerializerTest {
             this.put("secondKey", "secondValue");
         }};
         QueryResponseMessage<BigDecimal> message = new GenericQueryResponseMessage<>(
-                new MessageType("query"), BigDecimal.ONE, metadata, BigDecimal.class
+                new MessageType("query"), BigDecimal.ONE, BigDecimal.class, metadata
         );
         QueryResponse grpcMessage = testSubject.serializeResponse(message, "requestMessageId");
         QueryResponseMessage<BigDecimal> deserialized =
@@ -96,7 +96,7 @@ class QuerySerializerTest {
     void serializeExceptionalResponse() {
         RuntimeException exception = new RuntimeException("oops");
         QueryResponseMessage<String> responseMessage = new GenericQueryResponseMessage<>(
-                new MessageType("query"), exception, MetaData.with("test", "testValue"), String.class
+                new MessageType("query"), exception, String.class, MetaData.with("test", "testValue")
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
@@ -115,7 +115,7 @@ class QuerySerializerTest {
     void serializeDeserializeNonTransientExceptionalResponse() {
         SerializationException exception = new SerializationException("oops");
         QueryResponseMessage<String> responseMessage = new GenericQueryResponseMessage<>(
-                new MessageType("query"), exception, MetaData.with("test", "testValue"), String.class
+                new MessageType("query"), exception, String.class, MetaData.with("test", "testValue")
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
@@ -135,7 +135,7 @@ class QuerySerializerTest {
     void serializeExceptionalResponseWithDetails() {
         Exception exception = new QueryExecutionException("oops", null, "Details");
         QueryResponseMessage<String> responseMessage = new GenericQueryResponseMessage<>(
-                new MessageType("query"), exception, MetaData.with("test", "testValue"), String.class
+                new MessageType("query"), exception, String.class, MetaData.with("test", "testValue")
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
