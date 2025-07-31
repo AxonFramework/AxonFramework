@@ -33,12 +33,12 @@ import java.util.function.UnaryOperator;
 
 public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStreamingEventProcessorsModule> {
 
-    private static final PooledStreamingEventProcessorConfiguration INITIAL_EVENT_PROCESSOR_DEFAULTS =
+    private final PooledStreamingEventProcessorConfiguration INITIAL_EVENT_PROCESSOR_DEFAULTS =
             new PooledStreamingEventProcessorConfiguration()
                     .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                     .tokenStore(new InMemoryTokenStore());
 
-    private ComponentBuilder<PooledStreamingEventProcessorConfiguration> eventProcessorDefaultsBuilder;
+    private ComponentBuilder<PooledStreamingEventProcessorConfiguration> eventProcessorDefaultsBuilder = c -> INITIAL_EVENT_PROCESSOR_DEFAULTS;
     private final List<ModuleBuilder<PooledStreamingEventProcessorModule>> moduleBuilders = new ArrayList<>();
 
     @Internal

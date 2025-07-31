@@ -18,9 +18,11 @@ package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
@@ -42,8 +44,7 @@ import java.util.stream.Collectors;
 public class PooledStreamingEventProcessorModule
         extends BaseModule<PooledStreamingEventProcessorModule>
         implements EventProcessorModule,
-        EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>
-{
+        EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
     private final String processorName;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder;
@@ -103,8 +104,21 @@ public class PooledStreamingEventProcessorModule
                 configuration.eventHandlingComponents(decoratedEventHandlingComponents)
         );
 
-        lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, processor::start);
-        lifecycleRegistry.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, processor::shutdownAsync);
+//        lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, processor::start);
+//        lifecycleRegistry.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, processor::shutdownAsync);
+
+        var processorComponentDefinition = ComponentDefinition
+                .ofTypeAndName(PooledStreamingEventProcessor.class, processorName)
+                .withBuilder(c -> processor)
+                .onStart(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
+                    component.start();
+                    return FutureUtils.emptyCompletedFuture();
+                }).onShutdown(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
+                    return component.shutdownAsync();
+                });
+
+        componentRegistry(cr -> cr.registerComponent(processorComponentDefinition));
+
         return super.build(parent, lifecycleRegistry);
     }
 

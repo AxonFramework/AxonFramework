@@ -25,7 +25,7 @@ import java.util.function.UnaryOperator;
 
 public class EventProcessingModule extends BaseModule<EventProcessingModule> {
 
-    private static final EventProcessorConfiguration INITIAL_EVENT_PROCESSOR_DEFAULTS = new EventProcessorConfiguration();
+    private final EventProcessorConfiguration INITIAL_EVENT_PROCESSOR_DEFAULTS = new EventProcessorConfiguration();
 
     private final PooledStreamingEventProcessorsModule pooledStreamingEventProcessorsModule = new PooledStreamingEventProcessorsModule(
             "pooledStreamingProcessors");

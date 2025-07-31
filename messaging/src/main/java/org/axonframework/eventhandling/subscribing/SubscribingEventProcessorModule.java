@@ -17,8 +17,10 @@
 package org.axonframework.eventhandling.subscribing;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
@@ -75,8 +77,21 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                 processorName,
                 configuration.eventHandlingComponents(decoratedEventHandlingComponents)
         );
-        lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, processor::start);
-        lifecycleRegistry.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, processor::shutdownAsync);
+//        lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, processor::start);
+//        lifecycleRegistry.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, processor::shutdownAsync);
+
+        var processorComponentDefinition = ComponentDefinition
+                .ofTypeAndName(SubscribingEventProcessor.class, processorName)
+                .withBuilder(c -> processor)
+                .onStart(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
+                    component.start();
+                    return FutureUtils.emptyCompletedFuture();
+                }).onShutdown(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
+                    return component.shutdownAsync();
+                });
+
+        componentRegistry(cr -> cr.registerComponent(processorComponentDefinition));
+
         return super.build(parent, lifecycleRegistry);
     }
 

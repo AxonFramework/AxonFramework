@@ -30,7 +30,7 @@ import java.util.function.UnaryOperator;
 
 public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEventProcessorsModule> {
 
-    private static final SubscribingEventProcessorConfiguration INITIAL_EVENT_PROCESSOR_DEFAULTS =
+    private final SubscribingEventProcessorConfiguration INITIAL_EVENT_PROCESSOR_DEFAULTS =
             new SubscribingEventProcessorConfiguration()
                     .unitOfWorkFactory(new SimpleUnitOfWorkFactory());
 
