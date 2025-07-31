@@ -58,7 +58,7 @@ public abstract class AbstractMessage<P> implements Message<P> {
 
     @Override
     public Message<P> withMetaData(@Nonnull Map<String, String> metaData) {
-        if (getMetaData().equals(metaData)) {
+        if (metaData().equals(metaData)) {
             return this;
         }
         return withMetaData(MetaData.from(metaData));
@@ -69,7 +69,7 @@ public abstract class AbstractMessage<P> implements Message<P> {
         if (metaData.isEmpty()) {
             return this;
         }
-        return withMetaData(getMetaData().mergedWith(metaData));
+        return withMetaData(metaData().mergedWith(metaData));
     }
 
     /**

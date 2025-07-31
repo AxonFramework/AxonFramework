@@ -107,7 +107,7 @@ class CapacityMonitorTest {
                                                                                       message.payloadType()
                                                                                              .getSimpleName(),
                                                                                       "myMetaData",
-                                                                                      message.getMetaData()
+                                                                                      message.metaData()
                                                                                              .get("myMetadataKey")
                                                                                              .toString()));
 

@@ -543,7 +543,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      */
     protected void applyMessageOrPayload(Object payloadOrMessage) {
         if (payloadOrMessage instanceof Message<?> message) {
-            apply(message.payload(), message.getMetaData());
+            apply(message.payload(), message.metaData());
         } else if (payloadOrMessage != null) {
             apply(payloadOrMessage, MetaData.emptyInstance());
         }
@@ -570,7 +570,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
-                        identifier(), type(), payload(), getMetaData(), getTimestamp()
+                        identifier(), type(), payload(), metaData(), getTimestamp()
                 );
             } else {
                 return new LazyIdentifierDomainEventMessage<>(
@@ -586,12 +586,12 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
-                        identifier(), type(), payload(), getMetaData(), getTimestamp()
+                        identifier(), type(), payload(), metaData(), getTimestamp()
                 ).andMetaData(additionalMetaData);
             } else {
                 return new LazyIdentifierDomainEventMessage<>(
                         getType(), getSequenceNumber(),
-                        type(), payload(), getMetaData().mergedWith(additionalMetaData)
+                        type(), payload(), metaData().mergedWith(additionalMetaData)
                 );
             }
         }

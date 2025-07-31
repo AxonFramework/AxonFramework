@@ -113,8 +113,8 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
-    public MetaData getMetaData() {
-        return grpcBackedQueryMessage.getMetaData();
+    public MetaData metaData() {
+        return grpcBackedQueryMessage.metaData();
     }
 
     @Override
@@ -131,6 +131,6 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
 
     @Override
     public GrpcBackedSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
-        return withMetaData(getMetaData().mergedWith(metaData));
+        return withMetaData(metaData().mergedWith(metaData));
     }
 }

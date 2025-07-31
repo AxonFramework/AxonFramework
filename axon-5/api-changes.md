@@ -233,7 +233,8 @@ the long run.
 
 We have renamed the "get-styled" getters **all** `Message` implementations by removing "get" from the signature.
 Thus, `Message#getIdentifier()` is now called `Message#identifier()`, `Message#getPayload()` is now called
-`Message#payload()`, and `Message#getPayloadType()` is now `Message#payloadType()`.
+`Message#payload()`, `Message#getPayloadType()` is now `Message#payloadType()`, and `Message#getMetaData()` is now
+referred to as `Message#metaData()`.
 
 ## Message Stream
 
@@ -1365,6 +1366,7 @@ This section contains four subsections, called:
 | `Message#getIdentifier()`                                                                                                       | `Message#identifier()`                                                                                                 |
 | `Message#getPayload()`                                                                                                          | `Message#payload()`                                                                                                    |
 | `Message#getPayloadType()`                                                                                                      | `Message#payloadType()`                                                                                                |
+| `Message#getMetaData()`                                                                                                         | `Message#metaData()`                                                                                                   |
 
 ### Removed Methods and Constructors
 

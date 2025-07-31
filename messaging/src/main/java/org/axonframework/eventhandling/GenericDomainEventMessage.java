@@ -132,7 +132,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
      * @param delegate            The {@link Message} containing {@link Message#payload() payload},
      *                            {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                            {@link Message#getMetaData() metadata} for the {@link DomainEventMessage} to
+     *                            {@link Message#metaData() metadata} for the {@link DomainEventMessage} to
      *                            reconstruct.
      * @param timestampSupplier   The {@link Instant timestampSupplier} of this
      *                            {@link DomainEventMessage GenericDomainEventMessage's} creation.
@@ -154,7 +154,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
      * intended to reconstruct another {@link DomainEventMessage}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericEventMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -165,7 +165,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
      * @param delegate            The {@link Message} containing {@link Message#payload() payload},
      *                            {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                            {@link Message#getMetaData() metadata} for the {@link DomainEventMessage} to
+     *                            {@link Message#metaData() metadata} for the {@link DomainEventMessage} to
      *                            reconstruct.
      * @param timestamp           The {@link Instant timestamp} of this {@link DomainEventMessage DomainEventMessage's}
      *                            creation.
@@ -198,7 +198,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
 
     @Override
     public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
-        if (getMetaData().equals(metaData)) {
+        if (metaData().equals(metaData)) {
             return this;
         }
         return new GenericDomainEventMessage<>(aggregateType,
@@ -211,7 +211,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
     @Override
     public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         //noinspection ConstantConditions
-        if (metaData == null || metaData.isEmpty() || getMetaData().equals(metaData)) {
+        if (metaData == null || metaData.isEmpty() || metaData().equals(metaData)) {
             return this;
         }
         return new GenericDomainEventMessage<>(aggregateType,

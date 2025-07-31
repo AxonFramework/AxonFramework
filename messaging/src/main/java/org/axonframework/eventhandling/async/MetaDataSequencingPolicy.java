@@ -69,7 +69,7 @@ public class MetaDataSequencingPolicy implements SequencingPolicy {
     @Override
     public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
         return Optional.ofNullable(
-                event.getMetaData()
+                event.metaData()
                      .getOrDefault(metaDataKey, event.identifier())
         );
     }

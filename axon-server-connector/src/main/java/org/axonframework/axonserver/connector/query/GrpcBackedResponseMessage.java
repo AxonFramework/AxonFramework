@@ -106,7 +106,7 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public MetaData getMetaData() {
+    public MetaData metaData() {
         return metaDataSupplier.get();
     }
 
@@ -154,6 +154,6 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
     @Override
     public GrpcBackedResponseMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
-        return withMetaData(getMetaData().mergedWith(metaData));
+        return withMetaData(metaData().mergedWith(metaData));
     }
 }

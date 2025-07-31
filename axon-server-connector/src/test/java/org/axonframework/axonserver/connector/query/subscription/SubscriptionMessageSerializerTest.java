@@ -66,7 +66,7 @@ class SubscriptionMessageSerializerTest {
         assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(message.payload(), deserialized.payload());
         assertEquals(message.payloadType(), deserialized.payloadType());
-        assertEquals(message.getMetaData(), deserialized.getMetaData());
+        assertEquals(message.metaData(), deserialized.metaData());
     }
 
     @Test
@@ -79,7 +79,7 @@ class SubscriptionMessageSerializerTest {
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
         assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), result.getErrorCode());
-        assertEquals(message.getMetaData(), deserialized.getMetaData());
+        assertEquals(message.metaData(), deserialized.metaData());
         assertTrue(deserialized.isExceptional());
         assertEquals("oops", deserialized.exceptionResult().getMessage());
         assertInstanceOf(AxonServerRemoteQueryHandlingException.class, deserialized.exceptionResult().getCause());
@@ -95,7 +95,7 @@ class SubscriptionMessageSerializerTest {
         assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), result.getErrorCode());
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
         assertEquals(message.identifier(), deserialized.identifier());
-        assertEquals(message.getMetaData(), deserialized.getMetaData());
+        assertEquals(message.metaData(), deserialized.metaData());
         assertTrue(deserialized.isExceptional());
         assertEquals("oops", deserialized.exceptionResult().getMessage());
         assertInstanceOf(AxonServerNonTransientRemoteQueryHandlingException.class,

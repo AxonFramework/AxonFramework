@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class MetadataContextGetter implements TextMapGetter<Message<?>> {
 
     @Override
     public Iterable<String> keys(Message<?> message) {
-        return message.getMetaData().keySet();
+        return message.metaData().keySet();
     }
 
     @Override
@@ -53,6 +53,6 @@ public class MetadataContextGetter implements TextMapGetter<Message<?>> {
         if (message == null) {
             return null;
         }
-        return (String) message.getMetaData().get(key);
+        return (String) message.metaData().get(key);
     }
 }

@@ -103,7 +103,7 @@ public class DeadlineDetails {
                              @Nonnull Serializer serializer) {
         SerializedObject<String> serializedDescriptor = serializer.serialize(descriptor, String.class);
         SerializedObject<String> serializedPayload = serializer.serialize(message.payload(), String.class);
-        SerializedObject<String> serializedMetaData = serializer.serialize(message.getMetaData(), String.class);
+        SerializedObject<String> serializedMetaData = serializer.serialize(message.metaData(), String.class);
         DeadlineDetails deadlineDetails = new DeadlineDetails(deadlineName,
                                                               message.type().toString(),
                                                               serializedDescriptor.getData(),

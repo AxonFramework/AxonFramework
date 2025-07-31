@@ -94,7 +94,7 @@ class SimpleEventSchedulerTest {
         verify(eventBus, never()).publish(event1);
         verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<Object>>) item -> (item != null)
                 && event2.payload().equals(item.payload())
-                && event2.getMetaData().equals(item.getMetaData())));
+                && event2.metaData().equals(item.metaData())));
         scheduledExecutorService.shutdown();
         assertTrue(scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS),
                    "Executor refused to shutdown within a second");

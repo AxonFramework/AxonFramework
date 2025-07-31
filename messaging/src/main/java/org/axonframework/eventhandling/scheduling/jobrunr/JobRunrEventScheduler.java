@@ -141,7 +141,7 @@ public class JobRunrEventScheduler implements EventScheduler {
         String serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();
-        String serializedMetadata = serializer.serialize(eventMessage.getMetaData(), String.class).getData();
+        String serializedMetadata = serializer.serialize(eventMessage.metaData(), String.class).getData();
         if (isNull(revision)) {
             job.withDetails(() -> publish(serializedPayload, payloadClass, serializedMetadata));
         } else {

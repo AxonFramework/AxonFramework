@@ -122,7 +122,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
         assertEquals(expected.message().payload(), actual.message().payload());
         assertEquals(expected.message().payloadType(), actual.message().payloadType());
-        assertEquals(expected.message().getMetaData(), actual.message().getMetaData());
+        assertEquals(expected.message().metaData(), actual.message().metaData());
         assertEquals(expected.message().identifier(), actual.message().identifier());
         assertEquals(expected.cause(), actual.cause());
         assertEquals(expected.enqueuedAt(), actual.enqueuedAt());

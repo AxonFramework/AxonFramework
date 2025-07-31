@@ -93,7 +93,7 @@ public abstract class EventStorageEngineTest {
         assertTrue(optionalFirst.isPresent());
         EventMessage<?> message = optionalFirst.get();
         assertEquals("application event", message.payload());
-        assertEquals(MetaData.with("key", "value"), message.getMetaData());
+        assertEquals(MetaData.with("key", "value"), message.metaData());
     }
 
     @Test
@@ -104,15 +104,15 @@ public abstract class EventStorageEngineTest {
         /// we make sure persisted events have the same MetaData alteration logic
         DomainEventMessage<?> altered = messageWithMetaData.withMetaData(singletonMap("key2", "value"));
         DomainEventMessage<?> combined = messageWithMetaData.andMetaData(singletonMap("key2", "value"));
-        assertTrue(altered.getMetaData().containsKey("key2"));
+        assertTrue(altered.metaData().containsKey("key2"));
         altered.payload();
-        assertFalse(altered.getMetaData().containsKey("key"));
-        assertTrue(altered.getMetaData().containsKey("key2"));
-        assertTrue(combined.getMetaData().containsKey("key"));
-        assertTrue(combined.getMetaData().containsKey("key2"));
+        assertFalse(altered.metaData().containsKey("key"));
+        assertTrue(altered.metaData().containsKey("key2"));
+        assertTrue(combined.metaData().containsKey("key"));
+        assertTrue(combined.metaData().containsKey("key2"));
         assertNotNull(messageWithMetaData.payload());
-        assertNotNull(messageWithMetaData.getMetaData());
-        assertFalse(messageWithMetaData.getMetaData().isEmpty());
+        assertNotNull(messageWithMetaData.metaData());
+        assertFalse(messageWithMetaData.metaData().isEmpty());
     }
 
     @Test

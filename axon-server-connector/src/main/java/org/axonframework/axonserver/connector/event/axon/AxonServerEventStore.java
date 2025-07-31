@@ -482,7 +482,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
                                                               ))
                                                               .setData(ByteString.copyFrom(serializedPayload.getData()))
             ).setTimestamp(eventMessage.getTimestamp().toEpochMilli());
-            eventMessage.getMetaData().forEach((k, v) -> builder.putMetaData(k, converter.convertToMetaDataValue(v)));
+            eventMessage.metaData().forEach((k, v) -> builder.putMetaData(k, converter.convertToMetaDataValue(v)));
             return builder.build();
         }
 

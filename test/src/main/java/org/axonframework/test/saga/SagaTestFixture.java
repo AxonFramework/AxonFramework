@@ -392,7 +392,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private EventMessage<Object> timeCorrectedEventMessage(Object event) {
         EventMessage<?> msg = asEventMessage(event);
         return new GenericEventMessage<>(
-                msg.identifier(), msg.type(), msg.payload(), msg.getMetaData(), currentTime()
+                msg.identifier(), msg.type(), msg.payload(), msg.metaData(), currentTime()
         );
     }
 
@@ -528,7 +528,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                                                              eventMessage.identifier(),
                                                              eventMessage.type(),
                                                              eventMessage.payload(),
-                                                             eventMessage.getMetaData(),
+                                                             eventMessage.metaData(),
                                                              currentTime()));
             }
         }

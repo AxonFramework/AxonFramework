@@ -557,7 +557,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         assertEquals(expected.payload(), convertPayload(actual).payload());
         assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.getTimestamp().toEpochMilli(), actual.getTimestamp().toEpochMilli());
-        assertEquals(expected.getMetaData(), actual.getMetaData());
+        assertEquals(expected.metaData(), actual.metaData());
     }
 
     protected abstract EventMessage<String> convertPayload(EventMessage<?> original);

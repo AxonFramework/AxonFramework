@@ -68,7 +68,7 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
         Entry<Message<Object>> result = testSubject.map(message -> message.withMetaData(expectedMetaData));
 
         assertNotEquals(expectedMessage, result.message());
-        assertEquals(expectedMetaData, result.message().getMetaData());
+        assertEquals(expectedMetaData, result.message().metaData());
         assertTrue(result.containsResource(expectedContextKey));
         assertEquals(expectedResourceValue, result.getResource(expectedContextKey));
     }

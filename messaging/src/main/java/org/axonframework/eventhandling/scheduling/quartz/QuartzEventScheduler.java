@@ -282,7 +282,7 @@ public class QuartzEventScheduler implements EventScheduler {
             jobData.put(MESSAGE_REVISION, serializedPayload.getType().getRevision());
 
             SerializedObject<byte[]> serializedMetaData =
-                    serializer.serialize(eventMessage.getMetaData(), byte[].class);
+                    serializer.serialize(eventMessage.metaData(), byte[].class);
             jobData.put(MESSAGE_METADATA, serializedMetaData.getData());
 
             return jobData;

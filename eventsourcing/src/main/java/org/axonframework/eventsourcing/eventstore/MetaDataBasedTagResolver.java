@@ -45,7 +45,7 @@ public class MetaDataBasedTagResolver implements TagResolver {
 
     @Override
     public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
-        var tagValue = event.getMetaData().get(metaDataKey);
+        var tagValue = event.metaData().get(metaDataKey);
         return tagValue == null ? Set.of() : Set.of(new Tag(metaDataKey, tagValue));
     }
 } 

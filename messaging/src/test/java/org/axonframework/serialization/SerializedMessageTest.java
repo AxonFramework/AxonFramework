@@ -61,7 +61,7 @@ class SerializedMessageTest {
         assertEquals(Object.class, testSubject.payload().getClass());
         assertTrue(testSubject.isPayloadDeserialized());
         assertFalse(testSubject.isMetaDataDeserialized());
-        assertSame(MetaData.emptyInstance(), testSubject.getMetaData());
+        assertSame(MetaData.emptyInstance(), testSubject.metaData());
         assertTrue(testSubject.isMetaDataDeserialized());
     }
 
@@ -78,8 +78,8 @@ class SerializedMessageTest {
         Message<Object> resultTwo =
                 testSubject.withMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
-        assertEquals(0, resultOne.getMetaData().size());
-        assertEquals(1, resultTwo.getMetaData().size());
+        assertEquals(0, resultOne.metaData().size());
+        assertEquals(1, resultTwo.metaData().size());
     }
 
     @Test
@@ -92,13 +92,13 @@ class SerializedMessageTest {
                 new SerializedMessage<>(eventId, serializedPayload, serializedMetaData, serializer);
 
         Message<Object> resultOne = testSubject.andMetaData(MetaData.emptyInstance());
-        assertEquals(1, resultOne.getMetaData().size());
-        assertEquals("value", resultOne.getMetaData().get("key"));
+        assertEquals(1, resultOne.metaData().size());
+        assertEquals("value", resultOne.metaData().get("key"));
 
         Message<Object> resultTwo =
                 testSubject.andMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
-        assertEquals(1, resultTwo.getMetaData().size());
-        assertEquals("otherValue", resultTwo.getMetaData().get("key"));
+        assertEquals(1, resultTwo.metaData().size());
+        assertEquals("otherValue", resultTwo.metaData().get("key"));
     }
 
     @Test
@@ -142,7 +142,7 @@ class SerializedMessageTest {
     }
 
     @Test
-    void rethrowSerializationExceptionOnGetMetaData() {
+    void rethrowSerializationExceptionOnMetaData() {
         SerializationException serializationException = new SerializationException("test message");
         when(serializer.deserialize(serializedMetaData)).thenThrow(serializationException);
         when(serializer.deserialize(serializedPayload)).thenThrow(serializationException);
@@ -150,7 +150,7 @@ class SerializedMessageTest {
         SerializedMessage<Object> testSubject =
                 new SerializedMessage<>(eventId, serializedPayload, serializedMetaData, serializer);
 
-        SerializationException result = assertThrows(SerializationException.class, testSubject::getMetaData);
+        SerializationException result = assertThrows(SerializationException.class, testSubject::metaData);
         assertEquals("Error while deserializing meta data of message " + eventId, result.getMessage());
         assertSame(serializationException, result.getCause());
     }

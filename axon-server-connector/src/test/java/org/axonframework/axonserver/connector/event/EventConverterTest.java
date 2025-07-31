@@ -186,7 +186,7 @@ class EventConverterTest {
         assertEquals(EVENT_ID, result.identifier());
         assertEquals(EVENT_TYPE, result.type());
         assertArrayEquals(eventPayloadByteArray, result.payload());
-        assertEquals(EVENT_METADATA, result.getMetaData());
+        assertEquals(EVENT_METADATA, result.metaData());
         assertEquals(EVENT_TIMESTAMP, result.getTimestamp().toEpochMilli());
     }
 

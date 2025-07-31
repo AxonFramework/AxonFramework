@@ -346,11 +346,11 @@ public abstract class AbstractDeadlineManagerTestSuite {
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
 
         Message<?> aggregateCreatedEvent = publishedMessages.getFirst();
-        assertTrue(aggregateCreatedEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, aggregateCreatedEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(aggregateCreatedEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, aggregateCreatedEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
         Message<?> deadLineEvent = publishedMessages.get(1);
-        assertTrue(deadLineEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, deadLineEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(deadLineEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, deadLineEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
     }
 
     @Test
@@ -546,11 +546,11 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertSagaIs(LIVE);
 
         Message<?> sagaStartingEvent = publishedMessages.get(0);
-        assertTrue(sagaStartingEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, sagaStartingEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(sagaStartingEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, sagaStartingEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
         Message<?> deadLineOccurredEvent = publishedMessages.get(1);
-        assertTrue(deadLineOccurredEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, deadLineOccurredEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(deadLineOccurredEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, deadLineOccurredEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
     }
 
     private void assertPublishedEvents(Object... expectedEvents) {

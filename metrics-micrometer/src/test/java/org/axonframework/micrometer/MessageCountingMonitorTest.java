@@ -145,7 +145,7 @@ class MessageCountingMonitorTest {
                                                                                  meterRegistry,
                                                                                  message -> Tags
                                                                                          .of("myMetaData",
-                                                                                             message.getMetaData()
+                                                                                             message.metaData()
                                                                                                     .get("myMetadataKey")
                                                                                                     .toString()));
         EventMessage<Object> foo = asEventMessage(1).withMetaData(Collections.singletonMap("myMetadataKey",

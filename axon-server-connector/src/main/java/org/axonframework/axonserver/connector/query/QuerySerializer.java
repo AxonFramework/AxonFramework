@@ -134,7 +134,7 @@ public class QuerySerializer {
                            .addProcessingInstructions(timeout(timeout))
                            .addProcessingInstructions(priority(priority))
                            .addProcessingInstructions(supportsStreaming(stream))
-                           .putAllMetaData(metadataSerializer.apply(queryMessage.getMetaData()))
+                           .putAllMetaData(metadataSerializer.apply(queryMessage.metaData()))
                            .build();
     }
 
@@ -197,7 +197,7 @@ public class QuerySerializer {
             responseBuilder.setPayload(payloadSerializer.apply(queryResponse));
         }
 
-        return responseBuilder.putAllMetaData(metadataSerializer.apply(queryResponse.getMetaData()))
+        return responseBuilder.putAllMetaData(metadataSerializer.apply(queryResponse.metaData()))
                               .setMessageIdentifier(queryResponse.identifier())
                               .setRequestIdentifier(requestMessageId)
                               .build();

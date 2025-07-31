@@ -69,7 +69,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      * {@code responseType}, and {@code updateResponseType}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -77,7 +77,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      *
      * @param delegate           The {@link Message} containing {@link Message#payload() payload},
      *                           {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                           {@link Message#getMetaData() metadata} for the {@link SubscriptionQueryMessage} to
+     *                           {@link Message#metaData() metadata} for the {@link SubscriptionQueryMessage} to
      *                           reconstruct.
      * @param responseType       The expected {@link ResponseType response type} for this
      *                           {@link SubscriptionQueryMessage}.

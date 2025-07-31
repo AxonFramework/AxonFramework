@@ -23,7 +23,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ResultMessage;
 
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import jakarta.annotation.Nonnull;
@@ -87,7 +86,7 @@ public class LegacyDefaultUnitOfWork<T extends Message<?>> extends AbstractLegac
             } else if (result instanceof Message) {
                 resultMessage = new GenericResultMessage<>(((Message<?>) result).type(),
                                                            result,
-                                                           ((Message<?>) result).getMetaData());
+                                                           ((Message<?>) result).metaData());
             } else {
                 resultMessage = new GenericResultMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result);
             }

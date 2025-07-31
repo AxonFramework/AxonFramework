@@ -58,7 +58,7 @@ class GrpcBackedQueryUpdateMessageTest {
     }
 
     @Test
-    void getMetaDataReturnsTheSameMapAsWasInsertedInTheQueryUpdate() {
+    void metaDataReturnsTheSameMapAsWasInsertedInTheQueryUpdate() {
         MetaData expectedMetaData = MetaData.with("some-key", "some-value");
         SubscriptionQueryUpdateMessage<Object> testSubscriptionQueryUpdateMessage =
                 asUpdateMessage(TEST_QUERY_UPDATE).withMetaData(expectedMetaData);
@@ -67,7 +67,7 @@ class GrpcBackedQueryUpdateMessageTest {
         GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
-        assertEquals(expectedMetaData, testSubject.getMetaData());
+        assertEquals(expectedMetaData, testSubject.metaData());
     }
 
     @Test
@@ -120,7 +120,7 @@ class GrpcBackedQueryUpdateMessageTest {
         MetaData replacementMetaData = MetaData.with("some-other-key", "some-other-value");
 
         testSubject = testSubject.withMetaData(replacementMetaData);
-        MetaData resultMetaData = testSubject.getMetaData();
+        MetaData resultMetaData = testSubject.metaData();
         assertFalse(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
         assertEquals(replacementMetaData, resultMetaData);
     }
@@ -138,7 +138,7 @@ class GrpcBackedQueryUpdateMessageTest {
         MetaData additionalMetaData = MetaData.with("some-other-key", "some-other-value");
 
         testSubject = testSubject.andMetaData(additionalMetaData);
-        MetaData resultMetaData = testSubject.getMetaData();
+        MetaData resultMetaData = testSubject.metaData();
 
         assertTrue(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
         assertTrue(resultMetaData.containsKey(additionalMetaData.keySet().iterator().next()));

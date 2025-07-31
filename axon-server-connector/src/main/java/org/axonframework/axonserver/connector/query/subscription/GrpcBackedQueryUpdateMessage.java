@@ -106,7 +106,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     @Override
-    public MetaData getMetaData() {
+    public MetaData metaData() {
         return metaDataSupplier.get();
     }
 
@@ -154,6 +154,6 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
 
     @Override
     public GrpcBackedQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData) {
-        return withMetaData(getMetaData().mergedWith(metaData));
+        return withMetaData(metaData().mergedWith(metaData));
     }
 }

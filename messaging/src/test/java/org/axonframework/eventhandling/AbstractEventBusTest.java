@@ -177,7 +177,7 @@ class AbstractEventBusTest {
             //noinspection unchecked
             List<EventMessage<?>> eventMessages = (List<EventMessage<?>>) invocation.getArguments()[0];
             return (BiFunction<Integer, Object, Object>) (index, message) -> {
-                if (eventMessages.get(index).getMetaData().containsKey(key)) {
+                if (eventMessages.get(index).metaData().containsKey(key)) {
                     throw new AssertionError("MessageProcessor is asked to process the same event message twice");
                 }
                 return eventMessages.get(index).andMetaData(Collections.singletonMap(key, value));
@@ -193,7 +193,7 @@ class AbstractEventBusTest {
         verify(dispatchInterceptorMock).handle(argumentCaptor.capture()); //prepare commit, commit, and after commit
         assertEquals(1, argumentCaptor.getAllValues().size());
         assertEquals(2, argumentCaptor.getValue().size());
-        assertEquals(value, argumentCaptor.getValue().get(0).getMetaData().get(key));
+        assertEquals(value, argumentCaptor.getValue().get(0).metaData().get(key));
     }
 
     private static EventMessage<Object> newEvent() {

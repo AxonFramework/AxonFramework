@@ -123,7 +123,7 @@ class DeadlineJobDataBinderTest {
         assertEquals(testDeadlineMessage.getTimestamp(), result.getTimestamp());
         assertEquals(testDeadlineMessage.payload(), result.payload());
         assertEquals(testDeadlineMessage.payloadType(), result.payloadType());
-        assertEquals(testDeadlineMessage.getMetaData(), result.getMetaData());
+        assertEquals(testDeadlineMessage.metaData(), result.metaData());
 
         verify(serializer, times(2))
                 .deserialize(argThat(new DeadlineMessageSerializedObjectMatcher(expectedSerializedClassType, revisionMatcher)));

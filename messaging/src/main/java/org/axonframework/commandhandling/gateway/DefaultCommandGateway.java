@@ -89,14 +89,14 @@ public class DefaultCommandGateway implements CommandGateway {
     /**
      * Returns the given command as a {@link CommandMessage}. If {@code command} already implements
      * {@code CommandMessage}, it is returned as-is. When the {@code command} is another implementation of
-     * {@link Message}, the {@link Message#payload()} and {@link Message#getMetaData()} are used as input for a new
+     * {@link Message}, the {@link Message#payload()} and {@link Message#metaData()} are used as input for a new
      * {@link GenericCommandMessage}. Otherwise, the given {@code command} is wrapped into a
      * {@code GenericCommandMessage} as its payload.
      *
      * @param command The command to wrap as {@link CommandMessage}.
      * @return A {@link CommandMessage} containing given {@code command} as payload, a {@code command} if it already
      * implements {@code CommandMessage}, or a {@code CommandMessage} based on the result of
-     * {@link Message#payload()} and {@link Message#getMetaData()} for other {@link Message} implementations.
+     * {@link Message#payload()} and {@link Message#metaData()} for other {@link Message} implementations.
      */
     @SuppressWarnings("unchecked")
     private <C> CommandMessage<C> asCommandMessage(Object command, MetaData metaData) {
@@ -108,7 +108,7 @@ public class DefaultCommandGateway implements CommandGateway {
             return new GenericCommandMessage<>(
                     message.type(),
                     (C) message.payload(),
-                    message.getMetaData()
+                    message.metaData()
             );
         }
 

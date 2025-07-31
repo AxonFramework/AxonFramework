@@ -102,7 +102,7 @@ class JobRunrEventSchedulerTest {
 
         assertEquals(1, publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
-        assertTrue(publishedMessage.getMetaData().isEmpty());
+        assertTrue(publishedMessage.metaData().isEmpty());
     }
 
     @Test
@@ -133,7 +133,7 @@ class JobRunrEventSchedulerTest {
 
         assertEquals(2, publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
-        assertEquals(metadata, publishedMessage.getMetaData());
+        assertEquals(metadata, publishedMessage.metaData());
     }
 
     @Test
@@ -148,7 +148,7 @@ class JobRunrEventSchedulerTest {
 
         assertEquals(new PayloadWithRevision(), publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
-        assertTrue(publishedMessage.getMetaData().isEmpty());
+        assertTrue(publishedMessage.metaData().isEmpty());
     }
 
     @Test
@@ -168,7 +168,7 @@ class JobRunrEventSchedulerTest {
 
         assertEquals(new PayloadWithRevision(), publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
-        assertEquals(metadata, publishedMessage.getMetaData());
+        assertEquals(metadata, publishedMessage.metaData());
     }
 
     @Test

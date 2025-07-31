@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,6 @@ public class MetaDataAssociationResolver implements AssociationResolver {
     @Override
     public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
                               @Nonnull MessageHandlingMember<T> handler) {
-        return message.getMetaData().get(associationPropertyName);
+        return message.metaData().get(associationPropertyName);
     }
 }

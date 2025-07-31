@@ -708,7 +708,7 @@ class AxonServerQueryBusTest {
         when(localSegment.query(any())).thenAnswer(i -> {
             startProcessingGate.await();
             QueryMessage<?, ?> message = i.getArgument(0);
-            actual.add(message.getMetaData().get("index"));
+            actual.add(message.metaData().get("index"));
             finishProcessingGate.countDown();
             return CompletableFuture.completedFuture(
                     new GenericQueryResponseMessage<>(new MessageType("query"), "ok")

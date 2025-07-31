@@ -199,7 +199,7 @@ class SimpleQueryBusTest {
         assertEquals("hello1234", result.get().payload());
         assertEquals(
                 MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
-                result.get().getMetaData()
+                result.get().metaData()
         );
     }
 
@@ -216,7 +216,7 @@ class SimpleQueryBusTest {
         assertEquals(String.class, result.get().payloadType());
         assertEquals(
                 MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
-                result.get().getMetaData()
+                result.get().metaData()
         );
     }
 
@@ -448,7 +448,7 @@ class SimpleQueryBusTest {
                 messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value"))
         );
         testSubject.registerHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
-            if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
+            if (unitOfWork.getMessage().metaData().containsKey("key")) {
                 return "fakeReply";
             }
             return interceptorChain.proceedSync(context);
@@ -683,7 +683,7 @@ class SimpleQueryBusTest {
                 messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value"))
         );
         testSubject.registerHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
-            if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
+            if (unitOfWork.getMessage().metaData().containsKey("key")) {
                 return "fakeReply";
             }
             return interceptorChain.proceedSync(context);
@@ -743,8 +743,8 @@ class SimpleQueryBusTest {
                 new MessageType(String.class), "Hello, World", singleStringResponse
         );
         QueryResponseMessage<String> queryResponseMessage = testSubject.query(testQuery).get();
-        assertEquals(testQuery.identifier(), queryResponseMessage.getMetaData().get("traceId"));
-        assertEquals(testQuery.identifier(), queryResponseMessage.getMetaData().get("correlationId"));
+        assertEquals(testQuery.identifier(), queryResponseMessage.metaData().get("traceId"));
+        assertEquals(testQuery.identifier(), queryResponseMessage.metaData().get("correlationId"));
         assertEquals("Hello, World1234", queryResponseMessage.payload());
     }
 

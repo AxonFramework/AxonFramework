@@ -214,8 +214,8 @@ class FixtureTest_MatcherParams {
         verify(mockCommandHandler).handleSync(captor.capture(), any());
         List<CommandMessage> dispatched = captor.getAllValues();
         assertEquals(1, dispatched.size());
-        assertEquals(1, dispatched.get(0).getMetaData().size());
-        assertEquals("value", dispatched.get(0).getMetaData().get("meta"));
+        assertEquals(1, dispatched.get(0).metaData().size());
+        assertEquals("value", dispatched.get(0).metaData().get("meta"));
     }
 
     @Test

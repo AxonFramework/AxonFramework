@@ -82,7 +82,7 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
-        assertEquals(MetaData.emptyInstance(), result.getMetaData());
+        assertEquals(MetaData.emptyInstance(), result.metaData());
     }
 
     @Test
@@ -111,7 +111,7 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
-        MetaData resultMetaData = result.getMetaData();
+        MetaData resultMetaData = result.metaData();
         assertTrue(resultMetaData.containsKey(expectedMetaDataKey));
         assertTrue(resultMetaData.containsValue(expectedMetaDataValue));
     }
@@ -184,7 +184,7 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
-        assertEquals(MetaData.emptyInstance(), result.getMetaData());
+        assertEquals(MetaData.emptyInstance(), result.metaData());
     }
 
     @Test
@@ -218,7 +218,7 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
-        MetaData resultMetaData = result.getMetaData();
+        MetaData resultMetaData = result.metaData();
         assertTrue(resultMetaData.containsKey(expectedMetaDataKey));
         assertTrue(resultMetaData.containsValue(expectedMetaDataValue));
     }
@@ -243,7 +243,7 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getUpdateResponseType().getClass()));
         assertEquals(String.class, result.getUpdateResponseType().getExpectedResponseType());
-        assertEquals(MetaData.emptyInstance(), result.getMetaData());
+        assertEquals(MetaData.emptyInstance(), result.metaData());
     }
 
     @Test
@@ -274,7 +274,7 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getUpdateResponseType().getClass()));
         assertEquals(String.class, result.getUpdateResponseType().getExpectedResponseType());
-        MetaData resultMetaData = result.getMetaData();
+        MetaData resultMetaData = result.metaData();
         assertTrue(resultMetaData.containsKey(expectedMetaDataKey));
         assertTrue(resultMetaData.containsValue(expectedMetaDataValue));
     }
@@ -418,7 +418,7 @@ class DefaultQueryGatewayTest {
                     .verifyComplete();
 
         verify(mockBus).streamingQuery(argThat(
-                streamingQuery -> "value".equals(streamingQuery.getMetaData().get("key"))
+                streamingQuery -> "value".equals(streamingQuery.metaData().get("key"))
         ));
     }
 

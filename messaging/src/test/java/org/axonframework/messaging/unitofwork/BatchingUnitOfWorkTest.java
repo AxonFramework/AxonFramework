@@ -185,10 +185,10 @@ class BatchingUnitOfWorkTest {
                                                          .map(ResultMessage::exceptionResult)
                                                          .collect(Collectors.toList());
         List<MetaData> expectedMetaData = expectedMessages.stream()
-                                                          .map(Message::getMetaData)
+                                                          .map(Message::metaData)
                                                           .collect(Collectors.toList());
         List<MetaData> actualMetaData = actualMessages.stream()
-                                                      .map(Message::getMetaData)
+                                                      .map(Message::metaData)
                                                       .collect(Collectors.toList());
         assertEquals(expectedPayloads.size(), actualPayloads.size());
         //noinspection SuspiciousMethodCalls

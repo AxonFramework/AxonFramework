@@ -595,7 +595,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                 messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value"))
         );
         queryBus.registerHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
-            if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
+            if (unitOfWork.getMessage().metaData().containsKey("key")) {
                 return interceptedResponse;
             }
             return interceptorChain.proceedSync(context);
@@ -636,7 +636,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
         // then
         StepVerifier.create(result.updates())
-                    .expectNextMatches(m -> m.getMetaData().equals(metaData))
+                    .expectNextMatches(m -> m.metaData().equals(metaData))
                     .verifyComplete();
     }
 

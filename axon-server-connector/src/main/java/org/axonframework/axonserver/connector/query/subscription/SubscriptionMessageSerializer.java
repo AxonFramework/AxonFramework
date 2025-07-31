@@ -107,7 +107,7 @@ public class SubscriptionMessageSerializer {
                            .setComponentName(configuration.getComponentName())
                            .setPayload(payloadSerializer.apply(subscriptionQueryMessage))
                            .setResponseType(responseTypeSerializer.apply(subscriptionQueryMessage.getResponseType()))
-                           .putAllMetaData(metadataSerializer.apply(subscriptionQueryMessage.getMetaData()))
+                           .putAllMetaData(metadataSerializer.apply(subscriptionQueryMessage.metaData()))
                            .build();
     }
 
@@ -149,7 +149,7 @@ public class SubscriptionMessageSerializer {
             updateMessageBuilder.setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage));
         }
 
-        Map<String, MetaDataValue> metaData = metadataSerializer.apply(subscriptionQueryUpdateMessage.getMetaData());
+        Map<String, MetaDataValue> metaData = metadataSerializer.apply(subscriptionQueryUpdateMessage.metaData());
         return updateMessageBuilder.putAllMetaData(metaData)
                                    .setMessageIdentifier(subscriptionQueryUpdateMessage.identifier())
                                    .setClientId(configuration.getClientId())
