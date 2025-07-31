@@ -27,6 +27,8 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -53,6 +55,7 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
     private final MessagingConfigurer delegate;
 
     private ComponentBuilder<EventProcessorDefaults> eventProcessorDefaultsBuilder;
+    private final List<ModuleBuilder<EventProcessorModule>> moduleBuilders = new ArrayList<>();
 
     private EventProcessingConfigurer(MessagingConfigurer delegate) {
         this.delegate = delegate;
@@ -61,11 +64,13 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
     public static EventProcessingConfigurer enhance(@Nonnull MessagingConfigurer messagingConfigurer) {
         return new EventProcessingConfigurer(messagingConfigurer)
                 .componentRegistry(cr -> cr
-                        .registerEnhancer(new EventProcessingDefaultsEnhancer()) // todo: do not register tokenStore/unitOfWork or register and use them?
+                                           .registerEnhancer(new EventProcessingDefaultsEnhancer())
+                                   // todo: do not register tokenStore/unitOfWork or register and use them?
                 );
     }
 
-    public EventProcessingConfigurer defaults(@Nonnull BiFunction<Configuration, EventProcessorDefaults, EventProcessorDefaults> configureDefaults) {
+    public EventProcessingConfigurer defaults(
+            @Nonnull BiFunction<Configuration, EventProcessorDefaults, EventProcessorDefaults> configureDefaults) {
         this.eventProcessorDefaultsBuilder = config -> {
             var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
             config.getOptionalComponent(TokenStore.class)
@@ -100,7 +105,7 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
     public EventProcessingConfigurer registerEventProcessorModule(
             ModuleBuilder<EventProcessorModule> moduleBuilder
     ) {
-        componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));
+        moduleBuilders.add(moduleBuilder);
         return this;
     }
 
@@ -122,8 +127,22 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
         componentRegistry(
                 cr -> cr.registerComponent(
                         EventProcessorDefaults.class,
-                        eventProcessorDefaultsBuilder
+                        config -> {
+                            var defaults = eventProcessorDefaultsBuilder.build(config);
+                            // todo: shared should be inside and changed accordingly!
+                            cr.registerComponent(PooledStreamingEventProcessorConfiguration.class,
+                                                 c -> defaults.pooledStreaming);
+                            cr.registerComponent(SubscribingEventProcessorConfiguration.class,
+                                                 c -> defaults.subscribing);
+                            return defaults;
+                        }
                 )
+        );
+        moduleBuilders.forEach(moduleBuilder ->
+                                       componentRegistry(cr -> cr.registerComponent(
+                                               EventProcessorModule.class,
+                                               config -> moduleBuilder.build()
+                                       ))
         );
         return delegate.build();
     }
