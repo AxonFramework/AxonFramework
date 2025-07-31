@@ -24,6 +24,7 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
@@ -36,11 +37,11 @@ import java.util.stream.Collectors;
 
 public class SubscribingEventProcessorModule extends BaseModule<SubscribingEventProcessorModule>
         implements EventProcessorModule,
-        EventProcessorModule.CustomizationPhase<SubscribingEventProcessor.SubscribingEventProcessorConfiguration>,
+        EventProcessorModule.CustomizationPhase<SubscribingEventProcessorConfiguration>,
         EventProcessorModule.BuildPhase {
 
     private final String processorName;
-    private ComponentBuilder<SubscribingEventProcessor.SubscribingEventProcessorConfiguration> configurationBuilder;
+    private ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder;
 
     // todo: defaults - should be configurable
     private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
@@ -82,23 +83,23 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
     @Override
     public BuildPhase configure(
-            @Nonnull ComponentBuilder<SubscribingEventProcessor.SubscribingEventProcessorConfiguration> configurationBuilder) {
+            @Nonnull ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder) {
         this.configurationBuilder = configurationBuilder;
         return this;
     }
 
     @Override
     public BuildPhase customize(
-            @Nonnull ComponentBuilder<UnaryOperator<SubscribingEventProcessor.SubscribingEventProcessorConfiguration>> customizationBuilder) {
+            @Nonnull ComponentBuilder<UnaryOperator<SubscribingEventProcessorConfiguration>> customizationBuilder) {
         configure(cfg -> customizationBuilder.build(cfg).apply(parentConfigurationOrDefault(cfg)));
         return this;
     }
 
-    private static SubscribingEventProcessor.SubscribingEventProcessorConfiguration parentConfigurationOrDefault(
+    private static SubscribingEventProcessorConfiguration parentConfigurationOrDefault(
             Configuration cfg
     ) {
-        return cfg.getOptionalComponent(SubscribingEventProcessor.SubscribingEventProcessorConfiguration.class)
-                  .orElseGet(SubscribingEventProcessor.SubscribingEventProcessorConfiguration::new);
+        return cfg.getOptionalComponent(SubscribingEventProcessorConfiguration.class)
+                  .orElseGet(SubscribingEventProcessorConfiguration::new);
     }
 
     @Override

@@ -117,12 +117,12 @@ class PooledStreamingEventProcessorTest {
 
     private PooledStreamingEventProcessor withTestSubject(
             List<EventHandlingComponent> eventHandlingComponents,
-            UnaryOperator<PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration> configOverride
+            UnaryOperator<PooledStreamingEventProcessorConfiguration> configOverride
     ) {
         var componentsWithDefault = new ArrayList<>(eventHandlingComponents);
         componentsWithDefault.add(defaultEventHandlingComponent);
 
-        var testDefaultConfiguration = new PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration()
+        var testDefaultConfiguration = new PooledStreamingEventProcessorConfiguration()
                 .eventSource(stubMessageSource)
                 .eventHandlingComponents(componentsWithDefault)
                 .unitOfWorkFactory(new SimpleUnitOfWorkFactory())

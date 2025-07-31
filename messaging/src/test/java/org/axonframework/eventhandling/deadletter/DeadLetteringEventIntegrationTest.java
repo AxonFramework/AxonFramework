@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
@@ -190,7 +191,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         eventSource = new AsyncInMemoryStreamableEventSource();
         var interceptors = new MessageHandlerInterceptors();
-        var configuration = new PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration()
+        var configuration = new PooledStreamingEventProcessorConfiguration()
                 .eventSource(eventSource)
                 .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager))
                 .tokenStore(new InMemoryTokenStore())

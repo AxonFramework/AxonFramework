@@ -42,11 +42,11 @@ import java.util.stream.Collectors;
 public class PooledStreamingEventProcessorModule
         extends BaseModule<PooledStreamingEventProcessorModule>
         implements EventProcessorModule,
-        EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration>,
+        EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorConfiguration>,
         EventProcessorModule.BuildPhase {
 
     private final String processorName;
-    private ComponentBuilder<PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration> configurationBuilder;
+    private ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder;
 
     // todo: defaults - should be configurable
     private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
@@ -114,23 +114,23 @@ public class PooledStreamingEventProcessorModule
 
     @Override
     public BuildPhase configure(
-            @Nonnull ComponentBuilder<PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration> configurationBuilder) {
+            @Nonnull ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder) {
         this.configurationBuilder = configurationBuilder;
         return this;
     }
 
     @Override
     public BuildPhase customize(
-            @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration>> customizationBuilder) {
+            @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorConfiguration>> customizationBuilder) {
         configure(cfg -> customizationBuilder.build(cfg).apply(parentConfigurationOrDefault(cfg)));
         return this;
     }
 
-    private static PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration parentConfigurationOrDefault(
+    private static PooledStreamingEventProcessorConfiguration parentConfigurationOrDefault(
             Configuration cfg
     ) {
-        return cfg.getOptionalComponent(PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration.class)
-                  .orElseGet(PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration::new);
+        return cfg.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)
+                  .orElseGet(PooledStreamingEventProcessorConfiguration::new);
     }
 
     @Override

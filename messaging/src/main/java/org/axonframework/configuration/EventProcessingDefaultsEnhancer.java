@@ -18,9 +18,9 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.configuration.EventProcessorsCustomization;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
-import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorsCustomization;
+import org.axonframework.eventhandling.EventProcessorConfiguration;
+import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -33,22 +33,25 @@ public class EventProcessingDefaultsEnhancer implements ConfigurationEnhancer {
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-        EventProcessorsCustomization eventProcessorsCustomization = new EventProcessorsCustomization();
+        EventProcessorConfiguration eventProcessorConfiguration = new EventProcessorConfiguration();
         registry.registerIfNotPresent(TokenStore.class, c -> new InMemoryTokenStore())
                 .registerIfNotPresent(UnitOfWorkFactory.class,
                                       c -> {
-                                          Optional<UnitOfWorkFactory> unitOfWorkFactory = c.getOptionalComponent(TransactionManager.class)
+                                          Optional<UnitOfWorkFactory> unitOfWorkFactory = c.getOptionalComponent(
+                                                                                                   TransactionManager.class)
                                                                                            .map(TransactionalUnitOfWorkFactory::new);
                                           return unitOfWorkFactory.orElseGet(SimpleUnitOfWorkFactory::new);
                                       })
-                .registerIfNotPresent(EventProcessorsCustomization.class, c -> eventProcessorsCustomization)
-                .registerIfNotPresent(SubscribingEventProcessorsCustomization.class,
-                                      c -> new SubscribingEventProcessorsCustomization(
-                                              c.getComponent(EventProcessorsCustomization.class)
+                .registerIfNotPresent(EventProcessorConfiguration.class, c -> eventProcessorConfiguration)
+                .registerIfNotPresent(SubscribingEventProcessorConfiguration.class,
+                                      c -> new SubscribingEventProcessorConfiguration(
+                                              c.getComponent(EventProcessorConfiguration.class)
                                       )
                 )
-                .registerIfNotPresent(PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration.class,
-                                      c -> new PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration()
+                .registerIfNotPresent(PooledStreamingEventProcessorConfiguration.class,
+                                      c -> new PooledStreamingEventProcessorConfiguration(
+                                              c.getComponent(EventProcessorConfiguration.class)
+                                      )
                 );
     }
 }

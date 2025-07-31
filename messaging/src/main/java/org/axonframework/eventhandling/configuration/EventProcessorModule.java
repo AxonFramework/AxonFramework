@@ -20,8 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 
@@ -45,7 +45,7 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor processorName, must not be null or empty.
      * @return A builder phase to configure a subscribing event processor.
      */
-    static CustomizationPhase<SubscribingEventProcessor.SubscribingEventProcessorConfiguration> subscribing(String processorName) {
+    static CustomizationPhase<SubscribingEventProcessorConfiguration> subscribing(String processorName) {
         return new SubscribingEventProcessorModule(processorName);
     }
 
@@ -56,7 +56,7 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor name, must not be null or empty.
      * @return A builder phase to configure a pooled streaming event processor.
      */
-    static CustomizationPhase<PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration> pooledStreaming(
+    static CustomizationPhase<PooledStreamingEventProcessorConfiguration> pooledStreaming(
             String processorName) {
         return new PooledStreamingEventProcessorModule(processorName);
     }

@@ -29,6 +29,7 @@ import org.axonframework.tracing.SpanFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -43,7 +44,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Rene de Waele
  * @since 3.0
  */
-public abstract class EventProcessorConfiguration {
+public class EventProcessorConfiguration {
 
     protected List<EventHandlingComponent> eventHandlingComponents;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
@@ -53,6 +54,21 @@ public abstract class EventProcessorConfiguration {
                                                                                       .build();
     private List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory();
+
+    public EventProcessorConfiguration() {
+        super();
+    }
+
+    public EventProcessorConfiguration(EventProcessorConfiguration base) {
+        Objects.requireNonNull(base, "Base configuration may not be null");
+        assertNonNull(base, "Base configuration may not be null");
+        this.eventHandlingComponents = base.eventHandlingComponents();
+        this.errorHandler = base.errorHandler();
+        this.messageMonitor = base.messageMonitor();
+        this.spanFactory = base.spanFactory();
+        this.interceptors = base.interceptors();
+        this.unitOfWorkFactory = base.unitOfWorkFactory();
+    }
 
     /**
      * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
@@ -67,14 +83,16 @@ public abstract class EventProcessorConfiguration {
         assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
         return eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)));
     }
+
     /**
      * Sets the {@link EventHandlingComponent} which will handle all the individual {@link EventMessage}s.
      *
      * @param eventHandlingComponents the {@link EventHandlingComponent} which will handle all the individual
-     *                               {@link EventMessage}s
+     *                                {@link EventMessage}s
      * @return the current Builder instance, for fluent interfacing
      */
-    public EventProcessorConfiguration eventHandlingComponents(@Nonnull List<EventHandlingComponent> eventHandlingComponents) {
+    public EventProcessorConfiguration eventHandlingComponents(
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents) {
         assertNonNull(eventHandlingComponents, "EventHandlingComponents may not be null");
         this.eventHandlingComponents = eventHandlingComponents;
         return this;
@@ -124,15 +142,16 @@ public abstract class EventProcessorConfiguration {
     }
 
     @Deprecated(since = "5.0.0", forRemoval = true)
-    public EventProcessorConfiguration interceptors(@Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+    public EventProcessorConfiguration interceptors(
+            @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
         assertNonNull(spanFactory, "interceptors may not be null");
         this.interceptors = interceptors;
         return this;
     }
 
     /**
-     * A {@link UnitOfWorkFactory} that spawns {@link org.axonframework.messaging.unitofwork.UnitOfWork} used to
-     * process an events batch.
+     * A {@link UnitOfWorkFactory} that spawns {@link org.axonframework.messaging.unitofwork.UnitOfWork} used to process
+     * an events batch.
      *
      * @param unitOfWorkFactory A {@link UnitOfWorkFactory} that spawns
      *                          {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
@@ -151,7 +170,8 @@ public abstract class EventProcessorConfiguration {
      *                                    specifications
      */
     protected void validate() throws AxonConfigurationException {
-        assertNonNull(eventHandlingComponents, "The EventHandlingComponent is a hard requirement and should be provided");
+        assertNonNull(eventHandlingComponents,
+                      "The EventHandlingComponent is a hard requirement and should be provided");
     }
 
     /**
