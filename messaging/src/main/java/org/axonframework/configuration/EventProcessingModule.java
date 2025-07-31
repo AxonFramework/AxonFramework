@@ -83,11 +83,35 @@ public class EventProcessingModule extends BaseModule<EventProcessingModule> {
         return this;
     }
 
-    public EventProcessingModule registerEventProcessorModule(
-            ModuleBuilder<EventProcessorModule> moduleBuilder
-    ) {
+    public EventProcessingModule processor(EventProcessorModule module) {
+        moduleBuilders.add(() -> module);
+        return this;
+    }
+
+    public EventProcessingModule processor(ModuleBuilder<EventProcessorModule> moduleBuilder) {
         moduleBuilders.add(moduleBuilder);
         return this;
+    }
+
+    public EventProcessingModule pooledStreamingProcessor(
+            @Nonnull String name,
+            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> customize
+    ) {
+        return processor(
+                EventProcessorModule.pooledStreaming(name)
+                                    .customize(config -> customization -> customize.apply(config, customization))
+        );
+    }
+
+
+    public EventProcessingModule subscribingProcessor(
+            @Nonnull String name,
+            @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customize
+    ) {
+        return processor(
+                EventProcessorModule.subscribing(name)
+                                    .customize(config -> customization -> customize.apply(config, customization))
+        );
     }
 
     @Override
@@ -104,6 +128,18 @@ public class EventProcessingModule extends BaseModule<EventProcessingModule> {
                                                  c -> defaults.subscribing);
                             return defaults;
                         }
+                )
+        );
+        componentRegistry(
+                cr -> cr.registerComponent(
+                        PooledStreamingEventProcessorConfiguration.class,
+                        c -> c.getComponent(EventProcessorDefaults.class).pooledStreaming
+                )
+        );
+        componentRegistry(
+                cr -> cr.registerComponent(
+                        SubscribingEventProcessorConfiguration.class,
+                        c -> c.getComponent(EventProcessorDefaults.class).subscribing
                 )
         );
         moduleBuilders.forEach(moduleBuilder ->

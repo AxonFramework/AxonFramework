@@ -16,13 +16,14 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -52,20 +53,26 @@ class PooledStreamingEventProcessorModuleTest {
                 .pooledStreaming("test-processor")
                 .customize(cfg -> customization ->
                         customization
-                                .eventHandlingComponents(List.of(eventHandlingComponent1, eventHandlingComponent2)) // todo: maybe separated step?
-                                .eventSource(eventSource)
-                                .tokenStore(new InMemoryTokenStore())
+                                .eventHandlingComponents(List.of(eventHandlingComponent1,
+                                                                 eventHandlingComponent2)) // todo: maybe separated step?
                                 .initialSegmentCount(1)
                 );
 
-        var configuration = MessagingConfigurer.create()
-                                               .eventProcessing(eventProcessing -> eventProcessing
-                                                       .defaults(defaults -> defaults
-                                                               .shared(p -> p.errorHandler(PropagatingErrorHandler.instance()))
-                                                               .pooledStreaming(p -> p.batchSize(100))
-                                                       ).registerEventProcessorModule(module)
-                                               )
-                                               .build();
+        var configurer = MessagingConfigurer.create();
+        configurer.eventProcessing(
+                eventProcessing -> eventProcessing.defaults(
+                        defaults -> defaults
+                                .shared(p -> p
+                                        .errorHandler(PropagatingErrorHandler.instance())
+                                        .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(new NoOpTransactionManager()))
+                                ).pooledStreaming(p -> p
+                                        .eventSource(eventSource)
+                                        .batchSize(100)
+                                )
+                )
+        );
+        configurer.eventProcessing(eventProcessing -> eventProcessing.processor(module));
+        var configuration = configurer.build();
 
         // when
         configuration.start();
