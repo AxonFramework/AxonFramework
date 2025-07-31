@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
@@ -45,7 +46,7 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor processorName, must not be null or empty.
      * @return A builder phase to configure a subscribing event processor.
      */
-    static CustomizationPhase<SubscribingEventProcessorConfiguration> subscribing(String processorName) {
+    static CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> subscribing(String processorName) {
         return new SubscribingEventProcessorModule(processorName);
     }
 
@@ -56,16 +57,16 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor name, must not be null or empty.
      * @return A builder phase to configure a pooled streaming event processor.
      */
-    static CustomizationPhase<PooledStreamingEventProcessorConfiguration> pooledStreaming(
+    static CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> pooledStreaming(
             String processorName) {
         return new PooledStreamingEventProcessorModule(processorName);
     }
 
-    interface CustomizationPhase<T> {
+    interface CustomizationPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration> {
 
-        EventProcessorModule configure(@Nonnull ComponentBuilder<T> configurationBuilder);
+        P configure(@Nonnull ComponentBuilder<C> configurationBuilder);
 
-        EventProcessorModule customize(@Nonnull ComponentBuilder<UnaryOperator<T>> customizationBuilder);
+        P customize(@Nonnull ComponentBuilder<UnaryOperator<C>> customizationBuilder);
     }
 
 }

@@ -23,9 +23,10 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 /**
@@ -49,30 +50,46 @@ public class ProcessorEventHandlingComponents {
      * Constructs a {@code ProcessorEventHandlingComponents} instance by converting the provided varargs of
      * {@link EventHandlingComponent}s into a list and passing them to the corresponding constructor.
      *
-     * @param components A varargs array of {@link EventHandlingComponent}s to be used for event processing.
-     *                   Must not be null and is converted into a list of {@link SequencingEventHandlingComponent}s
-     *                   if necessary.
+     * @param component The components to be used for event processing.
+     * @param decorator A decorator function that applies additional processing logic to each component.
      */
-    public ProcessorEventHandlingComponents(@Nonnull EventHandlingComponent... components) {
-        this(Arrays.stream(components).toList());
+    public ProcessorEventHandlingComponents(@Nonnull EventHandlingComponent component,
+                                            @Nonnull UnaryOperator<EventHandlingComponent> decorator) {
+        this(List.of(component), decorator);
     }
 
     /**
      * Constructs a {@code ProcessorEventHandlingComponents} instance by wrapping the provided list of
-     * {@link EventHandlingComponent}s in SequencingEventHandlingComponent instances for sequential event handling
-     * where needed.
+     * {@link EventHandlingComponent}s in SequencingEventHandlingComponent instances for sequential event handling where
+     * needed.
      *
-     * @param components The list of {@link EventHandlingComponent}s to be used for event processing.
-     *                   Must not be null and is transformed into a list of {@link SequencingEventHandlingComponent}s
-     *                   if necessary.
+     * @param components The list of {@link EventHandlingComponent}s to be used for event processing. Must not be null
+     *                   and is transformed into a list of {@link SequencingEventHandlingComponent}s if necessary.
      */
     public ProcessorEventHandlingComponents(@Nonnull List<EventHandlingComponent> components) {
+        this(components, UnaryOperator.identity());
+    }
+
+    /**
+     * Constructs a {@code ProcessorEventHandlingComponents} instance by wrapping the provided list of
+     * {@link EventHandlingComponent}s in SequencingEventHandlingComponent instances for sequential event handling where
+     * needed.
+     *
+     * @param components The list of {@link EventHandlingComponent}s to be used for event processing. Must not be null
+     *                   and is transformed into a list of {@link SequencingEventHandlingComponent}s if necessary.
+     * @param decorator  A decorator function that applies additional processing logic to each component.
+     */
+    public ProcessorEventHandlingComponents(@Nonnull List<EventHandlingComponent> components,
+                                            @Nonnull UnaryOperator<EventHandlingComponent> decorator) {
+        Objects.requireNonNull(components, "Components may not be null");
+        Objects.requireNonNull(decorator, "Decorator may not be null");
         this.components = components.stream()
-                                    .map(c -> c instanceof SequencingEventHandlingComponent seq
-                                            ? seq
-                                            : new SequencingEventHandlingComponent(c)
+                                    .map(c -> c instanceof SequencingEventHandlingComponent
+                                            ? decorator.apply(c)
+                                            : new SequencingEventHandlingComponent(decorator.apply(c))
                                     ).toList();
     }
+
 
     /**
      * Processes a batch of events in the processing context.
@@ -137,13 +154,11 @@ public class ProcessorEventHandlingComponents {
     }
 
     /**
-     * Retrieves a set of sequence identifiers for the given event message and processing context.
-     * Each identifier represents a sequence property determined by the components within this instance.
+     * Retrieves a set of sequence identifiers for the given event message and processing context. Each identifier
+     * represents a sequence property determined by the components within this instance.
      *
-     * @param event   The event message for which the sequence identifiers are to be determined.
-     *                Must not be null.
-     * @param context The processing context in which the sequence identifiers are evaluated.
-     *                Must not be null.
+     * @param event   The event message for which the sequence identifiers are to be determined. Must not be null.
+     * @param context The processing context in which the sequence identifiers are evaluated. Must not be null.
      * @return A set of sequence identifiers associated with the given event and context.
      */
     public Set<Object> sequenceIdentifiersFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {

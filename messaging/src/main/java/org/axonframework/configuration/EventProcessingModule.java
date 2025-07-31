@@ -17,143 +17,70 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
-import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
-import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsModule;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 
 public class EventProcessingModule extends BaseModule<EventProcessingModule> {
 
-    private static final EventProcessorDefaults INITIAL_EVENT_PROCESSOR_DEFAULTS = new EventProcessorDefaults(
-            new EventProcessorConfiguration(), // validate if I need to pass it to others!?
-            new SubscribingEventProcessorConfiguration()
-                    .unitOfWorkFactory(new SimpleUnitOfWorkFactory()),
-            new PooledStreamingEventProcessorConfiguration()
-                    .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
-                    .tokenStore(new InMemoryTokenStore())
-    );
+    private final PooledStreamingEventProcessorsModule pooledStreamingEventProcessorsModule = new PooledStreamingEventProcessorsModule(
+            "pooledStreamingProcessors");
+    private final SubscribingEventProcessorsModule subscribingEventProcessorsModule = new SubscribingEventProcessorsModule(
+            "subscribingProcessors");
 
-    private ComponentBuilder<EventProcessorDefaults> eventProcessorDefaultsBuilder;
-    private final List<ModuleBuilder<EventProcessorModule>> moduleBuilders = new ArrayList<>();
+    private EventProcessorCustomization processorsDefaultCustomization = EventProcessorCustomization.noOp();
 
-
+    @Internal
     public EventProcessingModule(@Nonnull String name) {
         super(name);
-    }
-
-    public EventProcessingModule defaults(
-            @Nonnull BiFunction<Configuration, EventProcessorDefaults, EventProcessorDefaults> configureDefaults) {
-        this.eventProcessorDefaultsBuilder = config -> {
-            var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
-            config.getOptionalComponent(TokenStore.class)
-                  .ifPresent(tokenStore ->
-                                     defaults.pooledStreaming(p -> p.tokenStore(tokenStore))
-                  );
-            config.getOptionalComponent(StreamableEventSource.class)
-                  .ifPresent(eventSource ->
-                                     defaults.pooledStreaming(p -> p.eventSource(eventSource))
-                  );
-            return configureDefaults.apply(config, defaults);
-        };
-        return this;
-    }
-
-    public EventProcessingModule defaults(@Nonnull UnaryOperator<EventProcessorDefaults> configureDefaults) {
-        this.eventProcessorDefaultsBuilder = config -> {
-            var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
-            config.getOptionalComponent(TokenStore.class)
-                  .ifPresent(tokenStore ->
-                                     defaults.pooledStreaming(p -> p.tokenStore(tokenStore))
-                  );
-            config.getOptionalComponent(StreamableEventSource.class)
-                  .ifPresent(eventSource ->
-                                     defaults.pooledStreaming(p -> p.eventSource(eventSource))
-                  );
-            return configureDefaults.apply(defaults);
-        };
-        return this;
-    }
-
-    public EventProcessingModule registerEventProcessorModule(
-            ModuleBuilder<EventProcessorModule> moduleBuilder
-    ) {
-        moduleBuilders.add(moduleBuilder);
-        return this;
     }
 
     @Override
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         componentRegistry(
                 cr -> cr.registerComponent(
-                        EventProcessorDefaults.class,
-                        config -> {
-                            var defaults = eventProcessorDefaultsBuilder.build(config);
-                            // todo: shared should be inside and changed accordingly!
-                            cr.registerComponent(PooledStreamingEventProcessorConfiguration.class,
-                                                 c -> defaults.pooledStreaming);
-                            cr.registerComponent(SubscribingEventProcessorConfiguration.class,
-                                                 c -> defaults.subscribing);
-                            return defaults;
-                        }
+                        EventProcessorCustomization.class,
+                        cfg -> processorsDefaultCustomization
                 )
         );
-        moduleBuilders.forEach(moduleBuilder ->
-                                       componentRegistry(cr -> cr.registerModule(
-                                               moduleBuilder.build()
-                                       ))
-        );
+        componentRegistry(cr -> cr.registerModule(
+                pooledStreamingEventProcessorsModule
+        ));
+        componentRegistry(cr -> cr.registerModule(
+                subscribingEventProcessorsModule
+        ));
         return super.build(parent, lifecycleRegistry);
     }
 
-    public static final class EventProcessorDefaults {
-
-        private final EventProcessorConfiguration shared;
-        private final SubscribingEventProcessorConfiguration subscribing;
-        private final PooledStreamingEventProcessorConfiguration pooledStreaming;
-
-        public EventProcessorDefaults(
-                EventProcessorConfiguration shared,
-                SubscribingEventProcessorConfiguration subscribing,
-                PooledStreamingEventProcessorConfiguration pooledStreaming
-        ) {
-            this.shared = shared;
-            this.subscribing = subscribing;
-            this.pooledStreaming = pooledStreaming;
-        }
-
-        public EventProcessorDefaults shared(@Nonnull UnaryOperator<EventProcessorConfiguration> customize) {
-            return new EventProcessorDefaults(
-                    customize.apply(shared),
-                    subscribing,
-                    pooledStreaming
-            );
-        }
-
-        public EventProcessorDefaults subscribing(
-                @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> customize) {
-            return new EventProcessorDefaults(
-                    shared,
-                    customize.apply(subscribing),
-                    pooledStreaming
-            );
-        }
-
-        public EventProcessorDefaults pooledStreaming(
-                @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> customize) {
-            return new EventProcessorDefaults(
-                    shared,
-                    subscribing,
-                    customize.apply(pooledStreaming)
-            );
-        }
+    public EventProcessingModule defaults(
+            @Nonnull BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> configureDefaults) {
+        this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
+        return this;
     }
+
+    public EventProcessingModule defaults(@Nonnull UnaryOperator<EventProcessorConfiguration> configureDefaults) {
+        this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
+                (axonConfig, pConfig) -> configureDefaults.apply(pConfig)
+        );
+        return this;
+    }
+
+    public EventProcessingModule pooledStreaming(
+            @Nonnull UnaryOperator<PooledStreamingEventProcessorsModule> processorsModuleTask
+    ) {
+        processorsModuleTask.apply(pooledStreamingEventProcessorsModule);
+        return this;
+    }
+
+    public EventProcessingModule subscribing(
+            @Nonnull UnaryOperator<SubscribingEventProcessorsModule> processorsModuleTask
+    ) {
+        processorsModuleTask.apply(subscribingEventProcessorsModule);
+        return this;
+    }
+
 }

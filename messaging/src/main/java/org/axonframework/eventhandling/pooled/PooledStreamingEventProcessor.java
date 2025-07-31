@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessingException;
@@ -76,7 +78,7 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class PooledStreamingEventProcessor implements StreamingEventProcessor {
+public class PooledStreamingEventProcessor implements StreamingEventProcessor, DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -356,7 +358,9 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         return eventHandlingComponents.handle(events, context)
                                       .onErrorContinue(ex -> {
                                           try {
-                                              configuration.errorHandler().handleError(new ErrorContext(name, ex, events));
+                                              configuration.errorHandler().handleError(new ErrorContext(name,
+                                                                                                        ex,
+                                                                                                        events));
                                           } catch (RuntimeException re) {
                                               return MessageStream.failed(re);
                                           } catch (Exception e) {
@@ -396,5 +400,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      */
     private void statusUpdater(int segmentId, UnaryOperator<TrackerStatus> segmentUpdater) {
         processingStatus.computeIfPresent(segmentId, (s, ts) -> segmentUpdater.apply(ts));
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("name", name);
+        descriptor.describeProperty("mode", "pooled");
+        // TODO: Other properties!
     }
 }

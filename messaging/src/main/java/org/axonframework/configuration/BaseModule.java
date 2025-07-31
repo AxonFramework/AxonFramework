@@ -74,7 +74,7 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
      * @param registryAction The action to perform on the component registry.
      * @return This instance for fluent interfacing.
      */
-    public S componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+    protected S componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
         Objects.requireNonNull(registryAction, "The registryAction must be null.")
                .accept(this.componentRegistry);
         //noinspection unchecked
