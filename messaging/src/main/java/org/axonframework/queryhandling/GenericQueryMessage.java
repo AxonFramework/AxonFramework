@@ -86,12 +86,12 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
 
     @Override
     public QueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericQueryMessage<>(getDelegate().withMetaData(metaData), responseType);
+        return new GenericQueryMessage<>(delegate().withMetaData(metaData), responseType);
     }
 
     @Override
     public QueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericQueryMessage<>(getDelegate().andMetaData(metaData), responseType);
+        return new GenericQueryMessage<>(delegate().andMetaData(metaData), responseType);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
             //noinspection unchecked
             return (QueryMessage<T, R>) this;
         }
-        Message<P> delegate = getDelegate();
+        Message<P> delegate = delegate();
         Message<T> converted = new GenericMessage<T>(delegate.identifier(),
                                                      delegate.type(),
                                                      convertedPayload,

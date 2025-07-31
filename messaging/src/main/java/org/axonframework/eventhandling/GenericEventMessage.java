@@ -150,7 +150,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
         if (metaData().equals(metaData)) {
             return this;
         }
-        return new GenericEventMessage<>(getDelegate().withMetaData(metaData), timestampSupplier);
+        return new GenericEventMessage<>(delegate().withMetaData(metaData), timestampSupplier);
     }
 
     @Override
@@ -159,7 +159,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
         if (metaData == null || metaData.isEmpty() || metaData().equals(metaData)) {
             return this;
         }
-        return new GenericEventMessage<>(getDelegate().andMetaData(metaData), timestampSupplier);
+        return new GenericEventMessage<>(delegate().andMetaData(metaData), timestampSupplier);
     }
 
     @Override
@@ -169,7 +169,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
             //noinspection unchecked
             return (EventMessage<T>) this;
         }
-        Message<P> delegate = getDelegate();
+        Message<P> delegate = delegate();
         Message<T> converted = new GenericMessage<T>(delegate.identifier(),
                                                      delegate.type(),
                                                      convertedPayload,

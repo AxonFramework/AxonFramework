@@ -141,13 +141,13 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
 
     @Override
     public DeadlineMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericDeadlineMessage<>(deadlineName, getDelegate().withMetaData(metaData), this::timestamp);
+        return new GenericDeadlineMessage<>(deadlineName, delegate().withMetaData(metaData), this::timestamp);
     }
 
     @Override
     public DeadlineMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new GenericDeadlineMessage<>(
-                deadlineName, getDelegate().andMetaData(additionalMetaData), this::timestamp
+                deadlineName, delegate().andMetaData(additionalMetaData), this::timestamp
         );
     }
 
@@ -158,7 +158,7 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
             //noinspection unchecked
             return (DeadlineMessage<T>) this;
         }
-        Message<P> delegate = getDelegate();
+        Message<P> delegate = delegate();
         Message<T> converted = new GenericMessage<T>(delegate.identifier(),
                                                      delegate.type(),
                                                      convertedPayload,

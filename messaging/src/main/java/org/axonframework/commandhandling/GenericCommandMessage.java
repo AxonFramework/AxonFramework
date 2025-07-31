@@ -83,12 +83,12 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
 
     @Override
     public CommandMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericCommandMessage<>(getDelegate().withMetaData(metaData));
+        return new GenericCommandMessage<>(delegate().withMetaData(metaData));
     }
 
     @Override
     public CommandMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericCommandMessage<>(getDelegate().andMetaData(metaData));
+        return new GenericCommandMessage<>(delegate().andMetaData(metaData));
     }
 
     @Override
@@ -98,7 +98,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
             //noinspection unchecked
             return (CommandMessage<T>) this;
         }
-        Message<P> delegate = getDelegate();
+        Message<P> delegate = delegate();
         return new GenericCommandMessage<>(new GenericMessage<T>(delegate.identifier(),
                                                                  delegate.type(),
                                                                  convertedPayload,

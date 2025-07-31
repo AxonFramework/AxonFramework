@@ -101,7 +101,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
      *
      * @return The wrapped {@link Message} delegated by this decorator.
      */
-    protected Message<P> getDelegate() {
+    protected Message<P> delegate() {
         return delegate;
     }
 

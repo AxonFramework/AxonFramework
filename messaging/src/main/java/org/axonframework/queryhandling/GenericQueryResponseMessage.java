@@ -170,12 +170,12 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
 
     @Override
     public QueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericQueryResponseMessage<>(getDelegate().withMetaData(metaData));
+        return new GenericQueryResponseMessage<>(delegate().withMetaData(metaData));
     }
 
     @Override
     public QueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
-        return new GenericQueryResponseMessage<>(getDelegate().andMetaData(additionalMetaData));
+        return new GenericQueryResponseMessage<>(delegate().andMetaData(additionalMetaData));
     }
 
     @Override
@@ -185,7 +185,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
             //noinspection unchecked
             return (QueryResponseMessage<T>) this;
         }
-        Message<R> delegate = getDelegate();
+        Message<R> delegate = delegate();
         Message<T> converted = new GenericMessage<T>(delegate.identifier(),
                                                      delegate.type(),
                                                      convertedPayload,

@@ -195,12 +195,12 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
 
     @Override
     public ResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericResultMessage<>(getDelegate().withMetaData(metaData), exception);
+        return new GenericResultMessage<>(delegate().withMetaData(metaData), exception);
     }
 
     @Override
     public ResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericResultMessage<>(getDelegate().andMetaData(metaData), exception);
+        return new GenericResultMessage<>(delegate().andMetaData(metaData), exception);
     }
 
     @Override
@@ -210,7 +210,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
             //noinspection unchecked
             return (ResultMessage<T>) this;
         }
-        Message<R> delegate = getDelegate();
+        Message<R> delegate = delegate();
         Message<T> converted = new GenericMessage<T>(delegate.identifier(),
                                                      delegate.type(),
                                                      convertedPayload,

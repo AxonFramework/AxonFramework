@@ -130,13 +130,13 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     @Override
     public CommandResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
-        return new GenericCommandResultMessage<>(getDelegate().withMetaData(metaData), exception);
+        return new GenericCommandResultMessage<>(delegate().withMetaData(metaData), exception);
     }
 
     @Override
     public CommandResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
-        return new GenericCommandResultMessage<>(getDelegate().andMetaData(metaData), exception);
+        return new GenericCommandResultMessage<>(delegate().andMetaData(metaData), exception);
     }
 
     @Override
@@ -147,7 +147,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
             //noinspection unchecked
             return (CommandResultMessage<T>) this;
         }
-        Message<R> delegate = getDelegate();
+        Message<R> delegate = delegate();
         Message<T> converted = new GenericMessage<T>(delegate.identifier(),
                                                      delegate.type(),
                                                      convertedPayload,

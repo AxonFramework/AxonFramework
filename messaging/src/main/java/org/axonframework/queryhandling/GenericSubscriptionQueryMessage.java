@@ -100,14 +100,14 @@ public class GenericSubscriptionQueryMessage<P, I, U>
 
     @Override
     public SubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericSubscriptionQueryMessage<>(getDelegate().withMetaData(metaData),
+        return new GenericSubscriptionQueryMessage<>(delegate().withMetaData(metaData),
                                                      responseType(),
                                                      updateResponseType);
     }
 
     @Override
     public SubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericSubscriptionQueryMessage<>(getDelegate().andMetaData(metaData),
+        return new GenericSubscriptionQueryMessage<>(delegate().andMetaData(metaData),
                                                      responseType(),
                                                      updateResponseType);
     }
@@ -120,7 +120,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
             //noinspection unchecked
             return (SubscriptionQueryMessage<T, I, U>) this;
         }
-        Message<P> delegate = getDelegate();
+        Message<P> delegate = delegate();
         Message<T> converted = new GenericMessage<T>(delegate.identifier(),
                                                     delegate.type(),
                                                     convertedPayload,

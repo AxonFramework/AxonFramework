@@ -119,13 +119,13 @@ public class GenericStreamingQueryMessage<P, R>
 
     @Override
     public StreamingQueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericStreamingQueryMessage<>(getDelegate().withMetaData(metaData),
+        return new GenericStreamingQueryMessage<>(delegate().withMetaData(metaData),
                                                   responseType());
     }
 
     @Override
     public StreamingQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericStreamingQueryMessage<>(getDelegate().andMetaData(metaData),
+        return new GenericStreamingQueryMessage<>(delegate().andMetaData(metaData),
                                                   responseType());
     }
 
@@ -136,7 +136,7 @@ public class GenericStreamingQueryMessage<P, R>
             //noinspection unchecked
             return (StreamingQueryMessage<T, R>) super.withConvertedPayload(type, converter);
         }
-        Message<P> delegate = getDelegate();
+        Message<P> delegate = delegate();
         GenericMessage<T> converted = new GenericMessage<T>(delegate.identifier(),
                                                             delegate.type(),
                                                             convertedPayload,
