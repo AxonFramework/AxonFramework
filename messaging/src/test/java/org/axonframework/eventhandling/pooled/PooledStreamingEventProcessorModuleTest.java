@@ -16,14 +16,12 @@
 
 package org.axonframework.eventhandling.pooled;
 
-import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -49,7 +47,7 @@ class PooledStreamingEventProcessorModuleTest {
         eventHandlingComponent1.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         var eventHandlingComponent2 = new SimpleEventHandlingComponent();
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-        EventProcessorModule module = EventProcessorModule
+        PooledStreamingEventProcessorModule module = EventProcessorModule
                 .pooledStreaming("test-processor")
                 .customize(cfg -> customization ->
                         customization
@@ -61,17 +59,16 @@ class PooledStreamingEventProcessorModuleTest {
         var configurer = MessagingConfigurer.create();
         configurer.eventProcessing(
                 eventProcessing -> eventProcessing.defaults(
-                        defaults -> defaults
-                                .shared(p -> p
-                                        .errorHandler(PropagatingErrorHandler.instance())
-                                        .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(new NoOpTransactionManager()))
-                                ).pooledStreaming(p -> p
-                                        .eventSource(eventSource)
-                                        .batchSize(100)
-                                )
+                        d -> d.errorHandler(PropagatingErrorHandler.instance())
                 )
         );
-        configurer.eventProcessing(eventProcessing -> eventProcessing.processor(module));
+        configurer.eventProcessing(
+                eventProcessing -> eventProcessing.pooledStreaming(
+                        ps -> ps
+                                .defaults(d -> d.eventSource(eventSource))
+                                .processor(module)
+                )
+        );
         var configuration = configurer.build();
 
         // when
