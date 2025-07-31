@@ -58,12 +58,12 @@ class PooledStreamingEventProcessorModuleTest {
 
         var configurer = MessagingConfigurer.create();
         configurer.eventProcessing(
-                eventProcessing -> eventProcessing.defaults(
+                ep -> ep.defaults(
                         d -> d.errorHandler(PropagatingErrorHandler.instance())
                 )
         );
         configurer.eventProcessing(
-                eventProcessing -> eventProcessing.pooledStreaming(
+                ep -> ep.pooledStreaming(
                         ps -> ps
                                 .defaults(d -> d.eventSource(eventSource))
                                 .processor(module)
