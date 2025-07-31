@@ -103,7 +103,7 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
 
             E evolvedEntity = entity;
             for (var handler : handlers) {
-                var convertedEvent = event.withConvertedPayload(p -> converter.convert(p, handler.payloadType()));
+                var convertedEvent = event.withConvertedPayload(handler.payloadType(), converter);
                 if (!handler.canHandle(convertedEvent, context)) {
                     continue;
                 }

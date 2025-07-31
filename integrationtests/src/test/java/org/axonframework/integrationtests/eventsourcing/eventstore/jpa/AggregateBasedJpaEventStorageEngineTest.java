@@ -48,7 +48,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import javax.sql.DataSource;
@@ -92,13 +91,7 @@ class AggregateBasedJpaEventStorageEngineTest
 
     @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
-        return original.withConvertedPayload(payload -> {
-            try {
-                return OBJECT_MAPPER.readValue((byte[]) payload, String.class);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        return original.withConvertedPayload(String.class, converter);
     }
 
     @Test

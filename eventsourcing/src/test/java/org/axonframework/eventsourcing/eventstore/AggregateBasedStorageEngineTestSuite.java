@@ -29,6 +29,8 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.ChainingContentTypeConverter;
+import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
@@ -70,6 +72,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     protected Set<Tag> OTHER_AGGREGATE_TAGS;
     protected EventCriteria OTHER_AGGREGATE_CRITERIA;
 
+    protected Converter converter;
+
     protected ESE testSubject;
 
     @BeforeEach
@@ -81,6 +85,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         TEST_AGGREGATE_CRITERIA = EventCriteria.havingTags(TEST_AGGREGATE_TYPE, TEST_AGGREGATE_ID);
         OTHER_AGGREGATE_TAGS = Set.of(new Tag("OTHER_AGGREGATE", OTHER_AGGREGATE_ID));
         OTHER_AGGREGATE_CRITERIA = EventCriteria.havingTags("OTHER_AGGREGATE", OTHER_AGGREGATE_ID);
+
+        converter = new ChainingContentTypeConverter();
 
         testSubject = buildStorageEngine();
     }
