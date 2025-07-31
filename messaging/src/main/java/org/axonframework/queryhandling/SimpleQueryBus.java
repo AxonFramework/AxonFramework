@@ -489,7 +489,7 @@ public class SimpleQueryBus implements QueryBus {
     private <Q, I, U> void assertSubQueryResponseTypes(SubscriptionQueryMessage<Q, I, U> query) {
         Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
                        () -> "Subscription Query query does not support Flux as a return type.");
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.updateResponseType().getExpectedResponseType()),
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.updatesResponseType().getExpectedResponseType()),
                        () -> "Subscription Query query does not support Flux as an update type.");
     }
 

@@ -1371,7 +1371,7 @@ This section contains four subsections, called:
 | `Message#getMetaData()`                                                                                                         | `Message#metaData()`                                                                                                   |
 | `EventMessage#getTimestamp()`                                                                                                   | `EventMessage#timestamp()`                                                                                             |
 | `QueryMessage#getReponseType()`                                                                                                 | `QueryMessage#responseType()`                                                                                          | 
-| `SubscriptionQueryMessage#getUpdateReponseType()`                                                                               | `SubscriptionQueryMessage#updateResponseType()`                                                                        | 
+| `SubscriptionQueryMessage#getUpdateReponseType()`                                                                               | `SubscriptionQueryMessage#updatesResponseType()`                                                                       | 
 
 ### Removed Methods and Constructors
 

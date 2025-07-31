@@ -114,13 +114,14 @@ public class SubscriptionMessageSerializer {
     /**
      * Serializes the given {@code subscriptionQueryMessage} into a {@link SerializedObject}.
      *
-     * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} who's {@link SubscriptionQueryMessage#updateResponseType()}
-     *                                 to serialize into a {@link SerializedObject}
-     * @return a {@link SerializedObject} based on the given {@code subscriptionQueryMessage} its {@link
-     * SubscriptionQueryMessage#updateResponseType()}
+     * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} who's
+     *                                 {@link SubscriptionQueryMessage#updatesResponseType()} to serialize into a
+     *                                 {@link SerializedObject}
+     * @return a {@link SerializedObject} based on the given {@code subscriptionQueryMessage} its
+     * {@link SubscriptionQueryMessage#updatesResponseType()}
      */
     public SerializedObject serializeUpdateType(SubscriptionQueryMessage<?, ?, ?> subscriptionQueryMessage) {
-        return responseTypeSerializer.apply(subscriptionQueryMessage.updateResponseType());
+        return responseTypeSerializer.apply(subscriptionQueryMessage.updatesResponseType());
     }
 
     /**

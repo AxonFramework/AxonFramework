@@ -30,7 +30,7 @@ import java.util.Map;
  * @param <P> The type of {@link #payload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
  * @param <I> The type of {@link #responseType() initial response} expected from this
  *            {@link SubscriptionQueryMessage}.
- * @param <U> The type of {@link #updateResponseType() incremental updates} expected from this
+ * @param <U> The type of {@link #updatesResponseType() incremental updates} expected from this
  *            {@link SubscriptionQueryMessage}.
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -92,7 +92,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     }
 
     @Override
-    public ResponseType<U> updateResponseType() {
+    public ResponseType<U> updatesResponseType() {
         return updateResponseType;
     }
 
