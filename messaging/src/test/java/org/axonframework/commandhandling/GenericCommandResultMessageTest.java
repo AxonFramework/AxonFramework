@@ -20,6 +20,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
+import org.axonframework.messaging.MessageType;
 
 /**
  * Test class validating the {@link GenericCommandResultMessage}.
