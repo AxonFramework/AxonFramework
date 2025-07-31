@@ -19,6 +19,8 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.lifecycle.Phase;
@@ -47,7 +49,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @author Rene de Waele
  * @since 3.0
  */
-public class SubscribingEventProcessor implements EventProcessor {
+public class SubscribingEventProcessor implements EventProcessor, DescribableComponent {
 
     private final String name;
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
@@ -195,5 +197,11 @@ public class SubscribingEventProcessor implements EventProcessor {
      */
     public SubscribableMessageSource<? extends EventMessage<?>> getMessageSource() {
         return messageSource;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("name", name);
+        descriptor.describeProperty("mode", "subscribing");
     }
 }
