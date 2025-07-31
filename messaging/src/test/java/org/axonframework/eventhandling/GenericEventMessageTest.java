@@ -76,9 +76,9 @@ class GenericEventMessageTest extends MessageTestSuite {
         MetaData metaData = MetaData.from(metaDataMap);
         GenericEventMessage<Object> message =
                 new GenericEventMessage<>(new MessageType("event"), payload, metaData);
-        GenericEventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
-        GenericEventMessage<Object> message2 = message.withMetaData(
-                MetaData.from(Collections.singletonMap("key", "otherValue")));
+        EventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
+        EventMessage<Object> message2 =
+                message.withMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(0, message1.metaData().size());
         assertEquals(1, message2.metaData().size());
@@ -91,9 +91,9 @@ class GenericEventMessageTest extends MessageTestSuite {
         MetaData metaData = MetaData.from(metaDataMap);
         GenericEventMessage<Object> message =
                 new GenericEventMessage<>(new MessageType("event"), payload, metaData);
-        GenericEventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
-        GenericEventMessage<Object> message2 = message.andMetaData(
-                MetaData.from(Collections.singletonMap("key", "otherValue")));
+        EventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
+        EventMessage<Object> message2 =
+                message.andMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(1, message1.metaData().size());
         assertEquals("value", message1.metaData().get("key"));

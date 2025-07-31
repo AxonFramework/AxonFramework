@@ -75,10 +75,9 @@ class GenericCommandMessageTest extends MessageTestSuite {
         Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericCommandMessage<Object> message = new GenericCommandMessage<>(TEST_TYPE, payload, metaData);
-        GenericCommandMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
-        GenericCommandMessage<Object> message2 = message.withMetaData(
-                MetaData.from(Collections.singletonMap("key", "otherValue"))
-        );
+        CommandMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
+        CommandMessage<Object> message2 =
+                message.withMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(0, message1.metaData().size());
         assertEquals(1, message2.metaData().size());
