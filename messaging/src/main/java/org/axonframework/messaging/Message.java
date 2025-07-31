@@ -26,8 +26,6 @@ import org.axonframework.serialization.Serializer;
 
 import java.lang.reflect.Type;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * Representation of a {@link Message}, containing a {@link MessageType type}, payload of type {@code T}, and
@@ -232,7 +230,7 @@ public interface Message<P> {
      * @param <R>                    The type of the serialized data
      * @return a SerializedObject containing the serialized representation of the message's payload
      * @deprecated Serialization is removed from messages themselves. Instead, use
-     * {@link #withConvertedPayload(Function)}
+     * {@link #withConvertedPayload(Class, Converter)}
      */
     @Deprecated
     default <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
@@ -249,7 +247,7 @@ public interface Message<P> {
      * @param <R>                    The type of the serialized data
      * @return a SerializedObject containing the serialized representation of the message's metadata
      * @deprecated Serialization is removed from messages themselves. Instead, use
-     * {@link #withConvertedPayload(Function)}
+     * {@link #withConvertedPayload(Class, Converter)}
      */
     @Deprecated
     default <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
@@ -257,21 +255,18 @@ public interface Message<P> {
     }
 
     /**
-     * Returns a message which is effectively a copy of this Message with its payload converted using the given
-     * {@code conversion} function.
+     * Returns a <b>new</b> {@link Message} implementation with its {@link #payload()} converted to the given
+     * {@code type} by the given {@code converter}. This new {@code Message} is effectively a copy of
+     * {@code this Message} with a renewed payload and {@link #payloadType()}.
      * <p>
-     * Will only return the same instance if the conversion returns a payload object that is equal to the current
-     * payload.
+     * Will return the {@code this} instance if the payload type is
+     * {@link Class#isAssignableFrom(Class) assignable from} the given {@code type}.
      *
-     * @param conversion The function to apply to the payload of this message
-     * @param <C>        The new type of payload
-     * @return a message with the converted payload
+     * @param <T>       The new type of {@link #payload()}.
+     * @param type      The type to convert the {@link #payload()} to.
+     * @param converter The converter to convert the {@link #payload()} with.
+     * @return A <b>new</b> {@link Message} implementation with its {@link #payload()} converted to the given
+     * {@code type} by the given {@code converter}.
      */
-    default <C> Message<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
-        if (Objects.equals(payload(), conversion.apply(payload()))) {
-            //noinspection unchecked
-            return (Message<C>) this;
-        }
-        throw new UnsupportedOperationException("To be implemented");
-    }
+    <T> Message<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter);
 }
