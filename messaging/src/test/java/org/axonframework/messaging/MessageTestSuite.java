@@ -52,6 +52,16 @@ public abstract class MessageTestSuite<M extends Message<?>> {
      */
     protected abstract <P> M buildMessage(@Nullable P payload);
 
+    /**
+     * Overridable method to validate {@link Message} implementation specific details during assertion.
+     *
+     * @param actual The actual {@link Message} implementation.
+     * @param result The resulting {@link Message} implementation to validate against.
+     */
+    protected void validateMessageSpecifics(@Nonnull M actual, @Nonnull M result) {
+        // The default validations are done by the tests directly
+    }
+
     @Test
     void payloadAsWithClassAssignableFromPayloadTypeInvokesPayloadDirectly() {
         String testPayload = STRING_PAYLOAD;
@@ -152,7 +162,8 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.type()).isEqualTo(result.type());
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
-        assertThat(testSubject.payload().getBytes()).isEqualTo(result.payload());
+        assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        validateMessageSpecifics(testSubject, (M) result);
     }
 
     @Test
@@ -172,7 +183,8 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.type()).isEqualTo(result.type());
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
-        assertThat(testSubject.payload().getBytes()).isEqualTo(result.payload());
+        assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        validateMessageSpecifics(testSubject, (M) result);
     }
 
     @Test
@@ -192,6 +204,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.type()).isEqualTo(result.type());
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
-        assertThat(testSubject.payload().getBytes()).isEqualTo(result.payload());
+        assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        validateMessageSpecifics(testSubject, (M) result);
     }
 }
