@@ -225,7 +225,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public <T> Message<T> withConvertedPayload(@Nonnull Class<T> type,
+    public <T> Message<T> withConvertedPayload(@Nonnull Type type,
                                                @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
         //noinspection unchecked

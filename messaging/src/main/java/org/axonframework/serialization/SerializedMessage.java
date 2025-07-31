@@ -157,7 +157,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public <T> Message<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    public <T> Message<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         // This class will be removed/replaced by the ConversionAwareMessage, so skipping implementation
         return null;
     }
