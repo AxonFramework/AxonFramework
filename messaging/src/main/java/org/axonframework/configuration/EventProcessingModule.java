@@ -17,7 +17,6 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
@@ -30,18 +29,9 @@ import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
-/**
- * Internal configurer for the MessagingConfigurer, which is used to configure the event processing.
- */
-@Internal
-public class EventProcessingConfigurer implements ApplicationConfigurer {
-
-    // TODO:
-    // configureDefaultStreamableMessageSource
-    // configureDefaultSubscribableMessageSource
+public class EventProcessingModule extends BaseModule<EventProcessingModule> {
 
     private static final EventProcessorDefaults INITIAL_EVENT_PROCESSOR_DEFAULTS = new EventProcessorDefaults(
             new EventProcessorConfiguration(), // validate if I need to pass it to others!?
@@ -52,24 +42,15 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
                     .tokenStore(new InMemoryTokenStore())
     );
 
-    private final ApplicationConfigurer parent;
-
     private ComponentBuilder<EventProcessorDefaults> eventProcessorDefaultsBuilder;
     private final List<ModuleBuilder<EventProcessorModule>> moduleBuilders = new ArrayList<>();
 
-    private EventProcessingConfigurer(ApplicationConfigurer parent) {
-        this.parent = parent;
+
+    public EventProcessingModule(@Nonnull String name) {
+        super(name);
     }
 
-    public static EventProcessingConfigurer enhance(@Nonnull ApplicationConfigurer applicationConfigurer) {
-        return new EventProcessingConfigurer(applicationConfigurer)
-                .componentRegistry(cr -> cr
-                                           .registerEnhancer(new EventProcessingDefaultsEnhancer())
-                                   // todo: do not register tokenStore/unitOfWork or register and use them?
-                );
-    }
-
-    public EventProcessingConfigurer defaults(
+    public EventProcessingModule defaults(
             @Nonnull BiFunction<Configuration, EventProcessorDefaults, EventProcessorDefaults> configureDefaults) {
         this.eventProcessorDefaultsBuilder = config -> {
             var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
@@ -86,7 +67,7 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
         return this;
     }
 
-    public EventProcessingConfigurer defaults(@Nonnull UnaryOperator<EventProcessorDefaults> configureDefaults) {
+    public EventProcessingModule defaults(@Nonnull UnaryOperator<EventProcessorDefaults> configureDefaults) {
         this.eventProcessorDefaultsBuilder = config -> {
             var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
             config.getOptionalComponent(TokenStore.class)
@@ -102,29 +83,16 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
         return this;
     }
 
-    public EventProcessingConfigurer registerEventProcessorModule(
+    public EventProcessingModule registerEventProcessorModule(
             ModuleBuilder<EventProcessorModule> moduleBuilder
     ) {
         moduleBuilders.add(moduleBuilder);
         return this;
     }
 
-
     @Override
-    public EventProcessingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
-        parent.componentRegistry(componentRegistrar);
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
-        parent.lifecycleRegistry(lifecycleRegistrar);
-        return this;
-    }
-
-    @Override
-    public AxonConfiguration build() {
-        parent.componentRegistry(
+    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+        componentRegistry(
                 cr -> cr.registerComponent(
                         EventProcessorDefaults.class,
                         config -> {
@@ -139,11 +107,11 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
                 )
         );
         moduleBuilders.forEach(moduleBuilder ->
-                                       parent.componentRegistry(cr -> cr.registerModule(
+                                       componentRegistry(cr -> cr.registerModule(
                                                moduleBuilder.build()
                                        ))
         );
-        return parent.build(); // todo: weird?
+        return super.build(parent, lifecycleRegistry);
     }
 
     public static final class EventProcessorDefaults {
@@ -189,5 +157,3 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
         }
     }
 }
-
-

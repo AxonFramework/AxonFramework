@@ -63,18 +63,17 @@ import static org.axonframework.messaging.configuration.reflection.ParameterReso
 public class MessagingConfigurer implements ApplicationConfigurer {
 
     private final ApplicationConfigurer delegate;
-    private final EventProcessingConfigurer eventProcessingConfigurer;
+    private final EventProcessingModule eventProcessingModule;
 
     /**
      * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
      *
-     * @param delegate The delegate {@code ApplicationConfigurer} the {@code MessagingConfigurer} is based
-     *                              on.
+     * @param delegate The delegate {@code ApplicationConfigurer} the {@code MessagingConfigurer} is based on.
      */
     private MessagingConfigurer(@Nonnull ApplicationConfigurer delegate) {
         this.delegate =
                 requireNonNull(delegate, "The Application Configurer cannot be null.");
-        this.eventProcessingConfigurer = EventProcessingConfigurer.enhance(delegate);
+        this.eventProcessingModule = new EventProcessingModule("eventProcessingModule");
     }
 
     /**
@@ -223,14 +222,14 @@ public class MessagingConfigurer implements ApplicationConfigurer {
         return this;
     }
 
-    public MessagingConfigurer eventProcessing(@Nonnull Consumer<EventProcessingConfigurer> configurerTask) {
-        configurerTask.accept(eventProcessingConfigurer);
+    public MessagingConfigurer eventProcessing(@Nonnull Consumer<EventProcessingModule> configurerTask) {
+        configurerTask.accept(eventProcessingModule);
         return this;
     }
 
     @Override
     public AxonConfiguration build() {
-        eventProcessingConfigurer.build();
+        componentRegistry(cr -> cr.registerModule(eventProcessingModule));
         return delegate.build();
     }
 }
