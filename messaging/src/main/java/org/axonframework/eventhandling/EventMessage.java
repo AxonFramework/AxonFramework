@@ -17,9 +17,11 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.Message;
 import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.Map;
 
@@ -73,5 +75,15 @@ public interface EventMessage<P> extends Message<P> {
     EventMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
-    <T> EventMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter);
+    default <T> EventMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
+    }
+
+    @Override
+    default <T> EventMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    @Override
+    <T> EventMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

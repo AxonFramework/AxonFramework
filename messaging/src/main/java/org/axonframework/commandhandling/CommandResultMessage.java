@@ -17,9 +17,11 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -38,5 +40,16 @@ public interface CommandResultMessage<R> extends ResultMessage<R> {
     CommandResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
-    <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter);
+    default <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
+    }
+
+    @Override
+    default <T> CommandResultMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type,
+                                                             @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    @Override
+    <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

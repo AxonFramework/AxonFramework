@@ -17,10 +17,12 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Optional;
 
@@ -113,5 +115,15 @@ public interface ResultMessage<R> extends Message<R> {
     ResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
-    <T> ResultMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter);
+    default <T> ResultMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
+    }
+
+    @Override
+    default <T> ResultMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    @Override
+    <T> ResultMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }
