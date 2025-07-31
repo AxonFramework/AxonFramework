@@ -52,9 +52,8 @@ public interface Message<P> {
 
     /**
      * The {@link Context.ResourceKey} used to store and retrieve the {@link Message} from the
-     * {@link ProcessingContext}. Should always be the message for which a handler is being called.
-     * For example, if an event handler is called within the context of a command, the message should be the event
-     * message.
+     * {@link ProcessingContext}. Should always be the message for which a handler is being called. For example, if an
+     * event handler is called within the context of a command, the message should be the event message.
      */
     Context.ResourceKey<Message<?>> RESOURCE_KEY = Context.ResourceKey.withLabel("Message");
 
@@ -66,7 +65,7 @@ public interface Message<P> {
      * {@link ProcessingContext} instance which should be used in place of the original.
      *
      * @param context The {@link ProcessingContext} to which the {@code message} should be added.
-     * @param message The {@link Message} to add to the {@code context}.
+     * @param message The {@code Message} to add to the {@code context}.
      * @return The updated {@link ProcessingContext} with the {@code message} added under the {@link #RESOURCE_KEY}.
      */
     @Nonnull
@@ -75,10 +74,10 @@ public interface Message<P> {
     }
 
     /**
-     * Retrieves the {@link Message} from the given {@code context} using the {@link #RESOURCE_KEY}.
+     * Retrieves the {@code Message} from the given {@code context} using the {@link #RESOURCE_KEY}.
      *
-     * @param context The {@link ProcessingContext} from which to retrieve the {@link Message}.
-     * @return The {@link Message} stored in the {@code context} under the {@link #RESOURCE_KEY}, or {@code null} if not
+     * @param context The {@link ProcessingContext} from which to retrieve the {@code Message}.
+     * @return The {@code Message} stored in the {@code context} under the {@link #RESOURCE_KEY}, or {@code null} if not
      * found.
      */
     @Nullable
@@ -98,9 +97,9 @@ public interface Message<P> {
     String getIdentifier();
 
     /**
-     * Returns the message {@link QualifiedName qualifiedName} of this {@code Message}.
+     * Returns the message {@link MessageType type} of this {@code Message}.
      *
-     * @return The message {@link QualifiedName qualifiedName} of this {@code Message}.
+     * @return The message {@link MessageType type} of this {@code Message}.
      */
     @Nonnull
     MessageType type();
