@@ -46,12 +46,10 @@ import java.util.function.Function;
 public class GenericMessage<P> extends AbstractMessage<P> {
 
     private final P payload;
+    private final Class<P> payloadType;
     private final MetaData metaData;
 
     private transient volatile SerializedObjectHolder serializedObjectHolder;
-
-    @Deprecated
-    private final Class<P> payloadType;
 
     /**
      * Constructs a {@code GenericMessage} for the given {@code type} and {@code payload}.
