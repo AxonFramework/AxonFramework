@@ -116,7 +116,7 @@ public class LoggingInterceptor<T extends Message<?>>
         try {
             Object returnValue = interceptorChain.proceedSync(context);
             logger.info("[{}] executed successfully with a [{}] return value",
-                        message.payloadType().getSimpleName(),
+                        message.type().name(),
                         returnValue == null ? "null" : returnValue.getClass().getSimpleName());
             return returnValue;
         } catch (Exception t) {
