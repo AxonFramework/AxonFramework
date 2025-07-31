@@ -257,8 +257,8 @@ public interface Message<P> {
      * {@code type} by the given {@code converter}. This new {@code Message} is effectively a copy of
      * {@code this Message} with a renewed payload and {@link #payloadType()}.
      * <p>
-     * Will return the {@code this} instance if the payload type is
-     * {@link Class#isAssignableFrom(Class) assignable from} the given {@code type}.
+     * Will return the {@code this} instance if the {@link #payloadType() payload type} is
+     * {@link Class#isAssignableFrom(Class) assignable from} the converted result.
      *
      * @param <T>       The new type of {@link #payload()}.
      * @param type      The type to convert the {@link #payload()} to.
@@ -266,5 +266,41 @@ public interface Message<P> {
      * @return A <b>new</b> {@link Message} implementation with its {@link #payload()} converted to the given
      * {@code type} by the given {@code converter}.
      */
-    <T> Message<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter);
+    default <T> Message<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
+    }
+
+    /**
+     * Returns a <b>new</b> {@link Message} implementation with its {@link #payload()} converted to the given
+     * {@code type} by the given {@code converter}. This new {@code Message} is effectively a copy of
+     * {@code this Message} with a renewed payload and {@link #payloadType()}.
+     * <p>
+     * Will return the {@code this} instance if the {@link #payloadType() payload type} is
+     * {@link Class#isAssignableFrom(Class) assignable from} the converted result.
+     *
+     * @param <T>       The new type of {@link #payload()}.
+     * @param type      The type to convert the {@link #payload()} to.
+     * @param converter The converter to convert the {@link #payload()} with.
+     * @return A <b>new</b> {@link Message} implementation with its {@link #payload()} converted to the given
+     * {@code type} by the given {@code converter}.
+     */
+    default <T> Message<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    /**
+     * Returns a <b>new</b> {@link Message} implementation with its {@link #payload()} converted to the given
+     * {@code type} by the given {@code converter}. This new {@code Message} is effectively a copy of
+     * {@code this Message} with a renewed payload and {@link #payloadType()}.
+     * <p>
+     * Will return the {@code this} instance if the {@link #payloadType() payload type} is
+     * {@link Class#isAssignableFrom(Class) assignable from} the converted result.
+     *
+     * @param <T>       The new type of {@link #payload()}.
+     * @param type      The type to convert the {@link #payload()} to.
+     * @param converter The converter to convert the {@link #payload()} with.
+     * @return A <b>new</b> {@link Message} implementation with its {@link #payload()} converted to the given
+     * {@code type} by the given {@code converter}.
+     */
+    <T> Message<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }
