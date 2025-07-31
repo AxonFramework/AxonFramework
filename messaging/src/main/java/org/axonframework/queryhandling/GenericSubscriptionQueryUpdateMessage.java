@@ -121,12 +121,12 @@ public class GenericSubscriptionQueryUpdateMessage<U>
     }
 
     @Override
-    public GenericSubscriptionQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, String> metaData) {
+    public SubscriptionQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryUpdateMessage<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public GenericSubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData) {
+    public SubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryUpdateMessage<>(getDelegate().andMetaData(metaData));
     }
 

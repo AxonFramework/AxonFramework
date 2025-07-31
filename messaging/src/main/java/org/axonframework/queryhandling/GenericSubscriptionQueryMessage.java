@@ -31,8 +31,7 @@ import java.util.Map;
  * Generic implementation of the {@link SubscriptionQueryMessage} interface.
  *
  * @param <P> The type of {@link #payload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
- * @param <I> The type of {@link #responseType() initial response} expected from this
- *            {@link SubscriptionQueryMessage}.
+ * @param <I> The type of {@link #responseType() initial response} expected from this {@link SubscriptionQueryMessage}.
  * @param <U> The type of {@link #updatesResponseType() incremental updates} expected from this
  *            {@link SubscriptionQueryMessage}.
  * @author Allard Buijze
@@ -68,8 +67,8 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     }
 
     /**
-     * Constructs a {@code GenericSubscriptionQueryMessage} with given {@code delegate},
-     * {@code responseType}, and {@code updateResponseType}.
+     * Constructs a {@code GenericSubscriptionQueryMessage} with given {@code delegate}, {@code responseType}, and
+     * {@code updateResponseType}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
      * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
@@ -100,14 +99,14 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     }
 
     @Override
-    public GenericSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
+    public SubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().withMetaData(metaData),
                                                      responseType(),
                                                      updateResponseType);
     }
 
     @Override
-    public GenericSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
+    public SubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().andMetaData(metaData),
                                                      responseType(),
                                                      updateResponseType);

@@ -32,8 +32,8 @@ import java.util.Map;
  * It hard codes the {@link #responseType() response type} to an {@link PublisherResponseType} implementation.
  *
  * @param <P> The type of {@link #payload() payload} expressing the query in this {@link StreamingQueryMessage}.
- * @param <R> The type of {@link #responseType() response} expected from this {@link StreamingQueryMessage} streamed
- *            via {@link Publisher}.
+ * @param <R> The type of {@link #responseType() response} expected from this {@link StreamingQueryMessage} streamed via
+ *            {@link Publisher}.
  * @author Milan Savic
  * @author Stefan Dragisic
  * @since 4.6.0
