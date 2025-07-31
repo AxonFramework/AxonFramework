@@ -17,11 +17,14 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -108,5 +111,21 @@ public class GenericSubscriptionQueryMessage<P, I, U>
         return new GenericSubscriptionQueryMessage<>(getDelegate().andMetaData(metaData),
                                                      responseType(),
                                                      updateResponseType);
+    }
+
+    @Override
+    public <T> SubscriptionQueryMessage<T, I, U> withConvertedPayload(@Nonnull Type type,
+                                                                      @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (SubscriptionQueryMessage<T, I, U>) this;
+        }
+        Message<P> delegate = getDelegate();
+        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
+                                                    delegate.type(),
+                                                    convertedPayload,
+                                                    delegate.metaData());
+        return new GenericSubscriptionQueryMessage<>(converted, responseType(), updatesResponseType());
     }
 }

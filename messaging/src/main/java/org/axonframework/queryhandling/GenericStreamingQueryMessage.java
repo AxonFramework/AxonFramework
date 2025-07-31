@@ -23,8 +23,10 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.PublisherResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.serialization.Converter;
 import org.reactivestreams.Publisher;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -129,6 +131,21 @@ public class GenericStreamingQueryMessage<P, R>
     public StreamingQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericStreamingQueryMessage<>(getDelegate().andMetaData(metaData),
                                                   responseType());
+    }
+
+    @Override
+    public <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (StreamingQueryMessage<T, R>) super.withConvertedPayload(type, converter);
+        }
+        Message<P> delegate = getDelegate();
+        GenericMessage<T> converted = new GenericMessage<T>(delegate.identifier(),
+                                                            delegate.type(),
+                                                            convertedPayload,
+                                                            delegate.metaData());
+        return new GenericStreamingQueryMessage<>(converted, responseType());
     }
 
     @Override

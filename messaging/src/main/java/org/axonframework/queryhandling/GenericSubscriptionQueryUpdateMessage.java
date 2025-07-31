@@ -23,7 +23,9 @@ import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -126,6 +128,21 @@ public class GenericSubscriptionQueryUpdateMessage<U>
     @Override
     public GenericSubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryUpdateMessage<>(getDelegate().andMetaData(metaData));
+    }
+
+    @Override
+    public <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Type type,
+                                                                      @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (SubscriptionQueryUpdateMessage<T>) this;
+        }
+        Message<U> delegate = getDelegate();
+        return new GenericSubscriptionQueryUpdateMessage<>(new GenericMessage<T>(delegate.identifier(),
+                                                                                 delegate.type(),
+                                                                                 convertedPayload,
+                                                                                 delegate.metaData()));
     }
 
     @Override
