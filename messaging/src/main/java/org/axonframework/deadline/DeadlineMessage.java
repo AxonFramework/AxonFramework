@@ -18,6 +18,7 @@ package org.axonframework.deadline;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.serialization.Converter;
 
 import java.util.Map;
 
@@ -48,4 +49,7 @@ public interface DeadlineMessage<P> extends EventMessage<P> {
 
     @Override
     DeadlineMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData);
+
+    @Override
+    <T> DeadlineMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter);
 }

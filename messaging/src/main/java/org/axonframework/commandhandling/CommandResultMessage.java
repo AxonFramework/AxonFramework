@@ -18,9 +18,9 @@ package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.ResultMessage;
+import org.axonframework.serialization.Converter;
 
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * A {@link ResultMessage} that represents a result from handling a {@link CommandMessage}.
@@ -37,6 +37,6 @@ public interface CommandResultMessage<R> extends ResultMessage<R> {
     @Override
     CommandResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData);
 
-    // TODO - @Override from ResultMessage and Message
-    <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Function<R, T> conversion);
+    @Override
+    <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter);
 }

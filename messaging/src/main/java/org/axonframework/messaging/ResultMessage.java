@@ -16,13 +16,13 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 /**
  * A {@link Message} that represents a result of handling some form of request message.
@@ -96,7 +96,7 @@ public interface ResultMessage<R> extends Message<R> {
      * @param <T>                    the generic type representing the expected format
      * @return the serialized exception as a {@link SerializedObject}
      * @deprecated Serialization is removed from messages themselves. Instead, use
-     * {@link #withConvertedPayload(Function)}
+     * {@link Message#withConvertedPayload(Class, org.axonframework.serialization.Converter)}
      */
     @Deprecated
     default <T> SerializedObject<T> serializeExceptionResult(Serializer serializer, Class<T> expectedRepresentation) {
@@ -111,4 +111,7 @@ public interface ResultMessage<R> extends Message<R> {
 
     @Override
     ResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData);
+
+    @Override
+    <T> ResultMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter);
 }

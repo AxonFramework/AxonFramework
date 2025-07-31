@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.serialization.Converter;
 
 import java.util.Map;
 
@@ -48,4 +49,7 @@ public interface QueryMessage<P, R> extends Message<P> {
 
     @Override
     QueryMessage<P, R> andMetaData(@Nonnull Map<String, String> additionalMetaData);
+
+    @Override
+    <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter);
 }
