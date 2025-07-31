@@ -570,7 +570,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
-                        identifier(), type(), payload(), metaData(), getTimestamp()
+                        identifier(), type(), payload(), metaData(), timestamp()
                 );
             } else {
                 return new LazyIdentifierDomainEventMessage<>(
@@ -586,7 +586,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
-                        identifier(), type(), payload(), metaData(), getTimestamp()
+                        identifier(), type(), payload(), metaData(), timestamp()
                 ).andMetaData(additionalMetaData);
             } else {
                 return new LazyIdentifierDomainEventMessage<>(

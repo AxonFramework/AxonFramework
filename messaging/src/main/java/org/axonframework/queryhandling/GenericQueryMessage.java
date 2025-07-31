@@ -30,7 +30,7 @@ import java.util.Map;
  * Generic implementation of the {@link QueryMessage} interface.
  *
  * @param <P> The type of {@link #payload() payload} expressing the query in this {@link QueryMessage}.
- * @param <R> The type of {@link #getResponseType() response} expected from this {@link QueryMessage}.
+ * @param <R> The type of {@link #responseType() response} expected from this {@link QueryMessage}.
  * @author Marc Gathier
  * @author Steven van Beelen
  * @since 3.1.0
@@ -79,7 +79,7 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
     }
 
     @Override
-    public ResponseType<R> getResponseType() {
+    public ResponseType<R> responseType() {
         return responseType;
     }
 
@@ -97,7 +97,7 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
         stringBuilder.append(", expectedResponseType='")
-                     .append(getResponseType())
+                     .append(responseType())
                      .append('\'');
     }
 

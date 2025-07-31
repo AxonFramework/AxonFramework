@@ -164,7 +164,7 @@ public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngin
     public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
         return events.values()
                      .stream()
-                     .filter(event -> event.getTimestamp().equals(dateTime) || event.getTimestamp().isAfter(dateTime))
+                     .filter(event -> event.timestamp().equals(dateTime) || event.timestamp().isAfter(dateTime))
                      .min(Comparator.comparingLong(e -> ((GlobalSequenceTrackingToken) e.trackingToken())
                              .getGlobalIndex()))
                      .map(TrackedEventMessage::trackingToken)

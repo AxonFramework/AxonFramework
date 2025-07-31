@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,7 +138,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
     public static class Builder {
 
         private Comparator<Map.Entry<String, TrackedEventMessage<?>>> trackedEventComparator =
-                Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> t) -> t.getValue().getTimestamp());
+                Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> t) -> t.getValue().timestamp());
         private final Map<String, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceMap = new LinkedHashMap<>();
         private String longPollingSource = "";
 

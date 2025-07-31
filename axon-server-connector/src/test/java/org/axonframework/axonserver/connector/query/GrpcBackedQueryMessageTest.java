@@ -63,7 +63,7 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void getResponseTypeReturnsTheTypeAsSpecifiedInTheQueryRequest() {
+    void responseTypeReturnsTheTypeAsSpecifiedInTheQueryRequest() {
         ResponseType<String> expectedResponseType = RESPONSE_TYPE;
         QueryMessage<TestQuery, String> testQueryMessage = new GenericQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, expectedResponseType
@@ -74,7 +74,7 @@ class GrpcBackedQueryMessageTest {
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
         assertEquals(
-                expectedResponseType.getExpectedResponseType(), testSubject.getResponseType().getExpectedResponseType()
+                expectedResponseType.getExpectedResponseType(), testSubject.responseType().getExpectedResponseType()
         );
     }
 

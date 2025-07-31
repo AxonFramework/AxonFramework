@@ -187,7 +187,7 @@ class EventConverterTest {
         assertEquals(EVENT_TYPE, result.type());
         assertArrayEquals(eventPayloadByteArray, result.payload());
         assertEquals(EVENT_METADATA, result.metaData());
-        assertEquals(EVENT_TIMESTAMP, result.getTimestamp().toEpochMilli());
+        assertEquals(EVENT_TIMESTAMP, result.timestamp().toEpochMilli());
     }
 
     private record TestEvent(String stringState, Integer intState, List<Boolean> booleanState) {

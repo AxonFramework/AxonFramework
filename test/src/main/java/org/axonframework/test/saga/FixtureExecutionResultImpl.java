@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -317,7 +317,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     public FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant scheduledTime,
                                                                     Matcher<? super DeadlineMessage<?>> matcher) {
         return expectNoScheduledDeadlineMatching(matches(
-                deadlineMessage -> deadlineMessage.getTimestamp().equals(scheduledTime)
+                deadlineMessage -> deadlineMessage.timestamp().equals(scheduledTime)
                         && matcher.matches(deadlineMessage)
         ));
     }
@@ -343,7 +343,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     @Override
     public FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher) {
         return expectNoScheduledDeadlineMatching(matches(
-                deadlineMessage -> !(deadlineMessage.getTimestamp().isBefore(from) || deadlineMessage.getTimestamp().isAfter(to))
+                deadlineMessage -> !(deadlineMessage.timestamp().isBefore(from) || deadlineMessage.timestamp().isAfter(to))
                         && matcher.matches(deadlineMessage)
         ));
     }

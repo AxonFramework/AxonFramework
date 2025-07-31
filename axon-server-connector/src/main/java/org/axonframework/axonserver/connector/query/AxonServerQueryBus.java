@@ -268,7 +268,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         Span span = spanFactory.createQuerySpan(queryMessage, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             QueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(queryMessage);
-            Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
+            Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.responseType().getExpectedResponseType()),
                            () -> "The direct query does not support Flux as a return type.");
             shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
@@ -288,7 +288,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     Runnable responseProcessingTask = new ResponseProcessingTask<>(result,
                                                                                    serializer,
                                                                                    queryTransaction,
-                                                                                   queryMessage.getResponseType(),
+                                                                                   queryMessage.responseType(),
                                                                                    responseTaskSpan);
 
                     result.onAvailable(() -> queryResponseExecutor.execute(new PriorityRunnable(
@@ -379,7 +379,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private <R> Publisher<QueryResponseMessage<R>> deserialize(StreamingQueryMessage<?, R> queryMessage,
                                                                QueryResponse queryResponse) {
         //noinspection unchecked
-        Class<R> expectedResponseType = (Class<R>) queryMessage.getResponseType().getExpectedResponseType();
+        Class<R> expectedResponseType = (Class<R>) queryMessage.responseType().getExpectedResponseType();
         QueryResponseMessage<?> responseMessage = serializer.deserializeResponse(queryResponse);
         if (responseMessage.isExceptional()) {
             return Flux.error(responseMessage.exceptionResult());
@@ -415,7 +415,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(@Nonnull QueryMessage<Q, R> queryMessage,
                                                                 long timeout,
                                                                 @Nonnull TimeUnit timeUnit) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
+        Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.responseType().getExpectedResponseType()),
                        () -> "The scatter-Gather query does not support Flux as a return type.");
         shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
@@ -466,9 +466,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             @Nonnull SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
     ) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
                        () -> "The subscription Query query does not support Flux as a return type.");
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.updatesResponseType().getExpectedResponseType()),
                        () -> "The subscription Query query does not support Flux as an update type.");
         shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
@@ -900,7 +900,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 next = queryResult.nextIfAvailable();
             }
             if (next != null) {
-                action.accept(serializer.deserializeResponse(next, queryMessage.getResponseType()));
+                action.accept(serializer.deserializeResponse(next, queryMessage.responseType()));
                 return true;
             }
             queryResult.close();

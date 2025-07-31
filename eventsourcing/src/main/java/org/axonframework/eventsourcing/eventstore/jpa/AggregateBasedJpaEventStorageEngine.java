@@ -236,7 +236,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                     event.type(),
                     event.payload(),
                     event.metaData(),
-                    event.getTimestamp()
+                    event.timestamp()
             );
         } else {
             // returns non-aggregate event, so the sequence is always 0
@@ -244,7 +244,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                                    event.identifier(),
                                                    0L,
                                                    event,
-                                                   event::getTimestamp);
+                                                   event::timestamp);
         }
     }
 

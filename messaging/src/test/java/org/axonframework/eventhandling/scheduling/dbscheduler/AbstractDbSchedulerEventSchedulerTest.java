@@ -107,7 +107,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(1, publishedMessage.payload());
-        assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
+        assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
         assertTrue(publishedMessage.metaData().isEmpty());
     }
 
@@ -138,7 +138,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(2, publishedMessage.payload());
-        assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
+        assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
         assertEquals(metadata, publishedMessage.metaData());
     }
 
@@ -153,7 +153,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(new PayloadWithRevision(), publishedMessage.payload());
-        assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
+        assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
         assertTrue(publishedMessage.metaData().isEmpty());
     }
 
@@ -173,7 +173,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(new PayloadWithRevision(), publishedMessage.payload());
-        assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
+        assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
         assertEquals(metadata, publishedMessage.metaData());
     }
 

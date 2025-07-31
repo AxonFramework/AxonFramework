@@ -179,10 +179,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         Message<?> aggregateCreatedEvent = publishedMessages.getFirst();
         assertInstanceOf(GenericEventMessage.class, aggregateCreatedEvent);
-        assertTrue(afterDeadlineWasScheduled.isAfter(((GenericEventMessage<?>) aggregateCreatedEvent).getTimestamp()));
+        assertTrue(afterDeadlineWasScheduled.isAfter(((GenericEventMessage<?>) aggregateCreatedEvent).timestamp()));
         Message<?> deadLineEvent = publishedMessages.get(1);
         assertInstanceOf(GenericEventMessage.class, deadLineEvent);
-        assertTrue(afterDeadlineWasScheduled.isBefore(((GenericEventMessage<?>) deadLineEvent).getTimestamp()));
+        assertTrue(afterDeadlineWasScheduled.isBefore(((GenericEventMessage<?>) deadLineEvent).timestamp()));
     }
 
     @Test
@@ -497,7 +497,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.getComponent(DeadlineManager.class).registerHandlerInterceptor((uow, context, chain) -> {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(deadlineMessage.getDeadlineName(),
                                                                       new DeadlinePayload(FAKE_IDENTIFIER),
-                                                                      deadlineMessage.getTimestamp()));
+                                                                      deadlineMessage.timestamp()));
             return chain.proceedSync(context);
         });
         configuration.getComponent(EventSink.class)
@@ -516,7 +516,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
                      .registerDispatchInterceptor(
                              messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(),
                                                                      new DeadlinePayload(FAKE_IDENTIFIER),
-                                                                     m.getTimestamp())
+                                                                     m.timestamp())
                      );
         configuration.getComponent(EventSink.class)
                      .publish(null, testEventMessage);
@@ -578,7 +578,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         return new GenericDeadlineMessage<>(
                 deadlineMessage.getDeadlineName(),
                 new GenericMessage<>(new MessageType(payload.getClass()), payload),
-                deadlineMessage::getTimestamp
+                deadlineMessage::timestamp
         );
     }
 

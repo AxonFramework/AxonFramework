@@ -288,7 +288,7 @@ class FixtureTest_Deadlines {
     @Test
     void deadlineDispatchInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
-                messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp())
+                messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.timestamp())
         )
                .givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
@@ -302,7 +302,7 @@ class FixtureTest_Deadlines {
     void deadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, context, chain) -> {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(
-                    deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp())
+                    deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.timestamp())
             );
             return chain.proceedSync(context);
         })

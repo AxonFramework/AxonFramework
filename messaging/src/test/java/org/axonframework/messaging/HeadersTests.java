@@ -101,7 +101,7 @@ class HeadersTests {
             put(MESSAGE_ID, message.identifier());
             put(MESSAGE_TYPE, serializedObject.getType().getName());
             put(MESSAGE_REVISION, serializedObject.getType().getRevision());
-            put(MESSAGE_TIMESTAMP, message.getTimestamp());
+            put(MESSAGE_TIMESTAMP, message.timestamp());
         }};
 
         assertThat(defaultHeaders(message, serializedObject), is(expected));
@@ -122,7 +122,7 @@ class HeadersTests {
             put(MESSAGE_ID, message.identifier());
             put(MESSAGE_TYPE, serializedObject.getType().getName());
             put(MESSAGE_REVISION, serializedObject.getType().getRevision());
-            put(MESSAGE_TIMESTAMP, message.getTimestamp());
+            put(MESSAGE_TIMESTAMP, message.timestamp());
             put(AGGREGATE_ID, message.getAggregateIdentifier());
             put(AGGREGATE_SEQ, message.getSequenceNumber());
             put(AGGREGATE_TYPE, message.getType());

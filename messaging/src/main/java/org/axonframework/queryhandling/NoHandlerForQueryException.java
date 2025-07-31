@@ -50,7 +50,7 @@ public class NoHandlerForQueryException extends AxonNonTransientException {
                         + "the response, and all the parameters on the query handling method should be resolvable. "
                         + "It is thus recommended to validate the name, response type, and parameters.",
                 query.type(),
-                query.getResponseType()
+                query.responseType()
         ));
     }
 }

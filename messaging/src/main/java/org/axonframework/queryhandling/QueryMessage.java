@@ -25,12 +25,12 @@ import java.util.Map;
  * A {@link Message} type that carries a Query: a request for information.
  * <p>
  * Besides a {@link #payload() payload}, {@link QueryMessage QueryMessages} also carry the expected
- * {@link #getResponseType() response type}. This is the type of result expected by the caller.
+ * {@link #responseType() response type}. This is the type of result expected by the caller.
  * <p>
  * Handlers should only answer a query if they can respond with the appropriate response type.
  *
  * @param <P> The type of {@link #payload() payload} expressing the query in this {@link QueryMessage}.
- * @param <R> The type of {@link #getResponseType() response} expected from this {@link QueryMessage}.
+ * @param <R> The type of {@link #responseType() response} expected from this {@link QueryMessage}.
  * @author Marc Gathier
  * @since 3.1.0
  */
@@ -41,7 +41,7 @@ public interface QueryMessage<P, R> extends Message<P> {
      *
      * @return The {@link ResponseType type of response} expected by the sender of the query.
      */
-    ResponseType<R> getResponseType();
+    ResponseType<R> responseType();
 
     @Override
     QueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData);

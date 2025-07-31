@@ -1041,7 +1041,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                                     oldEvent.type(),
                                                                     oldEvent.payload(),
                                                                     oldEvent.metaData(),
-                                                                    oldEvent.getTimestamp()));
+                                                                    oldEvent.timestamp()));
                 } else {
                     givenEvents.add(oldEvent);
                 }

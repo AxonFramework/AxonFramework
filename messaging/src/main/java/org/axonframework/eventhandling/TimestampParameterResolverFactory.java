@@ -63,7 +63,7 @@ public final class TimestampParameterResolverFactory
         @Override
         public Instant resolveParameterValue(@Nonnull ProcessingContext context) {
             if (Message.fromContext(context) instanceof EventMessage eventMessage) {
-                return eventMessage.getTimestamp();
+                return eventMessage.timestamp();
             }
             return null;
         }

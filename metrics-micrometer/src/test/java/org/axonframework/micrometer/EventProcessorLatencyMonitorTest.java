@@ -59,12 +59,12 @@ class EventProcessorLatencyMonitorTest {
 
         //noinspection unchecked
         EventMessage<String> firstEventMessage = mock(EventMessage.class);
-        when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
+        when(firstEventMessage.timestamp()).thenReturn(Instant.ofEpochMilli(0));
         when(firstEventMessage.payloadType()).thenReturn(String.class);
 
         //noinspection unchecked
         EventMessage<Integer> secondEventMessage = mock(EventMessage.class);
-        when(secondEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(1000));
+        when(secondEventMessage.timestamp()).thenReturn(Instant.ofEpochMilli(1000));
         when(secondEventMessage.payloadType()).thenReturn(Integer.class);
 
         Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
@@ -83,12 +83,12 @@ class EventProcessorLatencyMonitorTest {
 
         //noinspection unchecked
         EventMessage<String> firstEventMessage = mock(EventMessage.class);
-        when(firstEventMessage.getTimestamp()).thenReturn(Instant.now());
+        when(firstEventMessage.timestamp()).thenReturn(Instant.now());
         when(firstEventMessage.payloadType()).thenReturn(String.class);
 
         //noinspection unchecked
         EventMessage<Integer> secondEventMessage = mock(EventMessage.class);
-        when(secondEventMessage.getTimestamp()).thenReturn(Instant.now().minusMillis(1000));
+        when(secondEventMessage.timestamp()).thenReturn(Instant.now().minusMillis(1000));
         when(secondEventMessage.payloadType()).thenReturn(Integer.class);
 
         Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
@@ -111,12 +111,12 @@ class EventProcessorLatencyMonitorTest {
 
         //noinspection unchecked
         EventMessage<String> firstEventMessage = mock(EventMessage.class);
-        when(firstEventMessage.getTimestamp()).thenReturn(Instant.now().minusMillis(1000));
+        when(firstEventMessage.timestamp()).thenReturn(Instant.now().minusMillis(1000));
         when(firstEventMessage.payloadType()).thenReturn(String.class);
 
         //noinspection unchecked
         EventMessage<Integer> secondEventMessage = mock(EventMessage.class);
-        when(secondEventMessage.getTimestamp()).thenReturn(Instant.now());
+        when(secondEventMessage.timestamp()).thenReturn(Instant.now());
         when(secondEventMessage.payloadType()).thenReturn(Integer.class);
 
         Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject

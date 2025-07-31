@@ -140,7 +140,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getClass().getName());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.identifier());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.type().toString());
-        statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(eventMessage.getTimestamp()));
+        statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(eventMessage.timestamp()));
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getName());
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getRevision());
         statement.setBytes(fieldIndex.getAndIncrement(), serializedPayload.getData());

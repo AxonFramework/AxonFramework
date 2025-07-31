@@ -71,7 +71,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                 message.getClass().getName(),
                 message.identifier(),
                 message.type().toString(),
-                message.getTimestamp().toString(),
+                message.timestamp().toString(),
                 serializedPayload.getType().getName(),
                 serializedPayload.getType().getRevision(),
                 serializedPayload.getData(),

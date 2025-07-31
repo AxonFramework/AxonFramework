@@ -77,7 +77,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
         this.payloadRevision = payload.getType().getRevision();
         this.payload = payload.getData();
         this.metaData = metaData.getData();
-        this.timeStamp = formatInstant(eventMessage.getTimestamp());
+        this.timeStamp = formatInstant(eventMessage.timestamp());
     }
 
     /**

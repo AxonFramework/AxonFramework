@@ -138,13 +138,13 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
 
     @Override
     public GenericDeadlineMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericDeadlineMessage<>(deadlineName, getDelegate().withMetaData(metaData), this::getTimestamp);
+        return new GenericDeadlineMessage<>(deadlineName, getDelegate().withMetaData(metaData), this::timestamp);
     }
 
     @Override
     public GenericDeadlineMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new GenericDeadlineMessage<>(
-                deadlineName, getDelegate().andMetaData(additionalMetaData), this::getTimestamp
+                deadlineName, getDelegate().andMetaData(additionalMetaData), this::timestamp
         );
     }
 

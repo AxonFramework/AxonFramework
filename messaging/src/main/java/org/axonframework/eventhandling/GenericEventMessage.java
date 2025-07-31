@@ -141,7 +141,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
 
     @Nonnull
     @Override
-    public Instant getTimestamp() {
+    public Instant timestamp() {
         return timestampSupplier.get();
     }
 
@@ -166,7 +166,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
         stringBuilder.append(", timestamp='")
-                     .append(getTimestamp());
+                     .append(timestamp());
     }
 
     @Override
@@ -182,6 +182,6 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
             //noinspection unchecked
             return (EventMessage<C>) this;
         }
-        return new GenericEventMessage<>(this.identifier(), this.type(), converted, metaData(), getTimestamp());
+        return new GenericEventMessage<>(this.identifier(), this.type(), converted, metaData(), timestamp());
     }
 }

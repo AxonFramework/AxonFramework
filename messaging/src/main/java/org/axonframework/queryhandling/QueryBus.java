@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import jakarta.annotation.Nonnull;
 /**
  * The mechanism that dispatches Query objects to their appropriate QueryHandlers. QueryHandlers can subscribe and
  * un-subscribe to specific queries (identified by their {@link QueryMessage#getQueryName()} and {@link
- * QueryMessage#getResponseType()} on the query bus. There may be multiple handlers for each combination of
+ * QueryMessage#responseType()} on the query bus. There may be multiple handlers for each combination of
  * queryName/responseType.
  *
  * @author Marc Gathier
