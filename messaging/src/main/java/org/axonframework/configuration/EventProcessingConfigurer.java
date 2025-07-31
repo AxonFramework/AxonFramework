@@ -52,17 +52,17 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
                     .tokenStore(new InMemoryTokenStore())
     );
 
-    private final MessagingConfigurer delegate;
+    private final ApplicationConfigurer parent;
 
     private ComponentBuilder<EventProcessorDefaults> eventProcessorDefaultsBuilder;
     private final List<ModuleBuilder<EventProcessorModule>> moduleBuilders = new ArrayList<>();
 
-    private EventProcessingConfigurer(MessagingConfigurer delegate) {
-        this.delegate = delegate;
+    private EventProcessingConfigurer(ApplicationConfigurer parent) {
+        this.parent = parent;
     }
 
-    public static EventProcessingConfigurer enhance(@Nonnull MessagingConfigurer messagingConfigurer) {
-        return new EventProcessingConfigurer(messagingConfigurer)
+    public static EventProcessingConfigurer enhance(@Nonnull ApplicationConfigurer applicationConfigurer) {
+        return new EventProcessingConfigurer(applicationConfigurer)
                 .componentRegistry(cr -> cr
                                            .registerEnhancer(new EventProcessingDefaultsEnhancer())
                                    // todo: do not register tokenStore/unitOfWork or register and use them?
@@ -112,19 +112,19 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
 
     @Override
     public EventProcessingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
-        delegate.componentRegistry(componentRegistrar);
+        parent.componentRegistry(componentRegistrar);
         return this;
     }
 
     @Override
     public EventProcessingConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
-        delegate.lifecycleRegistry(lifecycleRegistrar);
+        parent.lifecycleRegistry(lifecycleRegistrar);
         return this;
     }
 
     @Override
     public AxonConfiguration build() {
-        componentRegistry(
+        parent.componentRegistry(
                 cr -> cr.registerComponent(
                         EventProcessorDefaults.class,
                         config -> {
@@ -139,12 +139,11 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
                 )
         );
         moduleBuilders.forEach(moduleBuilder ->
-                                       componentRegistry(cr -> cr.registerComponent(
-                                               EventProcessorModule.class,
-                                               config -> moduleBuilder.build()
+                                       parent.componentRegistry(cr -> cr.registerModule(
+                                               moduleBuilder.build()
                                        ))
         );
-        return delegate.build();
+        return parent.build(); // todo: weird?
     }
 
     public static final class EventProcessorDefaults {

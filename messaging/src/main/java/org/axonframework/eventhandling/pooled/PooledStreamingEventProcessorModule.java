@@ -42,8 +42,8 @@ import java.util.stream.Collectors;
 public class PooledStreamingEventProcessorModule
         extends BaseModule<PooledStreamingEventProcessorModule>
         implements EventProcessorModule,
-        EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorConfiguration>,
-        EventProcessorModule.BuildPhase {
+        EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorConfiguration>
+{
 
     private final String processorName;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder;
@@ -113,14 +113,14 @@ public class PooledStreamingEventProcessorModule
     }
 
     @Override
-    public BuildPhase configure(
+    public EventProcessorModule configure(
             @Nonnull ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder) {
         this.configurationBuilder = configurationBuilder;
         return this;
     }
 
     @Override
-    public BuildPhase customize(
+    public EventProcessorModule customize(
             @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorConfiguration>> customizationBuilder) {
         configure(cfg -> customizationBuilder.build(cfg).apply(parentConfigurationOrDefault(cfg)));
         return this;

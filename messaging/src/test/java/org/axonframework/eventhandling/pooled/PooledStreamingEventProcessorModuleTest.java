@@ -56,7 +56,7 @@ class PooledStreamingEventProcessorModuleTest {
                                 .eventSource(eventSource)
                                 .tokenStore(new InMemoryTokenStore())
                                 .initialSegmentCount(1)
-                ).build();
+                );
 
         var configuration = MessagingConfigurer.create()
                                                .eventProcessing(eventProcessing -> eventProcessing
@@ -64,7 +64,8 @@ class PooledStreamingEventProcessorModuleTest {
                                                                .shared(p -> p.errorHandler(PropagatingErrorHandler.instance()))
                                                                .pooledStreaming(p -> p.batchSize(100))
                                                        ).registerEventProcessorModule(module)
-                                               ).build();
+                                               )
+                                               .build();
 
         // when
         configuration.start();

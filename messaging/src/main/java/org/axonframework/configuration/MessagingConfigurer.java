@@ -74,7 +74,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     private MessagingConfigurer(@Nonnull ApplicationConfigurer delegate) {
         this.delegate =
                 requireNonNull(delegate, "The Application Configurer cannot be null.");
-        this.eventProcessingConfigurer = EventProcessingConfigurer.enhance(this);
+        this.eventProcessingConfigurer = EventProcessingConfigurer.enhance(delegate);
     }
 
     /**
@@ -230,6 +230,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
 
     @Override
     public AxonConfiguration build() {
+        eventProcessingConfigurer.build();
         return delegate.build();
     }
 }

@@ -37,8 +37,8 @@ import java.util.stream.Collectors;
 
 public class SubscribingEventProcessorModule extends BaseModule<SubscribingEventProcessorModule>
         implements EventProcessorModule,
-        EventProcessorModule.CustomizationPhase<SubscribingEventProcessorConfiguration>,
-        EventProcessorModule.BuildPhase {
+        EventProcessorModule.CustomizationPhase<SubscribingEventProcessorConfiguration>
+{
 
     private final String processorName;
     private ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder;
@@ -82,14 +82,14 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
 
     @Override
-    public BuildPhase configure(
+    public EventProcessorModule configure(
             @Nonnull ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder) {
         this.configurationBuilder = configurationBuilder;
         return this;
     }
 
     @Override
-    public BuildPhase customize(
+    public EventProcessorModule customize(
             @Nonnull ComponentBuilder<UnaryOperator<SubscribingEventProcessorConfiguration>> customizationBuilder) {
         configure(cfg -> customizationBuilder.build(cfg).apply(parentConfigurationOrDefault(cfg)));
         return this;

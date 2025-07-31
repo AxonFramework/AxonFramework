@@ -63,14 +63,9 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
 
     interface CustomizationPhase<T> {
 
-        BuildPhase configure(@Nonnull ComponentBuilder<T> configurationBuilder);
+        EventProcessorModule configure(@Nonnull ComponentBuilder<T> configurationBuilder);
 
-        BuildPhase customize(@Nonnull ComponentBuilder<UnaryOperator<T>> customizationBuilder);
+        EventProcessorModule customize(@Nonnull ComponentBuilder<UnaryOperator<T>> customizationBuilder);
     }
 
-
-    interface BuildPhase {
-
-        EventProcessorModule build();
-    }
 }
