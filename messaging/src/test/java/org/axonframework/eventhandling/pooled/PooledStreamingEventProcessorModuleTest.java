@@ -17,12 +17,11 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -34,6 +33,33 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class PooledStreamingEventProcessorModuleTest {
+
+    @Test
+    void eventProcessingDefaultsAppliedToPooledStreamingEventProcessor() {
+        // given
+        AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
+
+        var expectedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+        var configurer = MessagingConfigurer.create();
+        configurer.eventProcessing(
+                ep -> ep.defaults(
+                        d -> d.unitOfWorkFactory(expectedUnitOfWorkFactory)
+                )
+        );
+        configurer.eventProcessing(
+                ep -> ep.pooledStreaming(
+                        ps -> ps
+                                .defaults(d -> d.eventSource(eventSource))
+                                .processor("sample", (c, p) -> p.eventHandlingComponents(List.of(new SimpleEventHandlingComponent())))
+                )
+        );
+        var configuration = configurer.build();
+
+        // when
+//        var processor = configuration.getComponent(PooledStreamingEventProcessor.class);
+
+        // todo: get it config by reflection?
+    }
 
     @Test
     void registersWithLifecycleHooks() {
@@ -48,24 +74,29 @@ class PooledStreamingEventProcessorModuleTest {
         eventHandlingComponent1.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         var eventHandlingComponent2 = new SimpleEventHandlingComponent();
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-        EventProcessorModule module = EventProcessorModule
+        PooledStreamingEventProcessorModule module = EventProcessorModule
                 .pooledStreaming("test-processor")
                 .customize(cfg -> customization ->
                         customization
-                                .eventHandlingComponents(List.of(eventHandlingComponent1, eventHandlingComponent2)) // todo: maybe separated step?
-                                .eventSource(eventSource)
-                                .tokenStore(new InMemoryTokenStore())
+                                .eventHandlingComponents(List.of(eventHandlingComponent1,
+                                                                 eventHandlingComponent2)) // todo: maybe separated step?
                                 .initialSegmentCount(1)
                 );
 
-        var configuration = MessagingConfigurer.create()
-                                               .eventProcessing(eventProcessing -> eventProcessing
-                                                       .defaults(defaults -> defaults
-                                                               .shared(p -> p.errorHandler(PropagatingErrorHandler.instance()))
-                                                               .pooledStreaming(p -> p.batchSize(100))
-                                                       ).registerEventProcessorModule(module)
-                                               )
-                                               .build();
+        var configurer = MessagingConfigurer.create();
+        configurer.eventProcessing(
+                ep -> ep.defaults(
+                        d -> d.errorHandler((ctx) -> {})
+                )
+        );
+        configurer.eventProcessing(
+                ep -> ep.pooledStreaming(
+                        ps -> ps
+                                .defaults(d -> d.eventSource(eventSource))
+                                .processor(module)
+                )
+        );
+        var configuration = configurer.build();
 
         // when
         configuration.start();
