@@ -173,7 +173,10 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerEventStore(@Nonnull ComponentBuilder<EventStore> eventStoreFactory) {
-        delegate.componentRegistry(cr -> cr.registerComponent(EventStore.class, eventStoreFactory));
+        delegate.componentRegistry(cr -> cr.registerComponent(EventStore.class, (config) -> {
+            eventStoreFactory.build(config);
+            cr.
+        }));
         return this;
     }
 

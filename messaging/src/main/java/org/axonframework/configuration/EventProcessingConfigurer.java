@@ -115,7 +115,7 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
             );
         }
 
-        SharedEventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
+        public SharedEventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
             return new SharedEventProcessorConfiguration(errorHandler);
         }
     }

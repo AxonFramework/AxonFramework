@@ -18,12 +18,11 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -52,22 +51,13 @@ class PooledStreamingEventProcessorModuleTest {
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         EventProcessorModule module = EventProcessorModule
                 .pooledStreaming("test-processor")
-                .eventSource(cfg -> eventSource)
-                .tokenStore(cfg -> new InMemoryTokenStore())
-                .executors()
-                .coordinator(cfg -> processorName -> defaultExecutor(1, "Coordinator[" + processorName + "]"))
-                .worker(cfg -> processorName -> defaultExecutor(4, "WorkPackage[" + processorName + "]"))
-                .unitOfWorkFactory(cfg -> new SimpleUnitOfWorkFactory())
-                .eventHandling()
-                .component(cfg -> eventHandlingComponent1)
-                .component(cfg -> eventHandlingComponent2)
-                .customize(cfg -> customization ->
+                .configure(cfg -> customization ->
                         customization.initialSegmentCount(1)
                 ).build(); // doubt? really remove the builder!? Now I have problem how to override per module?
 
         var configuration = MessagingConfigurer.create()
                                                .eventProcessing(eventProcessing -> eventProcessing
-                                                       .defaults(defaults -> defaults)
+                                                       .defaults(defaults -> defaults.errorHandler(PropagatingErrorHandler.INSTANCE))
                                                        .registerEventProcessorModule(module)
                                                ).build();
 
