@@ -19,6 +19,7 @@ package org.axonframework.serialization;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.AbstractMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
@@ -153,6 +154,12 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
             return serializer.getConverter().convert(metaData.getSerializedObject(), expectedRepresentation);
         }
         return serializer.serialize(metaData.getObject(), expectedRepresentation);
+    }
+
+    @Override
+    public <T> Message<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        // This class will be removed/replaced by the ConversionAwareMessage, so skipping implementation
+        return null;
     }
 
     /**

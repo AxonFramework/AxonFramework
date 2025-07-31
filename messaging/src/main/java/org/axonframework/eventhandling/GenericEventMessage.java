@@ -23,12 +23,11 @@ import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.CachingSupplier;
+import org.axonframework.serialization.Converter;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -163,6 +162,21 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     }
 
     @Override
+    public <T> EventMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (EventMessage<T>) this;
+        }
+        Message<P> delegate = getDelegate();
+        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
+                                                     delegate.type(),
+                                                     convertedPayload,
+                                                     delegate.metaData());
+        return new GenericEventMessage<>(converted, timestamp());
+    }
+
+    @Override
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
         stringBuilder.append(", timestamp='")
@@ -172,16 +186,5 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     @Override
     protected String describeType() {
         return "GenericEventMessage";
-    }
-
-    @Override
-    public <C> EventMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
-        P payload = payload();
-        C converted = conversion.apply(payload);
-        if (Objects.equals(converted, payload)) {
-            //noinspection unchecked
-            return (EventMessage<C>) this;
-        }
-        return new GenericEventMessage<>(this.identifier(), this.type(), converted, metaData(), timestamp());
     }
 }

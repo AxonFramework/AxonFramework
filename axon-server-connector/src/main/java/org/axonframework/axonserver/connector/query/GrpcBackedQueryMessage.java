@@ -133,4 +133,10 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     public GrpcBackedQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
         return withMetaData(metaData().mergedWith(metaData));
     }
+
+    @Override
+    public <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
+        return null;
+    }
 }

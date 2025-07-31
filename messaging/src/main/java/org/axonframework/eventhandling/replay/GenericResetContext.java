@@ -24,6 +24,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.Converter;
 
 import java.util.Map;
 
@@ -85,6 +86,20 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
     @Override
     public GenericResetContext<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new GenericResetContext<>(getDelegate().andMetaData(additionalMetaData));
+    }
+
+    @Override
+    public <T> ResetContext<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        T convertedPayload = this.payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (ResetContext<T>) this;
+        }
+        Message<P> delegate = getDelegate();
+        return new GenericResetContext<>(new GenericMessage<T>(delegate.identifier(),
+                                                               delegate.type(),
+                                                               convertedPayload,
+                                                               delegate.metaData()));
     }
 
     @Override

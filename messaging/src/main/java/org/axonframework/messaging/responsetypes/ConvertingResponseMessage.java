@@ -138,4 +138,9 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     public QueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new ConvertingResponseMessage<>(expectedResponseType, responseMessage.andMetaData(additionalMetaData));
     }
+
+    @Override
+    public <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        return responseMessage.withConvertedPayload(type, converter);
+    }
 }

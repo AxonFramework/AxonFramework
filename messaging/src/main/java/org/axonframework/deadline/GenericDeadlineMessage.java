@@ -19,9 +19,11 @@ package org.axonframework.deadline;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.Converter;
 
 import java.time.Instant;
 import java.util.Map;
@@ -146,6 +148,21 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
         return new GenericDeadlineMessage<>(
                 deadlineName, getDelegate().andMetaData(additionalMetaData), this::timestamp
         );
+    }
+
+    @Override
+    public <T> DeadlineMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (DeadlineMessage<T>) this;
+        }
+        Message<P> delegate = getDelegate();
+        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
+                                                     delegate.type(),
+                                                     convertedPayload,
+                                                     delegate.metaData());
+        return new GenericDeadlineMessage<>(getDeadlineName(), converted, this::timestamp);
     }
 
     @Override

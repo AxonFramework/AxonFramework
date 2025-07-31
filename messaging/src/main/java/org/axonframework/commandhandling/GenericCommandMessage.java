@@ -22,9 +22,9 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.Converter;
 
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Generic implementation of the {@link CommandMessage} interface.
@@ -91,13 +91,17 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
     }
 
     @Override
-    public <C> CommandMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
+    public <T> CommandMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (CommandMessage<T>) this;
+        }
         Message<P> delegate = getDelegate();
-        Message<C> transformed = new GenericMessage<>(delegate.identifier(),
-                                                      delegate.type(),
-                                                      conversion.apply(delegate.payload()),
-                                                      delegate.metaData());
-        return new GenericCommandMessage<>(transformed);
+        return new GenericCommandMessage<>(new GenericMessage<T>(delegate.identifier(),
+                                                                 delegate.type(),
+                                                                 convertedPayload,
+                                                                 delegate.metaData()));
     }
 
     @Override

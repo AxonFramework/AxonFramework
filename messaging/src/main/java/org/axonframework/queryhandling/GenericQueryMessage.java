@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.serialization.Converter;
 
 import java.util.Map;
 
@@ -91,6 +92,21 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
     @Override
     public QueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericQueryMessage<>(getDelegate().andMetaData(metaData), responseType);
+    }
+
+    @Override
+    public <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (QueryMessage<T, R>) this;
+        }
+        Message<P> delegate = getDelegate();
+        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
+                                                     delegate.type(),
+                                                     convertedPayload,
+                                                     delegate.metaData());
+        return new GenericQueryMessage<>(converted, responseType);
     }
 
     @Override

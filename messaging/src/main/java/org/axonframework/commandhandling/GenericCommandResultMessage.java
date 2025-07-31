@@ -23,9 +23,9 @@ import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.serialization.Converter;
 
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Generic implementation of the {@link CommandResultMessage} interface.
@@ -139,14 +139,19 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     }
 
     @Override
-    public <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Function<R, T> conversion) {
-        Throwable exception = optionalExceptionResult().orElse(null);
+    public <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Class<T> type,
+                                                            @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (CommandResultMessage<T>) this;
+        }
         Message<R> delegate = getDelegate();
-        Message<T> transformed = new GenericMessage<>(delegate.identifier(),
-                                                      delegate.type(),
-                                                      conversion.apply(delegate.payload()),
-                                                      delegate.metaData());
-        return new GenericCommandResultMessage<>(transformed, exception);
+        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
+                                                     delegate.type(),
+                                                     convertedPayload,
+                                                     delegate.metaData());
+        return new GenericCommandResultMessage<>(converted, optionalExceptionResult().orElse(null));
     }
 
     @Override

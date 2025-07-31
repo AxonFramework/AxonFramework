@@ -19,6 +19,7 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
@@ -199,6 +200,23 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     @Override
     public GenericResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericResultMessage<>(getDelegate().andMetaData(metaData), exception);
+    }
+
+    @Override
+    public <T> ResultMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (ResultMessage<T>) this;
+        }
+        Message<R> delegate = getDelegate();
+        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
+                                                     delegate.type(),
+                                                     convertedPayload,
+                                                     delegate.metaData());
+        return optionalExceptionResult().isPresent()
+                ? new GenericResultMessage<>(converted, optionalExceptionResult().get())
+                : new GenericResultMessage<>(converted);
     }
 
     @Override
