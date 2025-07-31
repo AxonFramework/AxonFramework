@@ -92,9 +92,9 @@ public abstract class MessageDecorator<P> implements Message<P> {
     }
 
     /**
-     * Returns the wrapped message delegate.
+     * Returns the wrapped {@link Message} delegated by this decorator.
      *
-     * @return the delegate message
+     * @return The wrapped {@link Message} delegated by this decorator.
      */
     protected Message<P> getDelegate() {
         return delegate;
@@ -118,7 +118,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
      * may be appended without enclosing. All properties should be preceded by a comma when appending, or finish with a
      * comma when prefixing values.
      *
-     * @param stringBuilder the builder to append data to
+     * @param stringBuilder The builder to append data to.
      */
     protected void describeTo(StringBuilder stringBuilder) {
         stringBuilder.append("type={")
@@ -140,7 +140,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
      * <p>
      * Defaults to the simple class name of the actual instance.
      *
-     * @return the type of message
+     * @return The type of the message.
      */
     protected String describeType() {
         return getClass().getSimpleName();

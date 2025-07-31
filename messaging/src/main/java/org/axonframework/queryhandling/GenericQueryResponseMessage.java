@@ -168,12 +168,12 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     @Override
-    public GenericQueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
+    public QueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericQueryResponseMessage<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public GenericQueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
+    public QueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new GenericQueryResponseMessage<>(getDelegate().andMetaData(additionalMetaData));
     }
 

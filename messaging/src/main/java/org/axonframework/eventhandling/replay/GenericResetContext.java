@@ -79,12 +79,12 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
     }
 
     @Override
-    public GenericResetContext<P> withMetaData(@Nonnull Map<String, String> metaData) {
+    public ResetContext<P> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericResetContext<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public GenericResetContext<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
+    public ResetContext<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new GenericResetContext<>(getDelegate().andMetaData(additionalMetaData));
     }
 

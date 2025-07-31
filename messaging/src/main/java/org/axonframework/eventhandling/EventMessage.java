@@ -41,8 +41,8 @@ public interface EventMessage<P> extends Message<P> {
      * Returns the identifier of this {@link EventMessage event}.
      * <p>
      * The identifier is used to define the uniqueness of an event. Two events may contain similar (or equal)
-     * {@link #payload() payloads} and {@link #timestamp() timestamp}, if the event identifiers are different,
-     * they both represent a different occurrence of an Event.
+     * {@link #payload() payloads} and {@link #timestamp() timestamp}, if the event identifiers are different, they both
+     * represent a different occurrence of an Event.
      * <p>
      * If two messages have the same identifier, they both represent the same unique occurrence of an event, even though
      * the resulting view may be different. You may not assume two messages are equal (i.e. interchangeable) if their

@@ -50,9 +50,8 @@ public interface Message<P> {
 
     /**
      * The {@link Context.ResourceKey} used to store and retrieve the {@link Message} from the
-     * {@link ProcessingContext}. Should always be the message for which a handler is being called.
-     * For example, if an event handler is called within the context of a command, the message should be the event
-     * message.
+     * {@link ProcessingContext}. Should always be the message for which a handler is being called. For example, if an
+     * event handler is called within the context of a command, the message should be the event message.
      */
     Context.ResourceKey<Message<?>> RESOURCE_KEY = Context.ResourceKey.withLabel("Message");
 
@@ -147,8 +146,7 @@ public interface Message<P> {
      * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
      * <p>
      * If {@link #payloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given
-     * {@link TypeReference#getType()}, {@link #payload()} may be invoked instead of using the given
-     * {@code converter}.
+     * {@link TypeReference#getType()}, {@link #payload()} may be invoked instead of using the given {@code converter}.
      * <p>
      * Implementers of this operation may optimize by storing the converted payloads, thus saving a
      * {@link Converter#convert(Object, Class)} invocation in the process. Only when this optimization is in place will
@@ -210,8 +208,8 @@ public interface Message<P> {
     Message<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     /**
-     * Returns a copy of this {@code Message} (implementation) with its {@link Message#metaData() metadata} merged
-     * with the given {@code metaData}.
+     * Returns a copy of this {@code Message} (implementation) with its {@link Message#metaData() metadata} merged with
+     * the given {@code metaData}.
      * <p>
      * All others fields, like for example the {@link #payload()}, remain unchanged.
      *

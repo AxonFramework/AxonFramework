@@ -32,8 +32,8 @@ import java.util.function.Supplier;
 /**
  * Generic implementation of the {@link DeadlineMessage} interface.
  *
- * @param <P> The type of {@link #payload() payload} contained in this {@link DeadlineMessage}. May be {@link Void}
- *            if no payload was provided.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link DeadlineMessage}. May be {@link Void} if
+ *            no payload was provided.
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 3.3.0
@@ -139,12 +139,12 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     }
 
     @Override
-    public GenericDeadlineMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
+    public DeadlineMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericDeadlineMessage<>(deadlineName, getDelegate().withMetaData(metaData), this::timestamp);
     }
 
     @Override
-    public GenericDeadlineMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
+    public DeadlineMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new GenericDeadlineMessage<>(
                 deadlineName, getDelegate().andMetaData(additionalMetaData), this::timestamp
         );

@@ -42,8 +42,7 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
 
 
     /**
-     * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and
-     * {@code responseType}.
+     * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and {@code responseType}.
      * <p>
      * The {@link MetaData} defaults to an empty instance. Initializes the message with the given {@code payload} and
      * expected {@code responseType}.

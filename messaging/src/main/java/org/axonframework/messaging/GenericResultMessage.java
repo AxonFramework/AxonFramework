@@ -114,9 +114,9 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate  The {@link Message} containing {@link Message#payload() payload},
-     *                  {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                  {@link Message#metaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
+     * @param delegate  The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
+     *                  {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
+     *                  {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link ResultMessage}.
      */
@@ -193,12 +193,12 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     @Override
-    public GenericResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
+    public ResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericResultMessage<>(getDelegate().withMetaData(metaData), exception);
     }
 
     @Override
-    public GenericResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
+    public ResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericResultMessage<>(getDelegate().andMetaData(metaData), exception);
     }
 

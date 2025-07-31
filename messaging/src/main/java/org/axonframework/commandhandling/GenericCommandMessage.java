@@ -81,12 +81,12 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
     }
 
     @Override
-    public GenericCommandMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
+    public CommandMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericCommandMessage<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public GenericCommandMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
+    public CommandMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericCommandMessage<>(getDelegate().andMetaData(metaData));
     }
 
