@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Rene de Waele
  */
-class GenericMessageTest extends MessageTestSuite {
+class GenericMessageTest extends MessageTestSuite<Message<?>> {
 
     private final Map<String, String> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
 
@@ -56,9 +56,8 @@ class GenericMessageTest extends MessageTestSuite {
     }
 
     @Override
-    protected <P, M extends Message<P>> M buildMessage(@Nullable P payload) {
-        //noinspection unchecked
-        return (M) new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    protected <P> Message<?> buildMessage(@Nullable P payload) {
+        return new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
     @AfterEach

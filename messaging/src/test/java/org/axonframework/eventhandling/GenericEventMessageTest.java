@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
@@ -34,12 +33,11 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-class GenericEventMessageTest extends MessageTestSuite {
+class GenericEventMessageTest extends MessageTestSuite<EventMessage<?>> {
 
     @Override
-    protected <P, M extends Message<P>> M buildMessage(@Nullable P payload) {
-        //noinspection unchecked
-        return (M) new GenericEventMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    protected <P> EventMessage<?> buildMessage(@Nullable P payload) {
+        return new GenericEventMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
     @Test

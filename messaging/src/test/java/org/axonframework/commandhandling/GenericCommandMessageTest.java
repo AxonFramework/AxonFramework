@@ -18,7 +18,6 @@ package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
@@ -34,14 +33,13 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-class GenericCommandMessageTest extends MessageTestSuite {
+class GenericCommandMessageTest extends MessageTestSuite<CommandMessage<?>> {
 
     private static final MessageType TEST_TYPE = new MessageType("command");
 
     @Override
-    protected <P, M extends Message<P>> M buildMessage(@Nullable P payload) {
-        //noinspection unchecked
-        return (M) new GenericCommandMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    protected <P> CommandMessage<?> buildMessage(@Nullable P payload) {
+        return new GenericCommandMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
     @Test
