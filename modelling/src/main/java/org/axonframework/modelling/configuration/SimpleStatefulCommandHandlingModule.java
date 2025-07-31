@@ -109,6 +109,7 @@ class SimpleStatefulCommandHandlingModule
         return this;
     }
 
+    // todo: why do I need this?
     @Override
     public StatefulCommandHandlingModule build() {
         registerStateManager();
