@@ -60,8 +60,10 @@ class PooledStreamingEventProcessorModuleTest {
 
         var configuration = MessagingConfigurer.create()
                                                .eventProcessing(eventProcessing -> eventProcessing
-                                                       .defaults(defaults -> defaults.errorHandler(PropagatingErrorHandler.INSTANCE))
-                                                       .registerEventProcessorModule(module)
+                                                       .defaults(defaults -> defaults
+                                                               .shared(p -> p.errorHandler(PropagatingErrorHandler.instance()))
+                                                               .pooledStreaming(p -> p.batchSize(100))
+                                                       ).registerEventProcessorModule(module)
                                                ).build();
 
         // when

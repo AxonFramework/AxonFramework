@@ -18,10 +18,16 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.eventhandling.ErrorHandler;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.EventProcessorConfiguration;
+import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
@@ -35,8 +41,18 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
     // configureDefaultStreamableMessageSource
     // configureDefaultSubscribableMessageSource
 
+    private static final EventProcessorDefaults INITIAL_EVENT_PROCESSOR_DEFAULTS = new EventProcessorDefaults(
+            new EventProcessorConfiguration(), // validate if I need to pass it to others!?
+            new SubscribingEventProcessorConfiguration()
+                    .unitOfWorkFactory(new SimpleUnitOfWorkFactory()),
+            new PooledStreamingEventProcessorConfiguration()
+                    .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                    .tokenStore(new InMemoryTokenStore())
+    );
+
     private final MessagingConfigurer delegate;
-    private SharedEventProcessorConfiguration sharedConfiguration = SharedEventProcessorConfiguration.defaults();
+
+    private ComponentBuilder<EventProcessorDefaults> eventProcessorDefaultsBuilder;
 
     private EventProcessingConfigurer(MessagingConfigurer delegate) {
         this.delegate = delegate;
@@ -45,13 +61,39 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
     public static EventProcessingConfigurer enhance(@Nonnull MessagingConfigurer messagingConfigurer) {
         return new EventProcessingConfigurer(messagingConfigurer)
                 .componentRegistry(cr -> cr
-                        .registerEnhancer(new EventProcessingDefaultsEnhancer())
+                        .registerEnhancer(new EventProcessingDefaultsEnhancer()) // todo: do not register tokenStore/unitOfWork or register and use them?
                 );
     }
 
-    public EventProcessingConfigurer defaults(
-            @Nonnull UnaryOperator<SharedEventProcessorConfiguration> configureDefaults) {
-        this.sharedConfiguration = configureDefaults.apply(sharedConfiguration);
+    public EventProcessingConfigurer defaults(@Nonnull BiFunction<Configuration, EventProcessorDefaults, EventProcessorDefaults> configureDefaults) {
+        this.eventProcessorDefaultsBuilder = config -> {
+            var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
+            config.getOptionalComponent(TokenStore.class)
+                  .ifPresent(tokenStore ->
+                                     defaults.pooledStreaming(p -> p.tokenStore(tokenStore))
+                  );
+            config.getOptionalComponent(StreamableEventSource.class)
+                  .ifPresent(eventSource ->
+                                     defaults.pooledStreaming(p -> p.eventSource(eventSource))
+                  );
+            return configureDefaults.apply(config, defaults);
+        };
+        return this;
+    }
+
+    public EventProcessingConfigurer defaults(@Nonnull UnaryOperator<EventProcessorDefaults> configureDefaults) {
+        this.eventProcessorDefaultsBuilder = config -> {
+            var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
+            config.getOptionalComponent(TokenStore.class)
+                  .ifPresent(tokenStore ->
+                                     defaults.pooledStreaming(p -> p.tokenStore(tokenStore))
+                  );
+            config.getOptionalComponent(StreamableEventSource.class)
+                  .ifPresent(eventSource ->
+                                     defaults.pooledStreaming(p -> p.eventSource(eventSource))
+                  );
+            return configureDefaults.apply(defaults);
+        };
         return this;
     }
 
@@ -79,26 +121,53 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
     public AxonConfiguration build() {
         componentRegistry(
                 cr -> cr.registerComponent(
-                        SharedEventProcessorConfiguration.class,
-                        cfg -> sharedConfiguration
+                        EventProcessorDefaults.class,
+                        eventProcessorDefaultsBuilder
                 )
         );
         return delegate.build();
     }
 
+    public static final class EventProcessorDefaults {
 
-    public record SharedEventProcessorConfiguration(
-            ErrorHandler errorHandler
-    ) {
+        private final EventProcessorConfiguration shared;
+        private final SubscribingEventProcessorConfiguration subscribing;
+        private final PooledStreamingEventProcessorConfiguration pooledStreaming;
 
-        static SharedEventProcessorConfiguration defaults() {
-            return new SharedEventProcessorConfiguration(
-                    PropagatingErrorHandler.INSTANCE
+        public EventProcessorDefaults(
+                EventProcessorConfiguration shared,
+                SubscribingEventProcessorConfiguration subscribing,
+                PooledStreamingEventProcessorConfiguration pooledStreaming
+        ) {
+            this.shared = shared;
+            this.subscribing = subscribing;
+            this.pooledStreaming = pooledStreaming;
+        }
+
+        public EventProcessorDefaults shared(@Nonnull UnaryOperator<EventProcessorConfiguration> customize) {
+            return new EventProcessorDefaults(
+                    customize.apply(shared),
+                    subscribing,
+                    pooledStreaming
             );
         }
 
-        public SharedEventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
-            return new SharedEventProcessorConfiguration(errorHandler);
+        public EventProcessorDefaults subscribing(
+                @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> customize) {
+            return new EventProcessorDefaults(
+                    shared,
+                    customize.apply(subscribing),
+                    pooledStreaming
+            );
+        }
+
+        public EventProcessorDefaults pooledStreaming(
+                @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> customize) {
+            return new EventProcessorDefaults(
+                    shared,
+                    subscribing,
+                    customize.apply(pooledStreaming)
+            );
         }
     }
 }
