@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.Converter;
@@ -48,7 +49,7 @@ public abstract class MessageTestSuite {
      * @param <M> The {@link Message} implementation under test.
      * @return a {@link Message} used by this test suite.
      */
-    protected abstract <P, M extends Message<P>> M buildMessage(P payload);
+    protected abstract <P, M extends Message<P>> M buildMessage(@Nullable P payload);
 
     @Test
     void payloadAsWithClassAssignableFromPayloadTypeInvokesPayloadDirectly() {

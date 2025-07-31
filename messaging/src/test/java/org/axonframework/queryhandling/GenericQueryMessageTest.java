@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 
@@ -31,6 +32,6 @@ class GenericQueryMessageTest extends MessageTestSuite {
     @Override
     protected <P, M extends Message<P>> M buildMessage(@Nullable P payload) {
         //noinspection unchecked
-        return (M) new GenericQueryMessage<>(new MessageType(payload.getClass()), payload);
+        return (M) new GenericQueryMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 }

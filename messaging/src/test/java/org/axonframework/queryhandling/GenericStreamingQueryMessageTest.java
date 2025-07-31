@@ -17,6 +17,7 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 
@@ -32,6 +33,8 @@ class GenericStreamingQueryMessageTest extends MessageTestSuite {
     @Override
     protected <P, M extends Message<P>> M buildMessage(@Nullable P payload) {
         //noinspection unchecked
-        return (M) new GenericStreamingQueryMessage<>(new MessageType(payload.getClass()), payload, String.class);
+        return (M) new GenericStreamingQueryMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
+                                                      payload,
+                                                      String.class);
     }
 }

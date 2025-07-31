@@ -17,6 +17,8 @@
 package org.axonframework.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -54,9 +56,9 @@ class GenericMessageTest extends MessageTestSuite {
     }
 
     @Override
-    protected <P, M extends Message<P>> M buildMessage(P payload) {
+    protected <P, M extends Message<P>> M buildMessage(@Nullable P payload) {
         //noinspection unchecked
-        return (M) new GenericMessage<>(new MessageType(payload.getClass()), payload);
+        return (M) new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
     @AfterEach

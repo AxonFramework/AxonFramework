@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 
@@ -30,6 +31,7 @@ class GenericCommandResultMessageTest extends MessageTestSuite {
     @Override
     protected <P, M extends Message<P>> M buildMessage(@Nullable P payload) {
         //noinspection unchecked
-        return (M) new GenericCommandResultMessage<>(new MessageType(payload.getClass()), payload);
+        return (M) new GenericCommandResultMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
+                                                     payload);
     }
 }

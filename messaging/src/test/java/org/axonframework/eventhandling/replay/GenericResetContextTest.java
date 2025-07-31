@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.replay;
 
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
@@ -38,9 +40,9 @@ class GenericResetContextTest extends MessageTestSuite {
     private static final Object TEST_PAYLOAD = new Object();
 
     @Override
-    protected <P, M extends Message<P>> M buildMessage(P payload) {
+    protected <P, M extends Message<P>> M buildMessage(@Nullable P payload) {
         //noinspection unchecked
-        return (M) new GenericResetContext<>(new MessageType(payload.getClass()), payload);
+        return (M) new GenericResetContext<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
     @Test

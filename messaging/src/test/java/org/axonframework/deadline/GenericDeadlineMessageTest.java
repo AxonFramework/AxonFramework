@@ -17,6 +17,7 @@
 package org.axonframework.deadline;
 
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 
@@ -30,6 +31,8 @@ class GenericDeadlineMessageTest extends MessageTestSuite {
     @Override
     protected <P, M extends Message<P>> M buildMessage(@Nullable P payload) {
         //noinspection unchecked
-        return (M) new GenericDeadlineMessage<>("deadlineName", new MessageType(payload.getClass()), payload);
+        return (M) new GenericDeadlineMessage<>("deadlineName",
+                                                new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
+                                                payload);
     }
 }
