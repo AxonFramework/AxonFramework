@@ -91,6 +91,11 @@ public abstract class MessageDecorator<P> implements Message<P> {
         return delegate.serializeMetaData(serializer, expectedRepresentation);
     }
 
+    @Override
+    public <T> Message<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        return delegate.withConvertedPayload(type, converter);
+    }
+
     /**
      * Returns the wrapped {@link Message} delegated by this decorator.
      *
