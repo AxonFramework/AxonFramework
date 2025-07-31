@@ -34,7 +34,11 @@ import static org.mockito.Mockito.*;
  */
 public abstract class MessageTestSuite {
 
+    private static final String STRING_PAYLOAD = "some-string-payload";
+    private static final ChainingContentTypeConverter CONVERTER = new ChainingContentTypeConverter();
     private static final TypeReference<byte[]> BYTE_ARRAY_TYPE_REF = new TypeReference<>() {
+    };
+    private static final TypeReference<String> STRING_TYPE_REFERENCE = new TypeReference<>() {
     };
 
     /**
@@ -48,8 +52,8 @@ public abstract class MessageTestSuite {
 
     @Test
     void payloadAsWithClassAssignableFromPayloadTypeInvokesPayloadDirectly() {
-        String testPayload = "some-string-payload";
-        Converter testConverter = spy(new ChainingContentTypeConverter());
+        String testPayload = STRING_PAYLOAD;
+        Converter testConverter = spy(CONVERTER);
 
         Message<String> testSubject = buildMessage(testPayload);
 
@@ -61,18 +65,18 @@ public abstract class MessageTestSuite {
 
     @Test
     void payloadAsWithClassConvertsPayload() {
-        String testPayload = "some-string-payload";
+        String testPayload = STRING_PAYLOAD;
 
         Message<String> testSubject = buildMessage(testPayload);
 
-        byte[] result = testSubject.payloadAs(byte[].class, new ChainingContentTypeConverter());
+        byte[] result = testSubject.payloadAs(byte[].class, CONVERTER);
 
         assertThat(testPayload.getBytes()).isEqualTo(result);
     }
 
     @Test
     void payloadAsWithClassThrowsNullPointerExceptionForNullConverter() {
-        Message<String> testSubject = buildMessage("some-string-payload");
+        Message<String> testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs(byte[].class, null))
                 .isExactlyInstanceOf(NullPointerException.class);
@@ -80,18 +84,18 @@ public abstract class MessageTestSuite {
 
     @Test
     void payloadAsWithTypeReferenceConvertsPayload() {
-        String testPayload = "some-string-payload";
+        String testPayload = STRING_PAYLOAD;
 
         Message<String> testSubject = buildMessage(testPayload);
 
-        byte[] result = testSubject.payloadAs(BYTE_ARRAY_TYPE_REF, new ChainingContentTypeConverter());
+        byte[] result = testSubject.payloadAs(BYTE_ARRAY_TYPE_REF, CONVERTER);
 
         assertThat(testPayload.getBytes()).isEqualTo(result);
     }
 
     @Test
     void payloadAsWithTypeReferenceThrowsNullPointerExceptionForNullConverter() {
-        Message<String> testSubject = buildMessage("some-string-payload");
+        Message<String> testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs(BYTE_ARRAY_TYPE_REF, null))
                 .isExactlyInstanceOf(NullPointerException.class);
@@ -99,8 +103,8 @@ public abstract class MessageTestSuite {
 
     @Test
     void payloadAsWithTypeInstanceOfClassAndAssignableFromPayloadTypeInvokesPayloadDirectly() {
-        String testPayload = "some-string-payload";
-        Converter testConverter = spy(new ChainingContentTypeConverter());
+        String testPayload = STRING_PAYLOAD;
+        Converter testConverter = spy(CONVERTER);
 
         Message<String> testSubject = buildMessage(testPayload);
 
@@ -112,20 +116,80 @@ public abstract class MessageTestSuite {
 
     @Test
     void payloadAsWithTypeConvertsPayload() {
-        String testPayload = "some-string-payload";
+        String testPayload = STRING_PAYLOAD;
 
         Message<String> testSubject = buildMessage(testPayload);
 
-        byte[] result = testSubject.payloadAs((Type) byte[].class, new ChainingContentTypeConverter());
+        byte[] result = testSubject.payloadAs((Type) byte[].class, CONVERTER);
 
         assertThat(testPayload.getBytes()).isEqualTo(result);
     }
 
     @Test
     void payloadAsWithTypeThrowsNullPointerExceptionForNullConverter() {
-        Message<String> testSubject = buildMessage("some-string-payload");
+        Message<String> testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs((Type) byte[].class, null))
                 .isExactlyInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void withConvertedPayloadForClassReturnsSameInstance() {
+        Message<String> testSubject = buildMessage(STRING_PAYLOAD);
+
+        assertThat(testSubject.withConvertedPayload(String.class, CONVERTER)).isSameAs(testSubject);
+    }
+
+    @Test
+    void withConvertedPayloadForClassReturnsNewMessageInstanceWithConvertedPayload() {
+        Message<String> testSubject = buildMessage(STRING_PAYLOAD);
+
+        Message<byte[]> result = testSubject.withConvertedPayload(byte[].class, CONVERTER);
+
+        assertThat(testSubject.identifier()).isEqualTo(result.identifier());
+        assertThat(testSubject.type()).isEqualTo(result.type());
+        assertThat(testSubject.metaData()).isEqualTo(result.metaData());
+        assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
+        assertThat(testSubject.payload().getBytes()).isEqualTo(result.payload());
+    }
+
+    @Test
+    void withConvertedPayloadForTypeReferenceReturnsSameInstance() {
+        Message<String> testSubject = buildMessage(STRING_PAYLOAD);
+
+        assertThat(testSubject.withConvertedPayload(STRING_TYPE_REFERENCE, CONVERTER)).isSameAs(testSubject);
+    }
+
+    @Test
+    void withConvertedPayloadForTypeReferenceReturnsNewMessageInstanceWithConvertedPayload() {
+        Message<String> testSubject = buildMessage(STRING_PAYLOAD);
+
+        Message<byte[]> result = testSubject.withConvertedPayload(BYTE_ARRAY_TYPE_REF, CONVERTER);
+
+        assertThat(testSubject.identifier()).isEqualTo(result.identifier());
+        assertThat(testSubject.type()).isEqualTo(result.type());
+        assertThat(testSubject.metaData()).isEqualTo(result.metaData());
+        assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
+        assertThat(testSubject.payload().getBytes()).isEqualTo(result.payload());
+    }
+
+    @Test
+    void withConvertedPayloadForTypeReturnsSameInstance() {
+        Message<String> testSubject = buildMessage(STRING_PAYLOAD);
+
+        assertThat(testSubject.withConvertedPayload((Type) String.class, CONVERTER)).isSameAs(testSubject);
+    }
+
+    @Test
+    void withConvertedPayloadForTypeReturnsNewMessageInstanceWithConvertedPayload() {
+        Message<String> testSubject = buildMessage(STRING_PAYLOAD);
+
+        Message<byte[]> result = testSubject.withConvertedPayload((Type) byte[].class, CONVERTER);
+
+        assertThat(testSubject.identifier()).isEqualTo(result.identifier());
+        assertThat(testSubject.type()).isEqualTo(result.type());
+        assertThat(testSubject.metaData()).isEqualTo(result.metaData());
+        assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
+        assertThat(testSubject.payload().getBytes()).isEqualTo(result.payload());
     }
 }
