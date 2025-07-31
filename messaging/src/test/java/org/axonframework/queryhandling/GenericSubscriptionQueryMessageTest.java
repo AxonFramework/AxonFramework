@@ -21,26 +21,29 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating the {@link GenericStreamingQueryMessage}.
+ * Test class validating the {@link GenericSubscriptionQueryMessage}.
  *
  * @author Steven van Beelen
  */
-class GenericStreamingQueryMessageTest extends MessageTestSuite<StreamingQueryMessage<?, ?>> {
+class GenericSubscriptionQueryMessageTest extends MessageTestSuite<SubscriptionQueryMessage<?, ?, ?>> {
 
     @Override
-    protected <P> StreamingQueryMessage<?, ?> buildMessage(@Nullable P payload) {
-        return new GenericStreamingQueryMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
-                                                  payload,
-                                                  String.class);
+    protected <P> SubscriptionQueryMessage<?, ?, ?> buildMessage(@Nullable P payload) {
+        return new GenericSubscriptionQueryMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
+                                                     payload,
+                                                     ResponseTypes.instanceOf(String.class),
+                                                     ResponseTypes.instanceOf(String.class));
     }
 
     @Override
-    protected void validateMessageSpecifics(@Nonnull StreamingQueryMessage<?, ?> actual,
-                                            @Nonnull StreamingQueryMessage<?, ?> result) {
+    protected void validateMessageSpecifics(@Nonnull SubscriptionQueryMessage<?, ?, ?> actual,
+                                            @Nonnull SubscriptionQueryMessage<?, ?, ?> result) {
         assertThat(actual.responseType()).isEqualTo(result.responseType());
+        assertThat(actual.updatesResponseType()).isEqualTo(result.updatesResponseType());
     }
 }

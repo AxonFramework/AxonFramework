@@ -16,11 +16,14 @@
 
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test class validating the {@link GenericQueryMessage}.
@@ -34,5 +37,10 @@ class GenericQueryMessageTest extends MessageTestSuite<QueryMessage<?, ?>> {
         return new GenericQueryMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
                                          payload,
                                          ResponseTypes.instanceOf(String.class));
+    }
+
+    @Override
+    protected void validateMessageSpecifics(@Nonnull QueryMessage<?, ?> actual, @Nonnull QueryMessage<?, ?> result) {
+        assertThat(actual.responseType()).isEqualTo(result.responseType());
     }
 }

@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MessageTestSuite;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.*;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -38,6 +40,11 @@ class GenericEventMessageTest extends MessageTestSuite<EventMessage<?>> {
     @Override
     protected <P> EventMessage<?> buildMessage(@Nullable P payload) {
         return new GenericEventMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    }
+
+    @Override
+    protected void validateMessageSpecifics(@Nonnull EventMessage<?> actual, @Nonnull EventMessage<?> result) {
+        assertThat(actual.timestamp()).isEqualTo(result.timestamp());
     }
 
     @Test

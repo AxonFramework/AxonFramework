@@ -16,10 +16,13 @@
 
 package org.axonframework.deadline;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test class validating the {@link GenericDeadlineMessage}.
@@ -33,5 +36,11 @@ class GenericDeadlineMessageTest extends MessageTestSuite<DeadlineMessage<?>> {
         return new GenericDeadlineMessage<>("deadlineName",
                                             new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
                                             payload);
+    }
+
+    @Override
+    protected void validateMessageSpecifics(@Nonnull DeadlineMessage<?> actual, @Nonnull DeadlineMessage<?> result) {
+        assertThat(actual.getDeadlineName()).isEqualTo(result.getDeadlineName());
+        assertThat(actual.timestamp()).isEqualTo(result.timestamp());
     }
 }
