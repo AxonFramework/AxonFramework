@@ -96,8 +96,8 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
                 return new GenericSubscriptionQueryUpdateMessage<>(
                         new MessageType(cause.getClass()),
                         cause,
-                        resultMessage.metaData(),
-                        resultMessage.payloadType()
+                        resultMessage.payloadType(),
+                        resultMessage.metaData()
                 );
             }
             return new GenericSubscriptionQueryUpdateMessage<>(resultMessage);

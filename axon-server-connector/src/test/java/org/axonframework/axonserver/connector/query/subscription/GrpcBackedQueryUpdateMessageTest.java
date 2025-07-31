@@ -147,8 +147,8 @@ class GrpcBackedQueryUpdateMessageTest {
     private static <U> SubscriptionQueryUpdateMessage<U> asUpdateMessage(Class<U> declaredType, Throwable exception) {
         return new GenericSubscriptionQueryUpdateMessage<>(new MessageType(exception.getClass()),
                                                            exception,
-                                                           MetaData.emptyInstance(),
-                                                           declaredType);
+                                                           declaredType,
+                                                           MetaData.emptyInstance());
     }
 
     @SuppressWarnings("unchecked")
