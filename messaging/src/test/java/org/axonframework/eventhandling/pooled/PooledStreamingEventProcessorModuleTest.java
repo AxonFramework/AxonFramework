@@ -16,19 +16,18 @@
 
 package org.axonframework.eventhandling.pooled;
 
-import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,9 +50,13 @@ class PooledStreamingEventProcessorModuleTest {
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         EventProcessorModule module = EventProcessorModule
                 .pooledStreaming("test-processor")
-                .configure(cfg -> customization ->
-                        customization.initialSegmentCount(1)
-                ).build(); // doubt? really remove the builder!? Now I have problem how to override per module?
+                .customize(cfg -> customization ->
+                        customization
+                                .eventHandlingComponents(List.of(eventHandlingComponent1, eventHandlingComponent2)) // todo: maybe separated step?
+                                .eventSource(eventSource)
+                                .tokenStore(new InMemoryTokenStore())
+                                .initialSegmentCount(1)
+                ).build();
 
         var configuration = MessagingConfigurer.create()
                                                .eventProcessing(eventProcessing -> eventProcessing
@@ -73,9 +76,5 @@ class PooledStreamingEventProcessorModuleTest {
 
         // then
         await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertThat(stopped).isTrue());
-    }
-
-    private static ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {
-        return Executors.newScheduledThreadPool(poolSize, new AxonThreadFactory(factoryName));
     }
 }

@@ -19,7 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.configuration.EventProcessorsCustomization;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsCustomization;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorsCustomization;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -47,10 +47,8 @@ public class EventProcessingDefaultsEnhancer implements ConfigurationEnhancer {
                                               c.getComponent(EventProcessorsCustomization.class)
                                       )
                 )
-                .registerIfNotPresent(PooledStreamingEventProcessorsCustomization.class,
-                                      c -> new PooledStreamingEventProcessorsCustomization(
-                                              c.getComponent(EventProcessorsCustomization.class)
-                                      )
+                .registerIfNotPresent(PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration.class,
+                                      c -> new PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration()
                 );
     }
 }

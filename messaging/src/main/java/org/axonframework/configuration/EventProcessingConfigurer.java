@@ -21,9 +21,6 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.configuration.EventProcessorsCustomization;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsCustomization;
-import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorsCustomization;
 
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -87,21 +84,6 @@ public class EventProcessingConfigurer implements ApplicationConfigurer {
                 )
         );
         return delegate.build();
-    }
-
-    public record EventProcessingConfiguration() {
-
-        public class Shared extends EventProcessorsCustomization {
-
-        }
-
-        public class PooledStreaming extends PooledStreamingEventProcessorsCustomization {
-
-        }
-
-        public class Subscribing extends SubscribingEventProcessorsCustomization {
-
-        }
     }
 
 

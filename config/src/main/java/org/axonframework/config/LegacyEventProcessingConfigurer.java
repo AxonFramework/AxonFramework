@@ -549,7 +549,7 @@ public interface LegacyEventProcessingConfigurer {
      *                               {@link PooledStreamingEventProcessor}
      * @param processorConfiguration allows further customization of the {@link PooledStreamingEventProcessor} under
      *                               construction. The given {@link LegacyConfiguration} can be used to extract
-     *                               components and use them in the {@link PooledStreamingEventProcessor.Builder}
+     *                               components and use them in the {@link PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration}
      * @return the current {@link LegacyEventProcessingConfigurer} instance, for fluent interfacing
      */
     LegacyEventProcessingConfigurer registerPooledStreamingEventProcessor(
@@ -682,13 +682,13 @@ public interface LegacyEventProcessingConfigurer {
     }
 
     /**
-     * Contract defining {@link PooledStreamingEventProcessor.Builder} based configuration when constructing a
+     * Contract defining {@link PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration} based configuration when constructing a
      * {@link PooledStreamingEventProcessor}.
      */
     @FunctionalInterface
     @Deprecated(since = "5.0.0", forRemoval = true)
     interface PooledStreamingProcessorConfiguration extends
-            BiFunction<LegacyConfiguration, PooledStreamingEventProcessor.Builder, PooledStreamingEventProcessor.Builder> {
+            BiFunction<LegacyConfiguration, PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration> {
 
         /**
          * Returns a configuration that applies the given {@code other} configuration after applying {@code this}. Any

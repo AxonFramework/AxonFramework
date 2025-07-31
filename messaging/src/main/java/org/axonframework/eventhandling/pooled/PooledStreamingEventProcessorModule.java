@@ -18,23 +18,19 @@ package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -42,69 +38,53 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+@Internal
 public class PooledStreamingEventProcessorModule
         extends BaseModule<PooledStreamingEventProcessorModule>
         implements EventProcessorModule,
-        EventProcessorModule.PooledStreaming.SourcePhase<PooledStreamingEventProcessorsCustomization>,
-        EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorsCustomization>,
-        EventProcessorModule.RequiredEventHandlingComponentPhase<PooledStreamingEventProcessorsCustomization>,
-        EventProcessorModule.AdditionalComponentsOrCustomization<PooledStreamingEventProcessorsCustomization>,
+        EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration>,
         EventProcessorModule.BuildPhase {
 
     private final String processorName;
-    private final List<ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
-    private ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder;
-    private ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorsCustomization>> customizationOverrideBuilder = cfg -> c -> c;
+    private ComponentBuilder<PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration> configurationBuilder;
 
     // todo: defaults - should be configurable
     private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
 
-
     public PooledStreamingEventProcessorModule(@Nonnull String processorName) {
         super(processorName);
         this.processorName = processorName;
-        this.eventHandlingComponentBuilders = new ArrayList<>();
-    }
-
-    @Override
-    public EventHandlingPhase<PooledStreamingEventProcessorsCustomization> eventSource(
-            @Nonnull ComponentBuilder<StreamableEventSource<? extends EventMessage<?>>> streamableEventSourceBuilder) {
-        this.streamableEventSourceBuilder = streamableEventSourceBuilder;
-        return this;
     }
 
     @Override
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         // todo: move it to the component registry!
-        var eventSource = streamableEventSourceBuilder.build(parent);
+        var configuration = configurationBuilder.build(parent);
 
-        // todo: get from global configuration, but allow overriding
-        var tokenStore = parent.getComponent(TokenStore.class);
-        var unitOfWorkFactory = parent.getComponent(UnitOfWorkFactory.class);
-        Function<String, ScheduledExecutorService> workerExecutorBuilder = processorName -> {
-            ScheduledExecutorService workerExecutor =
-                    defaultExecutor(4, "WorkPackage[" + processorName + "]");
-            lifecycleRegistry.onShutdown(workerExecutor::shutdown);
-            return workerExecutor;
-        };
-        Function<String, ScheduledExecutorService> coordinatorExecutorBuilder = processorName -> {
-            ScheduledExecutorService coordinatorExecutor =
-                    defaultExecutor(1, "Coordinator[" + processorName + "]");
-            lifecycleRegistry.onShutdown(coordinatorExecutor::shutdown);
-            return coordinatorExecutor;
-        };
+        var spanFactory = configuration.spanFactory();
+        var messageMonitor = configuration.messageMonitor();
 
-        var customizationOverride = customizationOverrideBuilder.build(parent);
-        var eventProcessorsCustomization = customizationOverride.apply(
-                parent.getComponent(PooledStreamingEventProcessorsCustomization.class)
-        ); // todo: write customization here!
+        if (configuration.workerExecutorBuilder() == null) {
+            Function<String, ScheduledExecutorService> workerExecutorBuilder = processorName -> {
+                ScheduledExecutorService workerExecutor =
+                        defaultExecutor(4, "WorkPackage[" + processorName + "]");
+                lifecycleRegistry.onShutdown(workerExecutor::shutdown);
+                return workerExecutor;
+            };
+            configuration.workerExecutor(workerExecutorBuilder);
+        }
 
-        var spanFactory = eventProcessorsCustomization.spanFactory();
-        var messageMonitor = eventProcessorsCustomization.messageMonitor();
+        if (configuration.coordinatorExecutorBuilder() == null) {
+            Function<String, ScheduledExecutorService> coordinatorExecutorBuilder = processorName -> {
+                ScheduledExecutorService coordinatorExecutor =
+                        defaultExecutor(1, "Coordinator[" + processorName + "]");
+                lifecycleRegistry.onShutdown(coordinatorExecutor::shutdown);
+                return coordinatorExecutor;
+            };
+            configuration.coordinatorExecutor(coordinatorExecutorBuilder);
+        }
 
-        var eventHandlingComponents = eventHandlingComponentBuilders.stream()
-                                                                    .map(hb -> hb.build(parent))
-                                                                    .toList();
+        var eventHandlingComponents = configuration.eventHandlingComponents();
         List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
                 .stream()
                 .map(c -> new TracingEventHandlingComponent(
@@ -117,16 +97,10 @@ public class PooledStreamingEventProcessorModule
                                 )
                         )
                 )).collect(Collectors.toUnmodifiableList());
-        // todo: register as component!
+
         var processor = new PooledStreamingEventProcessor(
                 processorName,
-                eventSource,
-                decoratedEventHandlingComponents,
-                unitOfWorkFactory,
-                tokenStore,
-                coordinatorExecutorBuilder,
-                workerExecutorBuilder,
-                eventProcessorsCustomization
+                configuration.eventHandlingComponents(decoratedEventHandlingComponents)
         );
 
         lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, processor::start);
@@ -139,22 +113,24 @@ public class PooledStreamingEventProcessorModule
     }
 
     @Override
-    public AdditionalComponentsOrCustomization<PooledStreamingEventProcessorsCustomization> component(
-            @Nonnull ComponentBuilder<EventHandlingComponent> eventHandlingComponentBuilder) {
-        eventHandlingComponentBuilders.add(eventHandlingComponentBuilder);
-        return this;
-    }
-
-    @Override
-    public RequiredEventHandlingComponentPhase<PooledStreamingEventProcessorsCustomization> eventHandling() {
+    public BuildPhase configure(
+            @Nonnull ComponentBuilder<PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration> configurationBuilder) {
+        this.configurationBuilder = configurationBuilder;
         return this;
     }
 
     @Override
     public BuildPhase customize(
-            @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorsCustomization>> customizationOverride) {
-        this.customizationOverrideBuilder = customizationOverride;
+            @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration>> customizationBuilder) {
+        configure(cfg -> customizationBuilder.build(cfg).apply(parentConfigurationOrDefault(cfg)));
         return this;
+    }
+
+    private static PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration parentConfigurationOrDefault(
+            Configuration cfg
+    ) {
+        return cfg.getOptionalComponent(PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration.class)
+                  .orElseGet(PooledStreamingEventProcessor.PooledStreamingEventProcessorConfiguration::new);
     }
 
     @Override

@@ -96,14 +96,13 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
                                                 context);
             }
         };
-        MonitoringEventHandlingComponent monitoredEventHandlingComponent = new MonitoringEventHandlingComponent(
-                messageMonitor,
-                mockEventHandlingComponent);
-        TestEventProcessor testSubject = TestEventProcessor.builder()
-                                                           .name("test")
-                                                           .eventHandlingComponent(monitoredEventHandlingComponent)
-                                                           .interceptors(List.of(interceptor))
-                                                           .build();
+        var eventHandlingComponent = new InterceptingEventHandlingComponent(
+                new MessageHandlerInterceptors(List.of(interceptor)),
+                new MonitoringEventHandlingComponent(
+                        messageMonitor,
+                        mockEventHandlingComponent)
+        );
+        TestEventProcessor testSubject = new TestEventProcessor(eventHandlingComponent);
 
         testSubject.processInBatchingUnitOfWork(events);
 
@@ -113,27 +112,17 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
     private static class TestEventProcessor implements EventProcessor {
 
         private static final SimpleUnitOfWorkFactory UNIT_OF_WORK_FACTORY = new SimpleUnitOfWorkFactory();
-        private final String name;
         private final ProcessorEventHandlingComponents processorEventHandlingComponents;
 
-        private TestEventProcessor(Builder builder) {
-            builder.validate();
-            this.name = builder.name;
-            var eventHandlingComponent = new InterceptingEventHandlingComponent(new MessageHandlerInterceptors(builder.interceptors()),
-                                                                                builder.eventHandlingComponent());
+        private TestEventProcessor(EventHandlingComponent eventHandlingComponent) {
             this.processorEventHandlingComponents = new ProcessorEventHandlingComponents(
-                    List.of(new MonitoringEventHandlingComponent(builder.messageMonitor,
-                                                                 eventHandlingComponent))
+                    List.of(eventHandlingComponent)
             );
-        }
-
-        private static Builder builder() {
-            return new Builder();
         }
 
         @Override
         public String getName() {
-            return name;
+            return "test";
         }
 
         @Override
@@ -159,48 +148,6 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
             unitOfWork.executeWithResult(ctx -> processorEventHandlingComponents.handle(
                     eventMessages, ctx).asCompletableFuture()
             ).join();
-        }
-
-        private static class Builder extends EventProcessorBuilder {
-
-            public Builder() {
-                super();
-            }
-
-            @Override
-            public Builder name(@Nonnull String name) {
-                super.name(name);
-                return this;
-            }
-
-            @Override
-            public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
-                super.eventHandlerInvoker(eventHandlerInvoker);
-                return this;
-            }
-
-            @Override
-            public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
-                super.messageMonitor(messageMonitor);
-                return this;
-            }
-
-            @Override
-            public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
-                super.eventHandlingComponent(eventHandlingComponent);
-                return this;
-            }
-
-            @Override
-            public Builder interceptors(
-                    @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
-                super.interceptors(interceptors);
-                return this;
-            }
-
-            private TestEventProcessor build() {
-                return new TestEventProcessor(this);
-            }
         }
     }
 }

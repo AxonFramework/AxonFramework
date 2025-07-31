@@ -584,27 +584,27 @@ public class LegacyEventProcessingModule
     }
 
     @Override
-//    public LegacyEventProcessingConfigurer configureDefaultStreamableMessageSource(
-//            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource
-//    ) {
-//        this.defaultStreamableSource.update(defaultSource);
-//        return this;
-//    }
+    public LegacyEventProcessingConfigurer configureDefaultStreamableMessageSource(
+            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource
+    ) {
+        this.defaultStreamableSource.update(defaultSource);
+        return this;
+    }
 
-//    @Override
-//    public LegacyEventProcessingConfigurer configureDefaultSubscribableMessageSource(
-//            Function<LegacyConfiguration, SubscribableMessageSource<EventMessage<?>>> defaultSource
-//    ) {
-//        this.defaultSubscribableSource.update(defaultSource);
-//        return this;
-//    }
+    @Override
+    public LegacyEventProcessingConfigurer configureDefaultSubscribableMessageSource(
+            Function<LegacyConfiguration, SubscribableMessageSource<EventMessage<?>>> defaultSource
+    ) {
+        this.defaultSubscribableSource.update(defaultSource);
+        return this;
+    }
 
-//    @Override
-//    public LegacyEventProcessingConfigurer registerEventProcessorFactory(
-//            EventProcessorBuilder eventProcessorBuilder) {
-//        this.defaultEventProcessorBuilder = eventProcessorBuilder;
-//        return this;
-//    }
+    @Override
+    public LegacyEventProcessingConfigurer registerEventProcessorFactory(
+            EventProcessorBuilder eventProcessorBuilder) {
+        this.defaultEventProcessorBuilder = eventProcessorBuilder;
+        return this;
+    }
 
     @Override
     public LegacyEventProcessingConfigurer registerEventProcessor(String name,
@@ -653,21 +653,21 @@ public class LegacyEventProcessingModule
         return this;
     }
 
-//    @Override
-//    public LegacyEventProcessingConfigurer registerDefaultErrorHandler(
-//            Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder) {
-//        this.defaultErrorHandler.update(errorHandlerBuilder);
-//        return this;
-//    }
+    @Override
+    public LegacyEventProcessingConfigurer registerDefaultErrorHandler(
+            Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder) {
+        this.defaultErrorHandler.update(errorHandlerBuilder);
+        return this;
+    }
 
-//    @Override
-//    public LegacyEventProcessingConfigurer registerErrorHandler(String eventProcessorName,
-//                                                                Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder) {
-//        this.errorHandlers.put(eventProcessorName, new Component<>(() -> configuration,
-//                                                                   "errorHandler",
-//                                                                   errorHandlerBuilder));
-//        return this;
-//    }
+    @Override
+    public LegacyEventProcessingConfigurer registerErrorHandler(String eventProcessorName,
+                                                                Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder) {
+        this.errorHandlers.put(eventProcessorName, new Component<>(() -> configuration,
+                                                                   "errorHandler",
+                                                                   errorHandlerBuilder));
+        return this;
+    }
 
     @Override
     public LegacyEventProcessingConfigurer byDefaultAssignHandlerInstancesTo(Function<Object, String> assignmentFunction) {

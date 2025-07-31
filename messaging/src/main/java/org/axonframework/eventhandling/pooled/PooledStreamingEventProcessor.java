@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessingException;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.EventProcessorBuilder;
+import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -69,8 +69,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+import static org.axonframework.common.BuilderUtils.*;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
@@ -87,7 +86,7 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * <p>
  * If no {@link TrackingToken}s are present for this processor, the {@code PooledStreamingEventProcessor} will
  * initialize them in a given segment count. By default, it will create {@code 16} segments, which can be configured
- * through the {@link Builder#initialSegmentCount(int)}.
+ * through the {@link PooledStreamingEventProcessorConfiguration#initialSegmentCount(int)}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -98,13 +97,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final String name;
+    private final PooledStreamingEventProcessorConfiguration configuration;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final TokenStore tokenStore;
-    private final PooledStreamingEventProcessorsCustomization customization;
-    private final ErrorHandler errorHandler;
-
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
     private final WorkPackage.EventFilter workPackageEventFilter;
@@ -114,58 +111,57 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     public PooledStreamingEventProcessor(
             @Nonnull String name,
-            @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource,
-            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
-            @Nonnull UnitOfWorkFactory unitOfWorkFactory,
-            @Nonnull TokenStore tokenStore,
-            @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder,
-            @Nonnull Function<String, ScheduledExecutorService> workerExecutorBuilder,
-            @Nonnull PooledStreamingEventProcessorsCustomization customization
+            @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> customization
     ) {
-        this.name = name;
-        this.eventSource = eventSource;
-        this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
-        this.unitOfWorkFactory = unitOfWorkFactory;
-        this.tokenStore = tokenStore;
-        this.customization = customization;
-        this.workerExecutor = workerExecutorBuilder.apply(name);
+        this(
+                Objects.requireNonNull(name, "Name may not be null"),
+                Objects.requireNonNull(customization, "Customization may not be null")
+                       .apply(new PooledStreamingEventProcessorConfiguration())
+        );
+    }
 
-        this.errorHandler = customization.errorHandler();
+    public PooledStreamingEventProcessor(
+            @Nonnull String name, // I'm not sure about the name? Maybe someone also want to override it later?
+            @Nonnull PooledStreamingEventProcessorConfiguration configuration
+    ) {
+        this.name = Objects.requireNonNull(name, "Name may not be null");
+        assertThat(name, n -> Objects.nonNull(n) && !n.isEmpty(), "Event Processor name may not be null or empty");
+        this.configuration = Objects.requireNonNull(configuration, "Configuration may not be null");
+        configuration.validate();
+        this.eventSource = configuration.eventSource();
+        this.tokenStore = configuration.tokenStore();
+        this.unitOfWorkFactory = configuration.unitOfWorkFactory();
+
+        // todo: many here!!!
+        this.eventHandlingComponents = new ProcessorEventHandlingComponents(configuration.eventHandlingComponents());
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 this.name,
                 this.eventHandlingComponents,
-                errorHandler
+                configuration.errorHandler()
         );
-
+        this.workerExecutor = configuration.workerExecutorBuilder().apply(name);
         var supportedEvents = this.eventHandlingComponents.supportedEvents();
         var eventCriteria = Objects.requireNonNull(
-                customization.eventCriteriaProvider().apply(supportedEvents),
+                configuration.eventCriteriaProvider().apply(supportedEvents),
                 "EventCriteriaProvider function must not return null"
         );
 
-        var tokenClaimInterval = customization.tokenClaimInterval();
-        var claimExtensionThreshold = customization.claimExtensionThreshold();
-        var clock = customization.clock();
-        var maxSegmentProvider = customization.maxSegmentProvider();
-        var initialSegmentCount = customization.initialSegmentCount();
-        Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken = customization.initialToken();
-        var coordinatorExtendsClaims = customization.coordinatorExtendsClaims();
         this.coordinator = Coordinator.builder()
                                       .name(name)
                                       .eventSource(eventSource)
                                       .tokenStore(tokenStore)
                                       .unitOfWorkFactory(unitOfWorkFactory)
-                                      .executorService(coordinatorExecutorBuilder.apply(name))
+                                      .executorService(configuration.coordinatorExecutorBuilder().apply(name))
                                       .workPackageFactory(this::spawnWorker)
-                                      .onMessageIgnored(customization.ignoredMessageHandler())
+                                      .onMessageIgnored(configuration.ignoredMessageHandler())
                                       .processingStatusUpdater(this::statusUpdater)
-                                      .tokenClaimInterval(tokenClaimInterval)
-                                      .claimExtensionThreshold(claimExtensionThreshold)
-                                      .clock(clock)
-                                      .maxSegmentProvider(maxSegmentProvider)
-                                      .initialSegmentCount(initialSegmentCount)
-                                      .initialToken(initialToken)
-                                      .coordinatorClaimExtension(coordinatorExtendsClaims)
+                                      .tokenClaimInterval(configuration.tokenClaimInterval())
+                                      .claimExtensionThreshold(configuration.claimExtensionThreshold())
+                                      .clock(configuration.clock())
+                                      .maxSegmentProvider(configuration.maxSegmentProvider())
+                                      .initialSegmentCount(configuration.initialSegmentCount())
+                                      .initialToken(configuration.initialToken())
+                                      .coordinatorClaimExtension(configuration.coordinatorExtendsClaims())
                                       .eventCriteria(eventCriteria)
                                       // .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment)) // TODO #3304 - Integrate event replay logic into Event Handling Component
                                       .build();
@@ -219,7 +215,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public void releaseSegment(int segmentId) {
-        var tokenClaimInterval = customization.tokenClaimInterval();
+        var tokenClaimInterval = this.configuration.tokenClaimInterval;
         releaseSegment(segmentId, tokenClaimInterval * 2, MILLISECONDS);
     }
 
@@ -270,13 +266,13 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public void resetTokens() {
-        var initialToken = customization.initialToken();
+        var initialToken = configuration.initialToken();
         resetTokens(initialToken);
     }
 
     @Override
     public <R> void resetTokens(R resetContext) {
-        var initialToken = customization.initialToken();
+        var initialToken = configuration.initialToken();
         resetTokens(initialToken, resetContext);
     }
 
@@ -334,11 +330,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      * {@inheritDoc}
      * <p>
      * The maximum capacity of the {@link PooledStreamingEventProcessor} defaults to {@value Short#MAX_VALUE}. If
-     * required, this value can be adjusted through the {@link Builder#maxClaimedSegments(int)} method.
+     * required, this value can be adjusted through the
+     * {@link PooledStreamingEventProcessorConfiguration#maxClaimedSegments(int)} method.
      */
     @Override
     public int maxCapacity() {
-        var maxSegmentProvider = customization.maxSegmentProvider();
+        var maxSegmentProvider = configuration.maxSegmentProvider();
         return maxSegmentProvider.getMaxSegments(name);
     }
 
@@ -349,9 +346,9 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
         WorkPackage.BatchProcessor batchProcessor = this::processWithErrorHandling;
-        var batchSize = customization.batchSize();
-        var claimExtensionThreshold = customization.claimExtensionThreshold();
-        var clock = customization.clock();
+        var batchSize = configuration.batchSize();
+        var claimExtensionThreshold = configuration.claimExtensionThreshold();
+        var clock = configuration.clock();
         return WorkPackage.builder()
                           .name(name)
                           .tokenStore(tokenStore)
@@ -370,22 +367,23 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                           .build();
     }
 
-    private MessageStream.Empty<Message<Void>> processWithErrorHandling(List<? extends EventMessage<?>> events, ProcessingContext context) {
+    private MessageStream.Empty<Message<Void>> processWithErrorHandling(List<? extends EventMessage<?>> events,
+                                                                        ProcessingContext context) {
         return eventHandlingComponents.handle(events, context)
-                      .onErrorContinue(ex -> {
-                          try {
-                              errorHandler.handleError(new ErrorContext(name, ex, events));
-                          } catch (RuntimeException re) {
-                              return MessageStream.failed(re);
-                          } catch (Exception e) {
-                              return MessageStream.failed(new EventProcessingException(
-                                      "Exception occurred while processing events",
-                                      e));
-                          }
-                          return MessageStream.empty().cast();
-                      })
-                      .ignoreEntries()
-                      .cast();
+                                      .onErrorContinue(ex -> {
+                                          try {
+                                              configuration.errorHandler().handleError(new ErrorContext(name, ex, events));
+                                          } catch (RuntimeException re) {
+                                              return MessageStream.failed(re);
+                                          } catch (Exception e) {
+                                              return MessageStream.failed(new EventProcessingException(
+                                                      "Exception occurred while processing events",
+                                                      e));
+                                          }
+                                          return MessageStream.empty().cast();
+                                      })
+                                      .ignoreEntries()
+                                      .cast();
     }
 
     /**
@@ -445,8 +443,9 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      */
-    @Deprecated(since = "5.0.0", forRemoval = true)
-    public static class Builder extends EventProcessorBuilder {
+    public static class PooledStreamingEventProcessorConfiguration extends EventProcessorConfiguration {
+
+        // todo: think about split interface - to access and change? like Configurer / Configuration
 
         private StreamableEventSource<? extends EventMessage<?>> eventSource;
         private TokenStore tokenStore;
@@ -455,6 +454,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         private int initialSegmentCount = 16;
         private Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken =
                 es -> es.firstToken().thenApply(ReplayToken::createReplayToken);
+
         private long tokenClaimInterval = 5000;
         private MaxSegmentProvider maxSegmentProvider = MaxSegmentProvider.maxShort();
         private long claimExtensionThreshold = 5000;
@@ -463,54 +463,54 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         private boolean coordinatorExtendsClaims = false;
         private Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider =
                 (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
+        private Consumer<? super EventMessage<?>> ignoredMessageHandler = eventMessage -> messageMonitor.onMessageIngested(eventMessage).reportIgnored();
 
-        protected Builder() {
+
+        public PooledStreamingEventProcessorConfiguration() {
         }
 
         @Override
-        public Builder name(@Nonnull String name) {
-            super.name(name);
+        public PooledStreamingEventProcessorConfiguration eventHandlingComponents(@Nonnull List<EventHandlingComponent> eventHandlingComponent) {
+            super.eventHandlingComponents(eventHandlingComponent);
             return this;
         }
 
         @Override
-        public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
-            super.eventHandlingComponent(eventHandlingComponent);
-            return this;
-        }
-
-        @Override
-        public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
+        public PooledStreamingEventProcessorConfiguration eventHandlerInvoker(
+                @Nonnull EventHandlerInvoker eventHandlerInvoker) {
             super.eventHandlerInvoker(eventHandlerInvoker);
             return this;
         }
 
         @Override
-        public Builder errorHandler(@Nonnull ErrorHandler errorHandler) {
+        public PooledStreamingEventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
             super.errorHandler(errorHandler);
             return this;
         }
 
         @Override
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        public PooledStreamingEventProcessorConfiguration messageMonitor(
+                @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
             return this;
         }
 
         @Override
-        public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
+        public PooledStreamingEventProcessorConfiguration spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }
 
         @Override
-        public Builder interceptors(@Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+        public PooledStreamingEventProcessorConfiguration interceptors(
+                @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
             super.interceptors(interceptors);
             return this;
         }
 
         @Override
-        public Builder unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+        public PooledStreamingEventProcessorConfiguration unitOfWorkFactory(
+                @Nonnull UnitOfWorkFactory unitOfWorkFactory) {
             super.unitOfWorkFactory(unitOfWorkFactory);
             return this;
         }
@@ -523,7 +523,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *                    {@link EventProcessor} will track.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder eventSource(@Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource) {
+        public PooledStreamingEventProcessorConfiguration eventSource(
+                @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource) {
             assertNonNull(eventSource, "StreamableEventSource may not be null");
             this.eventSource = eventSource;
             return this;
@@ -537,7 +538,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *                   {@link EventProcessor} to track its progress
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder tokenStore(@Nonnull TokenStore tokenStore) {
+        public PooledStreamingEventProcessorConfiguration tokenStore(@Nonnull TokenStore tokenStore) {
             assertNonNull(tokenStore, "TokenStore may not be null");
             this.tokenStore = tokenStore;
             return this;
@@ -551,7 +552,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *                            {@link PooledStreamingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder coordinatorExecutor(@Nonnull ScheduledExecutorService coordinatorExecutor) {
+        public PooledStreamingEventProcessorConfiguration coordinatorExecutor(
+                @Nonnull ScheduledExecutorService coordinatorExecutor) {
             assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
             this.coordinatorExecutorBuilder = ignored -> coordinatorExecutor;
             return this;
@@ -565,7 +567,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *                                   providing the {@link PooledStreamingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder coordinatorExecutor(
+        public PooledStreamingEventProcessorConfiguration coordinatorExecutor(
                 @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder) {
             assertNonNull(coordinatorExecutorBuilder,
                           "The Coordinator's ScheduledExecutorService builder may not be null");
@@ -581,7 +583,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *                       by this {@link PooledStreamingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder workerExecutor(@Nonnull ScheduledExecutorService workerExecutor) {
+        public PooledStreamingEventProcessorConfiguration workerExecutor(
+                @Nonnull ScheduledExecutorService workerExecutor) {
             assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
             this.workerExecutorBuilder = ignored -> workerExecutor;
             return this;
@@ -595,7 +598,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *                              the {@link PooledStreamingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder workerExecutor(@Nonnull Function<String, ScheduledExecutorService> workerExecutorBuilder) {
+        public PooledStreamingEventProcessorConfiguration workerExecutor(
+                @Nonnull Function<String, ScheduledExecutorService> workerExecutorBuilder) {
             assertNonNull(workerExecutorBuilder, "The Worker's ScheduledExecutorService builder may not be null");
             this.workerExecutorBuilder = workerExecutorBuilder;
             return this;
@@ -610,7 +614,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *                            start up
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder initialSegmentCount(int initialSegmentCount) {
+        public PooledStreamingEventProcessorConfiguration initialSegmentCount(int initialSegmentCount) {
             assertStrictPositive(initialSegmentCount, "The initial segment count should be a higher valuer than zero");
             this.initialSegmentCount = initialSegmentCount;
             return this;
@@ -630,7 +634,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *                     {@link StreamableEventSource}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder initialToken(
+        public PooledStreamingEventProcessorConfiguration initialToken(
                 @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken
         ) {
             assertNonNull(initialToken, "The initial token builder Function may not be null");
@@ -647,7 +651,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *                           attempt to claim any segments for processing
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder tokenClaimInterval(long tokenClaimInterval) {
+        public PooledStreamingEventProcessorConfiguration tokenClaimInterval(long tokenClaimInterval) {
             assertStrictPositive(tokenClaimInterval, "Token claim interval should be a higher valuer than zero");
             this.tokenClaimInterval = tokenClaimInterval;
             return this;
@@ -659,7 +663,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          * @param maxClaimedSegments The maximum number of segments this instance may claim.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder maxClaimedSegments(int maxClaimedSegments) {
+        public PooledStreamingEventProcessorConfiguration maxClaimedSegments(int maxClaimedSegments) {
             this.maxSegmentProvider = n -> maxClaimedSegments;
             return this;
         }
@@ -672,12 +676,12 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *                           {@link StreamingEventProcessor} may claim per instance.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
+        public PooledStreamingEventProcessorConfiguration maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
             assertNonNull(maxSegmentProvider,
                           "The max segment provider may not be null. "
                                   + "Provide a lambda of type (processorName: String) -> maxSegmentsToClaim");
-            assertStrictPositive(maxSegmentProvider.getMaxSegments(name),
-                                 "Max claimed segments should be a higher valuer than zero");
+//            assertStrictPositive(maxSegmentProvider.getMaxSegments(name),
+//                                 "Max claimed segments should be a higher valuer than zero");
             this.maxSegmentProvider = maxSegmentProvider;
             return this;
         }
@@ -691,7 +695,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *                                claim on a {@link TrackingToken}.
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder claimExtensionThreshold(long claimExtensionThreshold) {
+        public PooledStreamingEventProcessorConfiguration claimExtensionThreshold(long claimExtensionThreshold) {
             assertStrictPositive(
                     claimExtensionThreshold, "The claim extension threshold should be a higher valuer than zero"
             );
@@ -709,7 +713,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          * @param batchSize the number of events to be processed inside a single transaction
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder batchSize(int batchSize) {
+        public PooledStreamingEventProcessorConfiguration batchSize(int batchSize) {
             assertStrictPositive(batchSize, "The batch size should be a higher valuer than zero");
             this.batchSize = batchSize;
             return this;
@@ -724,7 +728,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          * @param clock the {@link Clock} used for time dependent operation by this {@link EventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder clock(@Nonnull Clock clock) {
+        public PooledStreamingEventProcessorConfiguration clock(@Nonnull Clock clock) {
             assertNonNull(clock, "Clock may not be null");
             this.clock = clock;
             return this;
@@ -737,7 +741,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          * Enabling "coordinator claim extension" is an optimization as it relieves this effort from the
          * {@code WorkPackage}. Toggling this feature may be particularly useful whenever the event handling task of the
          * {@code WorkPackage} is <b>lengthy</b>. Either because of a hefty event handling component or because of a
-         * large {@link PooledStreamingEventProcessor.Builder#batchSize(int)}.
+         * large {@link PooledStreamingEventProcessorConfiguration#batchSize(int)}.
          * <p>
          * An example of a lengthy processing tasks is whenever handling a batch of events exceeds half the
          * {@code claimTimeout} of the {@link TokenStore}. The {@code claimTimeout} defaults to 10 seconds for all
@@ -752,7 +756,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          *
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder enableCoordinatorClaimExtension() {
+        public PooledStreamingEventProcessorConfiguration enableCoordinatorClaimExtension() {
             this.coordinatorExtendsClaims = true;
             return this;
         }
@@ -771,37 +775,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
          * @param eventCriteriaProvider The function to build the {@link EventCriteria} from supported event types.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder eventCriteria(@Nonnull Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider) {
+        public PooledStreamingEventProcessorConfiguration eventCriteria(
+                @Nonnull Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider) {
             assertNonNull(eventCriteriaProvider, "EventCriteria builder function may not be null");
             this.eventCriteriaProvider = eventCriteriaProvider;
             return this;
-        }
-
-        /**
-         * Initializes a {@link PooledStreamingEventProcessor} as specified through this Builder.
-         *
-         * @return a {@link PooledStreamingEventProcessor} as specified through this Builder
-         */
-        public PooledStreamingEventProcessor build() {
-            return new PooledStreamingEventProcessor(
-                    name,
-                    eventSource,
-                    List.of(eventHandlingComponent()),
-                    unitOfWorkFactory,
-                    tokenStore,
-                    coordinatorExecutorBuilder,
-                    workerExecutorBuilder,
-                    new PooledStreamingEventProcessorsCustomization()
-                            .initialSegmentCount(initialSegmentCount)
-                            .initialToken(initialToken)
-                            .tokenClaimInterval(tokenClaimInterval)
-                            .maxSegmentProvider(maxSegmentProvider)
-                            .claimExtensionThreshold(claimExtensionThreshold)
-                            .batchSize(batchSize)
-                            .clock(clock)
-                            .coordinatorExtendsClaims(coordinatorExtendsClaims)
-                            .eventCriteriaProvider(eventCriteriaProvider)
-            );
         }
 
         @Override
@@ -820,18 +798,71 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             );
         }
 
-        /**
-         * Returns the name of this {@link PooledStreamingEventProcessor}.
-         *
-         * @return the name of this {@link PooledStreamingEventProcessor}
-         */
-        public String name() {
-            return name;
-        }
-
         @Override
         public boolean streaming() {
             return true;
+        }
+
+        public StreamableEventSource<? extends EventMessage<?>> eventSource() {
+            return eventSource;
+        }
+
+        public TokenStore tokenStore() {
+            return tokenStore;
+        }
+
+        public Function<String, ScheduledExecutorService> coordinatorExecutorBuilder() {
+            return coordinatorExecutorBuilder;
+        }
+
+        public Function<String, ScheduledExecutorService> workerExecutorBuilder() {
+            return workerExecutorBuilder;
+        }
+
+        public int initialSegmentCount() {
+            return initialSegmentCount;
+        }
+
+        public Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken() {
+            return initialToken;
+        }
+
+        public long tokenClaimInterval() {
+            return tokenClaimInterval;
+        }
+
+        public MaxSegmentProvider maxSegmentProvider() {
+            return maxSegmentProvider;
+        }
+
+        public long claimExtensionThreshold() {
+            return claimExtensionThreshold;
+        }
+
+        public int batchSize() {
+            return batchSize;
+        }
+
+        public Clock clock() {
+            return clock;
+        }
+
+        public boolean coordinatorExtendsClaims() {
+            return coordinatorExtendsClaims;
+        }
+
+        public Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider() {
+            return eventCriteriaProvider;
+        }
+
+        public Consumer<? super EventMessage<?>> ignoredMessageHandler() {
+            return ignoredMessageHandler;
+        }
+
+        public PooledStreamingEventProcessorConfiguration ignoredMessageHandler(
+                Consumer<? super EventMessage<?>> ignoredMessageHandler) {
+            this.ignoredMessageHandler = ignoredMessageHandler;
+            return this;
         }
     }
 }

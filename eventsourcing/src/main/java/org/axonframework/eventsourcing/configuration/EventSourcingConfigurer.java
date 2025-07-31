@@ -34,6 +34,7 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 
@@ -174,8 +175,11 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      */
     public EventSourcingConfigurer registerEventStore(@Nonnull ComponentBuilder<EventStore> eventStoreFactory) {
         delegate.componentRegistry(cr -> cr.registerComponent(EventStore.class, (config) -> {
-            eventStoreFactory.build(config);
-            cr.
+            var eventStore = eventStoreFactory.build(config);
+            if (eventStore instanceof StreamableEventSource<?> streamableEventSource) {
+                cr.registerComponent(StreamableEventSource.class, (c) -> streamableEventSource);
+            }
+            return eventStore;
         }));
         return this;
     }
