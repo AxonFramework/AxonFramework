@@ -25,6 +25,7 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.CachingSupplier;
 import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -162,7 +163,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     }
 
     @Override
-    public <T> EventMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    public <T> EventMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
         if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
             //noinspection unchecked

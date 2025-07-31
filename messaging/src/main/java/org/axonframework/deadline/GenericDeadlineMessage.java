@@ -25,6 +25,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -151,7 +152,7 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     }
 
     @Override
-    public <T> DeadlineMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    public <T> DeadlineMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
         if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
             //noinspection unchecked

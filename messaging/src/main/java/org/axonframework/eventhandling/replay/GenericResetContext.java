@@ -26,6 +26,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -89,7 +90,7 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
     }
 
     @Override
-    public <T> ResetContext<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    public <T> ResetContext<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = this.payloadAs(type, converter);
         if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
             //noinspection unchecked

@@ -25,6 +25,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -139,7 +140,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     }
 
     @Override
-    public <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Class<T> type,
+    public <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Type type,
                                                             @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
         if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
