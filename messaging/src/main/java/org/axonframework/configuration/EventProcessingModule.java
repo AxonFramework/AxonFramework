@@ -19,6 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsModule;
 
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;

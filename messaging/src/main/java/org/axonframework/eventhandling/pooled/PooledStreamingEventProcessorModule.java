@@ -26,16 +26,20 @@ import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
+import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
+import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.lifecycle.Phase;
 
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -128,27 +132,59 @@ public class PooledStreamingEventProcessorModule
 
     @Override
     public PooledStreamingEventProcessorModule configure(
-            @Nonnull ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder) {
+            @Nonnull ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder
+    ) {
         this.configurationBuilder = configurationBuilder;
         return this;
     }
 
     @Override
     public PooledStreamingEventProcessorModule customize(
-            @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorConfiguration>> customizationBuilder) {
-        configure(cfg -> customizationBuilder.build(cfg).apply(parentConfigurationOrDefault(cfg)));
+            @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorConfiguration>> customizationBuilder
+    ) {
+        configure(
+                cfg -> parentPooledStreamingCustomizationOrDefault(cfg).apply(
+                        cfg,
+                        customizationBuilder.build(cfg).apply(
+                                new PooledStreamingEventProcessorConfiguration(
+                                        parentSharedCustomizationOrDefault(cfg).apply(cfg, new EventProcessorConfiguration())
+                                ).tokenStore(new InMemoryTokenStore()) // todo: think about it!
+                        )
+                )
+        );
         return this;
     }
 
-    private static PooledStreamingEventProcessorConfiguration parentConfigurationOrDefault(
+    private static PooledStreamingEventProcessorModule.Customization parentPooledStreamingCustomizationOrDefault(
             Configuration cfg
     ) {
-        return cfg.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)
-                  .orElseGet(PooledStreamingEventProcessorConfiguration::new);
+        return cfg.getOptionalComponent(PooledStreamingEventProcessorModule.Customization.class, "pooledStreamingEventProcessorCustomization")
+                  .orElseGet(PooledStreamingEventProcessorModule.Customization::noOp);
+    }
+
+    private static EventProcessorCustomization parentSharedCustomizationOrDefault(
+            Configuration cfg
+    ) {
+        return cfg.getOptionalComponent(EventProcessorCustomization.class)
+                  .orElseGet(EventProcessorCustomization::noOp);
     }
 
     @Override
     public PooledStreamingEventProcessorModule build() {
         return this;
+    }
+
+    @Internal
+    @FunctionalInterface
+    interface Customization extends
+            BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> {
+
+        static Customization noOp() {
+            return (config, pConfig) -> pConfig;
+        }
+
+        default Customization andThen(Customization other) {
+            return (config, pConfig) -> other.apply(config, this.apply(config, pConfig));
+        }
     }
 }

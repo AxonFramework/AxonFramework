@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.configuration;
+package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.configuration.BaseModule;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,12 +33,7 @@ import java.util.function.UnaryOperator;
 
 public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStreamingEventProcessorsModule> {
 
-    private final PooledStreamingEventProcessorConfiguration INITIAL_EVENT_PROCESSOR_DEFAULTS =
-            new PooledStreamingEventProcessorConfiguration()
-                    .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
-                    .tokenStore(new InMemoryTokenStore());
-
-    private ComponentBuilder<PooledStreamingEventProcessorConfiguration> eventProcessorDefaultsBuilder = c -> INITIAL_EVENT_PROCESSOR_DEFAULTS;
+    private PooledStreamingEventProcessorModule.Customization processorsDefaultCustomization = PooledStreamingEventProcessorModule.Customization.noOp();
     private final List<ModuleBuilder<PooledStreamingEventProcessorModule>> moduleBuilders = new ArrayList<>();
 
     @Internal
@@ -50,8 +45,16 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         componentRegistry(
                 cr -> cr.registerComponent(
-                        PooledStreamingEventProcessorConfiguration.class,
-                        eventProcessorDefaultsBuilder
+                        PooledStreamingEventProcessorModule.Customization.class,
+                        "pooledStreamingEventProcessorCustomization",
+                        cfg ->
+                                processorsDefaultCustomization.andThen((axonConfig, processorConfig) -> {
+                                    cfg.getOptionalComponent(TokenStore.class)
+                                       .ifPresent(processorConfig::tokenStore);
+                                    cfg.getOptionalComponent(StreamableEventSource.class)
+                                       .ifPresent(processorConfig::eventSource);
+                                    return processorConfig;
+                                })
                 )
         );
         moduleBuilders.forEach(moduleBuilder ->
@@ -63,28 +66,18 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
     }
 
     public PooledStreamingEventProcessorsModule defaults(
-            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> configureDefaults) {
-        this.eventProcessorDefaultsBuilder = config -> {
-            var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
-            config.getOptionalComponent(TokenStore.class)
-                  .ifPresent(defaults::tokenStore);
-            config.getOptionalComponent(StreamableEventSource.class)
-                  .ifPresent(defaults::eventSource);
-            return configureDefaults.apply(config, defaults);
-        };
+            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> configureDefaults
+    ) {
+        this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
         return this;
     }
 
     public PooledStreamingEventProcessorsModule defaults(
-            @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> configureDefaults) {
-        this.eventProcessorDefaultsBuilder = config -> {
-            var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
-            config.getOptionalComponent(TokenStore.class)
-                  .ifPresent(defaults::tokenStore);
-            config.getOptionalComponent(StreamableEventSource.class)
-                  .ifPresent(defaults::eventSource);
-            return configureDefaults.apply(defaults);
-        };
+            @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> configureDefaults
+    ) {
+        this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
+                (axonConfig, pConfig) -> configureDefaults.apply(pConfig)
+        );
         return this;
     }
 
