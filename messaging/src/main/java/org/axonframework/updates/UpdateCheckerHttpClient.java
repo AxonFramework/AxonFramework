@@ -16,6 +16,7 @@
 
 package org.axonframework.updates;
 
+import org.axonframework.common.StringUtils;
 import org.axonframework.updates.api.UpdateCheckRequest;
 import org.axonframework.updates.api.UpdateCheckResponse;
 import org.axonframework.updates.configuration.UsagePropertyProvider;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -73,7 +75,8 @@ public class UpdateCheckerHttpClient {
     public Optional<UpdateCheckResponse> sendRequest(UpdateCheckRequest updateCheckRequest,
                                                      boolean firstRequest) {
         int redirects = 0;
-        String url = userProperties.getUrl() + "?" + updateCheckRequest.toQueryString();
+        String queryString = updateCheckRequest.toQueryString();
+        String url = userProperties.getUrl() + "?" + queryString;
         try {
             logger.debug("Reporting anonymous usage data to AxonIQ servers at: {}", url);
             while (redirects < MAX_REDIRECTS) {
@@ -101,12 +104,13 @@ public class UpdateCheckerHttpClient {
                 } else if (shouldRedirect(statusCode)) {
                     redirects++;
                     logger.debug("Received redirect request #{}. " + STATUS_CODE_REF, redirects, statusCode);
-                    url = connection.getHeaderField("Location");
-                    if (url == null) {
+                    String redirect = connection.getHeaderField("Location");
+                    if (redirect == null) {
                         logger.info(BASE_FAILURE + ", due to missing location header on redirect. " + STATUS_CODE_REF,
                                     statusCode);
                         return Optional.empty();
                     }
+                    url = preserveQueryParameters(redirect, queryString);
                 } else {
                     logger.info(BASE_FAILURE + ". " + STATUS_CODE_REF, statusCode);
                     return Optional.empty();
@@ -126,6 +130,14 @@ public class UpdateCheckerHttpClient {
                 || statusCode == HttpURLConnection.HTTP_SEE_OTHER
                 || statusCode == 307
                 || statusCode == 308;
+    }
+
+    private String preserveQueryParameters(String redirect, String queryString) throws MalformedURLException {
+        URL redirectUrl = new URL(redirect);
+        String redirectQuery = redirectUrl.getQuery();
+        return StringUtils.nonEmptyOrNull(redirectQuery)
+                ? redirectUrl + "&" + queryString
+                : redirectUrl + "?" + queryString;
     }
 
     private String readResponse(HttpURLConnection connection) throws IOException {
