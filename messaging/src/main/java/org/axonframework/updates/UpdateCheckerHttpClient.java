@@ -112,7 +112,7 @@ public class UpdateCheckerHttpClient {
                                     statusCode);
                         return Optional.empty();
                     }
-                    url = new URL(redirect).toURI().getPath() + "?" + queryString;
+                    url = removeQueryParameters(redirect) + "?" + queryString;
                 } else {
                     logger.info(BASE_FAILURE + ". " + STATUS_CODE_REF, statusCode);
                     return Optional.empty();
@@ -144,5 +144,11 @@ public class UpdateCheckerHttpClient {
             }
             return response.toString();
         }
+    }
+
+    private static String removeQueryParameters(String redirect) {
+        int queryParamIndex = redirect.indexOf('?');
+        redirect = queryParamIndex != -1 ? redirect.substring(0, queryParamIndex) : redirect;
+        return redirect;
     }
 }
