@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -331,18 +332,17 @@ class WorkPackage {
                     ctx.putResource(Segment.RESOURCE_KEY, segment);
                     ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
                 });
-                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken)); // todo: track the whole unit of work.
+
+                unitOfWork.onInvocation(ctx -> batchProcessor.process(eventBatch, ctx).asCompletableFuture());
+
+                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
                 unitOfWork.runOnAfterCommit(
                         u -> {
                             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
                             batchProcessedCallback.run();
                         }
                 );
-                // plan: preInvocation - batch processing,
-                // other: in onInvocations per event
-                FutureUtils.joinAndUnwrap(
-                        unitOfWork.executeWithResult(ctx -> batchProcessor.processBatch(eventBatch, ctx, segment))
-                );
+                FutureUtils.joinAndUnwrap(unitOfWork.execute());
             } finally {
                 processingEvents.set(false);
             }
@@ -529,25 +529,19 @@ class WorkPackage {
     }
 
     /**
-     * Functional interface defining the processing of a batch of {@link EventMessage}s within a {@link UnitOfWork}.
+     * Functional interface defining the processing of a batch of {@link EventMessage}s within a {@link ProcessingContext}.
      */
     @FunctionalInterface
     interface BatchProcessor {
 
         /**
-         * Processes a given batch of {@code eventMessages}. These {@code eventMessages} will be processed within the
-         * given {@code unitOfWork}. The collection of {@link Segment} instances defines the segments for which the
-         * {@code eventMessages} should be processed.
+         * Processes a batch of events in the processing context.
          *
-         * @param eventMessages     The batch of {@link EventMessage}s that is to be processed.
-         * @param processingContext The {@link ProcessingContext} that has been prepared to process the
-         *                          {@code eventMessages}.
-         * @param processingSegment The {@link Segment} for which the {@code eventMessages} should be processed in the
-         *                          given {@code unitOfWork}.
+         * @param events  The batch of event messages to be processed.
+         * @param context The processing context in which the event messages are processed.
+         * @return A stream of messages resulting from the processing of the event messages.
          */
-        CompletableFuture<?> processBatch(List<? extends EventMessage<?>> eventMessages,
-                                             ProcessingContext processingContext,
-                                             Segment processingSegment);
+        MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context);
     }
 
     /**
