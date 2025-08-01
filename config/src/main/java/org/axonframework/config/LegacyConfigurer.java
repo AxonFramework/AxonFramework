@@ -16,7 +16,6 @@
 
 package org.axonframework.config;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonConfigurationException;
@@ -46,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import jakarta.annotation.Nonnull;
 
 /**
  * Entry point of the Axon Configuration API.
