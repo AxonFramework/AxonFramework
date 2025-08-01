@@ -112,7 +112,7 @@ public class UpdateCheckerHttpClient {
                                     statusCode);
                         return Optional.empty();
                     }
-                    url = preserveQueryParameters(redirect, queryString);
+                    url = new URL(redirect).toURI().getPath() + "?" + queryString;
                 } else {
                     logger.info(BASE_FAILURE + ". " + STATUS_CODE_REF, statusCode);
                     return Optional.empty();
@@ -132,14 +132,6 @@ public class UpdateCheckerHttpClient {
                 || statusCode == HttpURLConnection.HTTP_SEE_OTHER
                 || statusCode == HTTP_TEMP_REDIRECT
                 || statusCode == HTTP_PERM_REDIRECT;
-    }
-
-    private String preserveQueryParameters(String redirect, String queryString) throws MalformedURLException {
-        URL redirectUrl = new URL(redirect);
-        String redirectQuery = redirectUrl.getQuery();
-        return StringUtils.nonEmptyOrNull(redirectQuery)
-                ? redirectUrl + "&" + queryString
-                : redirectUrl + "?" + queryString;
     }
 
     private String readResponse(HttpURLConnection connection) throws IOException {
