@@ -200,7 +200,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                         return personCommand.identifier();
                     }
                     throw new IllegalArgumentException(
-                            format("Unknown command type: %s", message.getPayloadType().getName()));
+                            format("Unknown command type: %s", message.payloadType().getName()));
                 });
         return StatefulCommandHandlingModule
                 .named("ImmutableBuilderEntityModelAdministrationTest")

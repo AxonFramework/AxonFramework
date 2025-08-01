@@ -96,8 +96,8 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
                 return new GenericSubscriptionQueryUpdateMessage<>(
                         new MessageType(cause.getClass()),
                         cause,
-                        resultMessage.getMetaData(),
-                        resultMessage.getPayloadType()
+                        resultMessage.payloadType(),
+                        resultMessage.getMetaData()
                 );
             }
             return new GenericSubscriptionQueryUpdateMessage<>(resultMessage);
@@ -122,7 +122,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
                              @Nonnull Predicate<? super Q> filter,
                              @Nonnull SubscriptionQueryUpdateMessage<U> update) {
         Predicate<SubscriptionQueryMessage<?, ?, U>> sqmFilter =
-                m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.payload());
+                m -> queryType.isAssignableFrom(m.payloadType()) && filter.test((Q) m.payload());
         emit(sqmFilter, update);
     }
 
@@ -160,7 +160,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
     @SuppressWarnings("unchecked")
     default <Q> void complete(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter) {
         Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
-                m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.payload());
+                m -> queryType.isAssignableFrom(m.payloadType()) && filter.test((Q) m.payload());
         complete(sqmFilter);
     }
 
@@ -184,7 +184,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
     default <Q> void completeExceptionally(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter,
                                            @Nonnull Throwable cause) {
         Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
-                m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.payload());
+                m -> queryType.isAssignableFrom(m.payloadType()) && filter.test((Q) m.payload());
         completeExceptionally(sqmFilter, cause);
     }
 

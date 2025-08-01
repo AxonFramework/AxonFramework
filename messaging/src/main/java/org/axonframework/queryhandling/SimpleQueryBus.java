@@ -560,9 +560,12 @@ public class SimpleQueryBus implements QueryBus {
             ResultMessage<R> resultMessage = (ResultMessage<R>) result;
             if (resultMessage.isExceptional()) {
                 Throwable cause = resultMessage.exceptionResult();
-                return new GenericQueryResponseMessage<>(messageTypeResolver.resolveOrThrow(cause), cause,
-                                                         resultMessage.getMetaData(),
-                                                         declaredType);
+                return new GenericQueryResponseMessage<>(
+                        messageTypeResolver.resolveOrThrow(cause),
+                        cause,
+                        declaredType,
+                        resultMessage.getMetaData()
+                );
             }
             return new GenericQueryResponseMessage<>(
                     messageTypeResolver.resolveOrThrow(resultMessage.payload()),

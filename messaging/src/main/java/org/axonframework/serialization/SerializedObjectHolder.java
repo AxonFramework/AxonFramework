@@ -61,7 +61,7 @@ public class SerializedObjectHolder {
                     // make sure the payload type is maintained
                     serialized = new SimpleSerializedObject<>(serialized.getData(),
                                                               serialized.getContentType(),
-                                                              serializer.typeForClass(message.getPayloadType()));
+                                                              serializer.typeForClass(message.payloadType()));
                 }
                 serializedPayload.put(serializer, serialized);
                 return serialized;

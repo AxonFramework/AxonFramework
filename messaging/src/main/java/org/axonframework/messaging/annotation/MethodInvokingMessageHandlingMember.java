@@ -104,7 +104,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
         ProcessingContext contextWithMessage = Message.addToContext(context, message);
         return typeMatches(message)
-                && payloadType.isAssignableFrom(message.getPayloadType())
+                && payloadType.isAssignableFrom(message.payloadType())
                 && parametersMatch(message, contextWithMessage);
     }
 
@@ -141,7 +141,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
         for (ParameterResolver<?> resolver : parameterResolvers) {
             if (!resolver.matches(processingContext)) {
                 logger.debug("Parameter Resolver [{}] did not match message [{}] for payload type [{}].",
-                             resolver.getClass(), message, message.getPayloadType());
+                             resolver.getClass(), message, message.payloadType());
                 return false;
             }
         }

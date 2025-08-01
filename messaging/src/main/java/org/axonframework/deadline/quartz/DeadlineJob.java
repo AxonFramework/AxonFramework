@@ -172,7 +172,7 @@ public class DeadlineJob implements Job {
                 throw new JobExecutionException(exceptionResult);
             } else if (logger.isInfoEnabled()) {
                 logger.info("Job successfully executed. Deadline message [{}] processed.",
-                            deadlineMessage.getPayloadType().getSimpleName());
+                            deadlineMessage.type().name());
             }
         } finally {
             span.end();

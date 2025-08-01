@@ -568,7 +568,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                                     .handleSync(message, context, target, h);
                 } catch (Exception e) {
                     throw new MessageHandlerInvocationException(
-                            format("Error handling event of type [%s] in aggregate", message.getPayloadType()), e);
+                            format("Error handling event of type [%s] in aggregate", message.type()), e);
                 }
             });
             children.values().stream()

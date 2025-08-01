@@ -94,7 +94,7 @@ class MessageTimerMonitorTest {
     @Test
     void messagesWithPayloadTypeAsCustomTag() {
         MessageTimerMonitor testSubject = testSubjectBuilder.tagsBuilder(
-                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
+                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.payloadType().getSimpleName())
         ).build();
 
         EventMessage<Object> foo = asEventMessage(1);

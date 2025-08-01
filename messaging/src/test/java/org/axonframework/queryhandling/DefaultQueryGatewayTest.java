@@ -79,7 +79,7 @@ class DefaultQueryGatewayTest {
 
         QueryMessage<String, String> result = queryMessageCaptor.getValue();
         assertEquals("query", result.payload());
-        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
         assertEquals(MetaData.emptyInstance(), result.getMetaData());
@@ -108,7 +108,7 @@ class DefaultQueryGatewayTest {
 
         QueryMessage<String, String> result = queryMessageCaptor.getValue();
         assertEquals("query", result.payload());
-        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
         MetaData resultMetaData = result.getMetaData();
@@ -181,7 +181,7 @@ class DefaultQueryGatewayTest {
 
         QueryMessage<String, String> result = queryMessageCaptor.getValue();
         assertEquals("scatterGather", result.payload());
-        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
         assertEquals(MetaData.emptyInstance(), result.getMetaData());
@@ -215,7 +215,7 @@ class DefaultQueryGatewayTest {
 
         QueryMessage<String, String> result = queryMessageCaptor.getValue();
         assertEquals("scatterGather", result.payload());
-        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
         MetaData resultMetaData = result.getMetaData();
@@ -238,7 +238,7 @@ class DefaultQueryGatewayTest {
 
         SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
         assertEquals("subscription", result.payload());
-        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getUpdateResponseType().getClass()));
@@ -269,7 +269,7 @@ class DefaultQueryGatewayTest {
 
         SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
         assertEquals("subscription", result.payload());
-        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getUpdateResponseType().getClass()));

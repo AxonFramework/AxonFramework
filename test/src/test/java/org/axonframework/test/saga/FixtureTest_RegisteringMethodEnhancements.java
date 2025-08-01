@@ -146,7 +146,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
             Message<?> message = Message.fromContext(context);
-            return message.getPayloadType().isAssignableFrom(ParameterResolvedEvent.class);
+            return message.payloadType().isAssignableFrom(ParameterResolvedEvent.class);
         }
     }
 

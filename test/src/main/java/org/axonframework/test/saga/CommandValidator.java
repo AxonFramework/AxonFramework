@@ -93,11 +93,11 @@ public class CommandValidator {
             Object expectedItem = expectedIterator.next();
             if (expectedItem instanceof CommandMessage) {
                 CommandMessage<?> expectedMessage = (CommandMessage<?>) expectedItem;
-                if (!expectedMessage.getPayloadType().equals(actualItem.getPayloadType())) {
+                if (!expectedMessage.payloadType().equals(actualItem.payloadType())) {
                     throw new AxonAssertionError(
                             "Unexpected payload type of command at position " + counter + " (0-based).\n"
-                                    + "Expected <" + expectedMessage.getPayloadType() + ">,\n"
-                                    + " but got <" + actualItem.getPayloadType() + ">."
+                                    + "Expected <" + expectedMessage.payloadType() + ">,\n"
+                                    + " but got <" + actualItem.payloadType() + ">."
                     );
                 }
                 assertCommandEquality(counter, expectedMessage.payload(), actualItem.payload());

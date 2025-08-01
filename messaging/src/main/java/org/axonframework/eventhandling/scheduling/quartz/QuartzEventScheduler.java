@@ -177,7 +177,7 @@ public class QuartzEventScheduler implements EventScheduler {
     protected JobDetail buildJobDetail(EventMessage event, JobKey jobKey) {
         JobDataMap jobData = jobDataBinder.toJobData(event);
         return JobBuilder.newJob(FireEventJob.class)
-                         .withDescription(event.getPayloadType().getName())
+                         .withDescription(event.type().name())
                          .withIdentity(jobKey)
                          .usingJobData(jobData)
                          .build();

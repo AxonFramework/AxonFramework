@@ -52,10 +52,10 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
                          @Nonnull InterceptorChain interceptorChain
     ) throws Exception {
         T message = unitOfWork.getMessage();
-        if (!AnnotationUtils.isAnnotationPresent(message.getPayloadType(), Secured.class)) {
+        if (!AnnotationUtils.isAnnotationPresent(message.payloadType(), Secured.class)) {
             return interceptorChain.proceedSync(context);
         }
-        Secured annotation = message.getPayloadType()
+        Secured annotation = message.payloadType()
                                     .getAnnotation(Secured.class);
 
         Set<String> authorities =
@@ -71,7 +71,7 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
                         ));
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Authorizing for [{}] and [{}]", message.getPayloadType().getName(), annotation.value());
+            logger.debug("Authorizing for [{}] and [{}]", message.type().name(), annotation.value());
         }
 
         authorities.retainAll(Arrays.stream(annotation.value()).collect(Collectors.toSet()));

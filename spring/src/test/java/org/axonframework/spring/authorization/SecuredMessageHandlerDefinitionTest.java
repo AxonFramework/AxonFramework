@@ -48,7 +48,7 @@ class SecuredMessageHandlerDefinitionTest {
         testSubject.givenNoPriorActivity()
                    .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER), metaData)
                    .expectEventsMatching(exactSequenceOf(predicate(
-                           eventMessage -> eventMessage.getPayloadType().isAssignableFrom(AggregateCreatedEvent.class)
+                           eventMessage -> eventMessage.payloadType().isAssignableFrom(AggregateCreatedEvent.class)
                    )));
     }
 
@@ -72,7 +72,7 @@ class SecuredMessageHandlerDefinitionTest {
         testSubject.given(new AggregateCreatedEvent(TEST_AGGREGATE_IDENTIFIER))
                    .when(new UpdateAggregateCommand(TEST_AGGREGATE_IDENTIFIER), metaData)
                    .expectEventsMatching(exactSequenceOf(predicate(
-                           eventMessage -> eventMessage.getPayloadType().isAssignableFrom(AggregateUpdatedEvent.class)
+                           eventMessage -> eventMessage.payloadType().isAssignableFrom(AggregateUpdatedEvent.class)
                    )));
     }
 

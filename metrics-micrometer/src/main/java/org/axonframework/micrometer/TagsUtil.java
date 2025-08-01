@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class TagsUtil {
      */
     public static final Function<Message<?>, Iterable<Tag>> PAYLOAD_TYPE_TAGGER_FUNCTION = message -> Tags.of(
             PAYLOAD_TYPE_TAG,
-            message.getPayloadType().getSimpleName());
+            message.payloadType().getSimpleName());
 
     /**
      * The function for creating the Micrometer {@link Tag}s based on the message metadata.

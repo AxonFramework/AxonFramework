@@ -53,16 +53,16 @@ class GenericResetContextTest extends MessageTestSuite {
 
         assertSame(MetaData.emptyInstance(), messageOne.getMetaData());
         assertEquals(Object.class, messageOne.payload().getClass());
-        assertEquals(Object.class, messageOne.getPayloadType());
+        assertEquals(Object.class, messageOne.payloadType());
 
         assertNotSame(metaDataMap, messageTwo.getMetaData());
         assertEquals(metaDataMap, messageTwo.getMetaData());
         assertEquals(Object.class, messageTwo.payload().getClass());
-        assertEquals(Object.class, messageTwo.getPayloadType());
+        assertEquals(Object.class, messageTwo.payloadType());
 
         assertSame(metaData, messageThree.getMetaData());
         assertEquals(Object.class, messageThree.payload().getClass());
-        assertEquals(Object.class, messageThree.getPayloadType());
+        assertEquals(Object.class, messageThree.payloadType());
 
         assertNotEquals(messageOne.identifier(), messageTwo.identifier());
         assertNotEquals(messageTwo.identifier(), messageThree.identifier());

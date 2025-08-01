@@ -290,7 +290,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
             GenericDomainEventMessage e = (GenericDomainEventMessage) event;
             String str = String.format("%d - %s(%s) ID %s %s", //
                                        e.getSequenceNumber(), //
-                                       e.getPayloadType().getSimpleName(), //
+                                       e.payloadType().getSimpleName(), //
                                        e.getAggregateIdentifier(), //
                                        e.identifier(), //
                                        e.payload());

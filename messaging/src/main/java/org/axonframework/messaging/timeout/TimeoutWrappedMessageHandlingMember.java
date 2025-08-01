@@ -64,7 +64,7 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
     @Override
     public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, T target) throws Exception {
         String taskName = String.format("Message [%s] for handler [%s]",
-                                        message.getPayloadType().getName(),
+                                        message.type().name(),
                                         target != null ? target.getClass().getName() : null);
         AxonTimeLimitedTask task = new AxonTimeLimitedTask(
                 taskName,

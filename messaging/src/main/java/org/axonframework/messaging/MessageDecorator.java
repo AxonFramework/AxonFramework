@@ -77,8 +77,8 @@ public abstract class MessageDecorator<P> implements Message<P> {
     }
 
     @Override
-    public Class<P> getPayloadType() {
-        return delegate.getPayloadType();
+    public Class<P> payloadType() {
+        return delegate.payloadType();
     }
 
     @Override

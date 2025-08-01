@@ -223,7 +223,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     private JobDetail buildJobDetail(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope, JobKey jobKey) {
         JobDataMap jobData = DeadlineJob.DeadlineJobDataBinder.toJobData(serializer, deadlineMessage, deadlineScope);
         return JobBuilder.newJob(DeadlineJob.class)
-                         .withDescription(deadlineMessage.getPayloadType().getName())
+                         .withDescription(deadlineMessage.type().name())
                          .withIdentity(jobKey)
                          .usingJobData(jobData)
                          .requestRecovery(true)

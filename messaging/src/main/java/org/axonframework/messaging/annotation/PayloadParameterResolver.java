@@ -48,7 +48,7 @@ public class PayloadParameterResolver implements ParameterResolver<Object> {
     @Override
     public boolean matches(@Nonnull ProcessingContext context) {
         return Optional.ofNullable(Message.fromContext(context))
-                       .map(Message::getPayloadType)
+                       .map(Message::payloadType)
                        .map(payloadType::isAssignableFrom)
                        .orElse(false);
     }

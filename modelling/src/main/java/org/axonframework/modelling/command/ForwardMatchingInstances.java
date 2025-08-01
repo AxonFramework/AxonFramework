@@ -65,7 +65,7 @@ public class ForwardMatchingInstances<T extends Message<?>> implements Forwardin
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
     public <E> Stream<E> filterCandidates(@Nonnull T message, @Nonnull Stream<E> candidates) {
-        Property routingProperty = routingProperties.computeIfAbsent(message.getPayloadType(),
+        Property routingProperty = routingProperties.computeIfAbsent(message.payloadType(),
                                                                      this::resolveProperty);
 
         if (routingProperty == null || routingProperty == NO_PROPERTY) {

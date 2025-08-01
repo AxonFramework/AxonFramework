@@ -93,11 +93,11 @@ class GlobalMetricRegistryTest {
     void createEventProcessorMonitorWithTags() {
         MessageMonitor<? super EventMessage<?>> monitor1 = subject.registerEventProcessor(
                 "test1",
-                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName()),
+                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.payloadType().getSimpleName()),
                 message -> Tags.empty());
         MessageMonitor<? super EventMessage<?>> monitor2 = subject.registerEventProcessor(
                 "test2",
-                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName()),
+                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.payloadType().getSimpleName()),
                 message -> Tags.empty());
 
         monitor1.onMessageIngested(asEventMessage("test")).reportSuccess();
@@ -128,7 +128,7 @@ class GlobalMetricRegistryTest {
     @Test
     void createEventBusMonitorWithTags() {
         MessageMonitor<? super EventMessage<?>> monitor = subject.registerEventBus(
-                "eventBus", message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
+                "eventBus", message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.payloadType().getSimpleName())
         );
 
         monitor.onMessageIngested(asEventMessage("test")).reportSuccess();
@@ -157,7 +157,7 @@ class GlobalMetricRegistryTest {
     @Test
     void createCommandBusMonitorWithTags() {
         MessageMonitor<? super CommandMessage<?>> monitor = subject.registerCommandBus(
-                "commandBus", message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
+                "commandBus", message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.payloadType().getSimpleName())
         );
 
         monitor.onMessageIngested(new GenericCommandMessage<>(new MessageType("command"), "test"))

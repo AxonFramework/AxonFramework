@@ -108,7 +108,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (EventMessage<?> expectedEvent : expectedEvents) {
             EventMessage<?> actualEvent = iterator.next();
-            if (!verifyMetaDataEquality(expectedEvent.getPayloadType(),
+            if (!verifyMetaDataEquality(expectedEvent.payloadType(),
                                         expectedEvent.getMetaData(),
                                         actualEvent.getMetaData())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
@@ -361,7 +361,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         MapStringEntryMatcher actualMatcher = new MapStringEntryMatcher(actualReturnValue.getMetaData());
         expectedMatcher.describeTo(expectedDescription);
         actualMatcher.describeTo(actualDescription);
-        if (!verifyMetaDataEquality(expectedResultMessage.getPayloadType(),
+        if (!verifyMetaDataEquality(expectedResultMessage.payloadType(),
                                     expectedResultMessage.getMetaData(),
                                     actualReturnValue.getMetaData())) {
             reporter.reportWrongResult(actualDescription, expectedDescription);

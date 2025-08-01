@@ -56,7 +56,7 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> 
         Field payloadTypeMonitorsField = testSubject.getClass().getDeclaredField("payloadTypeMonitors");
         payloadTypeMonitorsField.setAccessible(true);
 
-        String expectedMonitorName = STRING_MESSAGE.getPayloadType().getName();
+        String expectedMonitorName = STRING_MESSAGE.payloadType().getName();
 
         testSubject.onMessageIngested(STRING_MESSAGE);
 
@@ -76,8 +76,8 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> 
         Field payloadTypeMonitorsField = testSubject.getClass().getDeclaredField("payloadTypeMonitors");
         payloadTypeMonitorsField.setAccessible(true);
 
-        String expectedStringMonitorName = STRING_MESSAGE.getPayloadType().getName();
-        String expectedIntegerMonitorName = INTEGER_MESSAGE.getPayloadType().getName();
+        String expectedStringMonitorName = STRING_MESSAGE.payloadType().getName();
+        String expectedIntegerMonitorName = INTEGER_MESSAGE.payloadType().getName();
 
         testSubject.onMessageIngested(STRING_MESSAGE); // First unique payload type
         testSubject.onMessageIngested(STRING_MESSAGE);
@@ -106,7 +106,7 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> 
         PayloadTypeMessageMonitorWrapper<CapacityMonitor> testSubject = new PayloadTypeMessageMonitorWrapper<>(
                 CapacityMonitor::new, payloadType -> testPrefix + payloadType.getName());
 
-        String expectedMonitorName = testPrefix + STRING_MESSAGE.getPayloadType().getName();
+        String expectedMonitorName = testPrefix + STRING_MESSAGE.payloadType().getName();
 
         testSubject.onMessageIngested(STRING_MESSAGE);
 

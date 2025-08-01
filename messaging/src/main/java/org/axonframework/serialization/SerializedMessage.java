@@ -117,7 +117,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public Class<P> getPayloadType() {
+    public Class<P> payloadType() {
         return payload.getType();
     }
 

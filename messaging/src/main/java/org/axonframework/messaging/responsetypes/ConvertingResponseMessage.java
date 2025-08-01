@@ -125,7 +125,7 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public Class<R> getPayloadType() {
+    public Class<R> payloadType() {
         return expectedResponseType.responseMessagePayloadType();
     }
 

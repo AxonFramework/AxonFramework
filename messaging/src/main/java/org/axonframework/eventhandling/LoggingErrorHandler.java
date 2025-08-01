@@ -54,7 +54,7 @@ public class LoggingErrorHandler implements ListenerInvocationErrorHandler {
                              "Continuing processing with next listener",
                      eventHandler.getTargetType().getSimpleName(),
                      event.identifier(),
-                     event.getPayloadType().getName(),
+                     event.type().name(),
                      exception);
     }
 }

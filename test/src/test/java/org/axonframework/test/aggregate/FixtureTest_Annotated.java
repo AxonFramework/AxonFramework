@@ -305,7 +305,7 @@ class FixtureTest_Annotated {
                .when(new TestCommand(testAggregateId))
                .expectEventsMatching(exactSequenceOf(matches(
                        eventMessage -> eventMessage.getTimestamp() == Instant.EPOCH
-                               && MyEvent.class.equals(eventMessage.getPayloadType())
+                               && MyEvent.class.equals(eventMessage.payloadType())
                )));
 
         assertEquals(3, fixture.getEventStore()

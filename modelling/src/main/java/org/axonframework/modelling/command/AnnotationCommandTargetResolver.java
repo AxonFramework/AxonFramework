@@ -82,9 +82,9 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         if (aggregateIdentifier == null) {
             throw new IllegalArgumentException(format(
                     "Invalid command. It does not identify the target aggregate. "
-                            + "Make sure at least one of the fields or methods in the [%s] class contains the "
+                            + "Make sure at least one of the fields or methods in the command of type [%s] contains the "
                             + "@TargetAggregateIdentifier annotation and that it returns a non-null value.",
-                    command.getPayloadType().getSimpleName()
+                    command.type()
             ));
         }
         return aggregateIdentifier.toString();
@@ -98,13 +98,13 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
     private static Object invokeAnnotated(
             Message<?> command, Class<? extends Annotation> annotation
     ) throws InvocationTargetException, IllegalAccessException {
-        for (Method m : methodsOf(command.getPayloadType())) {
+        for (Method m : methodsOf(command.payloadType())) {
             if (AnnotationUtils.isAnnotationPresent(m, annotation)) {
                 ensureAccessible(m);
                 return m.invoke(command.payload());
             }
         }
-        for (Field f : fieldsOf(command.getPayloadType())) {
+        for (Field f : fieldsOf(command.payloadType())) {
             if (AnnotationUtils.isAnnotationPresent(f, annotation)) {
                 return getFieldValue(f, command.payload());
             }

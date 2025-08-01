@@ -236,8 +236,8 @@ class JdbcEventStorageEngineTest
 
         TrackingEventStream eventStoreResult = testEventStore.openStream(null);
         assertTrue(eventStoreResult.hasNextAvailable());
-        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
-        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().payloadType());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().payloadType());
         assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().payload());
         assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().payload());
     }

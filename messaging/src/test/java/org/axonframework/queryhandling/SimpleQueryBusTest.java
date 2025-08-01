@@ -213,7 +213,7 @@ class SimpleQueryBusTest {
 
         assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
         assertNull(result.get().payload());
-        assertEquals(String.class, result.get().getPayloadType());
+        assertEquals(String.class, result.get().payloadType());
         assertEquals(
                 MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
                 result.get().getMetaData()
