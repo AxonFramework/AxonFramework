@@ -79,9 +79,6 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
 
         Optional<Snapshotter> snapshotter = result.getOptionalComponent(Snapshotter.class);
         assertTrue(snapshotter.isPresent());
-
-        var eventSource = result.getOptionalComponent(StreamableEventSource.class);
-        assertTrue(eventSource.isPresent());
     }
 
     @Test
@@ -102,13 +99,12 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                                      (command, stateManager, context) -> MessageStream.empty().cast()
                                              ));
 
-        List<Configuration> moduleConfigurations =
+        Optional<Configuration> moduleConfiguration =
                 testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
                            .build()
-                           .getModuleConfigurations();
+                           .getModuleConfiguration("test");
 
-        assertFalse(moduleConfigurations.isEmpty());
-        assertEquals(1, moduleConfigurations.size());
+        assertTrue(moduleConfiguration.isPresent());
     }
 
     @Test
@@ -139,6 +135,16 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                           .build();
 
         assertEquals(expected, result.getComponent(EventStore.class));
+    }
+
+    @Test
+    void registerEventStoreShouldRegisterStreamableEventSourceIfImplemented() {
+        EventStore expected = new SimpleEventStore(null, null);
+
+        Configuration result = testSubject.registerEventStore(c -> expected)
+                                          .build();
+
+        assertEquals(expected, result.getComponent(StreamableEventSource.class));
     }
 
     @Test
