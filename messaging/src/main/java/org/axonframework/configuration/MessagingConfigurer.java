@@ -19,6 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.configuration.NewEventProcessingModule;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.QueryBus;
@@ -63,7 +64,7 @@ import static org.axonframework.messaging.configuration.reflection.ParameterReso
 public class MessagingConfigurer implements ApplicationConfigurer {
 
     private final ApplicationConfigurer delegate;
-    private final EventProcessingModule eventProcessingModule;
+    private final NewEventProcessingModule eventProcessingModule;
 
     /**
      * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
@@ -73,7 +74,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     private MessagingConfigurer(@Nonnull ApplicationConfigurer delegate) {
         this.delegate =
                 requireNonNull(delegate, "The Application Configurer cannot be null.");
-        this.eventProcessingModule = new EventProcessingModule("defaultEventProcessingModule");
+        this.eventProcessingModule = new NewEventProcessingModule("defaultEventProcessingModule");
     }
 
     /**
@@ -222,7 +223,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
         return this;
     }
 
-    public MessagingConfigurer eventProcessing(@Nonnull Consumer<EventProcessingModule> configurerTask) {
+    public MessagingConfigurer eventProcessing(@Nonnull Consumer<NewEventProcessingModule> configurerTask) {
         configurerTask.accept(eventProcessingModule);
         return this;
     }

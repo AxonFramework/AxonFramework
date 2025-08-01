@@ -107,7 +107,7 @@ class GenericEventMessageTest extends MessageTestSuite {
                                       .andMetaData(MetaData.with("key", "value").and("key2", "13"))
                                       .toString();
         assertTrue(actual.startsWith(
-                           "GenericEventMessage{type={java.lang.String#0.0.1}, eventId={MyPayload}, metadata={"
+                           "GenericEventMessage{type={java.lang.String#0.0.1}, payload={MyPayload}, metadata={"
                    ),
                    "Wrong output: " + actual);
         assertTrue(actual.contains("'key'->'value'"), "Wrong output: " + actual);

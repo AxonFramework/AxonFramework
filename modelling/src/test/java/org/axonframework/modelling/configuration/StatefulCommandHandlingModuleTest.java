@@ -97,7 +97,7 @@ class StatefulCommandHandlingModuleTest {
 
         assertNotNull(optionalStateManager.get().repository(String.class, String.class));
         assertNotNull(resultConfig.getModuleConfiguration("SimpleStateBasedEntityModule<String, String>").orElseThrow()
-                                   .getComponent(Repository.class, "String#String"));
+                                  .getComponent(Repository.class, "String#String"));
 
         MockComponentDescriptor descriptor = new MockComponentDescriptor();
         resultConfig.getComponent(CommandBus.class).describeTo(descriptor);
@@ -124,6 +124,30 @@ class StatefulCommandHandlingModuleTest {
 
         Optional<StatefulCommandHandlingComponent> optionalHandlingComponent = resultConfig.getOptionalComponent(
                 StatefulCommandHandlingComponent.class, "StatefulCommandHandlingComponent[test-subject]");
+        assertTrue(optionalHandlingComponent.isPresent());
+        assertTrue(optionalHandlingComponent.get().supportedCommands().contains(new QualifiedName(String.class)));
+    }
+
+    @Test
+    void buildModellingConfigurationSucceedsAndRegistersTheModuleWithComponent() {
+        var myCommandHandlingObject = new Object() {
+            @org.axonframework.commandhandling.annotation.CommandHandler
+            public void handle(String command) {
+            }
+        };
+
+
+        Configuration resultConfig = ModellingConfigurer.create()
+                           .registerStatefulCommandHandlingModule(
+                                   setupPhase.commandHandlers()
+                                             .annotatedCommandHandlingComponent(c -> myCommandHandlingObject)
+                                             .build()
+                           ).build();
+
+
+        Optional<StatefulCommandHandlingComponent> optionalHandlingComponent = resultConfig
+                .getModuleConfiguration("test-subject")
+                .flatMap(m -> m.getOptionalComponent(StatefulCommandHandlingComponent.class, "StatefulCommandHandlingComponent[test-subject]"));
         assertTrue(optionalHandlingComponent.isPresent());
         assertTrue(optionalHandlingComponent.get().supportedCommands().contains(new QualifiedName(String.class)));
     }

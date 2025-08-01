@@ -15,7 +15,7 @@
  */
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.config.LegacyEventProcessingConfigurer;
+import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -106,7 +106,7 @@ public class InterceptorAutoConfiguration {
 
     @Bean
     public InitializingBean messageHandlerInterceptorConfigurer(
-            LegacyEventProcessingConfigurer eventProcessingConfigurer,
+            EventProcessingConfigurer eventProcessingConfigurer,
             Optional<List<MessageHandlerInterceptor<? super EventMessage<?>>>> interceptors
     ) {
         return () -> interceptors

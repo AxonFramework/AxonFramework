@@ -16,7 +16,7 @@
 
 package org.axonframework.springboot.integration;
 
-import org.axonframework.config.LegacyEventProcessingModule;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.annotation.EventHandler;
@@ -34,11 +34,11 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests configuration of {@link LegacyEventProcessingModule}.
+ * Tests configuration of {@link EventProcessingModule}.
  *
  * @author Milan Savic
  */
-class LegacyEventProcessingModuleConfigTest {
+class EventProcessingModuleConfigTest {
 
     private ApplicationContextRunner testApplicationContext;
 
@@ -54,7 +54,7 @@ class LegacyEventProcessingModuleConfigTest {
     @Disabled("TODO #3495")
     void eventProcessingConfiguration() {
         testApplicationContext.run(context -> {
-            LegacyEventProcessingModule eventProcessingConfiguration = context.getBean(LegacyEventProcessingModule.class);
+            EventProcessingModule eventProcessingConfiguration = context.getBean(EventProcessingModule.class);
             assertEquals(3, eventProcessingConfiguration.eventProcessors().size());
             assertTrue(eventProcessingConfiguration.eventProcessor("processor2").isPresent());
             assertTrue(eventProcessingConfiguration.eventProcessor("subscribingProcessor").isPresent());
@@ -95,8 +95,8 @@ class LegacyEventProcessingModuleConfigTest {
     static class TestContext {
 
         @Bean
-        public LegacyEventProcessingModule eventProcessingConfiguration() {
-            LegacyEventProcessingModule config = new LegacyEventProcessingModule();
+        public EventProcessingModule eventProcessingConfiguration() {
+            EventProcessingModule config = new EventProcessingModule();
             config.assignProcessingGroup("processor1", "processor2");
             config.assignProcessingGroup(group -> group.contains("3") ? "subscribingProcessor" : group);
             config.registerSubscribingEventProcessor("subscribingProcessor");

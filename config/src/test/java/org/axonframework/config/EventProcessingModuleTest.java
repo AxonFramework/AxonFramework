@@ -92,12 +92,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link LegacyEventProcessingModule}.
+ * Test class validating the {@link EventProcessingModule}.
  *
  * @author Allard Buijze
  */
 @ExtendWith(MockitoExtension.class)
-class LegacyEventProcessingModuleTest {
+class EventProcessingModuleTest {
 
     private LegacyEventStore eventStoreOne;
     private LegacyEventStore eventStoreTwo;
@@ -190,7 +190,7 @@ class LegacyEventProcessingModuleTest {
                                                                 .registerEventHandler(c -> new TrackingEventHandler()))
                                        .start();
 
-        LegacyEventProcessingConfiguration processingConfig = configuration.eventProcessingConfiguration();
+        EventProcessingConfiguration processingConfig = configuration.eventProcessingConfiguration();
 
         assertTrue(processingConfig.eventProcessor("subscribing").isPresent());
         assertTrue(processingConfig.eventProcessor("subscribing")
@@ -282,7 +282,7 @@ class LegacyEventProcessingModuleTest {
                   .registerSaga(ConcurrentMap.class)
                   .registerSaga(String.class)
                   .registerEventHandler(c -> new HashMap<>());
-        LegacyEventProcessingConfiguration configuration = configurer.start()
+        EventProcessingConfiguration configuration = configurer.start()
                                                                .eventProcessingConfiguration();
 
         assertEquals("myGroup", configuration.sagaProcessingGroup(String.class));
@@ -304,7 +304,7 @@ class LegacyEventProcessingModuleTest {
                   .registerSaga(ConcurrentMap.class)
                   .registerSaga(String.class)
                   .registerEventHandler(c -> new HashMap<>());
-        LegacyEventProcessingConfiguration configuration = configurer.start()
+        EventProcessingConfiguration configuration = configurer.start()
                                                                .eventProcessingConfiguration();
 
         assertEquals("myGroup", configuration.sagaProcessingGroup(String.class));
@@ -356,7 +356,7 @@ class LegacyEventProcessingModuleTest {
 
     @Test
     void createSubscribingEventProcessorIfSubscribableMessageSourceDefinitionBuilderPresent(
-            @Mock LegacyEventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder mockBuilder,
+            @Mock EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder mockBuilder,
             @Mock SubscribableMessageSourceDefinition<EventMessage<?>> definition,
             @Mock SubscribableMessageSource source) {
         when(mockBuilder.build("pooled-streaming")).thenReturn(definition);
@@ -598,8 +598,8 @@ class LegacyEventProcessingModuleTest {
 
     @Test
     void packageOfObject() {
-        String expectedPackageName = LegacyEventProcessingModule.class.getPackage().getName();
-        assertEquals(expectedPackageName, LegacyEventProcessingModule.packageOfObject(this));
+        String expectedPackageName = EventProcessingModule.class.getPackage().getName();
+        assertEquals(expectedPackageName, EventProcessingModule.packageOfObject(this));
     }
 
     @Test
@@ -660,7 +660,7 @@ class LegacyEventProcessingModuleTest {
     @Test
     void sagaPooledStreamingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomPooledStreamingProcessorBuilder()
             throws NoSuchFieldException {
-        LegacyEventProcessingConfigurer.PooledStreamingProcessorConfiguration testPsepConfig =
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration testPsepConfig =
                 (config, builder) -> builder.maxClaimedSegments(4);
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor("ObjectProcessor", config -> eventStoreOne, testPsepConfig)
@@ -686,7 +686,7 @@ class LegacyEventProcessingModuleTest {
     @Test
     void sagaPooledStreamingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomConfigInstance()
             throws NoSuchFieldException {
-        LegacyEventProcessingConfigurer.PooledStreamingProcessorConfiguration testPsepConfig =
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration testPsepConfig =
                 (config, builder) -> builder.maxClaimedSegments(4);
         configurer.eventProcessing()
                   .usingPooledStreamingEventProcessors()
@@ -715,7 +715,7 @@ class LegacyEventProcessingModuleTest {
     @Test
     void sagaPooledStreamingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomDefaultConfig()
             throws NoSuchFieldException {
-        LegacyEventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
                 (config, builder) -> builder.maxClaimedSegments(4);
         configurer.eventProcessing()
                   .usingPooledStreamingEventProcessors(psepConfig)
@@ -1275,7 +1275,7 @@ class LegacyEventProcessingModuleTest {
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
 
         LegacyConfiguration config = configurer.start();
-        LegacyEventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
+        EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
 
         Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
                 eventProcessingConfig.deadLetterQueue(processingGroup);
@@ -1311,7 +1311,7 @@ class LegacyEventProcessingModuleTest {
                   .registerDefaultHandlerInterceptor((c, n) -> interceptor2);
 
         LegacyConfiguration config = configurer.start();
-        LegacyEventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
+        EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
 
         Optional<SequencedDeadLetterProcessor<EventMessage<?>>> optionalDeadLetterProcessor =
                 eventProcessingConfig.sequencedDeadLetterProcessor(processingGroup);
