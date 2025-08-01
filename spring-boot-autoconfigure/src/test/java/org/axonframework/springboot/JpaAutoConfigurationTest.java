@@ -18,7 +18,7 @@ package org.axonframework.springboot;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.config.LegacyEventProcessingModule;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -108,7 +108,7 @@ class JpaAutoConfigurationTest {
                    .run(context -> {
                        assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
 
-                       LegacyEventProcessingModule eventProcessingConfig = context.getBean(LegacyEventProcessingModule.class);
+                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
                        assertNotNull(eventProcessingConfig);
 
                        Optional<SequencedDeadLetterQueue<EventMessage<?>>> dlq =

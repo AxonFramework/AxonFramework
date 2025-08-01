@@ -57,7 +57,7 @@ class ConfigurationScopeAwareProviderTest {
     private AbstractSagaManager<Object> sagaManager;
 
     @Mock
-    private LegacyEventProcessingModule eventProcessingConfiguration;
+    private EventProcessingModule eventProcessingConfiguration;
 
     private ConfigurationScopeAwareProvider scopeAwareProvider;
 

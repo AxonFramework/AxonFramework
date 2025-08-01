@@ -929,7 +929,7 @@ For a complete set of the release notes, please check https://github.com/AxonFra
  This PR ensures no unnecessary snapshots are staged in the `AbstractSnapshotter` by validating none have been scheduled yet.
  This fix will resolve potential high I.O. when snapshots are being recreated for aggregates which have a high number of events.
 
-* The assignment rules used by the `LegacyEventProcessingConfigurer` weren't always taken into account as desired.
+* The assignment rules used by the `EventProcessingConfigurer` weren't always taken into account as desired.
  This inconsistency compared to regular assignment through the `@ProcessingGroup` annotation has been resolved in https://github.com/AxonFramework/AxonFramework/pull/1500[this] pull request.
 
 * Heartbeat messages between Axon Server and an Axon Framework application were already configurable, but only from the server's side.

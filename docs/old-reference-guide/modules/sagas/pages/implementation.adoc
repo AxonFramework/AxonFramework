@@ -137,7 +137,7 @@ A default configuration for a Saga called `MySaga` would look as follows:
 
 ==== Axon Configuration API
 
-As a specific type of event handler, registering a Saga is done through the `LegacyEventProcessingConfigurer`:
+As a specific type of event handler, registering a Saga is done through the `EventProcessingConfigurer`:
 
 [source,java]
 ----

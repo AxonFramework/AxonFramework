@@ -78,10 +78,10 @@ import static org.mockito.Mockito.*;
  * @author Mateusz Nowak
  * @author Steven van Beelen
  */
-class PooledStreamingEventProcessorTest {
+class NewPooledStreamingEventProcessorTest {
 
     private static final Logger logger = LoggerFactory.getLogger(
-            PooledStreamingEventProcessorTest.class);
+            NewPooledStreamingEventProcessorTest.class);
 
     private static final String PROCESSOR_NAME = "test";
 

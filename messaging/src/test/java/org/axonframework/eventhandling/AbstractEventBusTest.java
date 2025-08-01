@@ -243,7 +243,7 @@ class AbstractEventBusTest {
         }
 
         private void onEvents(List<? extends EventMessage<?>> events) {
-            //if the event eventId is a number > 0, a new number is published that is 1 smaller than the first number
+            //if the event payload is a number > 0, a new number is published that is 1 smaller than the first number
             Object payload = events.get(0).getPayload();
             if (payload instanceof Integer) {
                 int number = (int) payload;
