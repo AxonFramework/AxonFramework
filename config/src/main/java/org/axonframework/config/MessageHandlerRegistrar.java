@@ -33,7 +33,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * {@link #start()} and {@link #shutdown()} method and keeping hold of the message handler's {@link Registration}.
  * <p>
  * Note that this component is not intended for Event Handling Components, as those should be registered through the
- * {@link LegacyEventProcessingConfigurer}.
+ * {@link EventProcessingConfigurer}.
  *
  * @author Steven van Beelen
  * @since 4.3

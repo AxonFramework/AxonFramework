@@ -22,11 +22,11 @@ import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessage
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.LegacyDefaultConfigurer;
-import org.axonframework.config.LegacyEventProcessingConfigurer;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
@@ -90,7 +90,7 @@ class PersistentStreamAutoConfigurationTest {
 
                        EventProcessingModule eventProcessingModule = context.getBean(EventProcessingModule.class);
 
-                       LegacyEventProcessingConfigurer.EventProcessorBuilder defaultEventProcessorBuilder = getField(
+                       EventProcessingConfigurer.EventProcessorBuilder defaultEventProcessorBuilder = getField(
                                "defaultEventProcessorBuilder",
                                eventProcessingModule);
 

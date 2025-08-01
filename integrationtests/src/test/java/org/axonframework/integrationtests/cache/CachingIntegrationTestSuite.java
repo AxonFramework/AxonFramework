@@ -18,9 +18,9 @@ package org.axonframework.integrationtests.cache;
 
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.caching.Cache;
+import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyDefaultConfigurer;
-import org.axonframework.config.LegacyEventProcessingConfigurer;
 import org.axonframework.config.SagaConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
@@ -102,8 +102,8 @@ public abstract class CachingIntegrationTestSuite {
                                                                          .associationsCache(associationsCache)
                                                                          .build());
 
-        LegacyEventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-                LegacyEventProcessingConfigurer.PooledStreamingProcessorConfiguration.noOp();
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
+                EventProcessingConfigurer.PooledStreamingProcessorConfiguration.noOp();
 
         config = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
                                         .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())

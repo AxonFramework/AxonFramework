@@ -16,8 +16,8 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingModule;
-import org.axonframework.config.LegacyEventProcessingConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -41,7 +41,7 @@ import org.springframework.context.annotation.Bean;
 public class EventProcessingAutoConfiguration {
 
     @Bean
-    @ConditionalOnMissingBean({EventProcessingModule.class, LegacyEventProcessingConfiguration.class})
+    @ConditionalOnMissingBean({EventProcessingModule.class, EventProcessingConfiguration.class})
     public EventProcessingModule eventProcessingModule() {
         return new EventProcessingModule();
     }
