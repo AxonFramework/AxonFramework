@@ -16,8 +16,8 @@
 
 package org.axonframework.springboot.integration;
 
-import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
