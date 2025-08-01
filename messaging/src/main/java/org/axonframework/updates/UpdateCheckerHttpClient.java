@@ -49,6 +49,8 @@ public class UpdateCheckerHttpClient {
     private static final String BASE_FAILURE = "Failed to report anonymous usage data";
     private static final String STATUS_CODE_REF = "Received status code: {}";
     private static final int MAX_REDIRECTS = 5;
+    private static final int HTTP_TEMP_REDIRECT = 307;
+    private static final int HTTP_PERM_REDIRECT = 308;
 
     private final UsagePropertyProvider userProperties;
 
@@ -128,8 +130,8 @@ public class UpdateCheckerHttpClient {
         return statusCode == HttpURLConnection.HTTP_MOVED_PERM
                 || statusCode == HttpURLConnection.HTTP_MOVED_TEMP
                 || statusCode == HttpURLConnection.HTTP_SEE_OTHER
-                || statusCode == 307
-                || statusCode == 308;
+                || statusCode == HTTP_TEMP_REDIRECT
+                || statusCode == HTTP_PERM_REDIRECT;
     }
 
     private String preserveQueryParameters(String redirect, String queryString) throws MalformedURLException {
