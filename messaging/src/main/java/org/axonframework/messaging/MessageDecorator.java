@@ -17,8 +17,12 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
+
+import java.lang.reflect.Type;
 
 /**
  * Abstract implementation of a {@link Message} that delegates to an existing message.
@@ -65,6 +69,11 @@ public abstract class MessageDecorator<P> implements Message<P> {
     @Override
     public P getPayload() {
         return delegate.getPayload();
+    }
+
+    @Override
+    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+        return delegate.payloadAs(type, converter);
     }
 
     @Override

@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.replay;
 
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
@@ -30,10 +32,16 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class GenericResetContextTest {
+class GenericResetContextTest extends MessageTestSuite {
 
     private static final MessageType TEST_TYPE = new MessageType("reset");
     private static final Object TEST_PAYLOAD = new Object();
+
+    @Override
+    protected <P, M extends Message<P>> M buildMessage(P payload) {
+        //noinspection unchecked
+        return (M) new GenericResetContext<>(new MessageType(payload.getClass()), payload);
+    }
 
     @Test
     void constructor() {

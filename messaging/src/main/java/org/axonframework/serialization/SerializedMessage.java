@@ -17,10 +17,12 @@
 package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.AbstractMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -97,6 +99,12 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
         } catch (SerializationException e) {
             throw new SerializationException("Error while deserializing payload of message " + getIdentifier(), e);
         }
+    }
+
+    @Override
+    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+        // This class will be removed/replaced by the ConversionAwareMessage, so skipping implementation
+        return null;
     }
 
     @Override

@@ -18,10 +18,13 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -112,13 +115,76 @@ public interface Message<P> {
     MetaData getMetaData();
 
     /**
-     * Returns the payload of this {@code Message}.
+     * Returns the payload of this {@code Message} of generic type {@code P}.
      * <p>
      * The payload is the application-specific information.
      *
-     * @return The payload of this {@code Message}.
+     * @return The payload of this {@code Message} of generic type {@code P}.
      */
     P getPayload();
+
+    /**
+     * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
+     * <p>
+     * If {@link #getPayloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given {@code type},
+     * {@link #getPayload()} may be invoked instead of using the given {@code converter}.
+     * <p>
+     * Implementers of this operation may optimize by storing the converted payloads, thus saving a
+     * {@link Converter#convert(Object, Class)} invocation in the process. Only when this optimization is in place will
+     * a {@code null converter} result in a successful invocation of this method.
+     *
+     * @param type      The type to convert this {@code Message's} payload too.
+     * @param converter The converter to convert this {@code Message's} payload with.
+     * @param <T>       The generic type to convert this {@code Message's} payload too.
+     * @return The payload of this {@code Message}, converted to the given {@code type}.
+     * @throws NullPointerException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
+     *                              {@code converter} is given.
+     */
+    default <T> T payloadAs(@Nonnull Class<T> type, @Nullable Converter converter) {
+        return getPayloadType().isAssignableFrom(type) ? type.cast(getPayload()) : payloadAs((Type) type, converter);
+    }
+
+    /**
+     * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
+     * <p>
+     * If {@link #getPayloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given
+     * {@link TypeReference#getType()}, {@link #getPayload()} may be invoked instead of using the given
+     * {@code converter}.
+     * <p>
+     * Implementers of this operation may optimize by storing the converted payloads, thus saving a
+     * {@link Converter#convert(Object, Class)} invocation in the process. Only when this optimization is in place will
+     * a {@code null converter} result in a successful invocation of this method.
+     *
+     * @param type      The type to convert this {@code Message's} payload too.
+     * @param converter The converter to convert this {@code Message's} payload with.
+     * @param <T>       The generic type to convert this {@code Message's} payload too.
+     * @return The payload of this {@code Message}, converted to the given {@code type}.
+     * @throws NullPointerException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
+     *                              {@code converter} is given.
+     */
+    default <T> T payloadAs(@Nonnull TypeReference<T> type, @Nullable Converter converter) {
+        return payloadAs(type.getType(), converter);
+    }
+
+    /**
+     * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
+     * <p>
+     * If the given {@code type} is an instance of {@link Class} and {@link #getPayloadType()} is
+     * {@link Class#isAssignableFrom(Class) assignable from} that {@code Class}, {@link #getPayload()} may be invoked
+     * instead of using the given {@code converter}.
+     * <p>
+     * Implementers of this operation may optimize by storing the converted payloads, thus saving a
+     * {@link Converter#convert(Object, Class)} invocation in the process. Only when this optimization is in place will
+     * a {@code null converter} result in a successful invocation of this method.
+     *
+     * @param type      The type to convert this {@code Message's} payload too.
+     * @param converter The converter to convert this {@code Message's} payload with.
+     * @param <T>       The generic type to convert this {@code Message's} payload too.
+     * @return The payload of this {@code Message}, converted to the given {@code type}.
+     * @throws NullPointerException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
+     *                              {@code converter} is given.
+     */
+    <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter);
 
     /**
      * Returns the type of the payload.

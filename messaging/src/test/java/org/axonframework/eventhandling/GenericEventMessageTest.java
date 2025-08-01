@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
@@ -30,7 +32,13 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-class GenericEventMessageTest {
+class GenericEventMessageTest extends MessageTestSuite {
+
+    @Override
+    protected <P, M extends Message<P>> M buildMessage(P payload) {
+        //noinspection unchecked
+        return (M) new GenericEventMessage<>(new MessageType(payload.getClass()), payload);
+    }
 
     @Test
     void constructor() {
