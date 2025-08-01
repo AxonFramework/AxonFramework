@@ -214,7 +214,7 @@ class EventProcessingModuleTest {
         assertThrows(LifecycleHandlerInvocationException.class, configurer::start);
     }
 
-    // todo: test it differently!
+    @Disabled("TODO #3103 - Rewrite with Event Handling interceptors support")
     @Test
     void assignmentRulesOverrideThoseWithLowerPriority() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
@@ -317,7 +317,7 @@ class EventProcessingModuleTest {
         assertTrue(configuration.eventProcessor("ConcurrentMapProcessor").isPresent());
     }
 
-    @Disabled("TODO #3098 - Must be refactored because of the EventProcessingPipeline introduction")
+    @Disabled("TODO #3098 - Must be refactored because of the eventProcessorOperations removal")
     @Test
     void assignSequencingPolicy() throws NoSuchFieldException, IllegalAccessException {
         Object mockHandler = new Object();
@@ -376,7 +376,7 @@ class EventProcessingModuleTest {
         verify(mockBuilder, times(2)).build(anyString());
     }
 
-    // todo: test it differently
+    @Disabled("TODO #3103 - Rewrite with Event Handling interceptors support")
     @Test
     void assignInterceptors() {
         StubInterceptor interceptor1 = new StubInterceptor();
@@ -769,7 +769,7 @@ class EventProcessingModuleTest {
         assertThrows(LifecycleHandlerInvocationException.class, () -> configurer.start());
     }
 
-    @Disabled("TODO #3098 - Must be refactored because of the EventProcessingPipeline introduction")
+    @Disabled("TODO #3098 - Must be refactored because of the eventProcessorOperations removal")
     @Test
     void configurePooledStreamingEventProcessor() throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
@@ -801,7 +801,7 @@ class EventProcessingModuleTest {
 //                     getField("spanFactory", operations));
     }
 
-    @Disabled("TODO #3098 - Must be refactored because of the EventProcessingPipeline introduction")
+    @Disabled("TODO #3098 - Must be refactored because of the eventProcessorOperations removal")
     @Test
     void configurePooledStreamingEventProcessorWithSource() throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";

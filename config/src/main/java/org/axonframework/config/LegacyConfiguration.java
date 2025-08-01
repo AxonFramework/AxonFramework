@@ -16,7 +16,6 @@
 
 package org.axonframework.config;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.AxonConfigurationException;
@@ -50,6 +49,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
