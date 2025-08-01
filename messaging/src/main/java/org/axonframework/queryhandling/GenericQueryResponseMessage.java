@@ -23,7 +23,9 @@ import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -167,12 +169,29 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     @Override
-    public GenericQueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericQueryResponseMessage<>(getDelegate().withMetaData(metaData));
+    public QueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericQueryResponseMessage<>(delegate().withMetaData(metaData));
     }
 
     @Override
-    public GenericQueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
-        return new GenericQueryResponseMessage<>(getDelegate().andMetaData(additionalMetaData));
+    public QueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
+        return new GenericQueryResponseMessage<>(delegate().andMetaData(additionalMetaData));
+    }
+
+    @Override
+    public <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (QueryResponseMessage<T>) this;
+        }
+        Message<R> delegate = delegate();
+        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
+                                                     delegate.type(),
+                                                     convertedPayload,
+                                                     delegate.metaData());
+        return optionalExceptionResult().isPresent()
+                ? new GenericQueryResponseMessage<>(converted, optionalExceptionResult().get())
+                : new GenericQueryResponseMessage<>(converted);
     }
 }

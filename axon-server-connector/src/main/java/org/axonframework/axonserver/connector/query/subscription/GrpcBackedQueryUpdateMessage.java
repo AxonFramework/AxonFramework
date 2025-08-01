@@ -25,6 +25,7 @@ import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;
@@ -155,5 +156,11 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     @Override
     public GrpcBackedQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData) {
         return withMetaData(metaData().mergedWith(metaData));
+    }
+
+    @Override
+    public <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
+        return null;
     }
 }

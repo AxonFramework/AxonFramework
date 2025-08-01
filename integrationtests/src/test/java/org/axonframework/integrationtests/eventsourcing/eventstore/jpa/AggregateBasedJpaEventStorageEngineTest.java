@@ -17,6 +17,8 @@
 package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
@@ -30,6 +32,10 @@ import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTes
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
@@ -48,8 +54,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.io.IOException;
-import java.time.Instant;
+import java.lang.reflect.Type;
 import java.util.Collections;
 import javax.sql.DataSource;
 
@@ -61,12 +66,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class AggregateBasedJpaEventStorageEngineTest
         extends AggregateBasedStorageEngineTestSuite<AggregateBasedJpaEventStorageEngine> {
 
-    public static final JacksonSerializer TEST_SERIALIZER = JacksonSerializer.defaultSerializer();
-    public static final ObjectMapper OBJECT_MAPPER = TEST_SERIALIZER.getObjectMapper();
+    private static final JacksonSerializer TEST_SERIALIZER = JacksonSerializer.defaultSerializer();
+    private static final ObjectMapper OBJECT_MAPPER = TEST_SERIALIZER.getObjectMapper();
 
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
-
     @Autowired
     private EntityManagerProvider entityManagerProvider;
 
@@ -92,11 +96,21 @@ class AggregateBasedJpaEventStorageEngineTest
 
     @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
-        return original.withConvertedPayload(payload -> {
-            try {
-                return OBJECT_MAPPER.readValue((byte[]) payload, String.class);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        // TODO 3102 - This should be entirely removed once the AggregateBasedJpaEventStorageEngine uses a Converter instead of a Serializer
+        return original.withConvertedPayload(String.class, new Converter() {
+            @Override
+            public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
+                return TEST_SERIALIZER.canSerializeTo((Class) targetType);
+            }
+
+            @Nullable
+            @Override
+            public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
+                //noinspection removal,unchecked
+                SerializedObject<T> serializedObject = (SimpleSerializedObject<T>) new SimpleSerializedObject<>(
+                        (byte[]) input, byte[].class, ((Class<?>) targetType).getName(), null
+                );
+                return TEST_SERIALIZER.deserialize(serializedObject);
             }
         });
     }
@@ -126,7 +140,6 @@ class AggregateBasedJpaEventStorageEngineTest
 
         @Bean
         public DataSource dataSource() {
-            var now = Instant.now();
             DriverManagerDataSource driverManagerDataSource
                     = new DriverManagerDataSource("jdbc:hsqldb:mem:legacyjpaeventstoreageenginetest",
                                                   "sa",

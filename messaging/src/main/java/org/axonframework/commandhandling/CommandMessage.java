@@ -17,10 +17,12 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.Message;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * A {@link Message} carrying a command as its payload.
@@ -40,5 +42,15 @@ public interface CommandMessage<P> extends Message<P> {
     CommandMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
-    <C> CommandMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion);
+    default <T> CommandMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
+    }
+
+    @Override
+    default <T> CommandMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    @Override
+    <T> CommandMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

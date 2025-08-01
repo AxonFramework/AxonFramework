@@ -16,7 +16,8 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.messaging.Message;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
@@ -32,14 +33,13 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-class GenericCommandMessageTest extends MessageTestSuite {
+class GenericCommandMessageTest extends MessageTestSuite<CommandMessage<?>> {
 
     private static final MessageType TEST_TYPE = new MessageType("command");
 
     @Override
-    protected <P, M extends Message<P>> M buildMessage(P payload) {
-        //noinspection unchecked
-        return (M) new GenericCommandMessage<>(new MessageType(payload.getClass()), payload);
+    protected <P> CommandMessage<?> buildMessage(@Nullable P payload) {
+        return new GenericCommandMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
     @Test
@@ -75,10 +75,9 @@ class GenericCommandMessageTest extends MessageTestSuite {
         Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericCommandMessage<Object> message = new GenericCommandMessage<>(TEST_TYPE, payload, metaData);
-        GenericCommandMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
-        GenericCommandMessage<Object> message2 = message.withMetaData(
-                MetaData.from(Collections.singletonMap("key", "otherValue"))
-        );
+        CommandMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
+        CommandMessage<Object> message2 =
+                message.withMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(0, message1.metaData().size());
         assertEquals(1, message2.metaData().size());

@@ -32,7 +32,6 @@ import org.junit.jupiter.api.*;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -93,6 +92,6 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
 
     @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
-        return original.withConvertedPayload(p -> new String((byte[]) p, StandardCharsets.UTF_8));
+        return original.withConvertedPayload(String.class, converter);
     }
 }

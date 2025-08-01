@@ -17,6 +17,8 @@
 package org.axonframework.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -40,7 +42,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Rene de Waele
  */
-class GenericMessageTest extends MessageTestSuite {
+class GenericMessageTest extends MessageTestSuite<Message<?>> {
 
     private final Map<String, String> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
 
@@ -54,9 +56,8 @@ class GenericMessageTest extends MessageTestSuite {
     }
 
     @Override
-    protected <P, M extends Message<P>> M buildMessage(P payload) {
-        //noinspection unchecked
-        return (M) new GenericMessage<>(new MessageType(payload.getClass()), payload);
+    protected <P> Message<?> buildMessage(@Nullable P payload) {
+        return new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
     @AfterEach

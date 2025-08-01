@@ -405,8 +405,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         public ProcessingContext mapContextWithMessageIfNecessary(ProcessingContext context) {
             Message<?> eventMessage = Message.fromContext(context);
             if (eventMessage != null && expectedPayloadRepresentation != null) {
-                var convertedEvent = eventMessage.withConvertedPayload(
-                        p -> converter.convert(p, expectedPayloadRepresentation));
+                var convertedEvent = eventMessage.withConvertedPayload(expectedPayloadRepresentation, converter);
                 return Message.addToContext(context, convertedEvent);
             }
             return context;

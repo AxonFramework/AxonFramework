@@ -30,7 +30,6 @@ import org.axonframework.serialization.Serializer;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * Generic implementation of the {@link Message} interface containing the {@link #payload() payload} and
@@ -226,8 +225,12 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public <C> Message<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
-        C convertedPayload = conversion.apply(payload());
-        return new GenericMessage<>(type(), convertedPayload, MetaData.from(metaData));
+    public <T> Message<T> withConvertedPayload(@Nonnull Type type,
+                                               @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        //noinspection unchecked
+        return payloadType().isAssignableFrom(convertedPayload.getClass())
+                ? (Message<T>) this
+                : new GenericMessage<T>(identifier(), type(), convertedPayload, metaData());
     }
 }

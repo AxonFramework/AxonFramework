@@ -17,8 +17,11 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.ResultMessage;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -35,4 +38,19 @@ public interface SubscriptionQueryUpdateMessage<U> extends ResultMessage<U> {
 
     @Override
     SubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData);
+
+    @Override
+    default <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Class<T> type,
+                                                                       @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
+    }
+
+    @Override
+    default <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type,
+                                                                       @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    @Override
+    <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

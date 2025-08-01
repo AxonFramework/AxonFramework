@@ -16,7 +16,9 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.Message;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.*;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -32,12 +35,16 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-class GenericEventMessageTest extends MessageTestSuite {
+class GenericEventMessageTest extends MessageTestSuite<EventMessage<?>> {
 
     @Override
-    protected <P, M extends Message<P>> M buildMessage(P payload) {
-        //noinspection unchecked
-        return (M) new GenericEventMessage<>(new MessageType(payload.getClass()), payload);
+    protected <P> EventMessage<?> buildMessage(@Nullable P payload) {
+        return new GenericEventMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    }
+
+    @Override
+    protected void validateMessageSpecifics(@Nonnull EventMessage<?> actual, @Nonnull EventMessage<?> result) {
+        assertThat(actual.timestamp()).isEqualTo(result.timestamp());
     }
 
     @Test
@@ -76,9 +83,9 @@ class GenericEventMessageTest extends MessageTestSuite {
         MetaData metaData = MetaData.from(metaDataMap);
         GenericEventMessage<Object> message =
                 new GenericEventMessage<>(new MessageType("event"), payload, metaData);
-        GenericEventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
-        GenericEventMessage<Object> message2 = message.withMetaData(
-                MetaData.from(Collections.singletonMap("key", "otherValue")));
+        EventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
+        EventMessage<Object> message2 =
+                message.withMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(0, message1.metaData().size());
         assertEquals(1, message2.metaData().size());
@@ -91,9 +98,9 @@ class GenericEventMessageTest extends MessageTestSuite {
         MetaData metaData = MetaData.from(metaDataMap);
         GenericEventMessage<Object> message =
                 new GenericEventMessage<>(new MessageType("event"), payload, metaData);
-        GenericEventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
-        GenericEventMessage<Object> message2 = message.andMetaData(
-                MetaData.from(Collections.singletonMap("key", "otherValue")));
+        EventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
+        EventMessage<Object> message2 =
+                message.andMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
         assertEquals(1, message1.metaData().size());
         assertEquals("value", message1.metaData().get("key"));
