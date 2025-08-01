@@ -16,11 +16,10 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.pipeline.BranchingMultiEventProcessingPipeline;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -73,16 +72,15 @@ class PooledStreamingEventProcessorTest_MultipleEventHandlingComponent {
     }
 
     private PooledStreamingEventProcessor createTestSubject(
-            ProcessorEventHandlingComponents eventHandlingComponents,
+            List<EventHandlingComponent> eventHandlingComponents,
             UnaryOperator<PooledStreamingEventProcessorsCustomization> configOverride
     ) {
         var customization = configOverride.apply(new PooledStreamingEventProcessorsCustomization());
         return new PooledStreamingEventProcessor(
                 PROCESSOR_NAME,
                 stubMessageSource,
-                new BranchingMultiEventProcessingPipeline(eventHandlingComponents),// new MultiHandlingEventProcessingPipeline(eventHandlingComponents)
                 eventHandlingComponents,
-                new SimpleUnitOfWorkFactory(),
+                new SimpleUnitOfWorkFactory(), // todo: this will be BatchUnitOfWorkFactory
                 tokenStore,
                 processorName -> coordinatorExecutor,
                 processorName -> workerExecutor,
@@ -105,29 +103,33 @@ class PooledStreamingEventProcessorTest_MultipleEventHandlingComponent {
         var eventHandlingComponent2 = spy(new SimpleEventHandlingComponent());
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
 
-        var components = new ProcessorEventHandlingComponents(List.of(eventHandlingComponent1, eventHandlingComponent2));
+        List<EventHandlingComponent> components = List.of(eventHandlingComponent1, eventHandlingComponent2);
         setTestSubject(
-                createTestSubject(components, customization -> customization.initialSegmentCount(1))
+                createTestSubject(components, customization -> customization.initialSegmentCount(1).batchSize(10))
         );
 
         // when
-        EventMessage<Integer> supportedEvent = EventTestUtils.asEventMessage("Payload");
-        stubMessageSource.publishMessage(supportedEvent);
+        EventMessage<Integer> supportedEvent1 = EventTestUtils.asEventMessage("Payload");
+        EventMessage<Integer> supportedEvent2 = EventTestUtils.asEventMessage("Payload");
+        stubMessageSource.publishMessage(supportedEvent1);
+        stubMessageSource.publishMessage(supportedEvent2);
         testSubject.start();
 
         // then
         await().atMost(1, TimeUnit.SECONDS)
-               .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
+               .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSizeGreaterThan(0));
 
         // then
-        verify(eventHandlingComponent1, times(1)).handle(eq(supportedEvent), any());
-        verify(eventHandlingComponent2, times(1)).handle(eq(supportedEvent), any());
+        verify(eventHandlingComponent1, times(1)).handle(eq(supportedEvent1), any());
+        verify(eventHandlingComponent1, times(1)).handle(eq(supportedEvent2), any());
+        verify(eventHandlingComponent2, times(1)).handle(eq(supportedEvent1), any());
+        verify(eventHandlingComponent2, times(1)).handle(eq(supportedEvent2), any());
 
         // then
         await().atMost(200, TimeUnit.MILLISECONDS)
                .untilAsserted(() -> {
                    long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
-                   assertThat(currentPosition).isEqualTo(1);
+                   assertThat(currentPosition).isEqualTo(2);
                });
     }
 }
