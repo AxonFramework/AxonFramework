@@ -30,6 +30,8 @@ import java.util.function.UnaryOperator;
 
 public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEventProcessorsModule> {
 
+    public static final String DEFAULT_NAME = "subscribingProcessors";
+
     private SubscribingEventProcessorModule.Customization processorsDefaultCustomization = SubscribingEventProcessorModule.Customization.noOp();
     private final List<ModuleBuilder<SubscribingEventProcessorModule>> moduleBuilders = new ArrayList<>();
 

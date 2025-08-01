@@ -34,6 +34,8 @@ import java.util.function.UnaryOperator;
 
 public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStreamingEventProcessorsModule> {
 
+    public static final String DEFAULT_NAME = "pooledStreamingProcessors";
+
     private PooledStreamingEventProcessorModule.Customization processorsDefaultCustomization = PooledStreamingEventProcessorModule.Customization.noOp();
     private final List<ModuleBuilder<PooledStreamingEventProcessorModule>> moduleBuilders = new ArrayList<>();
 
