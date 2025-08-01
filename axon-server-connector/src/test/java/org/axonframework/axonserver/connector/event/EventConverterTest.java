@@ -183,7 +183,7 @@ class EventConverterTest {
         // when...
         EventMessage<byte[]> result = testSubject.convertEvent(testEvent);
         // then...
-        assertEquals(EVENT_ID, result.getIdentifier());
+        assertEquals(EVENT_ID, result.identifier());
         assertEquals(EVENT_TYPE, result.type());
         assertArrayEquals(eventPayloadByteArray, result.getPayload());
         assertEquals(EVENT_METADATA, result.getMetaData());

@@ -1037,7 +1037,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                     givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getType(),
                                                                     aggregateIdentifier,
                                                                     oldEvent.getSequenceNumber(),
-                                                                    oldEvent.getIdentifier(),
+                                                                    oldEvent.identifier(),
                                                                     oldEvent.type(),
                                                                     oldEvent.getPayload(),
                                                                     oldEvent.getMetaData(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
     public AbstractEventEntry(EventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
         SerializedObject<T> payload = eventMessage.serializePayload(serializer, contentType);
         SerializedObject<T> metaData = eventMessage.serializeMetaData(serializer, contentType);
-        this.eventIdentifier = eventMessage.getIdentifier();
+        this.eventIdentifier = eventMessage.identifier();
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();
         this.payload = payload.getData();

@@ -32,6 +32,6 @@ public class FullConcurrencyPolicy implements SequencingPolicy {
 
     @Override
     public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
-        return Optional.of(event.getIdentifier());
+        return Optional.of(event.identifier());
     }
 }

@@ -131,7 +131,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
      * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
      * @param delegate            The {@link Message} containing {@link Message#getPayload() payload},
-     *                            {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                            {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                            {@link Message#getMetaData() metadata} for the {@link DomainEventMessage} to
      *                            reconstruct.
      * @param timestampSupplier   The {@link Instant timestampSupplier} of this
@@ -154,7 +154,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
      * intended to reconstruct another {@link DomainEventMessage}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericEventMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -164,7 +164,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
      * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
      * @param delegate            The {@link Message} containing {@link Message#getPayload() payload},
-     *                            {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                            {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                            {@link Message#getMetaData() metadata} for the {@link DomainEventMessage} to
      *                            reconstruct.
      * @param timestamp           The {@link Instant timestamp} of this {@link DomainEventMessage DomainEventMessage's}

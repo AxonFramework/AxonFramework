@@ -723,7 +723,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     private Predicate<DeadLetter<? extends M>> equals(DeadLetter<? extends M> expected) {
-        return actual -> expected.message().getIdentifier().equals(actual.message().getIdentifier());
+        return actual -> expected.message().identifier().equals(actual.message().identifier());
     }
 
     @Test

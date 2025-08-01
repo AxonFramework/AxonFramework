@@ -113,7 +113,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
                                                                          .setType(event.type().name())
                                                                          .setRevision(event.type().version())
                                                                          .build())
-                                             .setMessageIdentifier(event.getIdentifier())
+                                             .setMessageIdentifier(event.identifier())
                                              .setTimestamp(event.getTimestamp().toEpochMilli());
                 String aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
                 String aggregateType = resolveAggregateType(taggedEvent.tags());

@@ -95,7 +95,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     @Override
-    public String getIdentifier() {
+    public String identifier() {
         return queryUpdate.getMessageIdentifier();
     }
 

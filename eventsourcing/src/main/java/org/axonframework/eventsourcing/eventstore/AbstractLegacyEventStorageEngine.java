@@ -148,7 +148,7 @@ public abstract class AbstractLegacyEventStorageEngine implements LegacyEventSto
      */
     private String buildExceptionMessage(EventMessage<?> failedEvent) {
         String eventDescription = format("An event with identifier [%s] could not be persisted",
-                                         failedEvent.getIdentifier());
+                                         failedEvent.identifier());
         if (isFirstDomainEvent(failedEvent)) {
             DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
             eventDescription = format(

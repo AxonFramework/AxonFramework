@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,6 @@ public class MessageIdSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
     public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
-        return singletonMap("axon_message_id", message.getIdentifier());
+        return singletonMap("axon_message_id", message.identifier());
     }
 }

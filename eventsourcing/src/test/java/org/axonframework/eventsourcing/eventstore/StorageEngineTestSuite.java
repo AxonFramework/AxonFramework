@@ -642,7 +642,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         } else {
             throw new AssertionError("Unexpected payload type: " + actual.getPayload().getClass());
         }
-        assertEquals(expected.getIdentifier(), actual.getIdentifier());
+        assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.getTimestamp().toEpochMilli(), actual.getTimestamp().toEpochMilli());
         assertEquals(expected.getMetaData(), actual.getMetaData());
     }

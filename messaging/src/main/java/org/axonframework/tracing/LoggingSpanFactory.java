@@ -61,7 +61,7 @@ public class LoggingSpanFactory implements SpanFactory {
         return new Slf4jSpan(operationNameSupplier,
                              () -> String.format("Handler span started for message of type [%s] and identifier [%s]",
                                                  parentMessage.getClass().getSimpleName(),
-                                                 parentMessage.getIdentifier()));
+                                                 parentMessage.identifier()));
     }
 
     @Override
@@ -76,14 +76,14 @@ public class LoggingSpanFactory implements SpanFactory {
                         "%s span started for message of type [%s] and identifier [%s] while handling message of type [%s] and identifier [%s]",
                         spanType,
                         parentMessage.getClass().getSimpleName(),
-                        parentMessage.getIdentifier(),
+                        parentMessage.identifier(),
                         uow.getMessage().getClass().getSimpleName(),
-                        uow.getMessage().getIdentifier()))
+                        uow.getMessage().identifier()))
                 .orElseGet(() -> String.format(
                         "%s span started for message of type [%s] and identifier [%s]",
                         spanType,
                         parentMessage.getClass().getSimpleName(),
-                        parentMessage.getIdentifier()));
+                        parentMessage.identifier()));
     }
 
     @Override
@@ -93,7 +93,7 @@ public class LoggingSpanFactory implements SpanFactory {
                                      .map(uow -> String.format(
                                              "Internal span started while handling message of type [%s] and identifier [%s]",
                                              uow.getMessage().getClass().getSimpleName(),
-                                             uow.getMessage().getIdentifier()))
+                                             uow.getMessage().identifier()))
                                      .orElseGet(() -> "Internal span started"));
     }
 

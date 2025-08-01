@@ -128,7 +128,7 @@ public class DeadLetteringEventHandlerInvoker
     public void handle(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext context, @Nonnull Segment segment) throws Exception {
         if (!super.sequencingPolicyMatchesSegment(message, segment)) {
             logger.trace("Ignoring event with id [{}] as it is not assigned to segment [{}].",
-                         message.getIdentifier(), segment);
+                         message.identifier(), segment);
             return;
         }
         Object sequenceIdentifier = super.sequenceIdentifier(message);
@@ -137,7 +137,7 @@ public class DeadLetteringEventHandlerInvoker
             if (logger.isInfoEnabled()) {
                 logger.info("Event with id [{}] is added to the dead-letter queue "
                                     + "since its queue id [{}] is already present.",
-                            message.getIdentifier(), sequenceIdentifier);
+                            message.identifier(), sequenceIdentifier);
             }
             markEnqueued(sequenceIdentifier, segment);
         } else {
@@ -181,7 +181,7 @@ public class DeadLetteringEventHandlerInvoker
                 markEnqueued(sequenceIdentifier, segment);
                 queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter.withCause(cause)));
             } else if (logger.isInfoEnabled()) {
-                logger.info("The enqueue policy decided not to dead letter event [{}].", message.getIdentifier());
+                logger.info("The enqueue policy decided not to dead letter event [{}].", message.identifier());
             }
         }
     }

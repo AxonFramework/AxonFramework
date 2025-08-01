@@ -117,7 +117,7 @@ public class GenericSubscriptionQueryUpdateMessage<U>
      * of Work.
      *
      * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
-     *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
+     *                 {@link Message#identifier() identifier} and {@link Message#getMetaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
     protected GenericSubscriptionQueryUpdateMessage(@Nonnull Message<U> delegate) {

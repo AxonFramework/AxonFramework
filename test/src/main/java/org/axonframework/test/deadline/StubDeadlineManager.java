@@ -107,11 +107,11 @@ public class StubDeadlineManager implements DeadlineManager {
 
         scheduledDeadlines.add(new ScheduledDeadlineInfo(triggerDateTime,
                                                          deadlineName,
-                                                         scheduledMessage.getIdentifier(),
+                                                         scheduledMessage.identifier(),
                                                          deadlineCounter.getAndIncrement(),
                                                          scheduledMessage,
                                                          deadlineScope));
-        return scheduledMessage.getIdentifier();
+        return scheduledMessage.identifier();
     }
 
     @SuppressWarnings("unchecked")

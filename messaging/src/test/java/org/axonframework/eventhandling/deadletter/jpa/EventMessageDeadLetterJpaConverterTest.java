@@ -143,7 +143,7 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     private void assertCorrectlyRestored(EventMessage<?> expected, EventMessage<?> actual) {
-        assertEquals(expected.getIdentifier(), actual.getIdentifier());
+        assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.getTimestamp(), actual.getTimestamp());
         assertEquals(expected.getPayload(), actual.getPayload());
         assertEquals(expected.getPayloadType(), actual.getPayloadType());
@@ -165,7 +165,7 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     private void assertCorrectlyMapped(EventMessage<?> eventMessage, DeadLetterEventEntry deadLetterEventEntry) {
-        assertEquals(eventMessage.getIdentifier(), deadLetterEventEntry.getEventIdentifier());
+        assertEquals(eventMessage.identifier(), deadLetterEventEntry.getEventIdentifier());
         assertEquals(eventMessage.getTimestamp().toString(), deadLetterEventEntry.getTimeStamp());
         assertEquals(eventMessage.getPayload().getClass().getName(),
                      deadLetterEventEntry.getPayload().getType().getName());

@@ -64,9 +64,9 @@ class GenericCommandMessageTest extends MessageTestSuite {
         assertEquals(testMetaDataMap, message2.getMetaData());
         assertEquals(Object.class, message2.getPayload().getClass());
 
-        assertNotEquals(message1.getIdentifier(), message3.getIdentifier());
-        assertNotEquals(message1.getIdentifier(), message2.getIdentifier());
-        assertNotEquals(message3.getIdentifier(), message2.getIdentifier());
+        assertNotEquals(message1.identifier(), message3.identifier());
+        assertNotEquals(message1.identifier(), message2.identifier());
+        assertNotEquals(message3.identifier(), message2.identifier());
     }
 
     @Test

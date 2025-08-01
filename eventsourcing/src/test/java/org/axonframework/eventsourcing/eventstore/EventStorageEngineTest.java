@@ -151,8 +151,8 @@ public abstract class EventStorageEngineTest {
         DomainEventMessage<?> eventMessage = createDomainEvent("otherAggregate", 0);
         testSubject.appendEvents(eventMessage);
         assertEquals(5, testSubject.readEvents(null, false).count());
-        assertEquals(eventMessage.getIdentifier(),
-                     testSubject.readEvents(null, false).reduce((a, b) -> b).get().getIdentifier());
+        assertEquals(eventMessage.identifier(),
+                     testSubject.readEvents(null, false).reduce((a, b) -> b).get().identifier());
     }
 
     @Test
@@ -162,8 +162,8 @@ public abstract class EventStorageEngineTest {
         testSubject.appendEvents(events);
         TrackingToken token = testSubject.readEvents(null, false).findFirst().get().trackingToken();
         assertEquals(3, testSubject.readEvents(token, false).count());
-        assertEquals(events.subList(1, events.size()).stream().map(EventMessage::getIdentifier).collect(toList()),
-                     testSubject.readEvents(token, false).map(EventMessage::getIdentifier).collect(toList()));
+        assertEquals(events.subList(1, events.size()).stream().map(EventMessage::identifier).collect(toList()),
+                     testSubject.readEvents(token, false).map(EventMessage::identifier).collect(toList()));
     }
 
     @Test
@@ -293,7 +293,7 @@ public abstract class EventStorageEngineTest {
     }
 
     protected void assertEventStreamsById(List<EventMessage<?>> s1, List<EventMessage<?>> s2) {
-        assertEquals(s1.stream().map(EventMessage::getIdentifier).collect(toList()),
-                     s2.stream().map(EventMessage::getIdentifier).collect(toList()));
+        assertEquals(s1.stream().map(EventMessage::identifier).collect(toList()),
+                     s2.stream().map(EventMessage::identifier).collect(toList()));
     }
 }

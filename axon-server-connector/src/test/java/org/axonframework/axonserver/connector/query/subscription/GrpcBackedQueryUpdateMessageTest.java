@@ -46,7 +46,7 @@ class GrpcBackedQueryUpdateMessageTest {
             new SubscriptionMessageSerializer(serializer, serializer, new AxonServerConfiguration());
 
     @Test
-    void getIdentifierReturnsTheSameIdentifierAsSpecifiedInTheQueryUpdate() {
+    void identifierAsSpecifiedInTheQueryUpdate() {
         SubscriptionQueryUpdateMessage<Object> testSubscriptionQueryUpdateMessage =
                 asUpdateMessage(TEST_QUERY_UPDATE);
         QueryUpdate testQueryUpdate =
@@ -54,7 +54,7 @@ class GrpcBackedQueryUpdateMessageTest {
         GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
-        assertEquals(testQueryUpdate.getMessageIdentifier(), testSubject.getIdentifier());
+        assertEquals(testQueryUpdate.getMessageIdentifier(), testSubject.identifier());
     }
 
     @Test

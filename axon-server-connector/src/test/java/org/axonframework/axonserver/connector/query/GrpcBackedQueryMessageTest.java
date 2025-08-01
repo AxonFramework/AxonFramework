@@ -79,7 +79,7 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void getIdentifierReturnsTheSameIdentifierAsSpecifiedInTheQueryRequest() {
+    void identifierAsSpecifiedInTheQueryRequest() {
         QueryMessage<TestQuery, String> testQueryMessage =
                 new GenericQueryMessage<>(new MessageType("query"), TEST_QUERY, RESPONSE_TYPE);
         QueryRequest testQueryRequest =
@@ -87,7 +87,7 @@ class GrpcBackedQueryMessageTest {
         GrpcBackedQueryMessage<TestQuery, String> testSubject =
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
-        assertEquals(testQueryRequest.getMessageIdentifier(), testSubject.getIdentifier());
+        assertEquals(testQueryRequest.getMessageIdentifier(), testSubject.identifier());
     }
 
     @Test

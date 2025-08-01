@@ -84,7 +84,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     }
 
     @Override
-    public String getIdentifier() {
+    public String identifier() {
         return query.getMessageIdentifier();
     }
 

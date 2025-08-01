@@ -80,7 +80,7 @@ public class EventConverter implements DescribableComponent {
 
     private Event convertEventMessage(EventMessage<?> eventMessage) {
         return Event.newBuilder()
-                    .setIdentifier(eventMessage.getIdentifier())
+                    .setIdentifier(eventMessage.identifier())
                     .setTimestamp(eventMessage.getTimestamp().toEpochMilli())
                     .setName(eventMessage.type().name())
                     .setVersion(eventMessage.type().version())

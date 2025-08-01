@@ -292,7 +292,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                                        e.getSequenceNumber(), //
                                        e.getPayloadType().getSimpleName(), //
                                        e.getAggregateIdentifier(), //
-                                       e.getIdentifier(), //
+                                       e.identifier(), //
                                        e.getPayload());
             events.add(str);
             return null;

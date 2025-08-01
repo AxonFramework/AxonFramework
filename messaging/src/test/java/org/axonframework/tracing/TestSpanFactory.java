@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -195,7 +195,7 @@ public class TestSpanFactory implements SpanFactory {
     private Optional<TestSpan> findSpan(String name, Message<?> message, Predicate<TestSpan> filter) {
         return findSpan(name, filter.and(
                 s -> s.message != null
-                        && s.message.getIdentifier().equals(message.getIdentifier())));
+                        && s.message.identifier().equals(message.identifier())));
     }
 
     @Override

@@ -198,7 +198,7 @@ class SimpleQueryBusTest {
         assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
         assertEquals("hello1234", result.get().getPayload());
         assertEquals(
-                MetaData.with(CORRELATION_ID, testQuery.getIdentifier()).and(TRACE_ID, "fakeTraceId"),
+                MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
                 result.get().getMetaData()
         );
     }
@@ -215,7 +215,7 @@ class SimpleQueryBusTest {
         assertNull(result.get().getPayload());
         assertEquals(String.class, result.get().getPayloadType());
         assertEquals(
-                MetaData.with(CORRELATION_ID, testQuery.getIdentifier()).and(TRACE_ID, "fakeTraceId"),
+                MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
                 result.get().getMetaData()
         );
     }
@@ -743,8 +743,8 @@ class SimpleQueryBusTest {
                 new MessageType(String.class), "Hello, World", singleStringResponse
         );
         QueryResponseMessage<String> queryResponseMessage = testSubject.query(testQuery).get();
-        assertEquals(testQuery.getIdentifier(), queryResponseMessage.getMetaData().get("traceId"));
-        assertEquals(testQuery.getIdentifier(), queryResponseMessage.getMetaData().get("correlationId"));
+        assertEquals(testQuery.identifier(), queryResponseMessage.getMetaData().get("traceId"));
+        assertEquals(testQuery.identifier(), queryResponseMessage.getMetaData().get("correlationId"));
         assertEquals("Hello, World1234", queryResponseMessage.getPayload());
     }
 

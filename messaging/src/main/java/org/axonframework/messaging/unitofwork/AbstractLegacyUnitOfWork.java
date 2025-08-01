@@ -174,7 +174,7 @@ public abstract class AbstractLegacyUnitOfWork<T extends Message<?>> implements 
                         "Encountered exception creating correlation data for message with id: '{}' "
                                 + "using correlation provider with class: '{}'"
                                 + "will continue without as this might otherwise prevent a rollback.",
-                        getMessage().getIdentifier(),
+                        getMessage().identifier(),
                         correlationDataProvider.getClass(),
                         e);
             }

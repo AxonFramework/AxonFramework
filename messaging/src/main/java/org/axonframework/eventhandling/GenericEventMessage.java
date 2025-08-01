@@ -108,7 +108,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * of Work.
      *
      * @param delegate          The {@link Message} containing {@link Message#getPayload() payload},
-     *                          {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                          {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                          {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
      * @param timestampSupplier {@link Supplier} for the {@link Instant timestamp} of the
      *                          {@link EventMessage EventMessage's} creation.
@@ -123,14 +123,14 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * Constructs a {@code GenericEventMessage} with given {@code delegate} and {@code timestamp}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericEventMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
      * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
-     *                  {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                  {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                  {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
      * @param timestamp The {@link Instant timestamp} of this {@link EventMessage GenericEventMessage's} creation.
      */
@@ -182,6 +182,6 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
             //noinspection unchecked
             return (EventMessage<C>) this;
         }
-        return new GenericEventMessage<>(this.getIdentifier(), this.type(), converted, getMetaData(), getTimestamp());
+        return new GenericEventMessage<>(this.identifier(), this.type(), converted, getMetaData(), getTimestamp());
     }
 }

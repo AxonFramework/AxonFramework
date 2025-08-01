@@ -123,7 +123,7 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
             eventMessage = new GenericDomainEventMessage<>(resultSet.getString(schema.aggregateTypeColumn()),
                                                            resultSet.getString(schema.aggregateIdentifierColumn()),
                                                            resultSet.getLong(schema.sequenceNumberColumn()),
-                                                           serializedMessage.getIdentifier(),
+                                                           serializedMessage.identifier(),
                                                            MessageType.fromString(resultSet.getString(schema.typeColumn())),
                                                            serializedMessage.getPayload(),
                                                            serializedMessage.getMetaData(),

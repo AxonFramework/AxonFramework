@@ -56,7 +56,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
     @Override
     public <T> Message<T> convertToOutboundMessage(EventMessage<T> event) {
         Map<String, Object> headers = new HashMap<>(event.getMetaData());
-        headers.put(MESSAGE_ID, event.getIdentifier());
+        headers.put(MESSAGE_ID, event.identifier());
         headers.put(MESSAGE_TYPE, event.type().toString());
         if (event instanceof DomainEventMessage) {
             headers.put(AGGREGATE_ID, ((DomainEventMessage<?>) event).getAggregateIdentifier());

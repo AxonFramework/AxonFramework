@@ -27,7 +27,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 /**
  * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the {@link EventMessage}'s
  * {@link org.axonframework.messaging.MetaData}, based on a given {@code metaDataKey}. In the absence of the given
- * {@code metaDataKey} on the {@link org.axonframework.messaging.MetaData}, the {@link EventMessage#getIdentifier()} is
+ * {@code metaDataKey} on the {@link org.axonframework.messaging.MetaData}, the {@link EventMessage#identifier()} is
  * used.
  *
  * @author Lucas Campos
@@ -70,7 +70,7 @@ public class MetaDataSequencingPolicy implements SequencingPolicy {
     public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
         return Optional.ofNullable(
                 event.getMetaData()
-                     .getOrDefault(metaDataKey, event.getIdentifier())
+                     .getOrDefault(metaDataKey, event.identifier())
         );
     }
 
