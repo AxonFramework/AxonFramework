@@ -48,7 +48,11 @@ public class EventProcessorConfiguration {
 
     protected List<EventHandlingComponent> eventHandlingComponents;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
+
+    // TODO #3098 - Remove MessageMonitor from EventProcessorConfiguration, keep the usages just in some decorator around EventHandlingComponent
     protected MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+
+    // TODO #3098 - Remove EventProcessorSpanFactory from EventProcessorConfiguration, keep the usages just in some decorator around EventHandlingComponent
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
                                                                                       .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                       .build();
