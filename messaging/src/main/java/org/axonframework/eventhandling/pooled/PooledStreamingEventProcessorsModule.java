@@ -24,6 +24,7 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 
 import java.util.ArrayList;
@@ -43,18 +44,20 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
 
     @Override
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+        componentRegistry(cr -> cr.registerIfNotPresent(TokenStore.class, cfg -> new InMemoryTokenStore()));
         componentRegistry(
                 cr -> cr.registerComponent(
                         PooledStreamingEventProcessorModule.Customization.class,
                         "pooledStreamingEventProcessorCustomization",
                         cfg ->
-                                processorsDefaultCustomization.andThen((axonConfig, processorConfig) -> {
-                                    cfg.getOptionalComponent(TokenStore.class)
-                                       .ifPresent(processorConfig::tokenStore);
-                                    cfg.getOptionalComponent(StreamableEventSource.class)
-                                       .ifPresent(processorConfig::eventSource);
-                                    return processorConfig;
-                                })
+                                PooledStreamingEventProcessorModule.Customization.noOp().andThen(
+                                        (axonConfig, processorConfig) -> {
+                                            cfg.getOptionalComponent(TokenStore.class)
+                                               .ifPresent(processorConfig::tokenStore);
+                                            cfg.getOptionalComponent(StreamableEventSource.class)
+                                               .ifPresent(processorConfig::eventSource);
+                                            return processorConfig;
+                                        }).andThen(processorsDefaultCustomization)
                 )
         );
         moduleBuilders.forEach(moduleBuilder ->
@@ -87,7 +90,8 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
     }
 
     public PooledStreamingEventProcessorsModule processor(
-            ModuleBuilder<PooledStreamingEventProcessorModule> moduleBuilder) {
+            ModuleBuilder<PooledStreamingEventProcessorModule> moduleBuilder
+    ) {
         moduleBuilders.add(moduleBuilder);
         return this;
     }

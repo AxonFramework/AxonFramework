@@ -33,7 +33,6 @@ import org.axonframework.eventhandling.configuration.EventProcessorCustomization
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.lifecycle.Phase;
 
 import java.util.List;
@@ -139,19 +138,21 @@ public class PooledStreamingEventProcessorModule
             @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorConfiguration>> customizationBuilder
     ) {
         configure(
-                cfg -> parentPooledStreamingCustomizationOrDefault(cfg).apply(
+                cfg -> sharedCustomizationOrNoOp(cfg).apply(
                         cfg,
-                        customizationBuilder.build(cfg).apply(
-                                new PooledStreamingEventProcessorConfiguration(
-                                        parentSharedCustomizationOrDefault(cfg).apply(cfg, new EventProcessorConfiguration())
-                                ).tokenStore(new InMemoryTokenStore()) // todo: think about it!
-                        )
+                        customizationBuilder.build(cfg).apply(defaultEventProcessorsConfiguration(cfg))
                 )
         );
         return this;
     }
 
-    private static PooledStreamingEventProcessorModule.Customization parentPooledStreamingCustomizationOrDefault(
+    private static PooledStreamingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
+        return new PooledStreamingEventProcessorConfiguration(
+                parentSharedCustomizationOrDefault(cfg).apply(cfg, new EventProcessorConfiguration())
+        );
+    }
+
+    private static PooledStreamingEventProcessorModule.Customization sharedCustomizationOrNoOp(
             Configuration cfg
     ) {
         return cfg.getOptionalComponent(PooledStreamingEventProcessorModule.Customization.class, "pooledStreamingEventProcessorCustomization")

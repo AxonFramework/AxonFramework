@@ -109,20 +109,23 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
             @Nonnull ComponentBuilder<UnaryOperator<SubscribingEventProcessorConfiguration>> customizationBuilder
     ) {
         configure(
-                cfg -> parentSubscribingConfigurationOrDefault(cfg).apply(
+                cfg -> sharedCustomizationOrNoOp(cfg).apply(
                         cfg,
-                        customizationBuilder.build(cfg).apply(
-                                new SubscribingEventProcessorConfiguration(
-                                        parentSharedCustomizationOrDefault(cfg).apply(cfg,
-                                                                                      new EventProcessorConfiguration())
-                                )
-                        )
+                        customizationBuilder.build(cfg).apply(defaultEventProcessorsConfiguration(cfg))
                 )
         );
         return this;
     }
 
-    private static SubscribingEventProcessorModule.Customization parentSubscribingConfigurationOrDefault(
+    @Nonnull
+    private static SubscribingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
+        return new SubscribingEventProcessorConfiguration(
+                parentSharedCustomizationOrDefault(cfg).apply(cfg,
+                                                              new EventProcessorConfiguration())
+        );
+    }
+
+    private static SubscribingEventProcessorModule.Customization sharedCustomizationOrNoOp(
             Configuration cfg
     ) {
         return cfg.getOptionalComponent(SubscribingEventProcessorModule.Customization.class, "subscribingEventProcessorCustomization")

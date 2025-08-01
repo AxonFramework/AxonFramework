@@ -21,6 +21,7 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
+import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +44,13 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
                 cr -> cr.registerComponent(
                         SubscribingEventProcessorModule.Customization.class,
                         "subscribingEventProcessorCustomization",
-                        cfg -> processorsDefaultCustomization
+                        cfg ->
+                                SubscribingEventProcessorModule.Customization.noOp().andThen(
+                                        (axonConfig, processorConfig) -> {
+                                            cfg.getOptionalComponent(SubscribableMessageSource.class)
+                                               .ifPresent(processorConfig::messageSource);
+                                            return processorConfig;
+                                        }).andThen(processorsDefaultCustomization)
                 )
         );
         moduleBuilders.forEach(moduleBuilder ->
