@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -542,11 +543,11 @@ class WorkPackageTest {
         private final List<ContextMessage> processedEvents = new ArrayList<>();
 
         @Override
-        public CompletableFuture<?> processBatch(List<? extends EventMessage<?>> eventMessages, ProcessingContext processingContext, Segment processingSegment) {
-            if (batchProcessorPredicate.test(eventMessages, TrackingToken.fromContext(processingContext).orElse(null))) {
-                processedEvents.addAll(eventMessages.stream().map(m -> new ContextMessage(m, processingContext)).toList());
+        public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context) {
+            if (batchProcessorPredicate.test(events, TrackingToken.fromContext(context).orElse(null))) {
+                processedEvents.addAll(events.stream().map(m -> new ContextMessage(m, context)).toList());
             }
-            return CompletableFuture.completedFuture(null);
+            return MessageStream.empty();
         }
 
         public List<ContextMessage> getProcessedEvents() {

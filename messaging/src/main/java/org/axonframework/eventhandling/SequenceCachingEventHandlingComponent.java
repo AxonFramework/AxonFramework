@@ -21,13 +21,13 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 public class SequenceCachingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
-    private final int cacheSize;
     private final Context.ResourceKey<SequenceIdentifiersCache> resourceKey;
 
     /**
@@ -36,18 +36,7 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
      * @param delegate The instance to delegate calls to.
      */
     public SequenceCachingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
-        this(delegate, 1000); // Default cache size
-    }
-
-    /**
-     * Constructs the component with given {@code delegate} to receive calls and specified cache size.
-     *
-     * @param delegate  The instance to delegate calls to.
-     * @param cacheSize The maximum number of entries to store in the cache.
-     */
-    public SequenceCachingEventHandlingComponent(@Nonnull EventHandlingComponent delegate, int cacheSize) {
         super(delegate);
-        this.cacheSize = cacheSize;
         this.resourceKey = Context.ResourceKey.withLabel("sequenceIdentifiersCache");
     }
 
@@ -63,7 +52,7 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
 
         SequenceIdentifiersCache cache = context.computeResourceIfAbsent(
                 resourceKey,
-                () -> new SequenceIdentifiersCache(cacheSize)
+                SequenceIdentifiersCache::new
         );
 
         var cachedSequenceId = cache.get(eventIdentifier);
@@ -77,10 +66,10 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
     }
 
     /**
-     * A size-limited cache for storing sequence identifiers per event handling component instance.
-     * The cache uses a LRU (Least Recently Used) eviction policy when the maximum size is reached.
+     * A size-limited cache for storing sequence identifiers per event handling component instance. The cache uses a LRU
+     * (Least Recently Used) eviction policy when the maximum size is reached.
      */
-    public static final class SequenceIdentifiersCache {
+    private static final class SequenceIdentifiersCache {
 
         private final Map<String, Object> cache;
 
@@ -89,18 +78,8 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
          *
          * @param maxSize The maximum number of entries to store in the cache.
          */
-        public SequenceIdentifiersCache(int maxSize) {
-            if (maxSize <= 0) {
-                throw new IllegalArgumentException("Cache size must be positive");
-            }
-
-            // Use LinkedHashMap with access-order for LRU eviction
-            this.cache = new java.util.LinkedHashMap<>(16, 0.75f, true) {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<String, Object> eldest) {
-                    return size() > maxSize;
-                }
-            };
+        SequenceIdentifiersCache() {
+            this.cache = new HashMap<>();
         }
 
         /**
@@ -109,7 +88,7 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
          * @param eventIdentifier    The event identifier to use as key.
          * @param sequenceIdentifier The sequence identifier to store.
          */
-        public void put(@Nonnull String eventIdentifier, @Nonnull Object sequenceIdentifier) {
+        void put(@Nonnull String eventIdentifier, @Nonnull Object sequenceIdentifier) {
             cache.put(eventIdentifier, sequenceIdentifier);
         }
 
@@ -120,17 +99,8 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
          * @return An {@link Optional} containing the sequence identifier if present, empty otherwise.
          */
         @Nonnull
-        public Optional<Object> get(@Nonnull String eventIdentifier) {
+        Optional<Object> get(@Nonnull String eventIdentifier) {
             return Optional.ofNullable(cache.get(eventIdentifier));
-        }
-
-        /**
-         * Returns the current number of entries in the cache.
-         *
-         * @return The current cache size.
-         */
-        public int size() {
-            return cache.size();
         }
     }
 }

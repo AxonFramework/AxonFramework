@@ -19,8 +19,6 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
-import org.axonframework.eventhandling.pipeline.HandlingEventProcessingPipeline;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -98,7 +96,9 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
                                                 context);
             }
         };
-        MonitoringEventHandlingComponent monitoredEventHandlingComponent = new MonitoringEventHandlingComponent(messageMonitor, mockEventHandlingComponent);
+        MonitoringEventHandlingComponent monitoredEventHandlingComponent = new MonitoringEventHandlingComponent(
+                messageMonitor,
+                mockEventHandlingComponent);
         TestEventProcessor testSubject = TestEventProcessor.builder()
                                                            .name("test")
                                                            .eventHandlingComponent(monitoredEventHandlingComponent)
@@ -114,14 +114,16 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
 
         private static final SimpleUnitOfWorkFactory UNIT_OF_WORK_FACTORY = new SimpleUnitOfWorkFactory();
         private final String name;
-        private final EventProcessingPipeline eventProcessingPipeline;
+        private final ProcessorEventHandlingComponents processorEventHandlingComponents;
 
         private TestEventProcessor(Builder builder) {
             builder.validate();
             this.name = builder.name;
-            var eventHandlingComponent = new InterceptingEventHandlingComponent(new MessageHandlerInterceptors(builder.interceptors()), builder.eventHandlingComponent());
-            this.eventProcessingPipeline = new HandlingEventProcessingPipeline(
-                    new MonitoringEventHandlingComponent(builder.messageMonitor, eventHandlingComponent)
+            var eventHandlingComponent = new InterceptingEventHandlingComponent(new MessageHandlerInterceptors(builder.interceptors()),
+                                                                                builder.eventHandlingComponent());
+            this.processorEventHandlingComponents = new ProcessorEventHandlingComponents(
+                    List.of(new MonitoringEventHandlingComponent(builder.messageMonitor,
+                                                                 eventHandlingComponent))
             );
         }
 
@@ -154,7 +156,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) {
             var unitOfWork = UNIT_OF_WORK_FACTORY.create();
-            unitOfWork.executeWithResult(ctx -> eventProcessingPipeline.process(
+            unitOfWork.executeWithResult(ctx -> processorEventHandlingComponents.handle(
                     eventMessages, ctx).asCompletableFuture()
             ).join();
         }

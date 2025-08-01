@@ -46,7 +46,7 @@ class SequenceOverridingEventHandlingComponentTest {
         var testSubject = new SequenceOverridingEventHandlingComponent(policy, delegate);
         var testEvent = new GenericEventMessage<>(
                 new MessageType("TestEvent"), 
-                "test-payload"
+                "test-eventId"
         );
 
         //when
@@ -65,7 +65,7 @@ class SequenceOverridingEventHandlingComponentTest {
         var testSubject = new SequenceOverridingEventHandlingComponent(policy, delegate);
         var testEvent = new GenericEventMessage<>(
                 new MessageType("TestEvent"), 
-                "test-payload"
+                "test-eventId"
         );
 
         //when

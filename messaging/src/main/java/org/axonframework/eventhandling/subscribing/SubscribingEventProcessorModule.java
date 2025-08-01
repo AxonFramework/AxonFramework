@@ -23,13 +23,11 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.configuration.EventProcessorsCustomization;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -81,7 +79,6 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         var eventSource = subscribableMessageSourceBuilder.build(parent);
 
         var spanFactory = eventProcessorsCustomization.spanFactory();
-        var errorHandler = eventProcessorsCustomization.errorHandler();
         var messageMonitor = eventProcessorsCustomization.messageMonitor();
         var decoratedEventHandlingComponent = new DefaultEventProcessorHandlingComponent(
                 spanFactory,
@@ -90,19 +87,10 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                 eventHandlingComponent,
                 false
         );
-        var processorEventHandlingComponents = new ProcessorEventHandlingComponents(List.of(decoratedEventHandlingComponent));
-        var decoratedEventProcessingPipeline = new DefaultEventProcessingPipeline(
-                processorName,
-                errorHandler,
-                spanFactory,
-                processorEventHandlingComponents,
-                false
-        );
         var processor = new SubscribingEventProcessor(
                 processorName,
                 eventSource,
-                decoratedEventProcessingPipeline,
-                decoratedEventHandlingComponent,
+                List.of(decoratedEventHandlingComponent),
                 new SimpleUnitOfWorkFactory(),
                 c -> c
         );

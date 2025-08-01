@@ -23,19 +23,19 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.pipeline.DefaultEventProcessingPipeline;
 import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
-import org.axonframework.eventhandling.pipeline.EventProcessingPipeline;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static java.util.Objects.requireNonNull;
@@ -56,40 +56,46 @@ public class SubscribingEventProcessor implements EventProcessor {
     private final String name;
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final UnitOfWorkFactory unitOfWorkFactory;
-    private final EventProcessingPipeline eventProcessingPipeline;
+    private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final EventProcessingStrategy processingStrategy;
-    private final EventHandlingComponent eventHandlingComponent;
+    private final ErrorHandler errorHandler;
 
     private volatile Registration eventBusRegistration;
 
     public SubscribingEventProcessor(
             @Nonnull String name,
             @Nonnull SubscribableMessageSource<? extends EventMessage<?>> messageSource,
-            @Nonnull EventProcessingPipeline eventProcessingPipeline,
-            @Nonnull EventHandlingComponent eventHandlingComponent,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
             @Nonnull UnitOfWorkFactory unitOfWorkFactory,
             @Nonnull UnaryOperator<Customization> configurationOverride
     ) {
         this.name = name;
         this.messageSource = messageSource;
-        this.eventProcessingPipeline = eventProcessingPipeline;
-        this.eventHandlingComponent = eventHandlingComponent;
+        this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
         this.unitOfWorkFactory = unitOfWorkFactory;
         var customization = requireNonNull(configurationOverride, "configurationOverride may not be null")
                 .apply(Customization.defaultValues());
         this.processingStrategy = customization.processingStrategy();
+        this.errorHandler = customization.errorHandler();
     }
 
-    public record Customization(EventProcessingStrategy processingStrategy) {
+    public record Customization(@Nonnull EventProcessingStrategy processingStrategy,
+                                @Nonnull ErrorHandler errorHandler) {
 
         static Customization defaultValues() {
             return new Customization(
-                    DirectEventProcessingStrategy.INSTANCE
+                    DirectEventProcessingStrategy.INSTANCE,
+                    PropagatingErrorHandler.INSTANCE
             );
         }
 
-        public Customization processingStrategy(EventProcessingStrategy processingStrategy) {
-            return new Customization(processingStrategy);
+        public Customization processingStrategy(@Nonnull EventProcessingStrategy processingStrategy) {
+            return new Customization(processingStrategy, this.errorHandler);
+        }
+
+        public Customization errorHandler(@Nonnull ErrorHandler errorHandler) {
+            return new Customization(this.processingStrategy,
+                                     requireNonNull(errorHandler, "errorHandler may not be null"));
         }
     }
 
@@ -108,22 +114,16 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.messageSource = builder.messageSource;
         this.processingStrategy = builder.processingStrategy;
         this.unitOfWorkFactory = builder.unitOfWorkFactory;
+        this.errorHandler = builder.errorHandler;
         var messageHandlerInterceptors = new MessageHandlerInterceptors(builder.interceptors());
-        var spanFactory = builder.spanFactory;
-        this.eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
+        var eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
                 builder.spanFactory,
                 builder.messageMonitor,
                 messageHandlerInterceptors,
                 builder.eventHandlingComponent(),
                 false
         );
-        this.eventProcessingPipeline = new DefaultEventProcessingPipeline(
-                this.name,
-                builder.errorHandler,
-                spanFactory,
-                new ProcessorEventHandlingComponents(List.of(eventHandlingComponent)),
-                false
-        );
+        this.eventHandlingComponents = new ProcessorEventHandlingComponents(List.of(eventHandlingComponent));
     }
 
     /**
@@ -185,17 +185,31 @@ public class SubscribingEventProcessor implements EventProcessor {
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
             var unitOfWork = unitOfWorkFactory.create();
-            FutureUtils.joinAndUnwrap(
-                    unitOfWork.executeWithResult(processingContext -> eventProcessingPipeline.process(
-                            eventMessages,
-                            processingContext
-                    ).asCompletableFuture())
-            );
+            unitOfWork.onInvocation(processingContext -> processWithErrorHandling(eventMessages, processingContext).asCompletableFuture());
+            FutureUtils.joinAndUnwrap(unitOfWork.execute());
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new EventProcessingException("Exception occurred while processing events", e);
         }
+    }
+
+    private MessageStream.Empty<Message<Void>> processWithErrorHandling(List<? extends EventMessage<?>> events, ProcessingContext context) {
+        return eventHandlingComponents.handle(events, context)
+                                      .onErrorContinue(ex -> {
+                                          try {
+                                              errorHandler.handleError(new ErrorContext(name, ex, events));
+                                          } catch (RuntimeException re) {
+                                              return MessageStream.failed(re);
+                                          } catch (Exception e) {
+                                              return MessageStream.failed(new EventProcessingException(
+                                                      "Exception occurred while processing events",
+                                                      e));
+                                          }
+                                          return MessageStream.empty().cast();
+                                      })
+                                      .ignoreEntries()
+                                      .cast();
     }
 
     /**
@@ -256,13 +270,6 @@ public class SubscribingEventProcessor implements EventProcessor {
         @Override
         public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
             super.eventHandlingComponent(eventHandlingComponent);
-            return this;
-        }
-
-        @Override
-        public Builder eventProcessingPipeline(
-                @Nonnull Function<EventProcessorBuilder, EventProcessingPipeline> eventProcessingPipelineBuilder) {
-            super.eventProcessingPipeline(eventProcessingPipelineBuilder);
             return this;
         }
 
