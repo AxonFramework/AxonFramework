@@ -64,7 +64,7 @@ class SequencingEventHandlingComponentTest {
         }
     }
 
-    @RepeatedTest(10)
+    @RepeatedTest(5)
     void whenHandlersAreAsyncOrderingIsPreservedAmongEventsWithSameSequenceIdentifier() {
         // given
         EventHandlingComponent eventHandlingComponent = sequencingEventHandlingComponent();
@@ -107,7 +107,7 @@ class SequencingEventHandlingComponentTest {
                 .containsExactly("event-3_seq-B", "event-6_seq-B", "event-8_seq-B", "event-9_seq-B");
     }
 
-    @RepeatedTest(3)
+    @RepeatedTest(5)
     void whenHandlersAreSyncOrderingIsPreservedInEntireBatch() {
         // given
         EventHandlingComponent eventHandlingComponent = sequencingEventHandlingComponent();

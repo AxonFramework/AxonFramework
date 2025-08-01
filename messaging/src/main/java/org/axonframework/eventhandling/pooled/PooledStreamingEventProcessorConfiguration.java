@@ -83,7 +83,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  */
 public class PooledStreamingEventProcessorConfiguration extends EventProcessorConfiguration {
 
-    // todo: think about split interface - to access and change? like Configurer / Configuration
+    // TODO #3098 - Think about the interface segregation here - to read and write like Configurer / Configuration.
 
     private StreamableEventSource<? extends EventMessage<?>> eventSource;
     private TokenStore tokenStore;

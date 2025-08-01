@@ -28,6 +28,7 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
+import org.axonframework.eventhandling.SequenceCachingEventHandlingComponent;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
@@ -67,6 +68,7 @@ public class PooledStreamingEventProcessorModule
         var spanFactory = configuration.spanFactory();
         var messageMonitor = configuration.messageMonitor();
 
+        // TODO #3098 - Clean-up this part.
         if (configuration.workerExecutorBuilder() == null) {
             Function<String, ScheduledExecutorService> workerExecutorBuilder = processorName -> {
                 ScheduledExecutorService workerExecutor =
@@ -89,7 +91,7 @@ public class PooledStreamingEventProcessorModule
 
         var eventHandlingComponents = configuration.eventHandlingComponents();
 
-        // TODO: Move it somewhere else! Like a decorator if certain enhancer applied.
+        // TODO #3098 - Move it somewhere else! Like a decorator if certain enhancer applied.
         List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
                 .stream()
                 .map(c -> new TracingEventHandlingComponent(
@@ -98,7 +100,7 @@ public class PooledStreamingEventProcessorModule
                                 messageMonitor,
                                 new InterceptingEventHandlingComponent(
                                         messageHandlerInterceptors,
-                                        c
+                                        new SequenceCachingEventHandlingComponent(c)
                                 )
                         )
                 )).collect(Collectors.toUnmodifiableList());

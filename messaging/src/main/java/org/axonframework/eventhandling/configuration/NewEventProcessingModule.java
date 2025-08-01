@@ -33,10 +33,14 @@ import java.util.function.UnaryOperator;
 // TODO #3098 - Rename to EventProcessingModule - I wanted to limit the files changed at once
 public class NewEventProcessingModule extends BaseModule<NewEventProcessingModule> {
 
+    public static final String DEFAULT_NAME = "defaultEventProcessingModule";
+
     private final PooledStreamingEventProcessorsModule pooledStreamingEventProcessorsModule = new PooledStreamingEventProcessorsModule(
-            "pooledStreamingProcessors");
+            PooledStreamingEventProcessorsModule.DEFAULT_NAME
+    );
     private final SubscribingEventProcessorsModule subscribingEventProcessorsModule = new SubscribingEventProcessorsModule(
-            "subscribingProcessors");
+            SubscribingEventProcessorsModule.DEFAULT_NAME
+    );
 
     private EventProcessorCustomization processorsDefaultCustomization = EventProcessorCustomization.noOp();
 

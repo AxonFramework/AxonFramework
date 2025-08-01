@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
@@ -34,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import jakarta.annotation.Nonnull;
 
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.*;
