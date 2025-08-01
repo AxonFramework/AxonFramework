@@ -857,6 +857,73 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
+    void shouldConcatWithMultipleStreamsSequentially() {
+        M first = createRandomMessage();
+        M second = createRandomMessage();
+        M third = createRandomMessage();
+        
+        MessageStream<M> stream1 = completedTestSubject(List.of(first));
+        MessageStream<M> stream2 = completedTestSubject(List.of(second));  
+        MessageStream<M> stream3 = completedTestSubject(List.of(third));
+
+        MessageStream<M> concatenated = stream1.concatWith(stream2).concatWith(stream3);
+
+        StepVerifier.create(concatenated.asFlux())
+                    .expectNextMatches(entry -> entry.message().equals(first))
+                    .expectNextMatches(entry -> entry.message().equals(second))
+                    .expectNextMatches(entry -> entry.message().equals(third))
+                    .verifyComplete();
+    }
+
+    @Test
+    void shouldFailConcatWithIfFirstStreamFails() {
+        RuntimeException testException = new RuntimeException("First stream failed");
+        MessageStream<M> firstStream = failingTestSubject(List.of(), testException);
+        MessageStream<M> secondStream = completedTestSubject(List.of(createRandomMessage()));
+
+        MessageStream<M> concatenated = firstStream.concatWith(secondStream);
+
+        StepVerifier.create(concatenated.asFlux())
+                    .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("First stream failed"))
+                    .verify();
+    }
+
+    @Test
+    void shouldFailConcatWithIfSecondStreamFails() {
+        RuntimeException testException = new RuntimeException("Second stream failed");
+        M firstMessage = createRandomMessage();
+        MessageStream<M> firstStream = completedTestSubject(List.of(firstMessage));
+        MessageStream<M> secondStream = failingTestSubject(List.of(), testException);
+
+        MessageStream<M> concatenated = firstStream.concatWith(secondStream);
+
+        StepVerifier.create(concatenated.asFlux())
+                    .expectNextMatches(entry -> entry.message().equals(firstMessage))
+                    .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("Second stream failed"))
+                    .verify();
+    }
+
+    @Test
+    void shouldPreserveOrderInConcatWithStreams() {
+        M first1 = createRandomMessage();
+        M first2 = createRandomMessage();
+        M second1 = createRandomMessage();
+        M second2 = createRandomMessage();
+        
+        MessageStream<M> stream1 = completedTestSubject(List.of(first1, first2));
+        MessageStream<M> stream2 = completedTestSubject(List.of(second1, second2));
+
+        MessageStream<M> concatenated = stream1.concatWith(stream2);
+
+        StepVerifier.create(concatenated.asFlux())
+                    .expectNextMatches(entry -> entry.message().equals(first1))
+                    .expectNextMatches(entry -> entry.message().equals(first2))
+                    .expectNextMatches(entry -> entry.message().equals(second1))
+                    .expectNextMatches(entry -> entry.message().equals(second2))
+                    .verifyComplete();
+    }
+
+    @Test
     void shouldInvokeCompletionCallback_asCompletableFuture() {
         AtomicBoolean invoked = new AtomicBoolean();
 
