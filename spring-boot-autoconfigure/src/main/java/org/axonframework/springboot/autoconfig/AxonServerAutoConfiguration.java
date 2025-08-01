@@ -38,8 +38,8 @@ import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.PriorityResolver;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.LegacyEventProcessingConfiguration;
-import org.axonframework.config.LegacyEventProcessingConfigurer;
+import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Message;
@@ -183,7 +183,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @ConditionalOnMissingClass("org.axonframework.extensions.multitenancy.autoconfig.MultiTenancyAxonServerAutoConfiguration")
     public EventProcessorInfoConfiguration processorInfoConfiguration(
-            LegacyEventProcessingConfiguration eventProcessingConfiguration,
+            EventProcessingConfiguration eventProcessingConfiguration,
             AxonServerConnectionManager connectionManager,
             AxonServerConfiguration configuration
     ) {
@@ -262,7 +262,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     /**
-     * Creates a {@link ConfigurerModule} to invoke {@link LegacyEventProcessingConfigurer ::usingSubscribingEventProcessors}
+     * Creates a {@link ConfigurerModule} to invoke {@link EventProcessingConfigurer ::usingSubscribingEventProcessors}
      *
      * @param executorBuilder         The {@link java.util.concurrent.ScheduledExecutorService} builder used during
      *                                construction of the {@link PersistentStreamMessageSourceDefinition}.

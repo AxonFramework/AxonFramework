@@ -212,7 +212,7 @@ public class SagaConfigurer<T> {
             Function<LegacyConfiguration, AbstractSagaManager<S>> managerBuilder = configurer.managerBuilder;
             if (managerBuilder == null) {
                 managerBuilder = c -> {
-                    LegacyEventProcessingConfiguration eventProcessingConfiguration = c.eventProcessingConfiguration();
+                    EventProcessingConfiguration eventProcessingConfiguration = c.eventProcessingConfiguration();
                     return AnnotatedSagaManager.<S>builder()
                                                .sagaType(configurer.type)
                                                .sagaRepository(repository.get())

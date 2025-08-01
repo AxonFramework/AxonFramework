@@ -43,7 +43,7 @@ import java.util.function.Function;
  * @since 4.0
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
-public interface LegacyEventProcessingConfiguration {
+public interface EventProcessingConfiguration {
 
     /**
      * Obtains an {@link EventProcessor} through the given {@code name}.
@@ -219,7 +219,7 @@ public interface LegacyEventProcessingConfiguration {
     /**
      * Returns the {@link EnqueuePolicy dead letter policy} tied to the given {@code processingGroup} in an
      * {@link Optional}. May return an {@link Optional} containing the
-     * {@link LegacyEventProcessingConfigurer#registerDefaultDeadLetterPolicy(Function) default policy} if present.
+     * {@link EventProcessingConfigurer#registerDefaultDeadLetterPolicy(Function) default policy} if present.
      *
      * @param processingGroup The name of the processing group for which to return an {@link EnqueuePolicy}.
      * @return The {@link EnqueuePolicy} belonging to the given {@code processingGroup}.

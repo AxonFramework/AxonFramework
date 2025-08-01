@@ -29,7 +29,7 @@ Caching prevents unnecessary calls to the database, at the cost of keeping some 
 
 == Add a dead letter queue to a specific processing group
 
-The other way is to add a `SequencedDeadLetterQueue` to a specific processing group in the `LegacyEventProcessingConfigurer` using the `registerDeadLetterQueue` method.
+The other way is to add a `SequencedDeadLetterQueue` to a specific processing group in the `EventProcessingConfigurer` using the `registerDeadLetterQueue` method.
 For example for setting the `JpaSequencedDeadLetterQueue` on the `my-processing-group` in a non-Spring context.
 
 [source,java]

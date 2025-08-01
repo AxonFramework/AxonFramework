@@ -849,7 +849,7 @@ This way, changes to the view model can be stored atomically with the changed to
 Furthermore, it guarantees **exactly once** processing semantics.
 ====
 
-Note that you can configure the token store to use for a streaming processor in the `LegacyEventProcessingConfigurer`:
+Note that you can configure the token store to use for a streaming processor in the `EventProcessingConfigurer`:
 
 [tabs]
 ====
@@ -914,7 +914,7 @@ public class AxonConfig {
 }
 ----
 
-Alternatively, inject the `LegacyEventProcessingConfigurer`, which allows more fine-grained customization:
+Alternatively, inject the `EventProcessingConfigurer`, which allows more fine-grained customization:
 
 [source,java]
 ----
@@ -1524,7 +1524,7 @@ Through xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console]'s processo
 The xref:axon-server-reference:ROOT:index.adoc[Axon Server] Dashboard contains split and merge buttons to adjust the number of segments. While it's straightforward to use as well, it does not support automatic scaling based on the number of replicas.
 
 ==== 3. Manual programming
-If none of the other two options are available, you can adjust the number of segments through the Axon Framework API. The `StreamingEventProcessor` exposes the `splitSegment(int segmentId)` and `mergeSegment(int segmentId)` methods. To obtain the `StreamingEventProcessor`, you can use the `LegacyEventProcessingConfiguration` to retrieve the processor by name.
+If none of the other two options are available, you can adjust the number of segments through the Axon Framework API. The `StreamingEventProcessor` exposes the `splitSegment(int segmentId)` and `mergeSegment(int segmentId)` methods. To obtain the `StreamingEventProcessor`, you can use the `EventProcessingConfiguration` to retrieve the processor by name.
 
 For those taking this approach, consider the following snippet as a form of guidance:
 
@@ -1833,7 +1833,7 @@ public class AxonConfig {
 }
 ----
 
-Assuming a `buildMultiStreamableMessageSource(...)` method is present, we can use the outcome to register a processor with the configuring `LegacyEventProcessingConfigurer`:
+Assuming a `buildMultiStreamableMessageSource(...)` method is present, we can use the outcome to register a processor with the configuring `EventProcessingConfigurer`:
 
 [tabs]
 ====

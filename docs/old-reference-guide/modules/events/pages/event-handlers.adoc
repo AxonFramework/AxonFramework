@@ -59,9 +59,9 @@ Since `EventA` is not assignable to `EventB` (it is its superclass), the `TopLis
 [[registering-event-handlers]]
 == Registering event handlers
 
-Event handling Components are defined using an `LegacyEventProcessingConfigurer`, which can be accessed from the global Axon `Configurer`.
-`LegacyEventProcessingConfigurer` is used to configure an `LegacyEventProcessingConfiguration`.
-Typically, an application will have a single `LegacyEventProcessingConfiguration` defined, but larger, more modular applications may define one per module.
+Event handling Components are defined using an `EventProcessingConfigurer`, which can be accessed from the global Axon `Configurer`.
+`EventProcessingConfigurer` is used to configure an `EventProcessingConfiguration`.
+Typically, an application will have a single `EventProcessingConfiguration` defined, but larger, more modular applications may define one per module.
 
 To register objects with `@EventHandler` methods, consider the following samples:
 
