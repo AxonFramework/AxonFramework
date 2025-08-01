@@ -63,7 +63,6 @@ public class PooledStreamingEventProcessorModule
 
     @Override
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        // todo: move it to the component registry!
         var configuration = configurationBuilder.build(parent);
 
         var spanFactory = configuration.spanFactory();
@@ -107,9 +106,6 @@ public class PooledStreamingEventProcessorModule
                 processorName,
                 configuration.eventHandlingComponents(decoratedEventHandlingComponents)
         );
-
-//        lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, processor::start);
-//        lifecycleRegistry.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, processor::shutdownAsync);
 
         var processorComponentDefinition = ComponentDefinition
                 .ofTypeAndName(PooledStreamingEventProcessor.class, processorName)

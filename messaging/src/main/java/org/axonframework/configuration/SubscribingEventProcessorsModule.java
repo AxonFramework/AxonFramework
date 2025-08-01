@@ -21,7 +21,6 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +29,7 @@ import java.util.function.UnaryOperator;
 
 public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEventProcessorsModule> {
 
-    private final SubscribingEventProcessorConfiguration INITIAL_EVENT_PROCESSOR_DEFAULTS =
-            new SubscribingEventProcessorConfiguration()
-                    .unitOfWorkFactory(new SimpleUnitOfWorkFactory());
-
-    private ComponentBuilder<SubscribingEventProcessorConfiguration> eventProcessorDefaultsBuilder = c -> INITIAL_EVENT_PROCESSOR_DEFAULTS;
+    private SubscribingEventProcessorModule.Customization processorsDefaultCustomization = SubscribingEventProcessorModule.Customization.noOp();
     private final List<ModuleBuilder<SubscribingEventProcessorModule>> moduleBuilders = new ArrayList<>();
 
     @Internal
@@ -46,8 +41,9 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         componentRegistry(
                 cr -> cr.registerComponent(
-                        SubscribingEventProcessorConfiguration.class,
-                        eventProcessorDefaultsBuilder
+                        SubscribingEventProcessorModule.Customization.class,
+                        "subscribingEventProcessorCustomization",
+                        cfg -> processorsDefaultCustomization
                 )
         );
         moduleBuilders.forEach(moduleBuilder ->
@@ -59,20 +55,18 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
     }
 
     public SubscribingEventProcessorsModule defaults(
-            @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> configureDefaults) {
-        this.eventProcessorDefaultsBuilder = config -> {
-            var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
-            return configureDefaults.apply(config, defaults);
-        };
+            @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> configureDefaults
+    ) {
+        this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
         return this;
     }
 
     public SubscribingEventProcessorsModule defaults(
-            @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> configureDefaults) {
-        this.eventProcessorDefaultsBuilder = config -> {
-            var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
-            return configureDefaults.apply(defaults);
-        };
+            @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> configureDefaults
+    ) {
+        this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
+                (axonConfig, pConfig) -> configureDefaults.apply(pConfig)
+        );
         return this;
     }
 
