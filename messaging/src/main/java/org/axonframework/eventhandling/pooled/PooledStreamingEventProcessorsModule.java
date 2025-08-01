@@ -22,6 +22,7 @@ import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -92,10 +93,26 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
     }
 
     public PooledStreamingEventProcessorsModule processor(
-            ModuleBuilder<PooledStreamingEventProcessorModule> moduleBuilder
+            @Nonnull String name,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents
     ) {
-        moduleBuilders.add(moduleBuilder);
-        return this;
+        return processor(
+                name,
+                eventHandlingComponents,
+                (cfg, c) -> c
+        );
+    }
+
+    public PooledStreamingEventProcessorsModule processor(
+            @Nonnull String name,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
+            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> customize
+    ) {
+        return processor(
+                name,
+                (cfg, customization) -> customize.apply(cfg,
+                                                        customization.eventHandlingComponents(eventHandlingComponents))
+        );
     }
 
     public PooledStreamingEventProcessorsModule processor(
@@ -106,5 +123,12 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
                 EventProcessorModule.pooledStreaming(name)
                                     .customize(config -> customization -> customize.apply(config, customization))
         );
+    }
+
+    public PooledStreamingEventProcessorsModule processor(
+            ModuleBuilder<PooledStreamingEventProcessorModule> moduleBuilder
+    ) {
+        moduleBuilders.add(moduleBuilder);
+        return this;
     }
 }

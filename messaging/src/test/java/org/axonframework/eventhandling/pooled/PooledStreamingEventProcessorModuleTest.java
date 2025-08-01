@@ -56,8 +56,7 @@ class PooledStreamingEventProcessorModuleTest {
                 ep -> ep.pooledStreaming(
                         ps -> ps
                                 .defaults(d -> d.eventSource(eventSource))
-                                .processor(processorName,
-                                           (c, p) -> p.eventHandlingComponents(List.of(new SimpleEventHandlingComponent())))
+                                .processor(processorName, List.of(new SimpleEventHandlingComponent()))
                 )
         );
         var configuration = configurer.build();
@@ -87,8 +86,7 @@ class PooledStreamingEventProcessorModuleTest {
                 ep -> ep.pooledStreaming(
                         ps -> ps
                                 .defaults(d -> d.eventSource(eventSource))
-                                .processor(processorName,
-                                           (c, p) -> p.eventHandlingComponents(List.of(new SimpleEventHandlingComponent())))
+                                .processor(processorName, List.of(new SimpleEventHandlingComponent()))
                 )
         );
         var configuration = configurer.build();
