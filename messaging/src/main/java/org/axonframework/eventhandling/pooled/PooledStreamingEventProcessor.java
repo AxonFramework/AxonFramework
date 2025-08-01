@@ -107,7 +107,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     }
 
     public PooledStreamingEventProcessor(
-            @Nonnull String name, // I'm not sure about the name? Maybe someone also want to override it later?
+            @Nonnull String name,
             @Nonnull PooledStreamingEventProcessorConfiguration configuration
     ) {
         this.name = Objects.requireNonNull(name, "Name may not be null");
