@@ -126,14 +126,6 @@ public class UpdateCheckerHttpClient {
         }
     }
 
-    private static boolean shouldRedirect(int statusCode) {
-        return statusCode == HttpURLConnection.HTTP_MOVED_PERM
-                || statusCode == HttpURLConnection.HTTP_MOVED_TEMP
-                || statusCode == HttpURLConnection.HTTP_SEE_OTHER
-                || statusCode == HTTP_TEMP_REDIRECT
-                || statusCode == HTTP_PERM_REDIRECT;
-    }
-
     private String readResponse(HttpURLConnection connection) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(),
                                                                               StandardCharsets.UTF_8))) {
@@ -144,6 +136,14 @@ public class UpdateCheckerHttpClient {
             }
             return response.toString();
         }
+    }
+
+    private static boolean shouldRedirect(int statusCode) {
+        return statusCode == HttpURLConnection.HTTP_MOVED_PERM
+                || statusCode == HttpURLConnection.HTTP_MOVED_TEMP
+                || statusCode == HttpURLConnection.HTTP_SEE_OTHER
+                || statusCode == HTTP_TEMP_REDIRECT
+                || statusCode == HTTP_PERM_REDIRECT;
     }
 
     private static String removeQueryParameters(String redirect) {
