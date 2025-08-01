@@ -46,17 +46,18 @@ class PooledStreamingEventProcessorModuleTest {
                         d -> d.unitOfWorkFactory(expectedUnitOfWorkFactory)
                 )
         );
+        var processorName = "testProcessor";
         configurer.eventProcessing(
                 ep -> ep.pooledStreaming(
                         ps -> ps
                                 .defaults(d -> d.eventSource(eventSource))
-                                .processor("sample", (c, p) -> p.eventHandlingComponents(List.of(new SimpleEventHandlingComponent())))
+                                .processor(processorName, (c, p) -> p.eventHandlingComponents(List.of(new SimpleEventHandlingComponent())))
                 )
         );
         var configuration = configurer.build();
 
         // when
-//        var processor = configuration.getComponent(PooledStreamingEventProcessor.class);
+        var processor = configuration.getComponent(PooledStreamingEventProcessor.class, processorName);
 
         // todo: get it config by reflection?
     }

@@ -19,8 +19,8 @@ package org.axonframework.springboot;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.LegacyEventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -86,7 +86,7 @@ class SagaCustomizeIntegrationTest {
     @Autowired
     private AtomicInteger eventsReceived;
     @Autowired
-    private LegacyEventProcessingModule eventProcessingModule;
+    private EventProcessingModule eventProcessingModule;
 
     @Disabled("TODO #3443 - Adjust SagaRepository API to be async-native")
     @Test
@@ -135,7 +135,7 @@ class SagaCustomizeIntegrationTest {
         }
 
         @Autowired
-        private void registerEventHandlers(LegacyEventProcessingModule eventProcessingConfiguration) throws ClassNotFoundException {
+        private void registerEventHandlers(EventProcessingModule eventProcessingConfiguration) throws ClassNotFoundException {
             Set<String> registeredProcessingGroups = new HashSet<>();
             ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
             scanner.addIncludeFilter(new AnnotationTypeFilter(Saga.class));

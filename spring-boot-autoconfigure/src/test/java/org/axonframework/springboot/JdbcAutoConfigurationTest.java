@@ -20,8 +20,8 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
-import org.axonframework.config.LegacyEventProcessingConfiguration;
-import org.axonframework.config.LegacyEventProcessingModule;
+import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -88,7 +88,7 @@ public class JdbcAutoConfigurationTest {
             assertThat(context).getBean(TokenStore.class).isInstanceOf(JdbcTokenStore.class);
             assertThat(context).getBean(SagaStore.class).isInstanceOf(JdbcSagaStore.class);
             assertThat(context).getBean(TokenStore.class)
-                               .isEqualTo(context.getBean(LegacyEventProcessingConfiguration.class)
+                               .isEqualTo(context.getBean(EventProcessingConfiguration.class)
                                                  .tokenStore("test"));
             assertThat(context).getBean(PersistenceExceptionResolver.class).isInstanceOf(
                     JdbcSQLErrorCodesResolver.class);
@@ -195,7 +195,7 @@ public class JdbcAutoConfigurationTest {
                    .run(context -> {
                        assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
 
-                       LegacyEventProcessingModule eventProcessingConfig = context.getBean(LegacyEventProcessingModule.class);
+                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
                        assertNotNull(eventProcessingConfig);
 
                        Optional<SequencedDeadLetterQueue<EventMessage<?>>> dlq =
@@ -215,7 +215,7 @@ public class JdbcAutoConfigurationTest {
                        assertNotNull(context.getBean("deadLetterQueueProviderConfigurerModule",
                                                      DeadLetterQueueProviderConfigurerModule.class));
 
-                       LegacyEventProcessingModule eventProcessingConfig = context.getBean(LegacyEventProcessingModule.class);
+                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
                        assertNotNull(eventProcessingConfig);
 
                        Optional<SequencedDeadLetterQueue<EventMessage<?>>> dlq =

@@ -21,9 +21,9 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.LegacyEventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -112,8 +112,8 @@ class InfraConfigurationTest {
             // Validate existence of Event Processor "test"
             assertThat(context).getBean("eventProcessingModule")
                                .isNotNull();
-            LegacyEventProcessingModule eventProcessingModule =
-                    context.getBean("eventProcessingModule", LegacyEventProcessingModule.class);
+            EventProcessingModule eventProcessingModule =
+                    context.getBean("eventProcessingModule", EventProcessingModule.class);
             assertThat(eventProcessingModule.eventProcessor("test")).isPresent();
 
             assertThat(context).getBean("eventHandlerInvocations", CountDownLatch.class)

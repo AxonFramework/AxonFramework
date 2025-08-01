@@ -755,15 +755,15 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     }
 
     @Override
-    public LegacyEventProcessingConfigurer eventProcessing() {
-        List<LegacyEventProcessingConfigurer> eventProcessingConfigurers =
+    public EventProcessingConfigurer eventProcessing() {
+        List<EventProcessingConfigurer> eventProcessingConfigurers =
                 modules.stream()
-                       .filter(module -> module.isType(LegacyEventProcessingConfigurer.class))
-                       .map(module -> (LegacyEventProcessingConfigurer) module.unwrap()) // It's safe to unwrap it since it isn't dependent on anything else.
+                       .filter(module -> module.isType(EventProcessingConfigurer.class))
+                       .map(module -> (EventProcessingConfigurer) module.unwrap()) // It's safe to unwrap it since it isn't dependent on anything else.
                        .collect(toList());
         switch (eventProcessingConfigurers.size()) {
             case 0:
-                LegacyEventProcessingModule eventProcessingModule = new LegacyEventProcessingModule();
+                EventProcessingModule eventProcessingModule = new EventProcessingModule();
                 registerModule(eventProcessingModule);
                 return eventProcessingModule;
             case 1:

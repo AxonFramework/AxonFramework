@@ -77,7 +77,7 @@ public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
     }
 
     private List<AbstractSagaManager> retrieveSagaManagers() {
-        LegacyEventProcessingConfiguration eventProcessingConfiguration = configuration.eventProcessingConfiguration();
+        EventProcessingConfiguration eventProcessingConfiguration = configuration.eventProcessingConfiguration();
         if (eventProcessingConfiguration == null) {
             return Collections.emptyList();
         }
