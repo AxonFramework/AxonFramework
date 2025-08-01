@@ -63,6 +63,8 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         var spanFactory = configuration.spanFactory();
         var messageMonitor = configuration.messageMonitor();
         var eventHandlingComponents = configuration.eventHandlingComponents();
+
+        // TODO: Move it somewhere else! Like a decorator if certain enhancer applied.
         List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
                 .stream()
                 .map(c -> new TracingEventHandlingComponent(
@@ -75,6 +77,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                                 )
                         )
                 )).collect(Collectors.toUnmodifiableList());
+
         var processor = new SubscribingEventProcessor(
                 processorName,
                 configuration.eventHandlingComponents(decoratedEventHandlingComponents)

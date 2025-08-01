@@ -88,6 +88,8 @@ public class PooledStreamingEventProcessorModule
         }
 
         var eventHandlingComponents = configuration.eventHandlingComponents();
+
+        // TODO: Move it somewhere else! Like a decorator if certain enhancer applied.
         List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
                 .stream()
                 .map(c -> new TracingEventHandlingComponent(
