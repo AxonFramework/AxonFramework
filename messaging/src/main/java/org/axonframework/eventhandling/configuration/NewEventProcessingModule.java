@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.configuration;
+package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.configuration.BaseModule;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.configuration.SubscribingEventProcessorsModule;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
-import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsModule;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 
-public class EventProcessingModule extends BaseModule<EventProcessingModule> {
+// TODO: Will be renamed to EventProcessingModule, but I wanted to limit changes and keept legacy EventProcessingModule for now.
+public class NewEventProcessingModule extends BaseModule<NewEventProcessingModule> {
 
     private final PooledStreamingEventProcessorsModule pooledStreamingEventProcessorsModule = new PooledStreamingEventProcessorsModule(
             "pooledStreamingProcessors");
@@ -35,7 +41,7 @@ public class EventProcessingModule extends BaseModule<EventProcessingModule> {
     private EventProcessorCustomization processorsDefaultCustomization = EventProcessorCustomization.noOp();
 
     @Internal
-    public EventProcessingModule(@Nonnull String name) {
+    public NewEventProcessingModule(@Nonnull String name) {
         super(name);
     }
 
@@ -44,7 +50,13 @@ public class EventProcessingModule extends BaseModule<EventProcessingModule> {
         componentRegistry(
                 cr -> cr.registerComponent(
                         EventProcessorCustomization.class,
-                        cfg -> processorsDefaultCustomization
+                        cfg -> EventProcessorCustomization.noOp().andThen(
+                                (axonConfig, processorConfig) -> {
+                                    cfg.getOptionalComponent(TransactionManager.class)
+                                       .map(TransactionalUnitOfWorkFactory::new)
+                                       .ifPresent(processorConfig::unitOfWorkFactory);
+                                    return processorConfig;
+                                }).andThen(processorsDefaultCustomization)
                 )
         );
         componentRegistry(cr -> cr.registerModule(
@@ -56,31 +68,30 @@ public class EventProcessingModule extends BaseModule<EventProcessingModule> {
         return super.build(parent, lifecycleRegistry);
     }
 
-    public EventProcessingModule defaults(
+    public NewEventProcessingModule defaults(
             @Nonnull BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> configureDefaults) {
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
         return this;
     }
 
-    public EventProcessingModule defaults(@Nonnull UnaryOperator<EventProcessorConfiguration> configureDefaults) {
+    public NewEventProcessingModule defaults(@Nonnull UnaryOperator<EventProcessorConfiguration> configureDefaults) {
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
                 (axonConfig, pConfig) -> configureDefaults.apply(pConfig)
         );
         return this;
     }
 
-    public EventProcessingModule pooledStreaming(
+    public NewEventProcessingModule pooledStreaming(
             @Nonnull UnaryOperator<PooledStreamingEventProcessorsModule> processorsModuleTask
     ) {
         processorsModuleTask.apply(pooledStreamingEventProcessorsModule);
         return this;
     }
 
-    public EventProcessingModule subscribing(
+    public NewEventProcessingModule subscribing(
             @Nonnull UnaryOperator<SubscribingEventProcessorsModule> processorsModuleTask
     ) {
         processorsModuleTask.apply(subscribingEventProcessorsModule);
         return this;
     }
-
 }

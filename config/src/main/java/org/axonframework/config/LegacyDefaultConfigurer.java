@@ -778,7 +778,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                        .collect(toList());
         switch (eventProcessingConfigurers.size()) {
             case 0:
-                LegacyEventProcessingModule eventProcessingModule = new LegacyEventProcessingModule();
+                EventProcessingModule eventProcessingModule = new EventProcessingModule();
                 registerModule(eventProcessingModule);
                 return eventProcessingModule;
             case 1:

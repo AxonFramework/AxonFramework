@@ -17,7 +17,7 @@
 package org.axonframework.springboot.integration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.config.LegacyEventProcessingModule;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -43,11 +43,11 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * This test ensures that any handler interceptor registered via {@link LegacyEventProcessingModule} is triggered.
+ * This test ensures that any handler interceptor registered via {@link EventProcessingModule} is triggered.
  *
  * @author Milan Savic
  */
-class LegacyEventProcessingModuleWithInterceptorsTest {
+class EventProcessingModuleWithInterceptorsTest {
 
     private ApplicationContextRunner testApplicationContext;
 
@@ -82,8 +82,8 @@ class LegacyEventProcessingModuleWithInterceptorsTest {
     static class TestContext {
 
         @Bean
-        public LegacyEventProcessingModule eventProcessingConfiguration() {
-            LegacyEventProcessingModule eventProcessingModule = new LegacyEventProcessingModule();
+        public EventProcessingModule eventProcessingConfiguration() {
+            EventProcessingModule eventProcessingModule = new EventProcessingModule();
             eventProcessingModule.usingSubscribingEventProcessors();
             eventProcessingModule.registerDefaultHandlerInterceptor((a, b) -> new MyInterceptor());
             return eventProcessingModule;

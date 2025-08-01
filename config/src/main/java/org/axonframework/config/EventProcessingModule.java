@@ -84,7 +84,7 @@ import static org.axonframework.config.LegacyEventProcessingConfigurer.PooledStr
  * @since 4.0
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
-public class LegacyEventProcessingModule
+public class EventProcessingModule
         implements ModuleConfiguration, LegacyEventProcessingConfiguration, LegacyEventProcessingConfigurer {
 
     private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
@@ -102,7 +102,7 @@ public class LegacyEventProcessingModule
     private TypeProcessingGroupSelector typeFallback =
             TypeProcessingGroupSelector.defaultSelector(DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION);
     private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(
-            LegacyEventProcessingModule::packageOfObject);
+            EventProcessingModule::packageOfObject);
 
     private final Map<String, SagaConfigurer<?>> sagaConfigurations = new HashMap<>();
     private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
