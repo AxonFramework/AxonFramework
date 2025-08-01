@@ -17,136 +17,95 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Context.ResourceKey;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
+import java.lang.invoke.MethodHandles;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Implementation of {@link DelegatingEventHandlingComponent} that ensures events with the same sequence identifier
- * are processed sequentially. Events with different sequence identifiers can be processed concurrently.
+ * An {@link EventHandlingComponent} wrapper that ensures events with the same sequence identifier are handled
+ * sequentially.
  * <p>
- * This component uses the {@link ProcessingContext} to manage the sequencing state, storing a map of
- * sequence identifiers to message streams that are currently being processed.
+ * This component uses the {@link ProcessingContext} to track the last invocation for each sequence identifier. When a
+ * new event arrives, it checks if there's an ongoing process for its sequence identifier. If so, it chains the new
+ * event's handling to occur after the previous one completes. If not, it handles the event immediately.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Internal
 public class SequencingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
-    private static final Logger logger = LoggerFactory.getLogger(SequencingEventHandlingComponent.class);
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private final Context.ResourceKey<Map<Object, CompletableFuture<?>>> sequencedInvocationsKey =
+            Context.ResourceKey.withLabel("sequencedInvocations");
 
     /**
-     * ResourceKey for storing the map of sequence identifiers to message streams in the ProcessingContext.
-     */
-    private final ResourceKey<ConcurrentMap<Object, MessageStream<?>>> sequencingMapKey =
-            ResourceKey.withLabel("sequencingMap");
-
-    /**
-     * Constructs a new SequencingEventHandlingComponent with the given delegate.
+     * Constructs the component with given {@code delegate} to receive calls.
      *
-     * @param delegate The EventHandlingComponent to delegate calls to.
+     * @param delegate         The instance to delegate calls to.
+     * @param sequencingPolicy The policy to determine the sequence identifier for events.
      */
-    public SequencingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
+    public SequencingEventHandlingComponent(
+            @Nonnull EventHandlingComponent delegate
+    ) {
         super(delegate);
     }
 
     @Nonnull
     @Override
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
-                                                    @Nonnull ProcessingContext context) {
-        Object sequenceIdentifier = sequenceIdentifierFor(event, context);
-        logger.debug("Handling event [{}] with sequence identifier [{}]", event.getIdentifier(), sequenceIdentifier);
+                                                     @Nonnull ProcessingContext context) {
+        Map<Object, CompletableFuture<?>> invocations =
+                context.computeResourceIfAbsent(sequencedInvocationsKey, ConcurrentHashMap::new);
 
-        // Get or create the map of sequence identifiers to message streams
-        ConcurrentMap<Object, MessageStream<?>> sequencingMap =
-                context.computeResourceIfAbsent(sequencingMapKey, ConcurrentHashMap::new);
+        CompletableFuture<Message<Void>> resultFuture = new CompletableFuture<>();
 
-        // Check if there's already a message stream for this sequence identifier
-        MessageStream<?> currentStream = sequencingMap.get(sequenceIdentifier);
-        
-        if (currentStream == null) {
-            // No current stream, create a new one and process the event immediately
-            logger.debug("No current stream for sequence identifier [{}], processing immediately", sequenceIdentifier);
-            MessageStream.Empty<Message<Void>> result = delegate.handle(event, context);
-            sequencingMap.put(sequenceIdentifier, result);
-            
-            // When the stream completes, remove it from the map
-            result.whenComplete(() -> {
-                logger.debug("Processing completed for sequence identifier [{}], removing from map", sequenceIdentifier);
-                sequencingMap.remove(sequenceIdentifier, result);
-            });
-            
-            return result;
+        invocations.compute(
+                sequenceIdentifierFor(event, context),
+                (sequenceIdentifier, previousInvocation) -> chainedSequenceInvocations(
+                        sequenceIdentifier,
+                        previousInvocation,
+                        event,
+                        context
+                ).whenComplete((r, e) -> {
+                    if (e != null) {
+                        resultFuture.completeExceptionally(e); // is it OK?
+                    } else {
+                        resultFuture.complete(null);
+                    }
+                }));
+
+        return MessageStream.fromFuture(resultFuture).ignoreEntries();
+    }
+
+    private CompletableFuture<?> chainedSequenceInvocations(
+            Object sequenceIdentifier,
+            CompletableFuture<?> previousInvocation,
+            EventMessage<?> event,
+            ProcessingContext context
+    ) {
+        if (previousInvocation == null) {
+            logger.debug("Event [{}] | No previous invocation for sequence identifier [{}]. Handling immediately.",
+                         event, sequenceIdentifier);
+            return delegate.handle(event, context).asCompletableFuture();
         } else {
-            // There's already a stream for this sequence identifier, wait for it to complete
-            logger.debug("Found existing stream for sequence identifier [{}], waiting for it to complete", sequenceIdentifier);
-            
-            // Create a reference to hold the actual stream that will be used once the current stream completes
-            AtomicReference<MessageStream.Empty<Message<Void>>> resultStreamRef = new AtomicReference<>(MessageStream.empty());
-            
-            // Create a custom MessageStream.Empty implementation that delegates to the actual stream
-            MessageStream.Empty<Message<Void>> delegatingStream = new MessageStream.Empty<Message<Void>>() {
-                @Override
-                public Optional<MessageStream.Entry<Message<Void>>> next() {
-                    return resultStreamRef.get().next();
-                }
-
-                @Override
-                public Optional<MessageStream.Entry<Message<Void>>> peek() {
-                    return resultStreamRef.get().peek();
-                }
-
-                @Override
-                public void onAvailable(@Nonnull Runnable callback) {
-                    resultStreamRef.get().onAvailable(callback);
-                }
-
-                @Override
-                public Optional<Throwable> error() {
-                    return resultStreamRef.get().error();
-                }
-
-                @Override
-                public boolean isCompleted() {
-                    return resultStreamRef.get().isCompleted();
-                }
-
-                @Override
-                public boolean hasNextAvailable() {
-                    return resultStreamRef.get().hasNextAvailable();
-                }
-
-                @Override
-                public void close() {
-                    resultStreamRef.get().close();
-                }
-            };
-            
-            // When the current stream completes, process this event
-            currentStream.whenComplete(() -> {
-                logger.debug("Previous stream completed for sequence identifier [{}], processing next event", sequenceIdentifier);
-                MessageStream.Empty<Message<Void>> result = delegate.handle(event, context);
-                sequencingMap.put(sequenceIdentifier, result);
-                
-                // When this stream completes, remove it from the map
-                result.whenComplete(() -> {
-                    logger.debug("Processing completed for sequence identifier [{}], removing from map", sequenceIdentifier);
-                    sequencingMap.remove(sequenceIdentifier, result);
-                });
-                
-                // Update the reference to the actual stream
-                resultStreamRef.set(result);
-            });
-            
-            return delegatingStream;
+            logger.debug(
+                    "Event [{}] | Previous invocation found for sequence identifier [{}]. Chaining the current event handling.",
+                    event,
+                    sequenceIdentifier);
+            return previousInvocation.thenCompose(
+                    (r) -> delegate.handle(event, context).asCompletableFuture()
+            );
         }
     }
 }
