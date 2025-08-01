@@ -96,7 +96,7 @@ class ListEntityChildMetamodelTest {
             );
 
             var result = testSubject.handle(commandMessage, parentEntity, context);
-            assertEquals("1337-result", result.asCompletableFuture().join().message().getPayload());
+            assertEquals("1337-result", result.asCompletableFuture().join().message().payload());
 
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
             verify(childEntityMetamodel).handleInstance(commandMessage, entityToBeFound, context);
@@ -160,7 +160,7 @@ class ListEntityChildMetamodelTest {
             when(childEntityMetamodel.evolve(any(), any(), any())).thenAnswer(answ -> {
                 RecordingChildEntity child = answ.getArgument(0);
                 EventMessage<String> event = answ.getArgument(1);
-                return child.evolve("child evolve: " + event.getPayload());
+                return child.evolve("child evolve: " + event.payload());
             });
             when(childEntityFieldDefinition.evolveParentBasedOnChildInput(any(), any())).thenAnswer(answ -> {
                 RecordingParentEntity parent = answ.getArgument(0);

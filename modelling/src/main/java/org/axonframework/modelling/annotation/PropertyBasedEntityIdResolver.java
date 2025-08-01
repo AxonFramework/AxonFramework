@@ -56,7 +56,7 @@ public class PropertyBasedEntityIdResolver implements EntityIdResolver<Object> {
     @Nonnull
     @Override
     public Object resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
-        Object payload = message.getPayload();
+        Object payload = message.payload();
         Class<?> payloadClass = payload.getClass();
         var property = propertyCache.computeIfAbsent(payloadClass, this::getObjectProperty);
         Object value = property.getValue(payload);

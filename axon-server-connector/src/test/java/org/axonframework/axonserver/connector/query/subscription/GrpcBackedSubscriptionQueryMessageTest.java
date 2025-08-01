@@ -141,7 +141,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void getPayloadReturnsAnIdenticalObjectAsInsertedThroughTheSubscriptionQuery() {
+    void payloadReturnsAnIdenticalObjectAsInsertedThroughTheSubscriptionQuery() {
         TestQuery expectedQuery = TEST_QUERY;
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), expectedQuery, RESPONSE_TYPE, RESPONSE_TYPE
@@ -155,7 +155,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
         GrpcBackedSubscriptionQueryMessage<TestQuery, String, String> testSubject =
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
-        assertEquals(expectedQuery, testSubject.getPayload());
+        assertEquals(expectedQuery, testSubject.payload());
     }
 
     @Test

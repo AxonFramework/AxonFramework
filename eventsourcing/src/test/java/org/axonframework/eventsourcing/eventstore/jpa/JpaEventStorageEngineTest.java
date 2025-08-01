@@ -241,8 +241,8 @@ class JpaEventStorageEngineTest
         entityManager.clear();
 
         assertFalse(entityManager.createQuery("SELECT e FROM CustomDomainEventEntry e").getResultList().isEmpty());
-        assertEquals("Snapshot1", testSubject.readSnapshot(AGGREGATE).get().getPayload());
-        assertEquals("Payload1", testSubject.readEvents(AGGREGATE).peek().getPayload());
+        assertEquals("Snapshot1", testSubject.readSnapshot(AGGREGATE).get().payload());
+        assertEquals("Payload1", testSubject.readEvents(AGGREGATE).peek().payload());
     }
 
     @Test
@@ -262,8 +262,8 @@ class JpaEventStorageEngineTest
                 createDomainEvent(AGGREGATE, 4, expectedPayloadTwo));
 
         List<String> eventStorageEngineResult = testSubject.readEvents(null, false)
-                .filter(m -> m.getPayload() instanceof String)
-                .map(m -> (String) m.getPayload())
+                .filter(m -> m.payload() instanceof String)
+                .map(m -> (String) m.payload())
                 .collect(toList());
         assertEquals(Arrays.asList(expectedPayloadOne, expectedPayloadTwo), eventStorageEngineResult);
 
@@ -272,8 +272,8 @@ class JpaEventStorageEngineTest
         assertTrue(eventStoreResult.hasNextAvailable());
         assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
         assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
-        assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().getPayload());
-        assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().getPayload());
+        assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().payload());
+        assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().payload());
         assertFalse(eventStoreResult.hasNextAvailable());
     }
 

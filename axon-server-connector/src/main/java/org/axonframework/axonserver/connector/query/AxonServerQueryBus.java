@@ -392,7 +392,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     new MultipleInstancesResponseType<>(expectedResponseType);
             ConvertingResponseMessage<List<R>> convertingMessage =
                     new ConvertingResponseMessage<>(multiResponseType, responseMessage);
-            return Flux.fromStream(convertingMessage.getPayload()
+            return Flux.fromStream(convertingMessage.payload()
                                                     .stream()
                                                     .map(payload -> singleMessage(responseMessage,
                                                                                   payload,

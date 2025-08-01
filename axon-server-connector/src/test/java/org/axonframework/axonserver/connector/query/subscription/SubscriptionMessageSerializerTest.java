@@ -64,7 +64,7 @@ class SubscriptionMessageSerializerTest {
         QueryUpdate result = testSubject.serialize(message);
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
         assertEquals(message.identifier(), deserialized.identifier());
-        assertEquals(message.getPayload(), deserialized.getPayload());
+        assertEquals(message.payload(), deserialized.payload());
         assertEquals(message.getPayloadType(), deserialized.getPayloadType());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
     }

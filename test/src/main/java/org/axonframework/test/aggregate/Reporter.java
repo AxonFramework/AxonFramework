@@ -457,7 +457,7 @@ public class Reporter {
     private String payloadContentType(Object event) {
         String simpleName;
         if (event instanceof EventMessage) {
-            simpleName = ((EventMessage<?>) event).getPayload().getClass().getName();
+            simpleName = ((EventMessage<?>) event).payload().getClass().getName();
         } else {
             simpleName = event.getClass().getName();
         }

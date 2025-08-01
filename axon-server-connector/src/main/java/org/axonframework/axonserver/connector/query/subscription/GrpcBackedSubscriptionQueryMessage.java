@@ -38,7 +38,7 @@ import java.util.Map;
  * {@link SubscriptionQueryMessage}.
  *
  * @param <P> A generic specifying the type of the {@link SubscriptionQueryMessage SubscriptionQueryMessage's}
- *            {@link #getPayload() payload}.
+ *            {@link #payload() payload}.
  * @param <I> A generic specifying the type of the {@link #getResponseType() initial result} of the
  *            {@link SubscriptionQueryResult}.
  * @param <U> A generic specifying the type of the {@link #getUpdateResponseType() subsequent updates} of the
@@ -102,8 +102,8 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
-    public P getPayload() {
-        return grpcBackedQueryMessage.getPayload();
+    public P payload() {
+        return grpcBackedQueryMessage.payload();
     }
 
     @Override

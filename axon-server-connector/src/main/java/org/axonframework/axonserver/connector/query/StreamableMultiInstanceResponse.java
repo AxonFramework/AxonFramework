@@ -72,7 +72,7 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
         this.responseHandler = responseHandler;
         this.serializer = serializer;
         this.requestId = requestId;
-        List<T> payload = resultMessage.getPayload();
+        List<T> payload = resultMessage.payload();
         this.result = payload != null ? payload.iterator() : emptyIterator();
     }
 

@@ -74,7 +74,7 @@ class AsyncInMemoryStreamableEventSourceTest {
             var asyncEntry1 = asyncStream.next().orElseThrow();
             TrackedEventMessage<?> legacyEvent1 = legacyStream.nextAvailable();
 
-            assertEquals(legacyEvent1.getPayload(), asyncEntry1.message().getPayload());
+            assertEquals(legacyEvent1.payload(), asyncEntry1.message().payload());
             assertEquals(legacyEvent1.trackingToken().position(),
                          TrackingToken.fromContext(asyncEntry1).orElseThrow().position());
 
@@ -82,7 +82,7 @@ class AsyncInMemoryStreamableEventSourceTest {
             var asyncEntry2 = asyncStream.next().orElseThrow();
             TrackedEventMessage<?> legacyEvent2 = legacyStream.nextAvailable();
 
-            assertEquals(legacyEvent2.getPayload(), asyncEntry2.message().getPayload());
+            assertEquals(legacyEvent2.payload(), asyncEntry2.message().payload());
             assertEquals(legacyEvent2.trackingToken().position(),
                          TrackingToken.fromContext(asyncEntry2).orElseThrow().position());
 
@@ -179,12 +179,12 @@ class AsyncInMemoryStreamableEventSourceTest {
             MessageStream<EventMessage<?>> stream = eventSource.open(condition);
             Optional<MessageStream.Entry<EventMessage<?>>> entry1 = stream.next();
             assertTrue(entry1.isPresent());
-            assertEquals("Event 1", entry1.get().message().getPayload());
+            assertEquals("Event 1", entry1.get().message().payload());
             assertEquals(1, TrackingToken.fromContext(entry1.get()).orElseThrow().position().orElse(-1));
 
             Optional<MessageStream.Entry<EventMessage<?>>> entry2 = stream.next();
             assertTrue(entry2.isPresent());
-            assertEquals("Event 2", entry2.get().message().getPayload());
+            assertEquals("Event 2", entry2.get().message().payload());
             assertEquals(2, TrackingToken.fromContext(entry2.get()).orElseThrow().position().orElse(-1));
         }
 

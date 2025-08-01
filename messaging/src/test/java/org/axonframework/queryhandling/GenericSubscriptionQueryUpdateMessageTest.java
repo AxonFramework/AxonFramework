@@ -49,7 +49,7 @@ class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite {
                 new MessageType("query"), payload, String.class
         );
 
-        assertEquals(payload, result.getPayload());
+        assertEquals(payload, result.payload());
     }
 
     @Test
@@ -60,7 +60,7 @@ class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite {
                 new MessageType("query"), payload, String.class
         );
 
-        assertNull(result.getPayload());
+        assertNull(result.payload());
     }
 
     @Test
@@ -73,7 +73,7 @@ class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite {
         Map<String, String> newMetaData = Collections.singletonMap("k2", "v3");
         SubscriptionQueryUpdateMessage<Object> result = original.andMetaData(newMetaData);
 
-        assertEquals(original.getPayload(), result.getPayload());
+        assertEquals(original.payload(), result.payload());
         MetaData expectedMetaData = MetaData.from(metaData)
                                             .mergedWith(newMetaData);
         assertEquals(expectedMetaData, result.getMetaData());
@@ -89,7 +89,7 @@ class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite {
         Map<String, String> newMetaData = Collections.singletonMap("k2", "v3");
         SubscriptionQueryUpdateMessage<Object> result = original.withMetaData(newMetaData);
 
-        assertEquals(original.getPayload(), result.getPayload());
+        assertEquals(original.payload(), result.payload());
         assertEquals(newMetaData, result.getMetaData());
     }
 }

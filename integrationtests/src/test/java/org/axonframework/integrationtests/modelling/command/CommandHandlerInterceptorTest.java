@@ -95,11 +95,11 @@ class CommandHandlerInterceptorTest {
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
 
         verify(eventStore, times(3)).publish(eventCaptor.capture());
-        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).getPayload());
+        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
         assertEquals(new AnyCommandInterceptedEvent(UpdateMyAggregateStateCommand.class.getName()),
-                     eventCaptor.getAllValues().get(1).getPayload());
+                     eventCaptor.getAllValues().get(1).payload());
         assertEquals(new MyAggregateStateUpdatedEvent("id", "state intercepted"),
-                     eventCaptor.getAllValues().get(2).getPayload());
+                     eventCaptor.getAllValues().get(2).payload());
 
         assertEquals("aggregateUpdateResult", result);
     }
@@ -118,10 +118,10 @@ class CommandHandlerInterceptorTest {
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(3)).publish(eventCaptor.capture());
-        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).getPayload());
+        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
         assertEquals(new AnyCommandInterceptedEvent(ClearMyAggregateStateCommand.class.getName()),
-                     eventCaptor.getAllValues().get(1).getPayload());
-        assertEquals(new MyAggregateStateClearedEvent("id"), eventCaptor.getAllValues().get(2).getPayload());
+                     eventCaptor.getAllValues().get(1).payload());
+        assertEquals(new MyAggregateStateClearedEvent("id"), eventCaptor.getAllValues().get(2).payload());
     }
 
     @SuppressWarnings("unchecked")
@@ -138,8 +138,8 @@ class CommandHandlerInterceptorTest {
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(2)).publish(eventCaptor.capture());
-        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).getPayload());
-        assertEquals(new MyAggregateStateNotClearedEvent("id"), eventCaptor.getAllValues().get(1).getPayload());
+        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
+        assertEquals(new MyAggregateStateNotClearedEvent("id"), eventCaptor.getAllValues().get(1).payload());
     }
 
     @SuppressWarnings("unchecked")
@@ -156,12 +156,12 @@ class CommandHandlerInterceptorTest {
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(4)).publish(eventCaptor.capture());
-        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).getPayload());
+        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
         assertEquals(new AnyCommandMatchingPatternInterceptedEvent(MyNestedCommand.class.getName()),
-                     eventCaptor.getAllValues().get(1).getPayload());
+                     eventCaptor.getAllValues().get(1).payload());
         assertEquals(new AnyCommandInterceptedEvent(MyNestedCommand.class.getName()),
-                     eventCaptor.getAllValues().get(2).getPayload());
-        assertEquals(new MyNestedEvent("id", "state intercepted"), eventCaptor.getAllValues().get(3).getPayload());
+                     eventCaptor.getAllValues().get(2).payload());
+        assertEquals(new MyNestedEvent("id", "state intercepted"), eventCaptor.getAllValues().get(3).payload());
     }
 
     @SuppressWarnings("unchecked")
@@ -178,17 +178,17 @@ class CommandHandlerInterceptorTest {
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(6)).publish(eventCaptor.capture());
-        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).getPayload());
+        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
         assertEquals(new AnyCommandMatchingPatternInterceptedEvent(MyNestedNestedCommand.class.getName()),
-                     eventCaptor.getAllValues().get(1).getPayload());
+                     eventCaptor.getAllValues().get(1).payload());
         assertEquals(new AnyCommandInterceptedEvent(MyNestedNestedCommand.class.getName()),
-                     eventCaptor.getAllValues().get(2).getPayload());
+                     eventCaptor.getAllValues().get(2).payload());
         assertEquals(new AnyCommandInterceptedEvent("StaticNestedNested" + MyNestedNestedCommand.class.getName()),
-                     eventCaptor.getAllValues().get(3).getPayload());
+                     eventCaptor.getAllValues().get(3).payload());
         assertEquals(new AnyCommandInterceptedEvent("NestedNested" + MyNestedNestedCommand.class.getName()),
-                     eventCaptor.getAllValues().get(4).getPayload());
+                     eventCaptor.getAllValues().get(4).payload());
         assertEquals(new MyNestedNestedEvent("id", "state parent intercepted intercepted"),
-                     eventCaptor.getAllValues().get(5).getPayload());
+                     eventCaptor.getAllValues().get(5).payload());
     }
 
     @Test
@@ -220,7 +220,7 @@ class CommandHandlerInterceptorTest {
         assertThrows(InterceptorException.class, () -> commandGateway.sendAndWait(interceptorCommand));
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(1)).publish(eventCaptor.capture());
-        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).getPayload());
+        assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
     }
 
     private record CreateMyAggregateCommand(String id) {

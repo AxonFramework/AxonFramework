@@ -27,7 +27,7 @@ import java.util.Map;
  * that reported it. The {@code DomainEventMessage's} sequence number allows messages to be placed in their order of
  * generation.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link DomainEventMessage}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link DomainEventMessage}.
  * @author Allard Buijze
  * @since 2.0.0
  */

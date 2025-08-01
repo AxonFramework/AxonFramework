@@ -237,7 +237,7 @@ public class DeadLetteringEventHandlerInvoker
                                                     transactionManager);
         LegacyUnitOfWork<?> uow = new LegacyDefaultUnitOfWork<>(null);
         uow.attachTransaction(transactionManager);
-        return uow.executeWithResult((ctx) -> queue.process(sequenceFilter, processingTask::process)).getPayload();
+        return uow.executeWithResult((ctx) -> queue.process(sequenceFilter, processingTask::process)).payload();
     }
 
     @Override

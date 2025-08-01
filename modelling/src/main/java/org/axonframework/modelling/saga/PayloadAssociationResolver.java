@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class PayloadAssociationResolver implements AssociationResolver {
     @SuppressWarnings("unchecked")
     public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
                               @Nonnull MessageHandlingMember<T> handler) {
-        return getProperty(associationPropertyName, handler).getValue(message.getPayload());
+        return getProperty(associationPropertyName, handler).getValue(message.payload());
     }
 
     private <T> Property getProperty(String associationPropertyName, MessageHandlingMember<T> handler) {

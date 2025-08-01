@@ -40,7 +40,7 @@ import java.util.function.Function;
  * Instead of implementing {@code Message} directly, consider implementing {@code CommandMessage}, {@code EventMessage}
  * or {@code QueryMessage} instead.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@code Message}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@code Message}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @see org.axonframework.commandhandling.CommandMessage
@@ -90,7 +90,7 @@ public interface Message<P> {
      * <p>
      * Two messages with the same identifiers should be interpreted as different representations of the same conceptual
      * message. In such case, the {@link Message#getMetaData() metadata} may be different for both representations. The
-     * {@link Message#getPayload() payload} <em>may</em> be identical.
+     * {@link Message#payload() payload} <em>may</em> be identical.
      *
      * @return The unique identifier of this {@code Message}.
      */
@@ -121,13 +121,13 @@ public interface Message<P> {
      *
      * @return The payload of this {@code Message} of generic type {@code P}.
      */
-    P getPayload();
+    P payload();
 
     /**
      * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
      * <p>
      * If {@link #getPayloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given {@code type},
-     * {@link #getPayload()} may be invoked instead of using the given {@code converter}.
+     * {@link #payload()} may be invoked instead of using the given {@code converter}.
      * <p>
      * Implementers of this operation may optimize by storing the converted payloads, thus saving a
      * {@link Converter#convert(Object, Class)} invocation in the process. Only when this optimization is in place will
@@ -141,14 +141,14 @@ public interface Message<P> {
      *                              {@code converter} is given.
      */
     default <T> T payloadAs(@Nonnull Class<T> type, @Nullable Converter converter) {
-        return getPayloadType().isAssignableFrom(type) ? type.cast(getPayload()) : payloadAs((Type) type, converter);
+        return getPayloadType().isAssignableFrom(type) ? type.cast(payload()) : payloadAs((Type) type, converter);
     }
 
     /**
      * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
      * <p>
      * If {@link #getPayloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given
-     * {@link TypeReference#getType()}, {@link #getPayload()} may be invoked instead of using the given
+     * {@link TypeReference#getType()}, {@link #payload()} may be invoked instead of using the given
      * {@code converter}.
      * <p>
      * Implementers of this operation may optimize by storing the converted payloads, thus saving a
@@ -170,7 +170,7 @@ public interface Message<P> {
      * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
      * <p>
      * If the given {@code type} is an instance of {@link Class} and {@link #getPayloadType()} is
-     * {@link Class#isAssignableFrom(Class) assignable from} that {@code Class}, {@link #getPayload()} may be invoked
+     * {@link Class#isAssignableFrom(Class) assignable from} that {@code Class}, {@link #payload()} may be invoked
      * instead of using the given {@code converter}.
      * <p>
      * Implementers of this operation may optimize by storing the converted payloads, thus saving a
@@ -202,7 +202,7 @@ public interface Message<P> {
     /**
      * Returns a copy of this {@code Message} (implementation) with the given {@code metaData}.
      * <p>
-     * All others fields, like for example the {@link #getPayload()}, remain unchanged.
+     * All others fields, like for example the {@link #payload()}, remain unchanged.
      * <p/>
      * While the implementation returned may be different from the implementation of {@code this}, implementations must
      * take special care in returning the same type of {@code Message} to prevent errors further downstream.
@@ -216,7 +216,7 @@ public interface Message<P> {
      * Returns a copy of this {@code Message} (implementation) with its {@link Message#getMetaData() metadata} merged
      * with the given {@code metaData}.
      * <p>
-     * All others fields, like for example the {@link #getPayload()}, remain unchanged.
+     * All others fields, like for example the {@link #payload()}, remain unchanged.
      *
      * @param metaData The metadata to merge with.
      * @return A copy of {@code this Message (implementation)} with the given {@code metaData}.
@@ -237,7 +237,7 @@ public interface Message<P> {
      */
     @Deprecated
     default <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
-        return serializer.serialize(getPayload(), expectedRepresentation);
+        return serializer.serialize(payload(), expectedRepresentation);
     }
 
     /**
@@ -269,7 +269,7 @@ public interface Message<P> {
      * @return a message with the converted payload
      */
     default <C> Message<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
-        if (Objects.equals(getPayload(), conversion.apply(getPayload()))) {
+        if (Objects.equals(payload(), conversion.apply(payload()))) {
             //noinspection unchecked
             return (Message<C>) this;
         }

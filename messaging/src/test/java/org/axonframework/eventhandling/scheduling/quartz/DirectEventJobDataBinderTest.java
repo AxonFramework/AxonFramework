@@ -111,7 +111,7 @@ class DirectEventJobDataBinderTest {
 
         assertEquals(testEventMessage.identifier(), resultEventMessage.identifier());
         assertEquals(testEventMessage.getTimestamp(), resultEventMessage.getTimestamp());
-        assertEquals(testEventMessage.getPayload(), resultEventMessage.getPayload());
+        assertEquals(testEventMessage.payload(), resultEventMessage.payload());
         assertEquals(testEventMessage.getPayloadType(), resultEventMessage.getPayloadType());
         assertEquals(testEventMessage.getMetaData(), resultEventMessage.getMetaData());
 

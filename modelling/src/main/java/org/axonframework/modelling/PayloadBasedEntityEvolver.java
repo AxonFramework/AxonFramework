@@ -25,7 +25,7 @@ import java.util.function.BiFunction;
 import static java.util.Objects.requireNonNull;
 
 /**
- * An {@link EntityEvolver} implementation that converts the {@link EventMessage#getPayload()} to the given
+ * An {@link EntityEvolver} implementation that converts the {@link EventMessage#payload()} to the given
  * {@code payloadType} to evolve an entity with.
  * <p>
  * Will throw a {@link ClassCastException} if the {@code payloadType} does not match.
@@ -41,10 +41,10 @@ public class PayloadBasedEntityEvolver<P, E> implements EntityEvolver<E> {
     private final BiFunction<E, P, E> evolver;
 
     /**
-     * Constructs a {@code PayloadConvertingEntityEvolver}, converting the {@link EventMessage#getPayload()} to the
+     * Constructs a {@code PayloadConvertingEntityEvolver}, converting the {@link EventMessage#payload()} to the
      * given {@code payloadType}, after which it invokes the given {@code evolver}.
      * <p>
-     * If the {@link EventMessage#getPayload()} cannot be converted to the requested {@code payloadType}, a
+     * If the {@link EventMessage#payload()} cannot be converted to the requested {@code payloadType}, a
      * {@link ClassCastException} is thrown.
      *
      * @param payloadType The payload type to check against.
@@ -60,7 +60,7 @@ public class PayloadBasedEntityEvolver<P, E> implements EntityEvolver<E> {
     public E evolve(@Nonnull E entity,
                     @Nonnull EventMessage<?> event,
                     @Nonnull ProcessingContext context) {
-        P payload = payloadType.cast(requireNonNull(event, "The event must not be null.").getPayload());
+        P payload = payloadType.cast(requireNonNull(event, "The event must not be null.").payload());
         return evolver.apply(requireNonNull(entity, "The entity must not be null."), payload);
     }
 }

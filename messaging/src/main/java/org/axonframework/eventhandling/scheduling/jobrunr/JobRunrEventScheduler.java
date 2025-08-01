@@ -137,7 +137,7 @@ public class JobRunrEventScheduler implements EventScheduler {
 
     @SuppressWarnings("rawtypes")
     private void addDetailsFromEvent(JobBuilder job, EventMessage eventMessage) {
-        SerializedObject<String> serialized = serializer.serialize(eventMessage.getPayload(), String.class);
+        SerializedObject<String> serialized = serializer.serialize(eventMessage.payload(), String.class);
         String serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();

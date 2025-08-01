@@ -76,7 +76,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
     @Override
     public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
         Objects.requireNonNull(event, "Event cannot be null");
-        var payload = event.getPayload();
+        var payload = event.payload();
         return Stream.concat(resolveFieldTags(payload), resolveMethodTags(payload))
                      .collect(Collectors.toSet());
     }

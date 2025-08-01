@@ -110,7 +110,7 @@ public class AxonServerConnector implements Connector {
                        .build();
             }
         }
-        Object payload = command.getPayload();
+        Object payload = command.payload();
         return builder
                 .setMessageIdentifier(command.identifier())
                 .setName(command.type().name())
@@ -207,9 +207,9 @@ public class AxonServerConnector implements Connector {
                 logger.info(
                         "To share exceptional information with the recipient it is recommended to wrap the exception in a CommandExecutionException with provided details.");
             }
-        } else if (result.getPayload() != null) {
+        } else if (result.payload() != null) {
             responseBuilder.setPayload(SerializedObject.newBuilder()
-                                                       .setData(ByteString.copyFrom((byte[]) result.getPayload())));
+                                                       .setData(ByteString.copyFrom((byte[]) result.payload())));
         }
 
         return responseBuilder.build();

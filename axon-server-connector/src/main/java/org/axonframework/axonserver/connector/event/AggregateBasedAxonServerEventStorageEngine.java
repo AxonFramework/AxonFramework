@@ -106,7 +106,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         try {
             events.forEach(taggedEvent -> {
                 EventMessage<?> event = taggedEvent.event();
-                byte[] payload = payloadConverter.convert(event.getPayload(), byte[].class);
+                byte[] payload = payloadConverter.convert(event.payload(), byte[].class);
                 Event.Builder builder = Event.newBuilder()
                                              .setPayload(SerializedObject.newBuilder()
                                                                          .setData(ByteString.copyFrom(payload))

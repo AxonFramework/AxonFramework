@@ -63,7 +63,7 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy {
     @Override
     public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage<?> eventMessage) {
         if (payloadClass.isAssignableFrom(eventMessage.getPayloadType())) {
-            @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.getPayload();
+            @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.payload();
             return Optional.ofNullable(propertyExtractor.apply(castedPayload));
         }
 

@@ -250,7 +250,7 @@ public class SimpleEventScheduler implements EventScheduler {
         private EventMessage<?> createMessage() {
             return event instanceof EventMessage
                     ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
-                                                ((EventMessage<?>) event).getPayload(),
+                                                ((EventMessage<?>) event).payload(),
                                                 ((EventMessage<?>) event).getMetaData())
                     : new GenericEventMessage<>(messageTypeResolver.resolveOrThrow(event), event);
         }

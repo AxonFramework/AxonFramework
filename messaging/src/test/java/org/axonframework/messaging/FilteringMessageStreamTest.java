@@ -69,7 +69,7 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
             MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second));
             FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate,
                                                                                           entry -> entry.message()
-                                                                                                        .getPayload()
+                                                                                                        .payload()
                                                                                                         .equals("keep"));
 
             Optional<Entry<Message<String>>> peeked = stream.peek();
@@ -77,9 +77,9 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
             Optional<Entry<Message<String>>> after = stream.next();
 
             assertThat(peeked).isPresent();
-            assertThat(peeked.get().message().getPayload()).isEqualTo("keep");
+            assertThat(peeked.get().message().payload()).isEqualTo("keep");
             assertThat(next).isPresent();
-            assertThat(next.get().message().getPayload()).isEqualTo("keep");
+            assertThat(next.get().message().payload()).isEqualTo("keep");
             assertThat(after).isNotPresent();
         }
 
@@ -90,7 +90,7 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
             MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second));
             FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate,
                                                                                           entry -> entry.message()
-                                                                                                        .getPayload()
+                                                                                                        .payload()
                                                                                                         .startsWith(
                                                                                                                 "keep"));
 
@@ -117,17 +117,17 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
             MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second, third, fourth));
             FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate,
                                                                                           entry -> entry.message()
-                                                                                                        .getPayload()
+                                                                                                        .payload()
                                                                                                         .startsWith(
                                                                                                                 "keep"));
 
             Optional<Entry<Message<String>>> firstMatch = stream.next();
             assertThat(firstMatch).isPresent();
-            assertThat(firstMatch.get().message().getPayload()).isEqualTo("keep1");
+            assertThat(firstMatch.get().message().payload()).isEqualTo("keep1");
 
             Optional<Entry<Message<String>>> secondMatch = stream.next();
             assertThat(secondMatch).isPresent();
-            assertThat(secondMatch.get().message().getPayload()).isEqualTo("keep2");
+            assertThat(secondMatch.get().message().payload()).isEqualTo("keep2");
 
             Optional<Entry<Message<String>>> after = stream.next();
             assertThat(after).isNotPresent();
@@ -140,7 +140,7 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
             MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second));
             FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate,
                                                                                           entry -> entry.message()
-                                                                                                        .getPayload()
+                                                                                                        .payload()
                                                                                                         .startsWith(
                                                                                                                 "keep"));
 

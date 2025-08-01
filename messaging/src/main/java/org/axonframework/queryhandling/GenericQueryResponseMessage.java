@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * Generic implementation of the {@link QueryResponseMessage} interface.
  *
- * @param <R> The type of {@link #getPayload() response} contained in this {@link QueryResponseMessage}.
+ * @param <R> The type of {@link #payload() response} contained in this {@link QueryResponseMessage}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 3.2.0
@@ -143,7 +143,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
+     * @param delegate The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
      *                 {@link Message#identifier() identifier} and {@link Message#getMetaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
@@ -158,7 +158,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
+     * @param delegate  The {@link Message} containing {@link Message#payload() payload},
      *                  {@link Message#type() type, {@link Message#identifier() identifier} and {@link
      *                  Message#getMetaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this

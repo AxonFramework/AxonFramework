@@ -71,7 +71,7 @@ class StreamingQueryTest {
     }
 
     private <Q, R> Flux<R> streamingQueryPayloads(StreamingQueryMessage<Q, R> testQuery) {
-        return streamingQuery(testQuery).map(Message::getPayload);
+        return streamingQuery(testQuery).map(Message::payload);
     }
 
     private <Q, R> Flux<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> testQuery) {

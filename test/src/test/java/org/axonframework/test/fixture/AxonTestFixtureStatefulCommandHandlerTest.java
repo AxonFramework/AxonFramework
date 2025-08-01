@@ -271,7 +271,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                             .subscribe(
                                     new QualifiedName(ChangeStudentNameCommand.class),
                                     (cmd, sm, ctx) -> {
-                                        ChangeStudentNameCommand payload = (ChangeStudentNameCommand) cmd.getPayload();
+                                        ChangeStudentNameCommand payload = (ChangeStudentNameCommand) cmd.payload();
                                         var student = sm.loadEntity(Student.class, payload.id(), ctx).join();
                                         if (!Objects.equals(student.getName(), payload.name())) {
                                             var eventSink = c.getComponent(EventSink.class);

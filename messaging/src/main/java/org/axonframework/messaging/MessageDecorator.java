@@ -29,7 +29,7 @@ import java.lang.reflect.Type;
  * <p>
  * Extend this decorator class to extend the message with additional features.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link MessageDecorator}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link MessageDecorator}.
  * @author Steven van Beelen
  * @author Rene de Waele
  * @since 3.0.0
@@ -42,7 +42,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
      * Initializes a new decorator with given {@code delegate} {@link Message}.
      * <p>
      * The decorator delegates to the delegate for the message's {@link #identifier() identifier},
-     * {@link Message#type() type}, {@link #getPayload() payload}, and {@link #getMetaData() metadata}.
+     * {@link Message#type() type}, {@link #payload() payload}, and {@link #getMetaData() metadata}.
      *
      * @param delegate The {@link Message} delegate.
      */
@@ -67,8 +67,8 @@ public abstract class MessageDecorator<P> implements Message<P> {
     }
 
     @Override
-    public P getPayload() {
-        return delegate.getPayload();
+    public P payload() {
+        return delegate.payload();
     }
 
     @Override
@@ -125,7 +125,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
                      .append(type())
                      .append('}')
                      .append(", payload={")
-                     .append(getPayload())
+                     .append(payload())
                      .append('}')
                      .append(", metadata={")
                      .append(getMetaData())

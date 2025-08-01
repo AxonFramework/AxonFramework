@@ -42,7 +42,7 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
                 new QualifiedName(ChangeStudentNameCommand.class),
                 c -> (command, state, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context, c);
-                    ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                    ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.payload();
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
                     eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
                     // Entity through magic of repository automatically updated

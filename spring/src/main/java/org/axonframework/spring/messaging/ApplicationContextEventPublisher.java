@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class ApplicationContextEventPublisher implements InitializingBean, Appli
      * @return the Spring ApplicationEvent representing the Axon EventMessage
      */
     protected ApplicationEvent convert(EventMessage<?> eventMessage) {
-        return new PayloadApplicationEvent<>(messageSource, eventMessage.getPayload());
+        return new PayloadApplicationEvent<>(messageSource, eventMessage.payload());
     }
 
     @Override

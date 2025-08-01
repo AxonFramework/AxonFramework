@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * A {@link ResultMessage} implementation that holds incremental updates of a subscription query.
  *
- * @param <U> The type of {@link #getPayload() update} contained in this {@link SubscriptionQueryUpdateMessage}.
+ * @param <U> The type of {@link #payload() update} contained in this {@link SubscriptionQueryUpdateMessage}.
  * @author Milan Savic
  * @since 3.3.0
  */

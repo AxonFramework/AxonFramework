@@ -27,7 +27,7 @@ import java.util.function.Function;
  * <p>
  * These messages carry an intention to change application state.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link CommandMessage}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link CommandMessage}.
  * @author Allard Buijze
  * @since 2.0.0
  */

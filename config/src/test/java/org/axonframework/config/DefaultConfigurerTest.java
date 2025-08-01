@@ -138,7 +138,7 @@ class DefaultConfigurerTest {
         config.start();
 
         var result = config.commandBus().dispatch(TEST_COMMAND, null);
-        assertEquals("test", result.get().getPayload());
+        assertEquals("test", result.get().payload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(LegacyEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
         assertEquals(2, config.getModules().size());
@@ -272,7 +272,7 @@ class DefaultConfigurerTest {
                                        .configureAggregate(
                                                defaultConfiguration(StubAggregate.class)
                                                        .configureCommandTargetResolver(
-                                                               c -> command -> command.getPayload().toString()
+                                                               c -> command -> command.payload().toString()
                                                        )
                                        )
                                        .registerEventUpcaster(c -> events -> {
@@ -331,7 +331,7 @@ class DefaultConfigurerTest {
 
         config.start();
         var result = config.commandBus().dispatch(TEST_COMMAND, null);
-        assertEquals("test", result.get().getPayload());
+        assertEquals("test", result.get().payload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config, AggregateConfiguration.class, AxonIQConsoleModule.class);
@@ -357,7 +357,7 @@ class DefaultConfigurerTest {
 
         config.start();
         var result = config.commandBus().dispatch(TEST_COMMAND, null);
-        assertEquals("test", result.get().getPayload());
+        assertEquals("test", result.get().payload());
         assertNotNull(config.repository(StubAggregate.class));
         assertTrue(config.getModules().stream().anyMatch(m -> m instanceof AggregateConfiguration));
 
@@ -409,7 +409,7 @@ class DefaultConfigurerTest {
 
         config.start();
         var result = config.commandBus().dispatch(TEST_COMMAND, null);
-        assertEquals("test", result.get().getPayload());
+        assertEquals("test", result.get().payload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config, AggregateConfiguration.class, AxonIQConsoleModule.class);
@@ -436,7 +436,7 @@ class DefaultConfigurerTest {
         config.start();
 
         var result = config.commandBus().dispatch(TEST_COMMAND, null);
-        assertEquals("test", result.get().getPayload());
+        assertEquals("test", result.get().payload());
         assertEquals(1, defaultMonitor.getMessages().size());
         assertEquals(1, commandBusMonitor.getMessages().size());
     }
@@ -480,7 +480,7 @@ class DefaultConfigurerTest {
         config.start();
 
         var result = config.commandBus().dispatch(TEST_COMMAND, null);
-        assertEquals("test", result.get().getPayload());
+        assertEquals("test", result.get().payload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(LegacyCachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
     }

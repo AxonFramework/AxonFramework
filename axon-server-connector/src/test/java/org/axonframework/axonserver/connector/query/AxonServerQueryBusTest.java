@@ -198,7 +198,7 @@ class AxonServerQueryBusTest {
                 new MessageType("query"), "Hello, World", instanceOf(String.class)
         );
 
-        assertEquals("test", testSubject.query(testQuery).get().getPayload());
+        assertEquals("test", testSubject.query(testQuery).get().payload());
 
         verify(targetContextResolver).resolveContext(testQuery);
         verify(localSegment, never()).query(testQuery);
@@ -267,7 +267,7 @@ class AxonServerQueryBusTest {
             ));
 
             StepVerifier.create(Flux.from(testSubject.streamingQuery(testStreamingQuery))
-                                    .map(Message::getPayload))
+                                    .map(Message::payload))
                         .expectNext("ok")
                         .verifyComplete();
 
@@ -455,7 +455,7 @@ class AxonServerQueryBusTest {
         when(mockQueryChannel.query(any())).thenReturn(stubResultStream);
 
         StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery))
-                                .map(Message::getPayload))
+                                .map(Message::payload))
                     .expectNext("1", "2", "3")
                     .verifyComplete();
 
@@ -481,7 +481,7 @@ class AxonServerQueryBusTest {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(new RuntimeException("oops")));
 
         StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery))
-                                .map(Message::getPayload))
+                                .map(Message::payload))
                     .verifyErrorMatches(t -> t instanceof RuntimeException && "oops".equals(t.getMessage()));
 
         verify(targetContextResolver).resolveContext(testQuery);
@@ -536,7 +536,7 @@ class AxonServerQueryBusTest {
     void dispatchInterceptor() {
         List<Object> results = new LinkedList<>();
         testSubject.registerDispatchInterceptor(messages -> (a, b) -> {
-            results.add(b.getPayload());
+            results.add(b.payload());
             return b;
         });
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
@@ -626,10 +626,10 @@ class AxonServerQueryBusTest {
         queryResult.cancel();
 
         StepVerifier.create(initialResult)
-                    .expectNextMatches(r -> r.getPayload().equals("Hello world"))
+                    .expectNextMatches(r -> r.payload().equals("Hello world"))
                     .verifyComplete();
 
-        StepVerifier.create(updates.map(Message::getPayload))
+        StepVerifier.create(updates.map(Message::payload))
                     .verifyError();
     }
 
@@ -651,10 +651,10 @@ class AxonServerQueryBusTest {
         Flux<SubscriptionQueryUpdateMessage<String>> updates = queryResult.updates();
         queryResult.cancel();
 
-        StepVerifier.create(initialResult.map(Message::getPayload))
+        StepVerifier.create(initialResult.map(Message::payload))
                     .verifyError();
 
-        StepVerifier.create(updates.map(Message::getPayload))
+        StepVerifier.create(updates.map(Message::payload))
                     .expectNextMatches(r -> r.equals("Hello world"))
                     .verifyComplete();
     }
@@ -855,8 +855,8 @@ class AxonServerQueryBusTest {
             QueryMessage<?, ?> message = i.getArgument(0);
             QueryResponseMessage<?> queryResponse = new GenericQueryResponseMessage<>(
                     new MessageType("query"),
-                    message.getPayload(),
-                    MetaData.with("response", message.getPayload().toString())
+                    message.payload(),
+                    MetaData.with("response", message.payload().toString())
             );
             return CompletableFuture.completedFuture(queryResponse);
         });

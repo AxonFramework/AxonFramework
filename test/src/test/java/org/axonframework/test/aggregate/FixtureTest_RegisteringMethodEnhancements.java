@@ -62,7 +62,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
                    .given(new MyEvent(TEST_AGGREGATE_IDENTIFIER, 42))
                    .when(new ResolveParameterCommand(TEST_AGGREGATE_IDENTIFIER))
                    .expectEventsMatching(exactSequenceOf(predicate(eventMessage -> {
-                       Object payload = eventMessage.getPayload();
+                       Object payload = eventMessage.payload();
                        assertTrue(payload instanceof ParameterResolvedEvent);
                        AtomicBoolean assertion = ((ParameterResolvedEvent) payload).getAssertion();
                        return assertion.get();

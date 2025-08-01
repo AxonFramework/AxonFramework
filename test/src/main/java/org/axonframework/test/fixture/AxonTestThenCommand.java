@@ -77,9 +77,9 @@ class AxonTestThenCommand
         expectedMatcher.describeTo(expectedDescription);
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
-        } else if (!verifyPayloadEquality(expectedPayload, actualResult.getPayload())) {
+        } else if (!verifyPayloadEquality(expectedPayload, actualResult.payload())) {
             PayloadMatcher<CommandResultMessage<?>> actualMatcher =
-                    new PayloadMatcher<>(CoreMatchers.equalTo(actualResult.getPayload()));
+                    new PayloadMatcher<>(CoreMatchers.equalTo(actualResult.payload()));
             actualMatcher.describeTo(actualDescription);
             reporter.reportWrongResult(actualDescription, expectedDescription);
         }
@@ -93,10 +93,10 @@ class AxonTestThenCommand
             reporter.reportUnexpectedException(actualException, expectedDescription);
         }
         try {
-            var payload = actualResult.getPayload();
+            var payload = actualResult.payload();
             consumer.accept(payload);
         } catch (AssertionError e) {
-            reporter.reportWrongResult(actualResult.getPayload(),
+            reporter.reportWrongResult(actualResult.payload(),
                                        "Result message to satisfy custom assertions: " + e.getMessage());
         }
         return this;
@@ -106,7 +106,7 @@ class AxonTestThenCommand
     public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> type) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
-            reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.getPayload(), description);
+            reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.payload(), description);
         }
         return super.exception(type);
     }
@@ -115,7 +115,7 @@ class AxonTestThenCommand
     public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
-            reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.getPayload(), description);
+            reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.payload(), description);
         }
         return super.exception(type, message);
     }
@@ -124,7 +124,7 @@ class AxonTestThenCommand
     public AxonTestPhase.Then.Command exceptionSatisfies(@Nonnull Consumer<Throwable> consumer) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
-            reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.getPayload(), description);
+            reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.payload(), description);
         }
         return super.exceptionSatisfies(consumer);
     }

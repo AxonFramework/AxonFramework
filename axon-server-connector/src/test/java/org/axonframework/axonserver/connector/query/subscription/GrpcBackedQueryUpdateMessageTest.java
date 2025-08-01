@@ -71,7 +71,7 @@ class GrpcBackedQueryUpdateMessageTest {
     }
 
     @Test
-    void getPayloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryUpdate() {
+    void payloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryUpdate() {
         TestQueryUpdate expectedQueryUpdate = TEST_QUERY_UPDATE;
         SubscriptionQueryUpdateMessage<Object> testSubscriptionQueryUpdateMessage =
                 asUpdateMessage(expectedQueryUpdate);
@@ -80,7 +80,7 @@ class GrpcBackedQueryUpdateMessageTest {
         GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
-        assertEquals(expectedQueryUpdate, testSubject.getPayload());
+        assertEquals(expectedQueryUpdate, testSubject.payload());
     }
 
     @Test
@@ -104,7 +104,7 @@ class GrpcBackedQueryUpdateMessageTest {
         GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
-        assertThrows(IllegalPayloadAccessException.class, testSubject::getPayload);
+        assertThrows(IllegalPayloadAccessException.class, testSubject::payload);
     }
 
     @Test

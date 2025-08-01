@@ -130,7 +130,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
         @Test
         void reduceResultBecomesVisibleWhenFutureCompletes() {
             Message<String> randomMessage = createRandomMessage();
-            String expected = randomMessage.getPayload() + randomMessage.getPayload();
+            String expected = randomMessage.payload() + randomMessage.payload();
             MessageStream<Message<String>> futureStream = completedTestSubject(List.of(randomMessage, randomMessage));
             CompletableFuture<MessageStream<Message<String>>> testFuture = new CompletableFuture<>();
 
@@ -138,7 +138,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
             CompletableFuture<String> result = testSubject.reduce(
                     "",
-                    (base, entry) -> base + entry.message().getPayload()
+                    (base, entry) -> base + entry.message().payload()
             );
             assertFalse(result.isDone());
 
@@ -288,7 +288,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
         @Test
         void reduceResultBecomesVisibleWhenFutureCompletes() {
             Message<String> randomMessage = createRandomMessage();
-            String expected = randomMessage.getPayload();
+            String expected = randomMessage.payload();
             MessageStream.Single<Message<String>> futureStream = completedSingleStreamTestSubject(randomMessage);
             CompletableFuture<MessageStream.Single<Message<String>>> testFuture = new CompletableFuture<>();
 
@@ -296,7 +296,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
             CompletableFuture<String> result = testSubject.reduce(
                     "",
-                    (base, entry) -> base + entry.message().getPayload()
+                    (base, entry) -> base + entry.message().payload()
             );
             assertFalse(result.isDone());
 

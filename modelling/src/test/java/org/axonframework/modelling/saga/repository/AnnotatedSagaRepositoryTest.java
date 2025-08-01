@@ -89,7 +89,7 @@ class AnnotatedSagaRepositoryTest {
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
         Saga<Object> saga2 =
                 startAndGet(null).executeWithResult((ctx) -> testSubject.load(saga.getSagaIdentifier()))
-                                 .getPayload();
+                                 .payload();
 
         assertSame(saga, saga2);
         currentUnitOfWork.commit();

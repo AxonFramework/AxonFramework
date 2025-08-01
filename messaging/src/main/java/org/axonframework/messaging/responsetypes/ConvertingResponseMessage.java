@@ -37,7 +37,7 @@ import java.util.Optional;
  * The conversion is generally used to accommodate response types that aren't compatible with serialization, such as
  * {@link OptionalResponseType}.
  *
- * @param <R> The type of {@link #getPayload() payload} contained in this {@link QueryResponseMessage}.
+ * @param <R> The type of {@link #payload() payload} contained in this {@link QueryResponseMessage}.
  * @author Allard Buijze
  * @since 4.3.0
  */
@@ -101,7 +101,7 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public R getPayload() {
+    public R payload() {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
                     "This result completed exceptionally, payload is not available. "
@@ -109,7 +109,7 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
                     optionalExceptionResult().orElse(null)
             );
         }
-        return expectedResponseType.convert(responseMessage.getPayload());
+        return expectedResponseType.convert(responseMessage.payload());
     }
 
     @Override

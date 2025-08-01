@@ -148,7 +148,7 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
      * @return the payloads of the applied events.
      */
     public List<Object> getAppliedEventPayloads() {
-        return appliedMessages.stream().map(EventMessage::getPayload).collect(Collectors.toList());
+        return appliedMessages.stream().map(EventMessage::payload).collect(Collectors.toList());
     }
 
     /**

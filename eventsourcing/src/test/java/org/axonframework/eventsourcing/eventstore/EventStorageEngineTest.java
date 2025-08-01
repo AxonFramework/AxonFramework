@@ -92,7 +92,7 @@ public abstract class EventStorageEngineTest {
         Optional<? extends TrackedEventMessage<?>> optionalFirst = testSubject.readEvents(null, false).findFirst();
         assertTrue(optionalFirst.isPresent());
         EventMessage<?> message = optionalFirst.get();
-        assertEquals("application event", message.getPayload());
+        assertEquals("application event", message.payload());
         assertEquals(MetaData.with("key", "value"), message.getMetaData());
     }
 
@@ -105,12 +105,12 @@ public abstract class EventStorageEngineTest {
         DomainEventMessage<?> altered = messageWithMetaData.withMetaData(singletonMap("key2", "value"));
         DomainEventMessage<?> combined = messageWithMetaData.andMetaData(singletonMap("key2", "value"));
         assertTrue(altered.getMetaData().containsKey("key2"));
-        altered.getPayload();
+        altered.payload();
         assertFalse(altered.getMetaData().containsKey("key"));
         assertTrue(altered.getMetaData().containsKey("key2"));
         assertTrue(combined.getMetaData().containsKey("key"));
         assertTrue(combined.getMetaData().containsKey("key2"));
-        assertNotNull(messageWithMetaData.getPayload());
+        assertNotNull(messageWithMetaData.payload());
         assertNotNull(messageWithMetaData.getMetaData());
         assertFalse(messageWithMetaData.getMetaData().isEmpty());
     }

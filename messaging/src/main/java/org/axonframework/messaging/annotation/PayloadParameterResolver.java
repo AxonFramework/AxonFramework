@@ -42,7 +42,7 @@ public class PayloadParameterResolver implements ParameterResolver<Object> {
 
     @Override
     public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-        return Message.fromContext(context).getPayload();
+        return Message.fromContext(context).payload();
     }
 
     @Override

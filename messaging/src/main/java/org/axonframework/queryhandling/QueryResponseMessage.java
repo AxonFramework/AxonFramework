@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * A {@link ResultMessage} implementation that contains the result of query handling.
  *
- * @param <R> The type of {@link #getPayload() payload} contained in this {@link QueryResponseMessage}.
+ * @param <R> The type of {@link #payload() payload} contained in this {@link QueryResponseMessage}.
  * @author Allard Buijze
  * @since 3.2.0
  */

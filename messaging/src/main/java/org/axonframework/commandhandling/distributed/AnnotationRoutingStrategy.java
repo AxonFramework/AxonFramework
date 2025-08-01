@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class AnnotationRoutingStrategy implements RoutingStrategy {
     @Override
     public String getRoutingKey(@Nonnull CommandMessage<?> command) {
         try {
-            Object payload = command.getPayload();
+            Object payload = command.payload();
             return payload == null ? null : findIdentifier(payload);
         } catch (InvocationTargetException e) {
             throw new AxonConfigurationException(

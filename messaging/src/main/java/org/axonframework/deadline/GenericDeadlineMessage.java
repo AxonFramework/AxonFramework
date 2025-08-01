@@ -30,7 +30,7 @@ import java.util.function.Supplier;
 /**
  * Generic implementation of the {@link DeadlineMessage} interface.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link DeadlineMessage}. May be {@link Void}
+ * @param <P> The type of {@link #payload() payload} contained in this {@link DeadlineMessage}. May be {@link Void}
  *            if no payload was provided.
  * @author Milan Savic
  * @author Steven van Beelen
@@ -43,7 +43,7 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     /**
      * Constructs a {@code GenericDeadlineMessage} for the given {@code type} and {@code deadlineName}.
      * <p>
-     * The {@link #getPayload()} defaults to {@code null} and the {@link MetaData} defaults to an empty instance.
+     * The {@link #payload()} defaults to {@code null} and the {@link MetaData} defaults to an empty instance.
      *
      * @param type         The {@link MessageType type} for this {@link DeadlineMessage}.
      * @param deadlineName The type for this {@link DeadlineMessage}.
@@ -118,7 +118,7 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
      * of Work.
      *
      * @param deadlineName      The name for this {@link DeadlineMessage}.
-     * @param delegate          The {@link Message} containing {@link Message#getPayload() payload},
+     * @param delegate          The {@link Message} containing {@link Message#payload() payload},
      *                          {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                          {@link Message#getMetaData() metadata} for the {@link DeadlineMessage} to reconstruct.
      * @param timestampSupplier {@link Supplier} for the {@link Instant timestamp} of the

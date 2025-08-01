@@ -49,7 +49,7 @@ public interface CommandResult {
      */
     default <R> CompletableFuture<R> resultAs(@Nonnull Class<R> type) {
         requireNonNull(type, "The result type must not be null");
-        return getResultMessage().thenApply(Message::getPayload)
+        return getResultMessage().thenApply(Message::payload)
                                  .thenApply(type::cast);
     }
 
@@ -92,7 +92,7 @@ public interface CommandResult {
         requireNonNull(successHandler, "The success handler must not be null.");
         getResultMessage().whenComplete((r, e) -> {
             if (e == null) {
-                successHandler.accept(resultType.cast(r.getPayload()), r);
+                successHandler.accept(resultType.cast(r.payload()), r);
             }
         });
         return this;

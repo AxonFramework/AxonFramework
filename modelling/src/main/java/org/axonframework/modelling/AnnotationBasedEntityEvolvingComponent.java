@@ -126,7 +126,7 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
 
     private E entityFromStreamResultOrUpdatedExisting(MessageStream.Entry<?> potentialEntityFromStream, E existing) {
         if (potentialEntityFromStream != null) {
-            var resultPayload = potentialEntityFromStream.message().getPayload();
+            var resultPayload = potentialEntityFromStream.message().payload();
             if (resultPayload != null && existing.getClass().isAssignableFrom(resultPayload.getClass())) {
                 //noinspection unchecked
                 return (E) existing.getClass().cast(resultPayload);

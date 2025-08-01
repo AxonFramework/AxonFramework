@@ -77,7 +77,7 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
         Object resolvedId = identifierResolver.resolve(message, context);
         //noinspection ConstantValue Users can still make the mistake to return null.
         if (resolvedId == null) {
-            throw new NullEntityIdInPayloadException(message.getPayload().getClass());
+            throw new NullEntityIdInPayloadException(message.payload().getClass());
         }
         StateManager stateManager = configuration.getComponent(StateManager.class);
         if (managedEntity) {

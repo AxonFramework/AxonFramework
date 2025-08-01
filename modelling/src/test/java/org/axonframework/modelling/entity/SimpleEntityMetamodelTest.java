@@ -115,7 +115,7 @@ class SimpleEntityMetamodelTest {
                     new MessageType(PARENT_ONLY_INSTANCE_COMMAND), "myPayload");
             MessageStream.Single<CommandResultMessage<?>> result = metamodel.handleInstance(command, entity, context);
 
-            assertEquals("parent", result.asCompletableFuture().join().message().getPayload());
+            assertEquals("parent", result.asCompletableFuture().join().message().payload());
             verify(parentInstanceCommandHandler, times(1)).handle(command, entity, context);
             verify(parentCreationalCommandHandler, times(0)).handle(command, context);
             verify(childModelMockOne, times(0)).handle(command, entity, context);
@@ -128,7 +128,7 @@ class SimpleEntityMetamodelTest {
                                                                                 "myPayload");
             MessageStream.Single<CommandResultMessage<?>> result = metamodel.handleInstance(command, entity, context);
 
-            assertEquals("child-one", result.asCompletableFuture().join().message().getPayload());
+            assertEquals("child-one", result.asCompletableFuture().join().message().payload());
             verify(childModelMockOne).handle(command, entity, context);
             verify(childModelMockTwo, times(0)).handle(command, entity, context);
             verify(parentInstanceCommandHandler, times(0)).handle(command, entity, context);
@@ -141,7 +141,7 @@ class SimpleEntityMetamodelTest {
                                                                                 "myPayload");
             MessageStream.Single<CommandResultMessage<?>> result = metamodel.handleInstance(command, entity, context);
 
-            assertEquals("child-two", result.asCompletableFuture().join().message().getPayload());
+            assertEquals("child-two", result.asCompletableFuture().join().message().payload());
             verify(childModelMockTwo).handle(command, entity, context);
             verify(childModelMockOne, times(0)).handle(command, entity, context);
             verify(parentInstanceCommandHandler, times(0)).handle(command, entity, context);
@@ -171,7 +171,7 @@ class SimpleEntityMetamodelTest {
             when(childModelMockTwo.canHandle(any(), any(), any())).thenReturn(false);
             MessageStream.Single<CommandResultMessage<?>> result = metamodel.handleInstance(command, entity, context);
 
-            assertEquals("child-one", result.asCompletableFuture().join().message().getPayload());
+            assertEquals("child-one", result.asCompletableFuture().join().message().payload());
             verify(childModelMockOne).handle(command, entity, context);
             verify(parentInstanceCommandHandler, times(0)).handle(command, entity, context);
             verify(parentCreationalCommandHandler, times(0)).handle(command, context);
@@ -186,7 +186,7 @@ class SimpleEntityMetamodelTest {
             when(childModelMockTwo.canHandle(any(), any(), any())).thenReturn(true);
             MessageStream.Single<CommandResultMessage<?>> result = metamodel.handleInstance(command, entity, context);
 
-            assertEquals("child-two", result.asCompletableFuture().join().message().getPayload());
+            assertEquals("child-two", result.asCompletableFuture().join().message().payload());
             verify(childModelMockTwo).handle(command, entity, context);
             verify(parentInstanceCommandHandler, times(0)).handle(command, entity, context);
             verify(parentCreationalCommandHandler, times(0)).handle(command, context);
@@ -252,7 +252,7 @@ class SimpleEntityMetamodelTest {
                     new MessageType(PARENT_ONLY_CREATIONAL_COMMAND), "myPayload");
             MessageStream.Single<CommandResultMessage<?>> result = metamodel.handleCreate(command, context);
 
-            assertEquals("parent-creational", result.asCompletableFuture().join().message().getPayload());
+            assertEquals("parent-creational", result.asCompletableFuture().join().message().payload());
             verify(parentCreationalCommandHandler).handle(command, context);
             verify(childModelMockOne, times(0)).handle(command, entity, context);
             verify(childModelMockTwo, times(0)).handle(command, entity, context);

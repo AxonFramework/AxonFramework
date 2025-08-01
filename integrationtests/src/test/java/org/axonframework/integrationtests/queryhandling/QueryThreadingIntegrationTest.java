@@ -147,7 +147,7 @@ class QueryThreadingIntegrationTest {
                                                                                ResponseTypes.instanceOf(String.class));
             QueryResponseMessage<String> b = queryBus.query(testQuery).get();
             waitingQueries.decrementAndGet();
-            return "a" + b.getPayload();
+            return "a" + b.payload();
         });
 
         CompletableFuture<QueryResponseMessage<String>> query1 = queryBus.query(
