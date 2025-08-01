@@ -18,6 +18,7 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
@@ -88,6 +89,29 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
             ModuleBuilder<SubscribingEventProcessorModule> moduleBuilder) {
         moduleBuilders.add(moduleBuilder);
         return this;
+    }
+
+    public SubscribingEventProcessorsModule processor(
+            @Nonnull String name,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents
+    ) {
+        return processor(
+                name,
+                eventHandlingComponents,
+                (cfg, c) -> c
+        );
+    }
+
+    public SubscribingEventProcessorsModule processor(
+            @Nonnull String name,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
+            @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customize
+    ) {
+        return processor(
+                name,
+                (cfg, customization) -> customize.apply(cfg,
+                                                        customization.eventHandlingComponents(eventHandlingComponents))
+        );
     }
 
     public SubscribingEventProcessorsModule processor(
