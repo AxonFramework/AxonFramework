@@ -30,7 +30,7 @@ import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 
-// TODO: Will be renamed to EventProcessingModule, but I wanted to limit changes and keept legacy EventProcessingModule for now.
+// TODO #3098 - Rename to EventProcessingModule - I wanted to limit the files changed at once
 public class NewEventProcessingModule extends BaseModule<NewEventProcessingModule> {
 
     private final PooledStreamingEventProcessorsModule pooledStreamingEventProcessorsModule = new PooledStreamingEventProcessorsModule(
