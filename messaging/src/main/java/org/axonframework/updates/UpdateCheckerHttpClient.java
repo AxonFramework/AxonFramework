@@ -46,7 +46,7 @@ public class UpdateCheckerHttpClient {
 
     private static final String BASE_FAILURE = "Failed to report anonymous usage data";
     private static final String STATUS_CODE_REF = "Received status code: {}";
-    private static final int MAX_REDIRECTS = 10;
+    private static final int MAX_REDIRECTS = 5;
 
     private final UsagePropertyProvider userProperties;
 
