@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.MessageStream;
@@ -87,7 +86,7 @@ class PooledStreamingEventProcessorModuleTest {
         var configurer = MessagingConfigurer.create();
         configurer.eventProcessing(
                 ep -> ep.defaults(
-                        d -> d.errorHandler(PropagatingErrorHandler.instance())
+                        d -> d.errorHandler((ctx) -> {})
                 )
         );
         configurer.eventProcessing(

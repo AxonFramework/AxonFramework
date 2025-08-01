@@ -19,6 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
+import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsModule;
 
 import java.util.function.BiFunction;
@@ -26,34 +27,45 @@ import java.util.function.UnaryOperator;
 
 public class EventProcessingModule extends BaseModule<EventProcessingModule> {
 
-    private final EventProcessorConfiguration INITIAL_EVENT_PROCESSOR_DEFAULTS = new EventProcessorConfiguration();
-
     private final PooledStreamingEventProcessorsModule pooledStreamingEventProcessorsModule = new PooledStreamingEventProcessorsModule(
             "pooledStreamingProcessors");
     private final SubscribingEventProcessorsModule subscribingEventProcessorsModule = new SubscribingEventProcessorsModule(
             "subscribingProcessors");
 
-    private ComponentBuilder<EventProcessorConfiguration> eventProcessorDefaultsBuilder = c -> INITIAL_EVENT_PROCESSOR_DEFAULTS;
+    private EventProcessorCustomization processorsDefaultCustomization = EventProcessorCustomization.noOp();
 
     @Internal
     public EventProcessingModule(@Nonnull String name) {
         super(name);
     }
 
+    @Override
+    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+        componentRegistry(
+                cr -> cr.registerComponent(
+                        EventProcessorCustomization.class,
+                        cfg -> processorsDefaultCustomization
+                )
+        );
+        componentRegistry(cr -> cr.registerModule(
+                pooledStreamingEventProcessorsModule
+        ));
+        componentRegistry(cr -> cr.registerModule(
+                subscribingEventProcessorsModule
+        ));
+        return super.build(parent, lifecycleRegistry);
+    }
+
     public EventProcessingModule defaults(
             @Nonnull BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> configureDefaults) {
-        this.eventProcessorDefaultsBuilder = config -> {
-            var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
-            return configureDefaults.apply(config, defaults);
-        };
+        this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
         return this;
     }
 
     public EventProcessingModule defaults(@Nonnull UnaryOperator<EventProcessorConfiguration> configureDefaults) {
-        this.eventProcessorDefaultsBuilder = config -> {
-            var defaults = INITIAL_EVENT_PROCESSOR_DEFAULTS;
-            return configureDefaults.apply(defaults);
-        };
+        this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
+                (axonConfig, pConfig) -> configureDefaults.apply(pConfig)
+        );
         return this;
     }
 
@@ -71,21 +83,4 @@ public class EventProcessingModule extends BaseModule<EventProcessingModule> {
         return this;
     }
 
-
-    @Override
-    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        componentRegistry(
-                cr -> cr.registerComponent(
-                        EventProcessorConfiguration.class,
-                        eventProcessorDefaultsBuilder
-                )
-        );
-        componentRegistry(cr -> cr.registerModule(
-                pooledStreamingEventProcessorsModule
-        ));
-        componentRegistry(cr -> cr.registerModule(
-                subscribingEventProcessorsModule
-        ));
-        return super.build(parent, lifecycleRegistry);
-    }
 }
