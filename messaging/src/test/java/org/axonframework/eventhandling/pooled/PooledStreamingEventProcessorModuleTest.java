@@ -84,8 +84,7 @@ class PooledStreamingEventProcessorModuleTest {
         var processorName = "testProcessor";
         configurer.eventProcessing(
                 ep -> ep.pooledStreaming(
-                        ps -> ps
-                                .defaults(d -> d.eventSource(eventSource))
+                        ps -> ps.defaults(d -> d.eventSource(eventSource))
                                 .processor(processorName, List.of(new SimpleEventHandlingComponent()))
                 )
         );
@@ -120,12 +119,6 @@ class PooledStreamingEventProcessorModuleTest {
                 );
 
         var configurer = MessagingConfigurer.create();
-        configurer.eventProcessing(
-                ep -> ep.defaults(
-                        d -> d.errorHandler((ctx) -> {
-                        })
-                )
-        );
         configurer.eventProcessing(
                 ep -> ep.pooledStreaming(
                         ps -> ps
