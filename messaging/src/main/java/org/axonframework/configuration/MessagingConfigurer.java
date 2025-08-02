@@ -64,7 +64,7 @@ import static org.axonframework.messaging.configuration.reflection.ParameterReso
 public class MessagingConfigurer implements ApplicationConfigurer {
 
     private final ApplicationConfigurer delegate;
-    private final NewEventProcessingModule eventProcessingModule;
+    private NewEventProcessingModule eventProcessingModule;
 
     /**
      * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
@@ -74,7 +74,6 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     private MessagingConfigurer(@Nonnull ApplicationConfigurer delegate) {
         this.delegate =
                 requireNonNull(delegate, "The Application Configurer cannot be null.");
-        this.eventProcessingModule = new NewEventProcessingModule(NewEventProcessingModule.DEFAULT_NAME);
     }
 
     /**
@@ -224,13 +223,16 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     public MessagingConfigurer eventProcessing(@Nonnull Consumer<NewEventProcessingModule> configurerTask) {
+        if (eventProcessingModule == null) {
+            this.eventProcessingModule = new NewEventProcessingModule(NewEventProcessingModule.DEFAULT_NAME);
+            componentRegistry(cr -> cr.registerModule(eventProcessingModule));
+        }
         configurerTask.accept(eventProcessingModule);
         return this;
     }
 
     @Override
     public AxonConfiguration build() {
-        componentRegistry(cr -> cr.registerModule(eventProcessingModule));
         return delegate.build();
     }
 }
