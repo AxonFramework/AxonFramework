@@ -31,7 +31,7 @@ import java.util.List;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Builder class to instantiate a {@link SubscribingEventProcessor}.
+ * Configuration class for a {@link SubscribingEventProcessor}.
  * <p>
  * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
  * {@link EventProcessorSpanFactory} is defaulted to a {@link DefaultEventProcessorSpanFactory} backed by a
@@ -94,7 +94,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @param messageSource the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this
      *                      {@link EventProcessor} implementation will subscribe itself to receive
      *                      {@link EventMessage}s
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing.
      */
     public SubscribingEventProcessorConfiguration messageSource(
             @Nonnull SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
@@ -109,7 +109,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *
      * @param processingStrategy the {@link EventProcessingStrategy} determining whether events are processed directly
      *                           or asynchronously
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing.
      */
     public SubscribingEventProcessorConfiguration processingStrategy(
             @Nonnull EventProcessingStrategy processingStrategy) {

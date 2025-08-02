@@ -34,7 +34,7 @@ import java.util.Objects;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Abstract Builder class to instantiate an {@link EventProcessor} implementation.
+ * Configuration class to be used for {@link EventProcessor} implementations.
  * <p>
  * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
  * {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
@@ -79,7 +79,7 @@ public class EventProcessorConfiguration {
      *
      * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
      *                            {@link EventMessage}s
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing.
      * @deprecated in favor of {@link #eventHandlingComponents(List)}
      */
     @Deprecated(since = "5.0.0", forRemoval = true)
@@ -93,7 +93,7 @@ public class EventProcessorConfiguration {
      *
      * @param eventHandlingComponents the {@link EventHandlingComponent} which will handle all the individual
      *                                {@link EventMessage}s
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing.
      */
     public EventProcessorConfiguration eventHandlingComponents(
             @Nonnull List<EventHandlingComponent> eventHandlingComponents) {
@@ -108,7 +108,7 @@ public class EventProcessorConfiguration {
      *
      * @param errorHandler the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during
      *                     processing
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing.
      */
     public EventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
         assertNonNull(errorHandler, "ErrorHandler may not be null");
@@ -122,7 +122,7 @@ public class EventProcessorConfiguration {
      *
      * @param messageMonitor a {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're
      *                       processed
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing.
      */
     public EventProcessorConfiguration messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
         assertNonNull(messageMonitor, "MessageMonitor may not be null");
@@ -136,7 +136,7 @@ public class EventProcessorConfiguration {
      * tracing capabilities.
      *
      * @param spanFactory The {@link SpanFactory} implementation
-     * @return The current Builder instance, for fluent interfacing.
+     * @return The current instance, for fluent interfacing.
      */
     @Deprecated(since = "5.0.0", forRemoval = true)
     public EventProcessorConfiguration spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
@@ -159,7 +159,7 @@ public class EventProcessorConfiguration {
      *
      * @param unitOfWorkFactory A {@link UnitOfWorkFactory} that spawns
      *                          {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
-     * @return The current Builder instance, for fluent interfacing.
+     * @return The current instance, for fluent interfacing.
      */
     public EventProcessorConfiguration unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
         assertNonNull(unitOfWorkFactory, "UnitOfWorkFactory may not be null");
