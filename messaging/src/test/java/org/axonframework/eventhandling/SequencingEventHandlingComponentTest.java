@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -69,9 +70,7 @@ class SequencingEventHandlingComponentTest {
         // given
         EventHandlingComponent eventHandlingComponent = sequencingEventHandlingComponent();
 
-        EventHandler eventHandler1_1 = (event, context) -> MessageStream.fromFuture(
-                CompletableFuture.supplyAsync(() -> testEvent("sample"), executorService)
-        ).ignoreEntries().cast();
+        EventHandler eventHandler1_1 = asyncEventHandler();
         eventHandlingComponent.subscribe(new QualifiedName(TestPayload.class), eventHandler1_1);
 
         // when
@@ -232,6 +231,33 @@ class SequencingEventHandlingComponentTest {
                             .toList();
     }
 
+    private EventHandler asyncEventHandler() {
+        return (event, context) -> {
+            CountDownLatch processingBarrier = new CountDownLatch(1);
+            CountDownLatch completionBarrier = new CountDownLatch(1);
+
+            CompletableFuture<EventMessage<Object>> asyncPipeline = CompletableFuture
+                    .runAsync(() -> {
+                        try {
+                            processingBarrier.await(100, TimeUnit.MILLISECONDS);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } finally {
+                            completionBarrier.countDown();
+                        }
+                    }, executorService)
+                    .thenCompose(v -> CompletableFuture.supplyAsync(() -> {
+                        try {
+                            completionBarrier.await(100, TimeUnit.MILLISECONDS);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        return testEvent("sample");
+                    }, executorService));
+
+            return MessageStream.fromFuture(asyncPipeline).ignoreEntries().cast();
+        };
+    }
 
     /**
      * Extracts the sequence identifier from an event with string representation containing "_seq-" pattern. For
