@@ -118,7 +118,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
         this.tokenStore = configuration.tokenStore();
         this.unitOfWorkFactory = configuration.unitOfWorkFactory();
 
-        // todo: many here!!!
         this.eventHandlingComponents = new ProcessorEventHandlingComponents(configuration.eventHandlingComponents());
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 this.name,

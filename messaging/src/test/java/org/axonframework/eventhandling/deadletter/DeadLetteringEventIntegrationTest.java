@@ -23,10 +23,12 @@ import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
+import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.StreamingEventProcessor;
+import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
-import org.axonframework.eventhandling.pipeline.DefaultEventProcessorHandlingComponent;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -199,12 +201,15 @@ public abstract class DeadLetteringEventIntegrationTest {
                 .workerExecutor(ignored -> Executors.newSingleThreadScheduledExecutor())
                 .initialSegmentCount(1)
                 .claimExtensionThreshold(1000);
-        var eventHandlingComponent = new DefaultEventProcessorHandlingComponent(
-                configuration.spanFactory(),
-                configuration.messageMonitor(),
-                interceptors,
-                new LegacyEventHandlingComponent(deadLetteringInvoker),
-                true
+        var eventHandlingComponent = new TracingEventHandlingComponent(
+                (event) -> configuration.spanFactory().createProcessEventSpan(true, event),
+                new MonitoringEventHandlingComponent(
+                        configuration.messageMonitor(),
+                        new InterceptingEventHandlingComponent(
+                                interceptors,
+                                new LegacyEventHandlingComponent(deadLetteringInvoker)
+                        )
+                )
         );
         configuration.eventHandlingComponents(List.of(eventHandlingComponent));
         streamingProcessor = new PooledStreamingEventProcessor(
