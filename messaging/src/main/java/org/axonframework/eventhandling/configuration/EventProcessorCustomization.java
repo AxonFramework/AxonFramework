@@ -23,7 +23,6 @@ import org.axonframework.eventhandling.EventProcessorConfiguration;
 
 import java.util.function.BiFunction;
 
-@Internal
 @FunctionalInterface
 public interface EventProcessorCustomization extends
         BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> {
