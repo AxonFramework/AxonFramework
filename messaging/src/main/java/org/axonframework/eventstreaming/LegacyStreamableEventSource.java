@@ -26,6 +26,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.StreamableMessageSource;
+import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -90,13 +91,14 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
      */
     private static class BlockingMessageStream<E extends EventMessage<?>> implements MessageStream<E> {
 
+        private static final Logger logger = org.slf4j.LoggerFactory.getLogger(BlockingMessageStream.class);
+
         private final BlockingStream<E> stream;
 
         BlockingMessageStream(BlockingStream<E> stream, EventCriteria criteria) {
             this.stream = stream;
             if (criteria != AnyEvent.INSTANCE) {
-                throw new IllegalArgumentException(
-                        "Only AnyEvent criteria is supported in this legacy adapter, but received: " + criteria);
+                logger.warn("Only AnyEvent criteria is supported in this legacy adapter, but received: {}. The events won't be filtered!", criteria);
             }
         }
 

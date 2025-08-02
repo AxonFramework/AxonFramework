@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
@@ -107,14 +108,16 @@ public abstract class AbstractEventStoreBenchmark {
                                                  }
 
                                          ).build();
+        var configuration = new PooledStreamingEventProcessorConfiguration()
+                .eventSource(new LegacyStreamableEventSource<>(eventStore))
+                .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
+                .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                .tokenStore(new InMemoryTokenStore())
+                .coordinatorExecutor(ignored -> coordinatorExecutor)
+                .workerExecutor(ignored -> workerExecutor);
         this.eventProcessor = new PooledStreamingEventProcessor(
                 "benchmark",
-                cfg -> cfg.eventSource(new LegacyStreamableEventSource<>(eventStore))
-                        .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
-                        .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
-                        .tokenStore(new InMemoryTokenStore())
-                        .coordinatorExecutor(ignored -> coordinatorExecutor)
-                        .workerExecutor(ignored -> workerExecutor)
+                configuration
         );
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }
