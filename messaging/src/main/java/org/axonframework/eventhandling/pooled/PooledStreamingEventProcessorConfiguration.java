@@ -53,9 +53,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
- * Builder class to instantiate a {@link PooledStreamingEventProcessor}.
+ * Configuration class for a {@link PooledStreamingEventProcessor}.
  * <p>
- * Upon initialization of this builder, the following fields are defaulted:
+ * Upon initialization of this configuration, the following fields are defaulted:
  * <ul>
  *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
  *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
@@ -71,7 +71,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  *     <li>The {@link EventProcessorSpanFactory} defaults to a {@link org.axonframework.eventhandling.DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
  *     <li>The {@code coordinatorExtendsClaims} defaults to a {@code false}.</li>
  * </ul>
- * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
+ * The following fields of this configuration are <b>hard requirements</b> and as such should be provided:
  * <ul>
  *     <li>The name of this {@link EventProcessor}.</li>
  *     <li>An {@link EventHandlerInvoker} which will be given the events handled by this processor</li>
@@ -165,7 +165,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param eventSource The {@link StreamableEventSource} (e.g. the {@code EventStore}) which this
      *                    {@link EventProcessor} will track.
-     * @return The current Builder instance, for fluent interfacing.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration eventSource(
             @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource) {
@@ -180,7 +180,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param tokenStore the {@link TokenStore} used to store and fetch event tokens that enable this
      *                   {@link EventProcessor} to track its progress
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration tokenStore(@Nonnull TokenStore tokenStore) {
         assertNonNull(tokenStore, "TokenStore may not be null");
@@ -194,7 +194,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param coordinatorExecutor the {@link ScheduledExecutorService} to be used by the coordinator of this
      *                            {@link PooledStreamingEventProcessor}
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration coordinatorExecutor(
             @Nonnull ScheduledExecutorService coordinatorExecutor) {
@@ -209,7 +209,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param coordinatorExecutorBuilder a builder function to construct a {@link ScheduledExecutorService}, providing
      *                                   the {@link PooledStreamingEventProcessor}
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration coordinatorExecutor(
             @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder) {
@@ -225,7 +225,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by
      *                       this {@link PooledStreamingEventProcessor}
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration workerExecutor(
             @Nonnull ScheduledExecutorService workerExecutor) {
@@ -240,7 +240,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param workerExecutorBuilder a builder function to construct a {@link ScheduledExecutorService}, providing the
      *                              {@link PooledStreamingEventProcessor}
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration workerExecutor(
             @Nonnull Function<String, ScheduledExecutorService> workerExecutorBuilder) {
@@ -256,7 +256,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param initialSegmentCount an {@code int} specifying the initial segment count used to create segments on start
      *                            up
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration initialSegmentCount(int initialSegmentCount) {
         assertStrictPositive(initialSegmentCount, "The initial segment count should be a higher valuer than zero");
@@ -276,7 +276,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
      *                     {@link StreamableEventSource}
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration initialToken(
             @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken
@@ -292,7 +292,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param tokenClaimInterval the time in milliseconds the processor's coordinator should wait after a failed attempt
      *                           to claim any segments for processing
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration tokenClaimInterval(long tokenClaimInterval) {
         assertStrictPositive(tokenClaimInterval, "Token claim interval should be a higher valuer than zero");
@@ -304,7 +304,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * Sets the maximum number of segments this instance may claim.
      *
      * @param maxClaimedSegments The maximum number of segments this instance may claim.
-     * @return The current Builder instance, for fluent interfacing.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration maxClaimedSegments(int maxClaimedSegments) {
         this.maxSegmentProvider = n -> maxClaimedSegments;
@@ -317,7 +317,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param maxSegmentProvider A {@link MaxSegmentProvider} providing the maximum number segments this
      *                           {@link StreamingEventProcessor} may claim per instance.
-     * @return The current Builder instance, for fluent interfacing.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
         assertNonNull(maxSegmentProvider,
@@ -336,7 +336,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param claimExtensionThreshold a time in milliseconds the work packages of this processor should extend the claim
      *                                on a {@link TrackingToken}.
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration claimExtensionThreshold(long claimExtensionThreshold) {
         assertStrictPositive(
@@ -354,7 +354,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * performed during event handling can be rolled back.
      *
      * @param batchSize the number of events to be processed inside a single transaction
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration batchSize(int batchSize) {
         assertStrictPositive(batchSize, "The batch size should be a higher valuer than zero");
@@ -369,7 +369,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * {@link GenericEventMessage#clock}.
      *
      * @param clock the {@link Clock} used for time dependent operation by this {@link EventProcessor}
-     * @return the current Builder instance, for fluent interfacing
+     * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration clock(@Nonnull Clock clock) {
         assertNonNull(clock, "Clock may not be null");
@@ -397,7 +397,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * Note that enabling this feature will result in more frequent invocation of the {@link TokenStore} to update the
      * tokens.
      *
-     * @return The current Builder instance, for fluent interfacing.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration enableCoordinatorClaimExtension() {
         this.coordinatorExtendsClaims = true;
@@ -416,7 +416,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * By default, it returns {@code EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents)}.
      *
      * @param eventCriteriaProvider The function to build the {@link EventCriteria} from supported event types.
-     * @return The current Builder instance, for fluent interfacing.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration eventCriteria(
             @Nonnull Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider) {
