@@ -52,6 +52,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
                 if (!pending.contains(message)) {
                     throw new RuntimeException("Message was presented to monitor twice: " + message);
                 }
+                pending.remove(message);
             }
 
             @Override
