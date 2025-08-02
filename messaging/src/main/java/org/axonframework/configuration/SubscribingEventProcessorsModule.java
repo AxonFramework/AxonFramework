@@ -64,7 +64,7 @@ import java.util.function.UnaryOperator;
  *     );
  * }</pre>
  *
- * @author Steven van Beelen
+ * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEventProcessorsModule> {
