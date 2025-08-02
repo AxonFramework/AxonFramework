@@ -21,6 +21,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.monitoring.MessageMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
@@ -38,16 +40,18 @@ import java.util.Objects;
  */
 public class MonitoringEventHandlingComponent extends DelegatingEventHandlingComponent {
 
+    private final Logger logger = LoggerFactory.getLogger(MonitoringEventHandlingComponent.class);
+
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
 
     /**
      * Constructs the component with given {@code delegate} to receive calls.
      *
-     * @param delegate The instance to delegate calls to.
+     * @param delegate       The instance to delegate calls to.
      * @param messageMonitor The {@link MessageMonitor} to monitor the events processed by this component.
      */
-    public MonitoringEventHandlingComponent( @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor,
-                                             @Nonnull EventHandlingComponent delegate
+    public MonitoringEventHandlingComponent(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor,
+                                            @Nonnull EventHandlingComponent delegate
     ) {
         super(delegate);
         this.messageMonitor = Objects.requireNonNull(messageMonitor, "MessageMonitor may not be null");
@@ -59,9 +63,19 @@ public class MonitoringEventHandlingComponent extends DelegatingEventHandlingCom
                                                      @Nonnull ProcessingContext context) {
         var monitorCallback = messageMonitor.onMessageIngested(event);
         return delegate.handle(event, context)
-                       .whenComplete(monitorCallback::reportSuccess)
+                       .whenComplete(() -> {
+                           try {
+                               monitorCallback.reportSuccess();
+                           } catch (Exception e) {
+                               logger.warn("An exception occurred while reporting success of event handling", e);
+                           }
+                       })
                        .onErrorContinue(ex -> {
-                           monitorCallback.reportFailure(ex);
+                           try {
+                                 monitorCallback.reportFailure(ex);
+                            } catch (Exception e) {
+                                 logger.warn("An exception occurred while reporting failure of event handling", e);
+                           }
                            return MessageStream.failed(ex);
                        }).ignoreEntries().cast();
     }
