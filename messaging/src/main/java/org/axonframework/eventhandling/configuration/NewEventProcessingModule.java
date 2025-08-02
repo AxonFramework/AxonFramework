@@ -22,7 +22,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.SubscribingEventProcessorsModule;
+import org.axonframework.eventhandling.SubscribingEventProcessorsModule;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsModule;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
