@@ -29,10 +29,10 @@ public interface EventProcessorCustomization extends
         BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> {
 
     static EventProcessorCustomization noOp() {
-        return (config, pConfig) -> pConfig;
+        return (axonConfig, processorConfig) -> processorConfig;
     }
 
     default EventProcessorCustomization andThen(EventProcessorCustomization other) {
-        return (config, pConfig) -> other.apply(config, this.apply(config, pConfig));
+        return (axonConfig, processorConfig) -> other.apply(axonConfig, this.apply(axonConfig, processorConfig));
     }
 }
