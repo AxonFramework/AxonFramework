@@ -101,7 +101,7 @@ class AccessSerializingRepositoryTest {
         verify(delegate, times(1)).load(eq(AGGREGATE_ID), any());
     }
 
-    @Test
+    @RepeatedTest(5)
     void timeoutOnQueuedOperationMakesTheNextWaitForCompletionOfAllPreviousItems() {
         UnitOfWork uow1 = new UnitOfWork("uow1");
         UnitOfWork uow2 = new UnitOfWork("uow2");
@@ -133,7 +133,7 @@ class AccessSerializingRepositoryTest {
 
         assertFalse(result1.isDone());
         // This one times out, and is expected to have completed
-        await().pollDelay(Duration.ofMillis(10))
+        await().pollDelay(Duration.ofMillis(20))
                .atMost(Duration.ofMillis(100))
                .untilAsserted(() -> assertTrue(result2.isCompletedExceptionally()));
 
