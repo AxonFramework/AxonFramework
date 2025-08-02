@@ -92,7 +92,7 @@ class SequencingEventHandlingComponentTest {
                .pollDelay(Duration.ofMillis(100))
                .untilAsserted(() -> assertThat(internal.recorded()).hasSameSizeAs(batch));
         var handledEvents = internal.recorded();
-        logger.info("Handled events: {}", handledEvents.stream().map(it -> it.getPayload().toString()).toList());
+        logger.info("Handled events: {}", handledEvents.stream().map(it -> it.payload().toString()).toList());
         var seqAEvents = payloadsOfSequence(handledEvents, "A");
         var seqBEvents = payloadsOfSequence(handledEvents, "B");
 
@@ -129,7 +129,7 @@ class SequencingEventHandlingComponentTest {
         // then
         assertThat(internal.recorded())
                 .hasSize(9)
-                .extracting(EventMessage::getPayload)
+                .extracting(EventMessage::payload)
                 .extracting("value")
                 .containsExactly(
                         "event-1_seq-A",
@@ -225,8 +225,8 @@ class SequencingEventHandlingComponentTest {
     @Nonnull
     private List<String> payloadsOfSequence(List<EventMessage<?>> handledEvents, String sequence) {
         return handledEvents.stream()
-                            .filter(event -> event.getPayload().toString().contains("seq-" + sequence))
-                            .map(Message::getPayload)
+                            .filter(event -> event.payload().toString().contains("seq-" + sequence))
+                            .map(Message::payload)
                             .map(Object::toString)
                             .toList();
     }
@@ -264,7 +264,7 @@ class SequencingEventHandlingComponentTest {
      * example, "event-1_seq-A" returns "A", "event-2_seq-B" returns "B".
      */
     private static String sequenceOf(EventMessage<?> event) {
-        var input = event.getPayload().toString();
+        var input = event.payload().toString();
         if (input == null) {
             return "";
         }

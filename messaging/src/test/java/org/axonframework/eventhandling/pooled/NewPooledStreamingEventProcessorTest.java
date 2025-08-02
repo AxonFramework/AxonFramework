@@ -647,7 +647,7 @@ class NewPooledStreamingEventProcessorTest {
             doReturn(MessageStream.failed(new RuntimeException("Simulating worker failure")))
                     .doReturn(MessageStream.empty())
                     .when(defaultEventHandlingComponent)
-                    .handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any());
+                    .handle(argThat(em -> em.identifier().equals(events.get(2).identifier())), any());
 
             testSubject.start();
 
@@ -659,7 +659,7 @@ class NewPooledStreamingEventProcessorTest {
             assertWithin(1, TimeUnit.SECONDS, () -> {
                 try {
                     verify(defaultEventHandlingComponent).handle(
-                            argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())),
+                            argThat(em -> em.identifier().equals(events.get(2).identifier())),
                             any()
                     );
                 } catch (Exception e) {
@@ -790,7 +790,7 @@ class NewPooledStreamingEventProcessorTest {
 
             // then - Verify the event was tracked as ignored (even though filtered at stream level)
             assertThat(stubMessageSource.getIgnoredEvents()).hasSize(1);
-            assertThat(stubMessageSource.getIgnoredEvents().getFirst().getPayload()).isEqualTo(1337);
+            assertThat(stubMessageSource.getIgnoredEvents().getFirst().payload()).isEqualTo(1337);
         }
 
         @Test
@@ -812,19 +812,19 @@ class NewPooledStreamingEventProcessorTest {
             EventMessage<Integer> eventToIgnoreTwo = EventTestUtils.asEventMessage(42);
             EventMessage<Integer> eventToIgnoreThree = EventTestUtils.asEventMessage(9001);
             List<Integer> eventsToIgnore = new ArrayList<>();
-            eventsToIgnore.add(eventToIgnoreOne.getPayload());
-            eventsToIgnore.add(eventToIgnoreTwo.getPayload());
-            eventsToIgnore.add(eventToIgnoreThree.getPayload());
+            eventsToIgnore.add(eventToIgnoreOne.payload());
+            eventsToIgnore.add(eventToIgnoreTwo.payload());
+            eventsToIgnore.add(eventToIgnoreThree.payload());
 
             EventMessage<String> eventToHandleOne = EventTestUtils.asEventMessage("some-text");
             EventMessage<String> eventToHandleTwo = EventTestUtils.asEventMessage("some-other-text");
             List<String> eventsToHandle = new ArrayList<>();
-            eventsToHandle.add(eventToHandleOne.getPayload());
-            eventsToHandle.add(eventToHandleTwo.getPayload());
+            eventsToHandle.add(eventToHandleOne.payload());
+            eventsToHandle.add(eventToHandleTwo.payload());
 
             List<Object> eventsToValidate = new ArrayList<>();
-            eventsToValidate.add(eventToHandleOne.getPayload());
-            eventsToValidate.add(eventToHandleTwo.getPayload());
+            eventsToValidate.add(eventToHandleOne.payload());
+            eventsToValidate.add(eventToHandleTwo.payload());
 
             // when
             stubMessageSource.publishMessage(eventToIgnoreOne);
@@ -848,7 +848,7 @@ class NewPooledStreamingEventProcessorTest {
             assertThat(handledEvents).hasSize(2);
 
             List<Object> handledPayloads = handledEvents.stream()
-                                                        .map(EventMessage::getPayload)
+                                                        .map(EventMessage::payload)
                                                         .collect(Collectors.toList());
             assertThat(handledPayloads).containsExactlyInAnyOrderElementsOf(eventsToHandle);
 
@@ -857,7 +857,7 @@ class NewPooledStreamingEventProcessorTest {
             assertThat(ignoredEvents).hasSize(3);
 
             List<Object> ignoredPayloads = ignoredEvents.stream()
-                                                        .map(EventMessage::getPayload)
+                                                        .map(EventMessage::payload)
                                                         .collect(Collectors.toList());
             assertThat(ignoredPayloads).containsExactlyInAnyOrderElementsOf(eventsToIgnore);
         }

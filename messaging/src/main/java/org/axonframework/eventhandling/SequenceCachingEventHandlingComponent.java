@@ -69,7 +69,7 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
     @Nonnull
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-        String eventIdentifier = event.getIdentifier();
+        String eventIdentifier = event.identifier();
 
         SequenceIdentifiersCache cache = context.computeResourceIfAbsent(
                 resourceKey,
