@@ -29,10 +29,32 @@ import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModu
 import java.util.function.UnaryOperator;
 
 /**
- * TBD
+ * Interface for configuring individual {@link org.axonframework.eventhandling.EventProcessor} modules.
  * <p>
- * Note that users do not have to invoke {@link #build()} themselves when using this interface, as the
- * {@link org.axonframework.configuration.ApplicationConfigurer} takes care of that.
+ * This interface is typically not implemented or used directly. Instead, use the provided factory methods to create
+ * specific processor modules, or access existing processors through parent module configurations like
+ * {@link org.axonframework.eventhandling.SubscribingEventProcessorsModule} or
+ * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsModule}.
+ * <p>
+ * Example usage:
+ * <pre>{@code
+ * // Create a subscribing event processor
+ * EventProcessorModule subscribingModule = EventProcessorModule
+ *     .subscribing("notification-processor")
+ *     .customize(config -> processorConfig -> processorConfig
+ *         .eventHandlingComponents(List.of(notificationHandler))
+ *         .messageSource(customMessageSource)
+ *     );
+ *
+ * // Create a pooled streaming event processor
+ * EventProcessorModule streamingModule = EventProcessorModule
+ *     .pooledStreaming("order-processor")
+ *     .customize(config -> processorConfig -> processorConfig
+ *         .eventHandlingComponents(List.of(orderHandler))
+ *         .bufferSize(2048)
+ *         .initialSegmentCount(8)
+ *     );
+ * }</pre>
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -40,18 +62,19 @@ import java.util.function.UnaryOperator;
 public interface EventProcessorModule extends Module, ModuleBuilder<EventProcessorModule> {
 
     /**
-     * Start building a SubscribingEventProcessor module with the given processor processorName. The subscribing event
-     * processor will register with a message source to receive events.
+     * Start building a {@link SubscribingEventProcessorModule} with the given processor processorName. The subscribing
+     * event processor will register with a message source to receive events.
      *
      * @param processorName The processor processorName, must not be null or empty.
      * @return A builder phase to configure a subscribing event processor.
      */
-    static CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> subscribing(String processorName) {
+    static CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> subscribing(
+            String processorName) {
         return new SubscribingEventProcessorModule(processorName);
     }
 
     /**
-     * Start building a PooledStreamingEventProcessor module with the given processor name. The pooled streaming
+     * Start building a {@link PooledStreamingEventProcessorModule} with the given processor name. The pooled streaming
      * processor manages multiple segments to process events from a stream.
      *
      * @param processorName The processor name, must not be null or empty.
@@ -62,11 +85,46 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
         return new PooledStreamingEventProcessorModule(processorName);
     }
 
+    /**
+     * Configuration phase interface that provides methods for setting up event processor configurations.
+     * <p>
+     * This interface offers two approaches for configuring event processors:
+     * <ul>
+     * <li>{@link #configure(ComponentBuilder)} - Complete configuration replacement, ignoring parent defaults</li>
+     * <li>{@link #customize(ComponentBuilder)} - Incremental customization on top of parent defaults</li>
+     * </ul>
+     * <p>
+     * The customization approach is generally preferred as it preserves shared configurations from parent modules
+     * while allowing processor-specific overrides.
+     *
+     * @param <P> The specific type of {@link EventProcessorModule} being configured.
+     * @param <C> The specific type of {@link EventProcessorConfiguration} for the processor.
+     * @author Mateusz Nowak
+     * @since 5.0.0
+     */
     interface CustomizationPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration> {
 
+        /**
+         * Configures the processor with a complete configuration, ignoring any parent module defaults.
+         * <p>
+         * This method provides direct control over the processor configuration but bypasses shared defaults from parent
+         * modules. Use {@link #customize(ComponentBuilder)} instead to preserve shared configurations while applying
+         * processor-specific customizations.
+         *
+         * @param configurationBuilder A builder that creates the complete processor configuration.
+         * @return The configured processor module.
+         */
         P configure(@Nonnull ComponentBuilder<C> configurationBuilder);
 
+        /**
+         * Customizes the processor configuration by applying modifications to the default configuration.
+         * <p>
+         * This method applies processor-specific customizations on top of shared defaults from parent modules,
+         * providing the recommended approach for most configuration scenarios.
+         *
+         * @param customizationBuilder A builder that creates a customization function for the processor configuration.
+         * @return The configured processor module.
+         */
         P customize(@Nonnull ComponentBuilder<UnaryOperator<C>> customizationBuilder);
     }
-
 }

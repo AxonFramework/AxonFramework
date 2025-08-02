@@ -108,7 +108,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     public PooledStreamingEventProcessorConfiguration() {
     }
 
-    public PooledStreamingEventProcessorConfiguration(EventProcessorConfiguration configuration) {
+    public PooledStreamingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration configuration) {
         super(configuration);
     }
 

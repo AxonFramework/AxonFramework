@@ -17,20 +17,42 @@
 package org.axonframework.eventhandling.configuration;
 
 
-import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 
 import java.util.function.BiFunction;
 
+/**
+ * Allows customizing the {@link EventProcessorConfiguration}.
+ * <p>
+ * The interface provides composition capabilities through {@link #andThen(EventProcessorCustomization)} to allow chaining
+ * multiple customizations in a specific order.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 @FunctionalInterface
 public interface EventProcessorCustomization extends
         BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> {
 
+    /**
+     * Creates a no-operation customization that returns the processor configuration unchanged.
+     *
+     * @return A customization that applies no changes to the processor configuration.
+     */
     static EventProcessorCustomization noOp() {
         return (axonConfig, processorConfig) -> processorConfig;
     }
 
+    /**
+     * Returns a composed customization that applies this customization first, then applies the other customization.
+     * <p>
+     * This allows for chaining multiple customizations together, with each subsequent customization receiving
+     * the result of the previous one.
+     *
+     * @param other The customization to apply after this one.
+     * @return A composed customization that applies both customizations in sequence.
+     */
     default EventProcessorCustomization andThen(EventProcessorCustomization other) {
         return (axonConfig, processorConfig) -> other.apply(axonConfig, this.apply(axonConfig, processorConfig));
     }

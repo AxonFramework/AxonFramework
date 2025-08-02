@@ -88,23 +88,6 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
         this.errorHandler = configuration.errorHandler();
     }
 
-    /**
-     * Instantiate a Builder to be able to create a {@code SubscribingEventProcessor}.
-     * <p>
-     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
-     * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a
-     * {@link DirectEventProcessingStrategy}, the {@link EventProcessorSpanFactory} defaults to a
-     * {@link DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}, and the
-     * {@link TransactionManager} defaults to the {@link NoTransactionManager#INSTANCE}. The Event Processor
-     * {@code name}, {@link EventHandlerInvoker} and {@link SubscribableMessageSource} are <b>hard requirements</b> and
-     * as such should be provided.
-     *
-     * @return a Builder to be able to create a {@code SubscribingEventProcessor}
-     */
-    public static SubscribingEventProcessorConfiguration builder() {
-        return new SubscribingEventProcessorConfiguration();
-    }
-
     @Override
     public String getName() {
         return name;

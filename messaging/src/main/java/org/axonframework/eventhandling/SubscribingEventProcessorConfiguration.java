@@ -50,7 +50,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         super();
     }
 
-    public SubscribingEventProcessorConfiguration(EventProcessorConfiguration base) {
+    public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         super(base);
     }
 
