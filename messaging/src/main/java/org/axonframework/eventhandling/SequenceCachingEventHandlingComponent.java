@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -26,6 +27,25 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Decorator for {@link EventHandlingComponent}. This implementation acts as a performance optimization layer by caching
+ * the results of sequence identifier calculations. Since sequence identifier computation can be expensive, this caching
+ * component reduces redundant calculations for events which sequence identifier has already been calculated within the
+ * same {@link ProcessingContext}.
+ * <p>
+ * The cache is stored as a resource in the {@link ProcessingContext}, ensuring that the cache is scoped to the current
+ * processing unit of work. This means the cache is automatically cleaned up when the processing context is completed.
+ * <p>
+ * Example usage within framework configuration:
+ * <pre>{@code
+ * EventHandlingComponent component = // ... create base component
+ * EventHandlingComponent cachingComponent = new SequenceCachingEventHandlingComponent(component);
+ * }</pre>
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
+@Internal
 public class SequenceCachingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
     private final Context.ResourceKey<SequenceIdentifiersCache> resourceKey;
@@ -33,8 +53,9 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
     /**
      * Constructs the component with given {@code delegate} to receive calls.
      *
-     * @param delegate The instance to delegate calls to.
+     * @param delegate The {@link EventHandlingComponent} instance to delegate calls to.
      */
+    @Internal
     public SequenceCachingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
         super(delegate);
         this.resourceKey = Context.ResourceKey.withLabel("sequenceIdentifiersCache");
@@ -66,37 +87,41 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
     }
 
     /**
-     * A size-limited cache for storing sequence identifiers per event handling component instance. The cache uses a LRU
-     * (Least Recently Used) eviction policy when the maximum size is reached.
+     * A cache for storing sequence identifiers by event identifier within a {@link ProcessingContext}.
+     * <p>
+     * This cache provides a simple key-value mapping between event identifiers and their corresponding sequence
+     * identifiers. The cache is scoped to a single processing context and is automatically cleaned up when the context
+     * completes, ensuring memory efficiency and isolation between processing operations.
      */
     private static final class SequenceIdentifiersCache {
 
         private final Map<String, Object> cache;
 
         /**
-         * Constructs a new sequence identifiers cache with the specified maximum size.
-         *
-         * @param maxSize The maximum number of entries to store in the cache.
+         * Constructs a new sequence identifiers cache.
+         * <p>
+         * The cache is initialized as an empty {@link HashMap} and is intended to be used within the scope of a single
+         * {@link ProcessingContext}.
          */
         SequenceIdentifiersCache() {
             this.cache = new HashMap<>();
         }
 
         /**
-         * Stores a sequence identifier in the cache.
+         * Stores a sequence identifier in the cache using the event identifier as the key.
          *
-         * @param eventIdentifier    The event identifier to use as key.
-         * @param sequenceIdentifier The sequence identifier to store.
+         * @param eventIdentifier    The event identifier to use as the cache key.
+         * @param sequenceIdentifier The sequence identifier to store in the cache.
          */
         void put(@Nonnull String eventIdentifier, @Nonnull Object sequenceIdentifier) {
             cache.put(eventIdentifier, sequenceIdentifier);
         }
 
         /**
-         * Retrieves a sequence identifier from the cache.
+         * Retrieves a sequence identifier from the cache for the given event identifier.
          *
-         * @param eventIdentifier The event identifier to look up.
-         * @return An {@link Optional} containing the sequence identifier if present, empty otherwise.
+         * @param eventIdentifier The event identifier to look up in the cache.
+         * @return An {@link Optional} containing the sequence identifier if present, or empty if not found.
          */
         @Nonnull
         Optional<Object> get(@Nonnull String eventIdentifier) {

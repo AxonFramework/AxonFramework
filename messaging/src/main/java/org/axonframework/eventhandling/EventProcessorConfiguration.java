@@ -63,7 +63,7 @@ public class EventProcessorConfiguration {
         super();
     }
 
-    public EventProcessorConfiguration(EventProcessorConfiguration base) {
+    public EventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         Objects.requireNonNull(base, "Base configuration may not be null");
         assertNonNull(base, "Base configuration may not be null");
         this.eventHandlingComponents = base.eventHandlingComponents();
