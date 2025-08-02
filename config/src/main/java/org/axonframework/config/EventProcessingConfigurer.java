@@ -32,6 +32,7 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -54,6 +55,8 @@ import java.util.function.Predicate;
  * @author Milan Savic
  * @since 4.0
  */
+// TODO #3098 - Remove the class and other related to legacy configuration approach
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface EventProcessingConfigurer {
 
     /**
@@ -549,7 +552,7 @@ public interface EventProcessingConfigurer {
      *                               {@link PooledStreamingEventProcessor}
      * @param processorConfiguration allows further customization of the {@link PooledStreamingEventProcessor} under
      *                               construction. The given {@link LegacyConfiguration} can be used to extract
-     *                               components and use them in the {@link PooledStreamingEventProcessor.Builder}
+     *                               components and use them in the {@link PooledStreamingEventProcessorConfiguration}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerPooledStreamingEventProcessor(
@@ -682,12 +685,13 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Contract defining {@link PooledStreamingEventProcessor.Builder} based configuration when constructing a
+     * Contract defining {@link PooledStreamingEventProcessorConfiguration} based configuration when constructing a
      * {@link PooledStreamingEventProcessor}.
      */
     @FunctionalInterface
+    @Deprecated(since = "5.0.0", forRemoval = true)
     interface PooledStreamingProcessorConfiguration extends
-            BiFunction<LegacyConfiguration, PooledStreamingEventProcessor.Builder, PooledStreamingEventProcessor.Builder> {
+            BiFunction<LegacyConfiguration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> {
 
         /**
          * Returns a configuration that applies the given {@code other} configuration after applying {@code this}. Any

@@ -30,6 +30,7 @@ import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
@@ -98,13 +99,12 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                                      (command, stateManager, context) -> MessageStream.empty().cast()
                                              ));
 
-        List<Configuration> moduleConfigurations =
+        Optional<Configuration> moduleConfiguration =
                 testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
                            .build()
-                           .getModuleConfigurations();
+                           .getModuleConfiguration("test");
 
-        assertFalse(moduleConfigurations.isEmpty());
-        assertEquals(1, moduleConfigurations.size());
+        assertTrue(moduleConfiguration.isPresent());
     }
 
     @Test
@@ -135,6 +135,16 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                           .build();
 
         assertEquals(expected, result.getComponent(EventStore.class));
+    }
+
+    @Test
+    void registerEventStoreShouldRegisterStreamableEventSourceIfImplemented() {
+        EventStore expected = new SimpleEventStore(null, null);
+
+        Configuration result = testSubject.registerEventStore(c -> expected)
+                                          .build();
+
+        assertEquals(expected, result.getComponent(StreamableEventSource.class));
     }
 
     @Test

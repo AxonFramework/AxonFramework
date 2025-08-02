@@ -63,10 +63,10 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
 
     @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         requireNonNull(event, "Event Message may not be null");
         return sequencingPolicy.getSequenceIdentifierFor(event)
-                               .orElseGet(() -> delegate.sequenceIdentifierFor(event));
+                               .orElseGet(() -> delegate.sequenceIdentifierFor(event, context));
     }
 
     @Override

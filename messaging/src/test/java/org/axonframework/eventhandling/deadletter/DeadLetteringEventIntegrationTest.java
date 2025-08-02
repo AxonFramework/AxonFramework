@@ -22,9 +22,15 @@ import org.axonframework.common.AxonException;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.LegacyEventHandlingComponent;
+import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.StreamingEventProcessor;
+import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
+import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
@@ -35,12 +41,14 @@ import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -184,19 +192,30 @@ public abstract class DeadLetteringEventIntegrationTest {
         deadLetteringInvoker = invokerBuilder.build();
 
         eventSource = new AsyncInMemoryStreamableEventSource();
-        streamingProcessor =
-                PooledStreamingEventProcessor.builder()
-                                             .name(PROCESSING_GROUP)
-                                             .eventHandlerInvoker(deadLetteringInvoker)
-                                             .eventSource(eventSource)
-                                             .tokenStore(new InMemoryTokenStore())
-                                             .transactionManager(transactionManager)
-                                             .coordinatorExecutor(Executors.newSingleThreadScheduledExecutor())
-                                             .workerExecutor(Executors.newSingleThreadScheduledExecutor())
-                                             .initialSegmentCount(1)
-                                             .claimExtensionThreshold(1000)
-                                             .build();
-
+        var interceptors = new MessageHandlerInterceptors();
+        var configuration = new PooledStreamingEventProcessorConfiguration()
+                .eventSource(eventSource)
+                .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager))
+                .tokenStore(new InMemoryTokenStore())
+                .coordinatorExecutor(ignored -> Executors.newSingleThreadScheduledExecutor())
+                .workerExecutor(ignored -> Executors.newSingleThreadScheduledExecutor())
+                .initialSegmentCount(1)
+                .claimExtensionThreshold(1000);
+        var eventHandlingComponent = new TracingEventHandlingComponent(
+                (event) -> configuration.spanFactory().createProcessEventSpan(true, event),
+                new MonitoringEventHandlingComponent(
+                        configuration.messageMonitor(),
+                        new InterceptingEventHandlingComponent(
+                                interceptors,
+                                new LegacyEventHandlingComponent(deadLetteringInvoker)
+                        )
+                )
+        );
+        configuration.eventHandlingComponents(List.of(eventHandlingComponent));
+        streamingProcessor = new PooledStreamingEventProcessor(
+                PROCESSING_GROUP,
+                configuration
+        );
         executor = Executors.newScheduledThreadPool(2);
     }
 

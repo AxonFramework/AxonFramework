@@ -17,9 +17,13 @@
 package org.axonframework.config;
 
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -97,11 +101,12 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerSaga(Saga2.class)
                   .registerSaga(Saga3.class)
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                          SubscribingEventProcessor.builder()
-                                                   .name(name)
-                                                   .eventHandlerInvoker(eventHandlerInvoker)
-                                                   .messageSource(conf.eventBus())
-                                                   .build()
+                          new SubscribingEventProcessor(
+                                  name,
+                                  cfg -> cfg.messageSource(conf.eventBus())
+                                          .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                                          .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
+                          )
                   );
         LegacyConfiguration configuration = configurer.buildConfiguration();
 
@@ -124,11 +129,13 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
         LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                          SubscribingEventProcessor.builder()
-                                                   .name(name)
-                                                   .eventHandlerInvoker(eventHandlerInvoker)
-                                                   .messageSource(conf.eventBus())
-                                                   .build())
+                          new SubscribingEventProcessor(
+                                  name,
+                                  cfg -> cfg.messageSource(conf.eventBus())
+                                            .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                                            .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
+                          )
+                  )
                   .assignProcessingGroup("processor1", "myProcessor")
                   .registerSaga(Saga1.class)
                   .registerSaga(Saga2.class)
@@ -153,12 +160,13 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerSaga(Saga2.class)
                   .registerSaga(Saga3.class)
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                          SubscribingEventProcessor.builder()
-                                                   .name(name)
-                                                   .eventHandlerInvoker(eventHandlerInvoker)
-                                                   .messageSource(conf.eventBus())
-                                                   .build())
-                  .assignProcessingGroup(group -> "myProcessor");
+                          new SubscribingEventProcessor(
+                                  name,
+                                  cfg -> cfg.messageSource(conf.eventBus())
+                                            .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                                            .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
+                          )
+                  ).assignProcessingGroup(group -> "myProcessor");
 
         LegacyConfiguration configuration = configurer.buildConfiguration();
 

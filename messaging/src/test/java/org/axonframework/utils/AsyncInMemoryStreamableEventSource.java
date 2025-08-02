@@ -89,6 +89,8 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     private final boolean streamCallbackSupported;
     private final List<EventMessage<?>> ignoredEvents = new CopyOnWriteArrayList<>();
     private final Set<AsyncMessageStream> openStreams = new CopyOnWriteArraySet<>();
+    private Runnable onOpen = () -> {};
+    private Runnable onClose = () -> {};
 
     /**
      * Construct a default {@link AsyncInMemoryStreamableEventSource}. If stream callbacks should be supported for
@@ -112,6 +114,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     public MessageStream<EventMessage<?>> open(@Nonnull StreamingCondition condition) {
         AsyncMessageStream stream = new AsyncMessageStream(condition);
         openStreams.add(stream);
+        onOpen.run();
         return stream;
     }
 
@@ -175,6 +178,22 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      */
     public void runOnAvailableCallback() {
         openStreams.forEach(AsyncMessageStream::runCallback);
+    }
+
+    /**
+     * Set a handler to be called whenever a stream is opened.
+     * @param onOpen the handler to call
+     */
+    public void setOnOpen(Runnable onOpen) {
+        this.onOpen = onOpen != null ? onOpen : () -> {};
+    }
+
+    /**
+     * Set a handler to be called whenever a stream is closed.
+     * @param onClose the handler to call
+     */
+    public void setOnClose(Runnable onClose) {
+        this.onClose = onClose != null ? onClose : () -> {};
     }
 
     /**
@@ -338,6 +357,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
             // This matches the original InMemoryStreamableEventSource behavior and provides
             // test isolation, allowing recovery scenarios where new events are published after errors
             clearAllMessages();
+            onClose.run();
         }
 
         public void notifyEventAvailable() {
