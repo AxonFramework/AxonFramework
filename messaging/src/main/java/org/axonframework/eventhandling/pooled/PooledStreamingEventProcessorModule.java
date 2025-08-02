@@ -146,7 +146,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
         var processor = new PooledStreamingEventProcessor(
                 processorName,
-                configuration.eventHandlingComponents(decoratedEventHandlingComponents)
+                decoratedEventHandlingComponents,
+                configuration
         );
 
         var processorComponentDefinition = ComponentDefinition
