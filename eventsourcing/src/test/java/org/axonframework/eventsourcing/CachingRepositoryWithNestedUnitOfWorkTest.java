@@ -302,6 +302,11 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
             events.add(str);
             return null;
         }
+
+        @Override
+        public Set<Class<?>> supportedEventTypes() {
+            return Set.of(AggregateCreatedEvent.class, AggregateUpdatedEvent.class);
+        }
     }
 
     /*
@@ -419,6 +424,11 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                 }
             }
             return null;
+        }
+
+        @Override
+        public Set<Class<?>> supportedEventTypes() {
+            return Set.of(AggregateCreatedEvent.class, AggregateUpdatedEvent.class);
         }
     }
 }
