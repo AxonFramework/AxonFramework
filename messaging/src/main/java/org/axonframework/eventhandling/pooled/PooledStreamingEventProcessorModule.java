@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.pooled;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
@@ -44,18 +43,58 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-@Internal
-public class PooledStreamingEventProcessorModule
-        extends BaseModule<PooledStreamingEventProcessorModule>
+/**
+ * A configuration module for configuring and registering a single {@link PooledStreamingEventProcessor} component.
+ * <p>
+ * The main capabilities provided by this module include:
+ * <ul>
+ * <li>Automatic thread pool configuration for coordinator and worker executors</li>
+ * <li>Event handling component decoration with tracing, monitoring, and interceptors</li>
+ * <li>Integration with shared configuration customizations from parent modules</li>
+ * <li>Lifecycle management for the created processor and its executors</li>
+ * </ul>
+ * <p>
+ * This module is typically not instantiated directly but created through 
+ * {@link EventProcessorModule#pooledStreaming(String)} or registered via 
+ * {@link PooledStreamingEventProcessorsModule#processor(String, List)} methods.
+ * <p>
+ * The module applies shared defaults from {@link PooledStreamingEventProcessorsModule} and 
+ * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule} before applying 
+ * processor-specific customizations.
+ * <p>
+ * Example configuration:
+ * <pre>{@code
+ * EventProcessorModule.pooledStreaming("order-processor")
+ *     .customize(config -> processorConfig -> processorConfig
+ *         .eventHandlingComponents(List.of(orderEventHandler))
+ *         .bufferSize(2048)
+ *         .initialSegmentCount(8)
+ *         .coordinatorExecutor(customCoordinatorExecutor)
+ *         .workerExecutor(customWorkerExecutor)
+ *     );
+ * }</pre>
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
+public class PooledStreamingEventProcessorModule extends BaseModule<PooledStreamingEventProcessorModule>
         implements EventProcessorModule,
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
     private final String processorName;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder;
 
-    // todo: defaults - should be configurable
+    // TODO #3103 - Rewrite with Event Handling interceptors support. Should be configurable.
     private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
 
+    /**
+     * Constructs a module with the given processor name.
+     * <p>
+     * The processor name will be used as the module name and as the unique identifier for the 
+     * {@link PooledStreamingEventProcessor} component created by this module.
+     *
+     * @param processorName The unique name for the pooled streaming event processor.
+     */
     public PooledStreamingEventProcessorModule(@Nonnull String processorName) {
         super(processorName);
         this.processorName = processorName;
@@ -129,6 +168,22 @@ public class PooledStreamingEventProcessorModule
         return Executors.newScheduledThreadPool(poolSize, new AxonThreadFactory(factoryName));
     }
 
+    /**
+     * Configures this module with a complete {@link PooledStreamingEventProcessorConfiguration}.
+     * <p>
+     * This method provides the most direct way to set the processor configuration. The configuration builder
+     * receives the Axon {@link Configuration} and should return a fully configured 
+     * {@link PooledStreamingEventProcessorConfiguration} instance.
+     * <p>
+     * <strong>Important:</strong> This method does not respect parent configurations and will fully override any 
+     * shared defaults from {@link PooledStreamingEventProcessorsModule} or 
+     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}. Use 
+     * {@link #customize(ComponentBuilder)} instead to apply processor-specific customizations while preserving 
+     * shared defaults.
+     *
+     * @param configurationBuilder A builder that creates the complete processor configuration.
+     * @return This module instance for method chaining.
+     */
     @Override
     public PooledStreamingEventProcessorModule configure(
             @Nonnull ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder
@@ -137,6 +192,19 @@ public class PooledStreamingEventProcessorModule
         return this;
     }
 
+    /**
+     * Customizes the processor configuration by applying modifications to the default configuration.
+     * <p>
+     * This method allows you to provide processor-specific customizations that will be applied on top of
+     * any shared defaults from parent modules. The customization builder receives the Axon {@link Configuration}
+     * and should return a function that modifies the processor configuration.
+     * <p>
+     * The customization is applied after shared defaults from {@link PooledStreamingEventProcessorsModule} and
+     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}.
+     *
+     * @param customizationBuilder A builder that creates a customization function for the processor configuration.
+     * @return This module instance for method chaining.
+     */
     @Override
     public PooledStreamingEventProcessorModule customize(
             @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorConfiguration>> customizationBuilder
@@ -159,7 +227,8 @@ public class PooledStreamingEventProcessorModule
     private static PooledStreamingEventProcessorModule.Customization sharedCustomizationOrNoOp(
             Configuration cfg
     ) {
-        return cfg.getOptionalComponent(PooledStreamingEventProcessorModule.Customization.class, "pooledStreamingEventProcessorCustomization")
+        return cfg.getOptionalComponent(PooledStreamingEventProcessorModule.Customization.class,
+                                        "pooledStreamingEventProcessorCustomization")
                   .orElseGet(PooledStreamingEventProcessorModule.Customization::noOp);
     }
 
@@ -175,17 +244,39 @@ public class PooledStreamingEventProcessorModule
         return this;
     }
 
-    @Internal
+    /**
+     * Allows customizing the {@link PooledStreamingEventProcessorConfiguration}.
+     * <p>
+     * The interface provides composition capabilities through {@link #andThen(Customization)} to allow chaining
+     * multiple customizations in a specific order.
+     *
+     * @author Mateusz Nowak
+     * @since 5.0.0
+     */
     @FunctionalInterface
     interface Customization extends
             BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> {
 
+        /**
+         * Creates a no-operation customization that returns the processor configuration unchanged.
+         *
+         * @return A customization that applies no changes to the processor configuration.
+         */
         static Customization noOp() {
-            return (config, pConfig) -> pConfig;
+            return (axonConfig, processorConfig) -> processorConfig;
         }
 
+        /**
+         * Returns a composed customization that applies this customization first, then applies the other customization.
+         * <p>
+         * This allows for chaining multiple customizations together, with each subsequent customization receiving
+         * the result of the previous one.
+         *
+         * @param other The customization to apply after this one.
+         * @return A composed customization that applies both customizations in sequence.
+         */
         default Customization andThen(Customization other) {
-            return (config, pConfig) -> other.apply(config, this.apply(config, pConfig));
+            return (axonConfig, processorConfig) -> other.apply(axonConfig, this.apply(axonConfig, processorConfig));
         }
     }
 }
