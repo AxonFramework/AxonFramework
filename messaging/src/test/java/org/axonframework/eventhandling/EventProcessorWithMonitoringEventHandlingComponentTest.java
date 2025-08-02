@@ -32,11 +32,13 @@ import org.junit.jupiter.api.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
 import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class EventProcessorWithMonitoringEventHandlingComponentTest {
 
@@ -48,9 +50,9 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
             @Override
             public void reportSuccess() {
                 if (!pending.contains(message)) {
-                    fail("Message was presented to monitor twice: " + message);
+                    throw new RuntimeException("Message was presented to monitor twice: " + message);
                 }
-                pending.remove(message);
+                var removed = pending.remove(message);
             }
 
             @Override
@@ -64,12 +66,8 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
             }
         };
 
-        EventHandlingComponent mockEventHandlingComponent = mock(EventHandlingComponent.class);
-        when(mockEventHandlingComponent.handle(any(), any())).thenReturn(MessageStream.empty());
-        when(mockEventHandlingComponent.supports(any())).thenReturn(true);
-        when(mockEventHandlingComponent.sequenceIdentifierFor(any(), any())).thenAnswer(
-                e -> e.getArgument(0, EventMessage.class).identifier()
-        );
+        EventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
+        eventHandlingComponent.subscribe(DomainEventTestUtils.TYPE.qualifiedName(), (e, c) -> MessageStream.empty());
 
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
@@ -96,13 +94,14 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
                                                 context);
             }
         };
-        var eventHandlingComponent = new InterceptingEventHandlingComponent(
-                new MessageHandlerInterceptors(List.of(interceptor)),
-                new MonitoringEventHandlingComponent(
-                        messageMonitor,
-                        mockEventHandlingComponent)
+        var decoratedEventHandlingComponent = new MonitoringEventHandlingComponent(
+                messageMonitor,
+                new InterceptingEventHandlingComponent(
+                        new MessageHandlerInterceptors(List.of(interceptor)),
+                        eventHandlingComponent
+                )
         );
-        TestEventProcessor testSubject = new TestEventProcessor(eventHandlingComponent);
+        TestEventProcessor testSubject = new TestEventProcessor(decoratedEventHandlingComponent);
 
         testSubject.processInBatchingUnitOfWork(events);
 
@@ -143,11 +142,12 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
             return false;
         }
 
-        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) {
+        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages)
+                throws ExecutionException, InterruptedException, TimeoutException {
             var unitOfWork = UNIT_OF_WORK_FACTORY.create();
-            unitOfWork.executeWithResult(ctx -> processorEventHandlingComponents.handle(
-                    eventMessages, ctx).asCompletableFuture()
-            ).join();
+            unitOfWork.executeWithResult(ctx -> processorEventHandlingComponents.handle(eventMessages, ctx)
+                                                                                .asCompletableFuture()
+            ).get(2, TimeUnit.SECONDS);
         }
     }
 }
