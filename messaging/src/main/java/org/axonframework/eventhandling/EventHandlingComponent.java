@@ -61,11 +61,11 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * inherit from a certain {@code EventHandlingComponent} implementation.
      *
      * @param event   The event for which to get the sequencing identifier.
-     * @param context
+     * @param context The processing context in which the event is being handled.
      * @return A sequence identifier for the given event.
      */
     @Nonnull
     default Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-        return event.getIdentifier();
+        return event.identifier();
     }
 }
