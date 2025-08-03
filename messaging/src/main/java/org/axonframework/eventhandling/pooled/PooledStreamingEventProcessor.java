@@ -118,6 +118,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
         );
     }
 
+
     public PooledStreamingEventProcessor(
             @Nonnull String name,
             @Nonnull PooledStreamingEventProcessorConfiguration configuration

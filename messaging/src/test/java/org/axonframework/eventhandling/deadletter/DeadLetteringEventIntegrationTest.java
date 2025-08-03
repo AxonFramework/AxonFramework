@@ -211,9 +211,9 @@ public abstract class DeadLetteringEventIntegrationTest {
                         )
                 )
         );
-        configuration.eventHandlingComponents(List.of(eventHandlingComponent));
         streamingProcessor = new PooledStreamingEventProcessor(
                 PROCESSING_GROUP,
+                List.of(eventHandlingComponent),
                 configuration
         );
         executor = Executors.newScheduledThreadPool(2);

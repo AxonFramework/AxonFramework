@@ -54,6 +54,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         super(base);
     }
 
+    @Deprecated(since = "5.0.0", forRemoval = true)
     @Override
     public SubscribingEventProcessorConfiguration eventHandlerInvoker(
             @Nonnull EventHandlerInvoker eventHandlerInvoker) {
@@ -61,6 +62,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         return this;
     }
 
+    @Deprecated(since = "5.0.0", forRemoval = true)
     @Override
     public SubscribingEventProcessorConfiguration eventHandlingComponents(
             @Nonnull List<EventHandlingComponent> eventHandlingComponents) {

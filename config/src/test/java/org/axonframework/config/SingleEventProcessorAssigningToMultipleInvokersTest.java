@@ -103,9 +103,9 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
                           new SubscribingEventProcessor(
                                   name,
+                                  List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                                   cfg -> cfg.messageSource(conf.eventBus())
                                           .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
-                                          .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
                           )
                   );
         LegacyConfiguration configuration = configurer.buildConfiguration();
@@ -131,9 +131,9 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
                           new SubscribingEventProcessor(
                                   name,
+                                  List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                                   cfg -> cfg.messageSource(conf.eventBus())
                                             .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
-                                            .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
                           )
                   )
                   .assignProcessingGroup("processor1", "myProcessor")
@@ -162,9 +162,9 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
                           new SubscribingEventProcessor(
                                   name,
+                                  List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                                   cfg -> cfg.messageSource(conf.eventBus())
                                             .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
-                                            .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
                           )
                   ).assignProcessingGroup(group -> "myProcessor");
 

@@ -45,21 +45,12 @@ public class EventHandlingComponents {
         this.components = components;
     }
 
-    public EventHandlingComponents decorated(@Nonnull UnaryOperator<EventHandlingComponent> decorator) {
-        return new EventHandlingComponents(components.stream().map(decorator).toList());
+    public static EventHandlingComponents single(@Nonnull Definition.Complete definition) {
+        return new EventHandlingComponents(List.of(definition.toComponent()));
     }
 
-    public List<EventHandlingComponent> toList() {
-        return List.copyOf(components);
-    }
-
-    public static EventHandlingComponents many(@Nonnull Definition.Complete requiredDefinition,
-                                               @Nonnull Definition.Complete... additionalDefinitions) {
-        var components = Stream.concat(
-                Stream.of(requiredDefinition.toComponent()),
-                Stream.of(additionalDefinitions).map(Definition.Complete::toComponent)
-        ).filter(Objects::nonNull).toList();
-        return new EventHandlingComponents(components);
+    public static EventHandlingComponents single(@Nonnull EventHandlingComponent component) {
+        return new EventHandlingComponents(List.of(component));
     }
 
     public static EventHandlingComponents many(@Nonnull EventHandlingComponent requiredComponent,
@@ -72,12 +63,21 @@ public class EventHandlingComponents {
         return new EventHandlingComponents(components);
     }
 
-    public static EventHandlingComponents single(@Nonnull EventHandlingComponent component) {
-        return new EventHandlingComponents(List.of(component));
+    public static EventHandlingComponents many(@Nonnull Definition.Complete requiredDefinition,
+                                               @Nonnull Definition.Complete... additionalDefinitions) {
+        var components = Stream.concat(
+                Stream.of(requiredDefinition.toComponent()),
+                Stream.of(additionalDefinitions).map(Definition.Complete::toComponent)
+        ).filter(Objects::nonNull).toList();
+        return new EventHandlingComponents(components);
     }
 
-    public static EventHandlingComponents single(@Nonnull Definition.Complete definition) {
-        return new EventHandlingComponents(List.of(definition.toComponent()));
+    public EventHandlingComponents decorated(@Nonnull UnaryOperator<EventHandlingComponent> decorator) {
+        return new EventHandlingComponents(components.stream().map(decorator).toList());
+    }
+
+    public List<EventHandlingComponent> toList() {
+        return List.copyOf(components);
     }
 
     public interface Definition {

@@ -23,13 +23,13 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorsModule;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
+import org.axonframework.eventhandling.configuration.EventHandlingComponents;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
@@ -39,7 +39,6 @@ import org.axonframework.lifecycle.Phase;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 /**
  * A configuration module for configuring and registering a single {@link SubscribingEventProcessor} component.
@@ -52,12 +51,12 @@ import java.util.stream.Collectors;
  * <li>Automatic subscription to the configured message source</li>
  * </ul>
  * <p>
- * This module is typically not instantiated directly but created through 
- * {@link EventProcessorModule#subscribing(String)} or registered via 
+ * This module is typically not instantiated directly but created through
+ * {@link EventProcessorModule#subscribing(String)} or registered via
  * {@link SubscribingEventProcessorsModule#processor(String, List)} methods.
  * <p>
  * The module applies shared defaults from {@link SubscribingEventProcessorsModule} and
- * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule} before applying 
+ * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule} before applying
  * processor-specific customizations.
  * <p>
  * Example configuration:
@@ -75,9 +74,11 @@ import java.util.stream.Collectors;
  */
 public class SubscribingEventProcessorModule extends BaseModule<SubscribingEventProcessorModule>
         implements EventProcessorModule,
+        EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration>,
         EventProcessorModule.CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> {
 
     private final String processorName;
+    private ComponentBuilder<EventHandlingComponents> eventHandlingComponentsBuilder;
     private ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder;
 
     // TODO #3103 - Rewrite with Event Handling interceptors support. Should be configurable.
@@ -86,7 +87,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     /**
      * Constructs a module with the given processor name.
      * <p>
-     * The processor name will be used as the module name and as the unique identifier for the 
+     * The processor name will be used as the module name and as the unique identifier for the
      * {@link SubscribingEventProcessor} component created by this module.
      *
      * @param processorName The unique name for the subscribing event processor.
@@ -102,12 +103,11 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
         var spanFactory = configuration.spanFactory();
         var messageMonitor = configuration.messageMonitor();
-        var eventHandlingComponents = configuration.eventHandlingComponents();
 
+        var eventHandlingComponents = eventHandlingComponentsBuilder.build(parent);
         // TODO #3098 - Move it somewhere else! Like a decorator if certain enhancer applied.
-        List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
-                .stream()
-                .map(c -> new TracingEventHandlingComponent(
+        var decoratedEventHandlingComponents = eventHandlingComponents
+                .decorated(c -> new TracingEventHandlingComponent(
                         (event) -> spanFactory.createProcessEventSpan(false, event),
                         new MonitoringEventHandlingComponent(
                                 messageMonitor,
@@ -116,11 +116,12 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                                         c
                                 )
                         )
-                )).collect(Collectors.toUnmodifiableList());
+                )).toList();
 
         var processor = new SubscribingEventProcessor(
                 processorName,
-                configuration.eventHandlingComponents(decoratedEventHandlingComponents)
+                decoratedEventHandlingComponents,
+                configuration
         );
 
         var processorComponentDefinition = ComponentDefinition
@@ -142,15 +143,15 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     /**
      * Configures this module with a complete {@link SubscribingEventProcessorConfiguration}.
      * <p>
-     * This method provides the most direct way to set the processor configuration. The configuration builder
-     * receives the Axon {@link Configuration} and should return a fully configured 
+     * This method provides the most direct way to set the processor configuration. The configuration builder receives
+     * the Axon {@link Configuration} and should return a fully configured
      * {@link SubscribingEventProcessorConfiguration} instance.
      * <p>
-     * <strong>Important:</strong> This method does not respect parent configurations and will fully override any 
+     * <strong>Important:</strong> This method does not respect parent configurations and will fully override any
      * shared defaults from {@link SubscribingEventProcessorsModule} or
-     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}. Use 
-     * {@link #customize(ComponentBuilder)} instead to apply processor-specific customizations while preserving 
-     * shared defaults.
+     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}. Use
+     * {@link #customize(ComponentBuilder)} instead to apply processor-specific customizations while preserving shared
+     * defaults.
      *
      * @param configurationBuilder A builder that creates the complete processor configuration.
      * @return This module instance for method chaining.
@@ -163,12 +164,20 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         return this;
     }
 
+    @Override
+    public CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> eventHandlingComponents(
+            ComponentBuilder<EventHandlingComponents> eventHandlingComponentsBuilder
+    ) {
+        this.eventHandlingComponentsBuilder = eventHandlingComponentsBuilder;
+        return this;
+    }
+
     /**
      * Customizes the processor configuration by applying modifications to the default configuration.
      * <p>
-     * This method allows you to provide processor-specific customizations that will be applied on top of
-     * any shared defaults from parent modules. The customization builder receives the Axon {@link Configuration}
-     * and should return a function that modifies the processor configuration.
+     * This method allows you to provide processor-specific customizations that will be applied on top of any shared
+     * defaults from parent modules. The customization builder receives the Axon {@link Configuration} and should return
+     * a function that modifies the processor configuration.
      * <p>
      * The customization is applied after shared defaults from {@link SubscribingEventProcessorsModule} and
      * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}.
@@ -220,8 +229,9 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     /**
      * Allows customizing the {@link SubscribingEventProcessorConfiguration}.
      * <p>
-     * The interface provides composition capabilities through {@link #andThen(SubscribingEventProcessorModule.Customization)} to allow chaining
-     * multiple customizations in a specific order.
+     * The interface provides composition capabilities through
+     * {@link #andThen(SubscribingEventProcessorModule.Customization)} to allow chaining multiple customizations in a
+     * specific order.
      *
      * @author Mateusz Nowak
      * @since 5.0.0
@@ -240,10 +250,11 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         }
 
         /**
-         * Returns a composed customization that applies this customization first, then applies the other customization.
+         * Returns a composed customization that applies this customization first, then applies the other
+         * customization.
          * <p>
-         * This allows for chaining multiple customizations together, with each subsequent customization receiving
-         * the result of the previous one.
+         * This allows for chaining multiple customizations together, with each subsequent customization receiving the
+         * result of the previous one.
          *
          * @param other The customization to apply after this one.
          * @return A composed customization that applies both customizations in sequence.

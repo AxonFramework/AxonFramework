@@ -68,7 +68,7 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor processorName, must not be null or empty.
      * @return A builder phase to configure a subscribing event processor.
      */
-    static CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> subscribing(
+    static EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> subscribing(
             String processorName) {
         return new SubscribingEventProcessorModule(processorName);
     }
@@ -80,9 +80,19 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * @param processorName The processor name, must not be null or empty.
      * @return A builder phase to configure a pooled streaming event processor.
      */
-    static CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> pooledStreaming(
+    static EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> pooledStreaming(
             String processorName) {
         return new PooledStreamingEventProcessorModule(processorName);
+    }
+
+    interface EventHandlingPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration> {
+
+        default CustomizationPhase<P, C> eventHandlingComponents(EventHandlingComponents eventHandlingComponents) {
+            return eventHandlingComponents(cfg -> eventHandlingComponents);
+        }
+
+        CustomizationPhase<P, C> eventHandlingComponents(
+                ComponentBuilder<EventHandlingComponents> eventHandlingComponentsBuilder);
     }
 
     /**
