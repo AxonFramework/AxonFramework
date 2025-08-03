@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
@@ -111,14 +110,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
 
     public PooledStreamingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration configuration) {
         super(configuration);
-    }
-
-    @Deprecated(since = "5.0.0", forRemoval = true)
-    @Override
-    public PooledStreamingEventProcessorConfiguration eventHandlingComponents(
-            @Nonnull List<EventHandlingComponent> eventHandlingComponent) {
-        super.eventHandlingComponents(eventHandlingComponent);
-        return this;
     }
 
     @Override

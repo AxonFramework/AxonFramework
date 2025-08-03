@@ -103,19 +103,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     ) {
         this(
                 Objects.requireNonNull(name, "Name may not be null"),
-                Objects.requireNonNull(customization, "Customization may not be null")
-                       .apply(new PooledStreamingEventProcessorConfiguration())
-                       .eventHandlingComponents(eventHandlingComponents)
-        );
-    }
-
-    @Deprecated(since = "5.0.0", forRemoval = true)
-    public PooledStreamingEventProcessor(
-            @Nonnull String name,
-            @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> customization
-    ) {
-        this(
-                Objects.requireNonNull(name, "Name may not be null"),
+                Objects.requireNonNull(eventHandlingComponents, "EventHandlingComponents may not be null"),
                 Objects.requireNonNull(customization, "Customization may not be null")
                        .apply(new PooledStreamingEventProcessorConfiguration())
         );
@@ -124,17 +112,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     public PooledStreamingEventProcessor(
             @Nonnull String name,
             @Nonnull List<EventHandlingComponent> eventHandlingComponents,
-            @Nonnull PooledStreamingEventProcessorConfiguration configuration) {
-        this(
-                Objects.requireNonNull(name, "Name may not be null"),
-                Objects.requireNonNull(configuration, "Configuration may not be null")
-                       .eventHandlingComponents(eventHandlingComponents)
-        );
-    }
-
-    @Deprecated(since = "5.0.0", forRemoval = true)
-    public PooledStreamingEventProcessor(
-            @Nonnull String name,
             @Nonnull PooledStreamingEventProcessorConfiguration configuration
     ) {
         this.name = Objects.requireNonNull(name, "Name may not be null");
@@ -145,7 +122,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
         this.tokenStore = configuration.tokenStore();
         this.unitOfWorkFactory = configuration.unitOfWorkFactory();
 
-        this.eventHandlingComponents = new ProcessorEventHandlingComponents(configuration.eventHandlingComponents());
+        this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 this.name,
                 this.eventHandlingComponents,

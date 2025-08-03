@@ -63,21 +63,7 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
     ) {
         this(
                 Objects.requireNonNull(name, "Name may not be null"),
-                Objects.requireNonNull(customization, "Customization may not be null")
-                       .apply(
-                               new SubscribingEventProcessorConfiguration()
-                                       .eventHandlingComponents(eventHandlingComponents)
-                       )
-        );
-    }
-
-    @Deprecated(since = "5.0.0", forRemoval = true)
-    public SubscribingEventProcessor(
-            @Nonnull String name,
-            @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> customization
-    ) {
-        this(
-                Objects.requireNonNull(name, "Name may not be null"),
+                Objects.requireNonNull(eventHandlingComponents, "EventHandlingComponents may not be null"),
                 Objects.requireNonNull(customization, "Customization may not be null")
                        .apply(new SubscribingEventProcessorConfiguration())
         );
@@ -88,26 +74,13 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
             @Nonnull List<EventHandlingComponent> eventHandlingComponents,
             @Nonnull SubscribingEventProcessorConfiguration configuration
     ) {
-        this(
-                name,
-                configuration.eventHandlingComponents(eventHandlingComponents)
-        );
-    }
-
-    @Deprecated(since = "5.0.0", forRemoval = true)
-    public SubscribingEventProcessor(
-            @Nonnull String name,
-            @Nonnull SubscribingEventProcessorConfiguration configuration
-    ) {
         this.name = Objects.requireNonNull(name, "Name may not be null");
         assertThat(name, n -> Objects.nonNull(n) && !n.isEmpty(), "Event Processor name may not be null or empty");
         Objects.requireNonNull(configuration, "SubscribingEventProcessorConfiguration may not be null");
         configuration.validate();
         this.messageSource = configuration.messageSource();
         this.unitOfWorkFactory = configuration.unitOfWorkFactory();
-        this.eventHandlingComponents = new ProcessorEventHandlingComponents(
-                configuration.eventHandlingComponents()
-        );
+        this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
         this.processingStrategy = configuration.processingStrategy();
         this.errorHandler = configuration.errorHandler();
     }
