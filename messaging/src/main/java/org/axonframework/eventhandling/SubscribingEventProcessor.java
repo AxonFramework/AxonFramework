@@ -71,6 +71,7 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
         );
     }
 
+    @Deprecated(since = "5.0.0", forRemoval = true)
     public SubscribingEventProcessor(
             @Nonnull String name,
             @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> customization
@@ -93,6 +94,7 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
         );
     }
 
+    @Deprecated(since = "5.0.0", forRemoval = true)
     public SubscribingEventProcessor(
             @Nonnull String name,
             @Nonnull SubscribingEventProcessorConfiguration configuration
