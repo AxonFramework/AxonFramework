@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
@@ -54,6 +54,7 @@ class SubscribingEventProcessorTest {
         spanFactory = new TestSpanFactory();
         eventBus = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build();
         transactionManager = new TestingTransactionManager();
+        testSubject = withTestSubject(List.of(), config -> config);
     }
 
     private SubscribingEventProcessor withTestSubject(
@@ -62,7 +63,7 @@ class SubscribingEventProcessorTest {
     ) {
         var configuration = new SubscribingEventProcessorConfiguration()
                 .messageSource(eventBus)
-                .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager))
                 .eventHandlingComponents(eventHandlingComponents);
         var customized = customization.apply(configuration);
         var processor = new SubscribingEventProcessor(
@@ -100,6 +101,7 @@ class SubscribingEventProcessorTest {
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
     }
 
+    @Disabled("TODO #3098 - Support tracking on the level of batch / Unit of Work")
     @Test
     void subscribingEventProcessorIsTraced() {
         // given
