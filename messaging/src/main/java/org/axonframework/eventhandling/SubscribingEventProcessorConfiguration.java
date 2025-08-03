@@ -56,14 +56,6 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
 
     @Deprecated(since = "5.0.0", forRemoval = true)
     @Override
-    public SubscribingEventProcessorConfiguration eventHandlerInvoker(
-            @Nonnull EventHandlerInvoker eventHandlerInvoker) {
-        super.eventHandlerInvoker(eventHandlerInvoker);
-        return this;
-    }
-
-    @Deprecated(since = "5.0.0", forRemoval = true)
-    @Override
     public SubscribingEventProcessorConfiguration eventHandlingComponents(
             @Nonnull List<EventHandlingComponent> eventHandlingComponents) {
         super.eventHandlingComponents(eventHandlingComponents);
