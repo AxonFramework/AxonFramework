@@ -125,7 +125,6 @@ class NewPooledStreamingEventProcessorTest {
 
         var testDefaultConfiguration = new PooledStreamingEventProcessorConfiguration()
                 .eventSource(stubMessageSource)
-                .eventHandlingComponents(componentsWithDefault)
                 .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                 .tokenStore(tokenStore)
                 .coordinatorExecutor(ignored -> coordinatorExecutor)
@@ -136,6 +135,7 @@ class NewPooledStreamingEventProcessorTest {
 
         var processor = new PooledStreamingEventProcessor(
                 PROCESSOR_NAME,
+                componentsWithDefault,
                 customizedConfiguration
         );
         this.testSubject = processor;

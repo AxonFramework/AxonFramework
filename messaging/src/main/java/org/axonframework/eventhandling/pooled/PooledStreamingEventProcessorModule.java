@@ -29,6 +29,7 @@ import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SequenceCachingEventHandlingComponent;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
+import org.axonframework.eventhandling.configuration.EventHandlingComponents;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
@@ -79,9 +80,11 @@ import java.util.stream.Collectors;
  */
 public class PooledStreamingEventProcessorModule extends BaseModule<PooledStreamingEventProcessorModule>
         implements EventProcessorModule,
+        EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>,
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
     private final String processorName;
+    private ComponentBuilder<EventHandlingComponents> eventHandlingComponentsBuilder;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder;
 
     // TODO #3103 - Rewrite with Event Handling interceptors support. Should be configurable.
@@ -128,25 +131,24 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
             configuration.coordinatorExecutor(coordinatorExecutorBuilder);
         }
 
-        var eventHandlingComponents = configuration.eventHandlingComponents();
-
+        var eventHandlingComponents = eventHandlingComponentsBuilder.build(parent);
         // TODO #3098 - Move it somewhere else! Like a decorator if certain enhancer applied.
-        List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
-                .stream()
-                .map(c -> new TracingEventHandlingComponent(
-                        (event) -> spanFactory.createProcessEventSpan(true, event),
+        var decoratedEventHandlingComponents = eventHandlingComponents
+                .decorated(c -> new TracingEventHandlingComponent(
+                        (event) -> spanFactory.createProcessEventSpan(false, event),
                         new MonitoringEventHandlingComponent(
                                 messageMonitor,
                                 new InterceptingEventHandlingComponent(
                                         messageHandlerInterceptors,
-                                        new SequenceCachingEventHandlingComponent(c)
+                                        c
                                 )
                         )
-                )).collect(Collectors.toUnmodifiableList());
+                )).toList();
 
         var processor = new PooledStreamingEventProcessor(
                 processorName,
-                configuration.eventHandlingComponents(decoratedEventHandlingComponents)
+                decoratedEventHandlingComponents,
+                configuration
         );
 
         var processorComponentDefinition = ComponentDefinition
@@ -191,6 +193,15 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         this.configurationBuilder = configurationBuilder;
         return this;
     }
+
+    @Override
+    public CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> eventHandlingComponents(
+            ComponentBuilder<EventHandlingComponents> eventHandlingComponentsBuilder
+    ) {
+        this.eventHandlingComponentsBuilder = eventHandlingComponentsBuilder;
+        return this;
+    }
+
 
     /**
      * Customizes the processor configuration by applying modifications to the default configuration.

@@ -113,6 +113,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         super(configuration);
     }
 
+    @Deprecated(since = "5.0.0", forRemoval = true)
     @Override
     public PooledStreamingEventProcessorConfiguration eventHandlingComponents(
             @Nonnull List<EventHandlingComponent> eventHandlingComponent) {
@@ -120,6 +121,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         return this;
     }
 
+    @Deprecated(since = "5.0.0", forRemoval = true)
     @Override
     public PooledStreamingEventProcessorConfiguration eventHandlerInvoker(
             @Nonnull EventHandlerInvoker eventHandlerInvoker) {
