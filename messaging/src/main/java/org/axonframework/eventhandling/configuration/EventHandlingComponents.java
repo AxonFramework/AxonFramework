@@ -90,7 +90,9 @@ public class EventHandlingComponents {
 
             RequiredEventHandlerPhase sequencingPolicy(@Nonnull SequencingPolicy sequencingPolicy);
 
-            RequiredEventHandlerPhase sequencingPolicy(@Nonnull Function<EventMessage<?>, Object> sequencingPolicy);
+            default RequiredEventHandlerPhase sequenceIdentifier(@Nonnull Function<EventMessage<?>, Object> sequencingPolicy){
+                return sequencingPolicy(event -> Optional.of(sequencingPolicy.apply(event)));
+            }
         }
 
         interface RequiredEventHandlerPhase {
@@ -129,16 +131,6 @@ public class EventHandlingComponents {
         @Override
         public Definition.RequiredEventHandlerPhase sequencingPolicy(@Nonnull SequencingPolicy sequencingPolicy) {
             this.component = new SequenceOverridingEventHandlingComponent(sequencingPolicy, component);
-            return this;
-        }
-
-        @Override
-        public Definition.RequiredEventHandlerPhase sequencingPolicy(
-                @Nonnull Function<EventMessage<?>, Object> sequencingPolicy) {
-            this.component = new SequenceOverridingEventHandlingComponent(
-                    (event) -> Optional.of(sequencingPolicy.apply(event)),
-                    component
-            );
             return this;
         }
 

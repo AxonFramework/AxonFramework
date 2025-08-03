@@ -213,6 +213,30 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
     }
 
     /**
+     * Registers a new {@link org.axonframework.eventhandling.SubscribingEventProcessor} with the given name and event
+     * handling components.
+     * <p>
+     * This is the simplest way to register a subscribing event processor. The processor will be created with default
+     * configuration plus any shared defaults configured through {@link #defaults(BiFunction)} or
+     * {@link #defaults(UnaryOperator)} methods.
+     *
+     * @param name                    The unique name for the event processor.
+     * @param eventHandlingComponents The list of {@link EventHandlingComponent} instances that this processor should
+     *                                handle events for.
+     * @return This module instance for method chaining.
+     */
+    public SubscribingEventProcessorsModule processor(
+            @Nonnull String name,
+            @Nonnull ComponentBuilder<EventHandlingComponents> eventHandlingComponents
+    ) {
+        return processor(
+                name,
+                eventHandlingComponents,
+                (cfg, c) -> c
+        );
+    }
+
+    /**
      * Registers a new {@link org.axonframework.eventhandling.SubscribingEventProcessor} with the given name, event
      * handling components, and custom configuration.
      * <p>
