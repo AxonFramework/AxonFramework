@@ -20,12 +20,15 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.configuration.NewEventProcessingModule;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -36,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.configuration.EventHandlingComponents.*;
+import static org.axonframework.eventhandling.configuration.EventHandlingComponents.Definition.*;
 
 class PooledStreamingEventProcessorModuleTest {
 
@@ -122,6 +126,53 @@ class PooledStreamingEventProcessorModuleTest {
                         ps -> ps
                                 .defaults(d -> d.eventSource(eventSource))
                                 .processor(module)
+                )
+        );
+        var configuration = configurer.build();
+
+        // when
+        configuration.start();
+
+        // then
+        await().atMost(Duration.ofSeconds(1))
+               .untilAsserted(() -> assertThat(started).isTrue());
+
+        // when
+        configuration.shutdown();
+
+        // then
+        await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertThat(stopped).isTrue());
+    }
+
+    @Test
+    void registersWithLifecycleHooks2() {
+        // given
+        AtomicBoolean started = new AtomicBoolean(false);
+        AtomicBoolean stopped = new AtomicBoolean(false);
+        AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
+        eventSource.setOnOpen(() -> started.set(true));
+        eventSource.setOnClose(() -> stopped.set(true));
+
+        var configurer = MessagingConfigurer.create();
+        configurer.eventProcessing(
+                ep -> ep.pooledStreaming(
+                        ps -> ps
+                                .defaults(d -> d.eventSource(eventSource))
+                                .processor("test-processor",
+                                           many(
+                                                   component()
+                                                           .sequenceIdentifier(EventMessage::getTimestamp)
+                                                           .handles(
+                                                                   new QualifiedName(String.class),
+                                                                   (e, c) -> MessageStream.empty()
+                                                           ),
+                                                   component()
+                                                           .handles(
+                                                                   new QualifiedName(Integer.class),
+                                                                   (e, c) -> MessageStream.empty()
+                                                           )
+                                           ).decorated(c -> new MonitoringEventHandlingComponent(NoOpMessageMonitor.instance(), c))
+                                )
                 )
         );
         var configuration = configurer.build();
