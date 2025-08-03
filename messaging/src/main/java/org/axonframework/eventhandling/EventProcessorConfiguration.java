@@ -46,7 +46,6 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class EventProcessorConfiguration {
 
-    protected List<EventHandlingComponent> eventHandlingComponents;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
 
     // TODO #3098 - Remove MessageMonitor from EventProcessorConfiguration, keep the usages just in some decorator around EventHandlingComponent
@@ -66,27 +65,11 @@ public class EventProcessorConfiguration {
     public EventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         Objects.requireNonNull(base, "Base configuration may not be null");
         assertNonNull(base, "Base configuration may not be null");
-        this.eventHandlingComponents = base.eventHandlingComponents();
         this.errorHandler = base.errorHandler();
         this.messageMonitor = base.messageMonitor();
         this.spanFactory = base.spanFactory();
         this.interceptors = base.interceptors();
         this.unitOfWorkFactory = base.unitOfWorkFactory();
-    }
-
-    /**
-     * Sets the {@link EventHandlingComponent} which will handle all the individual {@link EventMessage}s.
-     *
-     * @param eventHandlingComponents the {@link EventHandlingComponent} which will handle all the individual
-     *                                {@link EventMessage}s
-     * @return The current instance, for fluent interfacing.
-     */
-    @Deprecated(since = "5.0.0", forRemoval = true)
-    public EventProcessorConfiguration eventHandlingComponents(
-            @Nonnull List<EventHandlingComponent> eventHandlingComponents) {
-        assertNonNull(eventHandlingComponents, "EventHandlingComponents may not be null");
-        this.eventHandlingComponents = eventHandlingComponents;
-        return this;
     }
 
     /**
@@ -161,8 +144,7 @@ public class EventProcessorConfiguration {
      *                                    specifications
      */
     protected void validate() throws AxonConfigurationException {
-        assertNonNull(eventHandlingComponents,
-                      "The EventHandlingComponent is a hard requirement and should be provided");
+        assertNonNull(unitOfWorkFactory, "The UnitOfWorkFactory is a hard requirement and should be provided");
     }
 
     /**
@@ -190,15 +172,6 @@ public class EventProcessorConfiguration {
      */
     public EventProcessorSpanFactory spanFactory() {
         return spanFactory;
-    }
-
-    /**
-     * Returns the {@link EventHandlingComponent} which handles all the individual {@link EventMessage}s.
-     *
-     * @return The {@link EventHandlingComponent} for this {@link EventProcessor} implementation.
-     */
-    public List<EventHandlingComponent> eventHandlingComponents() {
-        return eventHandlingComponents;
     }
 
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors() {
