@@ -30,12 +30,12 @@ import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.axonframework.eventhandling.configuration.EventHandlingComponents.*;
 
 class PooledStreamingEventProcessorModuleTest {
 
@@ -56,7 +56,7 @@ class PooledStreamingEventProcessorModuleTest {
                 ep -> ep.pooledStreaming(
                         ps -> ps
                                 .defaults(d -> d.eventSource(eventSource))
-                                .processor(processorName, List.of(new SimpleEventHandlingComponent()))
+                                .processor(processorName, single(new SimpleEventHandlingComponent()))
                 )
         );
         var configuration = configurer.build();
@@ -85,7 +85,7 @@ class PooledStreamingEventProcessorModuleTest {
         configurer.eventProcessing(
                 ep -> ep.pooledStreaming(
                         ps -> ps.defaults(d -> d.eventSource(eventSource))
-                                .processor(processorName, List.of(new SimpleEventHandlingComponent()))
+                                .processor(processorName, single(new SimpleEventHandlingComponent()))
                 )
         );
         var configuration = configurer.build();
@@ -111,11 +111,9 @@ class PooledStreamingEventProcessorModuleTest {
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         PooledStreamingEventProcessorModule module = EventProcessorModule
                 .pooledStreaming("test-processor")
+                .eventHandlingComponents(many(eventHandlingComponent1, eventHandlingComponent2))
                 .customize(cfg -> customization ->
-                        customization
-                                .eventHandlingComponents(List.of(eventHandlingComponent1,
-                                                                 eventHandlingComponent2)) // todo: maybe separated step?
-                                .initialSegmentCount(1)
+                        customization.initialSegmentCount(1)
                 );
 
         var configurer = MessagingConfigurer.create();
