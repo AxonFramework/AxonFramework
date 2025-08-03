@@ -121,14 +121,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         return this;
     }
 
-    @Deprecated(since = "5.0.0", forRemoval = true)
-    @Override
-    public PooledStreamingEventProcessorConfiguration eventHandlerInvoker(
-            @Nonnull EventHandlerInvoker eventHandlerInvoker) {
-        super.eventHandlerInvoker(eventHandlerInvoker);
-        return this;
-    }
-
     @Override
     public PooledStreamingEventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
         super.errorHandler(errorHandler);

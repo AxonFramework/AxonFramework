@@ -75,20 +75,6 @@ public class EventProcessorConfiguration {
     }
 
     /**
-     * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
-     *
-     * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
-     *                            {@link EventMessage}s
-     * @return The current instance, for fluent interfacing.
-     * @deprecated in favor of {@link #eventHandlingComponents(List)}
-     */
-    @Deprecated(since = "5.0.0", forRemoval = true)
-    public EventProcessorConfiguration eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
-        assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
-        return eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)));
-    }
-
-    /**
      * Sets the {@link EventHandlingComponent} which will handle all the individual {@link EventMessage}s.
      *
      * @param eventHandlingComponents the {@link EventHandlingComponent} which will handle all the individual
