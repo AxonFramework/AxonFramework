@@ -98,6 +98,20 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
 
     public PooledStreamingEventProcessor(
             @Nonnull String name,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
+            @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> customization
+    ) {
+        this(
+                Objects.requireNonNull(name, "Name may not be null"),
+                Objects.requireNonNull(customization, "Customization may not be null")
+                       .apply(new PooledStreamingEventProcessorConfiguration())
+                       .eventHandlingComponents(eventHandlingComponents)
+        );
+    }
+
+    @Deprecated(since = "5.0.0", forRemoval = true)
+    public PooledStreamingEventProcessor(
+            @Nonnull String name,
             @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> customization
     ) {
         this(
@@ -118,7 +132,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
         );
     }
 
-
+    @Deprecated(since = "5.0.0", forRemoval = true)
     public PooledStreamingEventProcessor(
             @Nonnull String name,
             @Nonnull PooledStreamingEventProcessorConfiguration configuration
