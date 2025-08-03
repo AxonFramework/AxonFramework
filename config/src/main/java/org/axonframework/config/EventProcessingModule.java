@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
+import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
@@ -884,8 +885,8 @@ public class EventProcessingModule
                                                        SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
         return new SubscribingEventProcessor(
                 name,
-                c -> c.eventHandlerInvoker(eventHandlerInvoker)
-                      .errorHandler(errorHandler(name))
+                List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                c -> c.errorHandler(errorHandler(name))
                       .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
                       .messageSource(messageSource)
                       .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
@@ -912,7 +913,6 @@ public class EventProcessingModule
             PooledStreamingProcessorConfiguration processorConfiguration
     ) {
         var processorConfig = new PooledStreamingEventProcessorConfiguration()
-                .eventHandlerInvoker(eventHandlerInvoker)
                 .errorHandler(errorHandler(name))
                 .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
                 .eventSource(new LegacyStreamableEventSource<>(messageSource))
@@ -939,6 +939,7 @@ public class EventProcessingModule
 
         return new PooledStreamingEventProcessor(
                 name,
+                List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                 customized
         );
     }

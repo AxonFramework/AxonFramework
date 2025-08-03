@@ -109,8 +109,8 @@ public abstract class AbstractEventStoreBenchmark {
                                          ).build();
         this.eventProcessor = new PooledStreamingEventProcessor(
                 "benchmark",
+                List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                 cfg -> cfg.eventSource(new LegacyStreamableEventSource<>(eventStore))
-                        .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
                         .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                         .tokenStore(new InMemoryTokenStore())
                         .coordinatorExecutor(ignored -> coordinatorExecutor)

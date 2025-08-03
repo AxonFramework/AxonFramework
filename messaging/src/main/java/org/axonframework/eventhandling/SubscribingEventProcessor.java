@@ -21,16 +21,12 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
 import java.util.Objects;
@@ -62,12 +58,38 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
 
     public SubscribingEventProcessor(
             @Nonnull String name,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
+            @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> customization
+    ) {
+        this(
+                Objects.requireNonNull(name, "Name may not be null"),
+                Objects.requireNonNull(customization, "Customization may not be null")
+                       .apply(
+                               new SubscribingEventProcessorConfiguration()
+                                       .eventHandlingComponents(eventHandlingComponents)
+                       )
+        );
+    }
+
+    public SubscribingEventProcessor(
+            @Nonnull String name,
             @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> customization
     ) {
         this(
                 Objects.requireNonNull(name, "Name may not be null"),
                 Objects.requireNonNull(customization, "Customization may not be null")
                        .apply(new SubscribingEventProcessorConfiguration())
+        );
+    }
+
+    public SubscribingEventProcessor(
+            @Nonnull String name,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
+            @Nonnull SubscribingEventProcessorConfiguration configuration
+    ) {
+        this(
+                name,
+                configuration.eventHandlingComponents(eventHandlingComponents)
         );
     }
 

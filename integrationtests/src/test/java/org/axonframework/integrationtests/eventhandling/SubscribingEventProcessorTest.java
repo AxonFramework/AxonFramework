@@ -63,11 +63,11 @@ class SubscribingEventProcessorTest {
     ) {
         var configuration = new SubscribingEventProcessorConfiguration()
                 .messageSource(eventBus)
-                .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager))
-                .eventHandlingComponents(eventHandlingComponents);
+                .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager));
         var customized = customization.apply(configuration);
         var processor = new SubscribingEventProcessor(
                 "test",
+                eventHandlingComponents,
                 customized
         );
         this.testSubject = processor;

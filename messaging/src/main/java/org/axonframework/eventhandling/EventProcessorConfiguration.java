@@ -95,6 +95,7 @@ public class EventProcessorConfiguration {
      *                                {@link EventMessage}s
      * @return The current instance, for fluent interfacing.
      */
+    @Deprecated(since = "5.0.0", forRemoval = true)
     public EventProcessorConfiguration eventHandlingComponents(
             @Nonnull List<EventHandlingComponent> eventHandlingComponents) {
         assertNonNull(eventHandlingComponents, "EventHandlingComponents may not be null");

@@ -134,9 +134,9 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         SubscribingEventProcessor eventProcessor =
                 new SubscribingEventProcessor(
                         "test",
+                        List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                         cfg -> cfg.messageSource(eventStore)
                                   .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
-                                  .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
                 );
         eventProcessor.start();
         events.clear();
@@ -202,9 +202,9 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         SubscribingEventProcessor eventProcessor =
                 new SubscribingEventProcessor(
                         "test",
+                        List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                         cfg -> cfg.messageSource(eventStore)
                                   .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
-                                  .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
                 );
         eventProcessor.start();
 
@@ -248,9 +248,9 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         SubscribingEventProcessor eventProcessor =
                 new SubscribingEventProcessor(
                         "test",
+                        List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                         cfg -> cfg.messageSource(eventStore)
                                   .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
-                                  .eventHandlingComponents(List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)))
                 );
         eventProcessor.start();
 
