@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.ErrorContext;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessingException;
 import org.axonframework.eventhandling.EventTrackerStatus;
@@ -103,6 +104,17 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
                 Objects.requireNonNull(name, "Name may not be null"),
                 Objects.requireNonNull(customization, "Customization may not be null")
                        .apply(new PooledStreamingEventProcessorConfiguration())
+        );
+    }
+
+    public PooledStreamingEventProcessor(
+            @Nonnull String name,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
+            @Nonnull PooledStreamingEventProcessorConfiguration configuration) {
+        this(
+                Objects.requireNonNull(name, "Name may not be null"),
+                Objects.requireNonNull(configuration, "Configuration may not be null")
+                       .eventHandlingComponents(eventHandlingComponents)
         );
     }
 
