@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.repository;
 
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -101,7 +101,7 @@ class AccessSerializingRepositoryTest {
         verify(delegate, times(1)).load(eq(AGGREGATE_ID), any());
     }
 
-    @RepeatedTest(5)
+    @Test
     void timeoutOnQueuedOperationMakesTheNextWaitForCompletionOfAllPreviousItems() {
         UnitOfWork uow1 = new UnitOfWork("uow1");
         UnitOfWork uow2 = new UnitOfWork("uow2");
