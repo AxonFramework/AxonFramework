@@ -23,7 +23,7 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.eventhandling.configuration.EventHandlingComponents;
+import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -197,17 +197,17 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      * {@link #defaults(UnaryOperator)} methods.
      *
      * @param name                    The unique name for the event processor.
-     * @param eventHandlingComponents The list of {@link EventHandlingComponent} instances that this processor should
+     * @param eventHandlingComponentsConfigurer The list of {@link EventHandlingComponent} instances that this processor should
      *                                handle events for.
      * @return This module instance for method chaining.
      */
     public SubscribingEventProcessorsModule processor(
             @Nonnull String name,
-            @Nonnull EventHandlingComponents eventHandlingComponents
+            @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer
     ) {
         return processor(
                 name,
-                eventHandlingComponents,
+                eventHandlingComponentsConfigurer,
                 (cfg, c) -> c
         );
     }
@@ -227,7 +227,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      */
     public SubscribingEventProcessorsModule processor(
             @Nonnull String name,
-            @Nonnull ComponentBuilder<EventHandlingComponents> eventHandlingComponents
+            @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponents
     ) {
         return processor(
                 name,
@@ -245,7 +245,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      * configuration, allowing access to application-wide components.
      *
      * @param name                    The unique name for the event processor.
-     * @param eventHandlingComponents The list of {@link EventHandlingComponent} instances that this processor should
+     * @param eventHandlingComponentsConfigurer The list of {@link EventHandlingComponent} instances that this processor should
      *                                handle events for.
      * @param customize               A function that customizes the {@link SubscribingEventProcessorConfiguration} for
      *                                this specific processor.
@@ -253,12 +253,12 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      */
     public SubscribingEventProcessorsModule processor(
             @Nonnull String name,
-            @Nonnull EventHandlingComponents eventHandlingComponents,
+            @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer,
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customize
     ) {
         return processor(
                 name,
-                cfg -> eventHandlingComponents,
+                cfg -> eventHandlingComponentsConfigurer,
                 customize
         );
     }
@@ -278,7 +278,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      */
     public SubscribingEventProcessorsModule processor(
             @Nonnull String name,
-            @Nonnull ComponentBuilder<EventHandlingComponents> eventHandlingComponentsBuilder,
+            @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder,
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customize
     ) {
         return processor(

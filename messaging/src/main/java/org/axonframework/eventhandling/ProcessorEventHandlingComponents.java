@@ -47,30 +47,6 @@ public class ProcessorEventHandlingComponents {
     private final List<? extends EventHandlingComponent> components;
 
     /**
-     * Constructs a {@code ProcessorEventHandlingComponents} instance by converting the provided varargs of
-     * {@link EventHandlingComponent}s into a list and passing them to the corresponding constructor.
-     *
-     * @param component The components to be used for event processing.
-     * @param decorator A decorator function that applies additional processing logic to each component.
-     */
-    public ProcessorEventHandlingComponents(@Nonnull EventHandlingComponent component,
-                                            @Nonnull UnaryOperator<EventHandlingComponent> decorator) {
-        this(List.of(component), decorator);
-    }
-
-    /**
-     * Constructs a {@code ProcessorEventHandlingComponents} instance by wrapping the provided list of
-     * {@link EventHandlingComponent}s in SequencingEventHandlingComponent instances for sequential event handling where
-     * needed.
-     *
-     * @param components The list of {@link EventHandlingComponent}s to be used for event processing. Must not be null
-     *                   and is transformed into a list of {@link SequencingEventHandlingComponent}s if necessary.
-     */
-    public ProcessorEventHandlingComponents(@Nonnull List<EventHandlingComponent> components) {
-        this(components, UnaryOperator.identity());
-    }
-
-    /**
      * Constructs a {@code ProcessorEventHandlingComponents} instance by wrapping the provided list of
      * {@link EventHandlingComponent}s in SequencingEventHandlingComponent instances for sequential event handling where
      * needed.
@@ -79,14 +55,12 @@ public class ProcessorEventHandlingComponents {
      *                   and is transformed into a list of {@link SequencingEventHandlingComponent}s if necessary.
      * @param decorator  A decorator function that applies additional processing logic to each component.
      */
-    public ProcessorEventHandlingComponents(@Nonnull List<EventHandlingComponent> components,
-                                            @Nonnull UnaryOperator<EventHandlingComponent> decorator) {
+    public ProcessorEventHandlingComponents(@Nonnull List<EventHandlingComponent> components) {
         Objects.requireNonNull(components, "Components may not be null");
-        Objects.requireNonNull(decorator, "Decorator may not be null");
         this.components = components.stream()
                                     .map(c -> c instanceof SequencingEventHandlingComponent
-                                            ? decorator.apply(c)
-                                            : new SequencingEventHandlingComponent(decorator.apply(c))
+                                            ? c
+                                            : new SequencingEventHandlingComponent(c)
                                     ).toList();
     }
 

@@ -38,8 +38,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.eventhandling.configuration.EventHandlingComponents.*;
-import static org.axonframework.eventhandling.configuration.EventHandlingComponents.Definition.*;
+import static org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer.*;
+import static org.axonframework.eventhandling.configuration.EventHandlingComponentConfigurer.*;
 
 class PooledStreamingEventProcessorModuleTest {
 
