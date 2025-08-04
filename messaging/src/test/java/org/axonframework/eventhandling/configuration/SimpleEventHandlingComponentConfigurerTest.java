@@ -35,6 +35,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Test class validating the {@link SimpleEventHandlingComponentConfigurer} functionality.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 class SimpleEventHandlingComponentConfigurerTest {
 
     private static final StubProcessingContext STUB_PROCESSING_CONTEXT = new StubProcessingContext();
@@ -133,11 +139,6 @@ class SimpleEventHandlingComponentConfigurerTest {
 
             AtomicBoolean invoked = new AtomicBoolean();
 
-            /**
-             * Constructs the component with given {@code delegate} to receive calls.
-             *
-             * @param delegate The instance to delegate calls to.
-             */
             public SampleDecoration(@Nonnull EventHandlingComponent delegate) {
                 super(delegate);
             }
