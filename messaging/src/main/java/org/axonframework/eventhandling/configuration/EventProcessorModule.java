@@ -87,12 +87,13 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
 
     interface EventHandlingPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration> {
 
-        default CustomizationPhase<P, C> eventHandlingComponents(EventHandlingComponents eventHandlingComponents) {
-            return eventHandlingComponents(cfg -> eventHandlingComponents);
+        default CustomizationPhase<P, C> eventHandlingComponents(
+                EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer) {
+            return eventHandlingComponents(cfg -> eventHandlingComponentsConfigurer);
         }
 
         CustomizationPhase<P, C> eventHandlingComponents(
-                ComponentBuilder<EventHandlingComponents> eventHandlingComponentsBuilder);
+                ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder);
     }
 
     /**

@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorsModule;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
-import org.axonframework.eventhandling.configuration.EventHandlingComponents;
+import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
@@ -78,7 +78,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         EventProcessorModule.CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> {
 
     private final String processorName;
-    private ComponentBuilder<EventHandlingComponents> eventHandlingComponentsBuilder;
+    private ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder;
     private ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder;
 
     // TODO #3103 - Rewrite with Event Handling interceptors support. Should be configurable.
@@ -166,7 +166,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
     @Override
     public CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> eventHandlingComponents(
-            ComponentBuilder<EventHandlingComponents> eventHandlingComponentsBuilder
+            ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder
     ) {
         this.eventHandlingComponentsBuilder = eventHandlingComponentsBuilder;
         return this;

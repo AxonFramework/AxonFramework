@@ -24,12 +24,10 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
-import org.axonframework.eventhandling.SequenceCachingEventHandlingComponent;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
-import org.axonframework.eventhandling.configuration.EventHandlingComponents;
+import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
@@ -42,7 +40,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 /**
  * A configuration module for configuring and registering a single {@link PooledStreamingEventProcessor} component.
@@ -84,7 +81,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
     private final String processorName;
-    private ComponentBuilder<EventHandlingComponents> eventHandlingComponentsBuilder;
+    private ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder;
 
     // TODO #3103 - Rewrite with Event Handling interceptors support. Should be configurable.
@@ -196,7 +193,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     @Override
     public CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> eventHandlingComponents(
-            ComponentBuilder<EventHandlingComponents> eventHandlingComponentsBuilder
+            ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder
     ) {
         this.eventHandlingComponentsBuilder = eventHandlingComponentsBuilder;
         return this;
