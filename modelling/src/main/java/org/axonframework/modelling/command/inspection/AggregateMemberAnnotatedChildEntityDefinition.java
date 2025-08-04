@@ -56,7 +56,11 @@ public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChild
                     "Aggregate Member type should be a concrete implementation instead of [" + entityClass + "]."
             );
         }
-        return declaringEntity.modelOf(entityClass);
+
+        @SuppressWarnings("unchecked")
+        Class<Object> castEntityClass = (Class<Object>)entityClass;
+
+        return declaringEntity.modelOf(castEntityClass);
     }
 
     @Override

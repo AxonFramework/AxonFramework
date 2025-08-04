@@ -69,7 +69,11 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
                     "Aggregate Member type should be a concrete implementation instead of [" + entityType + "]."
             );
         }
-        return declaringEntity.modelOf(entityType);
+
+        @SuppressWarnings("unchecked")
+        Class<Object> castEntityType = (Class<Object>)entityType;
+
+        return declaringEntity.modelOf(castEntityType);
     }
 
     @Override
