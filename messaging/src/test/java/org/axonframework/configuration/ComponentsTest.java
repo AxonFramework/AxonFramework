@@ -24,6 +24,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
+import org.mockito.Mock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,15 +100,14 @@ class ComponentsTest {
     }
 
     @Test
-    void computeIfAbsentDoesNotComputeIfIdentifierIsAlreadyPresent() {
+    void computeIfAbsentDoesNotComputeIfIdentifierIsAlreadyPresent(@Mock Component<String> newComponent) {
         Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
         AtomicBoolean invoked = new AtomicBoolean(false);
 
         testSubject.put(testComponent);
         testSubject.computeIfAbsent(IDENTIFIER, () -> {
             invoked.set(true);
-            //noinspection unchecked
-            return mock(Component.class);
+            return newComponent;
         });
 
 
