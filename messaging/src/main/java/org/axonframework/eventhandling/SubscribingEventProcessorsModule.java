@@ -284,7 +284,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
         return processor(
                 EventProcessorModule.subscribing(name)
                                     .eventHandlingComponents(eventHandlingComponentsBuilder)
-                                    .customize(config -> customization -> customize.apply(config, customization))
+                                    .defaultCustomized(config -> customization -> customize.apply(config, customization))
         );
     }
 }

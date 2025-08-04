@@ -177,14 +177,14 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
      * <strong>Important:</strong> This method does not respect parent configurations and will fully override any 
      * shared defaults from {@link PooledStreamingEventProcessorsModule} or 
      * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}. Use 
-     * {@link #customize(ComponentBuilder)} instead to apply processor-specific customizations while preserving 
+     * {@link #defaultCustomized(ComponentBuilder)} instead to apply processor-specific customizations while preserving
      * shared defaults.
      *
      * @param configurationBuilder A builder that creates the complete processor configuration.
      * @return This module instance for method chaining.
      */
     @Override
-    public PooledStreamingEventProcessorModule configure(
+    public PooledStreamingEventProcessorModule overriddenConfiguration(
             @Nonnull ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder
     ) {
         this.configurationBuilder = configurationBuilder;
@@ -214,15 +214,21 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
      * @return This module instance for method chaining.
      */
     @Override
-    public PooledStreamingEventProcessorModule customize(
+    public PooledStreamingEventProcessorModule defaultCustomized(
             @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorConfiguration>> customizationBuilder
     ) {
-        configure(
+        overriddenConfiguration(
                 cfg -> sharedCustomizationOrNoOp(cfg).apply(
                         cfg,
                         customizationBuilder.build(cfg).apply(defaultEventProcessorsConfiguration(cfg))
                 )
         );
+        return this;
+    }
+
+    @Override
+    public PooledStreamingEventProcessorModule defaultConfiguration() {
+        defaultCustomized(cfg -> UnaryOperator.identity());
         return this;
     }
 

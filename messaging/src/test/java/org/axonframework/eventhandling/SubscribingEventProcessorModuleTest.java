@@ -42,7 +42,7 @@ class SubscribingEventProcessorModuleTest {
         var eventHandlingComponent = new SimpleEventHandlingComponent();
         EventProcessorModule module = EventProcessorModule.subscribing("test-processor")
                                                           .eventHandlingComponents(single(eventHandlingComponent))
-                                                          .customize(cfg -> customization -> customization
+                                                          .defaultCustomized(cfg -> customization -> customization
                                                                   .messageSource(messageSource)
                                                           )
                                                           .build();

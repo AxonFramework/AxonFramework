@@ -101,8 +101,8 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * <p>
      * This interface offers two approaches for configuring event processors:
      * <ul>
-     * <li>{@link #configure(ComponentBuilder)} - Complete configuration replacement, ignoring parent defaults</li>
-     * <li>{@link #customize(ComponentBuilder)} - Incremental customization on top of parent defaults</li>
+     * <li>{@link #overriddenConfiguration(ComponentBuilder)} - Complete configuration replacement, ignoring parent defaults</li>
+     * <li>{@link #defaultCustomized(ComponentBuilder)} - Incremental customization on top of parent defaults</li>
      * </ul>
      * <p>
      * The customization approach is generally preferred as it preserves shared configurations from parent modules
@@ -119,13 +119,13 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
          * Configures the processor with a complete configuration, ignoring any parent module defaults.
          * <p>
          * This method provides direct control over the processor configuration but bypasses shared defaults from parent
-         * modules. Use {@link #customize(ComponentBuilder)} instead to preserve shared configurations while applying
+         * modules. Use {@link #defaultCustomized(ComponentBuilder)} instead to preserve shared configurations while applying
          * processor-specific customizations.
          *
          * @param configurationBuilder A builder that creates the complete processor configuration.
          * @return The configured processor module.
          */
-        P configure(@Nonnull ComponentBuilder<C> configurationBuilder);
+        P overriddenConfiguration(@Nonnull ComponentBuilder<C> configurationBuilder);
 
         /**
          * Customizes the processor configuration by applying modifications to the default configuration.
@@ -136,6 +136,9 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
          * @param customizationBuilder A builder that creates a customization function for the processor configuration.
          * @return The configured processor module.
          */
-        P customize(@Nonnull ComponentBuilder<UnaryOperator<C>> customizationBuilder);
+        P defaultCustomized(@Nonnull ComponentBuilder<UnaryOperator<C>> customizationBuilder);
+
+
+        P defaultConfiguration();
     }
 }
