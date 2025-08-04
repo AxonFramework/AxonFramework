@@ -723,7 +723,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     private Predicate<DeadLetter<? extends M>> equals(DeadLetter<? extends M> expected) {
-        return actual -> expected.message().getIdentifier().equals(actual.message().getIdentifier());
+        return actual -> expected.message().identifier().equals(actual.message().identifier());
     }
 
     @Test
@@ -741,8 +741,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         // Add non-matching-id letter
         testSubject.enqueue(nonMatchingId, generateInitialLetter());
 
-        boolean result = testSubject.process(letter -> letter.message().getPayload()
-                                                             .equals(testLetter.message().getPayload()), testTask);
+        boolean result = testSubject.process(letter -> letter.message().payload()
+                                                             .equals(testLetter.message().payload()), testTask);
         assertTrue(result);
         assertLetter(testLetter, resultLetter.get());
 

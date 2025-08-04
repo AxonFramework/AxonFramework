@@ -70,7 +70,7 @@ class FixtureTest_Polymorphism {
                    DomainEventMessage<CreatedEvent> evt = (DomainEventMessage<CreatedEvent>) events.getFirst();
                    return evt.getType().equals(aggregateType)
                            && events.size() == 1
-                           && evt.getPayload().id.equals(id);
+                           && evt.payload().id.equals(id);
                }));
     }
 

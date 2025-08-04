@@ -241,12 +241,12 @@ public class DeadlineJob implements Job {
                                                DeadlineMessage<?> deadlineMessage,
                                                Serializer serializer) {
             jobData.put(DEADLINE_NAME, deadlineMessage.getDeadlineName());
-            jobData.put(MESSAGE_ID, deadlineMessage.getIdentifier());
+            jobData.put(MESSAGE_ID, deadlineMessage.identifier());
             jobData.put(TYPE, deadlineMessage.type().toString());
             jobData.put(MESSAGE_TIMESTAMP, deadlineMessage.getTimestamp().toString());
 
             SerializedObject<byte[]> serializedDeadlinePayload =
-                    serializer.serialize(deadlineMessage.getPayload(), byte[].class);
+                    serializer.serialize(deadlineMessage.payload(), byte[].class);
             jobData.put(SERIALIZED_MESSAGE_PAYLOAD, serializedDeadlinePayload.getData());
             jobData.put(MESSAGE_TYPE, serializedDeadlinePayload.getType().getName());
             jobData.put(MESSAGE_REVISION, serializedDeadlinePayload.getType().getRevision());

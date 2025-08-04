@@ -63,8 +63,8 @@ class SubscriptionMessageSerializerTest {
                 new GenericSubscriptionQueryUpdateMessage<>(new MessageType("query"), payload);
         QueryUpdate result = testSubject.serialize(message);
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
-        assertEquals(message.getIdentifier(), deserialized.getIdentifier());
-        assertEquals(message.getPayload(), deserialized.getPayload());
+        assertEquals(message.identifier(), deserialized.identifier());
+        assertEquals(message.payload(), deserialized.payload());
         assertEquals(message.getPayloadType(), deserialized.getPayloadType());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
     }
@@ -77,7 +77,7 @@ class SubscriptionMessageSerializerTest {
         );
         QueryUpdate result = testSubject.serialize(message);
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
-        assertEquals(message.getIdentifier(), deserialized.getIdentifier());
+        assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), result.getErrorCode());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
         assertTrue(deserialized.isExceptional());
@@ -94,7 +94,7 @@ class SubscriptionMessageSerializerTest {
         QueryUpdate result = testSubject.serialize(message);
         assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), result.getErrorCode());
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
-        assertEquals(message.getIdentifier(), deserialized.getIdentifier());
+        assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
         assertTrue(deserialized.isExceptional());
         assertEquals("oops", deserialized.exceptionResult().getMessage());

@@ -66,7 +66,7 @@ class EventSourcingRepositoryTest {
 
         factory = (id, event, ctx) -> {
             if (event != null) {
-                return id + "(" + event.getPayload() + ")";
+                return id + "(" + event.payload() + ")";
             }
             return id + "()";
         };
@@ -76,7 +76,7 @@ class EventSourcingRepositoryTest {
                 eventStore,
                 (id, event, context) -> factory.create(id, event, context),
                 (identifier, ctx) -> TEST_CRITERIA,
-                (entity, event, context) -> entity + "-" + event.getPayload()
+                (entity, event, context) -> entity + "-" + event.payload()
         );
     }
 
@@ -211,7 +211,7 @@ class EventSourcingRepositoryTest {
         ProcessingContext processingContext = new StubProcessingContext();
         factory = (id, event, ctx) -> {
             if (event != null) {
-                return id + "(" + event.getPayload() + ")";
+                return id + "(" + event.payload() + ")";
             }
             return null; // Simulating a null entity creation
         };

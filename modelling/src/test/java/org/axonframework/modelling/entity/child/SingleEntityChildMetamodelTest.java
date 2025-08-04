@@ -79,7 +79,7 @@ class SingleEntityChildMetamodelTest {
             GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(COMMAND), "myPayload");
 
             var result = testSubject.handle(command, parentEntity, context);
-            assertEquals("result", result.asCompletableFuture().join().message().getPayload());
+            assertEquals("result", result.asCompletableFuture().join().message().payload());
 
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
             verify(childEntityMetamodel).handleInstance(command, entityToBeFound, context);
@@ -144,7 +144,7 @@ class SingleEntityChildMetamodelTest {
             when(childEntityMetamodel.evolve(any(), any(), any())).thenAnswer(answ -> {
                 RecordingChildEntity child = answ.getArgument(0);
                 EventMessage<String> event = answ.getArgument(1);
-                return child.evolve("child evolve: " + event.getPayload());
+                return child.evolve("child evolve: " + event.payload());
             });
             when(childEntityFieldDefinition.evolveParentBasedOnChildInput(any(), any())).thenAnswer(answ -> {
                 RecordingParentEntity parent = answ.getArgument(0);

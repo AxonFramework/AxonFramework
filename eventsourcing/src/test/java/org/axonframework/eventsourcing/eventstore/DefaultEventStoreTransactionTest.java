@@ -217,8 +217,8 @@ class DefaultEventStoreTransactionTest {
             // then
             assertEquals(1, onAppendCallback1.size());
             assertEquals(1, onAppendCallback2.size());
-            assertEquals(event1.getIdentifier(), onAppendCallback1.getFirst().getIdentifier());
-            assertEquals(event1.getIdentifier(), onAppendCallback2.getFirst().getIdentifier());
+            assertEquals(event1.identifier(), onAppendCallback1.getFirst().identifier());
+            assertEquals(event1.identifier(), onAppendCallback2.getFirst().identifier());
         }
 
         @Test
@@ -387,8 +387,8 @@ class DefaultEventStoreTransactionTest {
     }
 
     private static void assertEvent(EventMessage<?> actual, EventMessage<?> expected) {
-        assertEquals(expected.getIdentifier(), actual.getIdentifier());
-        assertEquals(expected.getPayload(), actual.getPayload());
+        assertEquals(expected.identifier(), actual.identifier());
+        assertEquals(expected.payload(), actual.payload());
         assertEquals(expected.getTimestamp(), actual.getTimestamp());
         assertEquals(expected.getMetaData(), actual.getMetaData());
     }

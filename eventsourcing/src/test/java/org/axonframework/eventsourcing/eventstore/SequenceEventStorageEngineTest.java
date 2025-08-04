@@ -311,19 +311,19 @@ class SequenceEventStorageEngineTest {
 
         Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
         TrackedEventMessage<?> firstEvent = stream.findFirst().orElseThrow(IllegalStateException::new);
-        assertEquals("test1", firstEvent.getPayload());
+        assertEquals("test1", firstEvent.payload());
 
         Stream<? extends TrackedEventMessage<?>> stream2 = testSubject.readEvents(firstEvent.trackingToken(), true);
         List<TrackedEventMessage<?>> secondBatch = stream2.collect(toList());
         assertEquals(2, secondBatch.size());
-        assertEquals("test2", secondBatch.get(0).getPayload());
-        assertEquals("test3", secondBatch.get(1).getPayload());
+        assertEquals("test2", secondBatch.get(0).payload());
+        assertEquals("test3", secondBatch.get(1).payload());
 
         Stream<? extends TrackedEventMessage<?>> stream3 =
                 testSubject.readEvents(secondBatch.get(0).trackingToken(), true);
         List<TrackedEventMessage<?>> thirdBatch = stream3.collect(toList());
         assertEquals(1, thirdBatch.size());
-        assertEquals("test3", thirdBatch.get(0).getPayload());
+        assertEquals("test3", thirdBatch.get(0).payload());
 
         Stream<? extends TrackedEventMessage<?>> stream4 =
                 testSubject.readEvents(secondBatch.get(1).trackingToken(), true);

@@ -190,7 +190,7 @@ class LegacyEventHandlingComponentTest {
             var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEqualTo(event.getIdentifier());
+            assertThat(result).isEqualTo(event.identifier());
             verify(sequencingPolicy).getSequenceIdentifierFor(event);
         }
 
@@ -233,7 +233,7 @@ class LegacyEventHandlingComponentTest {
             var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEqualTo(event.getIdentifier());
+            assertThat(result).isEqualTo(event.identifier());
         }
 
         @Test
@@ -250,7 +250,7 @@ class LegacyEventHandlingComponentTest {
             var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEqualTo(event.getIdentifier());
+            assertThat(result).isEqualTo(event.identifier());
         }
 
         @Test
@@ -265,7 +265,7 @@ class LegacyEventHandlingComponentTest {
             var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEqualTo(event.getIdentifier());
+            assertThat(result).isEqualTo(event.identifier());
         }
 
         @Test
@@ -284,7 +284,7 @@ class LegacyEventHandlingComponentTest {
             var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEqualTo(event.getIdentifier());
+            assertThat(result).isEqualTo(event.identifier());
         }
 
         @Test
@@ -303,7 +303,7 @@ class LegacyEventHandlingComponentTest {
             var result = component.sequenceIdentifierFor(event);
 
             //then
-            assertThat(result).isEqualTo(event.getIdentifier());
+            assertThat(result).isEqualTo(event.identifier());
             // Verify that secondInvoker (which is SimpleEventHandlerInvoker) is never called
             verifyNoInteractions(secondInvoker);
         }

@@ -78,7 +78,7 @@ class DefaultQueryGatewayTest {
         verify(mockBus).query(queryMessageCaptor.capture());
 
         QueryMessage<String, String> result = queryMessageCaptor.getValue();
-        assertEquals("query", result.getPayload());
+        assertEquals("query", result.payload());
         assertEquals(String.class, result.getPayloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
@@ -107,7 +107,7 @@ class DefaultQueryGatewayTest {
         verify(mockBus).query(queryMessageCaptor.capture());
 
         QueryMessage<String, String> result = queryMessageCaptor.getValue();
-        assertEquals("query", result.getPayload());
+        assertEquals("query", result.payload());
         assertEquals(String.class, result.getPayloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
@@ -180,7 +180,7 @@ class DefaultQueryGatewayTest {
         verify(mockBus).scatterGather(queryMessageCaptor.capture(), eq(expectedTimeout), eq(expectedTimeUnit));
 
         QueryMessage<String, String> result = queryMessageCaptor.getValue();
-        assertEquals("scatterGather", result.getPayload());
+        assertEquals("scatterGather", result.payload());
         assertEquals(String.class, result.getPayloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
@@ -214,7 +214,7 @@ class DefaultQueryGatewayTest {
         verify(mockBus).scatterGather(queryMessageCaptor.capture(), eq(expectedTimeout), eq(expectedTimeUnit));
 
         QueryMessage<String, String> result = queryMessageCaptor.getValue();
-        assertEquals("scatterGather", result.getPayload());
+        assertEquals("scatterGather", result.payload());
         assertEquals(String.class, result.getPayloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
@@ -237,7 +237,7 @@ class DefaultQueryGatewayTest {
         verify(mockBus).subscriptionQuery(queryMessageCaptor.capture(), anyInt());
 
         SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
-        assertEquals("subscription", result.getPayload());
+        assertEquals("subscription", result.payload());
         assertEquals(String.class, result.getPayloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
@@ -268,7 +268,7 @@ class DefaultQueryGatewayTest {
         verify(mockBus).subscriptionQuery(queryMessageCaptor.capture(), anyInt());
 
         SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
-        assertEquals("subscription", result.getPayload());
+        assertEquals("subscription", result.payload());
         assertEquals(String.class, result.getPayloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
         assertEquals(String.class, result.getResponseType().getExpectedResponseType());
@@ -284,13 +284,13 @@ class DefaultQueryGatewayTest {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
         testSubject.registerDispatchInterceptor(messages -> (integer, queryMessage) -> new GenericQueryMessage<>(
                 new MessageType(queryMessage.type().name()),
-                "dispatch-" + queryMessage.getPayload(), queryMessage.getResponseType())
+                "dispatch-" + queryMessage.payload(), queryMessage.getResponseType())
         );
 
         testSubject.query("query", String.class).join();
 
         verify(mockBus).query(
-                argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "dispatch-query".equals(x.getPayload()))
+                argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "dispatch-query".equals(x.payload()))
         );
     }
 
@@ -359,7 +359,7 @@ class DefaultQueryGatewayTest {
                         new MessageType("query"), "test"
                 ) {
                     @Override
-                    public String getPayload() {
+                    public String payload() {
                         throw new MockException("Faking serialization problem");
                     }
                 }));

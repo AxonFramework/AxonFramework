@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * Generic implementation of the {@link SubscriptionQueryMessage} interface.
  *
- * @param <P> The type of {@link #getPayload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
+ * @param <P> The type of {@link #payload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
  * @param <I> The type of {@link #getResponseType() initial response} expected from this
  *            {@link SubscriptionQueryMessage}.
  * @param <U> The type of {@link #getUpdateResponseType() incremental updates} expected from this
@@ -68,15 +68,15 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      * Constructs a {@code GenericSubscriptionQueryMessage} with given {@code delegate},
      * {@code responseType}, and {@code updateResponseType}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
+     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate           The {@link Message} containing {@link Message#getPayload() payload},
-     *                           {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     * @param delegate           The {@link Message} containing {@link Message#payload() payload},
+     *                           {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                           {@link Message#getMetaData() metadata} for the {@link SubscriptionQueryMessage} to
      *                           reconstruct.
      * @param responseType       The expected {@link ResponseType response type} for this

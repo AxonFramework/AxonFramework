@@ -21,7 +21,6 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.property.Property;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.serialization.Converter;
 
 import java.util.Map;
 import java.util.Objects;
@@ -99,7 +98,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
                     messageRoutingProperty,
                     metamodel.entityType()));
         }
-        Object convertedPayload = metamodel.converter().convert(message.getPayload(), payloadType);
+        Object convertedPayload = metamodel.converter().convert(message.payload(), payloadType);
 
         Object routingValue = routingProperty.getValue(convertedPayload);
         return matchesInstance(entity, routingValue);

@@ -172,7 +172,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
             JdbcDeadLetter<? extends EventMessage<?>> actual = ((JdbcDeadLetter<? extends EventMessage<?>>) result);
 
             assertEquals(expected.getSequenceIdentifier(), actual.getSequenceIdentifier(), assertMessageSupplier);
-            assertEquals(expected.message().getPayload(), actual.message().getPayload(), assertMessageSupplier);
+            assertEquals(expected.message().payload(), actual.message().payload(), assertMessageSupplier);
             assertFalse(result.cause().isPresent(), assertMessageSupplier);
             assertEquals(expected.diagnostics(), actual.diagnostics(), assertMessageSupplier);
             assertEquals(sequenceIndex.longValue(), actual.getSequenceIndex(), assertMessageSupplier);
@@ -189,7 +189,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                         ),
                         e -> new JdbcException(
                                 "Failed to enqueue dead letter with with message id [" +
-                                        letter.message().getIdentifier() + "] during testing", e
+                                        letter.message().identifier() + "] during testing", e
                         )
                 );
             } catch (SQLException e) {

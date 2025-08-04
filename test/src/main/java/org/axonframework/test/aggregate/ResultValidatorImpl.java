@@ -94,7 +94,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
             EventMessage<?> actualEvent = iterator.next();
-            if (!verifyPayloadEquality(expectedEvent, actualEvent.getPayload())) {
+            if (!verifyPayloadEquality(expectedEvent, actualEvent.payload())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
@@ -103,7 +103,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
     @Override
     public ResultValidator<T> expectEvents(EventMessage<?>... expectedEvents) {
-        this.expectEvents(Stream.of(expectedEvents).map(Message::getPayload).toArray());
+        this.expectEvents(Stream.of(expectedEvents).map(Message::payload).toArray());
 
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (EventMessage<?> expectedEvent : expectedEvents) {
@@ -327,9 +327,9 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         expectedMatcher.describeTo(expectedDescription);
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
-        } else if (!verifyPayloadEquality(expectedPayload, actualReturnValue.getPayload())) {
+        } else if (!verifyPayloadEquality(expectedPayload, actualReturnValue.payload())) {
             PayloadMatcher<CommandResultMessage<?>> actualMatcher =
-                    new PayloadMatcher<>(CoreMatchers.equalTo(actualReturnValue.getPayload()));
+                    new PayloadMatcher<>(CoreMatchers.equalTo(actualReturnValue.payload()));
             actualMatcher.describeTo(actualDescription);
             reporter.reportWrongResult(actualDescription, expectedDescription);
         }
@@ -345,15 +345,15 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         matcher.describeTo(expectedDescription);
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
-        } else if (!matcher.matches(actualReturnValue.getPayload())) {
-            reporter.reportWrongResult(actualReturnValue.getPayload(), expectedDescription);
+        } else if (!matcher.matches(actualReturnValue.payload())) {
+            reporter.reportWrongResult(actualReturnValue.payload(), expectedDescription);
         }
         return this;
     }
 
     @Override
     public ResultValidator<T> expectResultMessage(CommandResultMessage<?> expectedResultMessage) {
-        expectResultMessagePayload(expectedResultMessage.getPayload());
+        expectResultMessagePayload(expectedResultMessage.payload());
 
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
@@ -398,7 +398,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         exceptionMessageMatcher.describeTo(description);
 
         if (actualException == null) {
-            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+            reporter.reportUnexpectedReturnValue(actualReturnValue.payload(), description);
         }
         if (actualException != null && !exceptionMessageMatcher.matches(actualException.getMessage())) {
             reporter.reportWrongExceptionMessage(actualException, description);
@@ -421,7 +421,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         StringDescription description = new StringDescription();
         matcher.describeTo(description);
         if (actualException == null) {
-            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+            reporter.reportUnexpectedReturnValue(actualReturnValue.payload(), description);
         }
         if (!matcher.matches(actualException)) {
             reporter.reportWrongException(actualException, description);
@@ -452,7 +452,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
             StringDescription description = new StringDescription(new StringBuilder(
                     "an exception with details matching "));
             exceptionDetailsMatcher.describeTo(description);
-            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+            reporter.reportUnexpectedReturnValue(actualReturnValue.payload(), description);
             return this;
         }
         if (!exceptionDetailsMatcher.matches(actualDetails)) {

@@ -100,7 +100,7 @@ class JobRunrEventSchedulerTest {
 
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
-        assertEquals(1, publishedMessage.getPayload());
+        assertEquals(1, publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
         assertTrue(publishedMessage.getMetaData().isEmpty());
     }
@@ -114,7 +114,7 @@ class JobRunrEventSchedulerTest {
 
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
-        assertEquals(1, publishedMessage.getPayload());
+        assertEquals(1, publishedMessage.payload());
     }
 
     @Test
@@ -131,7 +131,7 @@ class JobRunrEventSchedulerTest {
 
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
-        assertEquals(2, publishedMessage.getPayload());
+        assertEquals(2, publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
         assertEquals(metadata, publishedMessage.getMetaData());
     }
@@ -146,7 +146,7 @@ class JobRunrEventSchedulerTest {
 
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
-        assertEquals(new PayloadWithRevision(), publishedMessage.getPayload());
+        assertEquals(new PayloadWithRevision(), publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
         assertTrue(publishedMessage.getMetaData().isEmpty());
     }
@@ -166,7 +166,7 @@ class JobRunrEventSchedulerTest {
 
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
-        assertEquals(new PayloadWithRevision(), publishedMessage.getPayload());
+        assertEquals(new PayloadWithRevision(), publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
         assertEquals(metadata, publishedMessage.getMetaData());
     }
@@ -180,7 +180,7 @@ class JobRunrEventSchedulerTest {
         assertEquals(1, publishedMessages.size());
 
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
-        assertEquals(4, publishedMessage.getPayload());
+        assertEquals(4, publishedMessage.payload());
     }
 
     @Test
@@ -192,7 +192,7 @@ class JobRunrEventSchedulerTest {
         assertEquals(1, publishedMessages.size());
 
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
-        assertEquals(6, publishedMessage.getPayload());
+        assertEquals(6, publishedMessage.payload());
     }
 
     @Test

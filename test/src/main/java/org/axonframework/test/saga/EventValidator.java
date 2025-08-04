@@ -122,10 +122,10 @@ public class EventValidator implements EventMessageHandler {
      * {@code event} as is.
      *
      * @param event either an {@link EventMessage} or the payload of an EventMessage
-     * @return the given {@code event} as is or the {@link EventMessage#getPayload()}
+     * @return the given {@code event} as is or the {@link EventMessage#payload()}
      */
     private Object unwrapEvent(Object event) {
-        return event instanceof EventMessage ? ((EventMessage) event).getPayload() : event;
+        return event instanceof EventMessage ? ((EventMessage) event).payload() : event;
     }
 
     public Set<Class<?>> supportedEventTypes() {

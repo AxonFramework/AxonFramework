@@ -28,7 +28,7 @@ import java.util.Optional;
 /**
  * Generic implementation of {@link ResultMessage} interface.
  *
- * @param <R> The type of {@link #getPayload() result} contained in this {@link ResultMessage}.
+ * @param <R> The type of {@link #payload() result} contained in this {@link ResultMessage}.
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 4.0.0
@@ -98,8 +98,8 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
-     *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
+     * @param delegate The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
+     *                 {@link Message#identifier() identifier} and {@link Message#getMetaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
     public GenericResultMessage(@Nonnull Message<R> delegate) {
@@ -113,8 +113,8 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
-     *                  {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     * @param delegate  The {@link Message} containing {@link Message#payload() payload},
+     *                  {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                  {@link Message#getMetaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link ResultMessage}.
@@ -204,13 +204,13 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     @Override
     protected void describeTo(StringBuilder stringBuilder) {
         stringBuilder.append("payload={")
-                     .append(isExceptional() ? null : getPayload())
+                     .append(isExceptional() ? null : payload())
                      .append('}')
                      .append(", metadata={")
                      .append(getMetaData())
                      .append('}')
                      .append(", messageIdentifier='")
-                     .append(getIdentifier())
+                     .append(identifier())
                      .append('\'')
                      .append(", exception='")
                      .append(exception)
@@ -223,7 +223,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     @Override
-    public R getPayload() {
+    public R payload() {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
                     "This result completed exceptionally, payload is not available. "
@@ -231,6 +231,6 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
                     exception
             );
         }
-        return super.getPayload();
+        return super.payload();
     }
 }

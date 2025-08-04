@@ -96,7 +96,7 @@ public abstract class AbstractEventStoreBenchmark {
                 SimpleEventHandlerInvoker.builder()
                                          .eventHandlers(
                                                  (EventMessageHandler) (eventHandler, ctx) -> {
-                                                     if (readEvents.add(eventHandler.getIdentifier())) {
+                                                     if (readEvents.add(eventHandler.identifier())) {
                                                          remainingEvents.countDown();
                                                      } else {
                                                          throw new IllegalStateException("Double event!");

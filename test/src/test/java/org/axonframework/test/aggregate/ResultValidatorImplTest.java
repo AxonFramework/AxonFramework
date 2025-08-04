@@ -185,7 +185,7 @@ class ResultValidatorImplTest {
     void noDeadlineInTimeframeWithDeadlineInsideWindow() {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
         ScheduledDeadlineInfo deadlineInfo = createDeadline(expiryTime);
-        Object deadline = deadlineInfo.deadlineMessage().getPayload();
+        Object deadline = deadlineInfo.deadlineMessage().payload();
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
         assertThrows(AxonAssertionError.class,
@@ -205,7 +205,7 @@ class ResultValidatorImplTest {
     @Test
     void noDeadlineInTimeframeWithDeadlineAtFrom() {
         ScheduledDeadlineInfo deadlineInfo = createDeadline(deadlineWindowFrom);
-        Object deadline = deadlineInfo.deadlineMessage().getPayload();
+        Object deadline = deadlineInfo.deadlineMessage().payload();
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
         assertThrows(AxonAssertionError.class,
@@ -215,7 +215,7 @@ class ResultValidatorImplTest {
     @Test
     void noDeadlineInTimeframeWithDeadlineAtTo() {
         ScheduledDeadlineInfo deadlineInfo = createDeadline(deadlineWindowTo);
-        Object deadline = deadlineInfo.deadlineMessage().getPayload();
+        Object deadline = deadlineInfo.deadlineMessage().payload();
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
         assertThrows(AxonAssertionError.class,
@@ -230,10 +230,10 @@ class ResultValidatorImplTest {
 
         assertDoesNotThrow(() -> validator.expectNoScheduledDeadline(deadlineWindowFrom,
                                                                      deadlineWindowTo,
-                                                                     deadlineBefore.deadlineMessage().getPayload()));
+                                                                     deadlineBefore.deadlineMessage().payload()));
         assertDoesNotThrow(() -> validator.expectNoScheduledDeadline(deadlineWindowFrom,
                                                                      deadlineWindowTo,
-                                                                     deadlineAfter.deadlineMessage().getPayload()));
+                                                                     deadlineAfter.deadlineMessage().payload()));
     }
 
     @Test

@@ -17,6 +17,8 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
@@ -31,7 +33,13 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Milan Savic
  */
-class GenericSubscriptionQueryUpdateMessageTest {
+class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite {
+
+    @Override
+    protected <P, M extends Message<P>> M buildMessage(P payload) {
+        //noinspection unchecked
+        return (M) new GenericSubscriptionQueryUpdateMessage<>(new MessageType(payload.getClass()), payload);
+    }
 
     @Test
     void messageCreation() {
@@ -41,7 +49,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
                 new MessageType("query"), payload, String.class
         );
 
-        assertEquals(payload, result.getPayload());
+        assertEquals(payload, result.payload());
     }
 
     @Test
@@ -52,7 +60,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
                 new MessageType("query"), payload, String.class
         );
 
-        assertNull(result.getPayload());
+        assertNull(result.payload());
     }
 
     @Test
@@ -65,7 +73,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
         Map<String, String> newMetaData = Collections.singletonMap("k2", "v3");
         SubscriptionQueryUpdateMessage<Object> result = original.andMetaData(newMetaData);
 
-        assertEquals(original.getPayload(), result.getPayload());
+        assertEquals(original.payload(), result.payload());
         MetaData expectedMetaData = MetaData.from(metaData)
                                             .mergedWith(newMetaData);
         assertEquals(expectedMetaData, result.getMetaData());
@@ -81,7 +89,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
         Map<String, String> newMetaData = Collections.singletonMap("k2", "v3");
         SubscriptionQueryUpdateMessage<Object> result = original.withMetaData(newMetaData);
 
-        assertEquals(original.getPayload(), result.getPayload());
+        assertEquals(original.payload(), result.payload());
         assertEquals(newMetaData, result.getMetaData());
     }
 }

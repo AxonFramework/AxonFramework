@@ -117,8 +117,8 @@ class SpawningNewAggregateTest {
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
 
         verify(eventStore, times(2)).publish(eventCaptor.capture());
-        assertEquals(new Aggregate2CreatedEvent("aggregate2Id"), eventCaptor.getAllValues().get(0).getPayload());
-        assertEquals(new Aggregate1CreatedEvent("id"), eventCaptor.getAllValues().get(1).getPayload());
+        assertEquals(new Aggregate2CreatedEvent("aggregate2Id"), eventCaptor.getAllValues().get(0).payload());
+        assertEquals(new Aggregate1CreatedEvent("id"), eventCaptor.getAllValues().get(1).payload());
     }
 
     @MockitoSettings(strictness = Strictness.LENIENT)

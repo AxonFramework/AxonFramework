@@ -112,7 +112,7 @@ class EntityCommandHandlingComponentTest {
                                                                  .first().asCompletableFuture().join().message();
 
             verify(metamodel).handleCreate(eq(creationalCommandMessage), any());
-            assertEquals("creational", resultMessage.getPayload());
+            assertEquals("creational", resultMessage.payload());
         }
 
         @Test
@@ -164,7 +164,7 @@ class EntityCommandHandlingComponentTest {
                     instanceCommandMessage, context);
 
             verify(metamodel).handleInstance(eq(instanceCommandMessage), eq(testEntity), any());
-            Assertions.assertEquals("instance", componentResult.asCompletableFuture().join().message().getPayload());
+            Assertions.assertEquals("instance", componentResult.asCompletableFuture().join().message().payload());
         }
 
 
@@ -196,7 +196,7 @@ class EntityCommandHandlingComponentTest {
                     mixedCommandMessage, context);
             verify(metamodel).handleCreate(mixedCommandMessage, context);
             assertEquals("creational-mixed",
-                         componentResult.first().asCompletableFuture().join().message().getPayload());
+                         componentResult.first().asCompletableFuture().join().message().payload());
         }
 
         @Test
@@ -209,7 +209,7 @@ class EntityCommandHandlingComponentTest {
 
             verify(metamodel).handleInstance(mixedCommandMessage, entity, context);
             Assertions.assertEquals("instance-mixed",
-                                    componentResult.asCompletableFuture().join().message().getPayload());
+                                    componentResult.asCompletableFuture().join().message().payload());
         }
 
         @Test

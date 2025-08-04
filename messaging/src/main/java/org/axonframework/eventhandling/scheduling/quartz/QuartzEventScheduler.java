@@ -134,7 +134,7 @@ public class QuartzEventScheduler implements EventScheduler {
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
         Assert.state(initialized, () -> "Scheduler is not yet initialized");
         EventMessage eventMessage = asEventMessage(event);
-        String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getIdentifier();
+        String jobIdentifier = JOB_NAME_PREFIX + eventMessage.identifier();
         QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
         try {
             JobDetail jobDetail = buildJobDetail(eventMessage, new JobKey(jobIdentifier, groupIdentifier));
@@ -271,12 +271,12 @@ public class QuartzEventScheduler implements EventScheduler {
 
             EventMessage<?> eventMessage = (EventMessage<?>) event;
 
-            jobData.put(MESSAGE_ID, eventMessage.getIdentifier());
+            jobData.put(MESSAGE_ID, eventMessage.identifier());
             jobData.put(TYPE, eventMessage.type().toString());
             jobData.put(MESSAGE_TIMESTAMP, eventMessage.getTimestamp().toString());
 
             SerializedObject<byte[]> serializedPayload =
-                    serializer.serialize(eventMessage.getPayload(), byte[].class);
+                    serializer.serialize(eventMessage.payload(), byte[].class);
             jobData.put(SERIALIZED_MESSAGE_PAYLOAD, serializedPayload.getData());
             jobData.put(MESSAGE_TYPE, serializedPayload.getType().getName());
             jobData.put(MESSAGE_REVISION, serializedPayload.getType().getRevision());

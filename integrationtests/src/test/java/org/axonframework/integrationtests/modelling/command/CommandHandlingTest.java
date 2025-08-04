@@ -102,7 +102,7 @@ class CommandHandlingTest {
         private static DomainEventMessage<?> asDomainEventMessage(EventMessage<?> event) {
             return event instanceof DomainEventMessage<?> e
                     ? e
-                    : new GenericDomainEventMessage<>(null, event.getIdentifier(), 0L, event, event::getTimestamp);
+                    : new GenericDomainEventMessage<>(null, event.identifier(), 0L, event, event::getTimestamp);
         }
 
         @Override

@@ -66,7 +66,7 @@ class DefaultEventGatewayTest {
         // Then
         verify(mockEventSink).publish(contextCaptor.capture(), eventCaptor.capture());
         List<EventMessage<?>> result = eventCaptor.getValue();
-        assertEquals("Event1", result.getFirst().getPayload());
+        assertEquals("Event1", result.getFirst().payload());
         assertEquals("java.lang.String", result.getFirst().type().qualifiedName().name());
         assertNull(contextCaptor.getValue());
     }
@@ -85,7 +85,7 @@ class DefaultEventGatewayTest {
         // Then
         verify(mockEventSink).publish(contextCaptor.capture(), eventCaptor.capture());
         List<EventMessage<?>> result = eventCaptor.getValue();
-        assertEquals("Event1", result.getFirst().getPayload());
+        assertEquals("Event1", result.getFirst().payload());
         assertEquals("java.lang.String", result.getFirst().type().qualifiedName().name());
         assertEquals(testContext, contextCaptor.getValue());
     }
@@ -103,9 +103,9 @@ class DefaultEventGatewayTest {
         verify(mockEventSink).publish(isNull(), eventsCaptor.capture());
         List<EventMessage<?>> result = eventsCaptor.getValue();
         assertEquals(2, result.size());
-        assertEquals("Event2", result.get(0).getPayload());
+        assertEquals("Event2", result.get(0).payload());
         assertEquals("java.lang.String", result.getFirst().type().qualifiedName().name());
-        assertEquals("Event3", result.get(1).getPayload());
+        assertEquals("Event3", result.get(1).payload());
         assertEquals("java.lang.String", result.get(1).type().qualifiedName().name());
     }
 

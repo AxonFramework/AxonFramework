@@ -17,13 +17,16 @@
 package org.axonframework.messaging.responsetypes;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Optional;
 
@@ -34,7 +37,7 @@ import java.util.Optional;
  * The conversion is generally used to accommodate response types that aren't compatible with serialization, such as
  * {@link OptionalResponseType}.
  *
- * @param <R> The type of {@link #getPayload() payload} contained in this {@link QueryResponseMessage}.
+ * @param <R> The type of {@link #payload() payload} contained in this {@link QueryResponseMessage}.
  * @author Allard Buijze
  * @since 4.3.0
  */
@@ -82,8 +85,8 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public String getIdentifier() {
-        return responseMessage.getIdentifier();
+    public String identifier() {
+        return responseMessage.identifier();
     }
 
     @Nonnull
@@ -98,7 +101,7 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public R getPayload() {
+    public R payload() {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
                     "This result completed exceptionally, payload is not available. "
@@ -106,7 +109,19 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
                     optionalExceptionResult().orElse(null)
             );
         }
-        return expectedResponseType.convert(responseMessage.getPayload());
+        return expectedResponseType.convert(responseMessage.payload());
+    }
+
+    @Override
+    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+        if (isExceptional()) {
+            throw new IllegalPayloadAccessException(
+                    "This result completed exceptionally, payload is not available. "
+                            + "Try calling 'exceptionResult' to see the cause of failure.",
+                    optionalExceptionResult().orElse(null)
+            );
+        }
+        return responseMessage.payloadAs(type, converter);
     }
 
     @Override

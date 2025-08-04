@@ -64,7 +64,7 @@ public abstract class BatchingEventStorageEngineTest<E extends LegacyBatchingEve
                 testSubject.readEvents(null, false).reduce((a, b) -> b);
         assertEquals(testSubject.batchSize() + 11, testSubject.readEvents(null, false).count());
         assertTrue(resultEventMessage.isPresent());
-        assertEquals(last.getIdentifier(), resultEventMessage.get().getIdentifier());
+        assertEquals(last.identifier(), resultEventMessage.get().identifier());
     }
 
     protected void setTestSubject(LegacyBatchingEventStorageEngine testSubject) {

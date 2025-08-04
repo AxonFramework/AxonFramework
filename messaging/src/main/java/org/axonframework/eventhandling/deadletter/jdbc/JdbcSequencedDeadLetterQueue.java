@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -203,12 +203,12 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
             Optional<Cause> optionalCause = letter.cause();
             if (optionalCause.isPresent()) {
                 logger.info("Adding dead letter with message id [{}] because [{}].",
-                            letter.message().getIdentifier(),
+                            letter.message().identifier(),
                             optionalCause.get().type());
             } else {
                 logger.info(
                         "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
-                        letter.message().getIdentifier(),
+                        letter.message().identifier(),
                         sequenceId);
             }
         }
@@ -220,7 +220,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                                   c, processingGroup, sequenceId, letter, nextIndexForSequence(sequenceId)
                           ),
                           e -> new JdbcException("Failed to enqueue dead letter with with message id ["
-                                                         + letter.message().getIdentifier() + "]", e));
+                                                         + letter.message().identifier() + "]", e));
         } finally {
             closeQuietly(connection);
         }
@@ -263,7 +263,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                                                 c -> statementFactory.evictStatement(c, identifier),
                                                 e -> new JdbcException(
                                                         "Failed to evict letter with message id ["
-                                                                + letter.message().getIdentifier() + "]", e
+                                                                + letter.message().identifier() + "]", e
                                                 ));
                 if (deletedRows == 0) {
                     logger.info("Dead letter with identifier [{}] for processing group [{}] "
@@ -305,10 +305,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                                                                updatedLetter.lastTouched(),
                                                                updatedLetter.diagnostics()),
                         e -> new JdbcException("Failed to requeue letter with message id ["
-                                                       + letter.message().getIdentifier() + "]", e)
+                                                       + letter.message().identifier() + "]", e)
                 );
                 if (updatedRows == 0) {
-                    throw new NoSuchDeadLetterException("Cannot requeue [" + letter.message().getIdentifier()
+                    throw new NoSuchDeadLetterException("Cannot requeue [" + letter.message().identifier()
                                                                 + "] since there is not matching entry in this queue.");
                 } else if (logger.isTraceEnabled()) {
                     logger.trace("Requeued letter [{}] for sequence [{}].",

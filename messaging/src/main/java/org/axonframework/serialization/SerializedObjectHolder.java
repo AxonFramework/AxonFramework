@@ -56,8 +56,8 @@ public class SerializedObjectHolder {
         synchronized (payloadGuard) {
             SerializedObject existingForm = serializedPayload.get(serializer);
             if (existingForm == null) {
-                SerializedObject<T> serialized = serializer.serialize(message.getPayload(), expectedRepresentation);
-                if (message.getPayload() == null) {
+                SerializedObject<T> serialized = serializer.serialize(message.payload(), expectedRepresentation);
+                if (message.payload() == null) {
                     // make sure the payload type is maintained
                     serialized = new SimpleSerializedObject<>(serialized.getData(),
                                                               serialized.getContentType(),

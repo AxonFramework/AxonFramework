@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ public class CommandValidator {
                                     + " but got <" + actualItem.getPayloadType() + ">."
                     );
                 }
-                assertCommandEquality(counter, expectedMessage.getPayload(), actualItem.getPayload());
+                assertCommandEquality(counter, expectedMessage.payload(), actualItem.payload());
                 if (!expectedMessage.getMetaData().equals(actualItem.getMetaData())) {
                     throw new AxonAssertionError(
                             "Unexpected Meta Data of command at position " + counter + " (0-based).\n"
@@ -109,7 +109,7 @@ public class CommandValidator {
                     );
                 }
             } else {
-                assertCommandEquality(counter, expectedItem, actualItem.getPayload());
+                assertCommandEquality(counter, expectedItem, actualItem.payload());
             }
             counter++;
         }

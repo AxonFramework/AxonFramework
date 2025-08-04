@@ -86,7 +86,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
             DomainEventMessage<?> event1 = iterator.next(), event2 = iterator.next();
             assertEquals(event1.getAggregateIdentifier(), event2.getAggregateIdentifier());
             assertEquals(event1.getSequenceNumber(), event2.getSequenceNumber());
-            assertEquals(event1.getPayload(), event2.getPayload());
+            assertEquals(event1.payload(), event2.payload());
             assertEquals(event1.getMetaData(), event2.getMetaData());
         }
     }

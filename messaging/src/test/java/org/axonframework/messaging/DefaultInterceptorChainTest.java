@@ -65,6 +65,6 @@ class DefaultInterceptorChainTest {
         String actual = (String) testSubject.proceedSync(StubProcessingContext.forUnitOfWork(unitOfWork));
 
         assertSame("Result", actual);
-        verify(mockHandler).handleSync(argThat(x -> (x != null) && x.getPayload().equals("testing")), any());
+        verify(mockHandler).handleSync(argThat(x -> (x != null) && x.payload().equals("testing")), any());
     }
 }

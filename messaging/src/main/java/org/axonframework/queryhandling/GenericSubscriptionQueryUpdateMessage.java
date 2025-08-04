@@ -30,7 +30,7 @@ import java.util.Map;
  * Generic implementation of the {@link SubscriptionQueryUpdateMessage} interface holding incremental updates of a
  * subscription query.
  *
- * @param <U> The type of {@link #getPayload() update} contained in this {@link SubscriptionQueryUpdateMessage}.
+ * @param <U> The type of {@link #payload() update} contained in this {@link SubscriptionQueryUpdateMessage}.
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 3.3.0
@@ -116,8 +116,8 @@ public class GenericSubscriptionQueryUpdateMessage<U>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
-     *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
+     * @param delegate The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
+     *                 {@link Message#identifier() identifier} and {@link Message#getMetaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
     protected GenericSubscriptionQueryUpdateMessage(@Nonnull Message<U> delegate) {

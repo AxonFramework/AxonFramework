@@ -37,7 +37,7 @@ class FilteringEventStorageEngineTest {
 
     @BeforeEach
     void setUp() {
-        Predicate<EventMessage<?>> filter = m -> m.getPayload().toString().contains("accept");
+        Predicate<EventMessage<?>> filter = m -> m.payload().toString().contains("accept");
         mockStorage = mock(LegacyEventStorageEngine.class);
         testSubject = new LegacyFilteringEventStorageEngine(mockStorage, filter);
     }

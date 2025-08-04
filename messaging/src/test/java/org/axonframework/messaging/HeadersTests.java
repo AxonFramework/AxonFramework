@@ -98,7 +98,7 @@ class HeadersTests {
         EventMessage<Object> message = asEventMessage("foo");
         SerializedObject<byte[]> serializedObject = message.serializePayload(serializer, byte[].class);
         Map<String, Object> expected = new HashMap<>() {{
-            put(MESSAGE_ID, message.getIdentifier());
+            put(MESSAGE_ID, message.identifier());
             put(MESSAGE_TYPE, serializedObject.getType().getName());
             put(MESSAGE_REVISION, serializedObject.getType().getRevision());
             put(MESSAGE_TIMESTAMP, message.getTimestamp());
@@ -119,7 +119,7 @@ class HeadersTests {
         SerializedObject<byte[]> serializedObject = message.serializePayload(serializer, byte[].class);
 
         Map<String, Object> expected = new HashMap<>() {{
-            put(MESSAGE_ID, message.getIdentifier());
+            put(MESSAGE_ID, message.identifier());
             put(MESSAGE_TYPE, serializedObject.getType().getName());
             put(MESSAGE_REVISION, serializedObject.getType().getRevision());
             put(MESSAGE_TIMESTAMP, message.getTimestamp());

@@ -232,16 +232,16 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                     aggregateType,
                     aggregateIdentifier,
                     nextSequence,
-                    event.getIdentifier(),
+                    event.identifier(),
                     event.type(),
-                    event.getPayload(),
+                    event.payload(),
                     event.getMetaData(),
                     event.getTimestamp()
             );
         } else {
             // returns non-aggregate event, so the sequence is always 0
             return new GenericDomainEventMessage<>(null,
-                                                   event.getIdentifier(),
+                                                   event.identifier(),
                                                    0L,
                                                    event,
                                                    event::getTimestamp);

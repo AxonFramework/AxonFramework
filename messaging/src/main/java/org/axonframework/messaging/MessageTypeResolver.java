@@ -22,7 +22,7 @@ import org.axonframework.common.ObjectUtils;
 import java.util.Optional;
 
 /**
- * Functional interface describing a resolver from {@link Message#getPayload() Message payload} to it's
+ * Functional interface describing a resolver from {@link Message#payload() Message payload} to it's
  * {@link MessageType type}. Used to set the {@link Message#type() type} when putting the given payload on its
  * respective bus.
  *
@@ -38,7 +38,7 @@ public interface MessageTypeResolver {
      * Resolves a {@link MessageType type} for the given {@code payload}. If the given {@code payload} is already a
      * {@link Message} implementation, the {@link Message#type() Message Type} is returned.
      *
-     * @param payload The {@link Message#getPayload() Message payload} to resolve a {@link MessageType type} for.
+     * @param payload The {@link Message#payload() Message payload} to resolve a {@link MessageType type} for.
      * @return The {@link MessageType type} for the given {@code payload}.
      * @throws MessageTypeNotResolvedException if the {@link MessageType type} could not be resolved.
      */
@@ -52,7 +52,7 @@ public interface MessageTypeResolver {
     /**
      * Resolves a {@link MessageType type} for the given {@code payloadType}.
      *
-     * @param payloadType The {@link Class type} of the {@link Message#getPayload() Message payload} to resolve a
+     * @param payloadType The {@link Class type} of the {@link Message#payload() Message payload} to resolve a
      *                    {@link MessageType type} for.
      * @return The {@link MessageType type} for the given {@code payloadType}.
      * @throws MessageTypeNotResolvedException if the {@link MessageType type} could not be resolved.
@@ -69,7 +69,7 @@ public interface MessageTypeResolver {
      * This method returns an {@link Optional} that will be empty if the
      * {@link MessageType type} could not be resolved.
      *
-     * @param payload The {@link Message#getPayload() Message payload} to resolve a {@link MessageType type} for.
+     * @param payload The {@link Message#payload() Message payload} to resolve a {@link MessageType type} for.
      * @return An {@link Optional} containing the {@link MessageType type} for the given {@code payload},
      *         or empty if the type could not be resolved.
      */
@@ -86,7 +86,7 @@ public interface MessageTypeResolver {
      * This method returns an {@link Optional} that will be empty if the
      * {@link MessageType type} could not be resolved.
      *
-     * @param payloadType The {@link Class type} of the {@link Message#getPayload() Message payload} to resolve a
+     * @param payloadType The {@link Class type} of the {@link Message#payload() Message payload} to resolve a
      *                    {@link MessageType type} for.
      * @return An {@link Optional} containing the {@link MessageType type} for the given {@code payloadType},
      *         or empty if the type could not be resolved.

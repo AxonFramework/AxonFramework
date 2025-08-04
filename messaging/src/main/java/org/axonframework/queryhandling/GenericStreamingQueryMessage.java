@@ -30,7 +30,7 @@ import java.util.Map;
 /**
  * Generic implementation of the {@link StreamingQueryMessage} interface.
  *
- * @param <P> The type of {@link #getPayload() payload} expressing the query in this {@link StreamingQueryMessage}.
+ * @param <P> The type of {@link #payload() payload} expressing the query in this {@link StreamingQueryMessage}.
  * @param <R> The type of {@link #getResponseType() response} expected from this {@link StreamingQueryMessage} streamed
  *            via {@link Publisher}.
  * @author Milan Savic
@@ -79,15 +79,15 @@ public class GenericStreamingQueryMessage<P, R>
      * Constructs a {@code GenericStreamingQueryMessage} with given {@code delegate}, and
      * {@code responseType}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
+     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate     The {@link Message} containing {@link Message#getPayload() payload},
-     *                     {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     * @param delegate     The {@link Message} containing {@link Message#payload() payload},
+     *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                     {@link Message#getMetaData() metadata} for the {@link SubscriptionQueryMessage} to
      *                     reconstruct.
      * @param responseType The expected {@link Class response type} for this {@link StreamingQueryMessage}.
@@ -101,15 +101,15 @@ public class GenericStreamingQueryMessage<P, R>
      * Constructs a {@code GenericStreamingQueryMessage} with given {@code delegate}, and
      * {@code responseType}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
+     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate     The {@link Message} containing {@link Message#getPayload() payload},
-     *                     {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     * @param delegate     The {@link Message} containing {@link Message#payload() payload},
+     *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                     {@link Message#getMetaData() metadata} for the {@link SubscriptionQueryMessage} to
      *                     reconstruct.
      * @param responseType The expected {@link ResponseType response type} for this {@link StreamingQueryMessage}.

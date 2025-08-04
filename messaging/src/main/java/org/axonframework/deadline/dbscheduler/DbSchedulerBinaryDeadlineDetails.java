@@ -107,7 +107,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
                                                        @Nonnull DeadlineMessage message,
                                                        @Nonnull Serializer serializer) {
         SerializedObject<byte[]> serializedDescriptor = serializer.serialize(descriptor, byte[].class);
-        SerializedObject<byte[]> serializedPayload = serializer.serialize(message.getPayload(), byte[].class);
+        SerializedObject<byte[]> serializedPayload = serializer.serialize(message.payload(), byte[].class);
         SerializedObject<byte[]> serializedMetaData = serializer.serialize(message.getMetaData(), byte[].class);
 
         return new DbSchedulerBinaryDeadlineDetails(deadlineName,

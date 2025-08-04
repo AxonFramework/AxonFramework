@@ -69,7 +69,7 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
                             .first()
                             .asCompletableFuture()
                             .thenApply(MessageStream.Entry::message)
-                            .thenApply(CommandResultMessage::getPayload)
+                            .thenApply(CommandResultMessage::payload)
                             .join();
         } catch (Exception e) {
             if (e instanceof CompletionException && e.getCause() instanceof RuntimeException) {
@@ -86,7 +86,7 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
                             .first()
                             .asCompletableFuture()
                             .thenApply(MessageStream.Entry::message)
-                            .thenApply(CommandResultMessage::getPayload)
+                            .thenApply(CommandResultMessage::payload)
                             .join();
         } catch (Exception e) {
             if (e instanceof CompletionException && e.getCause() instanceof RuntimeException) {

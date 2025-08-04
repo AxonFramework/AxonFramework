@@ -30,7 +30,7 @@ import java.util.function.Function;
 /**
  * Generic implementation of the {@link CommandResultMessage} interface.
  *
- * @param <R> The type of {@link #getPayload() result} contained in this {@link CommandResultMessage}.
+ * @param <R> The type of {@link #payload() result} contained in this {@link CommandResultMessage}.
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 4.0.0
@@ -100,8 +100,8 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
-     *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
+     * @param delegate The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
+     *                 {@link Message#identifier() identifier} and {@link Message#getMetaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
     public GenericCommandResultMessage(@Nonnull Message<R> delegate) {
@@ -115,8 +115,8 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
-     *                  {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     * @param delegate  The {@link Message} containing {@link Message#payload() payload},
+     *                  {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                  {@link Message#getMetaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link CommandResultMessage}.
@@ -142,9 +142,9 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     public <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Function<R, T> conversion) {
         Throwable exception = optionalExceptionResult().orElse(null);
         Message<R> delegate = getDelegate();
-        Message<T> transformed = new GenericMessage<>(delegate.getIdentifier(),
+        Message<T> transformed = new GenericMessage<>(delegate.identifier(),
                                                       delegate.type(),
-                                                      conversion.apply(delegate.getPayload()),
+                                                      conversion.apply(delegate.payload()),
                                                       delegate.getMetaData());
         return new GenericCommandResultMessage<>(transformed, exception);
     }

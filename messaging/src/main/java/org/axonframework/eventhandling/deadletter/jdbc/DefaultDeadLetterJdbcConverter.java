@@ -51,7 +51,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * This converter expects a {@link DeadLetterSchema} to define the column names / labels used to retrieve the fields
  * from the {@link ResultSet}. Furthermore, it uses the configurable {@code genericSerializer} to deserialize
  * {@link TrackingToken TrackingTokens} for {@link TrackedEventMessage} instances. Lastly, this factory uses the
- * {@code eventSerializer} to deserialize the {@link EventMessage#getPayload() event payload},
+ * {@code eventSerializer} to deserialize the {@link EventMessage#payload() event payload},
  * {@link EventMessage#getMetaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} for the
  * {@code JdbcDeadLetter} to return.
  *
@@ -123,9 +123,9 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
             eventMessage = new GenericDomainEventMessage<>(resultSet.getString(schema.aggregateTypeColumn()),
                                                            resultSet.getString(schema.aggregateIdentifierColumn()),
                                                            resultSet.getLong(schema.sequenceNumberColumn()),
-                                                           serializedMessage.getIdentifier(),
+                                                           serializedMessage.identifier(),
                                                            MessageType.fromString(resultSet.getString(schema.typeColumn())),
-                                                           serializedMessage.getPayload(),
+                                                           serializedMessage.payload(),
                                                            serializedMessage.getMetaData(),
                                                            timestampSupplier.get());
         } else {
@@ -240,11 +240,11 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
         }
 
         /**
-         * Sets the {@link Serializer} to deserialize {@link EventMessage#getPayload() event payloads},
+         * Sets the {@link Serializer} to deserialize {@link EventMessage#payload() event payloads},
          * {@link EventMessage#getMetaData() MetaData} instances, and {@link DeadLetter#diagnostics() diagnostics}
          * with.
          *
-         * @param eventSerializer The serializer used to deserialize {@link EventMessage#getPayload() event payloads},
+         * @param eventSerializer The serializer used to deserialize {@link EventMessage#payload() event payloads},
          *                        {@link EventMessage#getMetaData() MetaData} instances, and
          *                        {@link DeadLetter#diagnostics() diagnostics} with.
          * @return The current Builder, for fluent interfacing.

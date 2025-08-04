@@ -128,7 +128,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
                                       if (logger.isDebugEnabled()) {
                                           logger.debug("Appended event [{}] with position [{}] and timestamp [{}].",
-                                                       event.event().getIdentifier(),
+                                                       event.event().identifier(),
                                                        next,
                                                        event.event().getTimestamp());
                                       }

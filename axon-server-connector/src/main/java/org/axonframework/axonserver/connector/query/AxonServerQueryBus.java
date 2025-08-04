@@ -392,7 +392,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     new MultipleInstancesResponseType<>(expectedResponseType);
             ConvertingResponseMessage<List<R>> convertingMessage =
                     new ConvertingResponseMessage<>(multiResponseType, responseMessage);
-            return Flux.fromStream(convertingMessage.getPayload()
+            return Flux.fromStream(convertingMessage.payload()
                                                     .stream()
                                                     .map(payload -> singleMessage(responseMessage,
                                                                                   payload,
@@ -403,7 +403,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private <R> QueryResponseMessage<R> singleMessage(QueryResponseMessage<?> original,
                                                       R newPayload,
                                                       Class<R> expectedPayloadType) {
-        GenericMessage<R> delegate = new GenericMessage<>(original.getIdentifier(),
+        GenericMessage<R> delegate = new GenericMessage<>(original.identifier(),
                                                           original.type(),
                                                           newPayload,
                                                           original.getMetaData(),
@@ -479,7 +479,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             SubscriptionQueryMessage<Q, I, U> interceptedQuery = dispatchInterceptors.intercept(
                     spanFactory.propagateContext(query)
             );
-            String subscriptionId = interceptedQuery.getIdentifier();
+            String subscriptionId = interceptedQuery.identifier();
             String targetContext = targetContextResolver.resolveContext(interceptedQuery);
 
             logger.debug("Subscription Query requested with subscription Id [{}]", subscriptionId);

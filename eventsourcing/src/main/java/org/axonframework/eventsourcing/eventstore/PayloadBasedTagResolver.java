@@ -96,9 +96,9 @@ public class PayloadBasedTagResolver<P> implements TagResolver {
     @Override
     public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
         //noinspection unchecked - suppressing cast warning
-        return payloadType.isAssignableFrom(event.getPayload().getClass())
+        return payloadType.isAssignableFrom(event.payload().getClass())
                 ? resolvers.stream()
-                           .map(resolver -> resolver.apply((P) event.getPayload()))
+                           .map(resolver -> resolver.apply((P) event.payload()))
                            .collect(Collectors.toSet())
                 : Set.of();
     }

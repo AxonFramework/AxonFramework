@@ -410,7 +410,7 @@ class QueryProcessingTaskIntegrationTest {
         assertEquals(1, responseHandler.sent().size());
         String payload = querySerializer.deserializeResponse(responseHandler.sent().getFirst(),
                                                              instanceOf(String.class))
-                                        .getPayload();
+                                        .payload();
         assertEquals("value", payload);
         assertTrue(responseHandler.completed());
     }
@@ -441,7 +441,7 @@ class QueryProcessingTaskIntegrationTest {
         assertTrue(responseHandler.completed());
         String firstPayload =
                 querySerializer.deserializeResponse(responseHandler.sent().getFirst(), instanceOf(String.class))
-                               .getPayload();
+                               .payload();
         assertTrue(firstPayload.startsWith("flux-"));
     }
 
@@ -762,13 +762,13 @@ class QueryProcessingTaskIntegrationTest {
         for (int i = 0; i < responses.size(); i++) {
             QueryResponseMessage<String> responseMessage =
                     querySerializer.deserializeResponse(responses.get(i), instanceOf(String.class));
-            assertEquals(i, Integer.parseInt(responseMessage.getPayload()));
+            assertEquals(i, Integer.parseInt(responseMessage.payload()));
         }
     }
 
     private void assertOrder(QueryResponse response) {
         List<String> responses = querySerializer.deserializeResponse(response, multipleInstancesOf(String.class))
-                                                .getPayload();
+                                                .payload();
         for (int i = 0; i < responses.size(); i++) {
             assertEquals(i, Integer.parseInt(responses.get(i)));
         }

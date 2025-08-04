@@ -225,7 +225,7 @@ public class SimpleQueryBus implements QueryBus {
                         return result;
                     }
                 } else {
-                    result = resultMessage.getPayload();
+                    result = resultMessage.payload();
                     invocationSuccess = true;
                 }
             }
@@ -255,7 +255,7 @@ public class SimpleQueryBus implements QueryBus {
                                .doOnEach(new ErrorIfComplete(lastError, interceptedQuery))
                                .next()
                                .doOnEach(new SuccessReporter())
-                               .flatMapMany(Message::getPayload)
+                               .flatMapMany(Message::payload)
                        ).contextWrite(new MonitorCallbackContextWriter(messageMonitor, query))
                        .doOnTerminate(span::end);
         }
@@ -453,8 +453,8 @@ public class SimpleQueryBus implements QueryBus {
             errorHandler.onError(resultMessage.exceptionResult(), interceptedQuery, handler);
         } else {
             try {
-                response = resultMessage.getPayload().get(leftTimeout,
-                                                          TimeUnit.MILLISECONDS);
+                response = resultMessage.payload().get(leftTimeout,
+                                                       TimeUnit.MILLISECONDS);
                 monitorCallback.reportSuccess();
             } catch (Exception e) {
                 span.recordException(e);
@@ -565,15 +565,15 @@ public class SimpleQueryBus implements QueryBus {
                                                          declaredType);
             }
             return new GenericQueryResponseMessage<>(
-                    messageTypeResolver.resolveOrThrow(resultMessage.getPayload()),
-                    resultMessage.getPayload(),
+                    messageTypeResolver.resolveOrThrow(resultMessage.payload()),
+                    resultMessage.payload(),
                     resultMessage.getMetaData()
             );
         } else if (result instanceof Message) {
             //noinspection unchecked
             Message<R> message = (Message<R>) result;
-            return new GenericQueryResponseMessage<>(messageTypeResolver.resolveOrThrow(message.getPayload()),
-                                                     message.getPayload(),
+            return new GenericQueryResponseMessage<>(messageTypeResolver.resolveOrThrow(message.payload()),
+                                                     message.payload(),
                                                      message.getMetaData());
         } else {
             MessageType type = messageTypeResolver.resolveOrThrow(ObjectUtils.nullSafeTypeOf(result));
@@ -615,14 +615,14 @@ public class SimpleQueryBus implements QueryBus {
         } else if (result instanceof ResultMessage) {
             ResultMessage<R> resultMessage = (ResultMessage<R>) result;
             return new GenericQueryResponseMessage<>(
-                    messageTypeResolver.resolveOrThrow(resultMessage.getPayload()),
-                    resultMessage.getPayload(),
+                    messageTypeResolver.resolveOrThrow(resultMessage.payload()),
+                    resultMessage.payload(),
                     resultMessage.getMetaData()
             );
         } else if (result instanceof Message) {
             Message<R> message = (Message<R>) result;
-            return new GenericQueryResponseMessage<>(messageTypeResolver.resolveOrThrow(message.getPayload()),
-                                                     message.getPayload(),
+            return new GenericQueryResponseMessage<>(messageTypeResolver.resolveOrThrow(message.payload()),
+                                                     message.payload(),
                                                      message.getMetaData());
         } else {
             return new GenericQueryResponseMessage<>(messageTypeResolver.resolveOrThrow(result), (R) result);

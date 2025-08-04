@@ -25,13 +25,13 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * A {@link Message} wrapping an event, which is represented by its {@link #getPayload() payload}.
+ * A {@link Message} wrapping an event, which is represented by its {@link #payload() payload}.
  * <p>
  * An event is a representation of an occurrence of an event (i.e. anything that happened any might be of importance to
  * any other component) in the application. It contains the data relevant for components that need to act based on that
  * event.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link EventMessage}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link EventMessage}.
  * @author Allard Buijze
  * @see DomainEventMessage
  * @since 2.0.0
@@ -42,7 +42,7 @@ public interface EventMessage<P> extends Message<P> {
      * Returns the identifier of this {@link EventMessage event}.
      * <p>
      * The identifier is used to define the uniqueness of an event. Two events may contain similar (or equal)
-     * {@link #getPayload() payloads} and {@link #getTimestamp() timestamp}, if the event identifiers are different,
+     * {@link #payload() payloads} and {@link #getTimestamp() timestamp}, if the event identifiers are different,
      * they both represent a different occurrence of an Event.
      * <p>
      * If two messages have the same identifier, they both represent the same unique occurrence of an event, even though
@@ -56,7 +56,7 @@ public interface EventMessage<P> extends Message<P> {
      * @return The identifier of this {@link EventMessage event}.
      */
     @Override
-    String getIdentifier();
+    String identifier();
 
     /**
      * Returns the timestamp of this {@link EventMessage event}.
@@ -82,7 +82,7 @@ public interface EventMessage<P> extends Message<P> {
      * @return a copy of this message with the payload converted
      */
     default <C> EventMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
-        P payload = getPayload();
+        P payload = payload();
         if (Objects.equals(payload, conversion.apply(payload))) {
             //noinspection unchecked
             return (EventMessage<C>) this;

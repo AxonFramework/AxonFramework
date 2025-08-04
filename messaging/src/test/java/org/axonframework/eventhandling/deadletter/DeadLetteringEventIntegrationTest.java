@@ -173,7 +173,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         DeadLetteringEventHandlerInvoker.Builder invokerBuilder = DeadLetteringEventHandlerInvoker
                 .builder()
                 .eventHandlers(eventHandlingComponent)
-                .sequencingPolicy(event -> Optional.of(((DeadLetterableEvent) event.getPayload()).getAggregateIdentifier()))
+                .sequencingPolicy(event -> Optional.of(((DeadLetterableEvent) event.payload()).getAggregateIdentifier()))
                 .enqueuePolicy(enqueuePolicy)
                 .queue(deadLetterQueue)
                 .transactionManager(transactionManager);
@@ -265,7 +265,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         Iterator<DeadLetter<? extends EventMessage<?>>> sequence = deadLetterQueue.deadLetterSequence("failure")
                                                                                   .iterator();
         assertTrue(sequence.hasNext());
-        assertEquals(failedEvent.getPayload(), sequence.next().message().getPayload());
+        assertEquals(failedEvent.payload(), sequence.next().message().payload());
         assertFalse(sequence.hasNext());
     }
 
@@ -305,11 +305,11 @@ public abstract class DeadLetteringEventIntegrationTest {
             Iterator<DeadLetter<? extends EventMessage<?>>> sequence = deadLetterQueue.deadLetterSequence(aggregateId)
                                                                                       .iterator();
             assertTrue(sequence.hasNext());
-            assertEquals(firstDeadLetter, sequence.next().message().getPayload());
+            assertEquals(firstDeadLetter, sequence.next().message().payload());
             assertTrue(sequence.hasNext());
-            assertEquals(secondDeadLetter, sequence.next().message().getPayload());
+            assertEquals(secondDeadLetter, sequence.next().message().payload());
             assertTrue(sequence.hasNext());
-            assertEquals(thirdDeadLetter, sequence.next().message().getPayload());
+            assertEquals(thirdDeadLetter, sequence.next().message().payload());
             assertFalse(sequence.hasNext());
         });
     }

@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
@@ -30,9 +32,15 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-class GenericCommandMessageTest {
+class GenericCommandMessageTest extends MessageTestSuite {
 
     private static final MessageType TEST_TYPE = new MessageType("command");
+
+    @Override
+    protected <P, M extends Message<P>> M buildMessage(P payload) {
+        //noinspection unchecked
+        return (M) new GenericCommandMessage<>(new MessageType(payload.getClass()), payload);
+    }
 
     @Test
     void constructor() {
@@ -45,20 +53,20 @@ class GenericCommandMessageTest {
 
         assertSame(MetaData.emptyInstance(), message1.getMetaData());
         assertEquals(TEST_TYPE, message1.type());
-        assertEquals(Object.class, message1.getPayload().getClass());
+        assertEquals(Object.class, message1.payload().getClass());
 
         assertEquals(TEST_TYPE, message3.type());
         assertSame(testMetaData, message3.getMetaData());
-        assertEquals(Object.class, message3.getPayload().getClass());
+        assertEquals(Object.class, message3.payload().getClass());
 
         assertEquals(TEST_TYPE, message2.type());
         assertNotSame(testMetaDataMap, message2.getMetaData());
         assertEquals(testMetaDataMap, message2.getMetaData());
-        assertEquals(Object.class, message2.getPayload().getClass());
+        assertEquals(Object.class, message2.payload().getClass());
 
-        assertNotEquals(message1.getIdentifier(), message3.getIdentifier());
-        assertNotEquals(message1.getIdentifier(), message2.getIdentifier());
-        assertNotEquals(message3.getIdentifier(), message2.getIdentifier());
+        assertNotEquals(message1.identifier(), message3.identifier());
+        assertNotEquals(message1.identifier(), message2.identifier());
+        assertNotEquals(message3.identifier(), message2.identifier());
     }
 
     @Test

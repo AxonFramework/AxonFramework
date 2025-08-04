@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.query.GrpcBackedQueryMessage;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MessageType;
@@ -25,9 +26,11 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -35,7 +38,7 @@ import java.util.Map;
  * {@link SubscriptionQueryMessage}.
  *
  * @param <P> A generic specifying the type of the {@link SubscriptionQueryMessage SubscriptionQueryMessage's}
- *            {@link #getPayload() payload}.
+ *            {@link #payload() payload}.
  * @param <I> A generic specifying the type of the {@link #getResponseType() initial result} of the
  *            {@link SubscriptionQueryResult}.
  * @param <U> A generic specifying the type of the {@link #getUpdateResponseType() subsequent updates} of the
@@ -77,7 +80,7 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
-    public String getIdentifier() {
+    public String identifier() {
         return subscriptionQuery.getSubscriptionIdentifier();
     }
 
@@ -99,8 +102,14 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
-    public P getPayload() {
-        return grpcBackedQueryMessage.getPayload();
+    public P payload() {
+        return grpcBackedQueryMessage.payload();
+    }
+
+    @Override
+    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+        // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
+        return null;
     }
 
     @Override

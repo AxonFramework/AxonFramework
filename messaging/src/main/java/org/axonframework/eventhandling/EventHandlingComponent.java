@@ -64,6 +64,6 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      */
     @Nonnull
     default Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
-        return event.getIdentifier();
+        return event.identifier();
     }
 }

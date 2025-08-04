@@ -110,9 +110,9 @@ public class AxonServerConnector implements Connector {
                        .build();
             }
         }
-        Object payload = command.getPayload();
+        Object payload = command.payload();
         return builder
-                .setMessageIdentifier(command.getIdentifier())
+                .setMessageIdentifier(command.identifier())
                 .setName(command.type().name())
                 .putAllMetaData(convertMap(command.getMetaData(), this::convertToTextMetaDataValue))
                 .setPayload(SerializedObject.newBuilder()
@@ -187,7 +187,7 @@ public class AxonServerConnector implements Connector {
         CommandResponse.Builder responseBuilder =
                 CommandResponse.newBuilder()
                                .setMessageIdentifier(
-                                       getOrDefault(result.getIdentifier(), UUID.randomUUID().toString())
+                                       getOrDefault(result.identifier(), UUID.randomUUID().toString())
                                )
                                .putAllMetaData(convertMap(result.getMetaData(),
                                                           this::convertToTextMetaDataValue))
@@ -207,9 +207,9 @@ public class AxonServerConnector implements Connector {
                 logger.info(
                         "To share exceptional information with the recipient it is recommended to wrap the exception in a CommandExecutionException with provided details.");
             }
-        } else if (result.getPayload() != null) {
+        } else if (result.payload() != null) {
             responseBuilder.setPayload(SerializedObject.newBuilder()
-                                                       .setData(ByteString.copyFrom((byte[]) result.getPayload())));
+                                                       .setData(ByteString.copyFrom((byte[]) result.payload())));
         }
 
         return responseBuilder.build();

@@ -543,7 +543,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      */
     protected void applyMessageOrPayload(Object payloadOrMessage) {
         if (payloadOrMessage instanceof Message<?> message) {
-            apply(message.getPayload(), message.getMetaData());
+            apply(message.payload(), message.getMetaData());
         } else if (payloadOrMessage != null) {
             apply(payloadOrMessage, MetaData.emptyInstance());
         }
@@ -570,12 +570,12 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
-                        getIdentifier(), type(), getPayload(), getMetaData(), getTimestamp()
+                        identifier(), type(), payload(), getMetaData(), getTimestamp()
                 );
             } else {
                 return new LazyIdentifierDomainEventMessage<>(
                         getType(), getSequenceNumber(),
-                        type(), getPayload(), MetaData.from(newMetaData)
+                        type(), payload(), MetaData.from(newMetaData)
                 );
             }
         }
@@ -586,12 +586,12 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
-                        getIdentifier(), type(), getPayload(), getMetaData(), getTimestamp()
+                        identifier(), type(), payload(), getMetaData(), getTimestamp()
                 ).andMetaData(additionalMetaData);
             } else {
                 return new LazyIdentifierDomainEventMessage<>(
                         getType(), getSequenceNumber(),
-                        type(), getPayload(), getMetaData().mergedWith(additionalMetaData)
+                        type(), payload(), getMetaData().mergedWith(additionalMetaData)
                 );
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,10 +120,10 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     protected void assertLetter(DeadLetter<? extends EventMessage<?>> expected,
                                 DeadLetter<? extends EventMessage<?>> actual) {
 
-        assertEquals(expected.message().getPayload(), actual.message().getPayload());
+        assertEquals(expected.message().payload(), actual.message().payload());
         assertEquals(expected.message().getPayloadType(), actual.message().getPayloadType());
         assertEquals(expected.message().getMetaData(), actual.message().getMetaData());
-        assertEquals(expected.message().getIdentifier(), actual.message().getIdentifier());
+        assertEquals(expected.message().identifier(), actual.message().identifier());
         assertEquals(expected.cause(), actual.cause());
         assertEquals(expected.enqueuedAt(), actual.enqueuedAt());
         assertEquals(expected.lastTouched(), actual.lastTouched());

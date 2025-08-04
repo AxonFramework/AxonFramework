@@ -58,7 +58,7 @@ class SerializedMessageTest {
 
         assertEquals(Object.class, testSubject.getPayloadType());
         assertFalse(testSubject.isPayloadDeserialized());
-        assertEquals(Object.class, testSubject.getPayload().getClass());
+        assertEquals(Object.class, testSubject.payload().getClass());
         assertTrue(testSubject.isPayloadDeserialized());
         assertFalse(testSubject.isMetaDataDeserialized());
         assertSame(MetaData.emptyInstance(), testSubject.getMetaData());
@@ -136,7 +136,7 @@ class SerializedMessageTest {
         SerializedMessage<Object> testSubject =
                 new SerializedMessage<>(eventId, serializedPayload, serializedMetaData, serializer);
 
-        SerializationException result = assertThrows(SerializationException.class, testSubject::getPayload);
+        SerializationException result = assertThrows(SerializationException.class, testSubject::payload);
         assertEquals("Error while deserializing payload of message " + eventId, result.getMessage());
         assertSame(serializationException, result.getCause());
     }

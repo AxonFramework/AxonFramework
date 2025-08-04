@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 public class InMemoryStreamableEventSource implements StreamableMessageSource<TrackedEventMessage<?>> {
 
     /**
-     * An {@link EventMessage#getPayload()} representing a failed event.
+     * An {@link EventMessage#payload()} representing a failed event.
      */
     private static final String FAIL_PAYLOAD = "FAIL";
     /**
@@ -104,7 +104,7 @@ public class InMemoryStreamableEventSource implements StreamableMessageSource<Tr
                                            .position()
                                            .orElseThrow(() -> new UnsupportedOperationException("Not supported"));
 
-                if (next.getPayload().equals(FAIL_PAYLOAD)) {
+                if (next.payload().equals(FAIL_PAYLOAD)) {
                     throw new IllegalStateException("Cannot retrieve event at position [" + lastToken + "].");
                 }
 

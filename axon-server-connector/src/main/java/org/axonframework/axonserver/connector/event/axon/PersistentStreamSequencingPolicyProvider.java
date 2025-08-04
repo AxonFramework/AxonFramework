@@ -104,7 +104,7 @@ public class PersistentStreamSequencingPolicyProvider
             if (event instanceof DomainEventMessage) {
                 return ((DomainEventMessage<?>) event).getAggregateIdentifier();
             }
-            return event.getIdentifier();
+            return event.identifier();
         }
 
         if (META_DATA_SEQUENCING_POLICY.equals(sequencingPolicy)) {
@@ -120,7 +120,7 @@ public class PersistentStreamSequencingPolicyProvider
         }
 
         if (FULL_CONCURRENCY_POLICY.equals(sequencingPolicy)) {
-            return event.getIdentifier();
+            return event.identifier();
         }
 
         if (PROPERTY_SEQUENCING_POLICY.equals(sequencingPolicy)) {

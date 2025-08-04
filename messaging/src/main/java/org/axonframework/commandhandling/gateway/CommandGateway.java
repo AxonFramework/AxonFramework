@@ -131,7 +131,7 @@ public interface CommandGateway {
     default Object sendAndWait(@Nonnull Object command) {
         try {
             return send(command, null).getResultMessage()
-                                      .thenApply(Message::getPayload)
+                                      .thenApply(Message::payload)
                                       .get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

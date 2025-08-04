@@ -30,7 +30,7 @@ import java.util.Map;
  * <p>
  * Handlers should only answer a query if they can respond with the appropriate response type and update type.
  *
- * @param <P> The type of {@link #getPayload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
+ * @param <P> The type of {@link #payload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
  * @param <I> The type of {@link #getResponseType() initial response} expected from this
  *            {@link SubscriptionQueryMessage}.
  * @param <U> The type of {@link #getUpdateResponseType() incremental updates} expected from this
