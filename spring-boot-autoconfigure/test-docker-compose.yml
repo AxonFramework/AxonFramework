@@ -1,6 +1,6 @@
 services:
   axonserver:
-    image: "axoniq/axonserver"
+    image: "docker.axoniq.io/axoniq/axonserver"
     hostname: axonserver
     ports:
       - 8024
