@@ -150,14 +150,14 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
      * <strong>Important:</strong> This method does not respect parent configurations and will fully override any
      * shared defaults from {@link SubscribingEventProcessorsModule} or
      * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}. Use
-     * {@link #customize(ComponentBuilder)} instead to apply processor-specific customizations while preserving shared
-     * defaults.
+     * {@link #defaultCustomized(ComponentBuilder)} instead to apply processor-specific customizations while preserving
+     * shared defaults.
      *
      * @param configurationBuilder A builder that creates the complete processor configuration.
      * @return This module instance for method chaining.
      */
     @Override
-    public SubscribingEventProcessorModule configure(
+    public SubscribingEventProcessorModule overriddenConfiguration(
             @Nonnull ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder
     ) {
         this.configurationBuilder = configurationBuilder;
@@ -186,15 +186,21 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
      * @return This module instance for method chaining.
      */
     @Override
-    public SubscribingEventProcessorModule customize(
+    public SubscribingEventProcessorModule defaultCustomized(
             @Nonnull ComponentBuilder<UnaryOperator<SubscribingEventProcessorConfiguration>> customizationBuilder
     ) {
-        configure(
+        overriddenConfiguration(
                 cfg -> sharedCustomizationOrNoOp(cfg).apply(
                         cfg,
                         customizationBuilder.build(cfg).apply(defaultEventProcessorsConfiguration(cfg))
                 )
         );
+        return this;
+    }
+
+    @Override
+    public SubscribingEventProcessorModule defaultConfiguration() {
+        defaultCustomized(cfg -> UnaryOperator.identity());
         return this;
     }
 

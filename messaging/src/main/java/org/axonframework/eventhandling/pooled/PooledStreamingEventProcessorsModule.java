@@ -277,7 +277,7 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
         return processor(
                 EventProcessorModule.pooledStreaming(name)
                                     .eventHandlingComponents(eventHandlingComponentsBuilder)
-                                    .customize(config -> customization -> customize.apply(config, customization))
+                                    .defaultCustomized(config -> customization -> customize.apply(config, customization))
         );
     }
 
