@@ -23,6 +23,7 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
@@ -37,11 +38,11 @@ import org.axonframework.eventhandling.configuration.EventProcessorCustomization
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.lifecycle.Phase;
 
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 /**
@@ -66,7 +67,7 @@ import java.util.stream.Collectors;
  * Example configuration:
  * <pre>{@code
  * EventProcessorModule.subscribing("notification-processor")
- *     .customize(config -> processorConfig -> processorConfig
+ *     .defaultCustomized((config, processorConfig) -> processorConfig
  *         .eventHandlingComponents(List.of(notificationHandler))
  *         .messageSource(customMessageSource)
  *         .errorHandler(customErrorHandler)
@@ -77,7 +78,7 @@ import java.util.stream.Collectors;
  * @since 5.0.0
  */
 public class SubscribingEventProcessorModule extends BaseModule<SubscribingEventProcessorModule>
-        implements EventProcessorModule,
+        implements EventProcessorModule, ModuleBuilder<SubscribingEventProcessorModule>,
         EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration>,
         EventProcessorModule.CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> {
 
@@ -157,14 +158,14 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
      * <p>
      * <strong>Important:</strong> This method does not respect parent configurations and will fully override any
      * shared defaults from {@link SubscribingEventProcessorsConfigurer} or {@link EventProcessingConfigurer}. Use
-     * {@link #defaultCustomized(ComponentBuilder)} instead to apply processor-specific customizations while preserving
+     * {@link #customize(BiFunction)} instead to apply processor-specific customizations while preserving
      * shared defaults.
      *
      * @param configurationBuilder A builder that creates the complete processor configuration.
      * @return This module instance for method chaining.
      */
     @Override
-    public SubscribingEventProcessorModule overriddenConfiguration(
+    public SubscribingEventProcessorModule configure(
             @Nonnull ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder
     ) {
         this.configurationBuilder = configurationBuilder;
@@ -175,31 +176,34 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
      * Customizes the processor configuration by applying modifications to the default configuration.
      * <p>
      * This method allows you to provide processor-specific customizations that will be applied on top of any shared
-     * defaults from parent modules. The customization builder receives the Axon {@link Configuration} and should return
-     * a function that modifies the processor configuration.
+     * defaults from parent modules. The customization function receives the Axon {@link Configuration} and the default
+     * processor configuration, returning the customized processor configuration.
      * <p>
      * The customization is applied after shared defaults from {@link SubscribingEventProcessorsConfigurer} and
      * {@link EventProcessingConfigurer}.
      *
-     * @param customizationBuilder A builder that creates a customization function for the processor configuration.
+     * @param customizationFunction A function that receives the configuration and default processor config, 
+     *                            returning the customized processor configuration.
      * @return This module instance for method chaining.
      */
     @Override
-    public SubscribingEventProcessorModule defaultCustomized(
-            @Nonnull ComponentBuilder<UnaryOperator<SubscribingEventProcessorConfiguration>> customizationBuilder
+    public SubscribingEventProcessorModule customize(
+            @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customizationFunction
     ) {
-        overriddenConfiguration(
+        configure(
                 cfg -> sharedCustomizationOrNoOp(cfg).apply(
                         cfg,
-                        customizationBuilder.build(cfg).apply(defaultEventProcessorsConfiguration(cfg))
+                        customizationFunction.apply(cfg, defaultEventProcessorsConfiguration(cfg))
                 )
         );
         return this;
     }
 
     @Override
-    public SubscribingEventProcessorModule defaultConfiguration() {
-        defaultCustomized(cfg -> UnaryOperator.identity());
+    public SubscribingEventProcessorModule build() {
+        if (configurationBuilder == null) {
+            customize((cfg, config) -> config);
+        }
         return this;
     }
 
@@ -224,11 +228,6 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     ) {
         return cfg.getOptionalComponent(EventProcessorCustomization.class)
                   .orElseGet(EventProcessorCustomization::noOp);
-    }
-
-    @Override
-    public EventProcessorModule build() {
-        return this;
     }
 
     @Override

@@ -24,6 +24,7 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
@@ -42,7 +43,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 /**
@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
  * Example configuration:
  * <pre>{@code
  * EventProcessorModule.pooledStreaming("order-processor")
- *     .customize(config -> processorConfig -> processorConfig
+ *     .defaultCustomized((config, processorConfig) -> processorConfig
  *         .eventHandlingComponents(List.of(orderEventHandler))
  *         .bufferSize(2048)
  *         .initialSegmentCount(8)
@@ -80,7 +80,7 @@ import java.util.stream.Collectors;
  * @since 5.0.0
  */
 public class PooledStreamingEventProcessorModule extends BaseModule<PooledStreamingEventProcessorModule>
-        implements EventProcessorModule,
+        implements EventProcessorModule, ModuleBuilder<PooledStreamingEventProcessorModule>,
         EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>,
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
@@ -184,14 +184,14 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
      * <p>
      * <strong>Important:</strong> This method does not respect parent configurations and will fully override any
      * shared defaults from {@link PooledStreamingEventProcessorsConfigurer} or {@link EventProcessingConfigurer}. Use
-     * {@link #defaultCustomized(ComponentBuilder)} instead to apply processor-specific customizations while preserving
-     * shared defaults.
+     * {@link #customize(BiFunction)} instead to apply processor-specific customizations while preserving shared
+     * defaults.
      *
      * @param configurationBuilder A builder that creates the complete processor configuration.
      * @return This module instance for method chaining.
      */
     @Override
-    public PooledStreamingEventProcessorModule overriddenConfiguration(
+    public PooledStreamingEventProcessorModule configure(
             @Nonnull ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder
     ) {
         this.configurationBuilder = configurationBuilder;
@@ -202,31 +202,26 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
      * Customizes the processor configuration by applying modifications to the default configuration.
      * <p>
      * This method allows you to provide processor-specific customizations that will be applied on top of any shared
-     * defaults from parent modules. The customization builder receives the Axon {@link Configuration} and should return
-     * a function that modifies the processor configuration.
+     * defaults from parent modules. The customization function receives the Axon {@link Configuration} and the default
+     * processor configuration, returning the customized processor configuration.
      * <p>
      * The customization is applied after shared defaults from {@link PooledStreamingEventProcessorsConfigurer} and
      * {@link EventProcessingConfigurer}.
      *
-     * @param customizationBuilder A builder that creates a customization function for the processor configuration.
+     * @param customizationFunction A function that receives the configuration and default processor config, returning
+     *                              the customized processor configuration.
      * @return This module instance for method chaining.
      */
     @Override
-    public PooledStreamingEventProcessorModule defaultCustomized(
-            @Nonnull ComponentBuilder<UnaryOperator<PooledStreamingEventProcessorConfiguration>> customizationBuilder
+    public PooledStreamingEventProcessorModule customize(
+            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> customizationFunction
     ) {
-        overriddenConfiguration(
+        configure(
                 cfg -> sharedCustomizationOrNoOp(cfg).apply(
                         cfg,
-                        customizationBuilder.build(cfg).apply(defaultEventProcessorsConfiguration(cfg))
+                        customizationFunction.apply(cfg, defaultEventProcessorsConfiguration(cfg))
                 )
         );
-        return this;
-    }
-
-    @Override
-    public PooledStreamingEventProcessorModule defaultConfiguration() {
-        defaultCustomized(cfg -> UnaryOperator.identity());
         return this;
     }
 
@@ -253,6 +248,9 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     @Override
     public PooledStreamingEventProcessorModule build() {
+        if (configurationBuilder == null) {
+            customize((cfg, config) -> config);
+        }
         return this;
     }
 
@@ -264,7 +262,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         this.eventHandlingComponentsBuilder = config -> eventHandlingComponentsBuilder
                 .apply(config, componentsConfigurer)
                 .toList();
-        return null;
+        return this;
     }
 
     /**

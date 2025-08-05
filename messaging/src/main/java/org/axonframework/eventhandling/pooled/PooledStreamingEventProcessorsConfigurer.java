@@ -171,7 +171,7 @@ public class PooledStreamingEventProcessorsConfigurer {
         processor(
                 () -> EventProcessorModule.pooledStreaming(name)
                                           .eventHandlingComponents(eventHandlingComponentsBuilder)
-                                          .defaultConfiguration()
+                                          .build()
         );
         return this;
     }
@@ -183,19 +183,6 @@ public class PooledStreamingEventProcessorsConfigurer {
         processor(
                 () -> moduleCustomizer.apply(EventProcessorModule.pooledStreaming(name))
         );
-        return this;
-    }
-
-    /**
-     * Registers a {@link PooledStreamingEventProcessorModule} using a {@link ModuleBuilder}.
-     *
-     * @param module A @link PooledStreamingEventProcessorModule} instance.
-     * @return This module instance for method chaining.
-     */
-    public PooledStreamingEventProcessorsConfigurer processor(
-            PooledStreamingEventProcessorModule module
-    ) {
-        moduleBuilders.add(() -> module);
         return this;
     }
 

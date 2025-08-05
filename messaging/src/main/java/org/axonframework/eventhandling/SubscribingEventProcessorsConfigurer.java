@@ -165,7 +165,7 @@ public class SubscribingEventProcessorsConfigurer {
         processor(
                 () -> EventProcessorModule.subscribing(name)
                                           .eventHandlingComponents(eventHandlingComponentsBuilder)
-                                          .defaultConfiguration()
+                                          .build()
         );
         return this;
     }
@@ -177,19 +177,6 @@ public class SubscribingEventProcessorsConfigurer {
         processor(
                 () -> moduleCustomizer.apply(EventProcessorModule.subscribing(name))
         );
-        return this;
-    }
-
-    /**
-     * Registers a {@link SubscribingEventProcessorModule} using a {@link ModuleBuilder}.
-     *
-     * @param module A {@link SubscribingEventProcessorModule} instance.
-     * @return This module instance for method chaining.
-     */
-    public SubscribingEventProcessorsConfigurer processor(
-            SubscribingEventProcessorModule module
-    ) {
-        moduleBuilders.add(() -> module);
         return this;
     }
 

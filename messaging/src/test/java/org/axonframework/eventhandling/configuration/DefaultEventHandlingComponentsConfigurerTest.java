@@ -45,34 +45,6 @@ class DefaultEventHandlingComponentsConfigurerTest {
     private static final StubProcessingContext STUB_PROCESSING_CONTEXT = new StubProcessingContext();
 
     @Nested
-    class SingleWithCompleteDefinitionTest {
-
-        @Test
-        void shouldCreateSingleComponentFromCompleteDefinition() {
-            //given
-            var handlerInvoked = new AtomicBoolean();
-            DefaultEventHandlingComponentBuilder configurer = new DefaultEventHandlingComponentBuilder();
-            var completeDefinition = configurer.handles(new QualifiedName(String.class), (e, c) -> {
-                handlerInvoked.set(true);
-                return MessageStream.empty();
-            });
-
-            //when
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().single(completeDefinition);
-            var components = componentsConfigurer.toList();
-
-            //then
-            assertThat(components).hasSize(1);
-
-            var component = components.getFirst();
-            EventMessage<String> sampleMessage = EventTestUtils.asEventMessage("Message1");
-            component.handle(sampleMessage, STUB_PROCESSING_CONTEXT);
-
-            assertThat(handlerInvoked).isTrue();
-        }
-    }
-
-    @Nested
     class SingleWithComponentTest {
 
         @Test

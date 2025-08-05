@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.Module;
-import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
@@ -33,7 +32,6 @@ import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModu
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 
 /**
  * Interface for configuring individual {@link org.axonframework.eventhandling.EventProcessor} modules.
@@ -47,7 +45,7 @@ import java.util.function.UnaryOperator;
  * // Create a subscribing event processor
  * EventProcessorModule subscribingModule = EventProcessorModule
  *     .subscribing("notification-processor")
- *     .customize(config -> processorConfig -> processorConfig
+ *     .defaultCustomized((config, processorConfig) -> processorConfig
  *         .eventHandlingComponents(List.of(notificationHandler))
  *         .messageSource(customMessageSource)
  *     );
@@ -55,7 +53,7 @@ import java.util.function.UnaryOperator;
  * // Create a pooled streaming event processor
  * EventProcessorModule streamingModule = EventProcessorModule
  *     .pooledStreaming("order-processor")
- *     .customize(config -> processorConfig -> processorConfig
+ *     .defaultCustomized((config, processorConfig) -> processorConfig
  *         .eventHandlingComponents(List.of(orderHandler))
  *         .bufferSize(2048)
  *         .initialSegmentCount(8)
@@ -65,7 +63,7 @@ import java.util.function.UnaryOperator;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public interface EventProcessorModule extends Module, ModuleBuilder<EventProcessorModule> {
+public interface EventProcessorModule extends Module {
 
     /**
      * Start building a {@link SubscribingEventProcessorModule} with the given processor processorName. The subscribing
@@ -133,8 +131,8 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
      * <p>
      * This interface offers two approaches for configuring event processors:
      * <ul>
-     * <li>{@link #overriddenConfiguration(ComponentBuilder)} - Complete configuration replacement, ignoring parent defaults</li>
-     * <li>{@link #defaultCustomized(ComponentBuilder)} - Incremental customization on top of parent defaults</li>
+     * <li>{@link #configure(ComponentBuilder)} - Complete configuration replacement, ignoring parent defaults</li>
+     * <li>{@link #customize(BiFunction)} - Incremental customization on top of parent defaults</li>
      * </ul>
      * <p>
      * The customization approach is generally preferred as it preserves shared configurations from parent modules
@@ -151,13 +149,13 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
          * Configures the processor with a complete configuration, ignoring any parent module defaults.
          * <p>
          * This method provides direct control over the processor configuration but bypasses shared defaults from parent
-         * modules. Use {@link #defaultCustomized(ComponentBuilder)} instead to preserve shared configurations while
+         * modules. Use {@link #customize(BiFunction)} instead to preserve shared configurations while
          * applying processor-specific customizations.
          *
          * @param configurationBuilder A builder that creates the complete processor configuration.
          * @return The configured processor module.
          */
-        P overriddenConfiguration(@Nonnull ComponentBuilder<C> configurationBuilder);
+        P configure(@Nonnull ComponentBuilder<C> configurationBuilder);
 
         /**
          * Customizes the processor configuration by applying modifications to the default configuration.
@@ -165,12 +163,12 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
          * This method applies processor-specific customizations on top of shared defaults from parent modules,
          * providing the recommended approach for most configuration scenarios.
          *
-         * @param customizationBuilder A builder that creates a customization function for the processor configuration.
+         * @param customizationFunction A function that receives the configuration and default processor config, 
+         *                            returning the customized processor configuration.
          * @return The configured processor module.
          */
-        P defaultCustomized(@Nonnull ComponentBuilder<UnaryOperator<C>> customizationBuilder);
+        P customize(@Nonnull BiFunction<Configuration, C, C> customizationFunction);
 
-
-        P defaultConfiguration();
+        P build();
     }
 }
