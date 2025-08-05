@@ -111,7 +111,7 @@ public interface EntityModel<T> {
      * @param <C>             the type of the child entity
      * @return An EntityModel for the child entity
      */
-    <C> EntityModel<C> modelOf(Class<? extends C> childEntityType);
+    <C> EntityModel<C> modelOf(Class<C> childEntityType);
 
     /**
      * Returns the class this model describes

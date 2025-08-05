@@ -190,7 +190,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
     }
 
     @Override
-    public <T> AnnotatedAggregateModel<T> createModel(Class<? extends T> aggregateType,
+    public <T> AnnotatedAggregateModel<T> createModel(Class<T> aggregateType,
                                                       Set<Class<? extends T>> subtypes) {
         if (!registry.containsKey(aggregateType)) {
             AnnotatedHandlerInspector<T> inspector = AnnotatedHandlerInspector.inspectType(aggregateType,
@@ -522,7 +522,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         @SuppressWarnings("unchecked")
         private AnnotatedAggregateModel<T> runtimeModelOf(T target) {
-            return modelOf((Class<? extends T>) target.getClass());
+            return modelOf((Class<T>) target.getClass());
         }
 
         @Override
@@ -543,7 +543,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         @Override
-        public <C> AnnotatedAggregateModel<C> modelOf(Class<? extends C> childEntityType) {
+        public <C> AnnotatedAggregateModel<C> modelOf(Class<C> childEntityType) {
             // using empty list subtypes because this model is already in the registry, so it doesn't matter
             return AnnotatedAggregateMetaModelFactory.this.createModel(childEntityType, Collections.emptySet());
         }

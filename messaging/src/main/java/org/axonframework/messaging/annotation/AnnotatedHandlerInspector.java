@@ -85,7 +85,7 @@ public class AnnotatedHandlerInspector<T> {
      * @param <T>         the handler's type
      * @return a new inspector instance for the inspected class
      */
-    public static <T> AnnotatedHandlerInspector<T> inspectType(Class<? extends T> handlerType) {
+    public static <T> AnnotatedHandlerInspector<T> inspectType(Class<T> handlerType) {
         return inspectType(handlerType, ClasspathParameterResolverFactory.forClass(handlerType));
     }
 
@@ -98,7 +98,7 @@ public class AnnotatedHandlerInspector<T> {
      * @param <T>                      the handler's type
      * @return a new inspector instance for the inspected class
      */
-    public static <T> AnnotatedHandlerInspector<T> inspectType(Class<? extends T> handlerType,
+    public static <T> AnnotatedHandlerInspector<T> inspectType(Class<T> handlerType,
                                                                ParameterResolverFactory parameterResolverFactory) {
         return inspectType(handlerType,
                            parameterResolverFactory,
@@ -115,7 +115,7 @@ public class AnnotatedHandlerInspector<T> {
      * @param <T>                      the handler's type
      * @return a new inspector instance for the inspected class
      */
-    public static <T> AnnotatedHandlerInspector<T> inspectType(Class<? extends T> handlerType,
+    public static <T> AnnotatedHandlerInspector<T> inspectType(Class<T> handlerType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition) {
         return inspectType(handlerType, parameterResolverFactory, handlerDefinition, emptySet());
@@ -133,7 +133,7 @@ public class AnnotatedHandlerInspector<T> {
      * @param <T>                      the handler's type
      * @return a new inspector instance for the inspected class
      */
-    public static <T> AnnotatedHandlerInspector<T> inspectType(Class<? extends T> handlerType,
+    public static <T> AnnotatedHandlerInspector<T> inspectType(Class<T> handlerType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition,
                                                                Set<Class<? extends T>> declaredSubtypes) {
@@ -145,14 +145,14 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> AnnotatedHandlerInspector<T> createInspector(Class<? extends T> inspectedType,
+    private static <T> AnnotatedHandlerInspector<T> createInspector(Class<T> inspectedType,
                                                                     ParameterResolverFactory parameterResolverFactory,
                                                                     HandlerDefinition handlerDefinition,
                                                                     Map<Class<?>, AnnotatedHandlerInspector<?>> registry,
                                                                     Set<Class<? extends T>> declaredSubtypes) {
         if (!registry.containsKey(inspectedType)) {
             registry.put(inspectedType,
-                         AnnotatedHandlerInspector.initialize((Class<T>) inspectedType,
+                         AnnotatedHandlerInspector.initialize(inspectedType,
                                                               parameterResolverFactory,
                                                               handlerDefinition,
                                                               registry,
@@ -169,7 +169,10 @@ public class AnnotatedHandlerInspector<T> {
                                                                Set<Class<? extends T>> declaredSubtypes) {
         List<AnnotatedHandlerInspector<? super T>> parents = new ArrayList<>();
         for (Class<?> iFace : inspectedType.getInterfaces()) {
-            parents.add(createInspector(iFace,
+            @SuppressWarnings("unchecked")  // Safe cast: all interfaces of T are guaranteed to be supertypes of T
+            Class<? super T> castIF = (Class<? super T>)iFace;
+
+            parents.add(createInspector(castIF,
                                         parameterResolverFactory,
                                         handlerDefinition,
                                         registry,
@@ -275,7 +278,7 @@ public class AnnotatedHandlerInspector<T> {
      * @param <C>        the handler's type
      * @return a new inspector for the given type
      */
-    public <C> AnnotatedHandlerInspector<C> inspect(Class<? extends C> entityType) {
+    public <C> AnnotatedHandlerInspector<C> inspect(Class<C> entityType) {
         return AnnotatedHandlerInspector.createInspector(entityType,
                                                          parameterResolverFactory,
                                                          handlerDefinition,
