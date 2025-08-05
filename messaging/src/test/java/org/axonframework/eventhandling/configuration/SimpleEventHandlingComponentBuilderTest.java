@@ -36,15 +36,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating the {@link SimpleEventHandlingComponentConfigurer} functionality.
+ * Test class validating the {@link DefaultEventHandlingComponentBuilder} functionality.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class SimpleEventHandlingComponentConfigurerTest {
+class SimpleEventHandlingComponentBuilderTest {
 
     private static final StubProcessingContext STUB_PROCESSING_CONTEXT = new StubProcessingContext();
-    private final SimpleEventHandlingComponentConfigurer configurer = new SimpleEventHandlingComponentConfigurer();
+    private final DefaultEventHandlingComponentBuilder configurer = new DefaultEventHandlingComponentBuilder();
 
     @Nested
     class SequencingPolicyTest {
@@ -58,7 +58,7 @@ class SimpleEventHandlingComponentConfigurerTest {
             //when
             var component = configurer.sequencingPolicy(sequencingPolicy)
                                       .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
-                                      .toComponent();
+                                      .build();
 
             //then
             var sampleEvent = EventTestUtils.asEventMessage("sample");
@@ -78,7 +78,7 @@ class SimpleEventHandlingComponentConfigurerTest {
             //when
             var component = configurer.sequenceIdentifier(e -> expectedIdentifier)
                                       .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
-                                      .toComponent();
+                                      .build();
 
             //then
             var sampleEvent = EventTestUtils.asEventMessage("sample");
@@ -103,7 +103,7 @@ class SimpleEventHandlingComponentConfigurerTest {
                                           handler2Invoked.set(true);
                                           return MessageStream.empty();
                                       })
-                                      .toComponent();
+                                      .build();
 
             // when
             EventMessage<String> sampleMessage = EventTestUtils.asEventMessage("Message1");
@@ -124,7 +124,7 @@ class SimpleEventHandlingComponentConfigurerTest {
             SampleDecoration component = (SampleDecoration)
                     configurer.handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
                               .decorated(SampleDecoration::new)
-                              .toComponent();
+                              .build();
 
             //when
             EventMessage<String> sampleMessage = EventTestUtils.asEventMessage("Message1");

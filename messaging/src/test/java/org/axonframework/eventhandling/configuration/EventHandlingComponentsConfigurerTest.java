@@ -51,7 +51,7 @@ class EventHandlingComponentsConfigurerTest {
         void shouldCreateSingleComponentFromCompleteDefinition() {
             //given
             var handlerInvoked = new AtomicBoolean();
-            SimpleEventHandlingComponentConfigurer configurer = new SimpleEventHandlingComponentConfigurer();
+            DefaultEventHandlingComponentBuilder configurer = new DefaultEventHandlingComponentBuilder();
             var completeDefinition = configurer.handles(new QualifiedName(String.class), (e, c) -> {
                 handlerInvoked.set(true);
                 return MessageStream.empty();
@@ -135,13 +135,13 @@ class EventHandlingComponentsConfigurerTest {
             var handler1Invoked = new AtomicBoolean();
             var handler2Invoked = new AtomicBoolean();
 
-            SimpleEventHandlingComponentConfigurer configurer1 = new SimpleEventHandlingComponentConfigurer();
+            DefaultEventHandlingComponentBuilder configurer1 = new DefaultEventHandlingComponentBuilder();
             var definition1 = configurer1.handles(new QualifiedName(String.class), (e, c) -> {
                 handler1Invoked.set(true);
                 return MessageStream.empty();
             });
 
-            SimpleEventHandlingComponentConfigurer configurer2 = new SimpleEventHandlingComponentConfigurer();
+            DefaultEventHandlingComponentBuilder configurer2 = new DefaultEventHandlingComponentBuilder();
             var definition2 = configurer2.handles(new QualifiedName(String.class), (e, c) -> {
                 handler2Invoked.set(true);
                 return MessageStream.empty();

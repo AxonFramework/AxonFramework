@@ -28,10 +28,10 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
-public interface EventHandlingComponentConfigurer {
+public interface EventHandlingComponentBuilder {
 
     public static SequencingPolicyPhase component() {
-        return new SimpleEventHandlingComponentConfigurer();
+        return new DefaultEventHandlingComponentBuilder();
     }
 
     interface SequencingPolicyPhase extends RequiredEventHandlerPhase {
@@ -63,6 +63,6 @@ public interface EventHandlingComponentConfigurer {
 
         Complete decorated(@Nonnull UnaryOperator<EventHandlingComponent> decorator);
 
-        EventHandlingComponent toComponent();
+        EventHandlingComponent build();
     }
 }

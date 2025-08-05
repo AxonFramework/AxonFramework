@@ -39,9 +39,9 @@ public class EventHandlingComponentsConfigurer {
     }
 
     public static EventHandlingComponentsConfigurer single(
-            @Nonnull EventHandlingComponentConfigurer.Complete definition
+            @Nonnull EventHandlingComponentBuilder.Complete definition
     ) {
-        return new EventHandlingComponentsConfigurer(List.of(definition.toComponent()));
+        return new EventHandlingComponentsConfigurer(List.of(definition.build()));
     }
 
     public static EventHandlingComponentsConfigurer single(@Nonnull EventHandlingComponent component) {
@@ -60,12 +60,12 @@ public class EventHandlingComponentsConfigurer {
     }
 
     public static EventHandlingComponentsConfigurer many(
-            @Nonnull EventHandlingComponentConfigurer.Complete requiredDefinition,
-            @Nonnull EventHandlingComponentConfigurer.Complete... additionalDefinitions
+            @Nonnull EventHandlingComponentBuilder.Complete requiredDefinition,
+            @Nonnull EventHandlingComponentBuilder.Complete... additionalDefinitions
     ) {
         var components = Stream.concat(
-                Stream.of(requiredDefinition.toComponent()),
-                Stream.of(additionalDefinitions).map(EventHandlingComponentConfigurer.Complete::toComponent)
+                Stream.of(requiredDefinition.build()),
+                Stream.of(additionalDefinitions).map(EventHandlingComponentBuilder.Complete::build)
         ).filter(Objects::nonNull).toList();
         return new EventHandlingComponentsConfigurer(components);
     }

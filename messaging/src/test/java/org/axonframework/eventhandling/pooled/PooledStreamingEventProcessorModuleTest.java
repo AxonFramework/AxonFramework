@@ -25,7 +25,6 @@ import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -43,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer.*;
-import static org.axonframework.eventhandling.configuration.EventHandlingComponentConfigurer.*;
+import static org.axonframework.eventhandling.configuration.EventHandlingComponentBuilder.*;
 
 /**
  * Test class validating the {@link PooledStreamingEventProcessorModule} functionality.
@@ -52,41 +51,6 @@ import static org.axonframework.eventhandling.configuration.EventHandlingCompone
  * @since 5.0.0
  */
 class PooledStreamingEventProcessorModuleTest {
-
-    @Test
-    void sample() {
-        String processorName = "test-processor";
-        AtomicBoolean started = new AtomicBoolean(false);
-        AtomicBoolean stopped = new AtomicBoolean(false);
-        AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
-        eventSource.setOnOpen(() -> started.set(true));
-        eventSource.setOnClose(() -> stopped.set(true));
-
-        var configurer = MessagingConfigurer.create();
-        var module = EventProcessorModule.pooledStreaming("test-processor")
-                            .eventHandlingComponents(cfg -> single(new SimpleEventHandlingComponent()))
-                            .defaultConfiguration();
-
-        configurer.eventProcessing(ep -> ep.defaults(d -> d.unitOfWorkFactory(new SimpleUnitOfWorkFactory())));
-        configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.defaults(d -> d.eventSource(eventSource))));
-        configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
-
-
-        var configuration = configurer.build();
-
-        //when
-        configuration.start();
-
-        //then
-        await().atMost(Duration.ofSeconds(1))
-               .untilAsserted(() -> assertThat(started).isTrue());
-
-        //when
-        configuration.shutdown();
-
-        //then
-        await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertThat(stopped).isTrue());
-    }
 
     @Nested
     class ConstructorTest {

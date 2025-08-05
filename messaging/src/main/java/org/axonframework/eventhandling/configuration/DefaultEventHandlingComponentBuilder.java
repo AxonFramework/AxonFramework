@@ -27,46 +27,58 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 
-class SimpleEventHandlingComponentConfigurer implements EventHandlingComponentConfigurer.SequencingPolicyPhase,
-        EventHandlingComponentConfigurer.RequiredEventHandlerPhase,
-        EventHandlingComponentConfigurer.AdditionalEventHandlerPhase,
-        EventHandlingComponentConfigurer.Complete {
+public class DefaultEventHandlingComponentBuilder
+        implements EventHandlingComponentBuilder.SequencingPolicyPhase,
+        EventHandlingComponentBuilder.RequiredEventHandlerPhase,
+        EventHandlingComponentBuilder.AdditionalEventHandlerPhase,
+        EventHandlingComponentBuilder.Complete {
 
-    private EventHandlingComponent component = new SimpleEventHandlingComponent();
+    private EventHandlingComponent component;
 
-    public SimpleEventHandlingComponentConfigurer() {
+    public DefaultEventHandlingComponentBuilder(@Nonnull EventHandlingComponent component) {
+        this.component = component;
+    }
+
+    public DefaultEventHandlingComponentBuilder() {
+        this.component = new SimpleEventHandlingComponent();
     }
 
     @Override
-    public EventHandlingComponentConfigurer.RequiredEventHandlerPhase sequencingPolicy(
-            @Nonnull SequencingPolicy sequencingPolicy) {
+    public EventHandlingComponentBuilder.RequiredEventHandlerPhase sequencingPolicy(
+            @Nonnull SequencingPolicy sequencingPolicy
+    ) {
         this.component = new SequenceOverridingEventHandlingComponent(sequencingPolicy, component);
         return this;
     }
 
     @Override
-    public EventHandlingComponentConfigurer.AdditionalEventHandlerPhase handles(@Nonnull QualifiedName name,
-                                                                                @Nonnull EventHandler eventHandler) {
+    public EventHandlingComponentBuilder.AdditionalEventHandlerPhase handles(
+            @Nonnull QualifiedName name,
+            @Nonnull EventHandler eventHandler
+    ) {
         component.subscribe(name, eventHandler);
         return this;
     }
 
     @Override
-    public EventHandlingComponentConfigurer.AdditionalEventHandlerPhase handles(@Nonnull Set<QualifiedName> names,
-                                                                                @Nonnull EventHandler eventHandler) {
+    public EventHandlingComponentBuilder.AdditionalEventHandlerPhase handles(
+            @Nonnull Set<QualifiedName> names,
+            @Nonnull EventHandler eventHandler
+    ) {
         component.subscribe(names, eventHandler);
         return this;
     }
 
     @Override
-    public EventHandlingComponentConfigurer.Complete decorated(
-            @Nonnull UnaryOperator<EventHandlingComponent> decorator) {
+    public EventHandlingComponentBuilder.Complete decorated(
+            @Nonnull UnaryOperator<EventHandlingComponent> decorator
+    ) {
         this.component = decorator.apply(component);
         return this;
     }
 
     @Override
-    public EventHandlingComponent toComponent() {
+    public EventHandlingComponent build() {
         return component;
     }
 }
