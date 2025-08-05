@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
@@ -44,23 +45,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SimpleEventHandlingComponentBuilderTest {
 
     private static final StubProcessingContext STUB_PROCESSING_CONTEXT = new StubProcessingContext();
-    private final DefaultEventHandlingComponentBuilder configurer = new DefaultEventHandlingComponentBuilder();
+    private final EventHandlingComponentBuilder.SequencingPolicyPhase builder = SimpleEventHandlingComponent.builder();
 
     @Nested
     class SequencingPolicyTest {
 
         @Test
         void shouldApplySequencingPolicyAndReturnRequiredEventHandlerPhase() {
-            //given
+            // given
             var expectedIdentifier = "sequenceId";
             SequencingPolicy sequencingPolicy = event -> Optional.of(expectedIdentifier);
 
-            //when
-            var component = configurer.sequencingPolicy(sequencingPolicy)
-                                      .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
-                                      .build();
+            // when
+            var component = builder.sequencingPolicy(sequencingPolicy)
+                                   .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+                                   .build();
 
-            //then
+            // then
             var sampleEvent = EventTestUtils.asEventMessage("sample");
             assertThat(
                     component.sequenceIdentifierFor(sampleEvent, STUB_PROCESSING_CONTEXT)).isSameAs(expectedIdentifier);
@@ -72,15 +73,15 @@ class SimpleEventHandlingComponentBuilderTest {
 
         @Test
         void shouldApplySequencingPolicyAndReturnRequiredEventHandlerPhase() {
-            //given
+            // given
             var expectedIdentifier = "sequenceId";
 
-            //when
-            var component = configurer.sequenceIdentifier(e -> expectedIdentifier)
-                                      .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
-                                      .build();
+            // when
+            var component = builder.sequenceIdentifier(e -> expectedIdentifier)
+                                   .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+                                   .build();
 
-            //then
+            // then
             var sampleEvent = EventTestUtils.asEventMessage("sample");
             assertThat(
                     component.sequenceIdentifierFor(sampleEvent, STUB_PROCESSING_CONTEXT)).isSameAs(expectedIdentifier);
@@ -92,24 +93,24 @@ class SimpleEventHandlingComponentBuilderTest {
 
         @Test
         void shouldRegisterEventHandlers() {
-            //given
+            // given
             var handler1Invoked = new AtomicBoolean();
             var handler2Invoked = new AtomicBoolean();
-            var component = configurer.handles(new QualifiedName(String.class), (e, c) -> {
+            var component = builder.handles(new QualifiedName(String.class), (e, c) -> {
                                           handler1Invoked.set(true);
                                           return MessageStream.empty();
                                       })
-                                      .handles(new QualifiedName(String.class), (e, c) -> {
+                                   .handles(new QualifiedName(String.class), (e, c) -> {
                                           handler2Invoked.set(true);
                                           return MessageStream.empty();
                                       })
-                                      .build();
+                                   .build();
 
-            // when
+            //  when
             EventMessage<String> sampleMessage = EventTestUtils.asEventMessage("Message1");
             component.handle(sampleMessage, STUB_PROCESSING_CONTEXT);
 
-            //then
+            // then
             assertThat(handler1Invoked).isTrue();
             assertThat(handler2Invoked).isTrue();
         }
@@ -120,17 +121,17 @@ class SimpleEventHandlingComponentBuilderTest {
 
         @Test
         void shouldDecorateEventHandlingComponent() {
-            //given
+            // given
             SampleDecoration component = (SampleDecoration)
-                    configurer.handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
-                              .decorated(SampleDecoration::new)
-                              .build();
+                    builder.handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+                           .decorated(SampleDecoration::new)
+                           .build();
 
-            //when
+            // when
             EventMessage<String> sampleMessage = EventTestUtils.asEventMessage("Message1");
             component.handle(sampleMessage, STUB_PROCESSING_CONTEXT);
 
-            //then
+            // then
             assertThat(component.invoked).isTrue();
         }
 

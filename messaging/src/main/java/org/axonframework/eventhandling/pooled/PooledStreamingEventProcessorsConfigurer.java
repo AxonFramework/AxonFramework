@@ -185,7 +185,7 @@ public class PooledStreamingEventProcessorsConfigurer {
         processor(
                 () -> EventProcessorModule.pooledStreaming(name)
                                           .eventHandlingComponents(eventHandlingComponentsBuilder)
-                                          .build()
+                                          .notCustomized()
         );
         return this;
     }

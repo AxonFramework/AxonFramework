@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandlingComponent;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 /**
@@ -55,7 +56,7 @@ public class DefaultEventHandlingComponentsConfigurer
      * @param components The components to configure. Will be copied for immutability.
      */
     private DefaultEventHandlingComponentsConfigurer(@Nonnull List<EventHandlingComponent> components) {
-        this.components = List.copyOf(components);
+        this.components = List.copyOf(Objects.requireNonNull(components, "components may not be null"));
     }
 
     @Override
@@ -70,7 +71,12 @@ public class DefaultEventHandlingComponentsConfigurer
     public DefaultEventHandlingComponentsConfigurer decorated(
             @Nonnull UnaryOperator<EventHandlingComponent> decorator
     ) {
-        return new DefaultEventHandlingComponentsConfigurer(components.stream().map(decorator).toList());
+        Objects.requireNonNull(decorator, "decorator may not be null");
+        return new DefaultEventHandlingComponentsConfigurer(
+                components.stream()
+                          .map(decorator)
+                          .toList()
+        );
     }
 
     public List<EventHandlingComponent> toList() {

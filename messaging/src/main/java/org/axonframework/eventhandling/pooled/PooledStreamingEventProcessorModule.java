@@ -162,54 +162,23 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         );
     }
 
-    /**
-     * Configures this module with a complete {@link PooledStreamingEventProcessorConfiguration}.
-     * <p>
-     * This method provides the most direct way to set the processor configuration. The configuration builder receives
-     * the Axon {@link Configuration} and should return a fully configured
-     * {@link PooledStreamingEventProcessorConfiguration} instance.
-     * <p>
-     * <strong>Important:</strong> This method does not respect parent configurations and will fully override any
-     * shared defaults from {@link PooledStreamingEventProcessorsConfigurer} or {@link EventProcessingConfigurer}. Use
-     * {@link #customize(BiFunction)} instead to apply processor-specific customizations while preserving shared
-     * defaults.
-     *
-     * @param configurationBuilder A builder that creates the complete processor configuration.
-     * @return This module instance for method chaining.
-     */
-    @Override
-    public PooledStreamingEventProcessorModule configure(
+    private PooledStreamingEventProcessorModule configure(
             @Nonnull ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder
     ) {
         this.configurationBuilder = configurationBuilder;
         return this;
     }
 
-    /**
-     * Customizes the processor configuration by applying modifications to the default configuration.
-     * <p>
-     * This method allows you to provide processor-specific customizations that will be applied on top of any shared
-     * defaults from parent modules. The customization function receives the Axon {@link Configuration} and the default
-     * processor configuration, returning the customized processor configuration.
-     * <p>
-     * The customization is applied after shared defaults from {@link PooledStreamingEventProcessorsConfigurer} and
-     * {@link EventProcessingConfigurer}.
-     *
-     * @param customizationFunction A function that receives the configuration and default processor config, returning
-     *                              the customized processor configuration.
-     * @return This module instance for method chaining.
-     */
     @Override
-    public PooledStreamingEventProcessorModule customize(
-            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> customizationFunction
+    public PooledStreamingEventProcessorModule customized(
+            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> instanceCustomization
     ) {
-        configure(
-                cfg -> sharedCustomizationOrNoOp(cfg).apply(
-                        cfg,
-                        customizationFunction.apply(cfg, defaultEventProcessorsConfiguration(cfg))
-                )
+        return configure(
+                cfg -> {
+                    var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg, defaultEventProcessorsConfiguration(cfg));
+                    return instanceCustomization.apply(cfg, typeCustomization);
+                }
         );
-        return this;
     }
 
     private static PooledStreamingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
@@ -218,7 +187,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         );
     }
 
-    private static PooledStreamingEventProcessorModule.Customization sharedCustomizationOrNoOp(
+    private static PooledStreamingEventProcessorModule.Customization typeSpecificCustomizationOrNoOp(
             Configuration cfg
     ) {
         return cfg.getOptionalComponent(PooledStreamingEventProcessorModule.Customization.class,
@@ -234,9 +203,9 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     }
 
     @Override
-    public PooledStreamingEventProcessorModule build() {
+    public PooledStreamingEventProcessorModule notCustomized() {
         if (configurationBuilder == null) {
-            customize((cfg, config) -> config);
+            customized((cfg, config) -> config);
         }
         return this;
     }
@@ -249,6 +218,11 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         this.eventHandlingComponentsBuilder = config -> eventHandlingComponentsBuilder
                 .apply(config, componentsConfigurer)
                 .toList();
+        return this;
+    }
+
+    @Override
+    public PooledStreamingEventProcessorModule build() {
         return this;
     }
 

@@ -25,6 +25,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
@@ -224,6 +225,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     public MessagingConfigurer eventProcessing(@Nonnull Consumer<EventProcessingConfigurer> configurerTask) {
+        Objects.requireNonNull(configurerTask, "The configurerTask may not be null");
         configurerTask.accept(eventProcessing);
         return this;
     }

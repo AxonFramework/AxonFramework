@@ -180,7 +180,7 @@ public class SubscribingEventProcessorsConfigurer {
         processor(
                 () -> EventProcessorModule.subscribing(name)
                                           .eventHandlingComponents(eventHandlingComponentsBuilder)
-                                          .build()
+                                          .notCustomized()
         );
         return this;
     }

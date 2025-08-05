@@ -64,4 +64,12 @@ public class RecordingEventHandlingComponent extends DelegatingEventHandlingComp
     public List<EventMessage<?>> recorded() {
         return recorded;
     }
+
+    public boolean handledAnything() {
+        return !recorded.isEmpty();
+    }
+
+    public boolean handled(EventMessage<?> event) {
+        return recorded.contains(event);
+    }
 }

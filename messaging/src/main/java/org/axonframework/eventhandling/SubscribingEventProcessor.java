@@ -26,7 +26,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -48,8 +47,8 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 public class SubscribingEventProcessor implements EventProcessor, DescribableComponent {
 
     private final String name;
+    private final SubscribingEventProcessorConfiguration configuration;
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
-    private final UnitOfWorkFactory unitOfWorkFactory;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final EventProcessingStrategy processingStrategy;
     private final ErrorHandler errorHandler;
@@ -78,11 +77,11 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
         assertThat(name, n -> Objects.nonNull(n) && !n.isEmpty(), "Event Processor name may not be null or empty");
         Objects.requireNonNull(configuration, "SubscribingEventProcessorConfiguration may not be null");
         configuration.validate();
-        this.messageSource = configuration.messageSource();
-        this.unitOfWorkFactory = configuration.unitOfWorkFactory();
+        this.configuration = configuration;
+        this.messageSource = this.configuration.messageSource();
         this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
-        this.processingStrategy = configuration.processingStrategy();
-        this.errorHandler = configuration.errorHandler();
+        this.processingStrategy = this.configuration.processingStrategy();
+        this.errorHandler = this.configuration.errorHandler();
     }
 
     @Override
@@ -126,7 +125,7 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
      */
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
-            var unitOfWork = unitOfWorkFactory.create();
+            var unitOfWork = this.configuration.unitOfWorkFactory().create();
             unitOfWork.onInvocation(processingContext -> processWithErrorHandling(eventMessages,
                                                                                   processingContext).asCompletableFuture());
             FutureUtils.joinAndUnwrap(unitOfWork.execute());

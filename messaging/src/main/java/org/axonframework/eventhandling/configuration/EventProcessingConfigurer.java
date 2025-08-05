@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -91,7 +92,7 @@ public class EventProcessingConfigurer {
      */
     @Internal
     public EventProcessingConfigurer(@Nonnull MessagingConfigurer parent) {
-        this.parent = parent;
+        this.parent = Objects.requireNonNull(parent, "parent may not be null");
         this.pooledStreamingEventProcessors = new PooledStreamingEventProcessorsConfigurer(this);
         this.subscribingEventProcessors = new SubscribingEventProcessorsConfigurer(this);
     }
@@ -130,6 +131,7 @@ public class EventProcessingConfigurer {
      */
     public EventProcessingConfigurer defaults(
             @Nonnull BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> configureDefaults) {
+        Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
         return this;
     }
@@ -145,6 +147,7 @@ public class EventProcessingConfigurer {
      * @return This module instance for method chaining.
      */
     public EventProcessingConfigurer defaults(@Nonnull UnaryOperator<EventProcessorConfiguration> configureDefaults) {
+        Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
                 (axonConfig, pConfig) -> configureDefaults.apply(pConfig)
         );
@@ -166,6 +169,7 @@ public class EventProcessingConfigurer {
     public EventProcessingConfigurer pooledStreaming(
             @Nonnull UnaryOperator<PooledStreamingEventProcessorsConfigurer> processorsModuleTask
     ) {
+        Objects.requireNonNull(processorsModuleTask, "processorsModuleTask may not be null");
         processorsModuleTask.apply(pooledStreamingEventProcessors);
         return this;
     }
@@ -185,11 +189,13 @@ public class EventProcessingConfigurer {
     public EventProcessingConfigurer subscribing(
             @Nonnull UnaryOperator<SubscribingEventProcessorsConfigurer> processorsModuleTask
     ) {
+        Objects.requireNonNull(processorsModuleTask, "processorsModuleTask may not be null");
         processorsModuleTask.apply(subscribingEventProcessors);
         return this;
     }
 
     public EventProcessingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+        Objects.requireNonNull(registryAction, "registryAction may not be null");
         parent.componentRegistry(registryAction);
         return this;
     }
