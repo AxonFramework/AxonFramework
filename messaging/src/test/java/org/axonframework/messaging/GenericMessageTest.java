@@ -73,21 +73,6 @@ class GenericMessageTest extends MessageTestSuite<Message<?>> {
     }
 
     @Test
-    void containsDataAsExpected() {
-        String testIdentifier = "testIdentifier";
-        MessageType testType = new MessageType("message");
-        String testPayload = "payload";
-        MetaData testMetaData = MetaData.emptyInstance();
-
-        Message<String> testSubject = new GenericMessage<>(testIdentifier, testType, testPayload, testMetaData);
-
-        assertEquals(testIdentifier, testSubject.identifier());
-        assertEquals(testType, testSubject.type());
-        assertEquals(testPayload, testSubject.payload());
-        assertEquals(testMetaData, testSubject.metaData());
-    }
-
-    @Test
     void correlationDataAddedToNewMessage() {
         Message<Object> testMessage = new GenericMessage<>(new MessageType("message"), new Object());
         assertEquals(correlationData, new HashMap<>(testMessage.metaData()));
