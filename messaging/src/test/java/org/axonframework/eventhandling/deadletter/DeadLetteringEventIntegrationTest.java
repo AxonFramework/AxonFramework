@@ -28,7 +28,6 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
-import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -46,6 +45,7 @@ import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -192,7 +192,6 @@ public abstract class DeadLetteringEventIntegrationTest {
         deadLetteringInvoker = invokerBuilder.build();
 
         eventSource = new AsyncInMemoryStreamableEventSource();
-        var interceptors = new MessageHandlerInterceptors();
         var configuration = new PooledStreamingEventProcessorConfiguration()
                 .eventSource(eventSource)
                 .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager))
@@ -206,7 +205,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 new MonitoringEventHandlingComponent(
                         configuration.messageMonitor(),
                         new InterceptingEventHandlingComponent(
-                                interceptors,
+                                Collections.emptyList(),
                                 new LegacyEventHandlingComponent(deadLetteringInvoker)
                         )
                 )
