@@ -108,7 +108,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * {@code metaData}, intended to reconstruct another {@link Message}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
-     * of Work. If you in tend to construct a new {@link GenericMessage}, please use
+     * of Work. If you in tend to construct a new {@code GenericMessage}, please use
      * {@link #GenericMessage(MessageType, Object)} instead.
      *
      * @param identifier The identifier of this {@link Message}.
@@ -124,11 +124,11 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     }
 
     /**
-     * Constructs a {@link GenericMessage} for the given {@code identifier}, {@code type}, {@code payload}, and
+     * Constructs a {@code GenericMessage} for the given {@code identifier}, {@code type}, {@code payload}, and
      * {@code metaData}, intended to reconstruct another {@link Message}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
-     * of Work. If you in tend to construct a new {@link GenericMessage}, please use
+     * of Work. If you in tend to construct a new {@code GenericMessage}, please use
      * {@link #GenericMessage(MessageType, Object)} instead.
      *
      * @param identifier          The identifier of this {@link Message}.
@@ -141,11 +141,11 @@ public class GenericMessage<P> extends AbstractMessage<P> {
                           @Nonnull MessageType type,
                           @Nullable P payload,
                           @Nonnull Class<P> declaredPayloadType,
-                          @Nonnull Map<String, ?> metaData) {
+                          @Nonnull Map<String, String> metaData) {
         super(identifier, type);
         this.payload = payload;
         this.payloadType = declaredPayloadType;
-        this.metaData = MetaData.from((Map<String, String>) metaData);
+        this.metaData = MetaData.from(metaData);
     }
 
     private GenericMessage(@Nonnull GenericMessage<P> original,
@@ -174,7 +174,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * of {@code "empty"}.
      */
     public static Message<Void> emptyMessage() {
-        return new GenericMessage<Void>(new MessageType("empty"), null);
+        return new GenericMessage<>(new MessageType("empty"), null);
     }
 
     @Override
@@ -231,6 +231,6 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         //noinspection unchecked
         return payloadType().isAssignableFrom(convertedPayload.getClass())
                 ? (Message<T>) this
-                : new GenericMessage<T>(identifier(), type(), convertedPayload, metaData());
+                : new GenericMessage<>(identifier(), type(), convertedPayload, metaData());
     }
 }
