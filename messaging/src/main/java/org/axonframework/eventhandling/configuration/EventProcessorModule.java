@@ -45,7 +45,7 @@ import java.util.function.Function;
  * // Create a subscribing event processor
  * EventProcessorModule subscribingModule = EventProcessorModule
  *     .subscribing("notification-processor")
- *     .defaultCustomized((config, processorConfig) -> processorConfig
+ *     .customize((config, processorConfig) -> processorConfig
  *         .eventHandlingComponents(List.of(notificationHandler))
  *         .messageSource(customMessageSource)
  *     );
@@ -53,7 +53,7 @@ import java.util.function.Function;
  * // Create a pooled streaming event processor
  * EventProcessorModule streamingModule = EventProcessorModule
  *     .pooledStreaming("order-processor")
- *     .defaultCustomized((config, processorConfig) -> processorConfig
+ *     .customize((config, processorConfig) -> processorConfig
  *         .eventHandlingComponents(List.of(orderHandler))
  *         .bufferSize(2048)
  *         .initialSegmentCount(8)

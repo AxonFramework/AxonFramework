@@ -62,10 +62,10 @@ import java.util.function.UnaryOperator;
  *     .eventProcessing(eventProcessing -> eventProcessing
  *         .defaults(config -> config.bufferSize(512))
  *         .pooledStreaming(pooledStreaming ->
- *             pooledStreaming.processor("calendar-processor", List.of(weekStartedEventHandler))
- *                        .processor("astrologers-week-symbol-processor", List.of(weekSymbolProclaimedEventHandler)))
+ *             pooledStreaming.processor("calendar-processor", (__, components) -> components.single(weekStartedEventHandler))
+ *                        .processor("astrologers-week-symbol-processor", (__, components) -> components.single(weekSymbolProclaimedEventHandler)))
  *         .subscribing(subscribing ->
- *             subscribing.processor("creatures-dwelling-readmodel", List.of(dwellingBuiltEventHandler))));
+ *             subscribing.processor("creatures-dwelling-readmodel", (__, components) -> components.single(dwellingBuiltEventHandler)));
  * }</pre>
  *
  * @author Mateusz Nowak

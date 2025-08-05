@@ -23,6 +23,15 @@ import java.util.List;
 import java.util.function.UnaryOperator;
 
 /**
+ * Default implementation of {@link EventHandlingComponentsConfigurer} providing immutable
+ * component collection management with decoration support.
+ * <p>
+ * This configurer follows an immutable pattern where each operation returns a new instance
+ * rather than modifying the existing one. Components are stored as immutable copies to
+ * prevent external modifications.
+ * <p>
+ * Typically accessed through the static {@link #init()} method to begin configuration.
+ *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
@@ -31,12 +40,22 @@ public class DefaultEventHandlingComponentsConfigurer
 
     private final List<EventHandlingComponent> components;
 
+    /**
+     * Creates a new configurer instance ready for component specification.
+     *
+     * @return The initial components phase for adding components.
+     */
     public static EventHandlingComponentsConfigurer.ComponentsPhase init() {
         return new DefaultEventHandlingComponentsConfigurer(List.of());
     }
 
+    /**
+     * Creates a configurer with the given components.
+     *
+     * @param components The components to configure. Will be copied for immutability.
+     */
     private DefaultEventHandlingComponentsConfigurer(@Nonnull List<EventHandlingComponent> components) {
-        this.components = components;
+        this.components = List.copyOf(components);
     }
 
     @Override
@@ -47,6 +66,7 @@ public class DefaultEventHandlingComponentsConfigurer
         return new DefaultEventHandlingComponentsConfigurer(components);
     }
 
+    @Override
     public DefaultEventHandlingComponentsConfigurer decorated(
             @Nonnull UnaryOperator<EventHandlingComponent> decorator
     ) {
