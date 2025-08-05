@@ -30,6 +30,7 @@ import org.axonframework.serialization.Serializer;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Generic implementation of the {@link Message} interface containing the {@link #payload() payload} and
@@ -50,6 +51,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     private final MetaData metaData;
 
     private transient volatile SerializedObjectHolder serializedObjectHolder;
+    private final ConcurrentHashMap<Type, Object> convertedPayloads;
 
     /**
      * Constructs a {@code GenericMessage} for the given {@code type} and {@code payload}.
@@ -146,6 +148,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         this.payload = payload;
         this.payloadType = declaredPayloadType;
         this.metaData = MetaData.from(metaData);
+        this.convertedPayloads = new ConcurrentHashMap<>();
     }
 
     private GenericMessage(@Nonnull GenericMessage<P> original,
@@ -154,6 +157,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         this.payload = original.payload();
         this.payloadType = original.payloadType();
         this.metaData = metaData;
+        this.convertedPayloads = new ConcurrentHashMap<>();
     }
 
     /**
@@ -189,12 +193,23 @@ public class GenericMessage<P> extends AbstractMessage<P> {
 
     @Override
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
-        //noinspection unchecked,rawtypes
-        return type instanceof Class clazz && payloadType().isAssignableFrom(clazz)
-                ? (T) payload()
-                : Objects.requireNonNull(converter,
-                                         "Cannot convert payload to [" + type.getTypeName() + "] with null Converter.")
-                         .convert(payload(), type);
+        //noinspection rawtypes
+        if (type instanceof Class clazz && payloadType().isAssignableFrom(clazz)) {
+            //noinspection unchecked
+            return (T) payload();
+        }
+        if (convertedPayloads.containsKey(type)) {
+            //noinspection unchecked
+            return (T) convertedPayloads.get(type);
+        }
+
+        Objects.requireNonNull(
+                converter, "Cannot convert payload to [" + type.getTypeName() + "] with null Converter."
+        );
+        T convertedPayload = converter.convert(payload(), type);
+        //noinspection DataFlowIssue
+        convertedPayloads.put(type, convertedPayload);
+        return convertedPayload;
     }
 
     @Override
