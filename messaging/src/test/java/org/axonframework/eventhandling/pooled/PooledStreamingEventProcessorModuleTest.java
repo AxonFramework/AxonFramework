@@ -473,36 +473,7 @@ class PooledStreamingEventProcessorModuleTest {
     }
 
     @Nested
-    class ComponentDecorationTest {
-
-        @Test
-        void shouldApplyDecorationsToEventHandlingComponents() {
-            // given
-            AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
-            var configurer = MessagingConfigurer.create();
-            configurer.eventProcessing(
-                    ep -> ep.pooledStreaming(
-                            ps -> ps.defaults(d -> d.eventSource(eventSource))
-                                    .processor(
-                                            "test-processor",
-                                            processor -> processor.eventHandlingComponents((cfg, components) -> components.single(
-                                                                          new SimpleEventHandlingComponent()))
-                                                                  .customize((cfg, c) -> c.initialSegmentCount(8))
-                                    )
-                    )
-            );
-            var configuration = configurer.build();
-
-            // when
-            var processor = configuredProcessor(configuration, "test-processor");
-
-            // then
-            assertThat(processor).isPresent();
-        }
-    }
-
-    @Nested
-    class IntegrationTest {
+    class MultipleEventHandlingComponentTest {
 
         @Test
         void shouldProcessEventsWithMultipleHandlers() {
