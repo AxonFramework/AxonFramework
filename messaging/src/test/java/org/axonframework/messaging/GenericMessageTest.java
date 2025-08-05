@@ -56,6 +56,11 @@ class GenericMessageTest extends MessageTestSuite<Message<?>> {
     }
 
     @Override
+    protected Message<?> buildDefaultMessage() {
+        return new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+    }
+
+    @Override
     protected <P> Message<?> buildMessage(@Nullable P payload) {
         return new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }

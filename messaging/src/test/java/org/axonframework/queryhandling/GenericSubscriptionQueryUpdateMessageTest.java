@@ -37,20 +37,16 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite<SubscriptionQueryUpdateMessage<?>> {
 
     @Override
+    protected SubscriptionQueryUpdateMessage<?> buildDefaultMessage() {
+        return new GenericSubscriptionQueryUpdateMessage<>(new GenericMessage<>(
+                TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA
+        ));
+    }
+
+    @Override
     protected <P> SubscriptionQueryUpdateMessage<?> buildMessage(@Nullable P payload) {
         return new GenericSubscriptionQueryUpdateMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
                                                            payload);
-    }
-
-    @Test
-    void messageCreation() {
-        String payload = "payload";
-
-        SubscriptionQueryUpdateMessage<String> result = new GenericSubscriptionQueryUpdateMessage<>(
-                new MessageType("query"), payload, String.class
-        );
-
-        assertEquals(payload, result.payload());
     }
 
     @Test

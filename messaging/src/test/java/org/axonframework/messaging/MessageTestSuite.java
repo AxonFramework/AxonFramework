@@ -24,6 +24,7 @@ import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Type;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,6 +38,12 @@ import static org.mockito.Mockito.*;
  */
 public abstract class MessageTestSuite<M extends Message<?>> {
 
+    protected static final String TEST_IDENTIFIER = "testIdentifier";
+    protected static final MessageType TEST_TYPE = new MessageType("message");
+    protected static final String TEST_PAYLOAD = "payload";
+    protected static final Class<String> TEST_PAYLOAD_TYPE = String.class;
+    protected static final Map<String, String> TEST_META_DATA = Map.of("key", "value");
+
     private static final String STRING_PAYLOAD = "some-string-payload";
     private static final ChainingContentTypeConverter CONVERTER = new ChainingContentTypeConverter();
     private static final TypeReference<byte[]> BYTE_ARRAY_TYPE_REF = new TypeReference<>() {
@@ -45,12 +52,29 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     };
 
     /**
+     * Builds a default {@link Message} used by this test suite.
+     *
+     * @return A default {@link Message} used by this test suite.
+     */
+    protected abstract M buildDefaultMessage();
+
+    /**
      * Builds a {@link Message} used by this test suite.
      *
      * @param <P> The payload type for the {@link Message} implementation under test.
-     * @return a {@link Message} used by this test suite.
+     * @return A {@link Message} used by this test suite.
      */
     protected abstract <P> M buildMessage(@Nullable P payload);
+
+    /**
+     * Overridable method to validate {@link #buildDefaultMessage() default} {@link Message} implementation specific
+     * details during assertion.
+     *
+     * @param result The resulting {@link Message} implementation to validate against.
+     */
+    protected void validateDefaultMessage(@Nonnull M result) {
+        // The default validations are done by the tests directly
+    }
 
     /**
      * Overridable method to validate {@link Message} implementation specific details during assertion.
@@ -63,13 +87,25 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
+    void containsDataAsExpected() {
+        M testSubject = buildDefaultMessage();
+
+        assertThat(TEST_IDENTIFIER).isEqualTo(testSubject.identifier());
+        assertThat(TEST_TYPE).isEqualTo(testSubject.type());
+        assertThat(TEST_PAYLOAD).isEqualTo(testSubject.payload());
+        assertThat(TEST_PAYLOAD_TYPE).isEqualTo(testSubject.payloadType());
+        assertThat(TEST_META_DATA).isEqualTo(testSubject.metaData());
+        validateDefaultMessage(testSubject);
+    }
+
+    @Test
     void payloadAsWithClassAssignableFromPayloadTypeInvokesPayloadDirectly() {
         String testPayload = STRING_PAYLOAD;
         Converter spiedConverter = spy(CONVERTER);
 
         M testSubject = buildMessage(testPayload);
 
-        String result = testSubject.payloadAs(String.class, spiedConverter);
+        String result = testSubject.payloadAs(TEST_PAYLOAD_TYPE, spiedConverter);
 
         assertThat(testPayload).isEqualTo(result);
         verifyNoInteractions(spiedConverter);
@@ -150,7 +186,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
 
         M testSubject = buildMessage(testPayload);
 
-        String result = testSubject.payloadAs((Type) String.class, spiedConverter);
+        String result = testSubject.payloadAs((Type) TEST_PAYLOAD_TYPE, spiedConverter);
 
         assertThat(testPayload).isEqualTo(result);
         verifyNoInteractions(spiedConverter);
@@ -194,7 +230,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     void withConvertedPayloadForClassReturnsSameInstance() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
-        assertThat(testSubject.withConvertedPayload(String.class, CONVERTER)).isSameAs(testSubject);
+        assertThat(testSubject.withConvertedPayload(TEST_PAYLOAD_TYPE, CONVERTER)).isSameAs(testSubject);
     }
 
     @Test
@@ -236,7 +272,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     void withConvertedPayloadForTypeReturnsSameInstance() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
-        assertThat(testSubject.withConvertedPayload((Type) String.class, CONVERTER)).isSameAs(testSubject);
+        assertThat(testSubject.withConvertedPayload((Type) TEST_PAYLOAD_TYPE, CONVERTER)).isSameAs(testSubject);
     }
 
     @Test
