@@ -53,6 +53,35 @@ import static org.axonframework.eventhandling.configuration.EventHandlingCompone
  */
 class PooledStreamingEventProcessorModuleTest {
 
+    @Test
+    void sample() {
+        String processorName = "test-processor";
+        AtomicBoolean started = new AtomicBoolean(false);
+        AtomicBoolean stopped = new AtomicBoolean(false);
+        AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
+        eventSource.setOnOpen(() -> started.set(true));
+        eventSource.setOnClose(() -> stopped.set(true));
+
+        var configurer = MessagingConfigurer.create();
+
+
+
+        var configuration = configurer.build();
+
+        //when
+        configuration.start();
+
+        //then
+        await().atMost(Duration.ofSeconds(1))
+               .untilAsserted(() -> assertThat(started).isTrue());
+
+        //when
+        configuration.shutdown();
+
+        //then
+        await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertThat(stopped).isTrue());
+    }
+
     @Nested
     class ConstructorTest {
 
