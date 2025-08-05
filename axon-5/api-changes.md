@@ -234,7 +234,9 @@ the long run.
 We have renamed the "get-styled" getters **all** `Message` implementations by removing "get" from the signature.
 Thus, `Message#getIdentifier()` is now called `Message#identifier()`, `Message#getPayload()` is now called
 `Message#payload()`, `Message#getPayloadType()` is now `Message#payloadType()`, and `Message#getMetaData()` is now
-referred to as `Message#metaData()`.
+referred to as `Message#metaData()`. A similar rename occurred for the `EventMessage`, for which we renamed the
+`getTimestamp()` method to `timestamp()`. Lastly, the `QueryMessage` and `SubscriptionQueryMessage` have undergone the
+same rename, for `getResponseType()` and `getUpdateResponseType()` respectively.
 
 ## Message Stream
 
@@ -1367,6 +1369,9 @@ This section contains four subsections, called:
 | `Message#getPayload()`                                                                                                          | `Message#payload()`                                                                                                    |
 | `Message#getPayloadType()`                                                                                                      | `Message#payloadType()`                                                                                                |
 | `Message#getMetaData()`                                                                                                         | `Message#metaData()`                                                                                                   |
+| `EventMessage#getTimestamp()`                                                                                                   | `EventMessage#timestamp()`                                                                                             |
+| `QueryMessage#getReponseType()`                                                                                                 | `QueryMessage#responseType()`                                                                                          | 
+| `SubscriptionQueryMessage#getUpdateReponseType()`                                                                               | `SubscriptionQueryMessage#updatesResponseType()`                                                                       | 
 
 ### Removed Methods and Constructors
 

@@ -135,7 +135,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                            .stream()
                            .filter(positionToEventEntry -> {
                                EventMessage<?> event = positionToEventEntry.getValue();
-                               Instant eventTimestamp = event.getTimestamp();
+                               Instant eventTimestamp = event.timestamp();
                                return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
                            })
                            .map(Map.Entry::getKey)

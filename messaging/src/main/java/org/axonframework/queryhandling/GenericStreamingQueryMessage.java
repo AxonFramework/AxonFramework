@@ -31,7 +31,7 @@ import java.util.Map;
  * Generic implementation of the {@link StreamingQueryMessage} interface.
  *
  * @param <P> The type of {@link #payload() payload} expressing the query in this {@link StreamingQueryMessage}.
- * @param <R> The type of {@link #getResponseType() response} expected from this {@link StreamingQueryMessage} streamed
+ * @param <R> The type of {@link #responseType() response} expected from this {@link StreamingQueryMessage} streamed
  *            via {@link Publisher}.
  * @author Milan Savic
  * @author Stefan Dragisic
@@ -122,13 +122,13 @@ public class GenericStreamingQueryMessage<P, R>
     @Override
     public StreamingQueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericStreamingQueryMessage<>(getDelegate().withMetaData(metaData),
-                                                  getResponseType());
+                                                  responseType());
     }
 
     @Override
     public StreamingQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericStreamingQueryMessage<>(getDelegate().andMetaData(metaData),
-                                                  getResponseType());
+                                                  responseType());
     }
 
     @Override

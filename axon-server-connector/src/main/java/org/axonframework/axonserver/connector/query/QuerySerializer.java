@@ -127,7 +127,7 @@ public class QuerySerializer {
                            .setQuery(queryMessage.type().name())
                            .setClientId(configuration.getClientId())
                            .setComponentName(configuration.getComponentName())
-                           .setResponseType(responseTypeSerializer.apply(queryMessage.getResponseType()
+                           .setResponseType(responseTypeSerializer.apply(queryMessage.responseType()
                                                                                      .forSerialization()))
                            .setPayload(payloadSerializer.apply(queryMessage))
                            .addProcessingInstructions(nrOfResults(nrResults))

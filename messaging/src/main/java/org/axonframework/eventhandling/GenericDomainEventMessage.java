@@ -205,7 +205,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
                                                aggregateIdentifier,
                                                sequenceNumber,
                                                getDelegate().withMetaData(metaData),
-                                               getTimestamp());
+                                               timestamp());
     }
 
     @Override
@@ -218,7 +218,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
                                                aggregateIdentifier,
                                                sequenceNumber,
                                                getDelegate().andMetaData(metaData),
-                                               getTimestamp());
+                                               timestamp());
     }
 
     @Override

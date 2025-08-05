@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 /**
  * A {@link MessageMonitor} implementation dedicated to {@link EventMessage EventMessages}.
  * <p>
- * This monitor defines the latency between the {@link EventMessage#getTimestamp()} and the {@link Clock#wallTime()}.
+ * This monitor defines the latency between the {@link EventMessage#timestamp()} and the {@link Clock#wallTime()}.
  * Doing so, it depicts the latency from when an event was published compared to when an
  * {@link org.axonframework.eventhandling.EventProcessor} processes the event to clarify how far behind an
  * {@code EventProcessor} is.
@@ -97,7 +97,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
         if (message != null) {
             Tags tags = Tags.of(tagsBuilder.apply(message));
             AtomicLong actualCounter = gauges.computeIfAbsent(tags, k -> new AtomicLong());
-            actualCounter.set(clock.wallTime() - message.getTimestamp().toEpochMilli());
+            actualCounter.set(clock.wallTime() - message.timestamp().toEpochMilli());
 
             Gauge.builder(meterNamePrefix + ".latency", actualCounter::get)
                  .tags(tags)

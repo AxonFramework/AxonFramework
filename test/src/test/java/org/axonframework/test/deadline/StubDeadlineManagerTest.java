@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ class StubDeadlineManagerTest {
         testSubject.advanceTimeBy(Duration.ofMinutes(75), (s, message) -> triggered.add(message));
 
         assertEquals(1, triggered.size());
-        assertEquals(triggerTime, triggered.get(0).getTimestamp());
+        assertEquals(triggerTime, triggered.get(0).timestamp());
     }
 
     private static class MockScope extends Scope {

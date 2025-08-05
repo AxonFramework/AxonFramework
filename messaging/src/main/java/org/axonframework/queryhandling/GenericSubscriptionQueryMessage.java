@@ -28,9 +28,9 @@ import java.util.Map;
  * Generic implementation of the {@link SubscriptionQueryMessage} interface.
  *
  * @param <P> The type of {@link #payload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
- * @param <I> The type of {@link #getResponseType() initial response} expected from this
+ * @param <I> The type of {@link #responseType() initial response} expected from this
  *            {@link SubscriptionQueryMessage}.
- * @param <U> The type of {@link #getUpdateResponseType() incremental updates} expected from this
+ * @param <U> The type of {@link #updatesResponseType() incremental updates} expected from this
  *            {@link SubscriptionQueryMessage}.
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -92,21 +92,21 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     }
 
     @Override
-    public ResponseType<U> getUpdateResponseType() {
+    public ResponseType<U> updatesResponseType() {
         return updateResponseType;
     }
 
     @Override
     public GenericSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().withMetaData(metaData),
-                                                     getResponseType(),
+                                                     responseType(),
                                                      updateResponseType);
     }
 
     @Override
     public GenericSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().andMetaData(metaData),
-                                                     getResponseType(),
+                                                     responseType(),
                                                      updateResponseType);
     }
 }

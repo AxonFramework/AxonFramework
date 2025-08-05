@@ -285,7 +285,7 @@ class FixtureTest_Deadlines {
     @Disabled("TODO #3065 - Revisit Deadline support")
     void deadlineDispatcherInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
-                messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
+                messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.timestamp()))
                .givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -297,7 +297,7 @@ class FixtureTest_Deadlines {
     void deadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, context, chain) -> {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(
-                    deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp())
+                    deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.timestamp())
             );
             return chain.proceedSync(context);
         })

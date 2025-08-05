@@ -41,7 +41,7 @@ public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implem
      * @param delegate      delegate message containing payload, metadata, identifier and timestamp
      */
     public GenericTrackedEventMessage(TrackingToken trackingToken, EventMessage<T> delegate) {
-        super(delegate, delegate.getTimestamp());
+        super(delegate, delegate.timestamp());
         this.trackingToken = trackingToken;
     }
 

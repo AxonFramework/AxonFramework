@@ -48,7 +48,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
             new SubscriptionMessageSerializer(serializer, serializer, new AxonServerConfiguration());
 
     @Test
-    void getUpdateResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
+    void updatesResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
         ResponseType<String> expectedUpdateResponseType = RESPONSE_TYPE;
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE, expectedUpdateResponseType
@@ -64,7 +64,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
 
         assertEquals(
                 expectedUpdateResponseType.getExpectedResponseType(),
-                testSubject.getResponseType().getExpectedResponseType()
+                testSubject.responseType().getExpectedResponseType()
         );
     }
 
@@ -86,7 +86,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void getResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
+    void responseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
         ResponseType<String> expectedResponseType = RESPONSE_TYPE;
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, expectedResponseType, RESPONSE_TYPE
@@ -101,7 +101,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
         assertEquals(
-                expectedResponseType.getExpectedResponseType(), testSubject.getResponseType().getExpectedResponseType()
+                expectedResponseType.getExpectedResponseType(), testSubject.responseType().getExpectedResponseType()
         );
     }
 
