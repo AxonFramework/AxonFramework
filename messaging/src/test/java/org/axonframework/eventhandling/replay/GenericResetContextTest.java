@@ -21,10 +21,7 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
-
-import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,34 +42,6 @@ class GenericResetContextTest extends MessageTestSuite<ResetContext<?>> {
     @Override
     protected <P> ResetContext<?> buildMessage(@Nullable P payload) {
         return new GenericResetContext<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
-    }
-
-    @Test
-    void withMetaData() {
-        MetaData metaData = MetaData.from(Collections.singletonMap("key", "value"));
-        ResetContext<Object> startMessage = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD, metaData);
-
-        ResetContext<Object> messageOne = startMessage.withMetaData(MetaData.emptyInstance());
-        ResetContext<Object> messageTwo =
-                startMessage.withMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
-
-        assertEquals(0, messageOne.metaData().size());
-        assertEquals(1, messageTwo.metaData().size());
-    }
-
-    @Test
-    void andMetaData() {
-        MetaData metaData = MetaData.from(Collections.singletonMap("key", "value"));
-        ResetContext<Object> startMessage = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD, metaData);
-
-        ResetContext<Object> messageOne = startMessage.andMetaData(MetaData.emptyInstance());
-        ResetContext<Object> messageTwo =
-                startMessage.andMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
-
-        assertEquals(1, messageOne.metaData().size());
-        assertEquals("value", messageOne.metaData().get("key"));
-        assertEquals(1, messageTwo.metaData().size());
-        assertEquals("otherValue", messageTwo.metaData().get("key"));
     }
 
     @Test

@@ -65,38 +65,6 @@ class GenericEventMessageTest extends MessageTestSuite<EventMessage<?>> {
     }
 
     @Test
-    void withMetaData() {
-        Object payload = new Object();
-        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
-        MetaData metaData = MetaData.from(metaDataMap);
-        GenericEventMessage<Object> message =
-                new GenericEventMessage<>(new MessageType("event"), payload, metaData);
-        EventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
-        EventMessage<Object> message2 =
-                message.withMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
-
-        assertEquals(0, message1.metaData().size());
-        assertEquals(1, message2.metaData().size());
-    }
-
-    @Test
-    void andMetaData() {
-        Object payload = new Object();
-        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
-        MetaData metaData = MetaData.from(metaDataMap);
-        GenericEventMessage<Object> message =
-                new GenericEventMessage<>(new MessageType("event"), payload, metaData);
-        EventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
-        EventMessage<Object> message2 =
-                message.andMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
-
-        assertEquals(1, message1.metaData().size());
-        assertEquals("value", message1.metaData().get("key"));
-        assertEquals(1, message2.metaData().size());
-        assertEquals("otherValue", message2.metaData().get("key"));
-    }
-
-    @Test
     void toStringIsAsExpected() {
         String actual = EventTestUtils.asEventMessage("MyPayload")
                                       .andMetaData(MetaData.with("key", "value").and("key2", "13"))

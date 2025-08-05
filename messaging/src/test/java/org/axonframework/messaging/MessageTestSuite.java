@@ -227,6 +227,31 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
+    void andMetaData() {
+        Map<String, String> newMetaData = Map.of("k2", "v3");
+        MetaData expectedMetaData = MetaData.from(TEST_META_DATA).mergedWith(newMetaData);
+
+        M testSubject = buildDefaultMessage();
+
+        Message<?> result = testSubject.andMetaData(newMetaData);
+
+        assertThat(testSubject.payload()).isEqualTo(result.payload());
+        assertThat(expectedMetaData).isEqualTo(result.metaData());
+    }
+
+    @Test
+    void withMetaData() {
+        Map<String, String> newMetaData = Map.of("k2", "v3");
+
+        M testSubject = buildDefaultMessage();
+
+        Message<?> result = testSubject.withMetaData(newMetaData);
+
+        assertThat(testSubject.payload()).isEqualTo(result.payload());
+        assertThat(newMetaData).isEqualTo(result.metaData());
+    }
+
+    @Test
     void withConvertedPayloadForClassReturnsSameInstance() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
