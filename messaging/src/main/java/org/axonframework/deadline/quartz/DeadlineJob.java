@@ -172,7 +172,7 @@ public class DeadlineJob implements Job {
                 throw new JobExecutionException(exceptionResult);
             } else if (logger.isInfoEnabled()) {
                 logger.info("Job successfully executed. Deadline message [{}] processed.",
-                            deadlineMessage.getPayloadType().getSimpleName());
+                            deadlineMessage.type().name());
             }
         } finally {
             span.end();
@@ -243,7 +243,7 @@ public class DeadlineJob implements Job {
             jobData.put(DEADLINE_NAME, deadlineMessage.getDeadlineName());
             jobData.put(MESSAGE_ID, deadlineMessage.identifier());
             jobData.put(TYPE, deadlineMessage.type().toString());
-            jobData.put(MESSAGE_TIMESTAMP, deadlineMessage.getTimestamp().toString());
+            jobData.put(MESSAGE_TIMESTAMP, deadlineMessage.timestamp().toString());
 
             SerializedObject<byte[]> serializedDeadlinePayload =
                     serializer.serialize(deadlineMessage.payload(), byte[].class);
@@ -252,7 +252,7 @@ public class DeadlineJob implements Job {
             jobData.put(MESSAGE_REVISION, serializedDeadlinePayload.getType().getRevision());
 
             SerializedObject<byte[]> serializedDeadlineMetaData =
-                    serializer.serialize(deadlineMessage.getMetaData(), byte[].class);
+                    serializer.serialize(deadlineMessage.metaData(), byte[].class);
             jobData.put(MESSAGE_METADATA, serializedDeadlineMetaData.getData());
         }
 

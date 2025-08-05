@@ -73,7 +73,7 @@ class CapacityMonitorTest {
                                                                    testClock,
                                                                    message -> Tags
                                                                            .of(TagsUtil.PAYLOAD_TYPE_TAG,
-                                                                               message.getPayloadType()
+                                                                               message.payloadType()
                                                                                       .getSimpleName()));
 
         EventMessage<Object> foo = asEventMessage(1);
@@ -104,10 +104,10 @@ class CapacityMonitorTest {
                                                                    TimeUnit.SECONDS,
                                                                    testClock,
                                                                    message -> Tags.of("myPayloadType",
-                                                                                      message.getPayloadType()
+                                                                                      message.payloadType()
                                                                                              .getSimpleName(),
                                                                                       "myMetaData",
-                                                                                      message.getMetaData()
+                                                                                      message.metaData()
                                                                                              .get("myMetadataKey")
                                                                                              .toString()));
 

@@ -51,8 +51,8 @@ class GenericTaggedEventMessageTest {
     void containsExpectedData() {
         assertEquals(TEST_EVENT.identifier(), testSubject.event().identifier());
         assertEquals(TEST_EVENT.payload(), testSubject.event().payload());
-        assertEquals(TEST_META_DATA, testSubject.event().getMetaData());
-        assertEquals(TEST_EVENT.getTimestamp(), testSubject.event().getTimestamp());
+        assertEquals(TEST_META_DATA, testSubject.event().metaData());
+        assertEquals(TEST_EVENT.timestamp(), testSubject.event().timestamp());
         assertEquals(TEST_TAGS, testSubject.tags());
     }
 

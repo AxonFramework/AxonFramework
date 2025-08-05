@@ -63,7 +63,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         // make us able to store deserialization errors as well.
         SerializedObject<byte[]> serializedPayload = message.serializePayload(eventSerializer, byte[].class);
         // For compatibility, we use the serializer directly for the metadata
-        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.getMetaData(), byte[].class);
+        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.metaData(), byte[].class);
         Optional<SerializedObject<byte[]>> serializedToken =
                 trackedEventMessage.map(m -> genericSerializer.serialize(m.trackingToken(), byte[].class));
 
@@ -71,7 +71,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                 message.getClass().getName(),
                 message.identifier(),
                 message.type().toString(),
-                message.getTimestamp().toString(),
+                message.timestamp().toString(),
                 serializedPayload.getType().getName(),
                 serializedPayload.getType().getRevision(),
                 serializedPayload.getData(),
@@ -113,7 +113,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                                                    serializedMessage.identifier(),
                                                    MessageType.fromString(entry.getType()),
                                                    serializedMessage.payload(),
-                                                   serializedMessage.getMetaData(),
+                                                   serializedMessage.metaData(),
                                                    timestampSupplier.get());
         } else {
             return new GenericEventMessage<>(serializedMessage, timestampSupplier);

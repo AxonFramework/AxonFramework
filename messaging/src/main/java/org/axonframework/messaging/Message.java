@@ -89,7 +89,7 @@ public interface Message<P> {
      * Returns the identifier of this {@code Message}.
      * <p>
      * Two messages with the same identifiers should be interpreted as different representations of the same conceptual
-     * message. In such case, the {@link Message#getMetaData() metadata} may be different for both representations. The
+     * message. In such case, the {@link Message#metaData() metadata} may be different for both representations. The
      * {@link Message#payload() payload} <em>may</em> be identical.
      *
      * @return The unique identifier of this {@code Message}.
@@ -112,7 +112,7 @@ public interface Message<P> {
      *
      * @return The {@link MetaData} for this {@code Message}.
      */
-    MetaData getMetaData();
+    MetaData metaData();
 
     /**
      * Returns the payload of this {@code Message} of generic type {@code P}.
@@ -126,7 +126,7 @@ public interface Message<P> {
     /**
      * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
      * <p>
-     * If {@link #getPayloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given {@code type},
+     * If {@link #payloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given {@code type},
      * {@link #payload()} may be invoked instead of using the given {@code converter}.
      * <p>
      * Implementers of this operation may optimize by storing the converted payloads, thus saving a
@@ -141,13 +141,13 @@ public interface Message<P> {
      *                              {@code converter} is given.
      */
     default <T> T payloadAs(@Nonnull Class<T> type, @Nullable Converter converter) {
-        return getPayloadType().isAssignableFrom(type) ? type.cast(payload()) : payloadAs((Type) type, converter);
+        return payloadType().isAssignableFrom(type) ? type.cast(payload()) : payloadAs((Type) type, converter);
     }
 
     /**
      * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
      * <p>
-     * If {@link #getPayloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given
+     * If {@link #payloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given
      * {@link TypeReference#getType()}, {@link #payload()} may be invoked instead of using the given
      * {@code converter}.
      * <p>
@@ -169,7 +169,7 @@ public interface Message<P> {
     /**
      * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
      * <p>
-     * If the given {@code type} is an instance of {@link Class} and {@link #getPayloadType()} is
+     * If the given {@code type} is an instance of {@link Class} and {@link #payloadType()} is
      * {@link Class#isAssignableFrom(Class) assignable from} that {@code Class}, {@link #payload()} may be invoked
      * instead of using the given {@code converter}.
      * <p>
@@ -195,9 +195,7 @@ public interface Message<P> {
      * @return the type of payload.
      * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
      */
-    @Deprecated
-    // TODO #3085 - Replace for getMessageType once fully integrated
-    Class<P> getPayloadType();
+    Class<P> payloadType();
 
     /**
      * Returns a copy of this {@code Message} (implementation) with the given {@code metaData}.
@@ -213,7 +211,7 @@ public interface Message<P> {
     Message<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     /**
-     * Returns a copy of this {@code Message} (implementation) with its {@link Message#getMetaData() metadata} merged
+     * Returns a copy of this {@code Message} (implementation) with its {@link Message#metaData() metadata} merged
      * with the given {@code metaData}.
      * <p>
      * All others fields, like for example the {@link #payload()}, remain unchanged.
@@ -254,7 +252,7 @@ public interface Message<P> {
      */
     @Deprecated
     default <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
-        return serializer.serialize(getMetaData(), expectedRepresentation);
+        return serializer.serialize(metaData(), expectedRepresentation);
     }
 
     /**

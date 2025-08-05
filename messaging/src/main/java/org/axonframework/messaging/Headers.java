@@ -94,7 +94,7 @@ public abstract class Headers {
         headers.put(MESSAGE_ID, message.identifier());
         headers.put(MESSAGE_TYPE, serializedObject.getType().getName());
         headers.put(MESSAGE_REVISION, serializedObject.getType().getRevision());
-        headers.put(MESSAGE_TIMESTAMP, message.getTimestamp());
+        headers.put(MESSAGE_TIMESTAMP, message.timestamp());
 
         if (message instanceof DomainEventMessage) {
             headers.put(AGGREGATE_ID, ((DomainEventMessage<?>) message).getAggregateIdentifier());

@@ -121,13 +121,14 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
             delegate = new GenericMessage<>(resultMessage.identifier(),
                                             new MessageType(responseType),
                                             result.next(),
-                                            resultMessage.getMetaData(),
-                                            responseType);
+                                            responseType,
+                                            resultMessage.metaData()
+            );
         } else {
             delegate = new GenericMessage<>(new MessageType(responseType),
                                             result.next(),
-                                            MetaData.emptyInstance(),
-                                            responseType);
+                                            responseType,
+                                            MetaData.emptyInstance());
         }
         GenericQueryResponseMessage<?> message = new GenericQueryResponseMessage<>(delegate);
         responseHandler.send(serializer.serializeResponse(message, requestId));

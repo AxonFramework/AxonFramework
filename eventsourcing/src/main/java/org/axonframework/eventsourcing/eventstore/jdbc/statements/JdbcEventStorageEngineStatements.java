@@ -115,7 +115,7 @@ public abstract class JdbcEventStorageEngineStatements {
             statement.setString(2, event.getAggregateIdentifier());
             statement.setLong(3, event.getSequenceNumber());
             statement.setString(4, event.getType());
-            timestampWriter.writeTimestamp(statement, 5, event.getTimestamp());
+            timestampWriter.writeTimestamp(statement, 5, event.timestamp());
             statement.setString(6, payload.getType().getName());
             statement.setString(7, payload.getType().getRevision());
             statement.setObject(8, payload.getData());
@@ -141,7 +141,7 @@ public abstract class JdbcEventStorageEngineStatements {
     protected static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> event) {
         return event instanceof DomainEventMessage<?>
                 ? (DomainEventMessage<T>) event
-                : new GenericDomainEventMessage<>(null, event.identifier(), 0L, event, event::getTimestamp);
+                : new GenericDomainEventMessage<>(null, event.identifier(), 0L, event, event::timestamp);
     }
 
     /**
@@ -236,7 +236,7 @@ public abstract class JdbcEventStorageEngineStatements {
         statement.setString(2, snapshot.getAggregateIdentifier());
         statement.setLong(3, snapshot.getSequenceNumber());
         statement.setString(4, snapshot.getType());
-        timestampWriter.writeTimestamp(statement, 5, snapshot.getTimestamp());
+        timestampWriter.writeTimestamp(statement, 5, snapshot.timestamp());
         statement.setString(6, payload.getType().getName());
         statement.setString(7, payload.getType().getRevision());
         statement.setObject(8, payload.getData());

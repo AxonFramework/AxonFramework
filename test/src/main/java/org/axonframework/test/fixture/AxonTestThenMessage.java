@@ -95,9 +95,9 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (EventMessage<?> expectedEvent : expectedEvents) {
             EventMessage<?> actualEvent = iterator.next();
-            if (!verifyMetaDataEquality(expectedEvent.getPayloadType(),
-                                        expectedEvent.getMetaData(),
-                                        actualEvent.getMetaData())) {
+            if (!verifyMetaDataEquality(expectedEvent.payloadType(),
+                                        expectedEvent.metaData(),
+                                        actualEvent.metaData())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }

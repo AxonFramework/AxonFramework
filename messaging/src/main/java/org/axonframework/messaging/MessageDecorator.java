@@ -42,7 +42,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
      * Initializes a new decorator with given {@code delegate} {@link Message}.
      * <p>
      * The decorator delegates to the delegate for the message's {@link #identifier() identifier},
-     * {@link Message#type() type}, {@link #payload() payload}, and {@link #getMetaData() metadata}.
+     * {@link Message#type() type}, {@link #payload() payload}, and {@link #metaData() metadata}.
      *
      * @param delegate The {@link Message} delegate.
      */
@@ -62,8 +62,8 @@ public abstract class MessageDecorator<P> implements Message<P> {
     }
 
     @Override
-    public MetaData getMetaData() {
-        return delegate.getMetaData();
+    public MetaData metaData() {
+        return delegate.metaData();
     }
 
     @Override
@@ -77,8 +77,8 @@ public abstract class MessageDecorator<P> implements Message<P> {
     }
 
     @Override
-    public Class<P> getPayloadType() {
-        return delegate.getPayloadType();
+    public Class<P> payloadType() {
+        return delegate.payloadType();
     }
 
     @Override
@@ -128,7 +128,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
                      .append(payload())
                      .append('}')
                      .append(", metadata={")
-                     .append(getMetaData())
+                     .append(metaData())
                      .append('}')
                      .append(", messageIdentifier='")
                      .append(identifier())

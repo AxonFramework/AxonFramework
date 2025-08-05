@@ -179,10 +179,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         Message<?> aggregateCreatedEvent = publishedMessages.getFirst();
         assertInstanceOf(GenericEventMessage.class, aggregateCreatedEvent);
-        assertTrue(afterDeadlineWasScheduled.isAfter(((GenericEventMessage<?>) aggregateCreatedEvent).getTimestamp()));
+        assertTrue(afterDeadlineWasScheduled.isAfter(((GenericEventMessage<?>) aggregateCreatedEvent).timestamp()));
         Message<?> deadLineEvent = publishedMessages.get(1);
         assertInstanceOf(GenericEventMessage.class, deadLineEvent);
-        assertTrue(afterDeadlineWasScheduled.isBefore(((GenericEventMessage<?>) deadLineEvent).getTimestamp()));
+        assertTrue(afterDeadlineWasScheduled.isBefore(((GenericEventMessage<?>) deadLineEvent).timestamp()));
     }
 
     @Test
@@ -346,11 +346,11 @@ public abstract class AbstractDeadlineManagerTestSuite {
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
 
         Message<?> aggregateCreatedEvent = publishedMessages.getFirst();
-        assertTrue(aggregateCreatedEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, aggregateCreatedEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(aggregateCreatedEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, aggregateCreatedEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
         Message<?> deadLineEvent = publishedMessages.get(1);
-        assertTrue(deadLineEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, deadLineEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(deadLineEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, deadLineEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
     }
 
     @Test
@@ -497,7 +497,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.getComponent(DeadlineManager.class).registerHandlerInterceptor((uow, context, chain) -> {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(deadlineMessage.getDeadlineName(),
                                                                       new DeadlinePayload(FAKE_IDENTIFIER),
-                                                                      deadlineMessage.getTimestamp()));
+                                                                      deadlineMessage.timestamp()));
             return chain.proceedSync(context);
         });
         configuration.getComponent(EventSink.class)
@@ -516,7 +516,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
                      .registerDispatchInterceptor(
                              messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(),
                                                                      new DeadlinePayload(FAKE_IDENTIFIER),
-                                                                     m.getTimestamp())
+                                                                     m.timestamp())
                      );
         configuration.getComponent(EventSink.class)
                      .publish(null, testEventMessage);
@@ -546,11 +546,11 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertSagaIs(LIVE);
 
         Message<?> sagaStartingEvent = publishedMessages.get(0);
-        assertTrue(sagaStartingEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, sagaStartingEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(sagaStartingEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, sagaStartingEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
         Message<?> deadLineOccurredEvent = publishedMessages.get(1);
-        assertTrue(deadLineOccurredEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, deadLineOccurredEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(deadLineOccurredEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, deadLineOccurredEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
     }
 
     private void assertPublishedEvents(Object... expectedEvents) {
@@ -578,7 +578,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         return new GenericDeadlineMessage<>(
                 deadlineMessage.getDeadlineName(),
                 new GenericMessage<>(new MessageType(payload.getClass()), payload),
-                deadlineMessage::getTimestamp
+                deadlineMessage::timestamp
         );
     }
 

@@ -121,8 +121,8 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                                 DeadLetter<? extends EventMessage<?>> actual) {
 
         assertEquals(expected.message().payload(), actual.message().payload());
-        assertEquals(expected.message().getPayloadType(), actual.message().getPayloadType());
-        assertEquals(expected.message().getMetaData(), actual.message().getMetaData());
+        assertEquals(expected.message().payloadType(), actual.message().payloadType());
+        assertEquals(expected.message().metaData(), actual.message().metaData());
         assertEquals(expected.message().identifier(), actual.message().identifier());
         assertEquals(expected.cause(), actual.cause());
         assertEquals(expected.enqueuedAt(), actual.enqueuedAt());

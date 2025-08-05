@@ -107,8 +107,8 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(1, publishedMessage.payload());
-        assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
-        assertTrue(publishedMessage.getMetaData().isEmpty());
+        assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
+        assertTrue(publishedMessage.metaData().isEmpty());
     }
 
     @Test
@@ -138,8 +138,8 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(2, publishedMessage.payload());
-        assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
-        assertEquals(metadata, publishedMessage.getMetaData());
+        assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
+        assertEquals(metadata, publishedMessage.metaData());
     }
 
     @Test
@@ -153,8 +153,8 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(new PayloadWithRevision(), publishedMessage.payload());
-        assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
-        assertTrue(publishedMessage.getMetaData().isEmpty());
+        assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
+        assertTrue(publishedMessage.metaData().isEmpty());
     }
 
     @Test
@@ -173,8 +173,8 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         EventMessage<?> publishedMessage = publishedMessages.getFirst();
 
         assertEquals(new PayloadWithRevision(), publishedMessage.payload());
-        assertTrue(rightAfterSchedule.isBefore(publishedMessage.getTimestamp()));
-        assertEquals(metadata, publishedMessage.getMetaData());
+        assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
+        assertEquals(metadata, publishedMessage.metaData());
     }
 
     @Test

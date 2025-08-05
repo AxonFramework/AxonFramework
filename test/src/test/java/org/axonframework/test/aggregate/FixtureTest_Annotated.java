@@ -89,7 +89,7 @@ class FixtureTest_Annotated {
                .expectEventsMatching(new TypeSafeMatcher<List<EventMessage<?>>>() {
                    @Override
                    protected boolean matchesSafely(List<EventMessage<?>> item) {
-                       return item.stream().allMatch(i -> Instant.EPOCH.equals(i.getTimestamp()));
+                       return item.stream().allMatch(i -> Instant.EPOCH.equals(i.timestamp()));
                    }
 
                    @Override
@@ -101,11 +101,11 @@ class FixtureTest_Annotated {
                 fixture.getEventStore()
                        .readEvents("AggregateId")
                        .asStream()
-                       .allMatch(i -> Instant.EPOCH.equals(i.getTimestamp()))
+                       .allMatch(i -> Instant.EPOCH.equals(i.timestamp()))
         );
         assertEquals(1, fixture.getEventStore().readEvents("AggregateId")
                                .asStream()
-                               .map(EventMessage::getTimestamp)
+                               .map(EventMessage::timestamp)
                                .distinct()
                                .count());
     }
@@ -117,7 +117,7 @@ class FixtureTest_Annotated {
 
         assertEquals(1, fixture.getEventStore().readEvents("AggregateId")
                                .asStream()
-                               .map(EventMessage::getTimestamp)
+                               .map(EventMessage::timestamp)
                                .distinct()
                                .count());
     }
@@ -304,8 +304,8 @@ class FixtureTest_Annotated {
                .andGivenCurrentTime(Instant.EPOCH)
                .when(new TestCommand(testAggregateId))
                .expectEventsMatching(exactSequenceOf(matches(
-                       eventMessage -> eventMessage.getTimestamp() == Instant.EPOCH
-                               && MyEvent.class.equals(eventMessage.getPayloadType())
+                       eventMessage -> eventMessage.timestamp() == Instant.EPOCH
+                               && MyEvent.class.equals(eventMessage.payloadType())
                )));
 
         assertEquals(3, fixture.getEventStore()

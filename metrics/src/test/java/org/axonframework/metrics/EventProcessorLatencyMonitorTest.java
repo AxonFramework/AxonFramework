@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,10 +43,10 @@ class EventProcessorLatencyMonitorTest {
     @Test
     void messages() {
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
-        when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
+        when(firstEventMessage.timestamp()).thenReturn(Instant.ofEpochMilli(0));
 
         EventMessage<?> secondEventMessage = mock(EventMessage.class);
-        when(secondEventMessage.getTimestamp()).thenReturn(Instant.now().minusMillis(1000));
+        when(secondEventMessage.timestamp()).thenReturn(Instant.now().minusMillis(1000));
 
         Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject.onMessagesIngested(
                 Arrays.asList(firstEventMessage, secondEventMessage)
@@ -63,10 +63,10 @@ class EventProcessorLatencyMonitorTest {
     @Test
     void failureMessage() {
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
-        when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
+        when(firstEventMessage.timestamp()).thenReturn(Instant.ofEpochMilli(0));
 
         EventMessage<?> secondEventMessage = mock(EventMessage.class);
-        when(secondEventMessage.getTimestamp()).thenReturn(Instant.now().minusMillis(1000));
+        when(secondEventMessage.timestamp()).thenReturn(Instant.now().minusMillis(1000));
 
         Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject.onMessagesIngested(
                 Arrays.asList(firstEventMessage, secondEventMessage)

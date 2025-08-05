@@ -94,7 +94,7 @@ class MessageTimerMonitorTest {
     @Test
     void messagesWithPayloadTypeAsCustomTag() {
         MessageTimerMonitor testSubject = testSubjectBuilder.tagsBuilder(
-                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
+                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.payloadType().getSimpleName())
         ).build();
 
         EventMessage<Object> foo = asEventMessage(1);
@@ -147,7 +147,7 @@ class MessageTimerMonitorTest {
     @Test
     void messagesWithMetadataAsCustomTag() {
         MessageTimerMonitor testSubject = testSubjectBuilder.tagsBuilder(
-                message -> Tags.of("myMetaData", message.getMetaData().get("myMetadataKey").toString())
+                message -> Tags.of("myMetaData", message.metaData().get("myMetadataKey").toString())
         ).build();
 
         EventMessage<Object> foo = asEventMessage("foo").withMetaData(Collections.singletonMap("myMetadataKey",

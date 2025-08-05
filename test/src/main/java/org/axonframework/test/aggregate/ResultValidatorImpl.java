@@ -108,9 +108,9 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (EventMessage<?> expectedEvent : expectedEvents) {
             EventMessage<?> actualEvent = iterator.next();
-            if (!verifyMetaDataEquality(expectedEvent.getPayloadType(),
-                                        expectedEvent.getMetaData(),
-                                        actualEvent.getMetaData())) {
+            if (!verifyMetaDataEquality(expectedEvent.payloadType(),
+                                        expectedEvent.metaData(),
+                                        actualEvent.metaData())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
@@ -243,7 +243,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant scheduledTime,
                                                                 Matcher<? super DeadlineMessage<?>> matcher) {
         return expectNoScheduledDeadlineMatching(matches(
-                deadlineMessage -> deadlineMessage.getTimestamp().equals(scheduledTime)
+                deadlineMessage -> deadlineMessage.timestamp().equals(scheduledTime)
                         && matcher.matches(deadlineMessage)
         ));
     }
@@ -272,7 +272,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     @Override
     public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher) {
         return expectNoScheduledDeadlineMatching(matches(
-                deadlineMessage -> !(deadlineMessage.getTimestamp().isBefore(from) || deadlineMessage.getTimestamp().isAfter(to))
+                deadlineMessage -> !(deadlineMessage.timestamp().isBefore(from) || deadlineMessage.timestamp().isAfter(to))
                         && matcher.matches(deadlineMessage)
         ));
     }
@@ -357,13 +357,13 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
-        MapStringEntryMatcher expectedMatcher = new MapStringEntryMatcher(expectedResultMessage.getMetaData());
-        MapStringEntryMatcher actualMatcher = new MapStringEntryMatcher(actualReturnValue.getMetaData());
+        MapStringEntryMatcher expectedMatcher = new MapStringEntryMatcher(expectedResultMessage.metaData());
+        MapStringEntryMatcher actualMatcher = new MapStringEntryMatcher(actualReturnValue.metaData());
         expectedMatcher.describeTo(expectedDescription);
         actualMatcher.describeTo(actualDescription);
-        if (!verifyMetaDataEquality(expectedResultMessage.getPayloadType(),
-                                    expectedResultMessage.getMetaData(),
-                                    actualReturnValue.getMetaData())) {
+        if (!verifyMetaDataEquality(expectedResultMessage.payloadType(),
+                                    expectedResultMessage.metaData(),
+                                    actualReturnValue.metaData())) {
             reporter.reportWrongResult(actualDescription, expectedDescription);
         }
 

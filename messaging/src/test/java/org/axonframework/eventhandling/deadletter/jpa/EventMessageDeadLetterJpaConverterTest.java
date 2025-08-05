@@ -144,10 +144,10 @@ class EventMessageDeadLetterJpaConverterTest {
 
     private void assertCorrectlyRestored(EventMessage<?> expected, EventMessage<?> actual) {
         assertEquals(expected.identifier(), actual.identifier());
-        assertEquals(expected.getTimestamp(), actual.getTimestamp());
+        assertEquals(expected.timestamp(), actual.timestamp());
         assertEquals(expected.payload(), actual.payload());
-        assertEquals(expected.getPayloadType(), actual.getPayloadType());
-        assertEquals(expected.getMetaData(), actual.getMetaData());
+        assertEquals(expected.payloadType(), actual.payloadType());
+        assertEquals(expected.metaData(), actual.metaData());
 
         assertEquals(expected.getClass(), actual.getClass());
         if (expected instanceof DomainEventMessage<?> domainExpected) {
@@ -166,7 +166,7 @@ class EventMessageDeadLetterJpaConverterTest {
 
     private void assertCorrectlyMapped(EventMessage<?> eventMessage, DeadLetterEventEntry deadLetterEventEntry) {
         assertEquals(eventMessage.identifier(), deadLetterEventEntry.getEventIdentifier());
-        assertEquals(eventMessage.getTimestamp().toString(), deadLetterEventEntry.getTimeStamp());
+        assertEquals(eventMessage.timestamp().toString(), deadLetterEventEntry.getTimeStamp());
         assertEquals(eventMessage.payload().getClass().getName(),
                      deadLetterEventEntry.getPayload().getType().getName());
         assertEquals(PAYLOAD_REVISION, deadLetterEventEntry.getPayload().getType().getRevision());

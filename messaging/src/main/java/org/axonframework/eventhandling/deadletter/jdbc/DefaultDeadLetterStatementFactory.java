@@ -49,7 +49,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * {@code PreparedStatements}. Furthermore, it uses the configurable {@code genericSerializer} to serialize
  * {@link TrackingToken TrackingTokens} in {@link TrackedEventMessage} instances. Lastly, this factory uses the
  * {@code eventSerializer} to serialize the {@link EventMessage#payload() event payload},
- * {@link EventMessage#getMetaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} of any
+ * {@link EventMessage#metaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} of any
  * {@code DeadLetter}.
  * <p>
  * This factory and the {@link DeadLetterJdbcConverter} must use the same {@link Serializer Serializers} and
@@ -140,7 +140,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getClass().getName());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.identifier());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.type().toString());
-        statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(eventMessage.getTimestamp()));
+        statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(eventMessage.timestamp()));
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getName());
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getRevision());
         statement.setBytes(fieldIndex.getAndIncrement(), serializedPayload.getData());
@@ -466,11 +466,11 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
 
         /**
          * Sets the {@link Serializer} to serialize the {@link EventMessage#payload() event payload},
-         * {@link EventMessage#getMetaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} of the
+         * {@link EventMessage#metaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} of the
          * {@link DeadLetter} when storing it to a database.
          *
          * @param eventSerializer The serializer to use for {@link EventMessage#payload() event payload}s,
-         *                        {@link EventMessage#getMetaData() MetaData} instances, and
+         *                        {@link EventMessage#metaData() MetaData} instances, and
          *                        {@link DeadLetter#diagnostics() diagnostics}.
          * @return The current Builder, for fluent interfacing.
          */

@@ -26,10 +26,10 @@ import java.util.Map;
 /**
  * A {@link QueryMessage} used for initiating streaming queries.
  * <p>
- * It hard codes the {@link #getResponseType() response type} to an {@link PublisherResponseType} implementation.
+ * It hard codes the {@link #responseType() response type} to an {@link PublisherResponseType} implementation.
  *
  * @param <P> The type of {@link #payload() payload} expressing the query in this {@link StreamingQueryMessage}.
- * @param <R> The type of {@link #getResponseType() response} expected from this {@link StreamingQueryMessage} streamed
+ * @param <R> The type of {@link #responseType() response} expected from this {@link StreamingQueryMessage} streamed
  *            via {@link Publisher}.
  * @author Milan Savic
  * @author Stefan Dragisic
@@ -38,7 +38,7 @@ import java.util.Map;
 public interface StreamingQueryMessage<P, R> extends QueryMessage<P, Publisher<R>> {
 
     @Override
-    ResponseType<Publisher<R>> getResponseType();
+    ResponseType<Publisher<R>> responseType();
 
     @Override
     StreamingQueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData);

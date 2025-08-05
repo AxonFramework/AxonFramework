@@ -51,18 +51,18 @@ class GenericResetContextTest extends MessageTestSuite {
         MetaData metaData = MetaData.from(metaDataMap);
         ResetContext<Object> messageThree = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD, metaData);
 
-        assertSame(MetaData.emptyInstance(), messageOne.getMetaData());
+        assertSame(MetaData.emptyInstance(), messageOne.metaData());
         assertEquals(Object.class, messageOne.payload().getClass());
-        assertEquals(Object.class, messageOne.getPayloadType());
+        assertEquals(Object.class, messageOne.payloadType());
 
-        assertNotSame(metaDataMap, messageTwo.getMetaData());
-        assertEquals(metaDataMap, messageTwo.getMetaData());
+        assertNotSame(metaDataMap, messageTwo.metaData());
+        assertEquals(metaDataMap, messageTwo.metaData());
         assertEquals(Object.class, messageTwo.payload().getClass());
-        assertEquals(Object.class, messageTwo.getPayloadType());
+        assertEquals(Object.class, messageTwo.payloadType());
 
-        assertSame(metaData, messageThree.getMetaData());
+        assertSame(metaData, messageThree.metaData());
         assertEquals(Object.class, messageThree.payload().getClass());
-        assertEquals(Object.class, messageThree.getPayloadType());
+        assertEquals(Object.class, messageThree.payloadType());
 
         assertNotEquals(messageOne.identifier(), messageTwo.identifier());
         assertNotEquals(messageTwo.identifier(), messageThree.identifier());
@@ -78,8 +78,8 @@ class GenericResetContextTest extends MessageTestSuite {
         ResetContext<Object> messageTwo =
                 startMessage.withMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
-        assertEquals(0, messageOne.getMetaData().size());
-        assertEquals(1, messageTwo.getMetaData().size());
+        assertEquals(0, messageOne.metaData().size());
+        assertEquals(1, messageTwo.metaData().size());
     }
 
     @Test
@@ -91,10 +91,10 @@ class GenericResetContextTest extends MessageTestSuite {
         ResetContext<Object> messageTwo =
                 startMessage.andMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
-        assertEquals(1, messageOne.getMetaData().size());
-        assertEquals("value", messageOne.getMetaData().get("key"));
-        assertEquals(1, messageTwo.getMetaData().size());
-        assertEquals("otherValue", messageTwo.getMetaData().get("key"));
+        assertEquals(1, messageOne.metaData().size());
+        assertEquals("value", messageOne.metaData().get("key"));
+        assertEquals(1, messageTwo.metaData().size());
+        assertEquals("otherValue", messageTwo.metaData().get("key"));
     }
 
     @Test

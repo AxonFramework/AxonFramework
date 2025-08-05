@@ -28,9 +28,9 @@ import java.util.Map;
  * Generic implementation of the {@link SubscriptionQueryMessage} interface.
  *
  * @param <P> The type of {@link #payload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
- * @param <I> The type of {@link #getResponseType() initial response} expected from this
+ * @param <I> The type of {@link #responseType() initial response} expected from this
  *            {@link SubscriptionQueryMessage}.
- * @param <U> The type of {@link #getUpdateResponseType() incremental updates} expected from this
+ * @param <U> The type of {@link #updatesResponseType() incremental updates} expected from this
  *            {@link SubscriptionQueryMessage}.
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -69,7 +69,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      * {@code responseType}, and {@code updateResponseType}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -77,7 +77,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      *
      * @param delegate           The {@link Message} containing {@link Message#payload() payload},
      *                           {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                           {@link Message#getMetaData() metadata} for the {@link SubscriptionQueryMessage} to
+     *                           {@link Message#metaData() metadata} for the {@link SubscriptionQueryMessage} to
      *                           reconstruct.
      * @param responseType       The expected {@link ResponseType response type} for this
      *                           {@link SubscriptionQueryMessage}.
@@ -92,21 +92,21 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     }
 
     @Override
-    public ResponseType<U> getUpdateResponseType() {
+    public ResponseType<U> updatesResponseType() {
         return updateResponseType;
     }
 
     @Override
     public GenericSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().withMetaData(metaData),
-                                                     getResponseType(),
+                                                     responseType(),
                                                      updateResponseType);
     }
 
     @Override
     public GenericSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().andMetaData(metaData),
-                                                     getResponseType(),
+                                                     responseType(),
                                                      updateResponseType);
     }
 }

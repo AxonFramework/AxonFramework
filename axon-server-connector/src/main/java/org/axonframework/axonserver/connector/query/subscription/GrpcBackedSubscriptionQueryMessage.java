@@ -39,9 +39,9 @@ import java.util.Map;
  *
  * @param <P> A generic specifying the type of the {@link SubscriptionQueryMessage SubscriptionQueryMessage's}
  *            {@link #payload() payload}.
- * @param <I> A generic specifying the type of the {@link #getResponseType() initial result} of the
+ * @param <I> A generic specifying the type of the {@link #responseType() initial result} of the
  *            {@link SubscriptionQueryResult}.
- * @param <U> A generic specifying the type of the {@link #getUpdateResponseType() subsequent updates} of the
+ * @param <U> A generic specifying the type of the {@link #updatesResponseType() subsequent updates} of the
  *            {@link SubscriptionQueryResult}.
  * @author Sara Pellegrini
  * @since 4.0.0
@@ -92,12 +92,12 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
 
     @Nonnull
     @Override
-    public ResponseType<I> getResponseType() {
-        return grpcBackedQueryMessage.getResponseType();
+    public ResponseType<I> responseType() {
+        return grpcBackedQueryMessage.responseType();
     }
 
     @Override
-    public ResponseType<U> getUpdateResponseType() {
+    public ResponseType<U> updatesResponseType() {
         return serializedUpdateResponseType.getObject();
     }
 
@@ -113,13 +113,13 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
-    public MetaData getMetaData() {
-        return grpcBackedQueryMessage.getMetaData();
+    public MetaData metaData() {
+        return grpcBackedQueryMessage.metaData();
     }
 
     @Override
-    public Class<P> getPayloadType() {
-        return grpcBackedQueryMessage.getPayloadType();
+    public Class<P> payloadType() {
+        return grpcBackedQueryMessage.payloadType();
     }
 
     @Override
@@ -131,6 +131,6 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
 
     @Override
     public GrpcBackedSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
-        return withMetaData(getMetaData().mergedWith(metaData));
+        return withMetaData(metaData().mergedWith(metaData));
     }
 }

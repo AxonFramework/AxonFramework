@@ -37,7 +37,7 @@ import java.util.function.Supplier;
  * Wrapper that allows clients to access a gRPC {@link QueryRequest} as a {@link QueryMessage}.
  *
  * @param <P> A generic specifying the type of the {@link QueryMessage QueryMessage's} {@link #payload() payload}.
- * @param <R> A generic specifying the expected {@link #getResponseType() response type} of the {@link QueryMessage}.
+ * @param <R> A generic specifying the expected {@link #responseType() response type} of the {@link QueryMessage}.
  * @author Marc Gathier
  * @since 4.0.0
  */
@@ -95,7 +95,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     }
 
     @Override
-    public ResponseType<R> getResponseType() {
+    public ResponseType<R> responseType() {
         return serializedResponseType.getObject();
     }
 
@@ -111,12 +111,12 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     }
 
     @Override
-    public MetaData getMetaData() {
+    public MetaData metaData() {
         return metaDataSupplier.get();
     }
 
     @Override
-    public Class<P> getPayloadType() {
+    public Class<P> payloadType() {
         return serializedPayload.getType();
     }
 
@@ -131,6 +131,6 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
 
     @Override
     public GrpcBackedQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
-        return withMetaData(getMetaData().mergedWith(metaData));
+        return withMetaData(metaData().mergedWith(metaData));
     }
 }

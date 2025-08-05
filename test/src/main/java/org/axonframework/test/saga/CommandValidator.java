@@ -93,19 +93,19 @@ public class CommandValidator {
             Object expectedItem = expectedIterator.next();
             if (expectedItem instanceof CommandMessage) {
                 CommandMessage<?> expectedMessage = (CommandMessage<?>) expectedItem;
-                if (!expectedMessage.getPayloadType().equals(actualItem.getPayloadType())) {
+                if (!expectedMessage.payloadType().equals(actualItem.payloadType())) {
                     throw new AxonAssertionError(
                             "Unexpected payload type of command at position " + counter + " (0-based).\n"
-                                    + "Expected <" + expectedMessage.getPayloadType() + ">,\n"
-                                    + " but got <" + actualItem.getPayloadType() + ">."
+                                    + "Expected <" + expectedMessage.payloadType() + ">,\n"
+                                    + " but got <" + actualItem.payloadType() + ">."
                     );
                 }
                 assertCommandEquality(counter, expectedMessage.payload(), actualItem.payload());
-                if (!expectedMessage.getMetaData().equals(actualItem.getMetaData())) {
+                if (!expectedMessage.metaData().equals(actualItem.metaData())) {
                     throw new AxonAssertionError(
                             "Unexpected Meta Data of command at position " + counter + " (0-based).\n"
-                                    + "Expected <" + expectedMessage.getMetaData() + ">,\n"
-                                    + " but got <" + actualItem.getMetaData() + ">."
+                                    + "Expected <" + expectedMessage.metaData() + ">,\n"
+                                    + " but got <" + actualItem.metaData() + ">."
                     );
                 }
             } else {

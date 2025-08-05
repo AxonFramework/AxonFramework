@@ -96,8 +96,8 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public MetaData getMetaData() {
-        return responseMessage.getMetaData();
+    public MetaData metaData() {
+        return responseMessage.metaData();
     }
 
     @Override
@@ -125,7 +125,7 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public Class<R> getPayloadType() {
+    public Class<R> payloadType() {
         return expectedResponseType.responseMessagePayloadType();
     }
 

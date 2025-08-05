@@ -106,21 +106,22 @@ public class SubscriptionMessageSerializer {
                            .setClientId(configuration.getClientId())
                            .setComponentName(configuration.getComponentName())
                            .setPayload(payloadSerializer.apply(subscriptionQueryMessage))
-                           .setResponseType(responseTypeSerializer.apply(subscriptionQueryMessage.getResponseType()))
-                           .putAllMetaData(metadataSerializer.apply(subscriptionQueryMessage.getMetaData()))
+                           .setResponseType(responseTypeSerializer.apply(subscriptionQueryMessage.responseType()))
+                           .putAllMetaData(metadataSerializer.apply(subscriptionQueryMessage.metaData()))
                            .build();
     }
 
     /**
      * Serializes the given {@code subscriptionQueryMessage} into a {@link SerializedObject}.
      *
-     * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} who's {@link SubscriptionQueryMessage#getUpdateResponseType()}
-     *                                 to serialize into a {@link SerializedObject}
-     * @return a {@link SerializedObject} based on the given {@code subscriptionQueryMessage} its {@link
-     * SubscriptionQueryMessage#getUpdateResponseType()}
+     * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} who's
+     *                                 {@link SubscriptionQueryMessage#updatesResponseType()} to serialize into a
+     *                                 {@link SerializedObject}
+     * @return a {@link SerializedObject} based on the given {@code subscriptionQueryMessage} its
+     * {@link SubscriptionQueryMessage#updatesResponseType()}
      */
     public SerializedObject serializeUpdateType(SubscriptionQueryMessage<?, ?, ?> subscriptionQueryMessage) {
-        return responseTypeSerializer.apply(subscriptionQueryMessage.getUpdateResponseType());
+        return responseTypeSerializer.apply(subscriptionQueryMessage.updatesResponseType());
     }
 
     /**
@@ -149,7 +150,7 @@ public class SubscriptionMessageSerializer {
             updateMessageBuilder.setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage));
         }
 
-        Map<String, MetaDataValue> metaData = metadataSerializer.apply(subscriptionQueryUpdateMessage.getMetaData());
+        Map<String, MetaDataValue> metaData = metadataSerializer.apply(subscriptionQueryUpdateMessage.metaData());
         return updateMessageBuilder.putAllMetaData(metaData)
                                    .setMessageIdentifier(subscriptionQueryUpdateMessage.identifier())
                                    .setClientId(configuration.getClientId())

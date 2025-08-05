@@ -177,7 +177,7 @@ public class QuartzEventScheduler implements EventScheduler {
     protected JobDetail buildJobDetail(EventMessage event, JobKey jobKey) {
         JobDataMap jobData = jobDataBinder.toJobData(event);
         return JobBuilder.newJob(FireEventJob.class)
-                         .withDescription(event.getPayloadType().getName())
+                         .withDescription(event.type().name())
                          .withIdentity(jobKey)
                          .usingJobData(jobData)
                          .build();
@@ -273,7 +273,7 @@ public class QuartzEventScheduler implements EventScheduler {
 
             jobData.put(MESSAGE_ID, eventMessage.identifier());
             jobData.put(TYPE, eventMessage.type().toString());
-            jobData.put(MESSAGE_TIMESTAMP, eventMessage.getTimestamp().toString());
+            jobData.put(MESSAGE_TIMESTAMP, eventMessage.timestamp().toString());
 
             SerializedObject<byte[]> serializedPayload =
                     serializer.serialize(eventMessage.payload(), byte[].class);
@@ -282,7 +282,7 @@ public class QuartzEventScheduler implements EventScheduler {
             jobData.put(MESSAGE_REVISION, serializedPayload.getType().getRevision());
 
             SerializedObject<byte[]> serializedMetaData =
-                    serializer.serialize(eventMessage.getMetaData(), byte[].class);
+                    serializer.serialize(eventMessage.metaData(), byte[].class);
             jobData.put(MESSAGE_METADATA, serializedMetaData.getData());
 
             return jobData;

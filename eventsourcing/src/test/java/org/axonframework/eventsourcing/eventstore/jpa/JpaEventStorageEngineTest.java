@@ -195,11 +195,10 @@ class JpaEventStorageEngineTest
         entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
                 .executeUpdate();
         DomainEventMessage<?> actual = testSubject.readEvents(AGGREGATE).peek();
-        assertEquals(UnknownSerializedType.class, actual.getPayloadType());
+        assertEquals(UnknownSerializedType.class, actual.payloadType());
     }
 
     @Test
-    @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
     void storeEventsWithCustomEntity() {
         XStreamSerializer serializer = xStreamSerializer();
@@ -241,6 +240,7 @@ class JpaEventStorageEngineTest
         entityManager.clear();
 
         assertFalse(entityManager.createQuery("SELECT e FROM CustomDomainEventEntry e").getResultList().isEmpty());
+        //noinspection OptionalGetWithoutIsPresent
         assertEquals("Snapshot1", testSubject.readSnapshot(AGGREGATE).get().payload());
         assertEquals("Payload1", testSubject.readEvents(AGGREGATE).peek().payload());
     }
@@ -270,8 +270,8 @@ class JpaEventStorageEngineTest
         TrackingEventStream eventStoreResult = testEventStore.openStream(null);
 
         assertTrue(eventStoreResult.hasNextAvailable());
-        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
-        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().payloadType());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().payloadType());
         assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().payload());
         assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().payload());
         assertFalse(eventStoreResult.hasNextAvailable());

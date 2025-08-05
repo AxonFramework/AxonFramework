@@ -51,18 +51,18 @@ class GenericEventMessageTest extends MessageTestSuite {
         EventMessage<Object> message3 =
                 new GenericEventMessage<>(new MessageType("event"), payload, metaDataMap);
 
-        assertSame(MetaData.emptyInstance(), message1.getMetaData());
+        assertSame(MetaData.emptyInstance(), message1.metaData());
         assertEquals(Object.class, message1.payload().getClass());
-        assertEquals(Object.class, message1.getPayloadType());
+        assertEquals(Object.class, message1.payloadType());
 
-        assertEquals(metaData, message2.getMetaData());
+        assertEquals(metaData, message2.metaData());
         assertEquals(Object.class, message2.payload().getClass());
-        assertEquals(Object.class, message2.getPayloadType());
+        assertEquals(Object.class, message2.payloadType());
 
-        assertNotSame(metaDataMap, message3.getMetaData());
-        assertEquals(metaDataMap, message3.getMetaData());
+        assertNotSame(metaDataMap, message3.metaData());
+        assertEquals(metaDataMap, message3.metaData());
         assertEquals(Object.class, message3.payload().getClass());
-        assertEquals(Object.class, message3.getPayloadType());
+        assertEquals(Object.class, message3.payloadType());
 
         assertNotEquals(message1.identifier(), message2.identifier());
         assertNotEquals(message1.identifier(), message3.identifier());
@@ -80,8 +80,8 @@ class GenericEventMessageTest extends MessageTestSuite {
         GenericEventMessage<Object> message2 = message.withMetaData(
                 MetaData.from(Collections.singletonMap("key", "otherValue")));
 
-        assertEquals(0, message1.getMetaData().size());
-        assertEquals(1, message2.getMetaData().size());
+        assertEquals(0, message1.metaData().size());
+        assertEquals(1, message2.metaData().size());
     }
 
     @Test
@@ -95,10 +95,10 @@ class GenericEventMessageTest extends MessageTestSuite {
         GenericEventMessage<Object> message2 = message.andMetaData(
                 MetaData.from(Collections.singletonMap("key", "otherValue")));
 
-        assertEquals(1, message1.getMetaData().size());
-        assertEquals("value", message1.getMetaData().get("key"));
-        assertEquals(1, message2.getMetaData().size());
-        assertEquals("otherValue", message2.getMetaData().get("key"));
+        assertEquals(1, message1.metaData().size());
+        assertEquals("value", message1.metaData().get("key"));
+        assertEquals(1, message2.metaData().size());
+        assertEquals("otherValue", message2.metaData().get("key"));
     }
 
     @Test

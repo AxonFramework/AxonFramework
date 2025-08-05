@@ -70,7 +70,7 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
      * of Work.
      *
      * @param delegate The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
-     *                 {@link Message#identifier() identifier} and {@link Message#getMetaData() metadata} for the
+     *                 {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
      *                 {@link EventMessage} to reconstruct.
      */
     public GenericResetContext(Message<P> delegate) {

@@ -83,7 +83,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         @Override
         public Object resolveParameterValue(@Nonnull ProcessingContext context) {
             return Message.fromContext(context)
-                          .getMetaData()
+                          .metaData()
                           .get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString());
         }
 
@@ -95,8 +95,8 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             }
             return !(parameterType.isPrimitive() || (boolean) metaDataValue.get(REQUIRED_PROPERTY))
                     || (
-                    message.getMetaData().containsKey(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString())
-                            && parameterType.isInstance(message.getMetaData().get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString()))
+                    message.metaData().containsKey(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString())
+                            && parameterType.isInstance(message.metaData().get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString()))
             );
         }
     }
@@ -112,7 +112,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         @Override
         public MetaData resolveParameterValue(@Nonnull ProcessingContext context) {
             Message<?> message = Message.fromContext(context);
-            return message.getMetaData();
+            return message.metaData();
         }
 
         @Override

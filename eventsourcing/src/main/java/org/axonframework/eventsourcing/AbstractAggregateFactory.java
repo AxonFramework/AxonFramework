@@ -93,7 +93,7 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
 
     @SuppressWarnings("unchecked")
     private Optional<T> fromSnapshot(DomainEventMessage<?> firstEvent) {
-        if (aggregateModel.types().anyMatch(firstEvent.getPayloadType()::equals)) {
+        if (aggregateModel.types().anyMatch(firstEvent.payloadType()::equals)) {
             return (Optional<T>) Optional.of(firstEvent.payload());
         }
         return Optional.empty();

@@ -382,7 +382,7 @@ class AxonServerQueryBusTest {
         when(mockQueryChannel.registerQueryHandler(any(), any()))
                 .thenReturn(FutureUtils::emptyCompletedFuture);
 
-        Registration result = testSubject.subscribe(TEST_QUERY, String.class, (q, ctx) -> "test: " + q.getPayloadType());
+        Registration result = testSubject.subscribe(TEST_QUERY, String.class, (q, ctx) -> "test: " + q.payloadType());
 
         assertNotNull(result);
         verify(mockQueryChannel).registerQueryHandler(any(), eq(new QueryDefinition(TEST_QUERY, String.class)));
@@ -393,7 +393,7 @@ class AxonServerQueryBusTest {
         io.axoniq.axonserver.connector.Registration registration = mock(io.axoniq.axonserver.connector.Registration.class);
         when(mockQueryChannel.registerQueryHandler(any(), any())).thenReturn(registration);
 
-        Registration result = testSubject.subscribe(TEST_QUERY, String.class, (q, ctx) -> "test: " + q.getPayloadType());
+        Registration result = testSubject.subscribe(TEST_QUERY, String.class, (q, ctx) -> "test: " + q.payloadType());
         assertNotNull(result);
         verify(mockQueryChannel).registerQueryHandler(any(), eq(new QueryDefinition(TEST_QUERY, String.class)));
 
@@ -708,7 +708,7 @@ class AxonServerQueryBusTest {
         when(localSegment.query(any())).thenAnswer(i -> {
             startProcessingGate.await();
             QueryMessage<?, ?> message = i.getArgument(0);
-            actual.add(message.getMetaData().get("index"));
+            actual.add(message.metaData().get("index"));
             finishProcessingGate.countDown();
             return CompletableFuture.completedFuture(
                     new GenericQueryResponseMessage<>(new MessageType("query"), "ok")
