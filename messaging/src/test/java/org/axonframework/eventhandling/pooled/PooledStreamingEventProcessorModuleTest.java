@@ -53,16 +53,16 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldCreateModuleWithProcessorName() {
-            //given
+            // given
             String processorName = "test-processor";
 
-            //when
+            // when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents((cfg, components) -> components.single(new SimpleEventHandlingComponent()))
                     .customize((cfg, c) -> c);
 
-            //then
+            // then
             assertThat(module.name()).isEqualTo(processorName);
         }
     }
@@ -72,11 +72,11 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldAcceptDirectConfiguration() {
-            //given
+            // given
             String processorName = "test-processor";
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
 
-            //when
+            // when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents((__, components) -> components.single(new SimpleEventHandlingComponent()))
@@ -87,7 +87,7 @@ class PooledStreamingEventProcessorModuleTest {
                             .initialSegmentCount(4))
                     .build();
 
-            //then
+            // then
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
             var configuration = configurer.build();
@@ -106,7 +106,7 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldApplyCustomizationToDefaultConfiguration() {
-            //given
+            // given
             String processorName = "test-processor";
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
             PooledStreamingEventProcessorModule module = EventProcessorModule
@@ -120,10 +120,10 @@ class PooledStreamingEventProcessorModuleTest {
                     .customize((cfg, c) -> c.initialSegmentCount(
                             8));
 
-            //when
+            // when
             module.customize((cfg, processorConfig) -> processorConfig.initialSegmentCount(8));
 
-            //then
+            // then
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                     .defaults(d -> d.eventSource(eventSource))
@@ -139,11 +139,11 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldApplyMultipleCustomizations() {
-            //given
+            // given
             String processorName = "test-processor";
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
 
-            // when
+            //  when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.single(
@@ -154,7 +154,7 @@ class PooledStreamingEventProcessorModuleTest {
                     )
                     .customize((cfg, processorConfig) -> processorConfig.initialSegmentCount(8));
 
-            //then
+            // then
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                     .defaults(d -> d.eventSource(eventSource))
@@ -170,12 +170,12 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldInheritParentCustomizations() {
-            //given
+            // given
             String processorName = "test-processor";
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
             var expectedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
 
-            //when
+            // when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.single(
@@ -185,7 +185,7 @@ class PooledStreamingEventProcessorModuleTest {
                                     .build())
                     ).customize((cfg, processorConfig) -> processorConfig.initialSegmentCount(8));
 
-            //then
+            // then
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.unitOfWorkFactory(expectedUnitOfWorkFactory)));
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
@@ -207,19 +207,19 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldConfigureEventHandlingComponents() {
-            //given
+            // given
             String processorName = "test-processor";
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
             var component1 = new SimpleEventHandlingComponent();
             var component2 = new SimpleEventHandlingComponent();
 
-            //when
+            // when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.many(component1, component2))
                     .build();
 
-            //then
+            // then
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                     .defaults(d -> d.eventSource(eventSource))
@@ -232,11 +232,11 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldConfigureEventHandlingComponentsUsingConfigurers() {
-            //given
+            // given
             String processorName = "test-processor";
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
 
-            // when
+            //  when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents((__, components) -> components.single(
@@ -246,7 +246,7 @@ class PooledStreamingEventProcessorModuleTest {
                                     .build())
                     ).build();
 
-            //then
+            // then
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                     .defaults(d -> d.eventSource(eventSource))
@@ -263,19 +263,19 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldCreateDefaultExecutorsWhenNotConfigured() {
-            //given
+            // given
             String processorName = "test-processor";
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
             var component = new SimpleEventHandlingComponent();
 
-            //when
+            // when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents((__, components) -> components.single(component))
                     .customize((cfg, c) -> c);
 
 
-            //then
+            // then
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                     .defaults(d -> d.eventSource(eventSource))
@@ -292,14 +292,14 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldUseCustomExecutorsWhenConfigured() {
-            //given
+            // given
             String processorName = "test-processor";
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
             var component = new SimpleEventHandlingComponent();
             var customCoordinator = new AtomicReference<ScheduledExecutorService>();
             var customWorker = new AtomicReference<ScheduledExecutorService>();
 
-            // when
+            //  when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents((__, components) -> components.single(component))
@@ -315,7 +315,7 @@ class PooledStreamingEventProcessorModuleTest {
                                 return executor;
                             }));
 
-            //then
+            // then
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                     .defaults(d -> d.eventSource(eventSource))
@@ -336,7 +336,7 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldStartAndStopProcessorWithLifecycleHooks() {
-            //given
+            // given
             AtomicBoolean started = new AtomicBoolean(false);
             AtomicBoolean stopped = new AtomicBoolean(false);
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
@@ -362,23 +362,23 @@ class PooledStreamingEventProcessorModuleTest {
             );
             var configuration = configurer.build();
 
-            //when
+            // when
             configuration.start();
 
-            //then
+            // then
             await().atMost(Duration.ofSeconds(1))
                    .untilAsserted(() -> assertThat(started).isTrue());
 
-            //when
+            // when
             configuration.shutdown();
 
-            //then
+            // then
             await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> assertThat(stopped).isTrue());
         }
 
         @Test
         void shouldShutdownCustomExecutorsOnConfigurationShutdown() {
-            //given
+            // given
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
             var component = new SimpleEventHandlingComponent();
             var configurer = MessagingConfigurer.create();
@@ -387,24 +387,24 @@ class PooledStreamingEventProcessorModuleTest {
                     .processor("test-processor", (__, components) -> components.single(component))));
             var configuration = configurer.build();
 
-            //when
+            // when
             configuration.start();
             var processor = configuredProcessor(configuration, "test-processor");
             var processorConfig = configurationOf(processor.orElse(null));
 
-            //then
+            // then
             assertThat(processor).isPresent();
             assertThat(processorConfig).isNotNull();
 
-            //when
+            // when
             configuration.shutdown();
 
-            //then
-            // Verify configuration has been shut down by checking processor is no longer available
+            // then
+            //  Verify configuration has been shut down by checking processor is no longer available
             await().atMost(Duration.ofSeconds(2))
                    .untilAsserted(() -> {
                        var shutdownProcessor = configuredProcessor(configuration, "test-processor");
-                       // After shutdown, processor should still be registered but in stopped state
+                       //  After shutdown, processor should still be registered but in stopped state
                        assertThat(shutdownProcessor).isPresent();
                    });
         }
@@ -415,7 +415,7 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldRegisterProcessorAsComponent() {
-            //given
+            // given
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
             var processorName = "testProcessor";
             var configurer = MessagingConfigurer.create();
@@ -430,17 +430,17 @@ class PooledStreamingEventProcessorModuleTest {
             );
             var configuration = configurer.build();
 
-            //when
+            // when
             var processor = configuredProcessor(configuration, processorName);
 
-            //then
+            // then
             assertThat(processor).isPresent();
             assertThat(processor.get()).isInstanceOf(PooledStreamingEventProcessor.class);
         }
 
         @Test
         void shouldApplyDefaultConfigurationFromHierarchy() {
-            //given
+            // given
             var expectedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
             AsyncInMemoryStreamableEventSource expectedEventSource = new AsyncInMemoryStreamableEventSource();
             var configurer = MessagingConfigurer.create();
@@ -460,11 +460,11 @@ class PooledStreamingEventProcessorModuleTest {
             );
             var configuration = configurer.build();
 
-            //when
+            // when
             var processor = configuredProcessor(configuration, processorName);
             var processorConfig = configurationOf(processor.orElse(null));
 
-            //then
+            // then
             assertThat(processor).isPresent();
             assertThat(processorConfig).isNotNull();
             assertThat(processorConfig.unitOfWorkFactory()).isEqualTo(expectedUnitOfWorkFactory);
@@ -477,7 +477,7 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldApplyDecorationsToEventHandlingComponents() {
-            //given
+            // given
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(
@@ -493,10 +493,10 @@ class PooledStreamingEventProcessorModuleTest {
             );
             var configuration = configurer.build();
 
-            //when
+            // when
             var processor = configuredProcessor(configuration, "test-processor");
 
-            //then
+            // then
             assertThat(processor).isPresent();
         }
     }
@@ -506,7 +506,7 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         void shouldProcessEventsWithMultipleHandlers() {
-            //given
+            // given
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
             var handler1Invoked = new AtomicBoolean();
             var handler2Invoked = new AtomicBoolean();
@@ -536,10 +536,10 @@ class PooledStreamingEventProcessorModuleTest {
             );
             var configuration = configurer.build();
 
-            //when
+            // when
             var processor = configuredProcessor(configuration, "test-processor");
 
-            //then
+            // then
             assertThat(processor).isPresent();
             configuration.start();
 

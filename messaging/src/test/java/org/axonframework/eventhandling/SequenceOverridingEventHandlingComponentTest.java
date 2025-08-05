@@ -38,7 +38,7 @@ class SequenceOverridingEventHandlingComponentTest {
 
     @Test
     void sequenceIdentifierForUsesPolicyWhenItProvidesSequence() {
-        //given
+        // given
         var policySequenceId = "policy-sequence-id";
         var delegateSequenceId = "delegate-sequence-id";
         SequencingPolicy policy = event -> Optional.of(policySequenceId);
@@ -49,16 +49,16 @@ class SequenceOverridingEventHandlingComponentTest {
                 "test-payload"
         );
 
-        //when
+        // when
         var result = testSubject.sequenceIdentifierFor(testEvent, new StubProcessingContext());
 
-        //then
+        // then
         assertThat(result).isEqualTo(policySequenceId);
     }
 
     @Test
     void sequenceIdentifierForUsesDelegateWhenPolicyReturnsEmpty() {
-        //given
+        // given
         var delegateSequenceId = "delegate-sequence-id";
         SequencingPolicy policy = event -> Optional.empty();
         EventHandlingComponent delegate = getEventHandlingComponentWithSequenceId(delegateSequenceId);
@@ -68,10 +68,10 @@ class SequenceOverridingEventHandlingComponentTest {
                 "test-payload"
         );
 
-        //when
+        // when
         var result = testSubject.sequenceIdentifierFor(testEvent, new StubProcessingContext());
 
-        //then
+        // then
         assertThat(result).isEqualTo(delegateSequenceId);
     }
 
