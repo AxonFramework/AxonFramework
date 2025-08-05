@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.configuration.NewEventProcessingModule;
+import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -63,7 +63,13 @@ class PooledStreamingEventProcessorModuleTest {
         eventSource.setOnClose(() -> stopped.set(true));
 
         var configurer = MessagingConfigurer.create();
+        var module = EventProcessorModule.pooledStreaming("test-processor")
+                            .eventHandlingComponents(cfg -> single(new SimpleEventHandlingComponent()))
+                            .defaultConfiguration();
 
+        configurer.eventProcessing(ep -> ep.defaults(d -> d.unitOfWorkFactory(new SimpleUnitOfWorkFactory())));
+        configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.defaults(d -> d.eventSource(eventSource))));
+        configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
 
 
         var configuration = configurer.build();
@@ -578,8 +584,7 @@ class PooledStreamingEventProcessorModuleTest {
     private static Optional<PooledStreamingEventProcessor> configuredProcessor(AxonConfiguration configuration,
                                                                                String processorName) {
         return configuration
-                .getModuleConfiguration(NewEventProcessingModule.DEFAULT_NAME)
-                .flatMap(m -> m.getModuleConfiguration(PooledStreamingEventProcessorsModule.DEFAULT_NAME))
+                .getModuleConfiguration(PooledStreamingEventProcessorsConfigurer.DEFAULT_NAME)
                 .flatMap(m -> m.getModuleConfiguration(processorName))
                 .flatMap(m -> m.getOptionalComponent(PooledStreamingEventProcessor.class, processorName));
     }

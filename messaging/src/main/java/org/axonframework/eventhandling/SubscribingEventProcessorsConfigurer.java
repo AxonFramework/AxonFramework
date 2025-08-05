@@ -24,6 +24,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -52,7 +53,7 @@ import java.util.function.UnaryOperator;
  * <li>Applies shared customizations through the {@link #defaults(BiFunction)} and {@link #defaults(UnaryOperator)} methods</li>
  * </ul>
  * <p>
- * This module is typically accessed through {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule#subscribing(UnaryOperator)}
+ * This module is typically accessed through {@link EventProcessingConfigurer#subscribing(UnaryOperator)}
  * rather than being instantiated directly.
  * <p>
  * Example usage:
@@ -71,7 +72,7 @@ import java.util.function.UnaryOperator;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEventProcessorsModule> {
+public class SubscribingEventProcessorsConfigurer extends BaseModule<SubscribingEventProcessorsConfigurer> {
 
     public static final String DEFAULT_NAME = "defaultSubscribingEventProcessors";
 
@@ -82,14 +83,14 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      * Constructs a new subscribing event processors module with the given name.
      * <p>
      * This constructor is marked as {@link Internal} because the module is typically created and managed by the
-     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}. Users should not instantiate this
+     * {@link EventProcessingConfigurer}. Users should not instantiate this
      * class directly but instead access it through
-     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule#subscribing(UnaryOperator)}.
+     * {@link EventProcessingConfigurer#subscribing(UnaryOperator)}.
      *
      * @param name The name of this subscribing event processors module.
      */
     @Internal
-    public SubscribingEventProcessorsModule(@Nonnull String name) {
+    public SubscribingEventProcessorsConfigurer(@Nonnull String name) {
         super(name);
     }
 
@@ -132,7 +133,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      *                          applied.
      * @return This module instance for method chaining.
      */
-    public SubscribingEventProcessorsModule defaults(
+    public SubscribingEventProcessorsConfigurer defaults(
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> configureDefaults
     ) {
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
@@ -151,7 +152,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      *                          defaults.
      * @return This module instance for method chaining.
      */
-    public SubscribingEventProcessorsModule defaults(
+    public SubscribingEventProcessorsConfigurer defaults(
             @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> configureDefaults
     ) {
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
@@ -170,7 +171,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      * @param module A pre-configured {@link SubscribingEventProcessorModule} to register.
      * @return This module instance for method chaining.
      */
-    public SubscribingEventProcessorsModule processor(SubscribingEventProcessorModule module) {
+    public SubscribingEventProcessorsConfigurer processor(SubscribingEventProcessorModule module) {
         moduleBuilders.add(() -> module);
         return this;
     }
@@ -181,7 +182,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      * @param moduleBuilder A builder that creates a {@link SubscribingEventProcessorModule} instance.
      * @return This module instance for method chaining.
      */
-    public SubscribingEventProcessorsModule processor(
+    public SubscribingEventProcessorsConfigurer processor(
             ModuleBuilder<SubscribingEventProcessorModule> moduleBuilder
     ) {
         moduleBuilders.add(moduleBuilder);
@@ -201,7 +202,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      *                                handle events for.
      * @return This module instance for method chaining.
      */
-    public SubscribingEventProcessorsModule processor(
+    public SubscribingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer
     ) {
@@ -225,7 +226,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      *                                handle events for.
      * @return This module instance for method chaining.
      */
-    public SubscribingEventProcessorsModule processor(
+    public SubscribingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponents
     ) {
@@ -251,7 +252,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      *                                this specific processor.
      * @return This module instance for method chaining.
      */
-    public SubscribingEventProcessorsModule processor(
+    public SubscribingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer,
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customize
@@ -276,7 +277,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      *                  processor.
      * @return This module instance for method chaining.
      */
-    public SubscribingEventProcessorsModule processor(
+    public SubscribingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder,
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customize

@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
@@ -54,10 +55,10 @@ import java.util.function.UnaryOperator;
  * <p>
  * This module is typically not instantiated directly but created through 
  * {@link EventProcessorModule#pooledStreaming(String)} or registered via 
- * {@link PooledStreamingEventProcessorsModule#processor(String, List)} methods.
+ * {@link PooledStreamingEventProcessorsConfigurer#processor(String, List)} methods.
  * <p>
- * The module applies shared defaults from {@link PooledStreamingEventProcessorsModule} and 
- * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule} before applying 
+ * The module applies shared defaults from {@link PooledStreamingEventProcessorsConfigurer} and
+ * {@link EventProcessingConfigurer} before applying
  * processor-specific customizations.
  * <p>
  * Example configuration:
@@ -172,8 +173,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
      * {@link PooledStreamingEventProcessorConfiguration} instance.
      * <p>
      * <strong>Important:</strong> This method does not respect parent configurations and will fully override any 
-     * shared defaults from {@link PooledStreamingEventProcessorsModule} or 
-     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}. Use 
+     * shared defaults from {@link PooledStreamingEventProcessorsConfigurer} or
+     * {@link EventProcessingConfigurer}. Use
      * {@link #defaultCustomized(ComponentBuilder)} instead to apply processor-specific customizations while preserving
      * shared defaults.
      *
@@ -204,8 +205,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
      * any shared defaults from parent modules. The customization builder receives the Axon {@link Configuration}
      * and should return a function that modifies the processor configuration.
      * <p>
-     * The customization is applied after shared defaults from {@link PooledStreamingEventProcessorsModule} and
-     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}.
+     * The customization is applied after shared defaults from {@link PooledStreamingEventProcessorsConfigurer} and
+     * {@link EventProcessingConfigurer}.
      *
      * @param customizationBuilder A builder that creates a customization function for the processor configuration.
      * @return This module instance for method chaining.

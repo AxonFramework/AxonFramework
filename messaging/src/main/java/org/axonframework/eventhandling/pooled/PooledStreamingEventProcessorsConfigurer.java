@@ -25,6 +25,7 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -56,7 +57,7 @@ import java.util.function.UnaryOperator;
  * <li>Applies shared customizations through the {@link #defaults(BiFunction)} and {@link #defaults(UnaryOperator)} methods</li>
  * </ul>
  * <p>
- * This module is typically accessed through {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule#pooledStreaming(UnaryOperator)}
+ * This module is typically accessed through {@link EventProcessingConfigurer#pooledStreaming(UnaryOperator)}
  * rather than being instantiated directly.
  * <p>
  * Example usage:
@@ -75,7 +76,7 @@ import java.util.function.UnaryOperator;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStreamingEventProcessorsModule> {
+public class PooledStreamingEventProcessorsConfigurer extends BaseModule<PooledStreamingEventProcessorsConfigurer> {
 
     public static final String DEFAULT_NAME = "defaultPooledStreamingEventProcessors";
 
@@ -86,14 +87,14 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
      * Constructs a new pooled streaming event processors module with the given name.
      * <p>
      * This constructor is marked as {@link Internal} because the module is typically created and managed by the
-     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}. Users should not instantiate this
+     * {@link EventProcessingConfigurer}. Users should not instantiate this
      * class directly but instead access it through
-     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule#pooledStreaming(UnaryOperator)}.
+     * {@link EventProcessingConfigurer#pooledStreaming(UnaryOperator)}.
      *
      * @param name The name of this pooled streaming event processors module.
      */
     @Internal
-    public PooledStreamingEventProcessorsModule(@Nonnull String name) {
+    public PooledStreamingEventProcessorsConfigurer(@Nonnull String name) {
         super(name);
     }
 
@@ -139,7 +140,7 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
      *                          applied.
      * @return This module instance for method chaining.
      */
-    public PooledStreamingEventProcessorsModule defaults(
+    public PooledStreamingEventProcessorsConfigurer defaults(
             @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> configureDefaults
     ) {
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
@@ -158,7 +159,7 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
      *                          desired defaults.
      * @return This module instance for method chaining.
      */
-    public PooledStreamingEventProcessorsModule defaults(
+    public PooledStreamingEventProcessorsConfigurer defaults(
             @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> configureDefaults
     ) {
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
@@ -177,7 +178,7 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
      * @param module A pre-configured {@link PooledStreamingEventProcessorModule} to register.
      * @return This module instance for method chaining.
      */
-    public PooledStreamingEventProcessorsModule processor(PooledStreamingEventProcessorModule module) {
+    public PooledStreamingEventProcessorsConfigurer processor(PooledStreamingEventProcessorModule module) {
         moduleBuilders.add(() -> module);
         return this;
     }
@@ -194,7 +195,7 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
      *                                handle events for.
      * @return This module instance for method chaining.
      */
-    public PooledStreamingEventProcessorsModule processor(
+    public PooledStreamingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer
     ) {
@@ -217,7 +218,7 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
      *                                handle events for.
      * @return This module instance for method chaining.
      */
-    public PooledStreamingEventProcessorsModule processor(
+    public PooledStreamingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponents
     ) {
@@ -243,7 +244,7 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
      *                                for this specific processor.
      * @return This module instance for method chaining.
      */
-    public PooledStreamingEventProcessorsModule processor(
+    public PooledStreamingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer,
             @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> customize
@@ -269,7 +270,7 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
      *                                       {@link PooledStreamingEventProcessorConfiguration} for this processor.
      * @return This module instance for method chaining.
      */
-    public PooledStreamingEventProcessorsModule processor(
+    public PooledStreamingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder,
             @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> customize
@@ -287,7 +288,7 @@ public class PooledStreamingEventProcessorsModule extends BaseModule<PooledStrea
      * @param moduleBuilder A builder that creates a {@link PooledStreamingEventProcessorModule} instance.
      * @return This module instance for method chaining.
      */
-    public PooledStreamingEventProcessorsModule processor(
+    public PooledStreamingEventProcessorsConfigurer processor(
             ModuleBuilder<PooledStreamingEventProcessorModule> moduleBuilder
     ) {
         moduleBuilders.add(moduleBuilder);

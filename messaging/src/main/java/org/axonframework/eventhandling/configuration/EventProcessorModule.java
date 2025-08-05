@@ -22,8 +22,10 @@ import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
+import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 
 import java.util.function.UnaryOperator;
@@ -33,8 +35,8 @@ import java.util.function.UnaryOperator;
  * <p>
  * This interface is typically not implemented or used directly. Instead, use the provided factory methods to create
  * specific processor modules, or access existing processors through parent module configurations like
- * {@link org.axonframework.eventhandling.SubscribingEventProcessorsModule} or
- * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsModule}.
+ * {@link SubscribingEventProcessorsConfigurer} or
+ * {@link PooledStreamingEventProcessorsConfigurer}.
  * <p>
  * Example usage:
  * <pre>{@code

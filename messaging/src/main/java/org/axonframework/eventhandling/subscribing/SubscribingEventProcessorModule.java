@@ -27,9 +27,10 @@ import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
-import org.axonframework.eventhandling.SubscribingEventProcessorsModule;
+import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
@@ -53,10 +54,10 @@ import java.util.function.UnaryOperator;
  * <p>
  * This module is typically not instantiated directly but created through
  * {@link EventProcessorModule#subscribing(String)} or registered via
- * {@link SubscribingEventProcessorsModule#processor(String, List)} methods.
+ * {@link SubscribingEventProcessorsConfigurer#processor(String, List)} methods.
  * <p>
- * The module applies shared defaults from {@link SubscribingEventProcessorsModule} and
- * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule} before applying
+ * The module applies shared defaults from {@link SubscribingEventProcessorsConfigurer} and
+ * {@link EventProcessingConfigurer} before applying
  * processor-specific customizations.
  * <p>
  * Example configuration:
@@ -145,8 +146,8 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
      * {@link SubscribingEventProcessorConfiguration} instance.
      * <p>
      * <strong>Important:</strong> This method does not respect parent configurations and will fully override any
-     * shared defaults from {@link SubscribingEventProcessorsModule} or
-     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}. Use
+     * shared defaults from {@link SubscribingEventProcessorsConfigurer} or
+     * {@link EventProcessingConfigurer}. Use
      * {@link #defaultCustomized(ComponentBuilder)} instead to apply processor-specific customizations while preserving
      * shared defaults.
      *
@@ -176,8 +177,8 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
      * defaults from parent modules. The customization builder receives the Axon {@link Configuration} and should return
      * a function that modifies the processor configuration.
      * <p>
-     * The customization is applied after shared defaults from {@link SubscribingEventProcessorsModule} and
-     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}.
+     * The customization is applied after shared defaults from {@link SubscribingEventProcessorsConfigurer} and
+     * {@link EventProcessingConfigurer}.
      *
      * @param customizationBuilder A builder that creates a customization function for the processor configuration.
      * @return This module instance for method chaining.
