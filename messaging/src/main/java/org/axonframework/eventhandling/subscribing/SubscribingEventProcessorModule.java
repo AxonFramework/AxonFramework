@@ -81,9 +81,6 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     private ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder;
     private ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder;
 
-    // TODO #3103 - Rewrite with Event Handling interceptors support. Should be configurable.
-    private final MessageHandlerInterceptors messageHandlerInterceptors = new MessageHandlerInterceptors();
-
     /**
      * Constructs a module with the given processor name.
      * <p>
@@ -112,7 +109,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                         new MonitoringEventHandlingComponent(
                                 messageMonitor,
                                 new InterceptingEventHandlingComponent(
-                                        messageHandlerInterceptors,
+                                        new MessageHandlerInterceptors(configuration.interceptors()),
                                         c
                                 )
                         )
