@@ -78,11 +78,10 @@ import static org.mockito.Mockito.*;
  * @author Mateusz Nowak
  * @author Steven van Beelen
  */
-// TODO #3098 - Rename to PooledStreamingEventProcessorTest
-class NewPooledStreamingEventProcessorTest {
+class PooledStreamingEventProcessorTest {
 
     private static final Logger logger = LoggerFactory.getLogger(
-            NewPooledStreamingEventProcessorTest.class);
+            PooledStreamingEventProcessorTest.class);
 
     private static final String PROCESSOR_NAME = "test";
 

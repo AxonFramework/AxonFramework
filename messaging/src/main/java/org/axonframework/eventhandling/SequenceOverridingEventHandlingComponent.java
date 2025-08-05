@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
@@ -43,6 +44,7 @@ import static java.util.Objects.requireNonNull;
  * @see EventHandlingComponent
  * @since 5.0.0
  */
+@Internal
 public class SequenceOverridingEventHandlingComponent implements EventHandlingComponent {
 
     private final SequencingPolicy sequencingPolicy;
@@ -55,6 +57,7 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
      * @param sequencingPolicy The policy to use for determining sequence identifiers for events.
      * @param delegate         The underlying event handling component to delegate operations to.
      */
+
     public SequenceOverridingEventHandlingComponent(@Nonnull SequencingPolicy sequencingPolicy,
                                                     @Nonnull EventHandlingComponent delegate) {
         this.sequencingPolicy = requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");

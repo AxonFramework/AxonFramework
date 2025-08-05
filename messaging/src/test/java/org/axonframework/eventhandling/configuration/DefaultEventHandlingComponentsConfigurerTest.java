@@ -147,27 +147,4 @@ class DefaultEventHandlingComponentsConfigurerTest {
             }
         }
     }
-
-    @Nested
-    class ToListTest {
-
-        @Test
-        void shouldReturnImmutableCopyOfComponents() {
-            //given
-            var component1 = new SimpleEventHandlingComponent();
-            var component2 = new SimpleEventHandlingComponent();
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, component2);
-
-            //when
-            var components1 = componentsConfigurer.toList();
-            var components2 = componentsConfigurer.toList();
-
-            //then
-            assertThat(components1).hasSize(2);
-            assertThat(components1).containsExactly(component1, component2);
-            assertThat(components2).hasSize(2);
-            assertThat(components2).containsExactly(component1, component2);
-            assertThat(components1).isNotSameAs(components2);
-        }
-    }
 }

@@ -45,19 +45,16 @@ import java.util.function.Function;
  * // Create a subscribing event processor
  * EventProcessorModule subscribingModule = EventProcessorModule
  *     .subscribing("notification-processor")
+ *     .eventHandlingComponent(notificationHandler)
  *     .customize((config, processorConfig) -> processorConfig
- *         .eventHandlingComponents(List.of(notificationHandler))
  *         .messageSource(customMessageSource)
  *     );
  *
  * // Create a pooled streaming event processor
  * EventProcessorModule streamingModule = EventProcessorModule
  *     .pooledStreaming("order-processor")
- *     .customize((config, processorConfig) -> processorConfig
- *         .eventHandlingComponents(List.of(orderHandler))
- *         .bufferSize(2048)
- *         .initialSegmentCount(8)
- *     );
+ *     .eventHandlingComponent(orderHandler)
+ *     .notCustomized();
  * }</pre>
  *
  * @author Mateusz Nowak
@@ -120,7 +117,7 @@ public interface EventProcessorModule extends Module {
         /**
          * Configures multiple event handling components using varargs.
          *
-         * @param requiredComponent     The first required component.
+         * @param requiredComponent    The first required component.
          * @param additionalComponents Additional components.
          * @return The customization phase for further configuration.
          */
@@ -170,14 +167,11 @@ public interface EventProcessorModule extends Module {
     /**
      * Configuration phase interface that provides methods for setting up event processor configurations.
      * <p>
-     * This interface offers two approaches for configuring event processors:
+     * This interface offers two approaches for finishing event processors setup:
      * <ul>
-     * <li>{@link #configure(ComponentBuilder)} - Complete configuration replacement, ignoring parent defaults</li>
-     * <li>{@link #customize(BiFunction)} - Incremental customization on top of parent defaults</li>
+     * <li>{@link #notCustomized()} - Just accepts the shared and type-specific configuration without customizing it</li>
+     * <li>{@link #customized(BiFunction)} - Incremental customization on top of shared and type-specific defaults</li>
      * </ul>
-     * <p>
-     * The customization approach is generally preferred as it preserves shared configurations from parent modules
-     * while allowing processor-specific overrides.
      *
      * @param <P> The specific type of {@link EventProcessorModule} being configured.
      * @param <C> The specific type of {@link EventProcessorConfiguration} for the processor.
@@ -187,34 +181,24 @@ public interface EventProcessorModule extends Module {
     interface CustomizationPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration> {
 
         /**
-         * Configures the processor with a complete configuration, ignoring any parent module defaults.
-         * <p>
-         * This method provides direct control over the processor configuration but bypasses shared defaults from parent
-         * modules. Use {@link #customize(BiFunction)} instead to preserve shared configurations while
-         * applying processor-specific customizations.
-         *
-         * @param configurationBuilder A builder that creates the complete processor configuration.
-         * @return The configured processor module.
-         */
-        P configure(@Nonnull ComponentBuilder<C> configurationBuilder);
-
-        /**
          * Customizes the processor configuration by applying modifications to the default configuration.
          * <p>
          * This method applies processor-specific customizations on top of shared defaults from parent modules,
          * providing the recommended approach for most configuration scenarios.
          *
-         * @param customizationFunction A function that receives the configuration and default processor config, 
-         *                            returning the customized processor configuration.
+         * @param instanceCustomization A function that receives the configuration and default processor config,
+         *                              returning the customized processor configuration.
          * @return The configured processor module.
          */
-        P customize(@Nonnull BiFunction<Configuration, C, C> customizationFunction);
+        P customized(@Nonnull BiFunction<Configuration, C, C> instanceCustomization);
 
         /**
          * Builds the processor module with the current configuration.
          *
          * @return The configured processor module.
          */
-        P build();
+        default P notCustomized() {
+            return customized((cfg, processorConfig) -> processorConfig);
+        }
     }
 }

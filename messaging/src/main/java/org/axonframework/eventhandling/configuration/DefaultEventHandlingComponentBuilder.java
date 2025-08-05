@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.SequenceOverridingEventHandlingComponent;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.messaging.QualifiedName;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 
@@ -76,7 +77,7 @@ public class DefaultEventHandlingComponentBuilder
      * @param component The base {@link EventHandlingComponent} to build upon. Cannot be {@code null}.
      */
     public DefaultEventHandlingComponentBuilder(@Nonnull EventHandlingComponent component) {
-        this.component = component;
+        this.component = Objects.requireNonNull(component, "EventHandlingComponent may not be null");
     }
 
 
@@ -84,7 +85,10 @@ public class DefaultEventHandlingComponentBuilder
     public EventHandlingComponentBuilder.RequiredEventHandlerPhase sequencingPolicy(
             @Nonnull SequencingPolicy sequencingPolicy
     ) {
-        this.component = new SequenceOverridingEventHandlingComponent(sequencingPolicy, component);
+        this.component = new SequenceOverridingEventHandlingComponent(
+                Objects.requireNonNull(sequencingPolicy, "SequencingPolicy may not be null"),
+                component
+        );
         return this;
     }
 
@@ -110,7 +114,7 @@ public class DefaultEventHandlingComponentBuilder
     public EventHandlingComponentBuilder.Complete decorated(
             @Nonnull UnaryOperator<EventHandlingComponent> decorator
     ) {
-        this.component = decorator.apply(component);
+        this.component = Objects.requireNonNull(decorator, "Decorator may not be null").apply(component);
         return this;
     }
 
