@@ -74,7 +74,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     private MessagingConfigurer(@Nonnull ApplicationConfigurer delegate) {
         this.delegate =
                 requireNonNull(delegate, "The Application Configurer cannot be null.");
-        this.eventProcessing = new EventProcessingConfigurer("EventProcessingConfigurer", this);
+        this.eventProcessing = new EventProcessingConfigurer(this);
     }
 
     /**

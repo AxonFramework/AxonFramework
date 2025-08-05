@@ -581,11 +581,11 @@ class PooledStreamingEventProcessorModuleTest {
 
 
     @Nonnull
-    private static Optional<PooledStreamingEventProcessor> configuredProcessor(AxonConfiguration configuration,
-                                                                               String processorName) {
-        return configuration
-                .getModuleConfiguration(PooledStreamingEventProcessorsConfigurer.DEFAULT_NAME)
-                .flatMap(m -> m.getModuleConfiguration(processorName))
+    private static Optional<PooledStreamingEventProcessor> configuredProcessor(
+            AxonConfiguration configuration,
+            String processorName
+    ) {
+        return configuration.getModuleConfiguration(processorName)
                 .flatMap(m -> m.getOptionalComponent(PooledStreamingEventProcessor.class, processorName));
     }
 

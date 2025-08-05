@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
@@ -34,6 +35,7 @@ import org.axonframework.eventstreaming.StreamableEventSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 /**
@@ -76,9 +78,9 @@ import java.util.function.UnaryOperator;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class PooledStreamingEventProcessorsConfigurer extends BaseModule<PooledStreamingEventProcessorsConfigurer> {
+public class PooledStreamingEventProcessorsConfigurer {
 
-    public static final String DEFAULT_NAME = "defaultPooledStreamingEventProcessors";
+    private final EventProcessingConfigurer parent;
 
     private PooledStreamingEventProcessorModule.Customization processorsDefaultCustomization = PooledStreamingEventProcessorModule.Customization.noOp();
     private final List<ModuleBuilder<PooledStreamingEventProcessorModule>> moduleBuilders = new ArrayList<>();
@@ -94,12 +96,11 @@ public class PooledStreamingEventProcessorsConfigurer extends BaseModule<PooledS
      * @param name The name of this pooled streaming event processors module.
      */
     @Internal
-    public PooledStreamingEventProcessorsConfigurer(@Nonnull String name) {
-        super(name);
+    public PooledStreamingEventProcessorsConfigurer(@Nonnull EventProcessingConfigurer parent) {
+        this.parent = parent;
     }
 
-    @Override
-    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public void build() {
         componentRegistry(cr -> cr.registerIfNotPresent(TokenStore.class, cfg -> new InMemoryTokenStore()));
         componentRegistry(
                 cr -> cr.registerComponent(
@@ -121,7 +122,6 @@ public class PooledStreamingEventProcessorsConfigurer extends BaseModule<PooledS
                                                moduleBuilder.build()
                                        ))
         );
-        return super.build(parent, lifecycleRegistry);
     }
 
     /**
@@ -292,6 +292,11 @@ public class PooledStreamingEventProcessorsConfigurer extends BaseModule<PooledS
             ModuleBuilder<PooledStreamingEventProcessorModule> moduleBuilder
     ) {
         moduleBuilders.add(moduleBuilder);
+        return this;
+    }
+
+    public PooledStreamingEventProcessorsConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+        parent.componentRegistry(registryAction);
         return this;
     }
 }

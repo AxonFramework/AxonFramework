@@ -20,18 +20,21 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 /**
@@ -72,10 +75,9 @@ import java.util.function.UnaryOperator;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class SubscribingEventProcessorsConfigurer extends BaseModule<SubscribingEventProcessorsConfigurer> {
+public class SubscribingEventProcessorsConfigurer {
 
-    public static final String DEFAULT_NAME = "defaultSubscribingEventProcessors";
-
+    private final EventProcessingConfigurer parent;
     private SubscribingEventProcessorModule.Customization processorsDefaultCustomization = SubscribingEventProcessorModule.Customization.noOp();
     private final List<ModuleBuilder<SubscribingEventProcessorModule>> moduleBuilders = new ArrayList<>();
 
@@ -90,12 +92,11 @@ public class SubscribingEventProcessorsConfigurer extends BaseModule<Subscribing
      * @param name The name of this subscribing event processors module.
      */
     @Internal
-    public SubscribingEventProcessorsConfigurer(@Nonnull String name) {
-        super(name);
+    public SubscribingEventProcessorsConfigurer(@Nonnull EventProcessingConfigurer parent) {
+        this.parent = parent;
     }
 
-    @Override
-    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public void build() {
         componentRegistry(
                 cr -> cr.registerComponent(
                         SubscribingEventProcessorModule.Customization.class,
@@ -114,7 +115,6 @@ public class SubscribingEventProcessorsConfigurer extends BaseModule<Subscribing
                                                moduleBuilder.build()
                                        ))
         );
-        return super.build(parent, lifecycleRegistry);
     }
 
     /**
@@ -287,5 +287,10 @@ public class SubscribingEventProcessorsConfigurer extends BaseModule<Subscribing
                                     .eventHandlingComponents(eventHandlingComponentsBuilder)
                                     .defaultCustomized(config -> customization -> customize.apply(config, customization))
         );
+    }
+
+    public SubscribingEventProcessorsConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+        parent.componentRegistry(registryAction);
+        return this;
     }
 }

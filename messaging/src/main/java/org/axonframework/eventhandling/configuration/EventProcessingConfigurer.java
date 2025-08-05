@@ -19,17 +19,14 @@ package org.axonframework.eventhandling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 
-import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -76,13 +73,9 @@ import java.util.function.UnaryOperator;
  */
 public class EventProcessingConfigurer {
 
-    private final PooledStreamingEventProcessorsConfigurer pooledStreamingEventProcessorsConfigurer = new PooledStreamingEventProcessorsConfigurer(
-            PooledStreamingEventProcessorsConfigurer.DEFAULT_NAME
-    );
-    private final SubscribingEventProcessorsConfigurer subscribingEventProcessorsConfigurer = new SubscribingEventProcessorsConfigurer(
-            SubscribingEventProcessorsConfigurer.DEFAULT_NAME
-    );
     private final MessagingConfigurer parent;
+    private final PooledStreamingEventProcessorsConfigurer pooledStreamingEventProcessors;
+    private final SubscribingEventProcessorsConfigurer subscribingEventProcessors;
 
     private EventProcessorCustomization processorsDefaultCustomization = EventProcessorCustomization.noOp();
 
@@ -97,8 +90,10 @@ public class EventProcessingConfigurer {
      * @param name The name of this event processing module.
      */
     @Internal
-    public EventProcessingConfigurer(@Nonnull String name, @Nonnull MessagingConfigurer parent) {
+    public EventProcessingConfigurer(@Nonnull MessagingConfigurer parent) {
         this.parent = parent;
+        this.pooledStreamingEventProcessors = new PooledStreamingEventProcessorsConfigurer(this);
+        this.subscribingEventProcessors = new SubscribingEventProcessorsConfigurer(this);
     }
 
     public void build() {
@@ -114,12 +109,8 @@ public class EventProcessingConfigurer {
                                 }).andThen(processorsDefaultCustomization)
                 )
         );
-        componentRegistry(cr -> cr.registerModule(
-                pooledStreamingEventProcessorsConfigurer
-        ));
-        componentRegistry(cr -> cr.registerModule(
-                subscribingEventProcessorsConfigurer
-        ));
+        pooledStreamingEventProcessors.build();
+        subscribingEventProcessors.build();
     }
 
     /**
@@ -175,7 +166,7 @@ public class EventProcessingConfigurer {
     public EventProcessingConfigurer pooledStreaming(
             @Nonnull UnaryOperator<PooledStreamingEventProcessorsConfigurer> processorsModuleTask
     ) {
-        processorsModuleTask.apply(pooledStreamingEventProcessorsConfigurer);
+        processorsModuleTask.apply(pooledStreamingEventProcessors);
         return this;
     }
 
@@ -194,11 +185,11 @@ public class EventProcessingConfigurer {
     public EventProcessingConfigurer subscribing(
             @Nonnull UnaryOperator<SubscribingEventProcessorsConfigurer> processorsModuleTask
     ) {
-        processorsModuleTask.apply(subscribingEventProcessorsConfigurer);
+        processorsModuleTask.apply(subscribingEventProcessors);
         return this;
     }
 
-    private EventProcessingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+    public EventProcessingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
         parent.componentRegistry(registryAction);
         return this;
     }
