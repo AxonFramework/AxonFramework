@@ -21,60 +21,72 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-/**
- * Name alternatives: EventHandlingComponents
- *
- * @author Mateusz Nowak
- * @since 5.0.0
- */
-public class EventHandlingComponentsConfigurer {
+public interface EventHandlingComponentsConfigurer {
 
-    private final List<EventHandlingComponent> components;
+    interface ComponentsPhase {
 
-    private EventHandlingComponentsConfigurer(@Nonnull List<EventHandlingComponent> components) {
-        this.components = components;
+        @Nonnull
+        CompletePhase single(@Nonnull Function<EventHandlingComponentBuilder.SequencingPolicyPhase, EventHandlingComponentBuilder.Complete> definition);
+
+        @Nonnull
+        default CompletePhase single(@Nonnull EventHandlingComponent component) {
+            return many(List.of(component));
+        }
+
+        @Nonnull
+        default CompletePhase single(
+                @Nonnull EventHandlingComponentBuilder.Complete definition
+        ) {
+            return single(definition.build());
+        }
+
+        @SuppressWarnings("unchecked")
+        @Nonnull
+        CompletePhase many(
+                @Nonnull Function<EventHandlingComponentBuilder.SequencingPolicyPhase, EventHandlingComponentBuilder.Complete> requiredComponent,
+                @Nonnull Function<EventHandlingComponentBuilder.SequencingPolicyPhase, EventHandlingComponentBuilder.Complete>... additionalComponents
+        );
+
+        @Nonnull
+        default CompletePhase many(
+                @Nonnull EventHandlingComponent requiredComponent,
+                @Nonnull EventHandlingComponent... additionalComponents
+        ) {
+            var components = Stream.concat(
+                    Stream.of(requiredComponent),
+                    Stream.of(additionalComponents)
+            ).filter(Objects::nonNull).toList();
+            return many(components);
+        }
+
+        @Nonnull
+        default CompletePhase many(
+                @Nonnull EventHandlingComponentBuilder.Complete requiredComponent,
+                @Nonnull EventHandlingComponentBuilder.Complete... additionalComponents
+        ) {
+            var components = Stream.concat(
+                    Stream.of(requiredComponent.build()),
+                    Stream.of(additionalComponents).map(EventHandlingComponentBuilder.Complete::build)
+            ).filter(Objects::nonNull).toList();
+            return many(components);
+        }
+
+        CompletePhase many(
+                @Nonnull List<EventHandlingComponent> components
+        );
     }
 
-    public static EventHandlingComponentsConfigurer single(
-            @Nonnull EventHandlingComponentBuilder.Complete definition
-    ) {
-        return new EventHandlingComponentsConfigurer(List.of(definition.build()));
-    }
+    interface CompletePhase {
 
-    public static EventHandlingComponentsConfigurer single(@Nonnull EventHandlingComponent component) {
-        return new EventHandlingComponentsConfigurer(List.of(component));
-    }
+        CompletePhase decorated(@Nonnull UnaryOperator<EventHandlingComponent> decorator);
 
-    public static EventHandlingComponentsConfigurer many(
-            @Nonnull EventHandlingComponent requiredComponent,
-            @Nonnull EventHandlingComponent... additionalComponents
-    ) {
-        var components = Stream.concat(
-                Stream.of(requiredComponent),
-                Stream.of(additionalComponents)
-        ).filter(Objects::nonNull).toList();
-        return new EventHandlingComponentsConfigurer(components);
-    }
+        ComponentsPhase and();
 
-    public static EventHandlingComponentsConfigurer many(
-            @Nonnull EventHandlingComponentBuilder.Complete requiredDefinition,
-            @Nonnull EventHandlingComponentBuilder.Complete... additionalDefinitions
-    ) {
-        var components = Stream.concat(
-                Stream.of(requiredDefinition.build()),
-                Stream.of(additionalDefinitions).map(EventHandlingComponentBuilder.Complete::build)
-        ).filter(Objects::nonNull).toList();
-        return new EventHandlingComponentsConfigurer(components);
-    }
-
-    public EventHandlingComponentsConfigurer decorated(@Nonnull UnaryOperator<EventHandlingComponent> decorator) {
-        return new EventHandlingComponentsConfigurer(components.stream().map(decorator).toList());
-    }
-
-    public List<EventHandlingComponent> toList() {
-        return List.copyOf(components);
+        List<EventHandlingComponent> toList();
     }
 }
+

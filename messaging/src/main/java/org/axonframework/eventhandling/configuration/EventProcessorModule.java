@@ -18,8 +18,10 @@ package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
@@ -28,6 +30,9 @@ import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModul
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
@@ -35,8 +40,7 @@ import java.util.function.UnaryOperator;
  * <p>
  * This interface is typically not implemented or used directly. Instead, use the provided factory methods to create
  * specific processor modules, or access existing processors through parent module configurations like
- * {@link SubscribingEventProcessorsConfigurer} or
- * {@link PooledStreamingEventProcessorsConfigurer}.
+ * {@link SubscribingEventProcessorsConfigurer} or {@link PooledStreamingEventProcessorsConfigurer}.
  * <p>
  * Example usage:
  * <pre>{@code
@@ -89,13 +93,39 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
 
     interface EventHandlingPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration> {
 
+        default CustomizationPhase<P, C> eventHandlingComponent(@Nonnull EventHandlingComponent requiredComponent) {
+            return eventHandlingComponents((cfg, components) -> components.single(requiredComponent));
+        }
+
+        default CustomizationPhase<P, C> eventHandlingComponent(
+                @Nonnull ComponentBuilder<EventHandlingComponent> requiredComponentBuilder
+        ) {
+            return eventHandlingComponents((cfg, components) -> components.single(requiredComponentBuilder.build(cfg)));
+        }
+
         default CustomizationPhase<P, C> eventHandlingComponents(
-                EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer) {
-            return eventHandlingComponents(cfg -> eventHandlingComponentsConfigurer);
+                @Nonnull EventHandlingComponent requiredComponent,
+                @Nonnull EventHandlingComponent... additionalComponents
+        ) {
+            return eventHandlingComponents((cfg, components) -> components.many(requiredComponent,
+                                                                                additionalComponents));
+        }
+
+        default CustomizationPhase<P, C> eventHandlingComponents(
+                @Nonnull List<EventHandlingComponent> componentList
+        ) {
+            return eventHandlingComponents((cfg, components) -> components.many(componentList));
+        }
+
+        default CustomizationPhase<P, C> eventHandlingComponents(
+                @Nonnull Function<EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsConfigurer
+        ) {
+            return eventHandlingComponents((cfg, components) -> eventHandlingComponentsConfigurer.apply(components));
         }
 
         CustomizationPhase<P, C> eventHandlingComponents(
-                ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder);
+                @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+        );
     }
 
     /**
@@ -121,8 +151,8 @@ public interface EventProcessorModule extends Module, ModuleBuilder<EventProcess
          * Configures the processor with a complete configuration, ignoring any parent module defaults.
          * <p>
          * This method provides direct control over the processor configuration but bypasses shared defaults from parent
-         * modules. Use {@link #defaultCustomized(ComponentBuilder)} instead to preserve shared configurations while applying
-         * processor-specific customizations.
+         * modules. Use {@link #defaultCustomized(ComponentBuilder)} instead to preserve shared configurations while
+         * applying processor-specific customizations.
          *
          * @param configurationBuilder A builder that creates the complete processor configuration.
          * @return The configured processor module.

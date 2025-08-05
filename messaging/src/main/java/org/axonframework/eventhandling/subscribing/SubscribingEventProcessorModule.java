@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
-import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
@@ -79,7 +79,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         EventProcessorModule.CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> {
 
     private final String processorName;
-    private ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder;
+    private ComponentBuilder<DefaultEventHandlingComponentsConfigurer> eventHandlingComponentsBuilder;
     private ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder;
 
     /**
@@ -164,7 +164,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
     @Override
     public CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> eventHandlingComponents(
-            ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder
+            ComponentBuilder<DefaultEventHandlingComponentsConfigurer> eventHandlingComponentsBuilder
     ) {
         this.eventHandlingComponentsBuilder = eventHandlingComponentsBuilder;
         return this;

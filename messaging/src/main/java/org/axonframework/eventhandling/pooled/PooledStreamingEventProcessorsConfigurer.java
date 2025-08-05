@@ -18,13 +18,9 @@ package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.configuration.BaseModule;
-import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
@@ -36,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
@@ -89,8 +86,7 @@ public class PooledStreamingEventProcessorsConfigurer {
      * Constructs a new pooled streaming event processors module with the given name.
      * <p>
      * This constructor is marked as {@link Internal} because the module is typically created and managed by the
-     * {@link EventProcessingConfigurer}. Users should not instantiate this
-     * class directly but instead access it through
+     * {@link EventProcessingConfigurer}. Users should not instantiate this class directly but instead access it through
      * {@link EventProcessingConfigurer#pooledStreaming(UnaryOperator)}.
      *
      * @param name The name of this pooled streaming event processors module.
@@ -168,118 +164,27 @@ public class PooledStreamingEventProcessorsConfigurer {
         return this;
     }
 
-    /**
-     * Registers a pre-configured {@link PooledStreamingEventProcessorModule} with this module.
-     * <p>
-     * Use this method when you have a fully configured processor module that you want to register directly. The module
-     * will inherit the shared defaults configured through {@link #defaults(BiFunction)} or
-     * {@link #defaults(UnaryOperator)} methods.
-     *
-     * @param module A pre-configured {@link PooledStreamingEventProcessorModule} to register.
-     * @return This module instance for method chaining.
-     */
-    public PooledStreamingEventProcessorsConfigurer processor(PooledStreamingEventProcessorModule module) {
-        moduleBuilders.add(() -> module);
+    public PooledStreamingEventProcessorsConfigurer processor(
+            @Nonnull String name,
+            @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+    ) {
+        processor(
+                () -> EventProcessorModule.pooledStreaming(name)
+                                          .eventHandlingComponents(eventHandlingComponentsBuilder)
+                                          .defaultConfiguration()
+        );
         return this;
     }
 
-    /**
-     * Registers a new {@link PooledStreamingEventProcessor} with the given name and event handling components.
-     * <p>
-     * This is the simplest way to register a pooled streaming event processor. The processor will be created with
-     * default configuration plus any shared defaults configured through {@link #defaults(BiFunction)} or
-     * {@link #defaults(UnaryOperator)} methods.
-     *
-     * @param name                    The unique name for the event processor.
-     * @param eventHandlingComponentsConfigurer The list of {@link EventHandlingComponent} instances that this processor should
-     *                                handle events for.
-     * @return This module instance for method chaining.
-     */
     public PooledStreamingEventProcessorsConfigurer processor(
             @Nonnull String name,
-            @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer
+            @Nonnull Function<EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>, EventProcessorModule> moduleCustomizer
     ) {
-        return processor(
-                name,
-                eventHandlingComponentsConfigurer,
-                (cfg, c) -> c
+        processor(
+                () -> (PooledStreamingEventProcessorModule) moduleCustomizer.apply(EventProcessorModule.pooledStreaming(
+                        name))
         );
-    }
-
-    /**
-     * Registers a new {@link PooledStreamingEventProcessor} with the given name and event handling components.
-     * <p>
-     * This is the simplest way to register a pooled streaming event processor. The processor will be created with
-     * default configuration plus any shared defaults configured through {@link #defaults(BiFunction)} or
-     * {@link #defaults(UnaryOperator)} methods.
-     *
-     * @param name                    The unique name for the event processor.
-     * @param eventHandlingComponents The list of {@link EventHandlingComponent} instances that this processor should
-     *                                handle events for.
-     * @return This module instance for method chaining.
-     */
-    public PooledStreamingEventProcessorsConfigurer processor(
-            @Nonnull String name,
-            @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponents
-    ) {
-        return processor(
-                name,
-                eventHandlingComponents,
-                (cfg, c) -> c
-        );
-    }
-
-    /**
-     * Registers a new {@link PooledStreamingEventProcessor} with the given name, event handling components, and custom
-     * configuration.
-     * <p>
-     * This method allows you to specify processor-specific customizations that will be applied in addition to any
-     * shared defaults. The customization function receives both the Axon {@link Configuration} and the processor
-     * configuration, allowing access to application-wide components.
-     *
-     * @param name                    The unique name for the event processor.
-     * @param eventHandlingComponentsConfigurer The list of {@link EventHandlingComponent} instances that this processor should
-     *                                handle events for.
-     * @param customize               A function that customizes the {@link PooledStreamingEventProcessorConfiguration}
-     *                                for this specific processor.
-     * @return This module instance for method chaining.
-     */
-    public PooledStreamingEventProcessorsConfigurer processor(
-            @Nonnull String name,
-            @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer,
-            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> customize
-    ) {
-        return processor(
-                name,
-                cfg -> eventHandlingComponentsConfigurer,
-                customize
-        );
-    }
-
-    /**
-     * Registers a new {@link PooledStreamingEventProcessor} with the given name and custom configuration.
-     * <p>
-     * This method provides the most flexibility for processor configuration. You are responsible for setting all
-     * necessary configuration, including event handling components. The customization function receives both the Axon
-     * {@link Configuration} and the processor configuration.
-     *
-     * @param name                           The unique name for the event processor.
-     * @param eventHandlingComponentsBuilder The list of {@link EventHandlingComponent} instances builders that this
-     *                                       processor should handle events for.
-     * @param customize                      A function that fully configures the
-     *                                       {@link PooledStreamingEventProcessorConfiguration} for this processor.
-     * @return This module instance for method chaining.
-     */
-    public PooledStreamingEventProcessorsConfigurer processor(
-            @Nonnull String name,
-            @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder,
-            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> customize
-    ) {
-        return processor(
-                EventProcessorModule.pooledStreaming(name)
-                                    .eventHandlingComponents(eventHandlingComponentsBuilder)
-                                    .defaultCustomized(config -> customization -> customize.apply(config, customization))
-        );
+        return this;
     }
 
     /**
@@ -295,7 +200,9 @@ public class PooledStreamingEventProcessorsConfigurer {
         return this;
     }
 
-    public PooledStreamingEventProcessorsConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+    public PooledStreamingEventProcessorsConfigurer componentRegistry(
+            @Nonnull Consumer<ComponentRegistry> registryAction
+    ) {
         parent.componentRegistry(registryAction);
         return this;
     }

@@ -18,16 +18,13 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.messaging.SubscribableMessageSource;
 
@@ -204,7 +201,7 @@ public class SubscribingEventProcessorsConfigurer {
      */
     public SubscribingEventProcessorsConfigurer processor(
             @Nonnull String name,
-            @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer
+            @Nonnull DefaultEventHandlingComponentsConfigurer eventHandlingComponentsConfigurer
     ) {
         return processor(
                 name,
@@ -228,7 +225,7 @@ public class SubscribingEventProcessorsConfigurer {
      */
     public SubscribingEventProcessorsConfigurer processor(
             @Nonnull String name,
-            @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponents
+            @Nonnull ComponentBuilder<DefaultEventHandlingComponentsConfigurer> eventHandlingComponents
     ) {
         return processor(
                 name,
@@ -254,7 +251,7 @@ public class SubscribingEventProcessorsConfigurer {
      */
     public SubscribingEventProcessorsConfigurer processor(
             @Nonnull String name,
-            @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer,
+            @Nonnull DefaultEventHandlingComponentsConfigurer eventHandlingComponentsConfigurer,
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customize
     ) {
         return processor(
@@ -279,7 +276,7 @@ public class SubscribingEventProcessorsConfigurer {
      */
     public SubscribingEventProcessorsConfigurer processor(
             @Nonnull String name,
-            @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder,
+            @Nonnull ComponentBuilder<DefaultEventHandlingComponentsConfigurer> eventHandlingComponentsBuilder,
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customize
     ) {
         return processor(

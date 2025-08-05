@@ -22,14 +22,12 @@ import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -41,7 +39,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer.*;
 import static org.axonframework.eventhandling.configuration.EventHandlingComponentBuilder.*;
 
 /**
@@ -63,7 +60,7 @@ class PooledStreamingEventProcessorModuleTest {
             //when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(cfg -> single(new SimpleEventHandlingComponent()))
+                    .eventHandlingComponents((cfg, components) -> components.single(new SimpleEventHandlingComponent()))
                     .defaultCustomized(cfg -> c -> c);
 
             //then
@@ -83,7 +80,7 @@ class PooledStreamingEventProcessorModuleTest {
             //when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(cfg -> single(new SimpleEventHandlingComponent()))
+                    .eventHandlingComponents((__, components) -> components.single(new SimpleEventHandlingComponent()))
                     .overriddenConfiguration(cfg -> new PooledStreamingEventProcessorConfiguration()
                             .eventSource(eventSource)
                             .tokenStore(new InMemoryTokenStore())
@@ -114,7 +111,7 @@ class PooledStreamingEventProcessorModuleTest {
             String processorName = "test-processor";
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
             PooledStreamingEventProcessorModule module = EventProcessorModule.pooledStreaming(processorName)
-                                                                             .eventHandlingComponents(single(component().handles(
+                                                                             .eventHandlingComponents(components -> components.single(component().handles(
                                                                                      new QualifiedName(String.class),
                                                                                      (e, c) -> MessageStream.empty())))
                                                                              .defaultCustomized(cfg -> c -> c.initialSegmentCount(
@@ -232,7 +229,7 @@ class PooledStreamingEventProcessorModuleTest {
             // when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(cfg -> single(component()
+                    .eventHandlingComponents((__, components) -> components.single(component()
                                                                    .handles(new QualifiedName(String.class),
                                                                             (e, c) -> MessageStream.empty())))
                     .defaultConfiguration();
@@ -262,7 +259,7 @@ class PooledStreamingEventProcessorModuleTest {
             //when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(cfg -> single(component))
+                    .eventHandlingComponents((__, components) -> components.single(component))
                     .defaultCustomized(cfg -> c -> c);
 
 
@@ -293,7 +290,7 @@ class PooledStreamingEventProcessorModuleTest {
             // when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(cfg -> single(component))
+                    .eventHandlingComponents((__, components) -> components.single(component))
                     .defaultCustomized(cfg -> processorConfig -> processorConfig
                             .coordinatorExecutor(name -> {
                                 var executor = java.util.concurrent.Executors.newScheduledThreadPool(1);
@@ -339,7 +336,7 @@ class PooledStreamingEventProcessorModuleTest {
                                              (event, context) -> MessageStream.empty());
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming("test-processor")
-                    .eventHandlingComponents(cfg -> single(eventHandlingComponent))
+                    .eventHandlingComponents((__, components) -> components.single(eventHandlingComponent))
                     .defaultCustomized(cfg -> customization ->
                             customization.initialSegmentCount(1)
                     );
@@ -375,7 +372,7 @@ class PooledStreamingEventProcessorModuleTest {
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                     .defaults(d -> d.eventSource(eventSource))
-                    .processor("test-processor", single(component))));
+                    .processor("test-processor", (__, components) -> components.single(component))));
             var configuration = configurer.build();
 
             //when
@@ -469,16 +466,10 @@ class PooledStreamingEventProcessorModuleTest {
             configurer.eventProcessing(
                     ep -> ep.pooledStreaming(
                             ps -> ps.defaults(d -> d.eventSource(eventSource))
-                                    .processor("test-processor",
-                                               many(
-                                                       component()
-                                                               .handles(new QualifiedName(String.class),
-                                                                        (e, c) -> MessageStream.empty()),
-                                                       component()
-                                                               .handles(new QualifiedName(Integer.class),
-                                                                        (e, c) -> MessageStream.empty())
-                                               ).decorated(c -> new MonitoringEventHandlingComponent(
-                                                       NoOpMessageMonitor.instance(), c))
+                                    .processor(
+                                            "test",
+                                            processor -> processor.eventHandlingComponents((cfg, components) -> components.single(new SimpleEventHandlingComponent()))
+                                                    .defaultConfiguration()
                                     )
                     )
             );
@@ -550,7 +541,7 @@ class PooledStreamingEventProcessorModuleTest {
             String processorName
     ) {
         return configuration.getModuleConfiguration(processorName)
-                .flatMap(m -> m.getOptionalComponent(PooledStreamingEventProcessor.class, processorName));
+                            .flatMap(m -> m.getOptionalComponent(PooledStreamingEventProcessor.class, processorName));
     }
 
     @Nullable

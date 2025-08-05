@@ -35,12 +35,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating the {@link EventHandlingComponentsConfigurer} functionality.
+ * Test class validating the {@link DefaultEventHandlingComponentsConfigurer} functionality.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class EventHandlingComponentsConfigurerTest {
+class DefaultEventHandlingComponentsConfigurerTest {
 
     private static final StubProcessingContext STUB_PROCESSING_CONTEXT = new StubProcessingContext();
 
@@ -58,7 +58,7 @@ class EventHandlingComponentsConfigurerTest {
             });
 
             //when
-            var componentsConfigurer = EventHandlingComponentsConfigurer.single(completeDefinition);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().single(completeDefinition);
             var components = componentsConfigurer.toList();
 
             //then
@@ -82,7 +82,7 @@ class EventHandlingComponentsConfigurerTest {
             component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             //when
-            var componentsConfigurer = EventHandlingComponentsConfigurer.single(component);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().single(component);
             var components = componentsConfigurer.toList();
 
             //then
@@ -102,7 +102,7 @@ class EventHandlingComponentsConfigurerTest {
             var component3 = new SimpleEventHandlingComponent();
 
             //when
-            var componentsConfigurer = EventHandlingComponentsConfigurer.many(component1, component2, component3);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().many(component1, component2, component3);
             var components = componentsConfigurer.toList();
 
             //then
@@ -117,7 +117,7 @@ class EventHandlingComponentsConfigurerTest {
             var component2 = new SimpleEventHandlingComponent();
 
             //when
-            var componentsConfigurer = EventHandlingComponentsConfigurer.many(component1, null, component2);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().many(component1, null, component2);
             var components = componentsConfigurer.toList();
 
             //then
@@ -148,7 +148,7 @@ class EventHandlingComponentsConfigurerTest {
             });
 
             //when
-            var componentsConfigurer = EventHandlingComponentsConfigurer.many(definition1, definition2);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().many(definition1, definition2);
             var components = componentsConfigurer.toList();
 
             //then
@@ -174,7 +174,7 @@ class EventHandlingComponentsConfigurerTest {
             component1.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
             component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
-            var componentsConfigurer = EventHandlingComponentsConfigurer.many(component1, component2);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().many(component1, component2);
 
             //when
             var decoratedConfigurer = componentsConfigurer.decorated(SampleDecoration::new);
@@ -220,7 +220,7 @@ class EventHandlingComponentsConfigurerTest {
             //given
             var component1 = new SimpleEventHandlingComponent();
             var component2 = new SimpleEventHandlingComponent();
-            var componentsConfigurer = EventHandlingComponentsConfigurer.many(component1, component2);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().many(component1, component2);
 
             //when
             var components1 = componentsConfigurer.toList();

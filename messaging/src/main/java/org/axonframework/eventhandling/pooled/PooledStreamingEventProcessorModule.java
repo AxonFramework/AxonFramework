@@ -27,6 +27,7 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
+import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
@@ -82,7 +83,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
     private final String processorName;
-    private ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder;
+    private ComponentBuilder<EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder;
 
     /**
@@ -189,15 +190,6 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         return this;
     }
 
-    @Override
-    public CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> eventHandlingComponents(
-            ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder
-    ) {
-        this.eventHandlingComponentsBuilder = eventHandlingComponentsBuilder;
-        return this;
-    }
-
-
     /**
      * Customizes the processor configuration by applying modifications to the default configuration.
      * <p>
@@ -254,6 +246,14 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     @Override
     public PooledStreamingEventProcessorModule build() {
         return this;
+    }
+
+    @Override
+    public CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> eventHandlingComponents(
+            @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder) {
+        var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty();
+        this.eventHandlingComponentsBuilder = config -> eventHandlingComponentsBuilder.apply(config, componentsConfigurer);
+        return null;
     }
 
     /**
