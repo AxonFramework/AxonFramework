@@ -30,26 +30,9 @@ public interface EventHandlingComponentsConfigurer {
     interface ComponentsPhase {
 
         @Nonnull
-        CompletePhase single(@Nonnull Function<EventHandlingComponentBuilder.SequencingPolicyPhase, EventHandlingComponentBuilder.Complete> definition);
-
-        @Nonnull
         default CompletePhase single(@Nonnull EventHandlingComponent component) {
             return many(List.of(component));
         }
-
-        @Nonnull
-        default CompletePhase single(
-                @Nonnull EventHandlingComponentBuilder.Complete definition
-        ) {
-            return single(definition.build());
-        }
-
-        @SuppressWarnings("unchecked")
-        @Nonnull
-        CompletePhase many(
-                @Nonnull Function<EventHandlingComponentBuilder.SequencingPolicyPhase, EventHandlingComponentBuilder.Complete> requiredComponent,
-                @Nonnull Function<EventHandlingComponentBuilder.SequencingPolicyPhase, EventHandlingComponentBuilder.Complete>... additionalComponents
-        );
 
         @Nonnull
         default CompletePhase many(
@@ -63,28 +46,12 @@ public interface EventHandlingComponentsConfigurer {
             return many(components);
         }
 
-        @Nonnull
-        default CompletePhase many(
-                @Nonnull EventHandlingComponentBuilder.Complete requiredComponent,
-                @Nonnull EventHandlingComponentBuilder.Complete... additionalComponents
-        ) {
-            var components = Stream.concat(
-                    Stream.of(requiredComponent.build()),
-                    Stream.of(additionalComponents).map(EventHandlingComponentBuilder.Complete::build)
-            ).filter(Objects::nonNull).toList();
-            return many(components);
-        }
-
-        CompletePhase many(
-                @Nonnull List<EventHandlingComponent> components
-        );
+        CompletePhase many(@Nonnull List<EventHandlingComponent> components);
     }
 
     interface CompletePhase {
 
         CompletePhase decorated(@Nonnull UnaryOperator<EventHandlingComponent> decorator);
-
-        ComponentsPhase and();
 
         List<EventHandlingComponent> toList();
     }

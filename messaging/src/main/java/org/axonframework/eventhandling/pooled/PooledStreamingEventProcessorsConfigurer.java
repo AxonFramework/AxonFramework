@@ -178,12 +178,24 @@ public class PooledStreamingEventProcessorsConfigurer {
 
     public PooledStreamingEventProcessorsConfigurer processor(
             @Nonnull String name,
-            @Nonnull Function<EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>, EventProcessorModule> moduleCustomizer
+            @Nonnull Function<EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>, PooledStreamingEventProcessorModule> moduleCustomizer
     ) {
         processor(
-                () -> (PooledStreamingEventProcessorModule) moduleCustomizer.apply(EventProcessorModule.pooledStreaming(
-                        name))
+                () -> moduleCustomizer.apply(EventProcessorModule.pooledStreaming(name))
         );
+        return this;
+    }
+
+    /**
+     * Registers a {@link PooledStreamingEventProcessorModule} using a {@link ModuleBuilder}.
+     *
+     * @param module A @link PooledStreamingEventProcessorModule} instance.
+     * @return This module instance for method chaining.
+     */
+    public PooledStreamingEventProcessorsConfigurer processor(
+            PooledStreamingEventProcessorModule module
+    ) {
+        moduleBuilders.add(() -> module);
         return this;
     }
 

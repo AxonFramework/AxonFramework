@@ -30,10 +30,6 @@ import java.util.function.UnaryOperator;
 
 public interface EventHandlingComponentBuilder {
 
-    public static SequencingPolicyPhase component() {
-        return new DefaultEventHandlingComponentBuilder();
-    }
-
     interface SequencingPolicyPhase extends RequiredEventHandlerPhase {
 
         RequiredEventHandlerPhase sequencingPolicy(@Nonnull SequencingPolicy sequencingPolicy);

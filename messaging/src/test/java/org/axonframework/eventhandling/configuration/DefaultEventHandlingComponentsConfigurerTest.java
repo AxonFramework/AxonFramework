@@ -58,7 +58,7 @@ class DefaultEventHandlingComponentsConfigurerTest {
             });
 
             //when
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().single(completeDefinition);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().single(completeDefinition);
             var components = componentsConfigurer.toList();
 
             //then
@@ -82,7 +82,7 @@ class DefaultEventHandlingComponentsConfigurerTest {
             component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             //when
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().single(component);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().single(component);
             var components = componentsConfigurer.toList();
 
             //then
@@ -102,7 +102,7 @@ class DefaultEventHandlingComponentsConfigurerTest {
             var component3 = new SimpleEventHandlingComponent();
 
             //when
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().many(component1, component2, component3);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, component2, component3);
             var components = componentsConfigurer.toList();
 
             //then
@@ -117,7 +117,7 @@ class DefaultEventHandlingComponentsConfigurerTest {
             var component2 = new SimpleEventHandlingComponent();
 
             //when
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().many(component1, null, component2);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, null, component2);
             var components = componentsConfigurer.toList();
 
             //then
@@ -127,54 +127,18 @@ class DefaultEventHandlingComponentsConfigurerTest {
     }
 
     @Nested
-    class ManyWithCompleteDefinitionsTest {
-
-        @Test
-        void shouldCreateManyComponentsFromCompleteDefinitions() {
-            //given
-            var handler1Invoked = new AtomicBoolean();
-            var handler2Invoked = new AtomicBoolean();
-
-            DefaultEventHandlingComponentBuilder configurer1 = new DefaultEventHandlingComponentBuilder();
-            var definition1 = configurer1.handles(new QualifiedName(String.class), (e, c) -> {
-                handler1Invoked.set(true);
-                return MessageStream.empty();
-            });
-
-            DefaultEventHandlingComponentBuilder configurer2 = new DefaultEventHandlingComponentBuilder();
-            var definition2 = configurer2.handles(new QualifiedName(String.class), (e, c) -> {
-                handler2Invoked.set(true);
-                return MessageStream.empty();
-            });
-
-            //when
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().many(definition1, definition2);
-            var components = componentsConfigurer.toList();
-
-            //then
-            assertThat(components).hasSize(2);
-
-            EventMessage<String> sampleMessage = EventTestUtils.asEventMessage("Message1");
-            components.get(0).handle(sampleMessage, STUB_PROCESSING_CONTEXT);
-            components.get(1).handle(sampleMessage, STUB_PROCESSING_CONTEXT);
-
-            assertThat(handler1Invoked).isTrue();
-            assertThat(handler2Invoked).isTrue();
-        }
-    }
-
-    @Nested
     class DecoratedTest {
 
         @Test
         void shouldDecorateAllComponents() {
             //given
-            var component1 = new SimpleEventHandlingComponent();
+            var component1 = SimpleEventHandlingComponent.builder()
+                    .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+                    .build();
             var component2 = new SimpleEventHandlingComponent();
-            component1.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
             component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().many(component1, component2);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, component2);
 
             //when
             var decoratedConfigurer = componentsConfigurer.decorated(SampleDecoration::new);
@@ -220,7 +184,7 @@ class DefaultEventHandlingComponentsConfigurerTest {
             //given
             var component1 = new SimpleEventHandlingComponent();
             var component2 = new SimpleEventHandlingComponent();
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty().many(component1, component2);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, component2);
 
             //when
             var components1 = componentsConfigurer.toList();

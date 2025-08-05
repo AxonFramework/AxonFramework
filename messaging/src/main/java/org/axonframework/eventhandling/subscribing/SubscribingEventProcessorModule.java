@@ -23,6 +23,7 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
@@ -30,6 +31,7 @@ import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
+import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
@@ -40,6 +42,7 @@ import org.axonframework.lifecycle.Phase;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * A configuration module for configuring and registering a single {@link SubscribingEventProcessor} component.
@@ -79,7 +82,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         EventProcessorModule.CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> {
 
     private final String processorName;
-    private ComponentBuilder<DefaultEventHandlingComponentsConfigurer> eventHandlingComponentsBuilder;
+    private ComponentBuilder<List<EventHandlingComponent>> eventHandlingComponentsBuilder;
     private ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder;
 
     /**
@@ -99,22 +102,11 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         var configuration = configurationBuilder.build(parent);
 
-        var spanFactory = configuration.spanFactory();
-        var messageMonitor = configuration.messageMonitor();
-
         var eventHandlingComponents = eventHandlingComponentsBuilder.build(parent);
-        // TODO #3098 - Move it somewhere else! Like a decorator if certain enhancer applied.
-        var decoratedEventHandlingComponents = eventHandlingComponents
-                .decorated(c -> new TracingEventHandlingComponent(
-                        (event) -> spanFactory.createProcessEventSpan(false, event),
-                        new MonitoringEventHandlingComponent(
-                                messageMonitor,
-                                new InterceptingEventHandlingComponent(
-                                        new MessageHandlerInterceptors(configuration.interceptors()),
-                                        c
-                                )
-                        )
-                )).toList();
+        List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
+                .stream()
+                .map(c -> withDefaultDecoration(c, configuration))
+                .collect(Collectors.toUnmodifiableList());
 
         var processor = new SubscribingEventProcessor(
                 processorName,
@@ -137,6 +129,24 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         return super.build(parent, lifecycleRegistry);
     }
 
+    // TODO #3098 - Move it somewhere else! Like a decorator if certain enhancer applied.
+    @Nonnull
+    private static TracingEventHandlingComponent withDefaultDecoration(
+            EventHandlingComponent c,
+            EventProcessorConfiguration configuration
+    ) {
+        return new TracingEventHandlingComponent(
+                (event) -> configuration.spanFactory().createProcessEventSpan(false, event),
+                new MonitoringEventHandlingComponent(
+                        configuration.messageMonitor(),
+                        new InterceptingEventHandlingComponent(
+                                new MessageHandlerInterceptors(configuration.interceptors()),
+                                c
+                        )
+                )
+        );
+    }
+
 
     /**
      * Configures this module with a complete {@link SubscribingEventProcessorConfiguration}.
@@ -146,8 +156,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
      * {@link SubscribingEventProcessorConfiguration} instance.
      * <p>
      * <strong>Important:</strong> This method does not respect parent configurations and will fully override any
-     * shared defaults from {@link SubscribingEventProcessorsConfigurer} or
-     * {@link EventProcessingConfigurer}. Use
+     * shared defaults from {@link SubscribingEventProcessorsConfigurer} or {@link EventProcessingConfigurer}. Use
      * {@link #defaultCustomized(ComponentBuilder)} instead to apply processor-specific customizations while preserving
      * shared defaults.
      *
@@ -159,14 +168,6 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
             @Nonnull ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder
     ) {
         this.configurationBuilder = configurationBuilder;
-        return this;
-    }
-
-    @Override
-    public CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> eventHandlingComponents(
-            ComponentBuilder<DefaultEventHandlingComponentsConfigurer> eventHandlingComponentsBuilder
-    ) {
-        this.eventHandlingComponentsBuilder = eventHandlingComponentsBuilder;
         return this;
     }
 
@@ -227,6 +228,17 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
     @Override
     public EventProcessorModule build() {
+        return this;
+    }
+
+    @Override
+    public CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> eventHandlingComponents(
+            @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+    ) {
+        var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init();
+        this.eventHandlingComponentsBuilder = cfg -> eventHandlingComponentsBuilder
+                .apply(cfg, componentsConfigurer)
+                .toList();
         return this;
     }
 

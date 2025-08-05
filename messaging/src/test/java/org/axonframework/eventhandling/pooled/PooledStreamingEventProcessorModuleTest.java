@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.eventhandling.configuration.EventHandlingComponentBuilder.*;
 
 /**
  * Test class validating the {@link PooledStreamingEventProcessorModule} functionality.
@@ -110,12 +109,16 @@ class PooledStreamingEventProcessorModuleTest {
             //given
             String processorName = "test-processor";
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
-            PooledStreamingEventProcessorModule module = EventProcessorModule.pooledStreaming(processorName)
-                                                                             .eventHandlingComponents(components -> components.single(component().handles(
-                                                                                     new QualifiedName(String.class),
-                                                                                     (e, c) -> MessageStream.empty())))
-                                                                             .defaultCustomized(cfg -> c -> c.initialSegmentCount(
-                                                                                     8));
+            PooledStreamingEventProcessorModule module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(components -> components.single(
+                            SimpleEventHandlingComponent.builder().handles(
+                                    new QualifiedName(String.class),
+                                    (e, c) -> MessageStream.empty()
+                            ).build()
+                    ))
+                    .defaultCustomized(cfg -> c -> c.initialSegmentCount(
+                            8));
 
             //when
             module.defaultCustomized(cfg -> processorConfig -> processorConfig.initialSegmentCount(8));
@@ -143,8 +146,12 @@ class PooledStreamingEventProcessorModuleTest {
             // when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(single(component().handles(new QualifiedName(String.class),
-                                                                        (e, c) -> MessageStream.empty())))
+                    .eventHandlingComponents(components -> components.single(
+                            SimpleEventHandlingComponent
+                                    .builder()
+                                    .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+                                    .build())
+                    )
                     .defaultCustomized(cfg -> processorConfig -> processorConfig.initialSegmentCount(8));
 
             //then
@@ -171,9 +178,12 @@ class PooledStreamingEventProcessorModuleTest {
             //when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(single(component().handles(new QualifiedName(String.class),
-                                                                        (e, c) -> MessageStream.empty())))
-                    .defaultCustomized(cfg -> processorConfig -> processorConfig.initialSegmentCount(8));
+                    .eventHandlingComponents(components -> components.single(
+                            SimpleEventHandlingComponent
+                                    .builder()
+                                    .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+                                    .build())
+                    ).defaultCustomized(cfg -> processorConfig -> processorConfig.initialSegmentCount(8));
 
             //then
             var configurer = MessagingConfigurer.create();
@@ -206,7 +216,7 @@ class PooledStreamingEventProcessorModuleTest {
             //when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(cfg -> many(component1, component2))
+                    .eventHandlingComponents(components -> components.many(component1, component2))
                     .defaultConfiguration();
 
             //then
@@ -229,10 +239,12 @@ class PooledStreamingEventProcessorModuleTest {
             // when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents((__, components) -> components.single(component()
-                                                                   .handles(new QualifiedName(String.class),
-                                                                            (e, c) -> MessageStream.empty())))
-                    .defaultConfiguration();
+                    .eventHandlingComponents((__, components) -> components.single(
+                            SimpleEventHandlingComponent
+                                    .builder()
+                                    .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+                                    .build())
+                    ).defaultConfiguration();
 
             //then
             var configurer = MessagingConfigurer.create();
@@ -410,7 +422,10 @@ class PooledStreamingEventProcessorModuleTest {
             configurer.eventProcessing(
                     ep -> ep.pooledStreaming(
                             ps -> ps.defaults(d -> d.eventSource(eventSource))
-                                    .processor(processorName, single(new SimpleEventHandlingComponent()))
+                                    .processor(processorName, (__, components) -> components.single(
+                                                       new SimpleEventHandlingComponent()
+                                               )
+                                    )
                     )
             );
             var configuration = configurer.build();
@@ -438,7 +453,8 @@ class PooledStreamingEventProcessorModuleTest {
             configurer.eventProcessing(
                     ep -> ep.pooledStreaming(
                             ps -> ps.defaults(d -> d.eventSource(expectedEventSource))
-                                    .processor(processorName, single(new SimpleEventHandlingComponent()))
+                                    .processor(processorName,
+                                               (__, components) -> components.single(new SimpleEventHandlingComponent()))
                     )
             );
             var configuration = configurer.build();
@@ -468,8 +484,9 @@ class PooledStreamingEventProcessorModuleTest {
                             ps -> ps.defaults(d -> d.eventSource(eventSource))
                                     .processor(
                                             "test",
-                                            processor -> processor.eventHandlingComponents((cfg, components) -> components.single(new SimpleEventHandlingComponent()))
-                                                    .defaultConfiguration()
+                                            processor -> processor.eventHandlingComponents((cfg, components) -> components.single(
+                                                                          new SimpleEventHandlingComponent()))
+                                                                  .defaultConfiguration()
                                     )
                     )
             );
@@ -498,17 +515,21 @@ class PooledStreamingEventProcessorModuleTest {
                     ep -> ep.pooledStreaming(
                             ps -> ps.defaults(d -> d.eventSource(eventSource))
                                     .processor("test-processor",
-                                               many(
-                                                       component()
-                                                               .handles(new QualifiedName(String.class), (e, c) -> {
-                                                                   handler1Invoked.set(true);
-                                                                   return MessageStream.empty();
-                                                               }),
-                                                       component()
-                                                               .handles(new QualifiedName(String.class), (e, c) -> {
-                                                                   handler2Invoked.set(true);
-                                                                   return MessageStream.empty();
-                                                               })
+                                               (cfg, components) -> components.many(
+                                                       SimpleEventHandlingComponent
+                                                               .builder()
+                                                               .handles(new QualifiedName(String.class),
+                                                                        (e, c) -> {
+                                                                            handler1Invoked.set(true);
+                                                                            return MessageStream.empty();
+                                                                        }).build(),
+                                                       SimpleEventHandlingComponent
+                                                               .builder()
+                                                               .handles(new QualifiedName(String.class),
+                                                                        (e, c) -> {
+                                                                            handler2Invoked.set(true);
+                                                                            return MessageStream.empty();
+                                                                        }).build()
                                                ))
                     )
             );

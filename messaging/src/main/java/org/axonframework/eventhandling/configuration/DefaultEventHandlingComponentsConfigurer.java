@@ -20,13 +20,9 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandlingComponent;
 
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
 
 /**
- * Name alternatives: EventHandlingComponents
- *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
@@ -35,7 +31,7 @@ public class DefaultEventHandlingComponentsConfigurer
 
     private final List<EventHandlingComponent> components;
 
-    public static EventHandlingComponentsConfigurer.ComponentsPhase empty() {
+    public static EventHandlingComponentsConfigurer.ComponentsPhase init() {
         return new DefaultEventHandlingComponentsConfigurer(List.of());
     }
 
@@ -43,28 +39,11 @@ public class DefaultEventHandlingComponentsConfigurer
         this.components = components;
     }
 
-    @Nonnull
-    @Override
-    public EventHandlingComponentsConfigurer.CompletePhase single(
-            @Nonnull Function<EventHandlingComponentBuilder.SequencingPolicyPhase, EventHandlingComponentBuilder.Complete> definition) {
-        return many(definition.apply(EventHandlingComponentBuilder.component()));
-    }
-
-    @SafeVarargs
-    @Nonnull
-    @Override
-    public final EventHandlingComponentsConfigurer.CompletePhase many(
-            @Nonnull Function<EventHandlingComponentBuilder.SequencingPolicyPhase, EventHandlingComponentBuilder.Complete> requiredComponent,
-            @Nonnull Function<EventHandlingComponentBuilder.SequencingPolicyPhase, EventHandlingComponentBuilder.Complete>... additionalComponents) {
-        return many(
-                Stream.concat(Stream.of(requiredComponent), Stream.of(additionalComponents))
-                      .map(builder -> builder.apply(new DefaultEventHandlingComponentBuilder()).build())
-                      .toList()
-        );
-    }
-
     @Override
     public EventHandlingComponentsConfigurer.CompletePhase many(@Nonnull List<EventHandlingComponent> components) {
+        if (components.isEmpty()) {
+            throw new IllegalArgumentException("At least one EventHandlingComponent must be provided");
+        }
         return new DefaultEventHandlingComponentsConfigurer(components);
     }
 

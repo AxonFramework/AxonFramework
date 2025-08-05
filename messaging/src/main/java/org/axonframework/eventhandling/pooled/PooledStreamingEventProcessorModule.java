@@ -24,6 +24,7 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
@@ -42,6 +43,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * A configuration module for configuring and registering a single {@link PooledStreamingEventProcessor} component.
@@ -54,8 +56,8 @@ import java.util.function.UnaryOperator;
  * <li>Lifecycle management for the created processor and its executors</li>
  * </ul>
  * <p>
- * This module is typically not instantiated directly but created through 
- * {@link EventProcessorModule#pooledStreaming(String)} or registered via 
+ * This module is typically not instantiated directly but created through
+ * {@link EventProcessorModule#pooledStreaming(String)} or registered via
  * {@link PooledStreamingEventProcessorsConfigurer#processor(String, List)} methods.
  * <p>
  * The module applies shared defaults from {@link PooledStreamingEventProcessorsConfigurer} and
@@ -83,13 +85,13 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
     private final String processorName;
-    private ComponentBuilder<EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder;
+    private ComponentBuilder<List<EventHandlingComponent>> eventHandlingComponentsBuilder;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder;
 
     /**
      * Constructs a module with the given processor name.
      * <p>
-     * The processor name will be used as the module name and as the unique identifier for the 
+     * The processor name will be used as the module name and as the unique identifier for the
      * {@link PooledStreamingEventProcessor} component created by this module.
      *
      * @param processorName The unique name for the pooled streaming event processor.
@@ -102,9 +104,6 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     @Override
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         var configuration = configurationBuilder.build(parent);
-
-        var spanFactory = configuration.spanFactory();
-        var messageMonitor = configuration.messageMonitor();
 
         // TODO #3098 - Clean-up this part.
         if (configuration.workerExecutorBuilder() == null) {
@@ -128,18 +127,10 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         }
 
         var eventHandlingComponents = eventHandlingComponentsBuilder.build(parent);
-        // TODO #3098 - Move it somewhere else! Like a decorator if certain enhancer applied.
-        var decoratedEventHandlingComponents = eventHandlingComponents
-                .decorated(c -> new TracingEventHandlingComponent(
-                        (event) -> spanFactory.createProcessEventSpan(false, event),
-                        new MonitoringEventHandlingComponent(
-                                messageMonitor,
-                                new InterceptingEventHandlingComponent(
-                                        new MessageHandlerInterceptors(configuration.interceptors()),
-                                        c
-                                )
-                        )
-                )).toList();
+        List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
+                .stream()
+                .map(c -> withDefaultDecoration(c, configuration))
+                .collect(Collectors.toUnmodifiableList());
 
         var processor = new PooledStreamingEventProcessor(
                 processorName,
@@ -166,16 +157,33 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         return Executors.newScheduledThreadPool(poolSize, new AxonThreadFactory(factoryName));
     }
 
+    // TODO #3098 - Move it somewhere else! Like a decorator if certain enhancer applied.
+    @Nonnull
+    private static TracingEventHandlingComponent withDefaultDecoration(
+            EventHandlingComponent c,
+            EventProcessorConfiguration configuration
+    ) {
+        return new TracingEventHandlingComponent(
+                (event) -> configuration.spanFactory().createProcessEventSpan(false, event),
+                new MonitoringEventHandlingComponent(
+                        configuration.messageMonitor(),
+                        new InterceptingEventHandlingComponent(
+                                new MessageHandlerInterceptors(configuration.interceptors()),
+                                c
+                        )
+                )
+        );
+    }
+
     /**
      * Configures this module with a complete {@link PooledStreamingEventProcessorConfiguration}.
      * <p>
-     * This method provides the most direct way to set the processor configuration. The configuration builder
-     * receives the Axon {@link Configuration} and should return a fully configured 
+     * This method provides the most direct way to set the processor configuration. The configuration builder receives
+     * the Axon {@link Configuration} and should return a fully configured
      * {@link PooledStreamingEventProcessorConfiguration} instance.
      * <p>
-     * <strong>Important:</strong> This method does not respect parent configurations and will fully override any 
-     * shared defaults from {@link PooledStreamingEventProcessorsConfigurer} or
-     * {@link EventProcessingConfigurer}. Use
+     * <strong>Important:</strong> This method does not respect parent configurations and will fully override any
+     * shared defaults from {@link PooledStreamingEventProcessorsConfigurer} or {@link EventProcessingConfigurer}. Use
      * {@link #defaultCustomized(ComponentBuilder)} instead to apply processor-specific customizations while preserving
      * shared defaults.
      *
@@ -193,9 +201,9 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     /**
      * Customizes the processor configuration by applying modifications to the default configuration.
      * <p>
-     * This method allows you to provide processor-specific customizations that will be applied on top of
-     * any shared defaults from parent modules. The customization builder receives the Axon {@link Configuration}
-     * and should return a function that modifies the processor configuration.
+     * This method allows you to provide processor-specific customizations that will be applied on top of any shared
+     * defaults from parent modules. The customization builder receives the Axon {@link Configuration} and should return
+     * a function that modifies the processor configuration.
      * <p>
      * The customization is applied after shared defaults from {@link PooledStreamingEventProcessorsConfigurer} and
      * {@link EventProcessingConfigurer}.
@@ -250,9 +258,12 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     @Override
     public CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> eventHandlingComponents(
-            @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder) {
-        var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.empty();
-        this.eventHandlingComponentsBuilder = config -> eventHandlingComponentsBuilder.apply(config, componentsConfigurer);
+            @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+    ) {
+        var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init();
+        this.eventHandlingComponentsBuilder = config -> eventHandlingComponentsBuilder
+                .apply(config, componentsConfigurer)
+                .toList();
         return null;
     }
 
@@ -279,10 +290,11 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         }
 
         /**
-         * Returns a composed customization that applies this customization first, then applies the other customization.
+         * Returns a composed customization that applies this customization first, then applies the other
+         * customization.
          * <p>
-         * This allows for chaining multiple customizations together, with each subsequent customization receiving
-         * the result of the previous one.
+         * This allows for chaining multiple customizations together, with each subsequent customization receiving the
+         * result of the previous one.
          *
          * @param other The customization to apply after this one.
          * @return A composed customization that applies both customizations in sequence.
