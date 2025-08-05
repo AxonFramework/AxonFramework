@@ -189,8 +189,7 @@ public interface Message<P> {
      * Is semantically equal to {@code getPayload().getClass()}, but allows implementations to optimize by using lazy
      * loading or deserialization.
      *
-     * @return the type of payload.
-     * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
+     * @return The type of payload.
      */
     Class<P> payloadType();
 
