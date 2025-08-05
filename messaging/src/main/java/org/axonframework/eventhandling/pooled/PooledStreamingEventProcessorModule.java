@@ -57,23 +57,11 @@ import java.util.stream.Collectors;
  * <p>
  * This module is typically not instantiated directly but created through
  * {@link EventProcessorModule#pooledStreaming(String)} or registered via
- * {@link PooledStreamingEventProcessorsConfigurer#processor(String, List)} methods.
+ * {@link PooledStreamingEventProcessorsConfigurer#processor} methods.
  * <p>
  * The module applies shared defaults from {@link PooledStreamingEventProcessorsConfigurer} and
  * {@link EventProcessingConfigurer} before applying
  * processor-specific customizations.
- * <p>
- * Example configuration:
- * <pre>{@code
- * EventProcessorModule.pooledStreaming("order-processor")
- *     .defaultCustomized((config, processorConfig) -> processorConfig
- *         .eventHandlingComponents(List.of(orderEventHandler))
- *         .bufferSize(2048)
- *         .initialSegmentCount(8)
- *         .coordinatorExecutor(customCoordinatorExecutor)
- *         .workerExecutor(customWorkerExecutor)
- *     );
- * }</pre>
  *
  * @author Mateusz Nowak
  * @since 5.0.0

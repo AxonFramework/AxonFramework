@@ -66,11 +66,10 @@ import java.util.function.Function;
 public interface EventProcessorModule extends Module {
 
     /**
-     * Start building a {@link SubscribingEventProcessorModule} with the given processor processorName. The subscribing
-     * event processor will register with a message source to receive events.
+     * Creates a subscribing event processor module with the given name.
      *
-     * @param processorName The processor processorName, must not be null or empty.
-     * @return A builder phase to configure a subscribing event processor.
+     * @param processorName The processor name.
+     * @return A builder phase to configure the subscribing event processor.
      */
     static EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> subscribing(
             String processorName) {
@@ -78,29 +77,53 @@ public interface EventProcessorModule extends Module {
     }
 
     /**
-     * Start building a {@link PooledStreamingEventProcessorModule} with the given processor name. The pooled streaming
-     * processor manages multiple segments to process events from a stream.
+     * Creates a pooled streaming event processor module with the given name.
      *
-     * @param processorName The processor name, must not be null or empty.
-     * @return A builder phase to configure a pooled streaming event processor.
+     * @param processorName The processor name.
+     * @return A builder phase to configure the pooled streaming event processor.
      */
     static EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> pooledStreaming(
             String processorName) {
         return new PooledStreamingEventProcessorModule(processorName);
     }
 
+    /**
+     * Builder phase for configuring event handling components.
+     *
+     * @param <P> The processor module type.
+     * @param <C> The processor configuration type.
+     */
     interface EventHandlingPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration> {
 
+        /**
+         * Configures a single event handling component.
+         *
+         * @param requiredComponent The component to configure.
+         * @return The customization phase for further configuration.
+         */
         default CustomizationPhase<P, C> eventHandlingComponent(@Nonnull EventHandlingComponent requiredComponent) {
             return eventHandlingComponents((cfg, components) -> components.single(requiredComponent));
         }
 
+        /**
+         * Configures a single event handling component using a builder.
+         *
+         * @param requiredComponentBuilder The component builder.
+         * @return The customization phase for further configuration.
+         */
         default CustomizationPhase<P, C> eventHandlingComponent(
                 @Nonnull ComponentBuilder<EventHandlingComponent> requiredComponentBuilder
         ) {
             return eventHandlingComponents((cfg, components) -> components.single(requiredComponentBuilder.build(cfg)));
         }
 
+        /**
+         * Configures multiple event handling components using varargs.
+         *
+         * @param requiredComponent     The first required component.
+         * @param additionalComponents Additional components.
+         * @return The customization phase for further configuration.
+         */
         default CustomizationPhase<P, C> eventHandlingComponents(
                 @Nonnull EventHandlingComponent requiredComponent,
                 @Nonnull EventHandlingComponent... additionalComponents
@@ -109,18 +132,36 @@ public interface EventProcessorModule extends Module {
                                                                                 additionalComponents));
         }
 
+        /**
+         * Configures multiple event handling components from a list.
+         *
+         * @param componentList The list of components.
+         * @return The customization phase for further configuration.
+         */
         default CustomizationPhase<P, C> eventHandlingComponents(
                 @Nonnull List<EventHandlingComponent> componentList
         ) {
             return eventHandlingComponents((cfg, components) -> components.many(componentList));
         }
 
+        /**
+         * Configures event handling components using a configurer function.
+         *
+         * @param eventHandlingComponentsConfigurer The configurer function.
+         * @return The customization phase for further configuration.
+         */
         default CustomizationPhase<P, C> eventHandlingComponents(
                 @Nonnull Function<EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsConfigurer
         ) {
             return eventHandlingComponents((cfg, components) -> eventHandlingComponentsConfigurer.apply(components));
         }
 
+        /**
+         * Configures event handling components using a builder function with configuration access.
+         *
+         * @param eventHandlingComponentsBuilder The builder function.
+         * @return The customization phase for further configuration.
+         */
         CustomizationPhase<P, C> eventHandlingComponents(
                 @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
         );
@@ -169,6 +210,11 @@ public interface EventProcessorModule extends Module {
          */
         P customize(@Nonnull BiFunction<Configuration, C, C> customizationFunction);
 
+        /**
+         * Builds the processor module with the current configuration.
+         *
+         * @return The configured processor module.
+         */
         P build();
     }
 }

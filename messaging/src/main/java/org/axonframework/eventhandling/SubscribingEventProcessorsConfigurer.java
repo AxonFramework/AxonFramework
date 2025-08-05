@@ -72,6 +72,7 @@ import java.util.function.UnaryOperator;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+
 public class SubscribingEventProcessorsConfigurer {
 
     private final EventProcessingConfigurer parent;
@@ -93,6 +94,13 @@ public class SubscribingEventProcessorsConfigurer {
         this.parent = parent;
     }
 
+    /**
+     * Builds and registers all configured subscribing event processors.
+     * <p>
+     * This method is typically called automatically by the framework during configuration building.
+     * It registers default components and all configured processor modules.
+     */
+    @Internal
     public void build() {
         componentRegistry(
                 cr -> cr.registerComponent(
@@ -158,6 +166,13 @@ public class SubscribingEventProcessorsConfigurer {
         return this;
     }
 
+    /**
+     * Registers a subscribing event processor with the specified name and event handling components.
+     *
+     * @param name                         The unique name for the processor.
+     * @param eventHandlingComponentsBuilder Function to configure the event handling components.
+     * @return This configurer instance for method chaining.
+     */
     public SubscribingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
@@ -170,6 +185,13 @@ public class SubscribingEventProcessorsConfigurer {
         return this;
     }
 
+    /**
+     * Registers a subscribing event processor with custom module configuration.
+     *
+     * @param name             The unique name for the processor.
+     * @param moduleCustomizer Function to customize the processor module configuration.
+     * @return This configurer instance for method chaining.
+     */
     public SubscribingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull Function<EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration>, SubscribingEventProcessorModule> moduleCustomizer
@@ -193,6 +215,12 @@ public class SubscribingEventProcessorsConfigurer {
         return this;
     }
 
+    /**
+     * Provides access to the component registry for additional component registrations.
+     *
+     * @param registryAction Action to perform on the component registry.
+     * @return This configurer instance for method chaining.
+     */
     public SubscribingEventProcessorsConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
         parent.componentRegistry(registryAction);
         return this;

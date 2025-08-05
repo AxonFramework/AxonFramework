@@ -56,21 +56,11 @@ import java.util.stream.Collectors;
  * <p>
  * This module is typically not instantiated directly but created through
  * {@link EventProcessorModule#subscribing(String)} or registered via
- * {@link SubscribingEventProcessorsConfigurer#processor(String, List)} methods.
+ * {@link SubscribingEventProcessorsConfigurer#processor} methods.
  * <p>
  * The module applies shared defaults from {@link SubscribingEventProcessorsConfigurer} and
  * {@link EventProcessingConfigurer} before applying
  * processor-specific customizations.
- * <p>
- * Example configuration:
- * <pre>{@code
- * EventProcessorModule.subscribing("notification-processor")
- *     .defaultCustomized((config, processorConfig) -> processorConfig
- *         .eventHandlingComponents(List.of(notificationHandler))
- *         .messageSource(customMessageSource)
- *         .errorHandler(customErrorHandler)
- *     );
- * }</pre>
  *
  * @author Mateusz Nowak
  * @since 5.0.0

@@ -65,8 +65,8 @@ import java.util.function.UnaryOperator;
  *     .eventProcessing(eventProcessing -> eventProcessing
  *         .pooledStreaming(pooledStreaming -> pooledStreaming
  *             .defaults(config -> config.bufferSize(1024).initialSegmentCount(4))
- *             .processor("order-processor", List.of(orderEventHandler))
- *             .processor("inventory-processor", List.of(inventoryEventHandler),
+ *             .processor("order-processor", (cfg, components) -> components.single(orderEventHandler))
+ *             .processor("inventory-processor", (cfg, components) -> components.single(inventoryEventHandler)),
  *                       (cfg, config) -> config.bufferSize(2048)) // Processor-specific override
  *         )
  *     );
@@ -96,6 +96,13 @@ public class PooledStreamingEventProcessorsConfigurer {
         this.parent = parent;
     }
 
+    /**
+     * Builds and registers all configured pooled streaming event processors.
+     * <p>
+     * This method is typically called automatically by the framework during configuration building.
+     * It registers default components and all configured processor modules.
+     */
+    @Internal
     public void build() {
         componentRegistry(cr -> cr.registerIfNotPresent(TokenStore.class, cfg -> new InMemoryTokenStore()));
         componentRegistry(
@@ -164,6 +171,13 @@ public class PooledStreamingEventProcessorsConfigurer {
         return this;
     }
 
+    /**
+     * Registers a pooled streaming event processor with the specified name and event handling components.
+     *
+     * @param name                         The unique name for the processor.
+     * @param eventHandlingComponentsBuilder Function to configure the event handling components.
+     * @return This configurer instance for method chaining.
+     */
     public PooledStreamingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
@@ -176,6 +190,13 @@ public class PooledStreamingEventProcessorsConfigurer {
         return this;
     }
 
+    /**
+     * Registers a pooled streaming event processor with custom module configuration.
+     *
+     * @param name             The unique name for the processor.
+     * @param moduleCustomizer Function to customize the processor module configuration.
+     * @return This configurer instance for method chaining.
+     */
     public PooledStreamingEventProcessorsConfigurer processor(
             @Nonnull String name,
             @Nonnull Function<EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>, PooledStreamingEventProcessorModule> moduleCustomizer
@@ -199,6 +220,12 @@ public class PooledStreamingEventProcessorsConfigurer {
         return this;
     }
 
+    /**
+     * Provides access to the component registry for additional component registrations.
+     *
+     * @param registryAction Action to perform on the component registry.
+     * @return This configurer instance for method chaining.
+     */
     public PooledStreamingEventProcessorsConfigurer componentRegistry(
             @Nonnull Consumer<ComponentRegistry> registryAction
     ) {
