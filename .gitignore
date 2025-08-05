@@ -22,3 +22,7 @@ axon.iws
 
 # documentation's local bulid
 docs/_playbook/build
+
+# Claude Code
+CLAUDE.md
+.claude/
