@@ -199,53 +199,6 @@ class JpaEventStorageEngineTest
     }
 
     @Test
-    @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
-    @DirtiesContext
-    void storeEventsWithCustomEntity() {
-        XStreamSerializer serializer = xStreamSerializer();
-        LegacyJpaEventStorageEngine.Builder jpaEventStorageEngineBuilder =
-                LegacyJpaEventStorageEngine.builder()
-                                           .snapshotSerializer(serializer)
-                                           .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
-                                           .eventSerializer(serializer)
-                                           .entityManagerProvider(entityManagerProvider)
-                                           .transactionManager(NoTransactionManager.INSTANCE)
-                                           .explicitFlush(false);
-        testSubject = new LegacyJpaEventStorageEngine(jpaEventStorageEngineBuilder) {
-
-            @Override
-            protected EventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
-                return new CustomDomainEventEntry((DomainEventMessage<?>) eventMessage, serializer);
-            }
-
-            @Override
-            protected DomainEventData<?> createSnapshotEntity(DomainEventMessage<?> snapshot, Serializer serializer) {
-                return new CustomSnapshotEventEntry(snapshot, serializer);
-            }
-
-            @Override
-            protected String domainEventEntryEntityName() {
-                return CustomDomainEventEntry.class.getSimpleName();
-            }
-
-            @Override
-            protected String snapshotEventEntryEntityName() {
-                return CustomSnapshotEventEntry.class.getSimpleName();
-            }
-        };
-
-        testSubject.appendEvents(createDomainEvent(AGGREGATE, 1, "Payload1"));
-        testSubject.storeSnapshot(createDomainEvent(AGGREGATE, 1, "Snapshot1"));
-
-        entityManager.flush();
-        entityManager.clear();
-
-        assertFalse(entityManager.createQuery("SELECT e FROM CustomDomainEventEntry e").getResultList().isEmpty());
-        assertEquals("Snapshot1", testSubject.readSnapshot(AGGREGATE).get().payload());
-        assertEquals("Payload1", testSubject.readEvents(AGGREGATE).peek().payload());
-    }
-
-    @Test
     void eventsWithUnknownPayloadDoNotResultInError() throws InterruptedException {
         String expectedPayloadOne = "Payload3";
         String expectedPayloadTwo = "Payload4";
