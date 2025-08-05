@@ -35,7 +35,6 @@ import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
-import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.lifecycle.Phase;
 
 import java.util.List;
@@ -168,7 +167,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                 new MonitoringEventHandlingComponent(
                         configuration.messageMonitor(),
                         new InterceptingEventHandlingComponent(
-                                new MessageHandlerInterceptors(configuration.interceptors()),
+                                configuration.interceptors(),
                                 c
                         )
                 )
