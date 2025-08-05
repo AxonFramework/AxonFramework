@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -559,7 +559,7 @@ public interface FixtureExecutionResult {
     /**
      * Asserts that the given {@code expectedDeadlineTypes} have been triggered. Matches that the given types are
      * complete, in the same order and match the triggered deadlines by validating with {@link
-     * DeadlineMessage#getPayloadType()}.
+     * DeadlineMessage#payloadType()}.
      *
      * @param expectedDeadlineTypes the sequence of deadline types expected to have been triggered
      * @return the current FixtureExecutionResult for method chaining

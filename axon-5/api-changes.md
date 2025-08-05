@@ -232,8 +232,8 @@ the long run.
 ### Message method renames
 
 We have renamed the "get-styled" getters **all** `Message` implementations by removing "get" from the signature.
-Thus, `Message#getIdentifier()` is now called `Message#identifier()`, and `Message#getPayload()` is now called
-`Message#payload()`.
+Thus, `Message#getIdentifier()` is now called `Message#identifier()`, `Message#getPayload()` is now called
+`Message#payload()`, and `Message#getPayloadType()` is now `Message#payloadType()`.
 
 ## Message Stream
 
@@ -1364,6 +1364,7 @@ This section contains four subsections, called:
 | `SequencingPolicy#getSequenceIdentifierFor(Object)`                                                                             | `SequencingPolicy#getSequenceIdentifierFor(EventMessage<?>)`                                                           |
 | `Message#getIdentifier()`                                                                                                       | `Message#identifier()`                                                                                                 |
 | `Message#getPayload()`                                                                                                          | `Message#payload()`                                                                                                    |
+| `Message#getPayloadType()`                                                                                                      | `Message#payloadType()`                                                                                                |
 
 ### Removed Methods and Constructors
 

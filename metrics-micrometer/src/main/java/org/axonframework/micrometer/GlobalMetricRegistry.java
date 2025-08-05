@@ -235,7 +235,7 @@ public class GlobalMetricRegistry {
             return registerEventProcessor(
                     EVENT_PROCESSOR_METRICS_NAME,
                     message -> Tags.of(
-                            PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
+                            PAYLOAD_TYPE_TAG, message.payloadType().getSimpleName(),
                             PROCESSOR_NAME_TAG, componentName
                     ),
                     message -> Tags.of(

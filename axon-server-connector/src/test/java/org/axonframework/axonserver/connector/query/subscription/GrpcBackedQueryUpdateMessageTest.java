@@ -84,7 +84,7 @@ class GrpcBackedQueryUpdateMessageTest {
     }
 
     @Test
-    void getPayloadTypeReturnsTheTypeOfTheInsertedQueryUpdate() {
+    void payloadTypeReturnsTheTypeOfTheInsertedQueryUpdate() {
         SubscriptionQueryUpdateMessage<Object> testSubscriptionQueryUpdateMessage =
                 asUpdateMessage(TEST_QUERY_UPDATE);
         QueryUpdate testQueryUpdate =
@@ -92,7 +92,7 @@ class GrpcBackedQueryUpdateMessageTest {
         GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
-        assertEquals(TestQueryUpdate.class, testSubject.getPayloadType());
+        assertEquals(TestQueryUpdate.class, testSubject.payloadType());
     }
 
     @Test
@@ -147,8 +147,8 @@ class GrpcBackedQueryUpdateMessageTest {
     private static <U> SubscriptionQueryUpdateMessage<U> asUpdateMessage(Class<U> declaredType, Throwable exception) {
         return new GenericSubscriptionQueryUpdateMessage<>(new MessageType(exception.getClass()),
                                                            exception,
-                                                           MetaData.emptyInstance(),
-                                                           declaredType);
+                                                           declaredType,
+                                                           MetaData.emptyInstance());
     }
 
     @SuppressWarnings("unchecked")

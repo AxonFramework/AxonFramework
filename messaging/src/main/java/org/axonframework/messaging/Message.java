@@ -126,7 +126,7 @@ public interface Message<P> {
     /**
      * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
      * <p>
-     * If {@link #getPayloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given {@code type},
+     * If {@link #payloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given {@code type},
      * {@link #payload()} may be invoked instead of using the given {@code converter}.
      * <p>
      * Implementers of this operation may optimize by storing the converted payloads, thus saving a
@@ -141,13 +141,13 @@ public interface Message<P> {
      *                              {@code converter} is given.
      */
     default <T> T payloadAs(@Nonnull Class<T> type, @Nullable Converter converter) {
-        return getPayloadType().isAssignableFrom(type) ? type.cast(payload()) : payloadAs((Type) type, converter);
+        return payloadType().isAssignableFrom(type) ? type.cast(payload()) : payloadAs((Type) type, converter);
     }
 
     /**
      * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
      * <p>
-     * If {@link #getPayloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given
+     * If {@link #payloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given
      * {@link TypeReference#getType()}, {@link #payload()} may be invoked instead of using the given
      * {@code converter}.
      * <p>
@@ -169,7 +169,7 @@ public interface Message<P> {
     /**
      * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
      * <p>
-     * If the given {@code type} is an instance of {@link Class} and {@link #getPayloadType()} is
+     * If the given {@code type} is an instance of {@link Class} and {@link #payloadType()} is
      * {@link Class#isAssignableFrom(Class) assignable from} that {@code Class}, {@link #payload()} may be invoked
      * instead of using the given {@code converter}.
      * <p>
@@ -195,9 +195,7 @@ public interface Message<P> {
      * @return the type of payload.
      * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
      */
-    @Deprecated
-    // TODO #3085 - Replace for getMessageType once fully integrated
-    Class<P> getPayloadType();
+    Class<P> payloadType();
 
     /**
      * Returns a copy of this {@code Message} (implementation) with the given {@code metaData}.

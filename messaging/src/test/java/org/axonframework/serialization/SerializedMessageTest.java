@@ -56,7 +56,7 @@ class SerializedMessageTest {
         SerializedMessage<Object> testSubject =
                 new SerializedMessage<>(eventId, serializedPayload, serializedMetaData, serializer);
 
-        assertEquals(Object.class, testSubject.getPayloadType());
+        assertEquals(Object.class, testSubject.payloadType());
         assertFalse(testSubject.isPayloadDeserialized());
         assertEquals(Object.class, testSubject.payload().getClass());
         assertTrue(testSubject.isPayloadDeserialized());

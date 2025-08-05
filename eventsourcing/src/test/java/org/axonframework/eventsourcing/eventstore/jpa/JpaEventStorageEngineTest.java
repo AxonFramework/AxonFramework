@@ -195,7 +195,7 @@ class JpaEventStorageEngineTest
         entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
                 .executeUpdate();
         DomainEventMessage<?> actual = testSubject.readEvents(AGGREGATE).peek();
-        assertEquals(UnknownSerializedType.class, actual.getPayloadType());
+        assertEquals(UnknownSerializedType.class, actual.payloadType());
     }
 
     @Test
@@ -270,8 +270,8 @@ class JpaEventStorageEngineTest
         TrackingEventStream eventStoreResult = testEventStore.openStream(null);
 
         assertTrue(eventStoreResult.hasNextAvailable());
-        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
-        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().payloadType());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().payloadType());
         assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().payload());
         assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().payload());
         assertFalse(eventStoreResult.hasNextAvailable());

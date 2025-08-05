@@ -384,7 +384,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         if (responseMessage.isExceptional()) {
             return Flux.error(responseMessage.exceptionResult());
         }
-        if (expectedResponseType.isAssignableFrom(responseMessage.getPayloadType())) {
+        if (expectedResponseType.isAssignableFrom(responseMessage.payloadType())) {
             InstanceResponseType<R> instanceResponseType = new InstanceResponseType<>(expectedResponseType);
             return Flux.just(new ConvertingResponseMessage<>(instanceResponseType, responseMessage));
         } else {
@@ -406,8 +406,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         GenericMessage<R> delegate = new GenericMessage<>(original.identifier(),
                                                           original.type(),
                                                           newPayload,
-                                                          original.getMetaData(),
-                                                          expectedPayloadType);
+                                                          expectedPayloadType,
+                                                          original.getMetaData());
         return new GenericQueryResponseMessage<>(delegate);
     }
 

@@ -38,7 +38,7 @@ class ConvertingResponseMessageTest {
         QueryResponseMessage<List<String>> wrapped =
                 new ConvertingResponseMessage<>(ResponseTypes.multipleInstancesOf(String.class), msg);
 
-        assertEquals(List.class, wrapped.getPayloadType());
+        assertEquals(List.class, wrapped.payloadType());
         assertEquals(singletonList("Some string result"), wrapped.payload());
         assertEquals("value", wrapped.getMetaData().get("test"));
     }
@@ -49,7 +49,7 @@ class ConvertingResponseMessageTest {
         QueryResponseMessage<List<String>> wrapped =
                 new ConvertingResponseMessage<>(ResponseTypes.multipleInstancesOf(String.class), msg);
 
-        assertEquals(List.class, wrapped.getPayloadType());
+        assertEquals(List.class, wrapped.payloadType());
         assertThrows(IllegalPayloadAccessException.class, wrapped::payload);
     }
 
