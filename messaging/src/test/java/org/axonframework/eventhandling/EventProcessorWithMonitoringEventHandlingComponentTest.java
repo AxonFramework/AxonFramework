@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
-import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptors;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -97,7 +96,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         var decoratedEventHandlingComponent = new MonitoringEventHandlingComponent(
                 messageMonitor,
                 new InterceptingEventHandlingComponent(
-                        new MessageHandlerInterceptors(List.of(interceptor)),
+                        List.of(interceptor),
                         eventHandlingComponent
                 )
         );

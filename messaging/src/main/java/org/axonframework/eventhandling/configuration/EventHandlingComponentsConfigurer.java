@@ -21,60 +21,84 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 /**
- * Name alternatives: EventHandlingComponents
+ * Builder interface for configuring collections of {@link EventHandlingComponent} instances.
+ * <p>
+ * Provides a fluent API for specifying single or multiple components and applying decorations
+ * to all components in the collection.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class EventHandlingComponentsConfigurer {
+public interface EventHandlingComponentsConfigurer {
 
-    private final List<EventHandlingComponent> components;
+    /**
+     * Initial phase for specifying event handling components.
+     */
+    interface ComponentsPhase {
 
-    private EventHandlingComponentsConfigurer(@Nonnull List<EventHandlingComponent> components) {
-        this.components = components;
+        /**
+         * Configures a single event handling component.
+         *
+         * @param component The component to configure.
+         * @return The complete phase for decoration and finalization.
+         */
+        @Nonnull
+        default CompletePhase single(@Nonnull EventHandlingComponent component) {
+            return many(List.of(component));
+        }
+
+        /**
+         * Configures multiple event handling components with varargs syntax.
+         *
+         * @param requiredComponent     The first required component.
+         * @param additionalComponents Additional components (can be empty).
+         * @return The complete phase for decoration and finalization.
+         */
+        @Nonnull
+        default CompletePhase many(
+                @Nonnull EventHandlingComponent requiredComponent,
+                @Nonnull EventHandlingComponent... additionalComponents
+        ) {
+            var components = Stream.concat(
+                    Stream.of(requiredComponent),
+                    Stream.of(additionalComponents)
+            ).filter(Objects::nonNull).toList();
+            return many(components);
+        }
+
+        /**
+         * Configures multiple event handling components from a list.
+         *
+         * @param components The list of components to configure.
+         * @return The complete phase for decoration and finalization.
+         */
+        CompletePhase many(@Nonnull List<EventHandlingComponent> components);
     }
 
-    public static EventHandlingComponentsConfigurer single(
-            @Nonnull EventHandlingComponentConfigurer.Complete definition
-    ) {
-        return new EventHandlingComponentsConfigurer(List.of(definition.toComponent()));
-    }
+    /**
+     * Final phase for applying decorations and building the component list.
+     */
+    interface CompletePhase {
 
-    public static EventHandlingComponentsConfigurer single(@Nonnull EventHandlingComponent component) {
-        return new EventHandlingComponentsConfigurer(List.of(component));
-    }
+        /**
+         * Applies a decorator to all components in the collection.
+         *
+         * @param decorator Function to decorate each component.
+         * @return This phase for further decoration or finalization.
+         */
+        CompletePhase decorated(@Nonnull UnaryOperator<EventHandlingComponent> decorator);
 
-    public static EventHandlingComponentsConfigurer many(
-            @Nonnull EventHandlingComponent requiredComponent,
-            @Nonnull EventHandlingComponent... additionalComponents
-    ) {
-        var components = Stream.concat(
-                Stream.of(requiredComponent),
-                Stream.of(additionalComponents)
-        ).filter(Objects::nonNull).toList();
-        return new EventHandlingComponentsConfigurer(components);
-    }
-
-    public static EventHandlingComponentsConfigurer many(
-            @Nonnull EventHandlingComponentConfigurer.Complete requiredDefinition,
-            @Nonnull EventHandlingComponentConfigurer.Complete... additionalDefinitions
-    ) {
-        var components = Stream.concat(
-                Stream.of(requiredDefinition.toComponent()),
-                Stream.of(additionalDefinitions).map(EventHandlingComponentConfigurer.Complete::toComponent)
-        ).filter(Objects::nonNull).toList();
-        return new EventHandlingComponentsConfigurer(components);
-    }
-
-    public EventHandlingComponentsConfigurer decorated(@Nonnull UnaryOperator<EventHandlingComponent> decorator) {
-        return new EventHandlingComponentsConfigurer(components.stream().map(decorator).toList());
-    }
-
-    public List<EventHandlingComponent> toList() {
-        return List.copyOf(components);
+        /**
+         * Returns the configured list of event handling components.
+         *
+         * @return The immutable list of configured components.
+         */
+        List<EventHandlingComponent> toList();
     }
 }
+

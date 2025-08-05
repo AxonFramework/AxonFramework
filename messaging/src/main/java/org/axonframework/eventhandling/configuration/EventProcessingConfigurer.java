@@ -19,15 +19,16 @@ package org.axonframework.eventhandling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.BaseModule;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.eventhandling.SubscribingEventProcessorsModule;
+import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsModule;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 /**
@@ -38,10 +39,10 @@ import java.util.function.UnaryOperator;
  * <li>{@link org.axonframework.eventhandling.SubscribingEventProcessor}</li>
  * </ul>
  * <p>
- * The {@code NewEventProcessingModule} acts as a composite module that delegates event {@link EventProcessorConfiguration} to
- * specialized sub-modules: {@link PooledStreamingEventProcessorsModule} for
+ * The {@code EventProcessingConfigurer} acts as a composite module that delegates event {@link EventProcessorConfiguration} to
+ * specialized sub-modules: {@link PooledStreamingEventProcessorsConfigurer} for
  * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor PooledStreamingEventProcessor}
- * instances and {@link SubscribingEventProcessorsModule} for
+ * instances and {@link SubscribingEventProcessorsConfigurer} for
  * {@link org.axonframework.eventhandling.SubscribingEventProcessor SubscribingEventProcessor} instances.
  * <p>
  * The main purpose is to provide shared configuration capabilities for all event processor types, allowing you to set
@@ -61,26 +62,20 @@ import java.util.function.UnaryOperator;
  *     .eventProcessing(eventProcessing -> eventProcessing
  *         .defaults(config -> config.bufferSize(512))
  *         .pooledStreaming(pooledStreaming ->
- *             pooledStreaming.processor("calendar-processor", List.of(weekStartedEventHandler))
- *                        .processor("astrologers-week-symbol-processor", List.of(weekSymbolProclaimedEventHandler)))
+ *             pooledStreaming.processor("calendar-processor", (__, components) -> components.single(weekStartedEventHandler))
+ *                        .processor("astrologers-week-symbol-processor", (__, components) -> components.single(weekSymbolProclaimedEventHandler)))
  *         .subscribing(subscribing ->
- *             subscribing.processor("creatures-dwelling-readmodel", List.of(dwellingBuiltEventHandler))));
+ *             subscribing.processor("creatures-dwelling-readmodel", (__, components) -> components.single(dwellingBuiltEventHandler)));
  * }</pre>
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-// TODO #3098 - Rename to EventProcessingModule - I wanted to limit the files changed at once
-public class NewEventProcessingModule extends BaseModule<NewEventProcessingModule> {
+public class EventProcessingConfigurer {
 
-    public static final String DEFAULT_NAME = "defaultEventProcessingModule";
-
-    private final PooledStreamingEventProcessorsModule pooledStreamingEventProcessorsModule = new PooledStreamingEventProcessorsModule(
-            PooledStreamingEventProcessorsModule.DEFAULT_NAME
-    );
-    private final SubscribingEventProcessorsModule subscribingEventProcessorsModule = new SubscribingEventProcessorsModule(
-            SubscribingEventProcessorsModule.DEFAULT_NAME
-    );
+    private final MessagingConfigurer parent;
+    private final PooledStreamingEventProcessorsConfigurer pooledStreamingEventProcessors;
+    private final SubscribingEventProcessorsConfigurer subscribingEventProcessors;
 
     private EventProcessorCustomization processorsDefaultCustomization = EventProcessorCustomization.noOp();
 
@@ -95,12 +90,13 @@ public class NewEventProcessingModule extends BaseModule<NewEventProcessingModul
      * @param name The name of this event processing module.
      */
     @Internal
-    public NewEventProcessingModule(@Nonnull String name) {
-        super(name);
+    public EventProcessingConfigurer(@Nonnull MessagingConfigurer parent) {
+        this.parent = parent;
+        this.pooledStreamingEventProcessors = new PooledStreamingEventProcessorsConfigurer(this);
+        this.subscribingEventProcessors = new SubscribingEventProcessorsConfigurer(this);
     }
 
-    @Override
-    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public void build() {
         componentRegistry(
                 cr -> cr.registerComponent(
                         EventProcessorCustomization.class,
@@ -113,13 +109,8 @@ public class NewEventProcessingModule extends BaseModule<NewEventProcessingModul
                                 }).andThen(processorsDefaultCustomization)
                 )
         );
-        componentRegistry(cr -> cr.registerModule(
-                pooledStreamingEventProcessorsModule
-        ));
-        componentRegistry(cr -> cr.registerModule(
-                subscribingEventProcessorsModule
-        ));
-        return super.build(parent, lifecycleRegistry);
+        pooledStreamingEventProcessors.build();
+        subscribingEventProcessors.build();
     }
 
     /**
@@ -137,7 +128,7 @@ public class NewEventProcessingModule extends BaseModule<NewEventProcessingModul
      *                          applied.
      * @return This module instance for method chaining.
      */
-    public NewEventProcessingModule defaults(
+    public EventProcessingConfigurer defaults(
             @Nonnull BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> configureDefaults) {
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
         return this;
@@ -153,7 +144,7 @@ public class NewEventProcessingModule extends BaseModule<NewEventProcessingModul
      * @param configureDefaults A function that modifies the {@link EventProcessorConfiguration} with desired defaults.
      * @return This module instance for method chaining.
      */
-    public NewEventProcessingModule defaults(@Nonnull UnaryOperator<EventProcessorConfiguration> configureDefaults) {
+    public EventProcessingConfigurer defaults(@Nonnull UnaryOperator<EventProcessorConfiguration> configureDefaults) {
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
                 (axonConfig, pConfig) -> configureDefaults.apply(pConfig)
         );
@@ -162,39 +153,44 @@ public class NewEventProcessingModule extends BaseModule<NewEventProcessingModul
 
     /**
      * Provides access to configure {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}
-     * instances through the {@link PooledStreamingEventProcessorsModule}.
+     * instances through the {@link PooledStreamingEventProcessorsConfigurer}.
      * <p>
      * Use this method to define specific pooled streaming event processors, set their configurations, and register
      * event handling components. The provided function receives the module for
      * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}s and can register individual
      * processors or configure module-wide settings.
      *
-     * @param processorsModuleTask A function that configures the {@link PooledStreamingEventProcessorsModule}.
+     * @param processorsModuleTask A function that configures the {@link PooledStreamingEventProcessorsConfigurer}.
      * @return This module instance for method chaining.
      */
-    public NewEventProcessingModule pooledStreaming(
-            @Nonnull UnaryOperator<PooledStreamingEventProcessorsModule> processorsModuleTask
+    public EventProcessingConfigurer pooledStreaming(
+            @Nonnull UnaryOperator<PooledStreamingEventProcessorsConfigurer> processorsModuleTask
     ) {
-        processorsModuleTask.apply(pooledStreamingEventProcessorsModule);
+        processorsModuleTask.apply(pooledStreamingEventProcessors);
         return this;
     }
 
     /**
      * Provides access to configure {@link org.axonframework.eventhandling.SubscribingEventProcessor} instances through
-     * the {@link SubscribingEventProcessorsModule}.
+     * the {@link SubscribingEventProcessorsConfigurer}.
      * <p>
      * Use this method to define specific subscribing event processors, set their configurations, and register event
      * handling components. The provided function receives the module for
      * {@link org.axonframework.eventhandling.SubscribingEventProcessor}s and can register individual processors or
      * configure module-wide settings.
      *
-     * @param processorsModuleTask A function that configures the {@link SubscribingEventProcessorsModule}.
+     * @param processorsModuleTask A function that configures the {@link SubscribingEventProcessorsConfigurer}.
      * @return This module instance for method chaining.
      */
-    public NewEventProcessingModule subscribing(
-            @Nonnull UnaryOperator<SubscribingEventProcessorsModule> processorsModuleTask
+    public EventProcessingConfigurer subscribing(
+            @Nonnull UnaryOperator<SubscribingEventProcessorsConfigurer> processorsModuleTask
     ) {
-        processorsModuleTask.apply(subscribingEventProcessorsModule);
+        processorsModuleTask.apply(subscribingEventProcessors);
+        return this;
+    }
+
+    public EventProcessingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+        parent.componentRegistry(registryAction);
         return this;
     }
 }

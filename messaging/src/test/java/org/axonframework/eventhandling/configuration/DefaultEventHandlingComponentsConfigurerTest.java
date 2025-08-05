@@ -35,42 +35,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating the {@link EventHandlingComponentsConfigurer} functionality.
+ * Test class validating the {@link DefaultEventHandlingComponentsConfigurer} functionality.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class EventHandlingComponentsConfigurerTest {
+class DefaultEventHandlingComponentsConfigurerTest {
 
     private static final StubProcessingContext STUB_PROCESSING_CONTEXT = new StubProcessingContext();
-
-    @Nested
-    class SingleWithCompleteDefinitionTest {
-
-        @Test
-        void shouldCreateSingleComponentFromCompleteDefinition() {
-            //given
-            var handlerInvoked = new AtomicBoolean();
-            SimpleEventHandlingComponentConfigurer configurer = new SimpleEventHandlingComponentConfigurer();
-            var completeDefinition = configurer.handles(new QualifiedName(String.class), (e, c) -> {
-                handlerInvoked.set(true);
-                return MessageStream.empty();
-            });
-
-            //when
-            var componentsConfigurer = EventHandlingComponentsConfigurer.single(completeDefinition);
-            var components = componentsConfigurer.toList();
-
-            //then
-            assertThat(components).hasSize(1);
-
-            var component = components.getFirst();
-            EventMessage<String> sampleMessage = EventTestUtils.asEventMessage("Message1");
-            component.handle(sampleMessage, STUB_PROCESSING_CONTEXT);
-
-            assertThat(handlerInvoked).isTrue();
-        }
-    }
 
     @Nested
     class SingleWithComponentTest {
@@ -82,7 +54,7 @@ class EventHandlingComponentsConfigurerTest {
             component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             //when
-            var componentsConfigurer = EventHandlingComponentsConfigurer.single(component);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().single(component);
             var components = componentsConfigurer.toList();
 
             //then
@@ -102,7 +74,7 @@ class EventHandlingComponentsConfigurerTest {
             var component3 = new SimpleEventHandlingComponent();
 
             //when
-            var componentsConfigurer = EventHandlingComponentsConfigurer.many(component1, component2, component3);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, component2, component3);
             var components = componentsConfigurer.toList();
 
             //then
@@ -117,7 +89,7 @@ class EventHandlingComponentsConfigurerTest {
             var component2 = new SimpleEventHandlingComponent();
 
             //when
-            var componentsConfigurer = EventHandlingComponentsConfigurer.many(component1, null, component2);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, null, component2);
             var components = componentsConfigurer.toList();
 
             //then
@@ -127,54 +99,18 @@ class EventHandlingComponentsConfigurerTest {
     }
 
     @Nested
-    class ManyWithCompleteDefinitionsTest {
-
-        @Test
-        void shouldCreateManyComponentsFromCompleteDefinitions() {
-            //given
-            var handler1Invoked = new AtomicBoolean();
-            var handler2Invoked = new AtomicBoolean();
-
-            SimpleEventHandlingComponentConfigurer configurer1 = new SimpleEventHandlingComponentConfigurer();
-            var definition1 = configurer1.handles(new QualifiedName(String.class), (e, c) -> {
-                handler1Invoked.set(true);
-                return MessageStream.empty();
-            });
-
-            SimpleEventHandlingComponentConfigurer configurer2 = new SimpleEventHandlingComponentConfigurer();
-            var definition2 = configurer2.handles(new QualifiedName(String.class), (e, c) -> {
-                handler2Invoked.set(true);
-                return MessageStream.empty();
-            });
-
-            //when
-            var componentsConfigurer = EventHandlingComponentsConfigurer.many(definition1, definition2);
-            var components = componentsConfigurer.toList();
-
-            //then
-            assertThat(components).hasSize(2);
-
-            EventMessage<String> sampleMessage = EventTestUtils.asEventMessage("Message1");
-            components.get(0).handle(sampleMessage, STUB_PROCESSING_CONTEXT);
-            components.get(1).handle(sampleMessage, STUB_PROCESSING_CONTEXT);
-
-            assertThat(handler1Invoked).isTrue();
-            assertThat(handler2Invoked).isTrue();
-        }
-    }
-
-    @Nested
     class DecoratedTest {
 
         @Test
         void shouldDecorateAllComponents() {
             //given
-            var component1 = new SimpleEventHandlingComponent();
+            var component1 = SimpleEventHandlingComponent.builder()
+                    .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+                    .build();
             var component2 = new SimpleEventHandlingComponent();
-            component1.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
             component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
-            var componentsConfigurer = EventHandlingComponentsConfigurer.many(component1, component2);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, component2);
 
             //when
             var decoratedConfigurer = componentsConfigurer.decorated(SampleDecoration::new);
@@ -220,7 +156,7 @@ class EventHandlingComponentsConfigurerTest {
             //given
             var component1 = new SimpleEventHandlingComponent();
             var component2 = new SimpleEventHandlingComponent();
-            var componentsConfigurer = EventHandlingComponentsConfigurer.many(component1, component2);
+            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, component2);
 
             //when
             var components1 = componentsConfigurer.toList();

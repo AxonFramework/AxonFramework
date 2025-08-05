@@ -19,7 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.configuration.NewEventProcessingModule;
+import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.QueryBus;
@@ -64,7 +64,7 @@ import static org.axonframework.messaging.configuration.reflection.ParameterReso
 public class MessagingConfigurer implements ApplicationConfigurer {
 
     private final ApplicationConfigurer delegate;
-    private NewEventProcessingModule eventProcessingModule;
+    private final EventProcessingConfigurer eventProcessing;
 
     /**
      * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
@@ -74,6 +74,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     private MessagingConfigurer(@Nonnull ApplicationConfigurer delegate) {
         this.delegate =
                 requireNonNull(delegate, "The Application Configurer cannot be null.");
+        this.eventProcessing = new EventProcessingConfigurer(this);
     }
 
     /**
@@ -222,17 +223,14 @@ public class MessagingConfigurer implements ApplicationConfigurer {
         return this;
     }
 
-    public MessagingConfigurer eventProcessing(@Nonnull Consumer<NewEventProcessingModule> configurerTask) {
-        if (eventProcessingModule == null) {
-            this.eventProcessingModule = new NewEventProcessingModule(NewEventProcessingModule.DEFAULT_NAME);
-            componentRegistry(cr -> cr.registerModule(eventProcessingModule));
-        }
-        configurerTask.accept(eventProcessingModule);
+    public MessagingConfigurer eventProcessing(@Nonnull Consumer<EventProcessingConfigurer> configurerTask) {
+        configurerTask.accept(eventProcessing);
         return this;
     }
 
     @Override
     public AxonConfiguration build() {
+        eventProcessing.build();
         return delegate.build();
     }
 }

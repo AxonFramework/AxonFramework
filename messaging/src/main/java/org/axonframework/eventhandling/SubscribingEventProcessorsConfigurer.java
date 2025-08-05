@@ -18,12 +18,11 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.configuration.BaseModule;
-import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -31,6 +30,8 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
@@ -52,7 +53,7 @@ import java.util.function.UnaryOperator;
  * <li>Applies shared customizations through the {@link #defaults(BiFunction)} and {@link #defaults(UnaryOperator)} methods</li>
  * </ul>
  * <p>
- * This module is typically accessed through {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule#subscribing(UnaryOperator)}
+ * This module is typically accessed through {@link EventProcessingConfigurer#subscribing(UnaryOperator)}
  * rather than being instantiated directly.
  * <p>
  * Example usage:
@@ -71,30 +72,36 @@ import java.util.function.UnaryOperator;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEventProcessorsModule> {
 
-    public static final String DEFAULT_NAME = "defaultSubscribingEventProcessors";
+public class SubscribingEventProcessorsConfigurer {
 
+    private final EventProcessingConfigurer parent;
     private SubscribingEventProcessorModule.Customization processorsDefaultCustomization = SubscribingEventProcessorModule.Customization.noOp();
     private final List<ModuleBuilder<SubscribingEventProcessorModule>> moduleBuilders = new ArrayList<>();
 
     /**
-     * Constructs a new subscribing event processors module with the given name.
+     * Constructs a new subscribing event processors module.
      * <p>
      * This constructor is marked as {@link Internal} because the module is typically created and managed by the
-     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule}. Users should not instantiate this
+     * {@link EventProcessingConfigurer}. Users should not instantiate this
      * class directly but instead access it through
-     * {@link org.axonframework.eventhandling.configuration.NewEventProcessingModule#subscribing(UnaryOperator)}.
+     * {@link EventProcessingConfigurer#subscribing(UnaryOperator)}.
      *
-     * @param name The name of this subscribing event processors module.
+     * @param parent The parent {@link EventProcessingConfigurer} that manages this module.
      */
     @Internal
-    public SubscribingEventProcessorsModule(@Nonnull String name) {
-        super(name);
+    public SubscribingEventProcessorsConfigurer(@Nonnull EventProcessingConfigurer parent) {
+        this.parent = parent;
     }
 
-    @Override
-    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+    /**
+     * Builds and registers all configured subscribing event processors.
+     * <p>
+     * This method is typically called automatically by the framework during configuration building.
+     * It registers default components and all configured processor modules.
+     */
+    @Internal
+    public void build() {
         componentRegistry(
                 cr -> cr.registerComponent(
                         SubscribingEventProcessorModule.Customization.class,
@@ -113,7 +120,6 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
                                                moduleBuilder.build()
                                        ))
         );
-        return super.build(parent, lifecycleRegistry);
     }
 
     /**
@@ -132,7 +138,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      *                          applied.
      * @return This module instance for method chaining.
      */
-    public SubscribingEventProcessorsModule defaults(
+    public SubscribingEventProcessorsConfigurer defaults(
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> configureDefaults
     ) {
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
@@ -151,7 +157,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      *                          defaults.
      * @return This module instance for method chaining.
      */
-    public SubscribingEventProcessorsModule defaults(
+    public SubscribingEventProcessorsConfigurer defaults(
             @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> configureDefaults
     ) {
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
@@ -161,17 +167,38 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
     }
 
     /**
-     * Registers a pre-configured {@link SubscribingEventProcessorModule} with this module.
-     * <p>
-     * Use this method when you have a fully configured processor module that you want to register directly. The module
-     * will inherit the shared defaults configured through {@link #defaults(BiFunction)} or
-     * {@link #defaults(UnaryOperator)} methods.
+     * Registers a subscribing event processor with the specified name and event handling components.
      *
-     * @param module A pre-configured {@link SubscribingEventProcessorModule} to register.
-     * @return This module instance for method chaining.
+     * @param name                         The unique name for the processor.
+     * @param eventHandlingComponentsBuilder Function to configure the event handling components.
+     * @return This configurer instance for method chaining.
      */
-    public SubscribingEventProcessorsModule processor(SubscribingEventProcessorModule module) {
-        moduleBuilders.add(() -> module);
+    public SubscribingEventProcessorsConfigurer processor(
+            @Nonnull String name,
+            @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+    ) {
+        processor(
+                () -> EventProcessorModule.subscribing(name)
+                                          .eventHandlingComponents(eventHandlingComponentsBuilder)
+                                          .build()
+        );
+        return this;
+    }
+
+    /**
+     * Registers a subscribing event processor with custom module configuration.
+     *
+     * @param name             The unique name for the processor.
+     * @param moduleCustomizer Function to customize the processor module configuration.
+     * @return This configurer instance for method chaining.
+     */
+    public SubscribingEventProcessorsConfigurer processor(
+            @Nonnull String name,
+            @Nonnull Function<EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration>, SubscribingEventProcessorModule> moduleCustomizer
+    ) {
+        processor(
+                () -> moduleCustomizer.apply(EventProcessorModule.subscribing(name))
+        );
         return this;
     }
 
@@ -181,7 +208,7 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
      * @param moduleBuilder A builder that creates a {@link SubscribingEventProcessorModule} instance.
      * @return This module instance for method chaining.
      */
-    public SubscribingEventProcessorsModule processor(
+    public SubscribingEventProcessorsConfigurer processor(
             ModuleBuilder<SubscribingEventProcessorModule> moduleBuilder
     ) {
         moduleBuilders.add(moduleBuilder);
@@ -189,102 +216,13 @@ public class SubscribingEventProcessorsModule extends BaseModule<SubscribingEven
     }
 
     /**
-     * Registers a new {@link org.axonframework.eventhandling.SubscribingEventProcessor} with the given name and event
-     * handling components.
-     * <p>
-     * This is the simplest way to register a subscribing event processor. The processor will be created with default
-     * configuration plus any shared defaults configured through {@link #defaults(BiFunction)} or
-     * {@link #defaults(UnaryOperator)} methods.
+     * Provides access to the component registry for additional component registrations.
      *
-     * @param name                    The unique name for the event processor.
-     * @param eventHandlingComponentsConfigurer The list of {@link EventHandlingComponent} instances that this processor should
-     *                                handle events for.
-     * @return This module instance for method chaining.
+     * @param registryAction Action to perform on the component registry.
+     * @return This configurer instance for method chaining.
      */
-    public SubscribingEventProcessorsModule processor(
-            @Nonnull String name,
-            @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer
-    ) {
-        return processor(
-                name,
-                eventHandlingComponentsConfigurer,
-                (cfg, c) -> c
-        );
-    }
-
-    /**
-     * Registers a new {@link org.axonframework.eventhandling.SubscribingEventProcessor} with the given name and event
-     * handling components.
-     * <p>
-     * This is the simplest way to register a subscribing event processor. The processor will be created with default
-     * configuration plus any shared defaults configured through {@link #defaults(BiFunction)} or
-     * {@link #defaults(UnaryOperator)} methods.
-     *
-     * @param name                    The unique name for the event processor.
-     * @param eventHandlingComponents The list of {@link EventHandlingComponent} instances that this processor should
-     *                                handle events for.
-     * @return This module instance for method chaining.
-     */
-    public SubscribingEventProcessorsModule processor(
-            @Nonnull String name,
-            @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponents
-    ) {
-        return processor(
-                name,
-                eventHandlingComponents,
-                (cfg, c) -> c
-        );
-    }
-
-    /**
-     * Registers a new {@link org.axonframework.eventhandling.SubscribingEventProcessor} with the given name, event
-     * handling components, and custom configuration.
-     * <p>
-     * This method allows you to specify processor-specific customizations that will be applied in addition to any
-     * shared defaults. The customization function receives both the Axon {@link Configuration} and the processor
-     * configuration, allowing access to application-wide components.
-     *
-     * @param name                    The unique name for the event processor.
-     * @param eventHandlingComponentsConfigurer The list of {@link EventHandlingComponent} instances that this processor should
-     *                                handle events for.
-     * @param customize               A function that customizes the {@link SubscribingEventProcessorConfiguration} for
-     *                                this specific processor.
-     * @return This module instance for method chaining.
-     */
-    public SubscribingEventProcessorsModule processor(
-            @Nonnull String name,
-            @Nonnull EventHandlingComponentsConfigurer eventHandlingComponentsConfigurer,
-            @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customize
-    ) {
-        return processor(
-                name,
-                cfg -> eventHandlingComponentsConfigurer,
-                customize
-        );
-    }
-
-    /**
-     * Registers a new {@link org.axonframework.eventhandling.SubscribingEventProcessor} with the given name and custom
-     * configuration.
-     * <p>
-     * This method provides the most flexibility for processor configuration. You are responsible for setting all
-     * necessary configuration including event handling components. The customization function receives both the Axon
-     * {@link Configuration} and the processor configuration.
-     *
-     * @param name      The unique name for the event processor.
-     * @param customize A function that fully configures the {@link SubscribingEventProcessorConfiguration} for this
-     *                  processor.
-     * @return This module instance for method chaining.
-     */
-    public SubscribingEventProcessorsModule processor(
-            @Nonnull String name,
-            @Nonnull ComponentBuilder<EventHandlingComponentsConfigurer> eventHandlingComponentsBuilder,
-            @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customize
-    ) {
-        return processor(
-                EventProcessorModule.subscribing(name)
-                                    .eventHandlingComponents(eventHandlingComponentsBuilder)
-                                    .defaultCustomized(config -> customization -> customize.apply(config, customization))
-        );
+    public SubscribingEventProcessorsConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+        parent.componentRegistry(registryAction);
+        return this;
     }
 }

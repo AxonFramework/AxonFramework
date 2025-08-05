@@ -98,12 +98,13 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                                      (command, stateManager, context) -> MessageStream.empty().cast()
                                              ));
 
-        Optional<Configuration> moduleConfiguration =
+        List<Configuration> moduleConfigurations =
                 testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
                            .build()
-                           .getModuleConfiguration("test");
+                           .getModuleConfigurations();
 
-        assertTrue(moduleConfiguration.isPresent());
+        assertFalse(moduleConfigurations.isEmpty());
+        assertEquals(1, moduleConfigurations.size());
     }
 
     @Test

@@ -22,15 +22,16 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
+import java.util.List;
 
 /**
  * An {@link EventHandlingComponent} implementation that supports intercepting event handling through
- * MessageHandlerInterceptors. This component delegates actual event handling to another {@link EventHandlingComponent} while
- * applying configured interceptors to the message handling process.
+ * MessageHandlerInterceptors. This component delegates actual event handling to another {@link EventHandlingComponent}
+ * while applying configured interceptors to the message handling process.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -40,20 +41,20 @@ import java.util.Objects;
  */
 public class InterceptingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
-    private final MessageHandlerInterceptors messageHandlerInterceptors;
+    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> messageHandlerInterceptors;
 
     /**
      * Constructs the component with the given delegate and interceptors.
      *
-     * @param delegate     The EventHandlingComponent to delegate to.
+     * @param delegate                   The EventHandlingComponent to delegate to.
      * @param messageHandlerInterceptors The list of interceptors to initialize with.
      */
     public InterceptingEventHandlingComponent(
-            @Nonnull MessageHandlerInterceptors messageHandlerInterceptors,
+            @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> messageHandlerInterceptors,
             @Nonnull EventHandlingComponent delegate
     ) {
         super(delegate);
-        this.messageHandlerInterceptors = Objects.requireNonNull(messageHandlerInterceptors, "InterceptorsList may not be null");
+        this.messageHandlerInterceptors = List.copyOf(messageHandlerInterceptors);
     }
 
     @Nonnull
@@ -63,10 +64,9 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
         DefaultInterceptorChain<EventMessage<?>, ?> chain =
                 new DefaultInterceptorChain<>(
                         null,
-                        messageHandlerInterceptors.toList(),
+                        messageHandlerInterceptors,
                         delegate::handle
                 );
         return chain.proceed(event, context).ignoreEntries().cast();
     }
-
 }
