@@ -120,7 +120,11 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
         assertNonNull(messageTypeResolver, "The Message Type Resolver may not be null");
         this.annotatedEventListener = annotatedEventListener;
         this.listenerType = annotatedEventListener.getClass();
-        this.inspector = AnnotatedHandlerInspector.inspectType(annotatedEventListener.getClass(),
+
+        @SuppressWarnings("unchecked")
+        Class<Object> cls = (Class<Object>)annotatedEventListener.getClass();
+
+        this.inspector = AnnotatedHandlerInspector.inspectType(cls,
                                                                parameterResolverFactory,
                                                                handlerDefinition);
         this.messageTypeResolver = messageTypeResolver;

@@ -67,7 +67,7 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
 
     /**
      * Initialize an Axon Server {@link GenericContainer test container} using the default image name
-     * {@code "axoniq/axonserver"}.
+     * {@code "docker.axoniq.io/axoniq/axonserver"}.
      */
     public AxonServerContainer() {
         this(DEFAULT_IMAGE_NAME);

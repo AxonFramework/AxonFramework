@@ -32,7 +32,7 @@ public interface AggregateMetaModelFactory {
      * @param <T>           The Aggregate type
      * @return Model describing the capabilities and characteristics of the inspected Aggregate class
      */
-    default <T> AggregateModel<T> createModel(Class<? extends T> aggregateType) {
+    default <T> AggregateModel<T> createModel(Class<T> aggregateType) {
         return createModel(aggregateType, Collections.emptySet());
     }
 
@@ -45,5 +45,5 @@ public interface AggregateMetaModelFactory {
      * @param <T>           The Aggregate type
      * @return Model describing the capabilities and characteristics of the inspected Aggregate class and its subtypes
      */
-    <T> AggregateModel<T> createModel(Class<? extends T> aggregateType, Set<Class<? extends T>> subtypes);
+    <T> AggregateModel<T> createModel(Class<T> aggregateType, Set<Class<? extends T>> subtypes);
 }
