@@ -199,7 +199,6 @@ class JpaEventStorageEngineTest
     }
 
     @Test
-    @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
     void storeEventsWithCustomEntity() {
         XStreamSerializer serializer = xStreamSerializer();
@@ -241,6 +240,7 @@ class JpaEventStorageEngineTest
         entityManager.clear();
 
         assertFalse(entityManager.createQuery("SELECT e FROM CustomDomainEventEntry e").getResultList().isEmpty());
+        //noinspection OptionalGetWithoutIsPresent
         assertEquals("Snapshot1", testSubject.readSnapshot(AGGREGATE).get().payload());
         assertEquals("Payload1", testSubject.readEvents(AGGREGATE).peek().payload());
     }

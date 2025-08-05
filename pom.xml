@@ -77,17 +77,17 @@
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
         <!-- Database -->
         <c3p0.version>0.9.1.2</c3p0.version>
-        <hikari.version>6.3.2</hikari.version>
+        <hikari.version>7.0.0</hikari.version>
         <hsqldb.version>2.7.2</hsqldb.version>
-        <hibernate-core.version>6.6.23.Final</hibernate-core.version>
-        <mysql-connector-java.version>9.3.0</mysql-connector-java.version>
+        <hibernate-core.version>7.0.9.Final</hibernate-core.version>
+        <mysql-connector-java.version>9.4.0</mysql-connector-java.version>
         <postgresql.version>42.7.7</postgresql.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
         <jakarta.el.version>6.0.1</jakarta.el.version>
-        <jakarta.el-impl.version>4.0.2</jakarta.el-impl.version>
+        <jakarta.el-impl.version>6.0.0</jakarta.el-impl.version>
         <jakarta.inject.version>2.0.1.MR</jakarta.inject.version>
-        <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
+        <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
         <jakarta.validation.version>3.1.1</jakarta.validation.version>
         <!-- Logging -->
         <log4j.version>2.25.1</log4j.version>
@@ -291,8 +291,8 @@
                 <version>${jakarta.validation.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.el</artifactId>
+                <groupId>org.glassfish.expressly</groupId>
+                <artifactId>expressly</artifactId>
                 <version>${jakarta.el-impl.version}</version>
             </dependency>
             <dependency>
