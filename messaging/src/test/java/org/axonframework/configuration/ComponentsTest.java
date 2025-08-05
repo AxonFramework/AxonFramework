@@ -24,7 +24,9 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +43,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
+@ExtendWith(MockitoExtension.class)
 class ComponentsTest {
 
     private static final Identifier<String> IDENTIFIER = new Identifier<>(String.class, "id");
