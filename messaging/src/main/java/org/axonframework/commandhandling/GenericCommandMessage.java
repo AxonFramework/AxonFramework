@@ -66,7 +66,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * Constructs a {@code GenericCommandMessage} with given {@code delegate}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericCommandMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -74,7 +74,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      *
      * @param delegate The {@link Message} containing {@link Message#payload() payload},
      *                 {@link Message#type() qualifiedName}, {@link Message#identifier() identifier} and
-     *                 {@link Message#getMetaData() metadata} for the {@link CommandMessage} to reconstruct.
+     *                 {@link Message#metaData() metadata} for the {@link CommandMessage} to reconstruct.
      */
     public GenericCommandMessage(@Nonnull Message<P> delegate) {
         super(delegate);
@@ -96,7 +96,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
         Message<C> transformed = new GenericMessage<>(delegate.identifier(),
                                                       delegate.type(),
                                                       conversion.apply(delegate.payload()),
-                                                      delegate.getMetaData());
+                                                      delegate.metaData());
         return new GenericCommandMessage<>(transformed);
     }
 

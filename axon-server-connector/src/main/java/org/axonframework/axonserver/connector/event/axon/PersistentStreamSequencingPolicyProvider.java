@@ -110,7 +110,7 @@ public class PersistentStreamSequencingPolicyProvider
         if (META_DATA_SEQUENCING_POLICY.equals(sequencingPolicy)) {
             List<Object> metaDataValues = new LinkedList<>();
             for (String sequencingPolicyParameter : sequencingPolicyParameters) {
-                metaDataValues.add(event.getMetaData().get(sequencingPolicyParameter));
+                metaDataValues.add(event.metaData().get(sequencingPolicyParameter));
             }
             return metaDataValues;
         }

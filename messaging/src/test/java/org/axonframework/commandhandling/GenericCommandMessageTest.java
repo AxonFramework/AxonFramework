@@ -51,17 +51,17 @@ class GenericCommandMessageTest extends MessageTestSuite {
         CommandMessage<Object> message2 = new GenericCommandMessage<>(TEST_TYPE, testPayload, testMetaDataMap);
         CommandMessage<Object> message3 = new GenericCommandMessage<>(TEST_TYPE, testPayload, testMetaData);
 
-        assertSame(MetaData.emptyInstance(), message1.getMetaData());
+        assertSame(MetaData.emptyInstance(), message1.metaData());
         assertEquals(TEST_TYPE, message1.type());
         assertEquals(Object.class, message1.payload().getClass());
 
         assertEquals(TEST_TYPE, message3.type());
-        assertSame(testMetaData, message3.getMetaData());
+        assertSame(testMetaData, message3.metaData());
         assertEquals(Object.class, message3.payload().getClass());
 
         assertEquals(TEST_TYPE, message2.type());
-        assertNotSame(testMetaDataMap, message2.getMetaData());
-        assertEquals(testMetaDataMap, message2.getMetaData());
+        assertNotSame(testMetaDataMap, message2.metaData());
+        assertEquals(testMetaDataMap, message2.metaData());
         assertEquals(Object.class, message2.payload().getClass());
 
         assertNotEquals(message1.identifier(), message3.identifier());
@@ -80,8 +80,8 @@ class GenericCommandMessageTest extends MessageTestSuite {
                 MetaData.from(Collections.singletonMap("key", "otherValue"))
         );
 
-        assertEquals(0, message1.getMetaData().size());
-        assertEquals(1, message2.getMetaData().size());
+        assertEquals(0, message1.metaData().size());
+        assertEquals(1, message2.metaData().size());
     }
 
     @Test
@@ -95,10 +95,10 @@ class GenericCommandMessageTest extends MessageTestSuite {
         CommandMessage<Object> command2 =
                 command.andMetaData(MetaData.from(Collections.singletonMap("key", "otherValue")));
 
-        assertEquals(1, command1.getMetaData().size());
-        assertEquals("value", command1.getMetaData().get("key"));
-        assertEquals(1, command2.getMetaData().size());
-        assertEquals("otherValue", command2.getMetaData().get("key"));
+        assertEquals(1, command1.metaData().size());
+        assertEquals("value", command1.metaData().get("key"));
+        assertEquals(1, command2.metaData().size());
+        assertEquals("otherValue", command2.metaData().get("key"));
     }
 
     @Test

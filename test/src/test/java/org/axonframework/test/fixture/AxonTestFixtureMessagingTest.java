@@ -668,7 +668,7 @@ class AxonTestFixtureMessagingTest {
                         new QualifiedName(ChangeStudentNameCommand.class),
                         (command, context) -> {
                             ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.payload();
-                            var metadataSample = (String) command.getMetaData().get("sample");
+                            var metadataSample = (String) command.metaData().get("sample");
                             var eventSink = c.getComponent(EventSink.class);
                             eventSink.publish(context, studentNameChangedEventMessage(payload.id(), payload.name(), 1));
                             var resultMessage = new GenericCommandResultMessage<>(

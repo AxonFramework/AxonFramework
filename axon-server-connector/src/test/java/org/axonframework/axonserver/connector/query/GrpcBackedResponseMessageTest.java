@@ -55,7 +55,7 @@ class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    void getMetaDataReturnsTheSameMapAsWasInsertedInTheQueryResponseMessage() {
+    void metaDataReturnsTheSameMapAsWasInsertedInTheQueryResponseMessage() {
         MetaData expectedMetaData = MetaData.with("some-key", "some-value");
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GrpcBackedResponseMessageTest.<TestQueryResponse>asResponseMessage(TEST_QUERY_RESPONSE)
@@ -65,7 +65,7 @@ class GrpcBackedResponseMessageTest {
         GrpcBackedResponseMessage<TestQueryResponse> testSubject =
                 new GrpcBackedResponseMessage<>(testQueryResponse, serializer);
 
-        assertEquals(expectedMetaData, testSubject.getMetaData());
+        assertEquals(expectedMetaData, testSubject.metaData());
     }
 
     @Test
@@ -162,7 +162,7 @@ class GrpcBackedResponseMessageTest {
         MetaData replacementMetaData = MetaData.with("some-other-key", "some-other-value");
 
         testSubject = testSubject.withMetaData(replacementMetaData);
-        MetaData resultMetaData = testSubject.getMetaData();
+        MetaData resultMetaData = testSubject.metaData();
         assertFalse(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
         assertEquals(replacementMetaData, resultMetaData);
     }
@@ -181,7 +181,7 @@ class GrpcBackedResponseMessageTest {
         MetaData additionalMetaData = MetaData.with("some-other-key", "some-other-value");
 
         testSubject = testSubject.andMetaData(additionalMetaData);
-        MetaData resultMetaData = testSubject.getMetaData();
+        MetaData resultMetaData = testSubject.metaData();
 
         assertTrue(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
         assertTrue(resultMetaData.containsKey(additionalMetaData.keySet().iterator().next()));
@@ -202,13 +202,13 @@ class GrpcBackedResponseMessageTest {
             return new GenericQueryResponseMessage<>(
                     new MessageType(resultMessage.payload().getClass()),
                     resultMessage.payload(),
-                    resultMessage.getMetaData()
+                    resultMessage.metaData()
             );
         } else if (result instanceof Message) {
             Message<R> message = (Message<R>) result;
             return new GenericQueryResponseMessage<>(new MessageType(message.payload().getClass()),
                                                      message.payload(),
-                                                     message.getMetaData());
+                                                     message.metaData());
         } else {
             return new GenericQueryResponseMessage<>(new MessageType(result.getClass()), (R) result);
         }

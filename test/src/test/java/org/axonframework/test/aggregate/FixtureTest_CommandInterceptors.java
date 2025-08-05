@@ -170,7 +170,7 @@ class FixtureTest_CommandInterceptors {
         LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWorkResult = unitOfWorkCaptor.getValue();
         Message<?> messageResult = unitOfWorkResult.getMessage();
         assertEquals(expectedCommand, messageResult.payload());
-        assertEquals(expectedMetaDataMap, messageResult.getMetaData());
+        assertEquals(expectedMetaDataMap, messageResult.metaData());
     }
 
     @Test

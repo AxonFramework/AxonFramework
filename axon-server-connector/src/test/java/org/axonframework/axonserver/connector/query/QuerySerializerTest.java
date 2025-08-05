@@ -67,7 +67,7 @@ class QuerySerializerTest {
         QueryMessage<Object, Object> deserialized = testSubject.deserializeRequest(queryRequest);
 
         assertEquals(message.identifier(), deserialized.identifier());
-        assertEquals(message.getMetaData(), deserialized.getMetaData());
+        assertEquals(message.metaData(), deserialized.metaData());
         assertTrue(message.getResponseType().matches(deserialized.getResponseType().responseMessagePayloadType()));
         assertEquals(message.payload(), deserialized.payload());
         assertEquals(message.payloadType(), deserialized.payloadType());
@@ -87,7 +87,7 @@ class QuerySerializerTest {
                 testSubject.deserializeResponse(grpcMessage, instanceOf(BigDecimal.class));
 
         assertEquals(message.identifier(), deserialized.identifier());
-        assertEquals(message.getMetaData(), deserialized.getMetaData());
+        assertEquals(message.metaData(), deserialized.metaData());
         assertEquals(message.payloadType(), deserialized.payloadType());
         assertEquals(message.payload(), deserialized.payload());
     }
@@ -104,7 +104,7 @@ class QuerySerializerTest {
 
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), outbound.getErrorCode());
         assertEquals(responseMessage.identifier(), deserialize.identifier());
-        assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
+        assertEquals(responseMessage.metaData(), deserialize.metaData());
         assertTrue(deserialize.isExceptional());
         assertTrue(deserialize.optionalExceptionResult().isPresent());
         assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
@@ -123,7 +123,7 @@ class QuerySerializerTest {
 
         assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), outbound.getErrorCode());
         assertEquals(responseMessage.identifier(), deserialize.identifier());
-        assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
+        assertEquals(responseMessage.metaData(), deserialize.metaData());
         assertTrue(deserialize.isExceptional());
         assertTrue(deserialize.optionalExceptionResult().isPresent());
         assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
@@ -142,7 +142,7 @@ class QuerySerializerTest {
         QueryResponseMessage<?> deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
 
         assertEquals(responseMessage.identifier(), deserialize.identifier());
-        assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
+        assertEquals(responseMessage.metaData(), deserialize.metaData());
         assertTrue(deserialize.isExceptional());
         assertTrue(deserialize.optionalExceptionResult().isPresent());
         assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());

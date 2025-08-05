@@ -123,7 +123,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
                            .setAggregateSequenceNumber(nextSequence);
                 }
                 var modifiableMetaDataMap = new HashMap<>(builder.getMetaDataMap());
-                buildMetaData(event.getMetaData(), modifiableMetaDataMap);
+                buildMetaData(event.metaData(), modifiableMetaDataMap);
                 Event message = builder.build();
                 tx.appendEvent(message);
             });

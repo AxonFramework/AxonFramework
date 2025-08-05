@@ -235,7 +235,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                     event.identifier(),
                     event.type(),
                     event.payload(),
-                    event.getMetaData(),
+                    event.metaData(),
                     event.getTimestamp()
             );
         } else {

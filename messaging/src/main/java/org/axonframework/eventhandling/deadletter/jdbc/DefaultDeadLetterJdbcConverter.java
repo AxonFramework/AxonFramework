@@ -52,7 +52,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * from the {@link ResultSet}. Furthermore, it uses the configurable {@code genericSerializer} to deserialize
  * {@link TrackingToken TrackingTokens} for {@link TrackedEventMessage} instances. Lastly, this factory uses the
  * {@code eventSerializer} to deserialize the {@link EventMessage#payload() event payload},
- * {@link EventMessage#getMetaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} for the
+ * {@link EventMessage#metaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} for the
  * {@code JdbcDeadLetter} to return.
  *
  * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation this
@@ -126,7 +126,7 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
                                                            serializedMessage.identifier(),
                                                            MessageType.fromString(resultSet.getString(schema.typeColumn())),
                                                            serializedMessage.payload(),
-                                                           serializedMessage.getMetaData(),
+                                                           serializedMessage.metaData(),
                                                            timestampSupplier.get());
         } else {
             eventMessage = new GenericEventMessage<>(serializedMessage, timestampSupplier);
@@ -241,11 +241,11 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
 
         /**
          * Sets the {@link Serializer} to deserialize {@link EventMessage#payload() event payloads},
-         * {@link EventMessage#getMetaData() MetaData} instances, and {@link DeadLetter#diagnostics() diagnostics}
+         * {@link EventMessage#metaData() MetaData} instances, and {@link DeadLetter#diagnostics() diagnostics}
          * with.
          *
          * @param eventSerializer The serializer used to deserialize {@link EventMessage#payload() event payloads},
-         *                        {@link EventMessage#getMetaData() MetaData} instances, and
+         *                        {@link EventMessage#metaData() MetaData} instances, and
          *                        {@link DeadLetter#diagnostics() diagnostics} with.
          * @return The current Builder, for fluent interfacing.
          */

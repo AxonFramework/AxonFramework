@@ -40,7 +40,7 @@ class ConvertingResponseMessageTest {
 
         assertEquals(List.class, wrapped.payloadType());
         assertEquals(singletonList("Some string result"), wrapped.payload());
-        assertEquals("value", wrapped.getMetaData().get("test"));
+        assertEquals("value", wrapped.metaData().get("test"));
     }
 
     @Test

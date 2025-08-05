@@ -26,10 +26,10 @@ import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
- * A message containing serialized {@link #payload() payload data} and {@link #getMetaData() metadata}.
+ * A message containing serialized {@link #payload() payload data} and {@link #metaData() metadata}.
  * <p>
  * A {@link SerializedMessage} will deserialize the payload or metadata on demand when {@link #payload()} or
- * {@link #getMetaData()} is called.
+ * {@link #metaData()} is called.
  * <p>
  * The {@code SerializedMessage} guarantees that the payload and metadata will not be deserialized more than once.
  * Messages of this type  will not be serialized more than once by the same serializer.
@@ -108,7 +108,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public MetaData getMetaData() {
+    public MetaData metaData() {
         try {
             return metaData.getObject();
         } catch (SerializationException e) {
@@ -123,7 +123,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
 
     @Override
     protected SerializedMessage<P> withMetaData(MetaData metaData) {
-        if (getMetaData().equals(metaData)) {
+        if (metaData().equals(metaData)) {
             return this;
         }
         return new SerializedMessage<>(this, new LazyDeserializingObject<>(metaData));

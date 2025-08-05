@@ -200,7 +200,7 @@ public class AxonServerEventStoreFactory {
 
         /**
          * Sets the {@link Serializer} used to de-/serialize the {@link EventMessage#payload() event payload} and
-         * {@link EventMessage#getMetaData() meta data} with.
+         * {@link EventMessage#metaData() meta data} with.
          * <p>
          * Defaults to a {@link XStreamSerializer}.
          * <p>
@@ -208,7 +208,7 @@ public class AxonServerEventStoreFactory {
          * implementation.
          *
          * @param eventSerializer The serializer to de-/serialize the {@link EventMessage#payload() event payload}
-         *                        and {@link EventMessage#getMetaData() meta data} with.
+         *                        and {@link EventMessage#metaData() meta data} with.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder eventSerializer(@Nonnull Serializer eventSerializer) {

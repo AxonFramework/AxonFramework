@@ -59,12 +59,12 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
                                     .getAnnotation(Secured.class);
 
         Set<String> authorities =
-                Optional.ofNullable(message.getMetaData().get("authorities"))
+                Optional.ofNullable(message.metaData().get("authorities"))
                         .map(authorityMetaData -> {
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Found authorities [{}]", authorityMetaData);
                             }
-                            return new HashSet<>(Arrays.asList(message.getMetaData().get("authorities").split(",")));
+                            return new HashSet<>(Arrays.asList(message.metaData().get("authorities").split(",")));
                         })
                         .orElseThrow(() -> new UnauthorizedMessageException(
                                 "No authorities found for message with identifier [" + message.identifier() + "]"

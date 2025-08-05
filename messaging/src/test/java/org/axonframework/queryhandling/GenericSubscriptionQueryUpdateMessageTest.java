@@ -76,7 +76,7 @@ class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite {
         assertEquals(original.payload(), result.payload());
         MetaData expectedMetaData = MetaData.from(metaData)
                                             .mergedWith(newMetaData);
-        assertEquals(expectedMetaData, result.getMetaData());
+        assertEquals(expectedMetaData, result.metaData());
     }
 
     @Test
@@ -90,6 +90,6 @@ class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite {
         SubscriptionQueryUpdateMessage<Object> result = original.withMetaData(newMetaData);
 
         assertEquals(original.payload(), result.payload());
-        assertEquals(newMetaData, result.getMetaData());
+        assertEquals(newMetaData, result.metaData());
     }
 }

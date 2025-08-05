@@ -34,7 +34,7 @@ import java.util.function.Function;
 
 /**
  * Generic implementation of the {@link Message} interface containing the {@link #payload() payload} and
- * {@link #getMetaData() metadata} in deserialized form.
+ * {@link #metaData() metadata} in deserialized form.
  * <p>
  * If a {@link GenericMessage} is created while a {@link LegacyUnitOfWork} is active it copies over the correlation data
  * of the {@code UnitOfWork} to the created message.
@@ -179,7 +179,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public MetaData getMetaData() {
+    public MetaData metaData() {
         return this.metaData;
     }
 
