@@ -26,3 +26,4 @@ docs/_playbook/build
 # Claude Code
 CLAUDE.md
 .claude/
+.mcp.json
