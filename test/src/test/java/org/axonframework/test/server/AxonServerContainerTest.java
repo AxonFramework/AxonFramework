@@ -33,7 +33,7 @@ class AxonServerContainerTest {
 
     @Test
     void constructionThroughStringImageNameStartsAsExpected() {
-        String testName = "axoniq/axonserver:latest-dev";
+        String testName = "axoniq/axonserver:latest";
         try (
                 AxonServerContainer testSubject = new AxonServerContainer(testName)
         ) {
@@ -44,7 +44,7 @@ class AxonServerContainerTest {
 
     @Test
     void constructionThroughDockerImageNameStartsAsExpected() {
-        DockerImageName testName = DockerImageName.parse("axoniq/axonserver:latest-dev");
+        DockerImageName testName = DockerImageName.parse("axoniq/axonserver:latest");
         try (
                 AxonServerContainer testSubject = new AxonServerContainer(testName)
         ) {
@@ -67,7 +67,7 @@ class AxonServerContainerTest {
         boolean testDevMode = true;
         try (
                 AxonServerContainer testSubject =
-                        new AxonServerContainer("axoniq/axonserver:latest-dev")
+                        new AxonServerContainer("axoniq/axonserver:latest")
                                 .withAxonServerName(testName)
                                 .withAxonServerHostname(testHostName)
                                 .withAxonServerInternalHostname(testInternalHostName)
@@ -95,7 +95,7 @@ class AxonServerContainerTest {
     @Test
     void properlyConfiguredDefaultContainerLabel() {
         try (AxonServerContainer testSubject = new AxonServerContainer()) {
-            assertEquals("axoniq/axonserver:latest", testSubject.getDockerImageName());
+            assertEquals("docker.axoniq.io/axoniq/axonserver:latest", testSubject.getDockerImageName());
         }
     }
 
