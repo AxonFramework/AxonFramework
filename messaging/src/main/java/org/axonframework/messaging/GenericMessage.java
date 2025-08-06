@@ -51,7 +51,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     private final MetaData metaData;
 
     private transient volatile SerializedObjectHolder serializedObjectHolder;
-    private final ConcurrentHashMap<Type, Object> convertedPayloads;
+    private final ConcurrentHashMap<ConversionKey, Object> convertedPayloads;
 
     /**
      * Constructs a {@code GenericMessage} for the given {@code type} and {@code payload}.
@@ -198,17 +198,19 @@ public class GenericMessage<P> extends AbstractMessage<P> {
             //noinspection unchecked
             return (T) payload();
         }
-        if (convertedPayloads.containsKey(type)) {
-            //noinspection unchecked
-            return (T) convertedPayloads.get(type);
-        }
-
         Objects.requireNonNull(
                 converter, "Cannot convert payload to [" + type.getTypeName() + "] with null Converter."
         );
+
+        ConversionKey conversionKey = new ConversionKey(type, converter.hashCode());
+        if (convertedPayloads.containsKey(conversionKey)) {
+            //noinspection unchecked
+            return (T) convertedPayloads.get(conversionKey);
+        }
+
         T convertedPayload = converter.convert(payload(), type);
         //noinspection DataFlowIssue
-        convertedPayloads.put(type, convertedPayload);
+        convertedPayloads.put(conversionKey, convertedPayload);
         return convertedPayload;
     }
 
@@ -247,5 +249,9 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         return payloadType().isAssignableFrom(convertedPayload.getClass())
                 ? (Message<T>) this
                 : new GenericMessage<>(identifier(), type(), convertedPayload, metaData());
+    }
+
+    private record ConversionKey(Type type, Integer converterHash) {
+
     }
 }
