@@ -123,7 +123,8 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * @param routingKey The routing key for this {@link CommandMessage}, if any.
      * @param priority   The priority for this {@link CommandMessage}, if any.
      */
-    public GenericCommandMessage(@Nonnull Message<P> delegate, @Nullable String routingKey, @Nullable Integer priority) {
+    public GenericCommandMessage(@Nonnull Message<P> delegate, @Nullable String routingKey,
+                                 @Nullable Integer priority) {
         super(delegate);
         this.routingKey = routingKey;
         this.priority = priority;
@@ -136,7 +137,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
 
     @Override
     public OptionalInt priority() {
-        if(priority == null) {
+        if (priority == null) {
             return OptionalInt.empty();
         }
         return OptionalInt.of(priority);
@@ -159,7 +160,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
                                                       delegate.type(),
                                                       conversion.apply(delegate.getPayload()),
                                                       delegate.getMetaData());
-        return new GenericCommandMessage<>(transformed);
+        return new GenericCommandMessage<>(transformed, routingKey, priority);
     }
 
     @Override
