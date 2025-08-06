@@ -27,7 +27,7 @@ import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.axonserver.connector.AxonServerMetadataConverter;
+import org.axonframework.axonserver.connector.MetaDataConverter;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.commandhandling.CommandMessage;
@@ -57,13 +57,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.axonserver.connector.AxonServerMetadataConverter.convertFromGrpcMetaDataValues;
+import static org.axonframework.axonserver.connector.MetaDataConverter.convertFromGrpcMetaDataValues;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.createProcessingInstruction;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * An implementation of {@link CommandBusConnector} that connects to an Axon Server instance to send and receive
+ * An implementation of the {@link CommandBusConnector} that connects to an Axon Server instance to send and receive
  * commands. It uses the Axon Server gRPC API to communicate with the server.
  *
  * @author Allard Buijze
@@ -134,7 +134,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         Object payload = command.getPayload();
         if (!(payload instanceof byte[] payloadAsBytes)) {
             throw new IllegalArgumentException(
-                    "Payload must be of type byte[] for AxonServerConnector, but was: " + payload.getClass().getName()
+                    "Payload must be of type byte[] for AxonServerConnector, but was: " + payload.getClass().getName()+", consider using a Converter-based CommandBusConnector"
             );
         }
         Command.Builder builder = Command.newBuilder();
@@ -144,7 +144,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         return builder
                 .setMessageIdentifier(command.getIdentifier())
                 .setName(command.type().name())
-                .putAllMetaData(AxonServerMetadataConverter.convertToGrpcMetaDataValues(command.getMetaData()))
+                .putAllMetaData(MetaDataConverter.convertToGrpcMetaDataValues(command.getMetaData()))
                 .setPayload(SerializedObject.newBuilder()
                                             .setData(ByteString.copyFrom(payloadAsBytes))
                                             .setType(command.type().name())
@@ -180,7 +180,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         Assert.isTrue(loadFactor >= 0, () -> "Load factor must be greater than 0.");
         logger.info("Subscribing to command [{}] with load factor [{}]", commandName, loadFactor);
         Registration registration = connection.commandChannel()
-                                              .registerCommandHandler(this::incoming, loadFactor, commandName.name());
+                                              .registerCommandHandler(this::handle, loadFactor, commandName.name());
 
         // Make sure that when we subscribe and immediately send a command, it can be handled.
         if (registration instanceof AsyncRegistration asyncRegistration) {
@@ -200,7 +200,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         this.subscriptions.put(commandName, registration);
     }
 
-    private CompletableFuture<CommandResponse> incoming(Command command) {
+    private CompletableFuture<CommandResponse> handle(Command command) {
         logger.info("Received incoming command [{}]", command.getName());
         try {
             CompletableFuture<CommandResponse> result = new CompletableFuture<>();
@@ -242,19 +242,19 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         CommandResponse.Builder responseBuilder = CommandResponse
                 .newBuilder()
                 .setMessageIdentifier(messageId)
-                .putAllMetaData(AxonServerMetadataConverter.convertToGrpcMetaDataValues(resultMessage.getMetaData()))
+                .putAllMetaData(MetaDataConverter.convertToGrpcMetaDataValues(resultMessage.getMetaData()))
                 .setRequestIdentifier(command.getMessageIdentifier());
         if (!(resultMessage.getPayload() instanceof byte[] payloadAsBytes)) {
             throw new IllegalArgumentException(
-                    "Payload must be of type byte[] for AxonServerConnector, but was: %s".formatted(
+                    "Payload must be of type byte[] for AxonServerConnector, but was: %s, consider using a Converter-based CommandBusConnector".formatted(
                             resultMessage.getPayload().getClass().getName())
             );
         }
         return responseBuilder.setPayload(SerializedObject.newBuilder()
-                                                       .setType(resultMessage.type().name())
-                                                       .setRevision(resultMessage.type().version())
-                                                          .setData(ByteString.copyFrom(payloadAsBytes)))
-                              .build();
+                .setType(resultMessage.type().name())
+                .setRevision(resultMessage.type().version())
+                .setData(ByteString.copyFrom(payloadAsBytes)))
+                .build();
     }
 
     @Override
@@ -284,13 +284,13 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
         @Override
         public void onSuccess(Message<?> resultMessage) {
-            logger.info("Command [{}] completed successfully with result [{}]", command.getName(), resultMessage);
+            logger.debug("Command [{}] completed successfully with result [{}]", command.getName(), resultMessage);
             result.complete(createResult(command, resultMessage));
         }
 
         @Override
         public void onError(@Nonnull Throwable cause) {
-
+            logger.info("Command [{}] raised an exception [{}]", command.getName(), cause.getMessage());
             result.completeExceptionally(cause);
         }
     }

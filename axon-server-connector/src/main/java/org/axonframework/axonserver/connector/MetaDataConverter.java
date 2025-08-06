@@ -35,7 +35,7 @@ import java.util.Map;
  * @since 5.0.0
  */
 @Internal
-public class AxonServerMetadataConverter {
+public class MetaDataConverter {
 
     /**
      * Converts a {@link Map} of String key-value pairs to a {@link Map} of Axon Server {@link MetaDataValue} objects.
