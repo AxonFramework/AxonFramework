@@ -26,13 +26,13 @@ import java.util.Map;
  * Specialization of the DomainEventData class that includes the Token representing the position of this event in a
  * stream.
  *
- * @param <T> The content type of the serialized data.
+ * @param <P> The content type of the serialized data.
  */
 @Deprecated // TODO discuss if we can remove this
-public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEventData<T> {
+public class TrackedDomainEventData<P> implements TrackedEventData<P>, DomainEventData<P> {
 
     private final TrackingToken trackingToken;
-    private final DomainEventData<T> eventData;
+    private final DomainEventData<P> eventData;
 
     /**
      * Initialize the TrackingDomainEventData with given {@code trackingToken} and {@code domainEventEntry}.
@@ -40,7 +40,7 @@ public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEve
      * @param trackingToken    The token representing this event's position in a stream
      * @param domainEventEntry The entry containing the event data itself
      */
-    public TrackedDomainEventData(TrackingToken trackingToken, DomainEventData<T> domainEventEntry) {
+    public TrackedDomainEventData(TrackingToken trackingToken, DomainEventData<P> domainEventEntry) {
         this.trackingToken = trackingToken;
         this.eventData = domainEventEntry;
     }
@@ -70,7 +70,7 @@ public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEve
 
     @Override
     @Nonnull
-    public T payload() {
+    public P payload() {
         return eventData.payload();
     }
 
@@ -104,12 +104,12 @@ public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEve
     }
 
     @Override
-    public SerializedObject<T> getMetaData() {
+    public SerializedObject<P> getMetaData() {
         return eventData.getMetaData();
     }
 
     @Override
-    public SerializedObject<T> getPayload() {
+    public SerializedObject<P> getPayload() {
         return eventData.getPayload();
     }
 }

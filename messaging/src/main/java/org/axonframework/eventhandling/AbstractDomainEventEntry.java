@@ -26,12 +26,13 @@ import org.axonframework.serialization.Serializer;
  * Abstract base class of a serialized domain event. Fields in this class contain JPA annotations that direct JPA event
  * storage engines how to store event entries.
  *
+ * @param <P> The content type of the {@link #payload()}.
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
  */
 @MappedSuperclass
-public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> implements DomainEventData<T> {
+public abstract class AbstractDomainEventEntry<P> extends AbstractEventEntry<P> implements DomainEventData<P> {
 
     @Basic
     private String type;
@@ -55,7 +56,7 @@ public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> 
      * constructor.
      */
     @Deprecated
-    public AbstractDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
+    public AbstractDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer, Class<P> contentType) {
         super(eventMessage, serializer, contentType);
         type = eventMessage.getType();
         aggregateIdentifier = eventMessage.getAggregateIdentifier();
@@ -78,8 +79,8 @@ public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> 
     public AbstractDomainEventEntry(@Nonnull String eventIdentifier,
                                     @Nonnull String payloadType,
                                     @Nonnull String payloadRevision,
-                                    @Nullable T payload,
-                                    @Nullable T metaData,
+                                    @Nullable P payload,
+                                    @Nullable P metaData,
                                     @Nonnull Object timestamp,
                                     @Nonnull String aggregateType,
                                     @Nonnull String aggregateIdentifier,

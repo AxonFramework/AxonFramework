@@ -39,12 +39,13 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * Abstract base class of a serialized event. Fields in this class contain JPA annotations that direct JPA event storage
  * engines how to store event entries.
  *
+ * @param <P> The content type of the {@link #payload()}.
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
  */
 @MappedSuperclass
-public abstract class AbstractEventEntry<T> implements EventData<T> {
+public abstract class AbstractEventEntry<P> implements EventData<P> {
 
     @Column(nullable = false, unique = true)
     private String eventIdentifier;
@@ -55,11 +56,11 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
     @Basic(optional = false)
     @Lob
     @Column(length = 10000)
-    private T payload;
+    private P payload;
     @Basic
     @Lob
     @Column(length = 10000)
-    private T metaData;
+    private P metaData;
     @Basic(optional = false)
     private String timeStamp;
 
@@ -77,9 +78,9 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
      * {@link AbstractEventEntry#AbstractEventEntry(String, String, String, Object, Object, Object)} constructor.
      */
     @Deprecated
-    public AbstractEventEntry(EventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
-        SerializedObject<T> payload = eventMessage.serializePayload(serializer, contentType);
-        SerializedObject<T> metaData = eventMessage.serializeMetaData(serializer, contentType);
+    public AbstractEventEntry(EventMessage<?> eventMessage, Serializer serializer, Class<P> contentType) {
+        SerializedObject<P> payload = eventMessage.serializePayload(serializer, contentType);
+        SerializedObject<P> metaData = eventMessage.serializeMetaData(serializer, contentType);
         this.eventIdentifier = eventMessage.identifier();
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();
@@ -101,8 +102,8 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
     public AbstractEventEntry(@Nonnull String eventIdentifier,
                               @Nonnull String payloadType,
                               @Nonnull String payloadRevision,
-                              @Nullable T payload,
-                              @Nullable T metaData,
+                              @Nullable P payload,
+                              @Nullable P metaData,
                               @Nonnull Object timestamp) {
         this.eventIdentifier = eventIdentifier;
         this.payloadType = payloadType;
@@ -141,7 +142,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
 
     @Override
     @Nonnull
-    public T payload() {
+    public P payload() {
         return payload;
     }
 
@@ -160,14 +161,14 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public SerializedObject<T> getMetaData() {
-        return new SerializedMetaData<>(metaData, (Class<T>) metaData.getClass());
+    public SerializedObject<P> getMetaData() {
+        return new SerializedMetaData<>(metaData, (Class<P>) metaData.getClass());
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public SerializedObject<T> getPayload() {
-        return new SimpleSerializedObject<>(payload, (Class<T>) payload.getClass(),
+    public SerializedObject<P> getPayload() {
+        return new SimpleSerializedObject<>(payload, (Class<P>) payload.getClass(),
                                             new SimpleSerializedType(payloadType, payloadRevision));
     }
 }

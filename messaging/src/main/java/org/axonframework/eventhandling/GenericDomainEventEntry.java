@@ -25,7 +25,7 @@ import jakarta.annotation.Nullable;
  *
  * @author Rene de Waele
  */
-public class GenericDomainEventEntry<T> extends AbstractDomainEventEntry<T> {
+public class GenericDomainEventEntry<P> extends AbstractDomainEventEntry<P> {
 
     /**
      * Constructs an {@code GenericDomainEventEntry} with the given parameters.
@@ -43,8 +43,8 @@ public class GenericDomainEventEntry<T> extends AbstractDomainEventEntry<T> {
     public GenericDomainEventEntry(@Nonnull String eventIdentifier,
                                    @Nonnull String payloadType,
                                    @Nonnull String payloadRevision,
-                                   @Nullable T payload,
-                                   @Nullable T metaData,
+                                   @Nullable P payload,
+                                   @Nullable P metaData,
                                    @Nonnull Object timestamp,
                                    @Nonnull String aggregateType,
                                    @Nonnull String aggregateIdentifier,

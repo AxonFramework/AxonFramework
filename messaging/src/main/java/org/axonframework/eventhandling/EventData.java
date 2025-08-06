@@ -27,13 +27,13 @@ import java.util.Map;
 /**
  * Interface describing the properties of a stored {@link EventMessage event messages}.
  *
- * @param <T> The content type of the {@link #payload()}.
+ * @param <P> The content type of the {@link #payload()}.
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 2.0.0
  */
-public interface EventData<T> {
+public interface EventData<P> {
 
     /**
      * Returns the identifier of the stored event.
@@ -69,7 +69,7 @@ public interface EventData<T> {
      * @return The payload of the stored event.
      */
     @Nonnull
-    T payload();
+    P payload();
 
     /**
      * Returns the metadata of the stored event.
@@ -94,7 +94,7 @@ public interface EventData<T> {
      * @deprecated In favor of {@link #metaData()}.
      */
     @Deprecated
-    SerializedObject<T> getMetaData();
+    SerializedObject<P> getMetaData();
 
     /**
      * Returns the serialized data of the Event Message's payload.
@@ -104,5 +104,5 @@ public interface EventData<T> {
      * the {@link SerializedType#getName()} and {@link #version()} for the {@link SerializedType#getRevision()}.
      */
     @Deprecated
-    SerializedObject<T> getPayload();
+    SerializedObject<P> getPayload();
 }
