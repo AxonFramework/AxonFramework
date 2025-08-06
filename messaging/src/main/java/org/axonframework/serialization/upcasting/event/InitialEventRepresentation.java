@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,8 +73,8 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
         type = data.getType();
         contentType = data.getContentType();
         metaData = new LazyDeserializingObject<>(eventData.getMetaData(), serializer);
-        eventIdentifier = eventData.getEventIdentifier();
-        timestamp = CachingSupplier.of(eventData::getTimestamp);
+        eventIdentifier = eventData.eventIdentifier();
+        timestamp = CachingSupplier.of(eventData::timestamp);
         if (eventData instanceof DomainEventData<?>) {
             DomainEventData<?> domainEventData = (DomainEventData<?>) eventData;
             aggregateType = domainEventData.getType();

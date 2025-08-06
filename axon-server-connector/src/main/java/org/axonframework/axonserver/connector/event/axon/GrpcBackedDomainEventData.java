@@ -71,7 +71,7 @@ public class GrpcBackedDomainEventData implements DomainEventData<byte[]> {
 
     @Override
     @Nonnull
-    public String getEventIdentifier() {
+    public String eventIdentifier() {
         return event.getMessageIdentifier();
     }
 
@@ -101,7 +101,7 @@ public class GrpcBackedDomainEventData implements DomainEventData<byte[]> {
 
     @Override
     @Nonnull
-    public Instant getTimestamp() {
+    public Instant timestamp() {
         return Instant.ofEpochMilli(event.getTimestamp());
     }
 

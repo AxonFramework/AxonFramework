@@ -69,8 +69,8 @@ class SingleEventUpcasterTest {
         assertEquals("1", firstEvent.getType().getRevision());
         StubDomainEvent upcastedEvent = serializer.deserialize(firstEvent.getData());
         assertEquals(newValue, upcastedEvent.getName());
-        assertEquals(eventData.getEventIdentifier(), firstEvent.getMessageIdentifier());
-        assertEquals(eventData.getTimestamp(), firstEvent.getTimestamp());
+        assertEquals(eventData.eventIdentifier(), firstEvent.getMessageIdentifier());
+        assertEquals(eventData.timestamp(), firstEvent.getTimestamp());
         assertEquals(metaData, firstEvent.getMetaData().getObject());
     }
 

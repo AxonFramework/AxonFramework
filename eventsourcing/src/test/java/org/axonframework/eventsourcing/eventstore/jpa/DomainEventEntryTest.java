@@ -64,8 +64,8 @@ class DomainEventEntryTest {
         assertEquals(expectedAggregateType, result.getType());
         assertEquals(expectedAggregateId, result.getAggregateIdentifier());
         assertEquals(expectedSequenceNumber, result.getSequenceNumber());
-        assertEquals(expectedEventIdentifier, result.getEventIdentifier());
-        assertEquals(expectedTimestamp, result.getTimestamp());
+        assertEquals(expectedEventIdentifier, result.eventIdentifier());
+        assertEquals(expectedTimestamp, result.timestamp());
         assertEquals(expectedPayload, serializer.deserialize(result.getPayload()));
         assertEquals(byte[].class, result.getPayload().getContentType());
         assertEquals(expectedMetaData, serializer.deserialize(result.getMetaData()));

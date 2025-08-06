@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public interface EventData<T> {
      * @return The identifier of the stored event.
      */
     @Nonnull
-    String getEventIdentifier();
+    String eventIdentifier();
 
     /**
      * Returns the type of the stored event.
@@ -85,7 +85,7 @@ public interface EventData<T> {
      * @return The timestamp at which the stored event was first created.
      */
     @Nonnull
-    Instant getTimestamp();
+    Instant timestamp();
 
     /**
      * Returns the serialized data of the MetaData of the serialized Event.

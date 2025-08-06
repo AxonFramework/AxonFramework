@@ -117,7 +117,7 @@ record LegacyJpaEventStorageOperations(
             );
 
             // Now that we have the event itself, we can calculate the token
-            boolean allowGaps = domainEvent.getTimestamp().isAfter(gapTimeoutThreshold);
+            boolean allowGaps = domainEvent.timestamp().isAfter(gapTimeoutThreshold);
             if (token == null) {
                 token = GapAwareTrackingToken.newInstance(
                         globalSequence,

@@ -193,16 +193,16 @@ class EventMultiUpcasterTest {
 
         IntermediateEventRepresentation firstResultRepresentation = result.getFirst();
         assertEquals(expectedRevisionNumber, firstResultRepresentation.getType().getRevision());
-        assertEquals(testEventData.getEventIdentifier(), firstResultRepresentation.getMessageIdentifier());
-        assertEquals(testEventData.getTimestamp(), firstResultRepresentation.getTimestamp());
+        assertEquals(testEventData.eventIdentifier(), firstResultRepresentation.getMessageIdentifier());
+        assertEquals(testEventData.timestamp(), firstResultRepresentation.getTimestamp());
         assertEquals(testMetaData, firstResultRepresentation.getMetaData().getObject());
         StubDomainEvent firstUpcastedEvent = serializer.deserialize(firstResultRepresentation.getData());
         assertEquals(expectedNewString, firstUpcastedEvent.getName());
 
         IntermediateEventRepresentation secondResultRepresentation = result.get(1);
         assertEquals(expectedSecondAndThirdRevisionNumber, secondResultRepresentation.getType().getRevision());
-        assertEquals(testEventData.getEventIdentifier(), secondResultRepresentation.getMessageIdentifier());
-        assertEquals(testEventData.getTimestamp(), secondResultRepresentation.getTimestamp());
+        assertEquals(testEventData.eventIdentifier(), secondResultRepresentation.getMessageIdentifier());
+        assertEquals(testEventData.timestamp(), secondResultRepresentation.getTimestamp());
         assertEquals(testMetaData, secondResultRepresentation.getMetaData().getObject());
         SecondStubEvent secondUpcastedEvent = serializer.deserialize(secondResultRepresentation.getData());
         assertEquals(expectedNewString, secondUpcastedEvent.getName());
@@ -210,8 +210,8 @@ class EventMultiUpcasterTest {
 
         IntermediateEventRepresentation thirdResultRepresentation = result.get(2);
         assertEquals(expectedSecondAndThirdRevisionNumber, thirdResultRepresentation.getType().getRevision());
-        assertEquals(testEventData.getEventIdentifier(), thirdResultRepresentation.getMessageIdentifier());
-        assertEquals(testEventData.getTimestamp(), thirdResultRepresentation.getTimestamp());
+        assertEquals(testEventData.eventIdentifier(), thirdResultRepresentation.getMessageIdentifier());
+        assertEquals(testEventData.timestamp(), thirdResultRepresentation.getTimestamp());
         assertEquals(testMetaData, thirdResultRepresentation.getMetaData().getObject());
         ThirdStubEvent thirdUpcastedEvent = serializer.deserialize(thirdResultRepresentation.getData());
         assertEquals(expectedNewString, thirdUpcastedEvent.getName());

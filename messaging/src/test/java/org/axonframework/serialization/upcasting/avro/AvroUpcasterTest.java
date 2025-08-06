@@ -204,7 +204,7 @@ class AvroUpcasterTest {
         return new EventData<>() {
             @Override
             @Nonnull
-            public String getEventIdentifier() {
+            public String eventIdentifier() {
                 return UUID.randomUUID().toString();
             }
 
@@ -234,7 +234,7 @@ class AvroUpcasterTest {
 
             @Override
             @Nonnull
-            public Instant getTimestamp() {
+            public Instant timestamp() {
                 return Instant.now();
             }
 

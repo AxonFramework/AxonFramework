@@ -103,8 +103,8 @@ class ContextAwareSingleEventUpcasterTest {
 
         IntermediateEventRepresentation firstEventResult = result.getFirst();
         assertNull(firstEventResult.getType().getRevision());
-        assertEquals(firstTestEventData.getEventIdentifier(), firstEventResult.getMessageIdentifier());
-        assertEquals(firstTestEventData.getTimestamp(), firstEventResult.getTimestamp());
+        assertEquals(firstTestEventData.eventIdentifier(), firstEventResult.getMessageIdentifier());
+        assertEquals(firstTestEventData.timestamp(), firstEventResult.getTimestamp());
         assertEquals(testMetaData, firstEventResult.getMetaData().getObject());
         SecondStubEvent contextEvent = serializer.deserialize(firstEventResult.getData());
         assertEquals(expectedContextEventString, contextEvent.getName());
@@ -112,8 +112,8 @@ class ContextAwareSingleEventUpcasterTest {
 
         IntermediateEventRepresentation secondEventResult = result.get(1);
         assertEquals(expectedRevisionNumber, secondEventResult.getType().getRevision());
-        assertEquals(secondTestEventData.getEventIdentifier(), secondEventResult.getMessageIdentifier());
-        assertEquals(secondTestEventData.getTimestamp(), secondEventResult.getTimestamp());
+        assertEquals(secondTestEventData.eventIdentifier(), secondEventResult.getMessageIdentifier());
+        assertEquals(secondTestEventData.timestamp(), secondEventResult.getTimestamp());
         assertEquals(testMetaData, secondEventResult.getMetaData().getObject());
         StubDomainEvent upcastedEvent = serializer.deserialize(secondEventResult.getData());
         assertEquals(expectedNewString, upcastedEvent.getName());

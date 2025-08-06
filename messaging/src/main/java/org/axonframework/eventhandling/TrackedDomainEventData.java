@@ -52,8 +52,8 @@ public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEve
 
     @Override
     @Nonnull
-    public String getEventIdentifier() {
-        return eventData.getEventIdentifier();
+    public String eventIdentifier() {
+        return eventData.eventIdentifier();
     }
 
     @Override
@@ -82,8 +82,8 @@ public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEve
 
     @Override
     @Nonnull
-    public Instant getTimestamp() {
-        return eventData.getTimestamp();
+    public Instant timestamp() {
+        return eventData.timestamp();
     }
 
     @Override

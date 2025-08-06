@@ -123,7 +123,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
 
     @Override
     @Nonnull
-    public String getEventIdentifier() {
+    public String eventIdentifier() {
         return eventIdentifier;
     }
 
@@ -154,7 +154,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
 
     @Override
     @Nonnull
-    public Instant getTimestamp() {
+    public Instant timestamp() {
         return DateTimeUtils.parseInstant(timeStamp);
     }
 

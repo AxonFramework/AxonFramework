@@ -297,15 +297,15 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                                event.getAggregateIdentifier(),
                                                event.getSequenceNumber(),
                                                convertToEventMessage(event),
-                                               event.getTimestamp());
+                                               event.timestamp());
     }
 
     private GenericEventMessage<?> convertToEventMessage(EventData<?> event) {
-        return new GenericEventMessage<>(event.getEventIdentifier(),
+        return new GenericEventMessage<>(event.eventIdentifier(),
                                          new MessageType(event.type(), event.version()),
                                          event.payload(),
                                          event.metaData(),
-                                         event.getTimestamp());
+                                         event.timestamp());
     }
 
     private static Context setMarkerAndBuildContext(String aggregateIdentifier,

@@ -660,7 +660,7 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
         );
 
         // Now that we have the event itself, we can calculate the token.
-        boolean allowGaps = domainEvent.getTimestamp().isAfter(gapTimeoutFrame());
+        boolean allowGaps = domainEvent.timestamp().isAfter(gapTimeoutFrame());
         GapAwareTrackingToken token = previousToken;
         if (token == null) {
             token = GapAwareTrackingToken.newInstance(
