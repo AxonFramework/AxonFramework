@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.util.ExecutorServiceFactory;
 
@@ -45,7 +46,7 @@ public class DistributedCommandBusConfiguration {
             );
 
     /**
-     * Sets the load factor for the distributed command bus. The load factor determines how many commands are sent each
+     * Sets the load factor for the distributed command bus. The load factor determines how many commands are sent to each
      * application that is part of the distributed command bus. A higher load factor means that more commands are sent
      * to this node compared to others. Defaults to 100.
      *
@@ -76,7 +77,7 @@ public class DistributedCommandBusConfiguration {
      * @param executorService The {@link ExecutorService} to use for the distributed command bus.
      * @return The configuration itself, for fluent API usage.
      */
-    public DistributedCommandBusConfiguration withExecutorService(ExecutorService executorService) {
+    public DistributedCommandBusConfiguration withExecutorService(@Nonnull ExecutorService executorService) {
         this.executorServiceFactory = (config, queue) -> executorService;
         return this;
     }
