@@ -16,8 +16,11 @@
 
 package org.axonframework.axonserver.connector;
 
+import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.axonserver.connector.event.TestConverter;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
@@ -64,5 +67,6 @@ class AxonServerConfigurationEnhancerTest {
         assertNotNull(result.getComponent(AxonServerConnectionManager.class));
         assertInstanceOf(ManagedChannelCustomizer.class, result.getComponent(ManagedChannelCustomizer.class));
         assertInstanceOf(AxonServerEventStorageEngine.class, result.getComponent(AxonServerEventStorageEngine.class));
+        assertInstanceOf(PayloadConvertingCommandBusConnector.class, result.getComponent(CommandBusConnector.class));
     }
 }
