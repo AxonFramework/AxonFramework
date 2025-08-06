@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.MappedSuperclass;
@@ -77,7 +78,7 @@ public abstract class AbstractSnapshotEventEntry<T> extends AbstractEventEntry<T
     public AbstractSnapshotEventEntry(String type, String aggregateIdentifier, long sequenceNumber,
                                       String eventIdentifier, Object timestamp, String payloadType,
                                       String payloadRevision, T payload, T metaData) {
-        super(eventIdentifier, timestamp, payloadType, payloadRevision, payload, metaData);
+        super(eventIdentifier, payloadType, payloadRevision, payload, metaData, timestamp);
         this.type = type;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
@@ -90,17 +91,19 @@ public abstract class AbstractSnapshotEventEntry<T> extends AbstractEventEntry<T
     }
 
     @Override
-    public String getType() {
+    @Nonnull
+    public String aggregateType() {
         return type;
     }
 
     @Override
-    public String getAggregateIdentifier() {
+    @Nonnull
+    public String aggregateIdentifier() {
         return aggregateIdentifier;
     }
 
     @Override
-    public long getSequenceNumber() {
+    public long aggregateSequenceNumber() {
         return sequenceNumber;
     }
 

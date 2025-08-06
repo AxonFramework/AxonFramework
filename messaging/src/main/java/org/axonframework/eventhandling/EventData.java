@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,45 +16,93 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
 
 import java.time.Instant;
+import java.util.Map;
 
 /**
- * Interface describing the properties of serialized Event Messages. Event Storage Engine implementations should have
- * their storage entries implement this interface.
+ * Interface describing the properties of a stored {@link EventMessage event messages}.
  *
- * @param <T> The content type of the serialized data
+ * @param <P> The content type of the {@link #payload()}.
+ * @author Allard Buijze
  * @author Rene de Waele
+ * @author Steven van Beelen
+ * @since 2.0.0
  */
-public interface EventData<T> {
+public interface EventData<P> {
 
     /**
-     * Returns the identifier of the serialized event.
+     * Returns the identifier of the stored event.
      *
-     * @return the identifier of the serialized event
+     * @return The identifier of the stored event.
      */
-    String getEventIdentifier();
+    @Nonnull
+    String eventIdentifier();
 
     /**
-     * Returns the timestamp at which the event was first created.
+     * Returns the type of the stored event.
+     * <p>
+     * Typically refers to the {@link MessageType#name()}.
      *
-     * @return the timestamp at which the event was first created
+     * @return The type of the stored event.
      */
-    Instant getTimestamp();
+    @Nonnull
+    String type();
+
+    /**
+     * Returns the version of the stored event.
+     * <p>
+     * Typically refers to the {@link MessageType#version()}.
+     *
+     * @return The version of the stored event.
+     */
+    @Nonnull
+    String version();
+
+    /**
+     * Returns the payload of the stored event.
+     *
+     * @return The payload of the stored event.
+     */
+    @Nonnull
+    P payload();
+
+    /**
+     * Returns the metadata of the stored event.
+     *
+     * @return The metadata of the stored event.
+     */
+    @Nonnull
+    Map<String, String> metaData();
+
+    /**
+     * Returns the timestamp at which the stored event was first created.
+     *
+     * @return The timestamp at which the stored event was first created.
+     */
+    @Nonnull
+    Instant timestamp();
 
     /**
      * Returns the serialized data of the MetaData of the serialized Event.
      *
      * @return the serialized data of the MetaData of the serialized Event
+     * @deprecated In favor of {@link #metaData()}.
      */
-    SerializedObject<T> getMetaData();
+    @Deprecated
+    SerializedObject<P> getMetaData();
 
     /**
      * Returns the serialized data of the Event Message's payload.
      *
      * @return the serialized data of the Event Message's payload
+     * @deprecated In favor of {@link #payload()} for the {@link SerializedObject#getData()}, and {@link #type()} for
+     * the {@link SerializedType#getName()} and {@link #version()} for the {@link SerializedType#getRevision()}.
      */
-    SerializedObject<T> getPayload();
-
+    @Deprecated
+    SerializedObject<P> getPayload();
 }

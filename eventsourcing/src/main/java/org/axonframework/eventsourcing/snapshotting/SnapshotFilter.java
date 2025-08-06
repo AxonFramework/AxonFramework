@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import java.util.function.Predicate;
  * org.axonframework.eventsourcing.AggregateSnapshotter} instances would be used.
  * <p>
  * In such a default set up, {@code DomainEventData} <i>corresponding to the right aggregate</i> means that the {@link
- * DomainEventData#getType()} matches the aggregate's type. If {@code DomainEventData} is of the <i>desired format</i>
+ * DomainEventData#aggregateType()} matches the aggregate's type. If {@code DomainEventData} is of the <i>desired format</i>
  * should be based on the {@link DomainEventData#getPayload()}, which contains the entire aggregate state.
  *
  * @author Steven van Beelen

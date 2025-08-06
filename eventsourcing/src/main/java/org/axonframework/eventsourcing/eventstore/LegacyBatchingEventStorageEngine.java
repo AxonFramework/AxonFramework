@@ -134,7 +134,7 @@ public abstract class LegacyBatchingEventStorageEngine extends AbstractLegacyEve
     protected Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber) {
         EventStreamSpliterator<? extends DomainEventData<?>> spliterator = new EventStreamSpliterator<>(
                 lastItem -> fetchDomainEvents(identifier,
-                                              lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
+                                              lastItem == null ? firstSequenceNumber : lastItem.aggregateSequenceNumber() + 1,
                                               batchSize), finalAggregateBatchPredicate);
         return StreamSupport.stream(spliterator, false);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,23 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.serialization.SerializedObject;
 
 import java.time.Instant;
+import java.util.Map;
 
 /**
- * Specialization of the DomainEventData class that includes the Token representing the position of this event in
- * a stream.
+ * Specialization of the DomainEventData class that includes the Token representing the position of this event in a
+ * stream.
  *
- * @param <T> The content type of the serialized data
+ * @param <P> The content type of the serialized data.
  */
-public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEventData<T> {
+@Deprecated // TODO discuss if we can remove this
+public class TrackedDomainEventData<P> implements TrackedEventData<P>, DomainEventData<P> {
 
     private final TrackingToken trackingToken;
-    private final DomainEventData<T> eventData;
+    private final DomainEventData<P> eventData;
 
     /**
      * Initialize the TrackingDomainEventData with given {@code trackingToken} and {@code domainEventEntry}.
@@ -37,7 +40,7 @@ public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEve
      * @param trackingToken    The token representing this event's position in a stream
      * @param domainEventEntry The entry containing the event data itself
      */
-    public TrackedDomainEventData(TrackingToken trackingToken, DomainEventData<T> domainEventEntry) {
+    public TrackedDomainEventData(TrackingToken trackingToken, DomainEventData<P> domainEventEntry) {
         this.trackingToken = trackingToken;
         this.eventData = domainEventEntry;
     }
@@ -48,37 +51,65 @@ public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEve
     }
 
     @Override
-    public String getEventIdentifier() {
-        return eventData.getEventIdentifier();
+    @Nonnull
+    public String eventIdentifier() {
+        return eventData.eventIdentifier();
     }
 
     @Override
-    public Instant getTimestamp() {
-        return eventData.getTimestamp();
+    @Nonnull
+    public String type() {
+        return eventData.type();
     }
 
     @Override
-    public SerializedObject<T> getMetaData() {
+    @Nonnull
+    public String version() {
+        return eventData.version();
+    }
+
+    @Override
+    @Nonnull
+    public P payload() {
+        return eventData.payload();
+    }
+
+    @Override
+    @Nonnull
+    public Map<String, String> metaData() {
+        return eventData.metaData();
+    }
+
+    @Override
+    @Nonnull
+    public Instant timestamp() {
+        return eventData.timestamp();
+    }
+
+    @Override
+    @Nonnull
+    public String aggregateType() {
+        return eventData.aggregateType();
+    }
+
+    @Override
+    @Nonnull
+    public String aggregateIdentifier() {
+        return eventData.aggregateIdentifier();
+    }
+
+    @Override
+    public long aggregateSequenceNumber() {
+        return eventData.aggregateSequenceNumber();
+    }
+
+    @Override
+    public SerializedObject<P> getMetaData() {
         return eventData.getMetaData();
     }
 
     @Override
-    public SerializedObject<T> getPayload() {
+    public SerializedObject<P> getPayload() {
         return eventData.getPayload();
-    }
-
-    @Override
-    public String getType() {
-        return eventData.getType();
-    }
-
-    @Override
-    public String getAggregateIdentifier() {
-        return eventData.getAggregateIdentifier();
-    }
-
-    @Override
-    public long getSequenceNumber() {
-        return eventData.getSequenceNumber();
     }
 }

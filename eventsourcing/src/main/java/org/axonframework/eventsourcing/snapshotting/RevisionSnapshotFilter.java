@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import static org.axonframework.common.BuilderUtils.assertNonBlank;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 
 /**
- * A {@link SnapshotFilter} implementation which based on a configurable allowed revision will only {@link
- * #allow(DomainEventData)} {@link DomainEventData} containing that revision. True will also be returned if the {@link
- * DomainEventData#getType()} does not match the given {@code type}, as in compliance with the {@code SnapshotFilter}
- * documentation.
+ * A {@link SnapshotFilter} implementation which based on a configurable allowed revision will only
+ * {@link #allow(DomainEventData)} {@link DomainEventData} containing that revision. True will also be returned if the
+ * {@link DomainEventData#aggregateType()} does not match the given {@code type}, as in compliance with the
+ * {@code SnapshotFilter} documentation.
  *
  * @author Steven van Beelen
  * @since 4.5
@@ -66,7 +66,7 @@ public class RevisionSnapshotFilter implements SnapshotFilter {
 
     @Override
     public boolean test(DomainEventData<?> domainEventData) {
-        String type = domainEventData.getType();
+        String type = domainEventData.aggregateType();
         String revision = domainEventData.getPayload().getType().getRevision();
         if (!Objects.equals(type, this.type)) {
             return true;
@@ -87,7 +87,7 @@ public class RevisionSnapshotFilter implements SnapshotFilter {
         /**
          * Sets the aggregate {@code type} this {@link SnapshotFilter} will allow using the outcome of {@link
          * Class#getName()} on the given {@code type}. Note that if the {@code type} does not match the {@link
-         * DomainEventData#getType()}, the filter will return {@code true} as per the {@code SnapshotFilter}
+         * DomainEventData#aggregateType()}, the filter will return {@code true} as per the {@code SnapshotFilter}
          * documentation.
          *
          * @param type defines aggregate type this {@link SnapshotFilter} allows
@@ -99,7 +99,7 @@ public class RevisionSnapshotFilter implements SnapshotFilter {
 
         /**
          * Sets the aggregate {@code type} this {@link SnapshotFilter} will allow. Note that if the {@code type} does
-         * not match the {@link DomainEventData#getType()}, the filter will return {@code true} as per the {@code
+         * not match the {@link DomainEventData#aggregateType()}, the filter will return {@code true} as per the {@code
          * SnapshotFilter} documentation.
          *
          * @param type defines aggregate type this {@link SnapshotFilter} allows

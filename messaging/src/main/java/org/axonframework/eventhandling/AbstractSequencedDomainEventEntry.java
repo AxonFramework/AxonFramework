@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
@@ -25,10 +27,14 @@ import org.axonframework.serialization.Serializer;
  * Abstract base class of a serialized domain event. Fields in this class contain JPA annotations that direct JPA event
  * storage engines how to store event entries.
  *
+ * @param <P> The content type of the {@link #payload()}.
  * @author Rene de Waele
+ * @since 3.0.0
  */
 @MappedSuperclass
-public abstract class AbstractSequencedDomainEventEntry<T> extends AbstractDomainEventEntry<T> implements DomainEventData<T> {
+public abstract class AbstractSequencedDomainEventEntry<P>
+        extends AbstractDomainEventEntry<P>
+        implements DomainEventData<P> {
 
     @Id
     @GeneratedValue
@@ -39,21 +45,60 @@ public abstract class AbstractSequencedDomainEventEntry<T> extends AbstractDomai
      * Construct a new default domain event entry from a published domain event message to enable storing the event or
      * sending it to a remote location. The event payload and metadata will be serialized to a byte array.
      * <p>
-     * The given {@code serializer} will be used to serialize the payload and metadata in the given {@code
-     * eventMessage}. The type of the serialized data will be the same as the given {@code contentType}.
+     * The given {@code serializer} will be used to serialize the payload and metadata in the given
+     * {@code eventMessage}. The type of the serialized data will be the same as the given {@code contentType}.
      *
      * @param eventMessage The event message to convert to a serialized event entry
      * @param serializer   The serializer to convert the event
      * @param contentType  The data type of the payload and metadata after serialization
+     * @deprecated In favor of
+     * {@link AbstractSequencedDomainEventEntry#AbstractSequencedDomainEventEntry(String, String, String, Object,
+     * Object, Object, String, String, long)} constructor.
      */
-    public AbstractSequencedDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer,
-                                             Class<T> contentType) {
+    @Deprecated
+    public AbstractSequencedDomainEventEntry(DomainEventMessage<?> eventMessage,
+                                             Serializer serializer,
+                                             Class<P> contentType) {
         super(eventMessage, serializer, contentType);
     }
 
     /**
-     * Default constructor required by JPA
+     * Constructs an {@code AbstractSequencedDomainEventEntry} with the given parameters.
+     *
+     * @param eventIdentifier         The identifier of the event.
+     * @param payloadType             The fully qualified class name or alias of the event payload.
+     * @param payloadRevision         The revision of the event payload.
+     * @param payload                 The serialized payload.
+     * @param metaData                The serialized metadata.
+     * @param timestamp               The time at which the event was originally created.
+     * @param aggregateType           The type of aggregate that published this event.
+     * @param aggregateIdentifier     The identifier of the aggregate that published this event.
+     * @param aggregateSequenceNumber The sequence number of the event in the aggregate.
+     */
+    public AbstractSequencedDomainEventEntry(@Nonnull String eventIdentifier,
+                                             @Nonnull String payloadType,
+                                             @Nonnull String payloadRevision,
+                                             @Nullable P payload,
+                                             @Nullable P metaData,
+                                             @Nonnull Object timestamp,
+                                             @Nonnull String aggregateType,
+                                             @Nonnull String aggregateIdentifier,
+                                             long aggregateSequenceNumber) {
+        super(eventIdentifier,
+              payloadType,
+              payloadRevision,
+              payload,
+              metaData,
+              timestamp,
+              aggregateType,
+              aggregateIdentifier,
+              aggregateSequenceNumber);
+    }
+
+    /**
+     * Default constructor required by JPA.
      */
     protected AbstractSequencedDomainEventEntry() {
+        // Default constructor required by JPA.
     }
 }

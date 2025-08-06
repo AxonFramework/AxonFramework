@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,34 +17,38 @@
 package org.axonframework.eventhandling;
 
 
+import jakarta.annotation.Nonnull;
+
 /**
  * Interface describing the properties of serialized Domain Event Messages. Event Store implementations should have
  * their storage entries implement this interface.
  *
- * @param <T> The content type of the serialized data
+ * @param <P> The content type of the serialized data.
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
-public interface DomainEventData<T> extends EventData<T> {
+public interface DomainEventData<P> extends EventData<P> {
 
     /**
      * Returns the type identifier of the aggregate.
      *
      * @return the type identifier of the aggregate.
      */
-    String getType();
+    @Nonnull
+    String aggregateType();
 
     /**
      * Returns the Identifier of the Aggregate to which the Event was applied.
      *
      * @return the Identifier of the Aggregate to which the Event was applied
      */
-    String getAggregateIdentifier();
+    @Nonnull
+    String aggregateIdentifier();
 
     /**
      * Returns the sequence number of the event in the aggregate.
      *
      * @return the sequence number of the event in the aggregate
      */
-    long getSequenceNumber();
+    long aggregateSequenceNumber();
 }

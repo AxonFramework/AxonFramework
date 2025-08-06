@@ -69,8 +69,8 @@ class SingleEventUpcasterTest {
         assertEquals("1", firstEvent.getType().getRevision());
         StubDomainEvent upcastedEvent = serializer.deserialize(firstEvent.getData());
         assertEquals(newValue, upcastedEvent.getName());
-        assertEquals(eventData.getEventIdentifier(), firstEvent.getMessageIdentifier());
-        assertEquals(eventData.getTimestamp(), firstEvent.getTimestamp());
+        assertEquals(eventData.eventIdentifier(), firstEvent.getMessageIdentifier());
+        assertEquals(eventData.timestamp(), firstEvent.getTimestamp());
         assertEquals(metaData, firstEvent.getMetaData().getObject());
     }
 
@@ -85,12 +85,15 @@ class SingleEventUpcasterTest {
         SerializedObject<String> serializedPayload = serializer.serialize(payload, String.class);
         EventData<?> eventData = new TrackedDomainEventData<>(
                 trackingToken,
-                new GenericDomainEventEntry<>(aggregateType, aggregateId, sequenceNumber,
-                                              "eventId", Instant.now(),
+                new GenericDomainEventEntry<>("eventId",
                                               serializedPayload.getType().getName(),
                                               serializedPayload.getType().getRevision(),
                                               serializedPayload,
-                                              serializer.serialize(MetaData.emptyInstance(), String.class))
+                                              serializer.serialize(MetaData.emptyInstance(), String.class),
+                                              Instant.now(),
+                                              aggregateType,
+                                              aggregateId,
+                                              sequenceNumber)
         );
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);

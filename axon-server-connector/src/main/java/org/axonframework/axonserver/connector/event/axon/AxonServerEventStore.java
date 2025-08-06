@@ -662,7 +662,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
                     }
 
                     DomainEventData<?> snapshot = prefetched.remove(0);
-                    sequenceNumber = snapshot.getSequenceNumber() - 1;
+                    sequenceNumber = snapshot.aggregateSequenceNumber() - 1;
                     action.accept(snapshot);
                     return true;
                 }

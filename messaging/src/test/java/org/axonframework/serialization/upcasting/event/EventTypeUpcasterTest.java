@@ -184,8 +184,8 @@ class EventTypeUpcasterTest {
     }
 
     /**
-     * Test {@link AbstractEventEntry} implementation which only allows adjusting the {@code payloadType} and {@code
-     * payloadRevision}. All other {@code AbstractEventEntry} parameters are defaulted.
+     * Test {@link AbstractEventEntry} implementation which only allows adjusting the {@code payloadType} and
+     * {@code payloadRevision}. All other {@code AbstractEventEntry} parameters are defaulted.
      */
     private static class TestEventEntry extends AbstractEventEntry<byte[]> {
 
@@ -193,9 +193,12 @@ class EventTypeUpcasterTest {
         private static final TestEvent META_DATA = new TestEvent("metadata");
 
         public TestEventEntry(String payloadType, String payloadRevision, Serializer serializer) {
-            super("eventIdentifier", "timestamp", payloadType, payloadRevision,
+            super("eventIdentifier",
+                  payloadType,
+                  payloadRevision,
                   serializer.serialize(PAYLOAD, byte[].class).getData(),
-                  serializer.serialize(META_DATA, byte[].class).getData());
+                  serializer.serialize(META_DATA, byte[].class).getData(),
+                  "timestamp");
         }
     }
 
