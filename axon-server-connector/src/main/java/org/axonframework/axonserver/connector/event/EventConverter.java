@@ -84,13 +84,9 @@ public class EventConverter implements DescribableComponent {
                     .setTimestamp(eventMessage.timestamp().toEpochMilli())
                     .setName(eventMessage.type().name())
                     .setVersion(eventMessage.type().version())
-                    .setPayload(convertPayload(eventMessage.payload()))
+                    .setPayload(ByteString.copyFrom(eventMessage.payloadAs(byte[].class, converter)))
                     .putAllMetadata(convertMetaData(eventMessage.metaData()))
                     .build();
-    }
-
-    private ByteString convertPayload(Object payload) {
-        return ByteString.copyFrom(converter.convert(payload, byte[].class));
     }
 
     private Map<String, String> convertMetaData(MetaData metaData) {
