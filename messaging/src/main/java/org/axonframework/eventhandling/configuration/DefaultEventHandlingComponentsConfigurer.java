@@ -61,6 +61,7 @@ public class DefaultEventHandlingComponentsConfigurer
 
     @Override
     public EventHandlingComponentsConfigurer.CompletePhase many(@Nonnull List<EventHandlingComponent> components) {
+        Objects.requireNonNull(components, "components may not be null");
         if (components.isEmpty()) {
             throw new IllegalArgumentException("At least one EventHandlingComponent must be provided");
         }
