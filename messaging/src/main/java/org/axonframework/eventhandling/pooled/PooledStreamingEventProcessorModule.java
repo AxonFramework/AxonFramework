@@ -169,20 +169,6 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         return this;
     }
 
-    /**
-     * Customizes the processor configuration by applying modifications to the default configuration.
-     * <p>
-     * This method allows you to provide processor-specific customizations that will be applied on top of any shared
-     * defaults from parent modules. The customization function receives the Axon {@link Configuration} and the default
-     * processor configuration, returning the customized processor configuration.
-     * <p>
-     * The customization is applied after shared defaults from {@link PooledStreamingEventProcessorsConfigurer} and
-     * {@link EventProcessingConfigurer}.
-     *
-     * @param instanceCustomization A function that receives the configuration and default processor config, returning
-     *                              the customized processor configuration.
-     * @return This module instance for method chaining.
-     */
     @Override
     public PooledStreamingEventProcessorModule customized(
             @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> instanceCustomization
