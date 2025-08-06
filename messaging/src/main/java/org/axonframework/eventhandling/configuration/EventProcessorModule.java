@@ -173,7 +173,7 @@ public interface EventProcessorModule extends Module {
      * This interface offers two approaches for configuring event processors:
      * <ul>
      * <li>{@link #configure(ComponentBuilder)} - Complete configuration replacement, ignoring parent defaults</li>
-     * <li>{@link #customize(BiFunction)} - Incremental customization on top of parent defaults</li>
+     * <li>{@link #customized(BiFunction)} - Incremental customization on top of parent defaults</li>
      * </ul>
      * <p>
      * The customization approach is generally preferred as it preserves shared configurations from parent modules
@@ -187,18 +187,6 @@ public interface EventProcessorModule extends Module {
     interface CustomizationPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration> {
 
         /**
-         * Configures the processor with a complete configuration, ignoring any parent module defaults.
-         * <p>
-         * This method provides direct control over the processor configuration but bypasses shared defaults from parent
-         * modules. Use {@link #customize(BiFunction)} instead to preserve shared configurations while
-         * applying processor-specific customizations.
-         *
-         * @param configurationBuilder A builder that creates the complete processor configuration.
-         * @return The configured processor module.
-         */
-        P configure(@Nonnull ComponentBuilder<C> configurationBuilder);
-
-        /**
          * Customizes the processor configuration by applying modifications to the default configuration.
          * <p>
          * This method applies processor-specific customizations on top of shared defaults from parent modules,
@@ -208,13 +196,13 @@ public interface EventProcessorModule extends Module {
          *                            returning the customized processor configuration.
          * @return The configured processor module.
          */
-        P customize(@Nonnull BiFunction<Configuration, C, C> customizationFunction);
+        P customized(@Nonnull BiFunction<Configuration, C, C> customizationFunction);
 
         /**
          * Builds the processor module with the current configuration.
          *
          * @return The configured processor module.
          */
-        P build();
+        P notCustomized();
     }
 }

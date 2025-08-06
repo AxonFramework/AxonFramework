@@ -41,10 +41,10 @@ class OldSubscribingEventProcessorModuleTest {
         var eventHandlingComponent = new SimpleEventHandlingComponent();
         EventProcessorModule module = EventProcessorModule.subscribing("test-processor")
                                                           .eventHandlingComponents(c -> c.single(eventHandlingComponent))
-                                                          .customize((cfg, customization) -> customization
+                                                          .customized((cfg, customization) -> customization
                                                                   .messageSource(messageSource)
                                                           )
-                                                          .build();
+                                                          .notCustomized();
 
         var configuration = MessagingConfigurer.create()
                                                .componentRegistry(cr -> cr.registerModule(module))

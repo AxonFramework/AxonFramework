@@ -137,22 +137,6 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
 
-    /**
-     * Configures this module with a complete {@link SubscribingEventProcessorConfiguration}.
-     * <p>
-     * This method provides the most direct way to set the processor configuration. The configuration builder receives
-     * the Axon {@link Configuration} and should return a fully configured
-     * {@link SubscribingEventProcessorConfiguration} instance.
-     * <p>
-     * <strong>Important:</strong> This method does not respect parent configurations and will fully override any
-     * shared defaults from {@link SubscribingEventProcessorsConfigurer} or {@link EventProcessingConfigurer}. Use
-     * {@link #customize(BiFunction)} instead to apply processor-specific customizations while preserving
-     * shared defaults.
-     *
-     * @param configurationBuilder A builder that creates the complete processor configuration.
-     * @return This module instance for method chaining.
-     */
-    @Override
     public SubscribingEventProcessorModule configure(
             @Nonnull ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder
     ) {
@@ -175,7 +159,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
      * @return This module instance for method chaining.
      */
     @Override
-    public SubscribingEventProcessorModule customize(
+    public SubscribingEventProcessorModule customized(
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customizationFunction
     ) {
         configure(
@@ -188,9 +172,9 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
     @Override
-    public SubscribingEventProcessorModule build() {
+    public SubscribingEventProcessorModule notCustomized() {
         if (configurationBuilder == null) {
-            customize((cfg, config) -> config);
+            customized((cfg, config) -> config);
         }
         return this;
     }
@@ -226,6 +210,11 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         this.eventHandlingComponentsBuilder = cfg -> eventHandlingComponentsBuilder
                 .apply(cfg, componentsConfigurer)
                 .toList();
+        return this;
+    }
+
+    @Override
+    public SubscribingEventProcessorModule build() {
         return this;
     }
 
