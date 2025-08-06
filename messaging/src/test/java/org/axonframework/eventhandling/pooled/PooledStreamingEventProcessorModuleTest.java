@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * Test class validating the {@link PooledStreamingEventProcessorModule} functionality.
+ * Test class validating the {@link PooledStreamingEventProcessorModule} functionality and its integration with the {@link MessagingConfigurer}.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -478,11 +478,6 @@ class PooledStreamingEventProcessorModuleTest {
     private static BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {
         var eventHandlingComponent = new SimpleEventHandlingComponent();
         eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-        return (__, components) -> components.single(eventHandlingComponent);
-    }
-
-    @Nonnull
-    private static BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> singleEventHandlingComponent(SimpleEventHandlingComponent eventHandlingComponent) {
         return (__, components) -> components.single(eventHandlingComponent);
     }
 
