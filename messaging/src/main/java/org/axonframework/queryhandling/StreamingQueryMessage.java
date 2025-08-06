@@ -17,10 +17,13 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.responsetypes.PublisherResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.serialization.Converter;
 import org.reactivestreams.Publisher;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -29,8 +32,8 @@ import java.util.Map;
  * It hard codes the {@link #responseType() response type} to an {@link PublisherResponseType} implementation.
  *
  * @param <P> The type of {@link #payload() payload} expressing the query in this {@link StreamingQueryMessage}.
- * @param <R> The type of {@link #responseType() response} expected from this {@link StreamingQueryMessage} streamed
- *            via {@link Publisher}.
+ * @param <R> The type of {@link #responseType() response} expected from this {@link StreamingQueryMessage} streamed via
+ *            {@link Publisher}.
  * @author Milan Savic
  * @author Stefan Dragisic
  * @since 4.6.0
@@ -45,4 +48,18 @@ public interface StreamingQueryMessage<P, R> extends QueryMessage<P, Publisher<R
 
     @Override
     StreamingQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> additionalMetaData);
+
+    @Override
+    default <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
+    }
+
+    @Override
+    default <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull TypeReference<T> type,
+                                                                 @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    @Override
+    <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

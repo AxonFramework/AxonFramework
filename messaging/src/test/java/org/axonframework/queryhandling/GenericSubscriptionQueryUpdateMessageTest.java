@@ -16,8 +16,9 @@
 
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
@@ -33,12 +34,12 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Milan Savic
  */
-class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite {
+class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite<SubscriptionQueryUpdateMessage<?>> {
 
     @Override
-    protected <P, M extends Message<P>> M buildMessage(P payload) {
-        //noinspection unchecked
-        return (M) new GenericSubscriptionQueryUpdateMessage<>(new MessageType(payload.getClass()), payload);
+    protected <P> SubscriptionQueryUpdateMessage<?> buildMessage(@Nullable P payload) {
+        return new GenericSubscriptionQueryUpdateMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
+                                                           payload);
     }
 
     @Test

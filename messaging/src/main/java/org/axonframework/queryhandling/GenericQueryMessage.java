@@ -23,7 +23,9 @@ import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -41,8 +43,7 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
 
 
     /**
-     * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and
-     * {@code responseType}.
+     * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and {@code responseType}.
      * <p>
      * The {@link MetaData} defaults to an empty instance. Initializes the message with the given {@code payload} and
      * expected {@code responseType}.
@@ -85,12 +86,27 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
 
     @Override
     public QueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericQueryMessage<>(getDelegate().withMetaData(metaData), responseType);
+        return new GenericQueryMessage<>(delegate().withMetaData(metaData), responseType);
     }
 
     @Override
     public QueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericQueryMessage<>(getDelegate().andMetaData(metaData), responseType);
+        return new GenericQueryMessage<>(delegate().andMetaData(metaData), responseType);
+    }
+
+    @Override
+    public <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (QueryMessage<T, R>) this;
+        }
+        Message<P> delegate = delegate();
+        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
+                                                     delegate.type(),
+                                                     convertedPayload,
+                                                     delegate.metaData());
+        return new GenericQueryMessage<>(converted, responseType);
     }
 
     @Override

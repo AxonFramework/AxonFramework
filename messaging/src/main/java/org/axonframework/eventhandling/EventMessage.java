@@ -17,12 +17,13 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.Message;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * A {@link Message} wrapping an event, which is represented by its {@link #payload() payload}.
@@ -42,8 +43,8 @@ public interface EventMessage<P> extends Message<P> {
      * Returns the identifier of this {@link EventMessage event}.
      * <p>
      * The identifier is used to define the uniqueness of an event. Two events may contain similar (or equal)
-     * {@link #payload() payloads} and {@link #timestamp() timestamp}, if the event identifiers are different,
-     * they both represent a different occurrence of an Event.
+     * {@link #payload() payloads} and {@link #timestamp() timestamp}, if the event identifiers are different, they both
+     * represent a different occurrence of an Event.
      * <p>
      * If two messages have the same identifier, they both represent the same unique occurrence of an event, even though
      * the resulting view may be different. You may not assume two messages are equal (i.e. interchangeable) if their
@@ -73,20 +74,16 @@ public interface EventMessage<P> extends Message<P> {
     @Override
     EventMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
 
-    /**
-     * Returns a copy of this EventMessage with its payload converted using given {@code conversion} function. If the
-     * function returns an equal payload, this Event Message instance is returned.
-     *
-     * @param conversion The function to apply to the payload of this message
-     * @param <C>        The type of payload returned by the conversion
-     * @return a copy of this message with the payload converted
-     */
-    default <C> EventMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
-        P payload = payload();
-        if (Objects.equals(payload, conversion.apply(payload))) {
-            //noinspection unchecked
-            return (EventMessage<C>) this;
-        }
-        throw new UnsupportedOperationException("To be implemented");
+    @Override
+    default <T> EventMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
     }
+
+    @Override
+    default <T> EventMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    @Override
+    <T> EventMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

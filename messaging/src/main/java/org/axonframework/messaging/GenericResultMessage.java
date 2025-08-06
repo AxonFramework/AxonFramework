@@ -19,9 +19,11 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Optional;
 
@@ -113,9 +115,9 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate  The {@link Message} containing {@link Message#payload() payload},
-     *                  {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                  {@link Message#metaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
+     * @param delegate  The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
+     *                  {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
+     *                  {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link ResultMessage}.
      */
@@ -192,13 +194,30 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     @Override
-    public GenericResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericResultMessage<>(getDelegate().withMetaData(metaData), exception);
+    public ResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericResultMessage<>(delegate().withMetaData(metaData), exception);
     }
 
     @Override
-    public GenericResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericResultMessage<>(getDelegate().andMetaData(metaData), exception);
+    public ResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericResultMessage<>(delegate().andMetaData(metaData), exception);
+    }
+
+    @Override
+    public <T> ResultMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+            //noinspection unchecked
+            return (ResultMessage<T>) this;
+        }
+        Message<R> delegate = delegate();
+        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
+                                                     delegate.type(),
+                                                     convertedPayload,
+                                                     delegate.metaData());
+        return optionalExceptionResult().isPresent()
+                ? new GenericResultMessage<>(converted, optionalExceptionResult().get())
+                : new GenericResultMessage<>(converted);
     }
 
     @Override

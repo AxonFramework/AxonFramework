@@ -133,4 +133,11 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     public GrpcBackedSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
         return withMetaData(metaData().mergedWith(metaData));
     }
+
+    @Override
+    public <T> SubscriptionQueryMessage<T, I, U> withConvertedPayload(@Nonnull Type type,
+                                                                      @Nonnull Converter converter) {
+        // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
+        return null;
+    }
 }

@@ -16,10 +16,13 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.messaging.Message;
-
-import java.util.Map;
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
+import org.axonframework.messaging.Message;
+import org.axonframework.serialization.Converter;
+
+import java.lang.reflect.Type;
+import java.util.Map;
 
 /**
  * A {@link Message} initiating the reset of an Event Handling Component.
@@ -37,4 +40,17 @@ public interface ResetContext<P> extends Message<P> {
 
     @Override
     ResetContext<P> andMetaData(@Nonnull Map<String, String> metaData);
+
+    @Override
+    default <T> ResetContext<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
+    }
+
+    @Override
+    default <T> ResetContext<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    @Override
+    <T> ResetContext<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }
