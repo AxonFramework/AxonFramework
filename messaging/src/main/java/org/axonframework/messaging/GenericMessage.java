@@ -38,6 +38,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * If a {@link GenericMessage} is created while a {@link LegacyUnitOfWork} is active it copies over the correlation data
  * of the {@code UnitOfWork} to the created message.
+ * <p>
+ * This {@code Message} implementation is "conversion aware," as it maintains <b>any</b> conversion results from
+ * {@link #payloadAs(Type, Converter)} and {@link #withConvertedPayload(Type, Converter)} (either invoked with a
+ * {@link Class}, {@link org.axonframework.common.TypeReference}, or {@link Type}), together with the hash of the given
+ * {@link Converter}. In doing so, this {@code Message} optimizes subsequent {@code payloadAs/withConvertedPayload}
+ * invocations for the same type-and-converter combination.
  *
  * @param <P> The type of {@link #payload() payload} contained in this {@link Message}.
  * @author Allard Buijze
