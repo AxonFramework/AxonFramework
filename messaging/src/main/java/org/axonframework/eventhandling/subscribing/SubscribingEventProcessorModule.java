@@ -154,21 +154,22 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
      * The customization is applied after shared defaults from {@link SubscribingEventProcessorsConfigurer} and
      * {@link EventProcessingConfigurer}.
      *
-     * @param customizationFunction A function that receives the configuration and default processor config, 
-     *                            returning the customized processor configuration.
+     * @param instanceCustomization A function that receives the configuration and default processor config, returning
+     *                              the customized processor configuration.
      * @return This module instance for method chaining.
      */
     @Override
     public SubscribingEventProcessorModule customized(
-            @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> customizationFunction
+            @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> instanceCustomization
     ) {
-        configure(
-                cfg -> sharedCustomizationOrNoOp(cfg).apply(
-                        cfg,
-                        customizationFunction.apply(cfg, defaultEventProcessorsConfiguration(cfg))
-                )
+        return configure(
+                cfg -> {
+                    var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg,
+                                                                                       defaultEventProcessorsConfiguration(
+                                                                                               cfg));
+                    return instanceCustomization.apply(cfg, typeCustomization);
+                }
         );
-        return this;
     }
 
     @Override
@@ -187,7 +188,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         );
     }
 
-    private static SubscribingEventProcessorModule.Customization sharedCustomizationOrNoOp(
+    private static SubscribingEventProcessorModule.Customization typeSpecificCustomizationOrNoOp(
             Configuration cfg
     ) {
         return cfg.getOptionalComponent(SubscribingEventProcessorModule.Customization.class,
