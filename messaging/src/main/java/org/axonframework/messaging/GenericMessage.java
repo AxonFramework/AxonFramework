@@ -38,6 +38,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * If a {@link GenericMessage} is created while a {@link LegacyUnitOfWork} is active it copies over the correlation data
  * of the {@code UnitOfWork} to the created message.
+ * <p>
+ * This {@code Message} implementation is "conversion aware," as it maintains <b>any</b> conversion results from
+ * {@link #payloadAs(Type, Converter)} and {@link #withConvertedPayload(Type, Converter)} (either invoked with a
+ * {@link Class}, {@link org.axonframework.common.TypeReference}, or {@link Type}), together with the hash of the given
+ * {@link Converter}. In doing so, this {@code Message} optimizes subsequent {@code payloadAs/withConvertedPayload}
+ * invocations for the same type-and-converter combination.
  *
  * @param <P> The type of {@link #payload() payload} contained in this {@link Message}.
  * @author Allard Buijze
@@ -51,7 +57,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     private final MetaData metaData;
 
     private transient volatile SerializedObjectHolder serializedObjectHolder;
-    private final ConcurrentHashMap<Type, Object> convertedPayloads;
+    private final ConcurrentHashMap<ConversionKey, Object> convertedPayloads;
 
     /**
      * Constructs a {@code GenericMessage} for the given {@code type} and {@code payload}.
@@ -198,17 +204,19 @@ public class GenericMessage<P> extends AbstractMessage<P> {
             //noinspection unchecked
             return (T) payload();
         }
-        if (convertedPayloads.containsKey(type)) {
-            //noinspection unchecked
-            return (T) convertedPayloads.get(type);
-        }
-
         Objects.requireNonNull(
                 converter, "Cannot convert payload to [" + type.getTypeName() + "] with null Converter."
         );
+
+        ConversionKey conversionKey = new ConversionKey(type, converter.hashCode());
+        if (convertedPayloads.containsKey(conversionKey)) {
+            //noinspection unchecked
+            return (T) convertedPayloads.get(conversionKey);
+        }
+
         T convertedPayload = converter.convert(payload(), type);
         //noinspection DataFlowIssue
-        convertedPayloads.put(type, convertedPayload);
+        convertedPayloads.put(conversionKey, convertedPayload);
         return convertedPayload;
     }
 
@@ -247,5 +255,9 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         return payloadType().isAssignableFrom(convertedPayload.getClass())
                 ? (Message<T>) this
                 : new GenericMessage<>(identifier(), type(), convertedPayload, metaData());
+    }
+
+    private record ConversionKey(Type type, Integer converterHash) {
+
     }
 }
