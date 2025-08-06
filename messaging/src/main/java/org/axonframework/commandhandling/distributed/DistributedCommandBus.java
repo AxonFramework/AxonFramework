@@ -42,8 +42,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * Each "physical" {@code CommandBus} instance is considered a "segment" of a conceptual distributed
  * {@code CommandBus}.
  * <p>
- * The {@code DistributedCommandBus} relies on a {@link CommandBusConnector} to dispatch commands and replies to different
- * segments of the {@code CommandBus}. Depending on the implementation used, each segment may run in a different JVM.
+ * The {@code DistributedCommandBus} relies on a {@link CommandBusConnector} to dispatch commands and replies to
+ * different segments of the {@code CommandBus}. Depending on the implementation used, each segment may run in a
+ * different JVM.
  *
  * @author Allard Buijze
  * @since 2.0.0
@@ -53,6 +54,7 @@ public class DistributedCommandBus implements CommandBus {
     private final Logger logger = LoggerFactory.getLogger(DistributedCommandBus.class);
     private final CommandBus delegate;
     private final CommandBusConnector connector;
+    // TODO Currently, the loadFactor impacts the whole application. Should be refactored to a loadFactor per CommandType, see issue #3074.
     private final int loadFactor;
     private final ExecutorService executorService;
 
@@ -61,9 +63,10 @@ public class DistributedCommandBus implements CommandBus {
      * {@link #subscribe(QualifiedName, CommandHandler) subscribing} handlers and the given {@code connector} to
      * dispatch commands and replies to different segments of the {@code CommandBus}.
      *
-     * @param delegate  The delegate {@code CommandBus} used to subscribe handlers too.
-     * @param connector The {@code Connector} to use to reschedule failed commands.
-     * @param configuration The {@code DistributedCommandBusConfiguration} containing the load factor for this bus.
+     * @param delegate      The delegate {@code CommandBus} used to subscribe handlers to.
+     * @param connector     The {@code Connector} to dispatch commands or replies.
+     * @param configuration The {@code DistributedCommandBusConfiguration} containing the load factor and the {@code
+     *                      ExecutorServiceFactory} for this bus.
      */
     public DistributedCommandBus(@Nonnull CommandBus delegate,
                                  @Nonnull CommandBusConnector connector,
@@ -106,13 +109,14 @@ public class DistributedCommandBus implements CommandBus {
                            @Nonnull CommandBusConnector.ResultCallback callback) {
             int priority = commandMessage.priority().orElse(0);
             if (logger.isDebugEnabled()) {
-                logger.debug("Received command [{}] for processing with priority [{}] and routing key [{}]", commandMessage.type(),
-                                 commandMessage.priority().orElse(0),
-                                 commandMessage.routingKey().orElse(null)
+                logger.debug("Received command [{}] for processing with priority [{}] and routing key [{}]",
+                             commandMessage.type(),
+                             commandMessage.priority().orElse(0),
+                             commandMessage.routingKey().orElse(null)
                 );
             }
             long sequence = TASK_SEQUENCE.incrementAndGet();
-            executorService.submit(new PriorityRunnable(() -> {
+            executorService.execute(new PriorityRunnable(() -> {
                 doHandleCommand(commandMessage, callback);
             }, priority, sequence));
         }

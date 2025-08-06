@@ -20,6 +20,8 @@ import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.ProcessingInstruction;
 import io.axoniq.axonserver.grpc.ProcessingKey;
 
+import jakarta.annotation.Nonnull;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -54,7 +56,7 @@ public abstract class ProcessingInstructionHelper {
      *                               ProcessingKey#PRIORITY} from
      * @return a {@code long} specifying the priority of a given operation
      */
-    public static int priority(List<ProcessingInstruction> processingInstructions) {
+    public static int priority(@Nonnull List<ProcessingInstruction> processingInstructions) {
         return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY).orElse(0L).intValue();
     }
 

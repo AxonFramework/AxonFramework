@@ -17,17 +17,9 @@
 package org.axonframework.integrationtests.testsuite;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
-import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
-import org.axonframework.integrationtests.testsuite.administration.commands.CompleteTaskCommand;
-import org.axonframework.integrationtests.testsuite.administration.commands.GiveRaise;
-import org.axonframework.modelling.StateManager;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -35,17 +27,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.concurrent.CompletionException;
-import java.util.stream.Collectors;
 
 /**
- * Test suite for verifying polymorphic behavior of entities. Can be implemented by different test classes that verify
- * different ways of building the {@link org.axonframework.modelling.entity.EntityCommandHandlingComponent}.
+ * Abstract test suite for integration tests using an AxonServerContainer. Concrete implementations have to provide a
+ * specific {@link ApplicationConfigurer}. The server is started using the default {@link AxonServerConfiguration}. The
+ * started configuration and the associated {@link CommandGateway} are available through member-variables.
  */
 public abstract class AbstractAxonServerIntegrationTest {
 
-    public static final Logger logger = LoggerFactory.getLogger(AbstractAxonServerIntegrationTest.class);
+    protected static final Logger logger = LoggerFactory.getLogger(AbstractAxonServerIntegrationTest.class);
     private static final AxonServerContainer container = new AxonServerContainer()
             .withAxonServerHostname("localhost")
             .withDevMode(true)
@@ -95,4 +85,3 @@ public abstract class AbstractAxonServerIntegrationTest {
 
     protected abstract ApplicationConfigurer createConfigurer();
 }
-
