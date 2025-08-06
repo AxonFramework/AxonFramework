@@ -134,11 +134,18 @@ class EventMultiUpcasterTest {
         long testSequenceNumber = 100;
         SerializedObject<String> testPayload = serializer.serialize(new StubDomainEvent("oldName"), String.class);
         EventData<?> testEventData = new TrackedDomainEventData<>(
-                testTrackingToken, new GenericDomainEventEntry<>(
-                testAggregateType, testAggregateId, testSequenceNumber, "eventId", Instant.now(),
-                testPayload.getType().getName(), testPayload.getType().getRevision(), testPayload,
-                serializer.serialize(MetaData.emptyInstance(), String.class)
-        ));
+                testTrackingToken, new GenericDomainEventEntry<>("eventId",
+                                                                 testPayload.getType().getName(),
+                                                                 testPayload.getType().getRevision(),
+                                                                 testPayload,
+                                                                 serializer.serialize(
+                                                                         MetaData.emptyInstance(), String.class
+                                                                 ),
+                                                                 Instant.now(),
+                                                                 testAggregateType,
+                                                                 testAggregateId,
+                                                                 testSequenceNumber)
+        );
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))

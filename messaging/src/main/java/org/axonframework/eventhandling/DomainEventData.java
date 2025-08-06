@@ -21,9 +21,9 @@ package org.axonframework.eventhandling;
  * Interface describing the properties of serialized Domain Event Messages. Event Store implementations should have
  * their storage entries implement this interface.
  *
- * @param <T> The content type of the serialized data
+ * @param <T> The content type of the serialized data.
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
 public interface DomainEventData<T> extends EventData<T> {
 

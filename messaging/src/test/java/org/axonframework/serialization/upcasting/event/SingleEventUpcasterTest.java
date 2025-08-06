@@ -85,12 +85,15 @@ class SingleEventUpcasterTest {
         SerializedObject<String> serializedPayload = serializer.serialize(payload, String.class);
         EventData<?> eventData = new TrackedDomainEventData<>(
                 trackingToken,
-                new GenericDomainEventEntry<>(aggregateType, aggregateId, sequenceNumber,
-                                              "eventId", Instant.now(),
+                new GenericDomainEventEntry<>("eventId",
                                               serializedPayload.getType().getName(),
                                               serializedPayload.getType().getRevision(),
                                               serializedPayload,
-                                              serializer.serialize(MetaData.emptyInstance(), String.class))
+                                              serializer.serialize(MetaData.emptyInstance(), String.class),
+                                              Instant.now(),
+                                              aggregateType,
+                                              aggregateId,
+                                              sequenceNumber)
         );
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);

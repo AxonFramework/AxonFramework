@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Lob;
@@ -29,6 +31,7 @@ import org.axonframework.serialization.SimpleSerializedType;
 
 import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
+import java.util.Map;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 
@@ -37,14 +40,14 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * engines how to store event entries.
  *
  * @author Rene de Waele
+ * @author Steven van Beelen
+ * @since 3.0.0
  */
 @MappedSuperclass
 public abstract class AbstractEventEntry<T> implements EventData<T> {
 
     @Column(nullable = false, unique = true)
     private String eventIdentifier;
-    @Basic(optional = false)
-    private String timeStamp;
     @Basic(optional = false)
     private String payloadType;
     @Basic
@@ -57,18 +60,23 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
     @Lob
     @Column(length = 10000)
     private T metaData;
+    @Basic(optional = false)
+    private String timeStamp;
 
     /**
      * Construct a new event entry from a published event message to enable storing the event or sending it to a remote
      * location.
      * <p>
-     * The given {@code serializer} will be used to serialize the payload and metadata in the given {@code eventMessage}.
-     * The type of the serialized data will be the same as the given {@code contentType}.
+     * The given {@code serializer} will be used to serialize the payload and metadata in the given
+     * {@code eventMessage}. The type of the serialized data will be the same as the given {@code contentType}.
      *
-     * @param eventMessage The event message to convert to a serialized event entry
-     * @param serializer   The serializer to convert the event
-     * @param contentType  The data type of the payload and metadata after serialization
+     * @param eventMessage The event message to convert to a serialized event entry.
+     * @param serializer   The serializer to convert the event.
+     * @param contentType  The data type of the payload and metadata after serialization.
+     * @deprecated In favor of the
+     * {@link AbstractEventEntry#AbstractEventEntry(String, String, String, Object, Object, Object)} constructor.
      */
+    @Deprecated
     public AbstractEventEntry(EventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
         SerializedObject<T> payload = eventMessage.serializePayload(serializer, contentType);
         SerializedObject<T> metaData = eventMessage.serializeMetaData(serializer, contentType);
@@ -81,41 +89,71 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
     }
 
     /**
-     * Reconstruct an event entry from a stored object.
+     * Constructs an {@code AbstractEventEntry} with the given parameters.
      *
-     * @param eventIdentifier The identifier of the event
-     * @param timestamp       The time at which the event was originally created
-     * @param payloadType     The fully qualified class name or alias of the event payload
-     * @param payloadRevision The revision of the event payload
-     * @param payload         The serialized payload
-     * @param metaData        The serialized metadata
+     * @param eventIdentifier The identifier of the event.
+     * @param payloadType     The fully qualified class name or alias of the event payload.
+     * @param payloadRevision The revision of the event payload.
+     * @param payload         The serialized payload.
+     * @param metaData        The serialized metadata.
+     * @param timestamp       The time at which the event was originally created.
      */
-    public AbstractEventEntry(String eventIdentifier, Object timestamp, String payloadType, String payloadRevision,
-                              T payload, T metaData) {
+    public AbstractEventEntry(@Nonnull String eventIdentifier,
+                              @Nonnull String payloadType,
+                              @Nonnull String payloadRevision,
+                              @Nullable T payload,
+                              @Nullable T metaData,
+                              @Nonnull Object timestamp) {
         this.eventIdentifier = eventIdentifier;
-        if (timestamp instanceof TemporalAccessor) {
-            this.timeStamp = formatInstant((TemporalAccessor) timestamp);
-        } else {
-            this.timeStamp = timestamp.toString();
-        }
         this.payloadType = payloadType;
         this.payloadRevision = payloadRevision;
         this.payload = payload;
         this.metaData = metaData;
+        this.timeStamp = timestamp instanceof TemporalAccessor
+                ? formatInstant((TemporalAccessor) timestamp)
+                : timestamp.toString();
     }
 
     /**
-     * Default constructor required by JPA
+     * Default constructor required by JPA.
      */
     protected AbstractEventEntry() {
+        // Default constructor required by JPA.
     }
 
     @Override
+    @Nonnull
     public String getEventIdentifier() {
         return eventIdentifier;
     }
 
     @Override
+    @Nonnull
+    public String type() {
+        return payloadType;
+    }
+
+    @Override
+    @Nonnull
+    public String version() {
+        return payloadRevision;
+    }
+
+    @Override
+    @Nonnull
+    public T payload() {
+        return payload;
+    }
+
+    @Override
+    @Nonnull
+    public Map<String, String> metaData() {
+        // TODO discuss what the storage format will be
+        return Map.of();
+    }
+
+    @Override
+    @Nonnull
     public Instant getTimestamp() {
         return DateTimeUtils.parseInstant(timeStamp);
     }

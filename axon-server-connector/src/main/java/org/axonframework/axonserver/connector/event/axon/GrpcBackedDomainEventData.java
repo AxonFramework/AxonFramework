@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.grpc.event.Event;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.SerializedObject;
@@ -29,12 +30,15 @@ import java.util.Map;
  * DomainEventData implementation that retrieves its raw data from a protobuf {@link Event} message.
  * <p>
  * This implementation strictly breaks the contract of DomainEventData, in that the returned SerializedObject for
- * MetaData does not contain the byte array representation of the metadata, but the {@link Event#getMetaDataMap()
- * MetaDataMap} defined in the protobuf message.
+ * MetaData does not contain the byte array representation of the metadata, but the
+ * {@link Event#getMetaDataMap() MetaDataMap} defined in the protobuf message.
  *
  * @author Marc Gathier
  * @since 4.0
+ * @deprecated No replacement necessary due to
+ * {@link org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine}.
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class GrpcBackedDomainEventData implements DomainEventData<byte[]> {
 
     private final Event event;
@@ -66,11 +70,37 @@ public class GrpcBackedDomainEventData implements DomainEventData<byte[]> {
     }
 
     @Override
+    @Nonnull
     public String getEventIdentifier() {
         return event.getMessageIdentifier();
     }
 
     @Override
+    @Nonnull
+    public String type() {
+        throw new UnsupportedOperationException("This class is deprecated");
+    }
+
+    @Override
+    @Nonnull
+    public String version() {
+        throw new UnsupportedOperationException("This class is deprecated");
+    }
+
+    @Override
+    @Nonnull
+    public byte[] payload() {
+        throw new UnsupportedOperationException("This class is deprecated");
+    }
+
+    @Override
+    @Nonnull
+    public Map<String, String> metaData() {
+        throw new UnsupportedOperationException("This class is deprecated");
+    }
+
+    @Override
+    @Nonnull
     public Instant getTimestamp() {
         return Instant.ofEpochMilli(event.getTimestamp());
     }

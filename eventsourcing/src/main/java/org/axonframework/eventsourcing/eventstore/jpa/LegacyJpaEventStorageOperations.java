@@ -106,9 +106,14 @@ record LegacyJpaEventStorageOperations(
             String aggregateIdentifier = (String) entry[2];
             String eventIdentifier = (String) entry[4];
             GenericDomainEventEntry<?> domainEvent = new GenericDomainEventEntry<>(
+                    eventIdentifier,
+                    (String) entry[6],
+                    (String) entry[7],
+                    entry[8],
+                    entry[9],
+                    entry[5],
                     (String) entry[1], eventIdentifier.equals(aggregateIdentifier) ? null : aggregateIdentifier,
-                    (long) entry[3], eventIdentifier, entry[5],
-                    (String) entry[6], (String) entry[7], entry[8], entry[9]
+                    (long) entry[3]
             );
 
             // Now that we have the event itself, we can calculate the token

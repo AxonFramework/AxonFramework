@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,8 +95,14 @@ class EventStreamUtilsTest {
     }
 
     private static DomainEventData<?> createEntry(long sequenceNumber) {
-        return new GenericDomainEventEntry<>("type", "testAggregate", sequenceNumber,
-                                             IdentifierFactory.getInstance().generateIdentifier(), Instant.now(),
-                                             String.class.getName(), null, "test", "metadata");
+        return new GenericDomainEventEntry<>(IdentifierFactory.getInstance().generateIdentifier(),
+                                             String.class.getName(),
+                                             null,
+                                             "test",
+                                             "metadata",
+                                             Instant.now(),
+                                             "type",
+                                             "testAggregate",
+                                             sequenceNumber);
     }
 }

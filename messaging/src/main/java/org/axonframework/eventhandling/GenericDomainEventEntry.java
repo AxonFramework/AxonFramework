@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+
 /**
  * Generic implementation of a serialized domain event entry. This implementation can be used by Event Storage Engine
  * implementations to reconstruct an event or snapshot from the underlying storage for example.
@@ -25,22 +28,35 @@ package org.axonframework.eventhandling;
 public class GenericDomainEventEntry<T> extends AbstractDomainEventEntry<T> {
 
     /**
-     * Reconstruct an event entry from a stored object.
+     * Constructs an {@code GenericDomainEventEntry} with the given parameters.
      *
-     * @param type                The type of aggregate that published this event
-     * @param aggregateIdentifier The identifier of the aggregate that published this event
-     * @param sequenceNumber      The sequence number of the event in the aggregate
-     * @param eventIdentifier     The identifier of the event
-     * @param timestamp           The time at which the event was originally created
-     * @param payloadType         The fully qualified class name or alias of the event payload
-     * @param payloadRevision     The revision of the event payload
-     * @param payload             The serialized payload
-     * @param metaData            The serialized metadata
+     * @param eventIdentifier         The identifier of the event.
+     * @param payloadType             The fully qualified class name or alias of the event payload.
+     * @param payloadRevision         The revision of the event payload.
+     * @param payload                 The serialized payload.
+     * @param metaData                The serialized metadata.
+     * @param timestamp               The time at which the event was originally created.
+     * @param aggregateType           The type of aggregate that published this event.
+     * @param aggregateIdentifier     The identifier of the aggregate that published this event.
+     * @param aggregateSequenceNumber The sequence number of the event in the aggregate.
      */
-    public GenericDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber, String eventIdentifier,
-                                   Object timestamp, String payloadType, String payloadRevision, T payload,
-                                   T metaData) {
-        super(type, aggregateIdentifier, sequenceNumber, eventIdentifier, timestamp, payloadType, payloadRevision,
-              payload, metaData);
+    public GenericDomainEventEntry(@Nonnull String eventIdentifier,
+                                   @Nonnull String payloadType,
+                                   @Nonnull String payloadRevision,
+                                   @Nullable T payload,
+                                   @Nullable T metaData,
+                                   @Nonnull Object timestamp,
+                                   @Nonnull String aggregateType,
+                                   @Nonnull String aggregateIdentifier,
+                                   long aggregateSequenceNumber) {
+        super(eventIdentifier,
+              payloadType,
+              payloadRevision,
+              payload,
+              metaData,
+              timestamp,
+              aggregateType,
+              aggregateIdentifier,
+              aggregateSequenceNumber);
     }
 }

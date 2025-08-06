@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Basic;
 import jakarta.persistence.MappedSuperclass;
 import org.axonframework.serialization.Serializer;
@@ -25,6 +27,8 @@ import org.axonframework.serialization.Serializer;
  * storage engines how to store event entries.
  *
  * @author Rene de Waele
+ * @author Steven van Beelen
+ * @since 3.0.0
  */
 @MappedSuperclass
 public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> implements DomainEventData<T> {
@@ -40,13 +44,17 @@ public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> 
      * Construct a new event entry from a published domain event message to enable storing the event or sending it to a
      * remote location.
      * <p>
-     * The given {@code serializer} will be used to serialize the payload and metadata in the given {@code eventMessage}.
-     * The type of the serialized data will be the same as the given {@code contentType}.
+     * The given {@code serializer} will be used to serialize the payload and metadata in the given
+     * {@code eventMessage}. The type of the serialized data will be the same as the given {@code contentType}.
      *
-     * @param eventMessage The event message to convert to a serialized event entry
-     * @param serializer   The serializer to convert the event
-     * @param contentType  The data type of the payload and metadata after serialization
+     * @param eventMessage The event message to convert to a serialized event entry.
+     * @param serializer   The serializer to convert the event.
+     * @param contentType  The data type of the payload and metadata after serialization.
+     * @deprecated In favor of the
+     * {@link #AbstractDomainEventEntry(String, String, String, Object, Object, Object, String, String, long)}
+     * constructor.
      */
+    @Deprecated
     public AbstractDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
         super(eventMessage, serializer, contentType);
         type = eventMessage.getType();
@@ -55,31 +63,38 @@ public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> 
     }
 
     /**
-     * Reconstruct an event entry from a stored object.
+     * Constructs an {@code AbstractDomainEventEntry} with the given parameters.
      *
-     * @param type                The type of aggregate that published this event
-     * @param aggregateIdentifier The identifier of the aggregate that published this event
-     * @param sequenceNumber      The sequence number of the event in the aggregate
-     * @param eventIdentifier     The identifier of the event
-     * @param timestamp           The time at which the event was originally created
-     * @param payloadType         The fully qualified class name or alias of the event payload
-     * @param payloadRevision     The revision of the event payload
-     * @param payload             The serialized payload
-     * @param metaData            The serialized metadata
+     * @param eventIdentifier         The identifier of the event.
+     * @param payloadType             The fully qualified class name or alias of the event payload.
+     * @param payloadRevision         The revision of the event payload.
+     * @param payload                 The serialized payload.
+     * @param metaData                The serialized metadata.
+     * @param timestamp               The time at which the event was originally created.
+     * @param aggregateType           The type of aggregate that published this event.
+     * @param aggregateIdentifier     The identifier of the aggregate that published this event.
+     * @param aggregateSequenceNumber The sequence number of the event in the aggregate.
      */
-    public AbstractDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber,
-                                    String eventIdentifier, Object timestamp, String payloadType,
-                                    String payloadRevision, T payload, T metaData) {
-        super(eventIdentifier, timestamp, payloadType, payloadRevision, payload, metaData);
-        this.type = type;
+    public AbstractDomainEventEntry(@Nonnull String eventIdentifier,
+                                    @Nonnull String payloadType,
+                                    @Nonnull String payloadRevision,
+                                    @Nullable T payload,
+                                    @Nullable T metaData,
+                                    @Nonnull Object timestamp,
+                                    @Nonnull String aggregateType,
+                                    @Nonnull String aggregateIdentifier,
+                                    long aggregateSequenceNumber) {
+        super(eventIdentifier, payloadType, payloadRevision, payload, metaData, timestamp);
+        this.type = aggregateType;
         this.aggregateIdentifier = aggregateIdentifier;
-        this.sequenceNumber = sequenceNumber;
+        this.sequenceNumber = aggregateSequenceNumber;
     }
 
     /**
-     * Default constructor required by JPA
+     * Default constructor required by JPA.
      */
     protected AbstractDomainEventEntry() {
+        // Default constructor required by JPA.
     }
 
     @Override

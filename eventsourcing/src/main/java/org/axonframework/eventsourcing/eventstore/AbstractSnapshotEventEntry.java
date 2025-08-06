@@ -77,7 +77,7 @@ public abstract class AbstractSnapshotEventEntry<T> extends AbstractEventEntry<T
     public AbstractSnapshotEventEntry(String type, String aggregateIdentifier, long sequenceNumber,
                                       String eventIdentifier, Object timestamp, String payloadType,
                                       String payloadRevision, T payload, T metaData) {
-        super(eventIdentifier, timestamp, payloadType, payloadRevision, payload, metaData);
+        super(eventIdentifier, payloadType, payloadRevision, payload, metaData, timestamp);
         this.type = type;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;

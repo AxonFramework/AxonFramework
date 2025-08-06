@@ -16,6 +16,7 @@
 
 package org.axonframework.serialization.upcasting.avro;
 
+import jakarta.annotation.Nonnull;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
@@ -43,6 +44,7 @@ import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -201,11 +203,37 @@ class AvroUpcasterTest {
     private static EventData<byte[]> eventData(SerializedObject<byte[]> payload, SerializedObject<byte[]> metaData) {
         return new EventData<>() {
             @Override
+            @Nonnull
             public String getEventIdentifier() {
                 return UUID.randomUUID().toString();
             }
 
             @Override
+            @Nonnull
+            public String type() {
+                return "";
+            }
+
+            @Override
+            @Nonnull
+            public String version() {
+                return "";
+            }
+
+            @Override
+            @Nonnull
+            public byte[] payload() {
+                return new byte[0];
+            }
+
+            @Override
+            @Nonnull
+            public Map<String, String> metaData() {
+                return Map.of();
+            }
+
+            @Override
+            @Nonnull
             public Instant getTimestamp() {
                 return Instant.now();
             }

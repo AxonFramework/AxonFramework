@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
@@ -75,7 +76,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.Assert.isTrue;
@@ -648,15 +648,15 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
         String aggregateIdentifier = resultSet.getString(schema.aggregateIdentifierColumn());
         String eventIdentifier = resultSet.getString(schema.eventIdentifierColumn());
         GenericDomainEventEntry<?> domainEvent = new GenericDomainEventEntry<>(
-                resultSet.getString(schema.typeColumn()),
-                eventIdentifier.equals(aggregateIdentifier) ? null : aggregateIdentifier,
-                resultSet.getLong(schema.sequenceNumberColumn()),
                 eventIdentifier,
-                readTimeStamp(resultSet, schema.timestampColumn()),
                 resultSet.getString(schema.payloadTypeColumn()),
                 resultSet.getString(schema.payloadRevisionColumn()),
                 readPayload(resultSet, schema.payloadColumn()),
-                readPayload(resultSet, schema.metaDataColumn())
+                readPayload(resultSet, schema.metaDataColumn()),
+                readTimeStamp(resultSet, schema.timestampColumn()),
+                resultSet.getString(schema.typeColumn()),
+                eventIdentifier.equals(aggregateIdentifier) ? null : aggregateIdentifier,
+                resultSet.getLong(schema.sequenceNumberColumn())
         );
 
         // Now that we have the event itself, we can calculate the token.
@@ -689,15 +689,16 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
      * @throws SQLException when an exception occurs while creating the event data.
      */
     protected DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
-        return new GenericDomainEventEntry<>(resultSet.getString(schema.typeColumn()),
-                                             resultSet.getString(schema.aggregateIdentifierColumn()),
-                                             resultSet.getLong(schema.sequenceNumberColumn()),
-                                             resultSet.getString(schema.eventIdentifierColumn()),
-                                             readTimeStamp(resultSet, schema.timestampColumn()),
+        return new GenericDomainEventEntry<>(resultSet.getString(schema.eventIdentifierColumn()),
                                              resultSet.getString(schema.payloadTypeColumn()),
                                              resultSet.getString(schema.payloadRevisionColumn()),
                                              readPayload(resultSet, schema.payloadColumn()),
-                                             readPayload(resultSet, schema.metaDataColumn()));
+                                             readPayload(resultSet, schema.metaDataColumn()),
+                                             readTimeStamp(resultSet, schema.timestampColumn()),
+                                             resultSet.getString(schema.typeColumn()),
+                                             resultSet.getString(schema.aggregateIdentifierColumn()),
+                                             resultSet.getLong(schema.sequenceNumberColumn())
+        );
     }
 
     /**
@@ -708,15 +709,16 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
      * @throws SQLException when an exception occurs while creating the event data.
      */
     protected DomainEventData<?> getSnapshotData(ResultSet resultSet) throws SQLException {
-        return new GenericDomainEventEntry<>(resultSet.getString(schema.typeColumn()),
-                                             resultSet.getString(schema.aggregateIdentifierColumn()),
-                                             resultSet.getLong(schema.sequenceNumberColumn()),
-                                             resultSet.getString(schema.eventIdentifierColumn()),
-                                             readTimeStamp(resultSet, schema.timestampColumn()),
+        return new GenericDomainEventEntry<>(resultSet.getString(schema.eventIdentifierColumn()),
                                              resultSet.getString(schema.payloadTypeColumn()),
                                              resultSet.getString(schema.payloadRevisionColumn()),
                                              readPayload(resultSet, schema.payloadColumn()),
-                                             readPayload(resultSet, schema.metaDataColumn()));
+                                             readPayload(resultSet, schema.metaDataColumn()),
+                                             readTimeStamp(resultSet, schema.timestampColumn()),
+                                             resultSet.getString(schema.typeColumn()),
+                                             resultSet.getString(schema.aggregateIdentifierColumn()),
+                                             resultSet.getLong(schema.sequenceNumberColumn())
+        );
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,19 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.serialization.SerializedObject;
 
 import java.time.Instant;
+import java.util.Map;
 
 /**
- * Specialization of the DomainEventData class that includes the Token representing the position of this event in
- * a stream.
+ * Specialization of the DomainEventData class that includes the Token representing the position of this event in a
+ * stream.
  *
- * @param <T> The content type of the serialized data
+ * @param <T> The content type of the serialized data.
  */
+@Deprecated // TODO discuss if we can remove this
 public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEventData<T> {
 
     private final TrackingToken trackingToken;
@@ -48,23 +51,39 @@ public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEve
     }
 
     @Override
+    @Nonnull
     public String getEventIdentifier() {
         return eventData.getEventIdentifier();
     }
 
     @Override
+    @Nonnull
+    public String type() {
+        return eventData.type();
+    }
+
+    @Override
+    @Nonnull
+    public String version() {
+        return eventData.version();
+    }
+
+    @Override
+    @Nonnull
+    public T payload() {
+        return eventData.payload();
+    }
+
+    @Override
+    @Nonnull
+    public Map<String, String> metaData() {
+        return eventData.metaData();
+    }
+
+    @Override
+    @Nonnull
     public Instant getTimestamp() {
         return eventData.getTimestamp();
-    }
-
-    @Override
-    public SerializedObject<T> getMetaData() {
-        return eventData.getMetaData();
-    }
-
-    @Override
-    public SerializedObject<T> getPayload() {
-        return eventData.getPayload();
     }
 
     @Override
@@ -80,5 +99,15 @@ public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEve
     @Override
     public long getSequenceNumber() {
         return eventData.getSequenceNumber();
+    }
+
+    @Override
+    public SerializedObject<T> getMetaData() {
+        return eventData.getMetaData();
+    }
+
+    @Override
+    public SerializedObject<T> getPayload() {
+        return eventData.getPayload();
     }
 }
