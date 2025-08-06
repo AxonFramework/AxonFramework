@@ -87,18 +87,20 @@ public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEve
     }
 
     @Override
-    public String getType() {
-        return eventData.getType();
+    @Nonnull
+    public String aggregateType() {
+        return eventData.aggregateType();
     }
 
     @Override
-    public String getAggregateIdentifier() {
-        return eventData.getAggregateIdentifier();
+    @Nonnull
+    public String aggregateIdentifier() {
+        return eventData.aggregateIdentifier();
     }
 
     @Override
-    public long getSequenceNumber() {
-        return eventData.getSequenceNumber();
+    public long aggregateSequenceNumber() {
+        return eventData.aggregateSequenceNumber();
     }
 
     @Override

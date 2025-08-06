@@ -77,9 +77,9 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
         timestamp = CachingSupplier.of(eventData::timestamp);
         if (eventData instanceof DomainEventData<?>) {
             DomainEventData<?> domainEventData = (DomainEventData<?>) eventData;
-            aggregateType = domainEventData.getType();
-            aggregateIdentifier = domainEventData.getAggregateIdentifier();
-            sequenceNumber = domainEventData.getSequenceNumber();
+            aggregateType = domainEventData.aggregateType();
+            aggregateIdentifier = domainEventData.aggregateIdentifier();
+            sequenceNumber = domainEventData.aggregateSequenceNumber();
         } else {
             aggregateType = null;
             aggregateIdentifier = null;

@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 
+import jakarta.annotation.Nonnull;
+
 /**
  * Interface describing the properties of serialized Domain Event Messages. Event Store implementations should have
  * their storage entries implement this interface.
@@ -32,19 +34,21 @@ public interface DomainEventData<T> extends EventData<T> {
      *
      * @return the type identifier of the aggregate.
      */
-    String getType();
+    @Nonnull
+    String aggregateType();
 
     /**
      * Returns the Identifier of the Aggregate to which the Event was applied.
      *
      * @return the Identifier of the Aggregate to which the Event was applied
      */
-    String getAggregateIdentifier();
+    @Nonnull
+    String aggregateIdentifier();
 
     /**
      * Returns the sequence number of the event in the aggregate.
      *
      * @return the sequence number of the event in the aggregate
      */
-    long getSequenceNumber();
+    long aggregateSequenceNumber();
 }

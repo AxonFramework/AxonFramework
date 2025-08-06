@@ -280,9 +280,9 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         MessageStream<EventMessage<?>> source =
                 MessageStream.fromStream(events,
                                          this::convertToDomainEventMessage,
-                                         event -> setMarkerAndBuildContext(event.getAggregateIdentifier(),
-                                                                           event.getSequenceNumber(),
-                                                                           event.getType(),
+                                         event -> setMarkerAndBuildContext(event.aggregateIdentifier(),
+                                                                           event.aggregateSequenceNumber(),
+                                                                           event.aggregateType(),
                                                                            markerReference))
                              // Defaults the marker when the aggregate stream was empty
                              .whenComplete(() -> markerReference.compareAndSet(
@@ -293,9 +293,9 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     private DomainEventMessage<?> convertToDomainEventMessage(DomainEventData<?> event) {
-        return new GenericDomainEventMessage<>(event.getType(),
-                                               event.getAggregateIdentifier(),
-                                               event.getSequenceNumber(),
+        return new GenericDomainEventMessage<>(event.aggregateType(),
+                                               event.aggregateIdentifier(),
+                                               event.aggregateSequenceNumber(),
                                                convertToEventMessage(event),
                                                event.timestamp());
     }
@@ -347,12 +347,12 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     private static Context trackedEventContext(TrackedEventData<?> trackedEventData) {
         var context = Context.empty();
         if (trackedEventData instanceof TrackedDomainEventData<?> trackedDomainEventData
-                && trackedDomainEventData.getAggregateIdentifier() != null
-                && trackedDomainEventData.getType() != null
+                && trackedDomainEventData.aggregateIdentifier() != null
+                && trackedDomainEventData.aggregateType() != null
         ) {
-            context = buildContext(trackedDomainEventData.getAggregateIdentifier(),
-                                   trackedDomainEventData.getSequenceNumber(),
-                                   trackedDomainEventData.getType());
+            context = buildContext(trackedDomainEventData.aggregateIdentifier(),
+                                   trackedDomainEventData.aggregateSequenceNumber(),
+                                   trackedDomainEventData.aggregateType());
         }
         var trackingToken = trackedEventData.trackingToken();
         return context.withResource(TrackingToken.RESOURCE_KEY, trackingToken);
@@ -456,7 +456,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                     lastItem -> transactionManager.fetchInTransaction(
                             () -> legacyJpaOperations.fetchDomainEvents(
                                     identifier,
-                                    lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
+                                    lastItem == null ? firstSequenceNumber : lastItem.aggregateSequenceNumber() + 1,
                                     batchSize
                             )
                     )

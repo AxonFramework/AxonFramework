@@ -53,19 +53,21 @@ public class GrpcBackedDomainEventData implements DomainEventData<byte[]> {
     }
 
     @Override
-    public String getType() {
+    @Nonnull
+    public String aggregateType() {
         String aggregateType = event.getAggregateType();
         return "".equals(aggregateType) ? null : aggregateType;
     }
 
     @Override
-    public String getAggregateIdentifier() {
+    @Nonnull
+    public String aggregateIdentifier() {
         String aggregateIdentifier = event.getAggregateIdentifier();
         return "".equals(aggregateIdentifier) ? null : aggregateIdentifier;
     }
 
     @Override
-    public long getSequenceNumber() {
+    public long aggregateSequenceNumber() {
         return event.getAggregateSequenceNumber();
     }
 
