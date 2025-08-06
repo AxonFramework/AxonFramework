@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.distributed;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -33,6 +34,7 @@ import static org.axonframework.configuration.DecoratorDefinition.forType;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Internal
 public class DistributedCommandBusConfigurationEnhancer implements ConfigurationEnhancer {
 
     /**
@@ -46,15 +48,17 @@ public class DistributedCommandBusConfigurationEnhancer implements Configuration
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
-        componentRegistry
-                .registerIfNotPresent(
-                        DistributedCommandBusConfiguration.class,
-                        (c) -> new DistributedCommandBusConfiguration(),
-                        SearchScope.ALL
-                )
-                .registerDecorator(forType(CommandBus.class)
-                                           .with(commandBusDecoratorDefinition())
-                                           .order(DISTRIBUTED_COMMAND_BUS_ORDER));
+        if (componentRegistry.hasComponent(CommandBusConnector.class)) {
+            componentRegistry
+                    .registerIfNotPresent(
+                            DistributedCommandBusConfiguration.class,
+                            (c) -> new DistributedCommandBusConfiguration(),
+                            SearchScope.ALL
+                    )
+                    .registerDecorator(forType(CommandBus.class)
+                                               .with(commandBusDecoratorDefinition())
+                                               .order(DISTRIBUTED_COMMAND_BUS_ORDER));
+        }
     }
 
     private ComponentDecorator<CommandBus, CommandBus> commandBusDecoratorDefinition() {
