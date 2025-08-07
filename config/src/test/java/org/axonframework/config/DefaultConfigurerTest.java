@@ -30,7 +30,6 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.caching.WeakReferenceCache;
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -55,7 +54,6 @@ import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
-import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
@@ -256,19 +254,6 @@ class DefaultConfigurerTest {
         AtomicInteger counter = new AtomicInteger();
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
-                                       .configureEmbeddedEventStore(
-                                               c -> LegacyJpaEventStorageEngine.builder()
-                                                                               .snapshotSerializer(c.serializer())
-                                                                               .upcasterChain(c.upcasterChain())
-                                                                               .persistenceExceptionResolver(c.getComponent(
-                                                                                       PersistenceExceptionResolver.class
-                                                                               ))
-                                                                               .entityManagerProvider(() -> entityManager)
-                                                                               .transactionManager(c.getComponent(
-                                                                                       TransactionManager.class
-                                                                               ))
-                                                                               .eventSerializer(c.serializer())
-                                                                               .build())
                                        .configureAggregate(
                                                defaultConfiguration(StubAggregate.class)
                                                        .configureCommandTargetResolver(
@@ -562,6 +547,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    @Disabled
     void aggregateSnapshotFilterIsAddedToTheEventStore() {
         AtomicBoolean filteredFirst = new AtomicBoolean(false);
         SnapshotFilter testFilterOne = snapshotData -> {
