@@ -1308,6 +1308,16 @@ This section contains five tables:
 | org.axonframework.lifecycle.ShutdownHandler                                              | [Lifecycle management](#component-lifecycle-management) is now only done lazy, eliminating the need for concrete component scanning.           |
 | org.axonframework.eventhandling.TrackingEventProcessor                                   | Removed in favor of `PooledStreamingEventProcessor` (see [Event Processors](#event-processors)).                                               |
 | org.axonframework.eventhandling.TrackingEventProcessorConfiguration                      | Removed along with `TrackingEventProcessor` (see [Event Processors](#event-processors)).                                                       |
+| org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine                     | Replaced in favor of the `AggregateBasedJpaEventStorageEngine`                                                                                 |
+| org.axonframework.eventhandling.EventData                                                | Removed in favor of the `EventMessage` carrying all required data to map from stored to read formats.                                          |
+| org.axonframework.eventhandling.AbstractEventEntry                                       | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.DomainEventData                                          | Removed in favor of the `EventMessage` carrying all required data to map from stored to read formats.                                          |
+| org.axonframework.eventhandling.AbstractDomainEventEntry                                 | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.GenericDomainEventEntry                                  | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.AbstractSequencedDomainEventEntry                        | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry                          | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.TrackedEventData                                         | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
+| org.axonframework.eventhandling.TrackedDomainEventData                                   | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 
 ### Marked for removal Classes
 
