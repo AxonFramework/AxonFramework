@@ -187,7 +187,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     @Nullable
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
         //noinspection unchecked,rawtypes
-        return type instanceof Class clazz && payloadType().isAssignableFrom(clazz)
+        return type instanceof Class clazz && clazz.isAssignableFrom(payloadType())
                 ? (T) payload()
                 : Objects.requireNonNull(converter,
                                          "Cannot convert payload to [" + type.getTypeName() + "] with null Converter.")
@@ -235,7 +235,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
                                                @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
         //noinspection unchecked
-        return payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))
+        return ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())
                 ? (Message<T>) this
                 : new GenericMessage<>(identifier(), type(), convertedPayload, metaData());
     }

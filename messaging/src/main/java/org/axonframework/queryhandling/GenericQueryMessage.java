@@ -102,7 +102,7 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
     @Nonnull
     public <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (QueryMessage<T, R>) this;
         }

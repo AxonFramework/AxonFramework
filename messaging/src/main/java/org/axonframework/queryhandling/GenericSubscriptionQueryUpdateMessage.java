@@ -138,7 +138,7 @@ public class GenericSubscriptionQueryUpdateMessage<U>
     public <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Type type,
                                                                       @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (SubscriptionQueryUpdateMessage<T>) this;
         }

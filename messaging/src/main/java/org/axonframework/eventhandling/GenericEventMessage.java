@@ -170,7 +170,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     @Nonnull
     public <T> EventMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (EventMessage<T>) this;
         }

@@ -159,7 +159,7 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     @Nonnull
     public <T> DeadlineMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (DeadlineMessage<T>) this;
         }

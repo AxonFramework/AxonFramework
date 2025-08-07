@@ -96,7 +96,7 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
     @Nonnull
     public <T> ResetContext<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = this.payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (ResetContext<T>) this;
         }

@@ -210,7 +210,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     @Nonnull
     public <T> ResultMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (ResultMessage<T>) this;
         }

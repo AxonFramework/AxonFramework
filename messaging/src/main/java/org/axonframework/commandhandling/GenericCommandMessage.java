@@ -99,7 +99,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
     @Nonnull
     public <T> CommandMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (CommandMessage<T>) this;
         }

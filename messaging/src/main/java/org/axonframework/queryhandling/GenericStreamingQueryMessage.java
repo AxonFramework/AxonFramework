@@ -137,7 +137,7 @@ public class GenericStreamingQueryMessage<P, R>
     @Nonnull
     public <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (StreamingQueryMessage<T, R>) super.withConvertedPayload(type, converter);
         }
