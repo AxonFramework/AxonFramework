@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ package org.axonframework.eventhandling;
  *
  * @param <T> The content type of the serialized data
  * @author Rene de Waele
+ * @deprecated Will be removed entirely in favor of the {@link EventMessage}.
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface TrackedEventData<T> extends EventData<T> {
 
     /**
