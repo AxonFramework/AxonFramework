@@ -18,6 +18,7 @@ package org.axonframework.deadline;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
@@ -135,16 +136,19 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     }
 
     @Override
+    @Nonnull
     public String getDeadlineName() {
         return deadlineName;
     }
 
     @Override
+    @Nonnull
     public DeadlineMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericDeadlineMessage<>(deadlineName, delegate().withMetaData(metaData), this::timestamp);
     }
 
     @Override
+    @Nonnull
     public DeadlineMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new GenericDeadlineMessage<>(
                 deadlineName, delegate().andMetaData(additionalMetaData), this::timestamp
@@ -152,17 +156,18 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     }
 
     @Override
+    @Nonnull
     public <T> DeadlineMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
             //noinspection unchecked
             return (DeadlineMessage<T>) this;
         }
         Message<P> delegate = delegate();
-        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
-                                                     delegate.type(),
-                                                     convertedPayload,
-                                                     delegate.metaData());
+        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+                                                    delegate.type(),
+                                                    convertedPayload,
+                                                    delegate.metaData());
         return new GenericDeadlineMessage<>(getDeadlineName(), converted, this::timestamp);
     }
 
