@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.gateway;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.serialization.Converter;
@@ -32,6 +33,7 @@ import org.axonframework.serialization.Converter;
  * @author Allard Buijze
  * @since 5.0.0
  */
+@Internal
 public class ConvertingCommandGatewayConfigurationEnhancer implements ConfigurationEnhancer {
 
     /**

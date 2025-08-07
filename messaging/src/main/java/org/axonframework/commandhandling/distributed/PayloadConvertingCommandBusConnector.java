@@ -39,31 +39,31 @@ public class PayloadConvertingCommandBusConnector<T> extends WrappedCommandBusCo
 
     private final CommandBusConnector delegate;
     private final Converter converter;
-    private final Class<?> representation;
+    private final Class<?> targetType;
 
 
     /**
      * Initialize the {@code PayloadConvertingConnector} to use given {@code converter} to convert each Message's
-     * payload into {@code representation} before passing it to given {@code delegate}.
+     * payload into {@code targetType} before passing it to given {@code delegate}.
      *
-     * @param delegate       The delegate to pass converted messages to.
-     * @param converter      The converter to use to convert each Message's payload.
-     * @param representation The desired representation of forwarded Message's payload.
+     * @param delegate   The delegate to pass converted messages to.
+     * @param converter  The converter to use to convert each Message's payload.
+     * @param targetType The desired representation of forwarded Message's payload.
      */
     public PayloadConvertingCommandBusConnector(@Nonnull CommandBusConnector delegate,
                                                 @Nonnull Converter converter,
-                                                @Nonnull Class<?> representation) {
+                                                @Nonnull Class<?> targetType) {
         super(delegate);
         this.delegate = Objects.requireNonNull(delegate, "The delegate must not be null.");
         this.converter = Objects.requireNonNull(converter, "The converter must not be null.");
-        this.representation = Objects.requireNonNull(representation, "The representation must not be null.");
+        this.targetType = Objects.requireNonNull(targetType, "The targetType must not be null.");
     }
 
     @Nonnull
     @Override
     public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                                @Nullable ProcessingContext processingContext) {
-        CommandMessage<?> serializedCommand = command.withConvertedPayload(p -> converter.convert(p, representation));
+        CommandMessage<?> serializedCommand = command.withConvertedPayload(p -> converter.convert(p, targetType));
         return delegate.dispatch(serializedCommand, processingContext);
     }
 
@@ -89,11 +89,11 @@ public class PayloadConvertingCommandBusConnector<T> extends WrappedCommandBusCo
 
         @Override
         public void onSuccess(Message<?> resultMessage) {
-            if(resultMessage == null || resultMessage.getPayload() == null) {
+            if (resultMessage == null || resultMessage.getPayload() == null) {
                 callback.onSuccess(resultMessage);
                 return;
             }
-            callback.onSuccess(resultMessage.withConvertedPayload(c -> converter.convert(c, representation)));
+            callback.onSuccess(resultMessage.withConvertedPayload(c -> converter.convert(c, targetType)));
         }
 
         @Override

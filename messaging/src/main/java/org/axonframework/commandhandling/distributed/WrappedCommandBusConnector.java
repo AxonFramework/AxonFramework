@@ -44,7 +44,7 @@ public abstract class WrappedCommandBusConnector implements CommandBusConnector,
      *
      * @param delegate The {@link CommandBusConnector} to delegate all calls to.
      */
-    protected WrappedCommandBusConnector(CommandBusConnector delegate) {
+    protected WrappedCommandBusConnector(@Nonnull CommandBusConnector delegate) {
         this.delegate = delegate;
     }
 

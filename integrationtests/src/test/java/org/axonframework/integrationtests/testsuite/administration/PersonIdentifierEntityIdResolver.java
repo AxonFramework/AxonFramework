@@ -52,7 +52,6 @@ class PersonIdentifierEntityIdResolver implements EntityIdResolver<PersonIdentif
                 CreateCustomer.class,
                 CreateEmployee.class,
                 ChangeEmailAddress.class,
-                AssignTaskCommand.class,
                 CompleteTaskCommand.class,
                 GiveRaise.class
         );

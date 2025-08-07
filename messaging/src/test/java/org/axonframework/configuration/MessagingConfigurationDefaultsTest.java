@@ -72,7 +72,9 @@ class MessagingConfigurationDefaultsTest {
         Configuration resultConfig = configurer.build();
 
         assertInstanceOf(ClassBasedMessageTypeResolver.class, resultConfig.getComponent(MessageTypeResolver.class));
-        assertInstanceOf(ConvertingCommandGateway.class, resultConfig.getComponent(CommandGateway.class));
+        // The specific CommandGateway-implementation registered by default may be overridden by the serviceloader-mechanism.
+        // So we just check if _any_ CommandGateway has been added to the configuration.
+        assertTrue(resultConfig.hasComponent(CommandGateway.class));
         assertInstanceOf(SimpleCommandBus.class, resultConfig.getComponent(CommandBus.class));
         assertInstanceOf(DefaultEventGateway.class, resultConfig.getComponent(EventGateway.class));
         assertInstanceOf(SimpleEventBus.class, resultConfig.getComponent(EventBus.class));
@@ -112,5 +114,12 @@ class MessagingConfigurationDefaultsTest {
         public void describeTo(@Nonnull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException();
         }
+    }
+
+    @Test
+    void test() {
+        MessagingConfigurer configurer = MessagingConfigurer.create();
+        Configuration resultConfig = configurer.build();
+        assertInstanceOf(ConvertingCommandGateway.class, resultConfig.getComponent(CommandGateway.class));
     }
 }

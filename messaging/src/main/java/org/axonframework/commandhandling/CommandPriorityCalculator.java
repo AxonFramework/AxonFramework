@@ -22,6 +22,7 @@ package org.axonframework.commandhandling;
  * @author Marc Gathier
  * @since 4.0
  */
+@FunctionalInterface
 public interface CommandPriorityCalculator {
 
     /**
