@@ -51,7 +51,7 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,11 +91,11 @@ import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEve
 public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(AggregateBasedJpaEventStorageEngine.class);
-    private static final String DOMAIN_EVENT_ENTRY_ENTITY_NAME = DomainEventEntry.class.getSimpleName();
+    private static final String DOMAIN_EVENT_ENTRY_ENTITY_NAME = AggregateBasedEventEntry.class.getSimpleName();
 
     private final EntityManagerProvider entityManagerProvider;
     private final TransactionManager transactionManager;
-    private final Serializer eventSerializer;
+    private final Converter converter;
     private final PersistenceExceptionResolver persistenceExceptionResolver;
 
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
@@ -108,21 +108,21 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
      * @param entityManagerProvider The {@link jakarta.persistence.EntityManager} provided for this storage solution.
      * @param transactionManager    The transaction manager, ensuring all operations to the storage solution occur
      *                              transactionally.
-     * @param eventSerializer       The event serializer, de-/serializing events.
+     * @param converter             The converter used to convert the {@link EventMessage#payload()} and
+     *                              {@link EventMessage#metaData()} to a {@code byte[]}.
      * @param configurationOverride A unary operator that can customize the {@code AggregateBasedJpaEventStorageEngine}
      *                              under construction.
      */
-    public AggregateBasedJpaEventStorageEngine(
-            @Nonnull EntityManagerProvider entityManagerProvider,
-            @Nonnull TransactionManager transactionManager,
-            @Nonnull Serializer eventSerializer,
-            @Nonnull UnaryOperator<Customization> configurationOverride
-    ) {
-        this.entityManagerProvider = requireNonNull(entityManagerProvider, "entityManagerProvider may not be null");
-        this.transactionManager = requireNonNull(transactionManager, "transactionManager may not be null");
-        this.eventSerializer = requireNonNull(eventSerializer, "eventSerializer may not be null");
+    public AggregateBasedJpaEventStorageEngine(@Nonnull EntityManagerProvider entityManagerProvider,
+                                               @Nonnull TransactionManager transactionManager,
+                                               @Nonnull Converter converter,
+                                               @Nonnull UnaryOperator<Customization> configurationOverride) {
+        this.entityManagerProvider =
+                requireNonNull(entityManagerProvider, "The entityManagerProvider may not be null.");
+        this.transactionManager = requireNonNull(transactionManager, "The transactionManager may not be null.");
+        this.converter = requireNonNull(converter, "The converter may not be null");
 
-        var customization = requireNonNull(configurationOverride, "configurationOverride may not be null")
+        var customization = requireNonNull(configurationOverride, "the configurationOverride may not be null.")
                 .apply(Customization.withDefaultValues());
 
         this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager,
@@ -212,39 +212,37 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     ) {
         var entityManager = entityManagerProvider.getEntityManager();
         events.stream()
-              .map(taggedEvent -> toDomainEventMessage(taggedEvent, aggregateSequencer))
-              .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
+              .map(taggedEvent -> mapToEntry(taggedEvent, aggregateSequencer, converter))
               .forEach(entityManager::persist);
     }
 
-    private static DomainEventMessage<?> toDomainEventMessage(
-            TaggedEventMessage<?> taggedEvent,
-            AggregateSequencer aggregateSequencer
-    ) {
-        var aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
-        var aggregateType = resolveAggregateType(taggedEvent.tags());
-        var event = taggedEvent.event();
-        var isAggregateEvent =
-                aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty();
-        if (isAggregateEvent) {
-            var nextSequence = aggregateSequencer.incrementAndGetSequenceOf(aggregateIdentifier);
-            return new GenericDomainEventMessage<>(
-                    aggregateType,
-                    aggregateIdentifier,
-                    nextSequence,
-                    event.identifier(),
-                    event.type(),
-                    event.payload(),
-                    event.metaData(),
-                    event.timestamp()
-            );
+    private static AggregateBasedEventEntry mapToEntry(TaggedEventMessage<?> taggedEvent,
+                                                       AggregateSequencer aggregateSequencer,
+                                                       Converter converter) {
+        String aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
+        String aggregateType = resolveAggregateType(taggedEvent.tags());
+        EventMessage<?> event = taggedEvent.event();
+        if (aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty()) {
+            return new AggregateBasedEventEntry(event.identifier(),
+                                                event.type().name(),
+                                                event.type().version(),
+                                                event.payloadAs(byte[].class, converter),
+                                                converter.convert(event.metaData(), byte[].class),
+                                                event.timestamp(),
+                                                aggregateType,
+                                                aggregateIdentifier,
+                                                aggregateSequencer.incrementAndGetSequenceOf(aggregateIdentifier));
         } else {
             // returns non-aggregate event, so the sequence is always 0
-            return new GenericDomainEventMessage<>(null,
-                                                   event.identifier(),
-                                                   0L,
-                                                   event,
-                                                   event::timestamp);
+            return new AggregateBasedEventEntry(event.identifier(),
+                                                event.type().name(),
+                                                event.type().version(),
+                                                event.payloadAs(byte[].class, converter),
+                                                converter.convert(event.metaData(), byte[].class),
+                                                event.timestamp(),
+                                                null,
+                                                event.identifier(),
+                                                0L);
         }
     }
 
@@ -261,12 +259,12 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     private GenericEventMessage<?> convertToEventMessage(EventData<?> event) {
         var payload = event.getPayload();
         var revision = payload.getType().getRevision();
-        var payloadClass = eventSerializer.classForType(payload.getType());
+        var payloadClass = "null";
         var messageType = revision == null
                 ? new MessageType(payloadClass)
                 : new MessageType(payloadClass, revision);
         var metadata = event.getMetaData();
-        MetaData metaData = eventSerializer.convert(metadata.getData(), MetaData.class);
+        MetaData metaData = converter.convert(metadata.getData(), MetaData.class);
         return new GenericEventMessage<>(
                 event.getEventIdentifier(),
                 messageType,
@@ -414,7 +412,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("entityManagerProvider", entityManagerProvider);
         descriptor.describeProperty("transactionManager", transactionManager);
-        descriptor.describeProperty("eventSerializer", eventSerializer);
+        descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);
         descriptor.describeProperty("legacyJpaOperations", legacyJpaOperations);
         descriptor.describeProperty("tokenOperations", tokenOperations);
