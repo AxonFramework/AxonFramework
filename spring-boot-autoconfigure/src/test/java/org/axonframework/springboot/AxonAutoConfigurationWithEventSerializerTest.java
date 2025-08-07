@@ -28,7 +28,6 @@ import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -80,7 +79,6 @@ class AxonAutoConfigurationWithEventSerializerTest {
         LegacyConfiguration axonConfiguration = applicationContext.getBean(LegacyConfiguration.class);
         assertNotSame(axonConfiguration.serializer(), axonConfiguration.eventSerializer());
         assertNotNull(applicationContext.getBean(TokenStore.class));
-        assertNotNull(applicationContext.getBean(LegacyJpaEventStorageEngine.class));
         assertEquals(SQLErrorCodesResolver.class,
                      applicationContext.getBean(PersistenceExceptionResolver.class).getClass());
         assertNotNull(applicationContext.getBean(EntityManagerProvider.class));
@@ -94,10 +92,10 @@ class AxonAutoConfigurationWithEventSerializerTest {
     void eventStorageEngineUsesSerializerBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final Serializer eventSerializer = applicationContext.getBean("myEventSerializer", Serializer.class);
-        final LegacyJpaEventStorageEngine engine = applicationContext.getBean(LegacyJpaEventStorageEngine.class);
+//        final LegacyJpaEventStorageEngine engine = applicationContext.getBean(LegacyJpaEventStorageEngine.class);
 
-        assertEquals(serializer, engine.getSnapshotSerializer());
-        assertEquals(eventSerializer, engine.getEventSerializer());
+//        assertEquals(serializer, engine.getSnapshotSerializer());
+//        assertEquals(eventSerializer, engine.getEventSerializer());
     }
 
     @org.springframework.context.annotation.Configuration

@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -46,9 +45,6 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
                 .withPropertyValues("axon.axonserver.enabled=false")
                 .withUserConfiguration(TestContext.class)
                 .run(context -> {
-                    assertThat(context).hasSingleBean(LegacyJpaEventStorageEngine.class);
-                    assertThat(context).getBean(LegacyJpaEventStorageEngine.class)
-                                       .isInstanceOf(LegacyJpaEventStorageEngine.class);
                     assertThat(context).getBean(LegacyEventStore.class).isInstanceOf(LegacyEmbeddedEventStore.class);
                 });
     }

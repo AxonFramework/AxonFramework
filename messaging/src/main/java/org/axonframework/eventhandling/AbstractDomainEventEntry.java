@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,9 @@ import org.axonframework.serialization.Serializer;
  * storage engines how to store event entries.
  *
  * @author Rene de Waele
+ * @deprecated Will be removed entirely in favor of the {@link org.axonframework.eventhandling.EventMessage}.
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 @MappedSuperclass
 public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> implements DomainEventData<T> {
 

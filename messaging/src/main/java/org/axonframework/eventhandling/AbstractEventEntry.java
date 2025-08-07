@@ -37,7 +37,9 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * engines how to store event entries.
  *
  * @author Rene de Waele
+ * @deprecated Will be removed entirely in favor of the {@link EventMessage}.
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 @MappedSuperclass
 public abstract class AbstractEventEntry<T> implements EventData<T> {
 
