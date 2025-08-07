@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
@@ -51,7 +52,7 @@ public class GenericSubscriptionQueryUpdateMessage<U>
      *                incremental update.
      */
     public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
-                                                 @Nonnull U payload) {
+                                                 @Nullable U payload) {
         this(new GenericMessage<>(type, payload, MetaData.emptyInstance()));
     }
 
@@ -121,28 +122,31 @@ public class GenericSubscriptionQueryUpdateMessage<U>
     }
 
     @Override
+    @Nonnull
     public SubscriptionQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryUpdateMessage<>(delegate().withMetaData(metaData));
     }
 
     @Override
+    @Nonnull
     public SubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryUpdateMessage<>(delegate().andMetaData(metaData));
     }
 
     @Override
+    @Nonnull
     public <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Type type,
                                                                       @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
             //noinspection unchecked
             return (SubscriptionQueryUpdateMessage<T>) this;
         }
         Message<U> delegate = delegate();
-        return new GenericSubscriptionQueryUpdateMessage<>(new GenericMessage<T>(delegate.identifier(),
-                                                                                 delegate.type(),
-                                                                                 convertedPayload,
-                                                                                 delegate.metaData()));
+        return new GenericSubscriptionQueryUpdateMessage<>(new GenericMessage<>(delegate.identifier(),
+                                                                                delegate.type(),
+                                                                                convertedPayload,
+                                                                                delegate.metaData()));
     }
 
     @Override

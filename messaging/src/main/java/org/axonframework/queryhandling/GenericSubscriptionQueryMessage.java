@@ -17,6 +17,8 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -59,7 +61,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      *                           {@link SubscriptionQueryMessage}.
      */
     public GenericSubscriptionQueryMessage(@Nonnull MessageType type,
-                                           @Nonnull P payload,
+                                           @Nullable P payload,
                                            @Nonnull ResponseType<I> responseType,
                                            @Nonnull ResponseType<U> updateResponseType) {
         super(type, payload, responseType);
@@ -94,11 +96,13 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     }
 
     @Override
+    @Nonnull
     public ResponseType<U> updatesResponseType() {
         return updateResponseType;
     }
 
     @Override
+    @Nonnull
     public SubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(delegate().withMetaData(metaData),
                                                      responseType(),
@@ -106,6 +110,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     }
 
     @Override
+    @Nonnull
     public SubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(delegate().andMetaData(metaData),
                                                      responseType(),
@@ -113,15 +118,16 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     }
 
     @Override
+    @Nonnull
     public <T> SubscriptionQueryMessage<T, I, U> withConvertedPayload(@Nonnull Type type,
                                                                       @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
             //noinspection unchecked
             return (SubscriptionQueryMessage<T, I, U>) this;
         }
         Message<P> delegate = delegate();
-        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
+        Message<T> converted = new GenericMessage<>(delegate.identifier(),
                                                     delegate.type(),
                                                     convertedPayload,
                                                     delegate.metaData());

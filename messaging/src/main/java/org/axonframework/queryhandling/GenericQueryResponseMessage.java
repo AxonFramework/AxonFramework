@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
@@ -46,10 +47,9 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * @param type   The {@link MessageType type} for this {@link QueryResponseMessage}.
      * @param result The result of type {@code R} for this {@link QueryResponseMessage}.
      */
-    @SuppressWarnings("unchecked")
     public GenericQueryResponseMessage(@Nonnull MessageType type,
-                                       @Nonnull R result) {
-        this(type, result, (Class<R>) result.getClass(), MetaData.emptyInstance());
+                                       @Nullable R result) {
+        this(type, result, ObjectUtils.nullSafeTypeOf(result), MetaData.emptyInstance());
     }
 
     /**
@@ -169,27 +169,30 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     @Override
+    @Nonnull
     public QueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericQueryResponseMessage<>(delegate().withMetaData(metaData));
     }
 
     @Override
+    @Nonnull
     public QueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new GenericQueryResponseMessage<>(delegate().andMetaData(additionalMetaData));
     }
 
     @Override
+    @Nonnull
     public <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
             //noinspection unchecked
             return (QueryResponseMessage<T>) this;
         }
         Message<R> delegate = delegate();
-        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
-                                                     delegate.type(),
-                                                     convertedPayload,
-                                                     delegate.metaData());
+        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+                                                    delegate.type(),
+                                                    convertedPayload,
+                                                    delegate.metaData());
         return optionalExceptionResult().isPresent()
                 ? new GenericQueryResponseMessage<>(converted, optionalExceptionResult().get())
                 : new GenericQueryResponseMessage<>(converted);

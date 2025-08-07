@@ -17,6 +17,8 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -56,7 +58,7 @@ public class GenericStreamingQueryMessage<P, R>
      * @param responseType The expected {@link Class response type} for this {@link StreamingQueryMessage}.
      */
     public GenericStreamingQueryMessage(@Nonnull MessageType type,
-                                        @Nonnull P payload,
+                                        @Nullable P payload,
                                         @Nonnull Class<R> responseType) {
         this(type, payload, new PublisherResponseType<>(responseType));
     }
@@ -72,7 +74,7 @@ public class GenericStreamingQueryMessage<P, R>
      * @param responseType The expected {@link ResponseType response type} for this {@link StreamingQueryMessage}.
      */
     public GenericStreamingQueryMessage(@Nonnull MessageType type,
-                                        @Nonnull P payload,
+                                        @Nullable P payload,
                                         @Nonnull ResponseType<Publisher<R>> responseType) {
         this(new GenericMessage<>(type, payload, MetaData.emptyInstance()), responseType);
     }
@@ -118,29 +120,32 @@ public class GenericStreamingQueryMessage<P, R>
     }
 
     @Override
+    @Nonnull
     public StreamingQueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericStreamingQueryMessage<>(delegate().withMetaData(metaData),
                                                   responseType());
     }
 
     @Override
+    @Nonnull
     public StreamingQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericStreamingQueryMessage<>(delegate().andMetaData(metaData),
                                                   responseType());
     }
 
     @Override
+    @Nonnull
     public <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
             //noinspection unchecked
             return (StreamingQueryMessage<T, R>) super.withConvertedPayload(type, converter);
         }
         Message<P> delegate = delegate();
-        GenericMessage<T> converted = new GenericMessage<T>(delegate.identifier(),
-                                                            delegate.type(),
-                                                            convertedPayload,
-                                                            delegate.metaData());
+        GenericMessage<T> converted = new GenericMessage<>(delegate.identifier(),
+                                                           delegate.type(),
+                                                           convertedPayload,
+                                                           delegate.metaData());
         return new GenericStreamingQueryMessage<>(converted, responseType());
     }
 
