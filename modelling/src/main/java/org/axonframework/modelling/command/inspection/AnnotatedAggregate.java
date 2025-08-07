@@ -565,6 +565,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
 
         @Override
+        @Nonnull
         public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, String> newMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
@@ -581,6 +582,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
 
         @Override
+        @Nonnull
         public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
