@@ -39,14 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Internal
 class ConversionCache {
 
-    private final ConcurrentHashMap<Type, CopyOnWriteArrayList<ConverterConversionTuple>> conversionCache;
-
-    /**
-     * Construct a basic {@code ConversionCache}.
-     */
-    ConversionCache() {
-        this.conversionCache = new ConcurrentHashMap<>();
-    }
+    private final ConcurrentHashMap<Type, CopyOnWriteArrayList<ConverterConversionTuple>> conversionCache = new ConcurrentHashMap<>();
 
     /**
      * Converts the given {@code input} into the given {@code type} with the given {@code converter} <b>only</b> if this
@@ -62,24 +55,23 @@ class ConversionCache {
      * The result may be {@code null} since the result of {@link Converter#convert(Object, Type) conversion} can also be
      * {@code null}.
      *
-     * @param type      The type to convert the given {@code input} into, <b>if</b> the given type-and-converter
-     *                  combination has not been seen before.
-     * @param converter The converter to convert the given {@code input with}, <b>if</b> the given type-and-converter
-     *                  combination has not been seen before.
-     * @param input     The input to convert into the given {@code type} by the given {@code converter}, <b>if</b> the
-     *                  given type-and-converter combination has not been seen before.
-     * @param <T>       The generic type to return.
+     * @param convertedType The type to convert the given {@code input} into, <b>if</b> the given type-and-converter
+     *                      combination has not been seen before.
+     * @param converter     The converter to convert the given {@code input with}, <b>if</b> the given
+     *                      type-and-converter combination has not been seen before.
+     * @param input         The input to convert into the given {@code type} by the given {@code converter}, <b>if</b>
+     *                      the given type-and-converter combination has not been seen before.
+     * @param <T>           The generic type to return.
      * @return The converted {@code input}, either directly from this cache or as the result from
      * {@link Converter#convert(Object, Type) converting}.
      */
     @Nullable
-    <T> T convertIfAbsent(@Nonnull Type type,
+    <T> T convertIfAbsent(@Nonnull Type convertedType,
                           @Nonnull Converter converter,
                           @Nullable Object input) {
         CopyOnWriteArrayList<ConverterConversionTuple> conversions =
-                conversionCache.computeIfAbsent(type, t -> new CopyOnWriteArrayList<>());
+                conversionCache.computeIfAbsent(convertedType, t -> new CopyOnWriteArrayList<>());
 
-        T conversion = null;
         for (ConverterConversionTuple conversionTuple : conversions) {
             Converter converterRef = conversionTuple.converterReference().get();
             if (converterRef == null) {
@@ -88,15 +80,13 @@ class ConversionCache {
             } else if (converterRef.equals(converter)) {
                 // Given Type and Converter combination occurred before! Let's return the conversion
                 //noinspection unchecked
-                conversion = (T) conversionTuple.conversion();
+                return (T) conversionTuple.conversion();
             }
         }
 
-        if (conversion == null) {
-            // No previous conversion found for Type and Converter. Let's convert ourselves
-            conversion = converter.convert(input, type);
-            conversions.add(new ConverterConversionTuple(new WeakReference<>(converter), conversion));
-        }
+        // No previous conversion found for Type and Converter. Let's convert ourselves
+        T conversion = converter.convert(input, convertedType);
+        conversions.add(new ConverterConversionTuple(new WeakReference<>(converter), conversion));
         return conversion;
     }
 

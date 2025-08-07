@@ -56,7 +56,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     private final MetaData metaData;
 
     private transient volatile SerializedObjectHolder serializedObjectHolder;
-    private final ConversionCache convertedPayloads;
+    private final ConversionCache convertedPayloads = new ConversionCache();
 
     /**
      * Constructs a {@code GenericMessage} for the given {@code type} and {@code payload}.
@@ -153,7 +153,6 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         this.payload = payload;
         this.payloadType = declaredPayloadType;
         this.metaData = MetaData.from(metaData);
-        this.convertedPayloads = new ConversionCache();
     }
 
     private GenericMessage(@Nonnull GenericMessage<P> original,
@@ -162,7 +161,6 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         this.payload = original.payload();
         this.payloadType = original.payloadType();
         this.metaData = metaData;
-        this.convertedPayloads = new ConversionCache();
     }
 
     /**
@@ -198,8 +196,8 @@ public class GenericMessage<P> extends AbstractMessage<P> {
 
     @Override
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
-        //noinspection rawtypes
-        if (type instanceof Class clazz && payloadType().isAssignableFrom(clazz)) {
+        //noinspection rawtypes,unchecked
+        if (type instanceof Class clazz && clazz.isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (T) payload();
         }
