@@ -34,22 +34,27 @@ import java.util.Map;
 public interface CommandResultMessage<R> extends ResultMessage<R> {
 
     @Override
+    @Nonnull
     CommandResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     CommandResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     default <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
+    @Nonnull
     default <T> CommandResultMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type,
                                                              @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
+    @Nonnull
     <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

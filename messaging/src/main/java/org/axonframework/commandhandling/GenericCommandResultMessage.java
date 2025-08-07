@@ -18,6 +18,7 @@ package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
@@ -74,7 +75,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * @param metaData      The metadata for this {@link CommandResultMessage}.
      */
     public GenericCommandResultMessage(@Nonnull MessageType type,
-                                       @Nonnull R commandResult,
+                                       @Nullable R commandResult,
                                        @Nonnull Map<String, String> metaData) {
         super(type, commandResult, metaData);
     }
@@ -128,30 +129,33 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     }
 
     @Override
+    @Nonnull
     public CommandResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
         return new GenericCommandResultMessage<>(delegate().withMetaData(metaData), exception);
     }
 
     @Override
+    @Nonnull
     public CommandResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
         return new GenericCommandResultMessage<>(delegate().andMetaData(metaData), exception);
     }
 
     @Override
+    @Nonnull
     public <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Type type,
                                                             @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+        if (payloadType().isAssignableFrom(ObjectUtils.nullSafeTypeOf(convertedPayload))) {
             //noinspection unchecked
             return (CommandResultMessage<T>) this;
         }
         Message<R> delegate = delegate();
-        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
-                                                     delegate.type(),
-                                                     convertedPayload,
-                                                     delegate.metaData());
+        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+                                                    delegate.type(),
+                                                    convertedPayload,
+                                                    delegate.metaData());
         return new GenericCommandResultMessage<>(converted, optionalExceptionResult().orElse(null));
     }
 

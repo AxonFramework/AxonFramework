@@ -114,17 +114,6 @@ public interface Message<P> {
     P payload();
 
     /**
-     * Returns the {@link MetaData} for this {@code Message}.
-     * <p>
-     * The {@code MetaData} is a collection of key-value pairs, where the key is a {@link String}, and the value is a
-     * serializable object.
-     *
-     * @return The {@link MetaData} for this {@code Message}.
-     */
-    @Nonnull
-    MetaData metaData();
-
-    /**
      * Returns the payload of this {@code Message}, converted to the given {@code type} by the given {@code converter}.
      * <p>
      * If {@link #payloadType()} is {@link Class#isAssignableFrom(Class) assignable from} the given {@code type},
@@ -195,11 +184,21 @@ public interface Message<P> {
      * Is semantically equal to {@code getPayload().getClass()}, but allows implementations to optimize by using lazy
      * loading or deserialization.
      *
-     * @return the type of payload.
-     * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
+     * @return The type of payload.
      */
     @Nonnull
     Class<P> payloadType();
+
+    /**
+     * Returns the {@link MetaData} for this {@code Message}.
+     * <p>
+     * The {@code MetaData} is a collection of key-value pairs, where the key is a {@link String}, and the value is a
+     * serializable object.
+     *
+     * @return The {@link MetaData} for this {@code Message}.
+     */
+    @Nonnull
+    MetaData metaData();
 
     /**
      * Returns a copy of this {@code Message} (implementation) with the given {@code metaData}.
