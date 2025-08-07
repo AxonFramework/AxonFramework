@@ -16,7 +16,7 @@
 
 package org.axonframework.updates;
 
-import org.axonframework.common.BuilderUtils;
+import org.axonframework.common.StringUtils;
 import org.axonframework.updates.api.UpdateCheckRequest;
 import org.axonframework.updates.api.UpdateCheckResponse;
 import org.axonframework.updates.configuration.UsagePropertyProvider;
@@ -28,9 +28,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Client for checking for updates and sending anonymous usage data to the AxonIQ servers. This client uses the
@@ -43,6 +46,12 @@ public class UpdateCheckerHttpClient {
 
     private final static Logger logger = LoggerFactory.getLogger(UpdateCheckerHttpClient.class);
 
+    private static final String BASE_FAILURE = "Failed to report anonymous usage data";
+    private static final String STATUS_CODE_REF = "Received status code: {}";
+    private static final int MAX_REDIRECTS = 5;
+    private static final int HTTP_TEMP_REDIRECT = 307;
+    private static final int HTTP_PERM_REDIRECT = 308;
+
     private final UsagePropertyProvider userProperties;
 
     /**
@@ -52,7 +61,7 @@ public class UpdateCheckerHttpClient {
      * @param userProperties The {@link UsagePropertyProvider} to use for retrieving the URL and other properties.
      */
     public UpdateCheckerHttpClient(UsagePropertyProvider userProperties) {
-        BuilderUtils.assertNonNull(userProperties, "The userProperties must not be null.");
+        assertNonNull(userProperties, "The userProperties must not be null.");
         this.userProperties = userProperties;
     }
 
@@ -67,35 +76,52 @@ public class UpdateCheckerHttpClient {
      */
     public Optional<UpdateCheckResponse> sendRequest(UpdateCheckRequest updateCheckRequest,
                                                      boolean firstRequest) {
-        String url = userProperties.getUrl() + "?" + updateCheckRequest.toQueryString();
-
+        int redirects = 0;
+        String queryString = updateCheckRequest.toQueryString();
+        String url = userProperties.getUrl() + "?" + queryString;
         try {
             logger.debug("Reporting anonymous usage data to AxonIQ servers at: {}", url);
+            while (redirects < MAX_REDIRECTS) {
+                HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(10000); // 10 seconds
+                connection.setReadTimeout(10000); // 10 seconds
+                // Disabled intentionally to handle manually, as redirects don't work consistently with User-Agent set.
+                connection.setInstanceFollowRedirects(false);
+                // Set headers
+                connection.setRequestProperty("User-Agent", updateCheckRequest.toUserAgent());
+                connection.setRequestProperty("X-Machine-Id", updateCheckRequest.machineId());
+                connection.setRequestProperty("X-Instance-Id", updateCheckRequest.instanceId());
+                connection.setRequestProperty(
+                        "X-Uptime", String.valueOf(ManagementFactory.getRuntimeMXBean().getUptime())
+                );
+                connection.setRequestProperty("X-First-Run", firstRequest ? "true" : "false");
 
-            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-            connection.setRequestMethod("GET");
-            connection.setConnectTimeout(10000); // 10 seconds
-            connection.setReadTimeout(10000); // 10 seconds
-            connection.setInstanceFollowRedirects(true);
-            // Set headers
-            connection.setRequestProperty("User-Agent", updateCheckRequest.toUserAgent());
-            connection.setRequestProperty("X-Machine-Id", updateCheckRequest.machineId());
-            connection.setRequestProperty("X-Instance-Id", updateCheckRequest.instanceId());
-            connection.setRequestProperty("X-Uptime", String.valueOf(ManagementFactory.getRuntimeMXBean().getUptime()));
-            connection.setRequestProperty("X-First-Run", firstRequest ? "true" : "false");
+                int statusCode = connection.getResponseCode();
 
-            int statusCode = connection.getResponseCode();
-            if (statusCode != 200) {
-                logger.info("Failed to report anonymous usage data, received status code: {}", statusCode);
-                return Optional.empty();
+                if (statusCode == HttpURLConnection.HTTP_OK) {
+                    String responseBody = readResponse(connection);
+                    logger.debug("Reported anonymous usage data successfully, received response: {}", responseBody);
+                    return Optional.of(UpdateCheckResponse.fromRequest(responseBody));
+                } else if (shouldRedirect(statusCode)) {
+                    redirects++;
+                    logger.debug("Received redirect request #{}. " + STATUS_CODE_REF, redirects, statusCode);
+                    String redirect = connection.getHeaderField("Location");
+                    if (redirect == null) {
+                        logger.info(BASE_FAILURE + ", due to missing location header on redirect. " + STATUS_CODE_REF,
+                                    statusCode);
+                        return Optional.empty();
+                    }
+                    url = removeQueryParameters(redirect) + "?" + queryString;
+                } else {
+                    logger.info(BASE_FAILURE + ". " + STATUS_CODE_REF, statusCode);
+                    return Optional.empty();
+                }
             }
-
-            // Read response
-            String responseBody = readResponse(connection);
-            logger.debug("Reported anonymous usage data successfully, received response: {}", responseBody);
-            return Optional.of(UpdateCheckResponse.fromRequest(responseBody));
+            logger.warn(BASE_FAILURE + " due to maximum amount of redirects.");
+            return Optional.empty();
         } catch (Exception e) {
-            logger.warn("Failed to report anonymous usage data", e);
+            logger.warn(BASE_FAILURE + ".", e);
             return Optional.empty();
         }
     }
@@ -106,9 +132,23 @@ public class UpdateCheckerHttpClient {
             StringBuilder response = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
-                response.append(line);
+                response.append(line).append("\n");
             }
             return response.toString();
         }
+    }
+
+    private static boolean shouldRedirect(int statusCode) {
+        return statusCode == HttpURLConnection.HTTP_MOVED_PERM
+                || statusCode == HttpURLConnection.HTTP_MOVED_TEMP
+                || statusCode == HttpURLConnection.HTTP_SEE_OTHER
+                || statusCode == HTTP_TEMP_REDIRECT
+                || statusCode == HTTP_PERM_REDIRECT;
+    }
+
+    private static String removeQueryParameters(String redirect) {
+        int queryParamIndex = redirect.indexOf('?');
+        redirect = queryParamIndex != -1 ? redirect.substring(0, queryParamIndex) : redirect;
+        return redirect;
     }
 }
