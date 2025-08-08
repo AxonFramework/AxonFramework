@@ -53,17 +53,13 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Spliterators;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -106,7 +102,6 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     private final Converter converter;
     private final PersistenceExceptionResolver persistenceExceptionResolver;
 
-    private final LegacyJpaEventStorageOperations legacyJpaOperations;
     private final BatchingEventStorageOperations batchingOperations;
     private final GapAwareTrackingTokenOperations tokenOperations;
 
@@ -133,14 +128,13 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         var customization = requireNonNull(configurationOverride, "the configurationOverride may not be null.")
                 .apply(Customization.withDefaultValues());
 
-        this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager, entityManagerProvider);
         this.tokenOperations = new GapAwareTrackingTokenOperations(
                 customization.tokenGapsHandling().timeout(),
                 logger
         );
         this.batchingOperations = new BatchingEventStorageOperations(
                 transactionManager,
-                legacyJpaOperations,
+                new LegacyJpaEventStorageOperations(transactionManager, entityManagerProvider),
                 tokenOperations,
                 customization.batchSize(),
                 customization.finalAggregateBatchPredicate(),
@@ -391,7 +385,6 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         descriptor.describeProperty("transactionManager", transactionManager);
         descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);
-        descriptor.describeProperty("legacyJpaOperations", legacyJpaOperations);
         descriptor.describeProperty("tokenOperations", tokenOperations);
         descriptor.describeProperty("batchingOperations", batchingOperations);
     }
