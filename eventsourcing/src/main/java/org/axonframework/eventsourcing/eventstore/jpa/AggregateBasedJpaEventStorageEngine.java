@@ -186,16 +186,17 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                 }
 
                 var afterCommitConsistencyMarker = aggregateSequencer.forwarded();
-                return txResult
-                        .exceptionallyCompose(e -> CompletableFuture.failedFuture(translateConflictException(e)))
-                        .thenApply(r -> afterCommitConsistencyMarker);
+                return txResult.exceptionallyCompose(
+                                       e -> CompletableFuture.failedFuture(translateConflictException(e))
+                               )
+                               .thenApply(r -> afterCommitConsistencyMarker);
             }
 
             private Throwable translateConflictException(Throwable e) {
                 Predicate<Throwable> isConflictException = (t) -> persistenceExceptionResolver != null
                         && t instanceof Exception ex
                         && persistenceExceptionResolver.isDuplicateKeyViolation(ex);
-                return LegacyAggregateBasedEventStorageEngineUtils
+                return AggregateBasedEventStorageEngineUtils
                         .translateConflictException(preCommitConsistencyMarker, e, isConflictException);
             }
 
