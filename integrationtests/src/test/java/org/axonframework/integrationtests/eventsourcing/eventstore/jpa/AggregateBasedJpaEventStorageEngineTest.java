@@ -85,8 +85,6 @@ import static org.mockito.Mockito.*;
 class AggregateBasedJpaEventStorageEngineTest
         extends AggregateBasedStorageEngineTestSuite<AggregateBasedJpaEventStorageEngine> {
 
-    private static final JacksonSerializer TEST_SERIALIZER = JacksonSerializer.defaultSerializer();
-
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
     @Autowired
@@ -100,7 +98,7 @@ class AggregateBasedJpaEventStorageEngineTest
         return new AggregateBasedJpaEventStorageEngine(
                 entityManagerProvider,
                 transactionManager,
-                TEST_SERIALIZER,
+                converter,
                 config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver())
         );
     }
@@ -117,23 +115,7 @@ class AggregateBasedJpaEventStorageEngineTest
 
     @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
-        // TODO 3102 - This should be entirely removed once the AggregateBasedJpaEventStorageEngine uses a Converter instead of a Serializer
-        return original.withConvertedPayload(String.class, new Converter() {
-            @Override
-            public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
-                return TEST_SERIALIZER.canSerializeTo((Class) targetType);
-            }
-
-            @Nullable
-            @Override
-            public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
-                //noinspection removal,unchecked
-                SerializedObject<T> serializedObject = (SimpleSerializedObject<T>) new SimpleSerializedObject<>(
-                        (byte[]) input, byte[].class, ((Class<?>) targetType).getName(), null
-                );
-                return TEST_SERIALIZER.deserialize(serializedObject);
-            }
-        });
+        return original.withConvertedPayload(String.class, converter);
     }
 
     @Test
@@ -221,7 +203,7 @@ class AggregateBasedJpaEventStorageEngineTest
         AggregateBasedJpaEventStorageEngine gapConfigTestSubject = new AggregateBasedJpaEventStorageEngine(
                 entityManagerProvider,
                 transactionManager,
-                TEST_SERIALIZER,
+                converter,
                 config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver())
                                 .tokenGapsHandling(c -> gapConfig)
         );
