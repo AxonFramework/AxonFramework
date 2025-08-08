@@ -22,11 +22,7 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
-
-import static org.axonframework.common.DateTimeUtils.formatInstant;
 
 /**
  * Contains operations that are used to interact with the Aggregate based JPA event storage database structure.
@@ -121,31 +117,6 @@ record LegacyJpaEventStorageOperations(
                 .setParameter("firstGapOffset", token.getGaps().first())
                 .setParameter("maxGlobalIndex", token.getGaps().last() + 1L)
                 .getResultList();
-    }
-
-    Optional<Long> maxGlobalIndex() {
-        var results = entityManager()
-                .createQuery("SELECT MAX(e.globalIndex) FROM AggregateBasedEventEntry e", Long.class)
-                .getResultList();
-        return (results.isEmpty() || results.getFirst() == null) ? Optional.empty() : Optional.of(results.getFirst());
-    }
-
-    Optional<Long> globalIndexAt(Instant dateTime) {
-        var results = entityManager()
-                .createQuery(
-                        "SELECT MIN(e.globalIndex) - 1 FROM AggregateBasedEventEntry e "
-                                + "WHERE e.timestamp >= :dateTime", Long.class
-                )
-                .setParameter("dateTime", formatInstant(dateTime))
-                .getResultList();
-        return (results.isEmpty() || results.getFirst() == null) ? Optional.empty() : Optional.of(results.getFirst());
-    }
-
-    Optional<Long> minGlobalIndex() {
-        var results = entityManager().createQuery(
-                "SELECT MIN(e.globalIndex) - 1 FROM AggregateBasedEventEntry e", Long.class
-        ).getResultList();
-        return (results.isEmpty() || results.getFirst() == null) ? Optional.empty() : Optional.of(results.getFirst());
     }
 
     private EntityManager entityManager() {

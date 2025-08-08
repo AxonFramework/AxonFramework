@@ -73,6 +73,7 @@ import java.util.stream.StreamSupport;
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.BuilderUtils.assertPositive;
 import static org.axonframework.common.BuilderUtils.assertThat;
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils.*;
 
@@ -90,7 +91,14 @@ import static org.axonframework.eventsourcing.eventstore.AggregateBasedEventStor
 public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(AggregateBasedJpaEventStorageEngine.class);
-    private static final String DOMAIN_EVENT_ENTRY_ENTITY_NAME = AggregateBasedEventEntry.class.getSimpleName();
+
+    private static final String FIRST_TOKEN_QUERY = "SELECT MIN(e.globalIndex) - 1 FROM AggregateBasedEventEntry e";
+    private static final String LATEST_TOKEN_QUERY = "SELECT MAX(e.globalIndex) FROM AggregateBasedEventEntry e";
+    private static final String TOKEN_AT_QUERY = """
+            SELECT MIN(e.globalIndex) - 1 \
+            FROM AggregateBasedEventEntry e \
+            WHERE e.timestamp >= :dateTime
+            """;
 
     private final EntityManagerProvider entityManagerProvider;
     private final TransactionManager transactionManager;
@@ -344,34 +352,37 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
     @Override
     public CompletableFuture<TrackingToken> firstToken() {
-        var first = legacyJpaOperations.minGlobalIndex()
-                                       .flatMap(this::gapAwareTrackingTokenOn)
-                                       .orElse(null);
-        return CompletableFuture.completedFuture(first);
+        return queryToken(FIRST_TOKEN_QUERY);
     }
 
     @Override
     public CompletableFuture<TrackingToken> latestToken() {
-        var latest = legacyJpaOperations.maxGlobalIndex()
-                                        .flatMap(this::gapAwareTrackingTokenOn)
-                                        .orElse(null);
-        return CompletableFuture.completedFuture(latest);
+        return queryToken(LATEST_TOKEN_QUERY);
+    }
+
+    @Nonnull
+    private CompletableFuture<TrackingToken> queryToken(String firstTokenQuery) {
+        try (EntityManager entityManager = entityManager()) {
+            List<Long> results = entityManager.createQuery(firstTokenQuery, Long.class).getResultList();
+            if (results.isEmpty() || results.getFirst() == null) {
+                return CompletableFuture.completedFuture(null);
+            }
+            return CompletableFuture.completedFuture(new GapAwareTrackingToken(results.getFirst(), Set.of()));
+        }
     }
 
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
-        var token = legacyJpaOperations.globalIndexAt(at)
-                                       .flatMap(this::gapAwareTrackingTokenOn)
-                                       .or(() -> legacyJpaOperations.maxGlobalIndex()
-                                                                    .flatMap(this::gapAwareTrackingTokenOn))
-                                       .orElse(null);
-        return CompletableFuture.completedFuture(token);
-    }
-
-    private Optional<TrackingToken> gapAwareTrackingTokenOn(Long globalIndex) {
-        return globalIndex == null
-                ? Optional.empty()
-                : Optional.of(GapAwareTrackingToken.newInstance(globalIndex, Collections.emptySet()));
+        try (EntityManager entityManager = entityManager()) {
+            List<Long> results = entityManager.createQuery(TOKEN_AT_QUERY, Long.class)
+                                              .setParameter("dateTime", formatInstant(at))
+                                              .getResultList();
+            if (results.isEmpty() || results.getFirst() == null) {
+                return latestToken();
+            }
+            Long position = results.getFirst();
+            return CompletableFuture.completedFuture(new GapAwareTrackingToken(position, Set.of()));
+        }
     }
 
     @Override
