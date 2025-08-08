@@ -34,23 +34,28 @@ import java.util.Map;
 public interface SubscriptionQueryUpdateMessage<U> extends ResultMessage<U> {
 
     @Override
+    @Nonnull
     SubscriptionQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     SubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     default <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Class<T> type,
                                                                        @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
+    @Nonnull
     default <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type,
                                                                        @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
+    @Nonnull
     <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

@@ -93,6 +93,7 @@ public interface Message<P> {
      *
      * @return The unique identifier of this {@code Message}.
      */
+    @Nonnull
     String identifier();
 
     /**
@@ -104,22 +105,13 @@ public interface Message<P> {
     MessageType type();
 
     /**
-     * Returns the {@link MetaData} for this {@code Message}.
-     * <p>
-     * The {@code MetaData} is a collection of key-value pairs, where the key is a {@link String}, and the value is a
-     * serializable object.
-     *
-     * @return The {@link MetaData} for this {@code Message}.
-     */
-    MetaData metaData();
-
-    /**
      * Returns the payload of this {@code Message} of generic type {@code P}.
      * <p>
      * The payload is the application-specific information.
      *
      * @return The payload of this {@code Message} of generic type {@code P}.
      */
+    @Nullable
     P payload();
 
     /**
@@ -139,6 +131,7 @@ public interface Message<P> {
      * @throws NullPointerException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                              {@code converter} is given.
      */
+    @Nullable
     default <T> T payloadAs(@Nonnull Class<T> type, @Nullable Converter converter) {
         return payloadType().isAssignableFrom(type) ? type.cast(payload()) : payloadAs((Type) type, converter);
     }
@@ -160,6 +153,7 @@ public interface Message<P> {
      * @throws NullPointerException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                              {@code converter} is given.
      */
+    @Nullable
     default <T> T payloadAs(@Nonnull TypeReference<T> type, @Nullable Converter converter) {
         return payloadAs(type.getType(), converter);
     }
@@ -182,6 +176,7 @@ public interface Message<P> {
      * @throws ConversionException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                              {@code converter} is given.
      */
+    @Nullable
     <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter);
 
     /**
@@ -190,10 +185,21 @@ public interface Message<P> {
      * Is semantically equal to {@code getPayload().getClass()}, but allows implementations to optimize by using lazy
      * loading or deserialization.
      *
-     * @return the type of payload.
-     * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
+     * @return The type of payload.
      */
+    @Nonnull
     Class<P> payloadType();
+
+    /**
+     * Returns the {@link MetaData} for this {@code Message}.
+     * <p>
+     * The {@code MetaData} is a collection of key-value pairs, where the key is a {@link String}, and the value is a
+     * serializable object.
+     *
+     * @return The {@link MetaData} for this {@code Message}.
+     */
+    @Nonnull
+    MetaData metaData();
 
     /**
      * Returns a copy of this {@code Message} (implementation) with the given {@code metaData}.
@@ -206,6 +212,7 @@ public interface Message<P> {
      * @param metaData The new metadata for the {@code Message}.
      * @return A copy of {@code this Message (implementation)} with the given {@code metaData}.
      */
+    @Nonnull
     Message<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     /**
@@ -217,6 +224,7 @@ public interface Message<P> {
      * @param metaData The metadata to merge with.
      * @return A copy of {@code this Message (implementation)} with the given {@code metaData}.
      */
+    @Nonnull
     Message<P> andMetaData(@Nonnull Map<String, String> metaData);
 
     /**
@@ -267,6 +275,7 @@ public interface Message<P> {
      * @return A <b>new</b> {@link Message} implementation with its {@link #payload()} converted to the given
      * {@code type} by the given {@code converter}.
      */
+    @Nonnull
     default <T> Message<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
@@ -285,6 +294,7 @@ public interface Message<P> {
      * @return A <b>new</b> {@link Message} implementation with its {@link #payload()} converted to the given
      * {@code type} by the given {@code converter}.
      */
+    @Nonnull
     default <T> Message<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
@@ -303,5 +313,6 @@ public interface Message<P> {
      * @return A <b>new</b> {@link Message} implementation with its {@link #payload()} converted to the given
      * {@code type} by the given {@code converter}.
      */
+    @Nonnull
     <T> Message<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

@@ -16,7 +16,9 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
@@ -41,7 +43,6 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
 
     private final ResponseType<R> responseType;
 
-
     /**
      * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and {@code responseType}.
      * <p>
@@ -53,7 +54,7 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
      * @param responseType The expected {@link ResponseType response type} for this {@link QueryMessage}.
      */
     public GenericQueryMessage(@Nonnull MessageType type,
-                               @Nonnull P payload,
+                               @Nullable P payload,
                                @Nonnull ResponseType<R> responseType) {
         this(new GenericMessage<>(type, payload, MetaData.emptyInstance()), responseType);
     }
@@ -80,32 +81,36 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
     }
 
     @Override
+    @Nonnull
     public ResponseType<R> responseType() {
         return responseType;
     }
 
     @Override
+    @Nonnull
     public QueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericQueryMessage<>(delegate().withMetaData(metaData), responseType);
     }
 
     @Override
+    @Nonnull
     public QueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericQueryMessage<>(delegate().andMetaData(metaData), responseType);
     }
 
     @Override
+    @Nonnull
     public <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (QueryMessage<T, R>) this;
         }
         Message<P> delegate = delegate();
-        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
-                                                     delegate.type(),
-                                                     convertedPayload,
-                                                     delegate.metaData());
+        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+                                                    delegate.type(),
+                                                    convertedPayload,
+                                                    delegate.metaData());
         return new GenericQueryMessage<>(converted, responseType);
     }
 

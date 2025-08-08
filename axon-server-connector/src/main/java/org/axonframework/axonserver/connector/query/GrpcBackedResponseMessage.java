@@ -95,22 +95,25 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
+    @Nonnull
     public String identifier() {
         return queryResponse.getMessageIdentifier();
     }
 
-    @Nonnull
     @Override
+    @Nonnull
     public MessageType type() {
         return this.type;
     }
 
     @Override
+    @Nonnull
     public MetaData metaData() {
         return metaDataSupplier.get();
     }
 
     @Override
+    @Nullable
     public R payload() {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
@@ -123,12 +126,14 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
+    @Nullable
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
         // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
         return null;
     }
 
     @Override
+    @Nonnull
     public Class<R> payloadType() {
         return serializedPayload == null ? null : serializedPayload.getType();
     }
@@ -144,6 +149,7 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
+    @Nonnull
     public GrpcBackedResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GrpcBackedResponseMessage<>(queryResponse,
                                                serializedPayload,
@@ -153,11 +159,13 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
+    @Nonnull
     public GrpcBackedResponseMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
         return withMetaData(metaData().mergedWith(metaData));
     }
 
     @Override
+    @Nonnull
     public <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
         return null;

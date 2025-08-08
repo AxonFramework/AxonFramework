@@ -57,6 +57,7 @@ public interface EventMessage<P> extends Message<P> {
      * @return The identifier of this {@link EventMessage event}.
      */
     @Override
+    @Nonnull
     String identifier();
 
     /**
@@ -66,24 +67,30 @@ public interface EventMessage<P> extends Message<P> {
      *
      * @return The timestamp of this {@link EventMessage event}.
      */
+    @Nonnull
     Instant timestamp();
 
     @Override
+    @Nonnull
     EventMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     EventMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     default <T> EventMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
+    @Nonnull
     default <T> EventMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
+    @Nonnull
     <T> EventMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }
