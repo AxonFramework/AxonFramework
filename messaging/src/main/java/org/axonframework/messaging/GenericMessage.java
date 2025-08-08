@@ -20,8 +20,10 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedObjectHolder;
@@ -40,7 +42,7 @@ import java.util.Objects;
  * <p>
  * This {@code Message} implementation is "conversion aware," as it maintains <b>any</b> conversion results from
  * {@link #payloadAs(Type, Converter)} and {@link #withConvertedPayload(Type, Converter)} (either invoked with a
- * {@link Class}, {@link org.axonframework.common.TypeReference}, or {@link Type}), together with the hash of the given
+ * {@link Class}, {@link TypeReference}, or {@link Type}), together with the hash of the given
  * {@link Converter}. In doing so, this {@code Message} optimizes subsequent {@code payloadAs/withConvertedPayload}
  * invocations for the same type-and-converter combination.
  *
@@ -203,10 +205,11 @@ public class GenericMessage<P> extends AbstractMessage<P> {
             //noinspection unchecked
             return (T) payload();
         }
-        Objects.requireNonNull(
-                converter, "Cannot convert payload to [" + type.getTypeName() + "] with null Converter."
-        );
-        return convertedPayloads.convertIfAbsent(type, converter, payload());
+
+        if (converter == null) {
+            throw new ConversionException("Cannot convert " + payloadType() + " to " + type + " without a converter.");
+        }
+        return convertedPayloads.convertIfAbsent(type, converter);
     }
 
     @Override

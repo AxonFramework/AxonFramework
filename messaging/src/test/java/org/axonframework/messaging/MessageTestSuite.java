@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.serialization.ChainingContentTypeConverter;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
@@ -134,11 +135,11 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
-    void payloadAsWithClassThrowsNullPointerExceptionForNullConverter() {
+    void payloadAsWithClassThrowsConversionExceptionForNullConverter() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs(byte[].class, null))
-                .isExactlyInstanceOf(NullPointerException.class);
+                .isExactlyInstanceOf(ConversionException.class);
     }
 
     @Test
@@ -185,11 +186,11 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
-    void payloadAsWithTypeReferenceThrowsNullPointerExceptionForNullConverter() {
+    void payloadAsWithTypeReferenceThrowsConversionExceptionForNullConverter() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs(BYTE_ARRAY_TYPE_REF, null))
-                .isExactlyInstanceOf(NullPointerException.class);
+                .isExactlyInstanceOf(ConversionException.class);
     }
 
     @Test
@@ -249,11 +250,11 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
-    void payloadAsWithTypeThrowsNullPointerExceptionForNullConverter() {
+    void payloadAsWithTypeThrowsConversionExceptionForNullConverter() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs((Type) byte[].class, null))
-                .isExactlyInstanceOf(NullPointerException.class);
+                .isExactlyInstanceOf(ConversionException.class);
     }
 
     @Test

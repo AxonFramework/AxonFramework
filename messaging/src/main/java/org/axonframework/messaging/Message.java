@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -178,7 +179,7 @@ public interface Message<P> {
      * @param converter The converter to convert this {@code Message's} payload with.
      * @param <T>       The generic type to convert this {@code Message's} payload too.
      * @return The payload of this {@code Message}, converted to the given {@code type}.
-     * @throws NullPointerException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
+     * @throws ConversionException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                              {@code converter} is given.
      */
     <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter);
