@@ -80,12 +80,13 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
+    @Nonnull
     public String identifier() {
         return subscriptionQuery.getSubscriptionIdentifier();
     }
 
-    @Nonnull
     @Override
+    @Nonnull
     public MessageType type() {
         return grpcBackedQueryMessage.type();
     }
@@ -97,32 +98,38 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
+    @Nonnull
     public ResponseType<U> updatesResponseType() {
         return serializedUpdateResponseType.getObject();
     }
 
     @Override
+    @Nullable
     public P payload() {
         return grpcBackedQueryMessage.payload();
     }
 
     @Override
+    @Nullable
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
         // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
         return null;
     }
 
     @Override
+    @Nonnull
     public MetaData metaData() {
         return grpcBackedQueryMessage.metaData();
     }
 
     @Override
+    @Nonnull
     public Class<P> payloadType() {
         return grpcBackedQueryMessage.payloadType();
     }
 
     @Override
+    @Nonnull
     public GrpcBackedSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GrpcBackedSubscriptionQueryMessage<>(subscriptionQuery,
                                                         grpcBackedQueryMessage.withMetaData(metaData),
@@ -130,11 +137,13 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
+    @Nonnull
     public GrpcBackedSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
         return withMetaData(metaData().mergedWith(metaData));
     }
 
     @Override
+    @Nonnull
     public <T> SubscriptionQueryMessage<T, I, U> withConvertedPayload(@Nonnull Type type,
                                                                       @Nonnull Converter converter) {
         // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488

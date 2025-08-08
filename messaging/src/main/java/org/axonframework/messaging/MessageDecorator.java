@@ -51,37 +51,43 @@ public abstract class MessageDecorator<P> implements Message<P> {
     }
 
     @Override
+    @Nonnull
     public String identifier() {
         return delegate.identifier();
     }
 
-    @Nonnull
     @Override
+    @Nonnull
     public MessageType type() {
         return delegate.type();
     }
 
     @Override
-    public MetaData metaData() {
-        return delegate.metaData();
-    }
-
-    @Override
+    @Nullable
     public P payload() {
         return delegate.payload();
     }
 
     @Override
+    @Nullable
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
         return delegate.payloadAs(type, converter);
     }
 
     @Override
+    @Nonnull
     public Class<P> payloadType() {
         return delegate.payloadType();
     }
 
     @Override
+    @Nonnull
+    public MetaData metaData() {
+        return delegate.metaData();
+    }
+
+    @Override
+    @Nonnull
     public <S> SerializedObject<S> serializePayload(Serializer serializer, Class<S> expectedRepresentation) {
         return delegate.serializePayload(serializer, expectedRepresentation);
     }
@@ -92,6 +98,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
     }
 
     @Override
+    @Nonnull
     public <T> Message<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         return delegate.withConvertedPayload(type, converter);
     }
@@ -101,6 +108,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
      *
      * @return The wrapped {@link Message} delegated by this decorator.
      */
+    @Nonnull
     protected Message<P> delegate() {
         return delegate;
     }
