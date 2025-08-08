@@ -38,7 +38,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * @since 5.0.0
  */
 @Entity
-@Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber", unique = true))
+@Table(indexes = @Index(columnList = "aggregateIdentifier,aggregateSequenceNumber", unique = true))
 public class AggregateBasedEventEntry {
 
     @Id
@@ -111,5 +111,45 @@ public class AggregateBasedEventEntry {
      */
     protected AggregateBasedEventEntry() {
         //Default constructor required by JPA.
+    }
+
+    public long globalIndex() {
+        return globalIndex;
+    }
+
+    public String identifier() {
+        return identifier;
+    }
+
+    public String type() {
+        return type;
+    }
+
+    public String version() {
+        return version;
+    }
+
+    public byte[] payload() {
+        return payload;
+    }
+
+    public byte[] metadata() {
+        return metadata;
+    }
+
+    public String timestamp() {
+        return timestamp;
+    }
+
+    public String aggregateType() {
+        return aggregateType;
+    }
+
+    public String aggregateIdentifier() {
+        return aggregateIdentifier;
+    }
+
+    public Long aggregateSequenceNumber() {
+        return aggregateSequenceNumber;
     }
 }
