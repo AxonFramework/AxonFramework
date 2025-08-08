@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
@@ -50,16 +52,16 @@ class DefaultEventHandlingComponentsConfigurerTest {
         @Test
         void shouldCreateSingleComponentFromEventHandlingComponent() {
             //given
-            var component = new SimpleEventHandlingComponent();
-            component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+            ComponentBuilder<EventHandlingComponent> componentBuilder = cfg -> new SimpleEventHandlingComponent()
+                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             //when
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().single(component);
+            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer().declarative(componentBuilder);
             var components = componentsConfigurer.toList();
 
             //then
             assertThat(components).hasSize(1);
-            assertThat(components.getFirst()).isSameAs(component);
+            assertThat(components.getFirst()).isSameAs(componentBuilder);
         }
     }
 
@@ -69,32 +71,20 @@ class DefaultEventHandlingComponentsConfigurerTest {
         @Test
         void shouldCreateManyComponentsFromEventHandlingComponents() {
             //given
-            var component1 = new SimpleEventHandlingComponent();
-            var component2 = new SimpleEventHandlingComponent();
-            var component3 = new SimpleEventHandlingComponent();
+            ComponentBuilder<EventHandlingComponent> componentBuilder1 = cfg -> new SimpleEventHandlingComponent();
+            ComponentBuilder<EventHandlingComponent> componentBuilder2 = cfg -> new SimpleEventHandlingComponent();
+            ComponentBuilder<EventHandlingComponent> componentBuilder3 = cfg -> new SimpleEventHandlingComponent();
 
             //when
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, component2, component3);
+            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
+                    .declarative(componentBuilder1)
+                    .declarative(componentBuilder2)
+                    .declarative(componentBuilder3);
             var components = componentsConfigurer.toList();
 
             //then
             assertThat(components).hasSize(3);
-            assertThat(components).containsExactly(component1, component2, component3);
-        }
-
-        @Test
-        void shouldFilterOutNullComponents() {
-            //given
-            var component1 = new SimpleEventHandlingComponent();
-            var component2 = new SimpleEventHandlingComponent();
-
-            //when
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, null, component2);
-            var components = componentsConfigurer.toList();
-
-            //then
-            assertThat(components).hasSize(2);
-            assertThat(components).containsExactly(component1, component2);
+            assertThat(components).containsExactly(componentBuilder1, componentBuilder2, componentBuilder3);
         }
     }
 
@@ -105,16 +95,19 @@ class DefaultEventHandlingComponentsConfigurerTest {
         void shouldDecorateAllComponents() {
             //given
             var component1 = SimpleEventHandlingComponent.builder()
-                    .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
-                    .build();
+                                                         .handles(new QualifiedName(String.class),
+                                                                  (e, c) -> MessageStream.empty())
+                                                         .build();
             var component2 = new SimpleEventHandlingComponent();
             component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
-            var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init().many(component1, component2);
+            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
+                    .declarative(cfg -> component1)
+                    .declarative(cfg -> component2);
 
             //when
-            var decoratedConfigurer = componentsConfigurer.decorated(SampleDecoration::new);
-            var decoratedComponents = decoratedConfigurer.toList();
+            var decoratedConfigurer = componentsConfigurer.decorated((cfg, c) -> new SampleDecoration(c));
+            var decoratedComponents = decoratedConfigurer.build(MessagingConfigurer.create().build());
 
             //then
             assertThat(decoratedComponents).hasSize(2);

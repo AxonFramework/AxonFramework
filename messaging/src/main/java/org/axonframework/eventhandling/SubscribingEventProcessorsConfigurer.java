@@ -29,6 +29,7 @@ import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -55,19 +56,6 @@ import java.util.function.UnaryOperator;
  * <p>
  * This module is typically accessed through {@link EventProcessingConfigurer#subscribing(UnaryOperator)}
  * rather than being instantiated directly.
- * <p>
- * Example usage:
- * <pre>{@code
- * MessagingConfigurer.create()
- *     .eventProcessing(eventProcessing -> eventProcessing
- *         .subscribing(subscribing -> subscribing
- *             .defaults(config -> config.errorHandler(myErrorHandler))
- *             .processor("projection-processor", List.of(projectionHandler))
- *             .processor("notification-processor", List.of(notificationHandler),
- *                       (cfg, config) -> config.messageSource(customMessageSource)) // Processor-specific override
- *         )
- *     );
- * }</pre>
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -141,6 +129,7 @@ public class SubscribingEventProcessorsConfigurer {
     public SubscribingEventProcessorsConfigurer defaults(
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> configureDefaults
     ) {
+        Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
         return this;
     }
@@ -160,6 +149,7 @@ public class SubscribingEventProcessorsConfigurer {
     public SubscribingEventProcessorsConfigurer defaults(
             @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> configureDefaults
     ) {
+        Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
                 (axonConfig, pConfig) -> configureDefaults.apply(pConfig)
         );
@@ -168,14 +158,15 @@ public class SubscribingEventProcessorsConfigurer {
 
     /**
      * Registers a subscribing event processor with the specified name and event handling components.
+     * The processor will use the default subscribing event processor configuration.
      *
      * @param name                         The unique name for the processor.
      * @param eventHandlingComponentsBuilder Function to configure the event handling components.
      * @return This configurer instance for method chaining.
      */
-    public SubscribingEventProcessorsConfigurer processor(
+    public SubscribingEventProcessorsConfigurer defaultProcessor(
             @Nonnull String name,
-            @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+            @Nonnull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
     ) {
         processor(
                 () -> EventProcessorModule.subscribing(name)
@@ -211,6 +202,7 @@ public class SubscribingEventProcessorsConfigurer {
     public SubscribingEventProcessorsConfigurer processor(
             ModuleBuilder<SubscribingEventProcessorModule> moduleBuilder
     ) {
+        Objects.requireNonNull(moduleBuilder, "moduleBuilder may not be null");
         moduleBuilders.add(moduleBuilder);
         return this;
     }
@@ -222,6 +214,7 @@ public class SubscribingEventProcessorsConfigurer {
      * @return This configurer instance for method chaining.
      */
     public SubscribingEventProcessorsConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+        Objects.requireNonNull(registryAction, "registryAction may not be null");
         parent.componentRegistry(registryAction);
         return this;
     }

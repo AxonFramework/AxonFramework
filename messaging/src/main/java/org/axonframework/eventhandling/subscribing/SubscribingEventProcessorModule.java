@@ -40,7 +40,9 @@ import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingCom
 import org.axonframework.lifecycle.Phase;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -56,7 +58,7 @@ import java.util.stream.Collectors;
  * <p>
  * This module is typically not instantiated directly but created through
  * {@link EventProcessorModule#subscribing(String)} or registered via
- * {@link SubscribingEventProcessorsConfigurer#processor} methods.
+ * {@link SubscribingEventProcessorsConfigurer#defaultProcessor} methods.
  * <p>
  * The module applies shared defaults from {@link SubscribingEventProcessorsConfigurer} and
  * {@link EventProcessingConfigurer} before applying
@@ -71,7 +73,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         EventProcessorModule.CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> {
 
     private final String processorName;
-    private ComponentBuilder<List<EventHandlingComponent>> eventHandlingComponentsBuilder;
+    private List<ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
     private ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder;
 
     /**
@@ -91,7 +93,9 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         var configuration = configurationBuilder.build(parent);
 
-        var eventHandlingComponents = eventHandlingComponentsBuilder.build(parent);
+        var eventHandlingComponents = eventHandlingComponentBuilders.stream()
+                                                                    .map(c -> c.build(parent))
+                                                                    .toList();
         List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
                 .stream()
                 .map(c -> withDefaultDecoration(c, configuration))
@@ -191,12 +195,11 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
     @Override
     public CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> eventHandlingComponents(
-            @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+            @Nonnull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
     ) {
-        var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init();
-        this.eventHandlingComponentsBuilder = cfg -> eventHandlingComponentsBuilder
-                .apply(cfg, componentsConfigurer)
-                .toList();
+        Objects.requireNonNull(configurerTask, "configurerTask may not be null");
+        var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer();
+        this.eventHandlingComponentBuilders = configurerTask.apply(componentsConfigurer).toList();
         return this;
     }
 
