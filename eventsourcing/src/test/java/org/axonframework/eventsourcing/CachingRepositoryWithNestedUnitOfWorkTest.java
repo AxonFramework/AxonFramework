@@ -23,6 +23,7 @@ import org.axonframework.common.caching.NoCache;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
@@ -32,6 +33,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngin
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.ehcache.CacheManager;
@@ -130,11 +132,12 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                                          .eventHandlers(new LoggingEventHandler(events))
                                          .build();
         SubscribingEventProcessor eventProcessor =
-                SubscribingEventProcessor.builder()
-                                         .name("test")
-                                         .eventHandlerInvoker(eventHandlerInvoker)
-                                         .messageSource(eventStore)
-                                         .build();
+                new SubscribingEventProcessor(
+                        "test",
+                        List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                        cfg -> cfg.messageSource(eventStore)
+                                  .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                );
         eventProcessor.start();
         events.clear();
         aggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
@@ -197,11 +200,12 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                                          )
                                          .build();
         SubscribingEventProcessor eventProcessor =
-                SubscribingEventProcessor.builder()
-                                         .name("test")
-                                         .eventHandlerInvoker(eventHandlerInvoker)
-                                         .messageSource(eventStore)
-                                         .build();
+                new SubscribingEventProcessor(
+                        "test",
+                        List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                        cfg -> cfg.messageSource(eventStore)
+                                  .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                );
         eventProcessor.start();
 
         LegacyUnitOfWork<?> uow = LegacyDefaultUnitOfWork.startAndGet(null);
@@ -242,11 +246,12 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                                                  new CommandExecutingEventHandler("UOW8", "UOW4", true)
                                          ).build();
         SubscribingEventProcessor eventProcessor =
-                SubscribingEventProcessor.builder()
-                                         .name("test")
-                                         .eventHandlerInvoker(eventHandlerInvoker)
-                                         .messageSource(eventStore)
-                                         .build();
+                new SubscribingEventProcessor(
+                        "test",
+                        List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                        cfg -> cfg.messageSource(eventStore)
+                                  .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                );
         eventProcessor.start();
 
         // First command: Create Aggregate
@@ -296,6 +301,11 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                                        e.payload());
             events.add(str);
             return null;
+        }
+
+        @Override
+        public Set<Class<?>> supportedEventTypes() {
+            return Set.of(AggregateCreatedEvent.class, AggregateUpdatedEvent.class);
         }
     }
 
@@ -414,6 +424,11 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                 }
             }
             return null;
+        }
+
+        @Override
+        public Set<Class<?>> supportedEventTypes() {
+            return Set.of(AggregateCreatedEvent.class, AggregateUpdatedEvent.class);
         }
     }
 }

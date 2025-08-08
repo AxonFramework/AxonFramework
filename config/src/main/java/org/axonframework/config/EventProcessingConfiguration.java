@@ -25,7 +25,6 @@ import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -43,6 +42,7 @@ import java.util.function.Function;
  * @author Milan Savic
  * @since 4.0
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface EventProcessingConfiguration {
 
     /**
@@ -121,14 +121,6 @@ public interface EventProcessingConfiguration {
      * @return the processing group
      */
     String sagaProcessingGroup(Class<?> sagaType);
-
-    /**
-     * Returns a {@link List} of {@link MessageHandlerInterceptor}s for a processor with given {@code processorName}.
-     *
-     * @param processorName a {@link String} specifying a processing group
-     * @return a {@link List} of {@link MessageHandlerInterceptor}s for a processor with given {@code processorName}
-     */
-    List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName);
 
     /**
      * Returns the {@link ListenerInvocationErrorHandler} tied to the given {@code processingGroup}.
