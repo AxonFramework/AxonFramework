@@ -102,6 +102,21 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
+    void secondPayloadAsWithClassInvocationAndNullResultReusesPreviousConversionResult() {
+        Converter spiedConverter = spy(CONVERTER);
+        when(spiedConverter.convert(any(), (Type) any())).thenReturn(null);
+
+        M testSubject = buildMessage(STRING_PAYLOAD);
+
+        byte[] firstResult = testSubject.payloadAs(byte[].class, spiedConverter);
+        byte[] secondResult = testSubject.payloadAs(byte[].class, spiedConverter);
+
+        assertThat(firstResult).isNull();
+        assertThat(secondResult).isNull();
+        verify(spiedConverter, times(1)).convert(any(), (Type) any());
+    }
+
+    @Test
     void payloadAsWithSameClassButDifferentConverterDoesConvertAgain() {
         String testPayload = STRING_PAYLOAD;
         Converter firstConverter = spy(CONVERTER);

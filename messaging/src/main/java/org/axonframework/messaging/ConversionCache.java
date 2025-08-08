@@ -21,16 +21,13 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.serialization.Converter;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Type;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * An {@link Internal} class wrapping a {@link ConcurrentHashMap} of {@link Type} to a {@link CopyOnWriteArrayList} of
- * conversions. Useful to maintain a "conversion cache", for example by the
- * {@link GenericMessage#payloadAs(Type, Converter)} and {@link GenericMessage#withConvertedPayload(Type, Converter)}
- * operations.
+ * An {@link Internal} class that maintain a "conversion cache", to back operations such as
+ * {@link Message#payloadAs(Type, Converter)} and {@link Message#withConvertedPayload(Type, Converter)},
+ * to avoid executing several conversions to the same target type with the same converter.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -39,7 +36,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Internal
 class ConversionCache {
 
-    private final ConcurrentHashMap<Type, CopyOnWriteArrayList<ConverterConversionTuple>> conversionCache = new ConcurrentHashMap<>();
+    // allow system-wide disabling of the cache using an environment variable
+    private static final boolean CONVERSION_ENABLED = Boolean.parseBoolean(System.getProperty(
+            "AXON_CONVERSION_CACHE_ENABLED",
+            "true"));
+
+    // replacement value to allow null values in the map
+    private static final Object NULL = new Object();
+
+    private final ConcurrentHashMap<Target, Object> conversionCache = new ConcurrentHashMap<>();
+    private final Object original;
+
+    public ConversionCache(Object original) {
+        this.original = original;
+    }
 
     /**
      * Converts the given {@code input} into the given {@code type} with the given {@code converter} <b>only</b> if this
@@ -50,47 +60,49 @@ class ConversionCache {
      * <p>
      * If that's {@code true}, the previous conversion result will be returned. Whenever this is {@code false},
      * {@link Converter#convert(Object, Type)} will be invoked with the {@code input} and {@code type} respectively. The
-     * conversion results is kept in this cache for subsequent invocations.
+     * conversion result is kept in this cache for subsequent invocations.
      * <p>
      * The result may be {@code null} since the result of {@link Converter#convert(Object, Type) conversion} can also be
      * {@code null}.
      *
-     * @param convertedType The type to convert the given {@code input} into, <b>if</b> the given type-and-converter
+     * @param targetType    The type to convert the given {@code input} into, <b>if</b> the given type-and-converter
      *                      combination has not been seen before.
      * @param converter     The converter to convert the given {@code input with}, <b>if</b> the given
      *                      type-and-converter combination has not been seen before.
-     * @param input         The input to convert into the given {@code type} by the given {@code converter}, <b>if</b>
-     *                      the given type-and-converter combination has not been seen before.
      * @param <T>           The generic type to return.
      * @return The converted {@code input}, either directly from this cache or as the result from
      * {@link Converter#convert(Object, Type) converting}.
      */
     @Nullable
-    <T> T convertIfAbsent(@Nonnull Type convertedType,
-                          @Nonnull Converter converter,
-                          @Nullable Object input) {
-        CopyOnWriteArrayList<ConverterConversionTuple> conversions =
-                conversionCache.computeIfAbsent(convertedType, t -> new CopyOnWriteArrayList<>());
-
-        for (ConverterConversionTuple conversionTuple : conversions) {
-            Converter converterRef = conversionTuple.converterReference().get();
-            if (converterRef == null) {
-                // Converter no longer exists, so let's remove this entry
-                conversions.remove(conversionTuple);
-            } else if (converterRef.equals(converter)) {
-                // Given Type and Converter combination occurred before! Let's return the conversion
-                //noinspection unchecked
-                return (T) conversionTuple.conversion();
-            }
+    <T> T convertIfAbsent(@Nonnull Type targetType,
+                          @Nonnull Converter converter) {
+        if (CONVERSION_ENABLED) {
+            //noinspection unchecked
+            return (T) unwrapNull(conversionCache.computeIfAbsent(new Target(targetType, converter),
+                                                                  t -> wrapNull(converter.convert(original,
+                                                                                                  targetType))));
         }
-
-        // No previous conversion found for Type and Converter. Let's convert ourselves
-        T conversion = converter.convert(input, convertedType);
-        conversions.add(new ConverterConversionTuple(new WeakReference<>(converter), conversion));
-        return conversion;
+        // no caching, direct conversion
+        return converter.convert(original, targetType);
     }
 
-    private record ConverterConversionTuple(WeakReference<Converter> converterReference, Object conversion) {
+    @Nonnull
+    private Object wrapNull(@Nullable Object obj) {
+        if (obj == null) {
+            return NULL;
+        }
+        return obj;
+    }
+
+    @Nullable
+    private Object unwrapNull(@Nonnull Object wrapped) {
+        if (wrapped == NULL) {
+            return null;
+        }
+        return wrapped;
+    }
+
+    private record Target(Type targetType, Converter converter) {
 
     }
 }
