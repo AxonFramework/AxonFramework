@@ -72,6 +72,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link AggregateBasedJpaEventStorageEngine}.
+ *
+ * @author Mateusz Nowak
+ */
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = AggregateBasedJpaEventStorageEngineTest.TestContext.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -167,7 +172,8 @@ class AggregateBasedJpaEventStorageEngineTest
         entityManager.clear();
         transaction.commit();
         transaction = transactionManager.startTransaction();
-        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee WHERE dee.aggregateSequenceNumber < 0").executeUpdate();
+        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee WHERE dee.aggregateSequenceNumber < 0")
+                     .executeUpdate();
         transaction.commit();
 
         testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())))
@@ -312,10 +318,9 @@ class AggregateBasedJpaEventStorageEngineTest
 
         @Bean
         public DataSource dataSource() {
-            DriverManagerDataSource driverManagerDataSource
-                    = new DriverManagerDataSource("jdbc:hsqldb:mem:aggregatebasedjpaeventstorageenginetest",
-                                                  "sa",
-                                                  "password");
+            String uniqueDbName = "jdbc:hsqldb:mem:aggregatebasedjpaeventstorageenginetest-" + System.nanoTime();
+            DriverManagerDataSource driverManagerDataSource =
+                    new DriverManagerDataSource(uniqueDbName, "sa", "password");
             driverManagerDataSource.setDriverClassName("org.hsqldb.jdbcDriver");
             return driverManagerDataSource;
         }
