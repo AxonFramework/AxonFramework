@@ -33,6 +33,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericResultMessageTest extends MessageTestSuite<ResultMessage<?>> {
 
     @Override
+    protected ResultMessage<?> buildDefaultMessage() {
+        return new GenericResultMessage<>(new GenericMessage<>(
+                TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA
+        ));
+    }
+
+    @Override
     protected <P> ResultMessage<?> buildMessage(@Nullable P payload) {
         return new GenericResultMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }

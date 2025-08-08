@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 
@@ -27,6 +28,13 @@ import org.axonframework.messaging.MessageType;
  * @author Steven van Beelen
  */
 class GenericQueryResponseMessageTest extends MessageTestSuite<QueryResponseMessage<?>> {
+
+    @Override
+    protected QueryResponseMessage<?> buildDefaultMessage() {
+        return new GenericQueryResponseMessage<>(new GenericMessage<>(
+                TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA
+        ));
+    }
 
     @Override
     protected <P> QueryResponseMessage<?> buildMessage(@Nullable P payload) {

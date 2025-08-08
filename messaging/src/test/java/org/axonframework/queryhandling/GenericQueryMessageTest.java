@@ -19,8 +19,11 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,11 +35,25 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class GenericQueryMessageTest extends MessageTestSuite<QueryMessage<?, ?>> {
 
+    private static final ResponseType<String> TEST_RESPONSE_TYPE = ResponseTypes.instanceOf(String.class);
+
+    @Override
+    protected QueryMessage<?, ?> buildDefaultMessage() {
+        Message<String> delegate =
+                new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+        return new GenericQueryMessage<>(delegate, TEST_RESPONSE_TYPE);
+    }
+
     @Override
     protected <P> QueryMessage<?, ?> buildMessage(@Nullable P payload) {
         return new GenericQueryMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
                                          payload,
-                                         ResponseTypes.instanceOf(String.class));
+                                         TEST_RESPONSE_TYPE);
+    }
+
+    @Override
+    protected void validateDefaultMessage(@Nonnull QueryMessage<?, ?> result) {
+        assertThat(TEST_RESPONSE_TYPE).isEqualTo(result.responseType());
     }
 
     @Override
