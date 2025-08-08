@@ -58,7 +58,7 @@ public class AggregateBasedEventEntry {
     @Basic
     @Lob
     @Column(length = 10000)
-    private byte[] metaData;
+    private byte[] metadata;
     @Basic(optional = false)
     private String timestamp;
     @Basic
@@ -75,7 +75,7 @@ public class AggregateBasedEventEntry {
      * @param type                    The {@link MessageType#name()} of an {@link EventMessage#type()}.
      * @param version                 The {@link MessageType#version()} of an {@link EventMessage#type()}.
      * @param payload                 The {@link EventMessage#payload()} as a {@code byte[]}.
-     * @param metaData                The {@link EventMessage#metaData()} as a {@code byte[]}.
+     * @param metadata                The {@link EventMessage#metaData()} as a {@code byte[]}.
      * @param timestamp               The time at which the {@link EventMessage} was originally created.
      * @param aggregateType           The type of the aggregate that published this {@link EventMessage}. May be
      *                                {@code null} if the event does not originate from an aggregate.
@@ -88,7 +88,7 @@ public class AggregateBasedEventEntry {
                                     @Nonnull String type,
                                     @Nonnull String version,
                                     @Nonnull byte[] payload,
-                                    @Nonnull byte[] metaData,
+                                    @Nonnull byte[] metadata,
                                     @Nonnull Object timestamp,
                                     @Nullable String aggregateType,
                                     @Nullable String aggregateIdentifier,
@@ -97,7 +97,7 @@ public class AggregateBasedEventEntry {
         this.type = type;
         this.version = version;
         this.payload = payload;
-        this.metaData = metaData;
+        this.metadata = metadata;
         this.timestamp = timestamp instanceof TemporalAccessor
                 ? formatInstant((TemporalAccessor) timestamp)
                 : timestamp.toString();
