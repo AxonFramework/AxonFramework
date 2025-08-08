@@ -167,7 +167,7 @@ class AggregateBasedJpaEventStorageEngineTest
         entityManager.clear();
         transaction.commit();
         transaction = transactionManager.startTransaction();
-        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee WHERE dee.sequenceNumber < 0").executeUpdate();
+        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee WHERE dee.aggregateSequenceNumber < 0").executeUpdate();
         transaction.commit();
 
         testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())))
