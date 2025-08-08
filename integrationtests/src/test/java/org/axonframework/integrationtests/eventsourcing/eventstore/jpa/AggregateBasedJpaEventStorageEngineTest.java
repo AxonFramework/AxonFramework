@@ -313,7 +313,7 @@ class AggregateBasedJpaEventStorageEngineTest
         @Bean
         public DataSource dataSource() {
             DriverManagerDataSource driverManagerDataSource
-                    = new DriverManagerDataSource("jdbc:hsqldb:mem:legacyjpaeventstoreageenginetest",
+                    = new DriverManagerDataSource("jdbc:hsqldb:mem:aggregatebasedjpaeventstorageenginetest",
                                                   "sa",
                                                   "password");
             driverManagerDataSource.setDriverClassName("org.hsqldb.jdbcDriver");
