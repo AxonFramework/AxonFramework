@@ -37,6 +37,7 @@ import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.StreamSpliterator;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
@@ -325,8 +326,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     @Override
     public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
         var trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
-        Stream<? extends TokenEntry> events =
-                batchingOperations.readEventData(trackingToken);
+        Stream<? extends TokenEntry> events = batchingOperations.readEventData(trackingToken);
         return MessageStream.fromStream(events,
                                         tokenEntry -> convertToEventMessage(tokenEntry.entry()),
                                         AggregateBasedJpaEventStorageEngine::trackedEventContext);
@@ -439,7 +439,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         }
 
         Stream<? extends AggregateBasedEventEntry> readEventData(String identifier, long firstSequenceNumber) {
-            EventStreamSpliterator<? extends AggregateBasedEventEntry> spliterator = new EventStreamSpliterator<>(
+            StreamSpliterator<? extends AggregateBasedEventEntry> spliterator = new StreamSpliterator<>(
                     lastItem -> transactionManager.fetchInTransaction(
                             () -> legacyJpaOperations.fetchDomainEvents(
                                     identifier,
@@ -452,7 +452,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         }
 
         Stream<? extends AggregateBasedJpaEventStorageEngine.TokenEntry> readEventData(TrackingToken trackingToken) {
-            EventStreamSpliterator<? extends AggregateBasedJpaEventStorageEngine.TokenEntry> spliterator = new EventStreamSpliterator<>(
+            StreamSpliterator<? extends TokenEntry> spliterator = new StreamSpliterator<>(
                     lastItem -> fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.token(), batchSize),
                     batch -> BATCH_OPTIMIZATION_DISABLED
             );
@@ -537,42 +537,6 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
         private boolean defaultFinalAggregateBatchPredicate(List<? extends AggregateBasedEventEntry> recentBatch) {
             return fetchForAggregateUntilEmpty() ? recentBatch.isEmpty() : recentBatch.size() < batchSize;
-        }
-
-        private static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
-
-            private final Function<T, List<? extends T>> fetchFunction;
-            private final Predicate<List<? extends T>> finalBatchPredicate;
-
-            private Iterator<? extends T> iterator;
-            private T lastItem;
-            private boolean lastBatchFound;
-
-            private EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction,
-                                           Predicate<List<? extends T>> finalBatchPredicate) {
-                super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
-                this.fetchFunction = fetchFunction;
-                this.finalBatchPredicate = finalBatchPredicate;
-            }
-
-            @Override
-            public boolean tryAdvance(Consumer<? super T> action) {
-                requireNonNull(action);
-                if (iterator == null || !iterator.hasNext()) {
-                    if (lastBatchFound) {
-                        return false;
-                    }
-                    List<? extends T> items = fetchFunction.apply(lastItem);
-                    lastBatchFound = finalBatchPredicate.test(items);
-                    iterator = items.iterator();
-                }
-                if (!iterator.hasNext()) {
-                    return false;
-                }
-
-                action.accept(lastItem = iterator.next());
-                return true;
-            }
         }
     }
 

@@ -27,12 +27,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
-import java.util.Spliterators;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -132,7 +127,7 @@ public abstract class LegacyBatchingEventStorageEngine extends AbstractLegacyEve
 
     @Override
     protected Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber) {
-        EventStreamSpliterator<? extends DomainEventData<?>> spliterator = new EventStreamSpliterator<>(
+        StreamSpliterator<? extends DomainEventData<?>> spliterator = new StreamSpliterator<>(
                 lastItem -> fetchDomainEvents(identifier,
                                               lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
                                               batchSize), finalAggregateBatchPredicate);
@@ -146,7 +141,7 @@ public abstract class LegacyBatchingEventStorageEngine extends AbstractLegacyEve
      */
     @Override
     protected Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken, boolean mayBlock) {
-        EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
+        StreamSpliterator<? extends TrackedEventData<?>> spliterator = new StreamSpliterator<>(
                 lastItem -> fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize),
                 batch -> BATCH_OPTIMIZATION_DISABLED
         );
@@ -250,42 +245,6 @@ public abstract class LegacyBatchingEventStorageEngine extends AbstractLegacyEve
         @Override
         protected void validate() throws AxonConfigurationException {
             super.validate();
-        }
-    }
-
-    private static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
-
-        private final Function<T, List<? extends T>> fetchFunction;
-        private final Predicate<List<? extends T>> finalBatchPredicate;
-
-        private Iterator<? extends T> iterator;
-        private T lastItem;
-        private boolean lastBatchFound;
-
-        private EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction,
-                                       Predicate<List<? extends T>> finalBatchPredicate) {
-            super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
-            this.fetchFunction = fetchFunction;
-            this.finalBatchPredicate = finalBatchPredicate;
-        }
-
-        @Override
-        public boolean tryAdvance(Consumer<? super T> action) {
-            Objects.requireNonNull(action);
-            if (iterator == null || !iterator.hasNext()) {
-                if (lastBatchFound) {
-                    return false;
-                }
-                List<? extends T> items = fetchFunction.apply(lastItem);
-                lastBatchFound = finalBatchPredicate.test(items);
-                iterator = items.iterator();
-            }
-            if (!iterator.hasNext()) {
-                return false;
-            }
-
-            action.accept(lastItem = iterator.next());
-            return true;
         }
     }
 }
