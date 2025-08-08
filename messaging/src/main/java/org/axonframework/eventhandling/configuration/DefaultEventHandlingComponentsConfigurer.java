@@ -17,70 +17,69 @@
 package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventHandlingComponent;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.UnaryOperator;
+import java.util.function.BiFunction;
+
+import static java.util.Objects.requireNonNull;
 
 /**
- * Default implementation of {@link EventHandlingComponentsConfigurer} providing immutable
- * component collection management with decoration support.
- * <p>
- * This configurer follows an immutable pattern where each operation returns a new instance
- * rather than modifying the existing one. Components are stored as immutable copies to
- * prevent external modifications.
- * <p>
- * Typically accessed through the static {@link #init()} method to begin configuration.
+ * Default implementation of {@link EventHandlingComponentsConfigurer} providing {@link EventHandlingComponent}s`
+ * builders management with decoration support.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Internal
 public class DefaultEventHandlingComponentsConfigurer
-        implements EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase {
+        implements EventHandlingComponentsConfigurer.RequiredComponentPhase,
+        EventHandlingComponentsConfigurer.AdditionalComponentPhase, EventHandlingComponentsConfigurer.CompletePhase {
 
-    private final List<EventHandlingComponent> components;
+    private List<ComponentBuilder<EventHandlingComponent>> componentBuilders = new ArrayList<>();
 
     /**
-     * Creates a new configurer instance ready for component specification.
+     * Creates a new empty configurer instance.
      *
-     * @return The initial components phase for adding components.
+     * @since 5.0.0
      */
-    public static EventHandlingComponentsConfigurer.ComponentsPhase init() {
-        return new DefaultEventHandlingComponentsConfigurer(List.of());
+    public DefaultEventHandlingComponentsConfigurer() {
+        // Default constructor for empty configuration
     }
 
-    /**
-     * Creates a configurer with the given components.
-     *
-     * @param components The components to configure. Will be copied for immutability.
-     */
-    private DefaultEventHandlingComponentsConfigurer(@Nonnull List<EventHandlingComponent> components) {
-        this.components = List.copyOf(Objects.requireNonNull(components, "components may not be null"));
+    @Nonnull
+    @Override
+    public EventHandlingComponentsConfigurer.AdditionalComponentPhase declarative(
+            @Nonnull ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
+    ) {
+        requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
+        componentBuilders.add(handlingComponentBuilder);
+        return this;
     }
 
     @Override
-    public EventHandlingComponentsConfigurer.CompletePhase many(@Nonnull List<EventHandlingComponent> components) {
-        Objects.requireNonNull(components, "components may not be null");
-        if (components.isEmpty()) {
-            throw new IllegalArgumentException("At least one EventHandlingComponent must be provided");
-        }
-        return new DefaultEventHandlingComponentsConfigurer(components);
-    }
-
-    @Override
-    public DefaultEventHandlingComponentsConfigurer decorated(
-            @Nonnull UnaryOperator<EventHandlingComponent> decorator
+    public EventHandlingComponentsConfigurer.CompletePhase decorated(
+            @Nonnull BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
     ) {
         Objects.requireNonNull(decorator, "decorator may not be null");
-        return new DefaultEventHandlingComponentsConfigurer(
-                components.stream()
-                          .map(decorator)
-                          .toList()
-        );
+        var decoratedBuilders = new ArrayList<ComponentBuilder<EventHandlingComponent>>();
+        for (var builder : componentBuilders) {
+            decoratedBuilders.add(cfg -> {
+                EventHandlingComponent component = builder.build(cfg);
+                return decorator.apply(cfg, component);
+            });
+        }
+        componentBuilders = decoratedBuilders;
+        return this;
     }
 
-    public List<EventHandlingComponent> toList() {
-        return List.copyOf(components);
+    @Override
+    public List<ComponentBuilder<EventHandlingComponent>> toList() {
+        return List.copyOf(componentBuilders);
     }
 }

@@ -93,74 +93,13 @@ public interface EventProcessorModule extends Module {
     interface EventHandlingPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration> {
 
         /**
-         * Configures a single event handling component.
-         *
-         * @param requiredComponent The component to configure.
-         * @return The customization phase for further configuration.
-         */
-        default CustomizationPhase<P, C> eventHandlingComponent(@Nonnull EventHandlingComponent requiredComponent) {
-            return eventHandlingComponents((cfg, components) -> components.single(requiredComponent));
-        }
-
-        /**
-         * Configures a single event handling component using a builder.
-         *
-         * @param requiredComponentBuilder The component builder.
-         * @return The customization phase for further configuration.
-         */
-        default CustomizationPhase<P, C> eventHandlingComponent(
-                @Nonnull ComponentBuilder<EventHandlingComponent> requiredComponentBuilder
-        ) {
-            return eventHandlingComponents((cfg, components) -> components.single(requiredComponentBuilder.build(cfg)));
-        }
-
-        /**
-         * Configures multiple event handling components using varargs.
-         *
-         * @param requiredComponent    The first required component.
-         * @param additionalComponents Additional components.
-         * @return The customization phase for further configuration.
-         */
-        default CustomizationPhase<P, C> eventHandlingComponents(
-                @Nonnull EventHandlingComponent requiredComponent,
-                @Nonnull EventHandlingComponent... additionalComponents
-        ) {
-            return eventHandlingComponents((cfg, components) -> components.many(requiredComponent,
-                                                                                additionalComponents));
-        }
-
-        /**
-         * Configures multiple event handling components from a list.
-         *
-         * @param componentList The list of components.
-         * @return The customization phase for further configuration.
-         */
-        default CustomizationPhase<P, C> eventHandlingComponents(
-                @Nonnull List<EventHandlingComponent> componentList
-        ) {
-            return eventHandlingComponents((cfg, components) -> components.many(componentList));
-        }
-
-        /**
          * Configures event handling components using a configurer function.
          *
          * @param eventHandlingComponentsConfigurer The configurer function.
          * @return The customization phase for further configuration.
          */
-        default CustomizationPhase<P, C> eventHandlingComponents(
-                @Nonnull Function<EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsConfigurer
-        ) {
-            return eventHandlingComponents((cfg, components) -> eventHandlingComponentsConfigurer.apply(components));
-        }
-
-        /**
-         * Configures event handling components using a builder function with configuration access.
-         *
-         * @param eventHandlingComponentsBuilder The builder function.
-         * @return The customization phase for further configuration.
-         */
         CustomizationPhase<P, C> eventHandlingComponents(
-                @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+                @Nonnull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
         );
     }
 

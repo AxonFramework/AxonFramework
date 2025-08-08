@@ -17,19 +17,26 @@
 package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
+import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventHandlingComponent;
+import org.axonframework.eventhandling.annotation.AnnotatedEventHandlingComponent;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Builder interface for configuring collections of {@link EventHandlingComponent} instances.
  * <p>
- * Provides a fluent API for specifying single or multiple components and applying decorations
- * to all components in the collection.
+ * Provides a fluent API for specifying single or multiple components and applying decorations to all components in the
+ * collection.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -39,7 +46,15 @@ public interface EventHandlingComponentsConfigurer {
     /**
      * Initial phase for specifying event handling components.
      */
-    interface ComponentsPhase {
+    interface RequiredComponentPhase extends ComponentsPhase<AdditionalComponentPhase> {
+
+    }
+
+    interface AdditionalComponentPhase extends ComponentsPhase<AdditionalComponentPhase>, CompletePhase {
+
+    }
+
+    interface ComponentsPhase<T> {
 
         /**
          * Configures a single event handling component.
@@ -48,36 +63,21 @@ public interface EventHandlingComponentsConfigurer {
          * @return The complete phase for decoration and finalization.
          */
         @Nonnull
-        default CompletePhase single(@Nonnull EventHandlingComponent component) {
-            return many(List.of(component));
-        }
+        AdditionalComponentPhase declarative(@Nonnull ComponentBuilder<EventHandlingComponent> handlingComponentBuilder);
 
         /**
-         * Configures multiple event handling components with varargs syntax.
+         * Configures an annotated event handling component.
          *
-         * @param requiredComponent     The first required component.
-         * @param additionalComponents Additional components (can be empty).
-         * @return The complete phase for decoration and finalization.
+         * @param handlingComponentBuilder The annotated component builder.
+         * @return The additional component phase for further configuration.
          */
-        @Nonnull
-        default CompletePhase many(
-                @Nonnull EventHandlingComponent requiredComponent,
-                @Nonnull EventHandlingComponent... additionalComponents
-        ) {
-            var components = Stream.concat(
-                    Stream.of(requiredComponent),
-                    Stream.of(additionalComponents)
-            ).filter(Objects::nonNull).toList();
-            return many(components);
+        default AdditionalComponentPhase annotated(@Nonnull ComponentBuilder<Object> handlingComponentBuilder) {
+            requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
+            return declarative(c -> new AnnotatedEventHandlingComponent<>(
+                    handlingComponentBuilder.build(c),
+                    c.getComponent(ParameterResolverFactory.class)
+            ));
         }
-
-        /**
-         * Configures multiple event handling components from a list.
-         *
-         * @param components The list of components to configure.
-         * @return The complete phase for decoration and finalization.
-         */
-        CompletePhase many(@Nonnull List<EventHandlingComponent> components);
     }
 
     /**
@@ -91,14 +91,28 @@ public interface EventHandlingComponentsConfigurer {
          * @param decorator Function to decorate each component.
          * @return This phase for further decoration or finalization.
          */
-        CompletePhase decorated(@Nonnull UnaryOperator<EventHandlingComponent> decorator);
+        CompletePhase decorated(
+                @Nonnull BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
+        );
 
         /**
          * Returns the configured list of event handling components.
          *
          * @return The immutable list of configured components.
          */
-        List<EventHandlingComponent> toList();
+        List<ComponentBuilder<EventHandlingComponent>> toList();
+
+        /**
+         * Builds all configured components using the provided configuration.
+         *
+         * @param configuration The framework configuration.
+         * @return The list of built event handling components.
+         */
+        default List<EventHandlingComponent> build(Configuration configuration) {
+            return toList().stream()
+                    .map(builder -> builder.build(configuration))
+                    .toList();
+        }
     }
 }
 

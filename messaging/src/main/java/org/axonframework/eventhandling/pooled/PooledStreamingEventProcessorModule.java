@@ -38,6 +38,7 @@ import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingCom
 import org.axonframework.lifecycle.Phase;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
@@ -57,7 +58,7 @@ import java.util.stream.Collectors;
  * <p>
  * This module is typically not instantiated directly but created through
  * {@link EventProcessorModule#pooledStreaming(String)} or registered via
- * {@link PooledStreamingEventProcessorsConfigurer#processor} methods.
+ * {@link PooledStreamingEventProcessorsConfigurer#defaultProcessor} methods.
  * <p>
  * The module applies shared defaults from {@link PooledStreamingEventProcessorsConfigurer} and
  * {@link EventProcessingConfigurer} before applying
@@ -72,7 +73,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
     private final String processorName;
-    private ComponentBuilder<List<EventHandlingComponent>> eventHandlingComponentsBuilder;
+    private List<ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder;
 
     /**
@@ -113,7 +114,9 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
             configuration.coordinatorExecutor(coordinatorExecutorBuilder);
         }
 
-        var eventHandlingComponents = eventHandlingComponentsBuilder.build(parent);
+        var eventHandlingComponents = eventHandlingComponentBuilders.stream()
+                                              .map(c -> c.build(parent))
+                                              .toList();
         List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
                 .stream()
                 .map(c -> withDefaultDecoration(c, configuration))
@@ -212,12 +215,11 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     @Override
     public CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> eventHandlingComponents(
-            @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+            @Nonnull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
     ) {
-        var componentsConfigurer = DefaultEventHandlingComponentsConfigurer.init();
-        this.eventHandlingComponentsBuilder = config -> eventHandlingComponentsBuilder
-                .apply(config, componentsConfigurer)
-                .toList();
+        Objects.requireNonNull(configurerTask, "configurerTask may not be null");
+        var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer();
+        this.eventHandlingComponentBuilders = configurerTask.apply(componentsConfigurer).toList();
         return this;
     }
 
