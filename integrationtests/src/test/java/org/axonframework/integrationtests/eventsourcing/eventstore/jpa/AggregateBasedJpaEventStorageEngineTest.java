@@ -16,8 +16,6 @@
 
 package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
@@ -40,10 +38,6 @@ import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -61,7 +55,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.lang.reflect.Type;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -140,7 +133,7 @@ class AggregateBasedJpaEventStorageEngineTest
     void gapsForVeryOldEventsAreNotIncluded() {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         Transaction transaction = transactionManager.startTransaction();
-        entityManager.createQuery("DELETE FROM DomainEventEntry dee").executeUpdate();
+        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee").executeUpdate();
         entityManager.clear();
         transaction.commit();
 
@@ -174,7 +167,7 @@ class AggregateBasedJpaEventStorageEngineTest
         entityManager.clear();
         transaction.commit();
         transaction = transactionManager.startTransaction();
-        entityManager.createQuery("DELETE FROM DomainEventEntry dee WHERE dee.sequenceNumber < 0").executeUpdate();
+        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee WHERE dee.sequenceNumber < 0").executeUpdate();
         transaction.commit();
 
         testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())))
@@ -210,7 +203,7 @@ class AggregateBasedJpaEventStorageEngineTest
 
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         Transaction transaction = transactionManager.startTransaction();
-        entityManager.createQuery("DELETE FROM DomainEventEntry dee").executeUpdate();
+        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee").executeUpdate();
         entityManager.clear();
         transaction.commit();
 
@@ -251,7 +244,7 @@ class AggregateBasedJpaEventStorageEngineTest
         // Let's create some gaps by removing all events with payload "aggregateId"
         transaction = transactionManager.startTransaction();
         entityManager.createQuery(
-                             "DELETE FROM DomainEventEntry dee WHERE dee.aggregateIdentifier <> :aggregateIdentifier"
+                             "DELETE FROM AggregateBasedEventEntry entry WHERE entry.aggregateIdentifier <> :aggregateIdentifier"
                      )
                      .setParameter("aggregateIdentifier", "aggregateId")
                      .executeUpdate();
@@ -262,7 +255,7 @@ class AggregateBasedJpaEventStorageEngineTest
         // some "magic" because sequences aren't reset between tests. Finding the sequence positions to use in assertions
         List<Long> sequences =
                 entityManager.createQuery(
-                                     "SELECT e.globalIndex FROM DomainEventEntry e WHERE e.aggregateIdentifier = :aggregateIdentifier",
+                                     "SELECT e.globalIndex FROM AggregateBasedEventEntry e WHERE e.aggregateIdentifier = :aggregateIdentifier",
                                      Long.class
                              )
                              .setParameter("aggregateIdentifier", "aggregateId")
