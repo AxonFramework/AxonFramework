@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import jakarta.persistence.EntityManager;
 import org.axonframework.common.Assert;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.TypeReference;
@@ -54,7 +55,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 import java.util.Spliterators;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
@@ -142,6 +143,17 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         this.persistenceExceptionResolver = customization.persistenceExceptionResolver();
     }
 
+    /**
+     * Returns an {@link EntityManager} from the {@link EntityManagerProvider}.
+     * <p>
+     * Internal use only.
+     *
+     * @return An {@link EntityManager} from the {@link EntityManagerProvider}.
+     */
+    private EntityManager entityManager() {
+        return entityManagerProvider.getEntityManager();
+    }
+
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
@@ -206,7 +218,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
             AggregateSequencer aggregateSequencer,
             List<TaggedEventMessage<?>> events
     ) {
-        var entityManager = entityManagerProvider.getEntityManager();
+        var entityManager = entityManager();
         events.stream()
               .map(taggedEvent -> mapToEntry(taggedEvent, aggregateSequencer, converter))
               .forEach(entityManager::persist);
