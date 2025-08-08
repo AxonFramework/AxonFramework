@@ -38,9 +38,7 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.eventhandling.DomainEventData;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -50,10 +48,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.LegacyCachingEventSourcingRepository;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
-import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
@@ -67,7 +62,6 @@ import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.annotation.QueryHandler;
-import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
@@ -542,55 +536,6 @@ class DefaultConfigurerTest {
         SnapshotFilter snapshotFilter = resultConfig.snapshotFilter();
         boolean result = snapshotFilter.allow(mock(DomainEventData.class));
         assertFalse(result);
-        assertTrue(filteredFirst.get());
-        assertTrue(filteredSecond.get());
-    }
-
-    @Test
-    @Disabled
-    void aggregateSnapshotFilterIsAddedToTheEventStore() {
-        AtomicBoolean filteredFirst = new AtomicBoolean(false);
-        SnapshotFilter testFilterOne = snapshotData -> {
-            filteredFirst.set(true);
-            return true;
-        };
-        AggregateConfigurer<StubAggregate> aggregateConfigurerOne = AggregateConfigurer.defaultConfiguration(
-                StubAggregate.class).configureSnapshotFilter(configuration -> testFilterOne);
-
-        AtomicBoolean filteredSecond = new AtomicBoolean(false);
-        SnapshotFilter testFilterTwo = snapshotData -> {
-            filteredSecond.set(true);
-            return true;
-        };
-        AggregateConfigurer<StubAggregate> aggregateConfigurerTwo = AggregateConfigurer.defaultConfiguration(
-                StubAggregate.class).configureSnapshotFilter(configuration -> testFilterTwo);
-
-        Serializer serializer = TestSerializer.xStreamSerializer();
-        EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
-
-        DomainEventMessage<String> testDomainEvent = new GenericDomainEventMessage<>(
-                "StubAggregate", "some-aggregate-id", 0, new MessageType("event"), "some-payload"
-        );
-        DomainEventData<byte[]> snapshotData =
-                new AbstractSnapshotEventEntry<>(testDomainEvent, serializer, byte[].class) {
-                };
-        DomainEventData<byte[]> domainEventData = new DomainEventEntry(testDomainEvent, serializer);
-        // Firstly snapshot data will be retrieved (and filtered), secondly event data.
-        doReturn(Stream.of(snapshotData), Collections.singletonList(domainEventData)).when(transactionManager)
-                                                                                     .fetchInTransaction(any());
-
-        LegacyConfiguration resultConfig = LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
-                                                                  .configureSerializer(
-                                                                          configuration -> serializer
-                                                                  )
-                                                                  .configureTransactionManager(configuration -> transactionManager)
-                                                                  .configureAggregate(aggregateConfigurerOne)
-                                                                  .configureAggregate(aggregateConfigurerTwo)
-                                                                  .buildConfiguration();
-
-        LegacyEventStore resultEventStore = resultConfig.eventStore();
-        resultEventStore.readEvents("some-aggregate-id");
-
         assertTrue(filteredFirst.get());
         assertTrue(filteredSecond.get());
     }
