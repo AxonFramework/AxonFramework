@@ -30,6 +30,7 @@ import org.axonframework.eventstreaming.StreamableEventSource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -58,19 +59,6 @@ import java.util.function.UnaryOperator;
  * <p>
  * This module is typically accessed through {@link EventProcessingConfigurer#pooledStreaming(UnaryOperator)}
  * rather than being instantiated directly.
- * <p>
- * Example usage:
- * <pre>{@code
- * MessagingConfigurer.create()
- *     .eventProcessing(eventProcessing -> eventProcessing
- *         .pooledStreaming(pooledStreaming -> pooledStreaming
- *             .defaults(config -> config.bufferSize(1024).initialSegmentCount(4))
- *             .processor("order-processor", (cfg, components) -> components.single(orderEventHandler))
- *             .processor("inventory-processor", (cfg, components) -> components.single(inventoryEventHandler)),
- *                       (cfg, config) -> config.bufferSize(2048)) // Processor-specific override
- *         )
- *     );
- * }</pre>
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -146,6 +134,7 @@ public class PooledStreamingEventProcessorsConfigurer {
     public PooledStreamingEventProcessorsConfigurer defaults(
             @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> configureDefaults
     ) {
+        Objects.requireNonNull(configureDefaults, "configureDefaults must not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
         return this;
     }
@@ -165,6 +154,7 @@ public class PooledStreamingEventProcessorsConfigurer {
     public PooledStreamingEventProcessorsConfigurer defaults(
             @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> configureDefaults
     ) {
+        Objects.requireNonNull(configureDefaults, "configureDefaults must not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
                 (axonConfig, pConfig) -> configureDefaults.apply(pConfig)
         );
@@ -173,14 +163,15 @@ public class PooledStreamingEventProcessorsConfigurer {
 
     /**
      * Registers a pooled streaming event processor with the specified name and event handling components.
+     * The processor will use the default pooled streaming event processor configuration.
      *
      * @param name                         The unique name for the processor.
      * @param eventHandlingComponentsBuilder Function to configure the event handling components.
      * @return This configurer instance for method chaining.
      */
-    public PooledStreamingEventProcessorsConfigurer processor(
+    public PooledStreamingEventProcessorsConfigurer defaultProcessor(
             @Nonnull String name,
-            @Nonnull BiFunction<Configuration, EventHandlingComponentsConfigurer.ComponentsPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+            @Nonnull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
     ) {
         processor(
                 () -> EventProcessorModule.pooledStreaming(name)
@@ -190,8 +181,7 @@ public class PooledStreamingEventProcessorsConfigurer {
         return this;
     }
 
-    /**
-     * Registers a pooled streaming event processor with custom module configuration.
+    /** Registers a pooled streaming event processor with custom module configuration.
      *
      * @param name             The unique name for the processor.
      * @param moduleCustomizer Function to customize the processor module configuration.
@@ -216,6 +206,7 @@ public class PooledStreamingEventProcessorsConfigurer {
     public PooledStreamingEventProcessorsConfigurer processor(
             ModuleBuilder<PooledStreamingEventProcessorModule> moduleBuilder
     ) {
+        Objects.requireNonNull(moduleBuilder, "moduleBuilder may not be null");
         moduleBuilders.add(moduleBuilder);
         return this;
     }
@@ -229,6 +220,7 @@ public class PooledStreamingEventProcessorsConfigurer {
     public PooledStreamingEventProcessorsConfigurer componentRegistry(
             @Nonnull Consumer<ComponentRegistry> registryAction
     ) {
+        Objects.requireNonNull(registryAction, "registryAction may not be null");
         parent.componentRegistry(registryAction);
         return this;
     }

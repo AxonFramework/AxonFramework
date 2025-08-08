@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlerRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
@@ -29,13 +30,12 @@ import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -52,6 +52,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
+    private final SimpleEventHandlingComponent handlingComponent;
 
     /**
      * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
@@ -114,40 +115,44 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                                            @Nonnull AnnotatedHandlerInspector<T> model) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null");
         this.model = requireNonNull(model, "The Annotated Handler Inspector may not be null");
+
+        this.handlingComponent = new SimpleEventHandlingComponent();
+        initializeHandlersBasedOnModel();
+    }
+
+    private void initializeHandlersBasedOnModel() {
+        model.getAllHandlers().forEach(
+                (modelClass, handlers) ->
+                        handlers.stream()
+                                .filter(h -> h.canHandleMessageType(EventMessage.class))
+                                .forEach(this::registerHandler));
+    }
+
+    private void registerHandler(MessageHandlingMember<? super T> handler) {
+        QualifiedName qualifiedName = new QualifiedName(handler.payloadType()); // TODO #3098 - allow to define eventName on the handling member
+
+        MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
+        handlingComponent.subscribe(
+                qualifiedName,
+                (event, ctx) ->
+                interceptorChain.handle(event, ctx, target, handler).ignoreEntries().cast()
+        );
     }
 
     @Override
     public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        throw new UnsupportedOperationException(
-                "This Event Handling Component does not support direct event handler registration."
-        );
+        return handlingComponent.subscribe(name, eventHandler);
     }
 
     @Nonnull
     @Override
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
-        requireNonNull(event, "Event Message may not be null");
-        requireNonNull(context, "Processing Context may not be null");
-        var listenerType = target.getClass();
-        var handler = model.getHandlers(listenerType)
-                           .filter(h -> h.canHandle(event, context))
-                           .findFirst();
-        if (handler.isPresent()) {
-            var interceptor = model.chainedInterceptor(listenerType);
-            var result = interceptor.handle(event, context, target, handler.get());
-            return result.ignoreEntries().cast();
-        }
-        return MessageStream.empty();
+        return handlingComponent.handle(event, context);
     }
 
     @Override
     public Set<QualifiedName> supportedEvents() {
-        var listenerType = target.getClass();
-        return model.getHandlers(listenerType)
-                    .filter(Objects::nonNull)
-                    .map(MessageHandlingMember::payloadType)
-                    .map(QualifiedName::new)
-                    .collect(Collectors.toSet());
+        return Set.copyOf(handlingComponent.supportedEvents());
     }
 }
