@@ -69,8 +69,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.common.BuilderUtils.assertPositive;
-import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils.*;
 
@@ -142,14 +140,15 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     private final EntityManagerProvider entityManagerProvider;
     private final TransactionManager transactionManager;
     private final Converter converter;
-    private final PersistenceExceptionResolver persistenceExceptionResolver;
 
-    private final GapAwareTrackingTokenOperations tokenOperations;
+    private final PersistenceExceptionResolver persistenceExceptionResolver;
+    private final Predicate<List<? extends AggregateBasedEventEntry>> finalBatchPredicate;
     private final int batchSize;
     private final int gapCleaningThreshold;
-    private final long lowestGlobalSequence;
     private final int maxGapOffset;
-    private final Predicate<List<? extends AggregateBasedEventEntry>> finalAggregateBatchPredicate;
+    private final long lowestGlobalSequence;
+
+    private final GapAwareTrackingTokenOperations tokenOperations;
 
     /**
      * Constructs an {@code AggregateBasedJpaEventStorageEngine} with the given parameters.
@@ -159,31 +158,28 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
      *                              transactionally.
      * @param converter             The converter used to convert the {@link EventMessage#payload()} and
      *                              {@link EventMessage#metaData()} to a {@code byte[]}.
-     * @param configurationOverride A unary operator that can customize the {@code AggregateBasedJpaEventStorageEngine}
-     *                              under construction.
+     * @param configurer            A unary operator of the {@link AggregateBasedJpaEventStorageEngineConfiguration}
+     *                              that customizes the {@code AggregateBasedJpaEventStorageEngine} under construction.
      */
     public AggregateBasedJpaEventStorageEngine(@Nonnull EntityManagerProvider entityManagerProvider,
                                                @Nonnull TransactionManager transactionManager,
                                                @Nonnull Converter converter,
-                                               @Nonnull UnaryOperator<Customization> configurationOverride) {
+                                               @Nonnull UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer) {
         this.entityManagerProvider =
                 requireNonNull(entityManagerProvider, "The entityManagerProvider may not be null.");
         this.transactionManager = requireNonNull(transactionManager, "The transactionManager may not be null.");
         this.converter = requireNonNull(converter, "The converter may not be null");
 
-        var customization = requireNonNull(configurationOverride, "the configurationOverride may not be null.")
-                .apply(Customization.withDefaultValues());
+        var config = requireNonNull(configurer, "the configurationOverride may not be null.")
+                .apply(AggregateBasedJpaEventStorageEngineConfiguration.DEFAULT);
+        this.persistenceExceptionResolver = config.persistenceExceptionResolver();
+        this.finalBatchPredicate = config.finalBatchPredicate();
+        this.batchSize = config.batchSize();
+        this.gapCleaningThreshold = config.gapCleaningThreshold();
+        this.lowestGlobalSequence = config.lowestGlobalSequence();
+        this.maxGapOffset = config.maxGapOffset();
 
-        this.tokenOperations = new GapAwareTrackingTokenOperations(
-                customization.tokenGapsHandling().timeout(),
-                logger
-        );
-        this.batchSize = customization.batchSize();
-        this.gapCleaningThreshold = customization.tokenGapsHandling().cleaningThreshold();
-        this.lowestGlobalSequence = customization.lowestGlobalSequence();
-        this.maxGapOffset = customization.tokenGapsHandling().maxOffset();
-        this.finalAggregateBatchPredicate = customization.finalAggregateBatchPredicate();
-        this.persistenceExceptionResolver = customization.persistenceExceptionResolver();
+        this.tokenOperations = new GapAwareTrackingTokenOperations(config.gapTimeout(), logger);
     }
 
     /**
@@ -320,7 +316,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                         aggregateIdentifier,
                         lastEntry == null ? firstSequenceNumber : lastEntry.aggregateSequenceNumber() + 1
                 )),
-                finalAggregateBatchPredicate
+                finalBatchPredicate
         );
 
         MessageStream<EventMessage<?>> source =
@@ -531,106 +527,5 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
     private record TokenAndEvent(GapAwareTrackingToken token, AggregateBasedEventEntry event) {
 
-    }
-
-    public record Customization(
-            PersistenceExceptionResolver persistenceExceptionResolver,
-            int batchSize,
-            Predicate<List<? extends AggregateBasedEventEntry>> finalAggregateBatchPredicate,
-            long lowestGlobalSequence,
-            TokenGapsHandlingConfig tokenGapsHandling
-    ) {
-
-        private static final int DEFAULT_BATCH_SIZE = 100;
-        private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
-        private static final Predicate<List<? extends AggregateBasedEventEntry>> DEFAULT_PREDICATE = List::isEmpty;
-
-        public Customization {
-            assertThat(batchSize, size -> size > 0, "The batchSize must be a positive number");
-            assertThat(lowestGlobalSequence,
-                       number -> number > 0,
-                       "The lowestGlobalSequence must be a positive number");
-        }
-
-        public record TokenGapsHandlingConfig(int maxOffset, int timeout, int cleaningThreshold) {
-
-            private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
-            private static final int DEFAULT_GAP_TIMEOUT = 60000;
-            private static final int DEFAULT_GAP_CLEANING_THRESHOLD = 250;
-
-            public TokenGapsHandlingConfig {
-                assertPositive(maxOffset, "maxOffset");
-                assertPositive(timeout, "timeout");
-                assertPositive(cleaningThreshold, "cleaningThreshold");
-            }
-
-            static TokenGapsHandlingConfig withDefaultValues() {
-                return new TokenGapsHandlingConfig(DEFAULT_MAX_GAP_OFFSET,
-                                                   DEFAULT_GAP_TIMEOUT,
-                                                   DEFAULT_GAP_CLEANING_THRESHOLD);
-            }
-        }
-
-        public static Customization withDefaultValues() {
-            return new Customization(
-                    null,
-                    DEFAULT_BATCH_SIZE,
-                    DEFAULT_PREDICATE,
-                    DEFAULT_LOWEST_GLOBAL_SEQUENCE,
-                    TokenGapsHandlingConfig.withDefaultValues()
-            );
-        }
-
-        public Customization persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
-            return new Customization(
-                    persistenceExceptionResolver,
-                    batchSize,
-                    finalAggregateBatchPredicate,
-                    lowestGlobalSequence,
-                    tokenGapsHandling
-            );
-        }
-
-        public Customization batchSize(int batchSize) {
-            return new Customization(
-                    persistenceExceptionResolver,
-                    batchSize,
-                    finalAggregateBatchPredicate,
-                    lowestGlobalSequence,
-                    tokenGapsHandling
-            );
-        }
-
-        public Customization finalAggregateBatchPredicate(
-                Predicate<List<? extends AggregateBasedEventEntry>> finalAggregateBatchPredicate
-        ) {
-            return new Customization(
-                    persistenceExceptionResolver,
-                    batchSize,
-                    finalAggregateBatchPredicate,
-                    lowestGlobalSequence,
-                    tokenGapsHandling
-            );
-        }
-
-        public Customization lowestGlobalSequence(long lowestGlobalSequence) {
-            return new Customization(
-                    persistenceExceptionResolver,
-                    batchSize,
-                    finalAggregateBatchPredicate,
-                    lowestGlobalSequence,
-                    tokenGapsHandling
-            );
-        }
-
-        public Customization tokenGapsHandling(UnaryOperator<TokenGapsHandlingConfig> configurationOverride) {
-            return new Customization(
-                    persistenceExceptionResolver,
-                    batchSize,
-                    finalAggregateBatchPredicate,
-                    lowestGlobalSequence,
-                    configurationOverride.apply(tokenGapsHandling)
-            );
-        }
     }
 }

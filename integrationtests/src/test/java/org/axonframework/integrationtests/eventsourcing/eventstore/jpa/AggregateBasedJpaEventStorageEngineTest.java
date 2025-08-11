@@ -197,14 +197,13 @@ class AggregateBasedJpaEventStorageEngineTest
 
     @Test
     void oldGapsAreRemovedFromProvidedTrackingToken() {
-        AggregateBasedJpaEventStorageEngine.Customization.TokenGapsHandlingConfig gapConfig =
-                new AggregateBasedJpaEventStorageEngine.Customization.TokenGapsHandlingConfig(10000, 50001, 50);
         AggregateBasedJpaEventStorageEngine gapConfigTestSubject = new AggregateBasedJpaEventStorageEngine(
                 entityManagerProvider,
                 transactionManager,
                 converter,
-                config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver())
-                                .tokenGapsHandling(c -> gapConfig)
+                config -> config.maxGapOffset(10000)
+                                .gapTimeout(50001)
+                                .gapCleaningThreshold(50)
         );
 
         EntityManager entityManager = entityManagerProvider.getEntityManager();
