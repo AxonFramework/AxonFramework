@@ -46,17 +46,19 @@ public abstract class AbstractMessage<P> implements Message<P> {
     }
 
     @Override
+    @Nonnull
     public String identifier() {
         return this.identifier;
     }
 
-    @Nonnull
     @Override
+    @Nonnull
     public MessageType type() {
         return this.type;
     }
 
     @Override
+    @Nonnull
     public Message<P> withMetaData(@Nonnull Map<String, String> metaData) {
         if (metaData().equals(metaData)) {
             return this;
@@ -65,6 +67,7 @@ public abstract class AbstractMessage<P> implements Message<P> {
     }
 
     @Override
+    @Nonnull
     public Message<P> andMetaData(@Nonnull Map<String, String> metaData) {
         if (metaData.isEmpty()) {
             return this;

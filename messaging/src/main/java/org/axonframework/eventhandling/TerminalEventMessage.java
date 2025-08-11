@@ -39,7 +39,6 @@ public class TerminalEventMessage extends GenericEventMessage<Void> implements E
     public static final TerminalEventMessage INSTANCE = new TerminalEventMessage();
 
     private TerminalEventMessage() {
-        //noinspection DataFlowIssue
         super(new MessageType(TerminalEventMessage.class), null);
     }
 }

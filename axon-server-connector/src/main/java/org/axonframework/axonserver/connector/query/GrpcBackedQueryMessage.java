@@ -84,43 +84,50 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     }
 
     @Override
+    @Nonnull
     public String identifier() {
         return query.getMessageIdentifier();
     }
 
-    @Nonnull
     @Override
+    @Nonnull
     public MessageType type() {
         return this.type;
     }
 
     @Override
+    @Nonnull
     public ResponseType<R> responseType() {
         return serializedResponseType.getObject();
     }
 
     @Override
+    @Nullable
     public P payload() {
         return serializedPayload.getObject();
     }
 
     @Override
+    @Nullable
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
         // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
         return null;
     }
 
     @Override
+    @Nonnull
     public MetaData metaData() {
         return metaDataSupplier.get();
     }
 
     @Override
+    @Nonnull
     public Class<P> payloadType() {
         return serializedPayload.getType();
     }
 
     @Override
+    @Nonnull
     public GrpcBackedQueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GrpcBackedQueryMessage<>(query,
                                             serializedPayload,
@@ -130,11 +137,13 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     }
 
     @Override
+    @Nonnull
     public GrpcBackedQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
         return withMetaData(metaData().mergedWith(metaData));
     }
 
     @Override
+    @Nonnull
     public <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
         return null;

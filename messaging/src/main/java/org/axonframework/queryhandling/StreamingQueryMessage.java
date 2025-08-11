@@ -41,25 +41,31 @@ import java.util.Map;
 public interface StreamingQueryMessage<P, R> extends QueryMessage<P, Publisher<R>> {
 
     @Override
+    @Nonnull
     ResponseType<Publisher<R>> responseType();
 
     @Override
+    @Nonnull
     StreamingQueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     StreamingQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> additionalMetaData);
 
     @Override
+    @Nonnull
     default <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
+    @Nonnull
     default <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull TypeReference<T> type,
                                                                  @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
+    @Nonnull
     <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

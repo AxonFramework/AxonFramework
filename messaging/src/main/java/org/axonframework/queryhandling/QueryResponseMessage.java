@@ -34,22 +34,27 @@ import java.util.Map;
 public interface QueryResponseMessage<R> extends ResultMessage<R> {
 
     @Override
+    @Nonnull
     QueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     QueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData);
 
     @Override
+    @Nonnull
     default <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
+    @Nonnull
     default <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type,
                                                              @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
+    @Nonnull
     <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

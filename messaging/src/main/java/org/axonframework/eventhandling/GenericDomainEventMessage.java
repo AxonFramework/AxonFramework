@@ -197,6 +197,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
     }
 
     @Override
+    @Nonnull
     public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         if (metaData().equals(metaData)) {
             return this;
@@ -209,6 +210,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
     }
 
     @Override
+    @Nonnull
     public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         //noinspection ConstantConditions
         if (metaData == null || metaData.isEmpty() || metaData().equals(metaData)) {
