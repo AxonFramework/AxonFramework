@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 class ConversionCache {
 
     // Allow system-wide disabling of the cache using an environment variable
-    private static final boolean CONVERSION_ENABLED = Boolean.parseBoolean(
+    private final boolean conversionEnabled = Boolean.parseBoolean(
             System.getProperty("AXON_CONVERSION_CACHE_ENABLED", "true")
     );
     // Replacement value to allow null values in the map
@@ -81,7 +81,7 @@ class ConversionCache {
     @Nullable
     <T> T convertIfAbsent(@Nonnull Type targetType,
                           @Nonnull Converter converter) {
-        if (CONVERSION_ENABLED) {
+        if (conversionEnabled) {
             //noinspection unchecked
             return (T) unwrapNull(conversionCache.computeIfAbsent(
                     new Target(targetType, converter),
