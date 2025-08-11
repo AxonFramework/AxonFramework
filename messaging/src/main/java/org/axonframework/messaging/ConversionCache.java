@@ -26,8 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An {@link Internal} class that maintain a "conversion cache", to back operations such as
- * {@link Message#payloadAs(Type, Converter)} and {@link Message#withConvertedPayload(Type, Converter)},
- * to avoid executing several conversions to the same target type with the same converter.
+ * {@link Message#payloadAs(Type, Converter)} and {@link Message#withConvertedPayload(Type, Converter)}, to avoid
+ * executing several conversions to the same target type with the same converter.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -36,18 +36,23 @@ import java.util.concurrent.ConcurrentHashMap;
 @Internal
 class ConversionCache {
 
-    // allow system-wide disabling of the cache using an environment variable
-    private static final boolean CONVERSION_ENABLED = Boolean.parseBoolean(System.getProperty(
-            "AXON_CONVERSION_CACHE_ENABLED",
-            "true"));
-
-    // replacement value to allow null values in the map
+    // Allow system-wide disabling of the cache using an environment variable
+    private static final boolean CONVERSION_ENABLED = Boolean.parseBoolean(
+            System.getProperty("AXON_CONVERSION_CACHE_ENABLED", "true")
+    );
+    // Replacement value to allow null values in the map
     private static final Object NULL = new Object();
 
     private final ConcurrentHashMap<Target, Object> conversionCache = new ConcurrentHashMap<>();
     private final Object original;
 
-    public ConversionCache(Object original) {
+    /**
+     * Constructs a {@code ConversionCache} with the {@code original} object for which conversions will be stored in
+     * this cache.
+     *
+     * @param original The original object for which conversions will be stored in this cache.
+     */
+    public ConversionCache(@Nullable Object original) {
         this.original = original;
     }
 
@@ -65,11 +70,11 @@ class ConversionCache {
      * The result may be {@code null} since the result of {@link Converter#convert(Object, Type) conversion} can also be
      * {@code null}.
      *
-     * @param targetType    The type to convert the given {@code input} into, <b>if</b> the given type-and-converter
-     *                      combination has not been seen before.
-     * @param converter     The converter to convert the given {@code input with}, <b>if</b> the given
-     *                      type-and-converter combination has not been seen before.
-     * @param <T>           The generic type to return.
+     * @param targetType The type to convert the given {@code input} into, <b>if</b> the given type-and-converter
+     *                   combination has not been seen before.
+     * @param converter  The converter to convert the given {@code input with}, <b>if</b> the given type-and-converter
+     *                   combination has not been seen before.
+     * @param <T>        The generic type to return.
      * @return The converted {@code input}, either directly from this cache or as the result from
      * {@link Converter#convert(Object, Type) converting}.
      */
@@ -78,28 +83,23 @@ class ConversionCache {
                           @Nonnull Converter converter) {
         if (CONVERSION_ENABLED) {
             //noinspection unchecked
-            return (T) unwrapNull(conversionCache.computeIfAbsent(new Target(targetType, converter),
-                                                                  t -> wrapNull(converter.convert(original,
-                                                                                                  targetType))));
+            return (T) unwrapNull(conversionCache.computeIfAbsent(
+                    new Target(targetType, converter),
+                    t -> wrapNull(converter.convert(original, targetType))
+            ));
         }
-        // no caching, direct conversion
+        // No caching, direct conversion
         return converter.convert(original, targetType);
     }
 
     @Nonnull
     private Object wrapNull(@Nullable Object obj) {
-        if (obj == null) {
-            return NULL;
-        }
-        return obj;
+        return obj == null ? NULL : obj;
     }
 
     @Nullable
     private Object unwrapNull(@Nonnull Object wrapped) {
-        if (wrapped == NULL) {
-            return null;
-        }
-        return wrapped;
+        return wrapped == NULL ? null : wrapped;
     }
 
     private record Target(Type targetType, Converter converter) {
