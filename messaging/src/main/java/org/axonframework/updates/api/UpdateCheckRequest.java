@@ -95,6 +95,7 @@ public record UpdateCheckRequest(
                         .filter(a -> a.groupId().equals("org.axonframework"))
                         .filter(a -> a.artifactId().equals("axon-messaging"))
                         .map(Artifact::version)
-                        .findFirst().orElse("5.0.0");
+                        .findFirst()
+                        .orElse("4.12.0");
     }
 }

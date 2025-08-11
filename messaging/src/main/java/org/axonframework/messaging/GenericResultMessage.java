@@ -18,6 +18,7 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
@@ -122,7 +123,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      *                  {@link ResultMessage}.
      */
     public GenericResultMessage(@Nonnull Message<R> delegate,
-                                @Nonnull Throwable exception) {
+                                @Nullable Throwable exception) {
         super(delegate);
         this.exception = exception;
     }
@@ -194,27 +195,30 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     @Override
+    @Nonnull
     public ResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericResultMessage<>(delegate().withMetaData(metaData), exception);
     }
 
     @Override
+    @Nonnull
     public ResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericResultMessage<>(delegate().andMetaData(metaData), exception);
     }
 
     @Override
+    @Nonnull
     public <T> ResultMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (ResultMessage<T>) this;
         }
         Message<R> delegate = delegate();
-        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
-                                                     delegate.type(),
-                                                     convertedPayload,
-                                                     delegate.metaData());
+        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+                                                    delegate.type(),
+                                                    convertedPayload,
+                                                    delegate.metaData());
         return optionalExceptionResult().isPresent()
                 ? new GenericResultMessage<>(converted, optionalExceptionResult().get())
                 : new GenericResultMessage<>(converted);

@@ -44,24 +44,30 @@ public interface QueryMessage<P, R> extends Message<P> {
      *
      * @return The {@link ResponseType type of response} expected by the sender of the query.
      */
+    @Nonnull
     ResponseType<R> responseType();
 
     @Override
+    @Nonnull
     QueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     QueryMessage<P, R> andMetaData(@Nonnull Map<String, String> additionalMetaData);
 
     @Override
+    @Nonnull
     default <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
+    @Nonnull
     default <T> QueryMessage<T, R> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
+    @Nonnull
     <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

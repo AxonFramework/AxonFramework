@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.serialization.ChainingContentTypeConverter;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
@@ -138,6 +139,21 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
+    void secondPayloadAsWithClassInvocationAndNullResultReusesPreviousConversionResult() {
+        Converter spiedConverter = spy(CONVERTER);
+        when(spiedConverter.convert(any(), (Type) any())).thenReturn(null);
+
+        M testSubject = buildMessage(STRING_PAYLOAD);
+
+        byte[] firstResult = testSubject.payloadAs(byte[].class, spiedConverter);
+        byte[] secondResult = testSubject.payloadAs(byte[].class, spiedConverter);
+
+        assertThat(firstResult).isNull();
+        assertThat(secondResult).isNull();
+        verify(spiedConverter, times(1)).convert(any(), (Type) any());
+    }
+
+    @Test
     void payloadAsWithSameClassButDifferentConverterDoesConvertAgain() {
         String testPayload = STRING_PAYLOAD;
         Converter firstConverter = spy(CONVERTER);
@@ -155,11 +171,11 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
-    void payloadAsWithClassThrowsNullPointerExceptionForNullConverter() {
+    void payloadAsWithClassThrowsConversionExceptionForNullConverter() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs(byte[].class, null))
-                .isExactlyInstanceOf(NullPointerException.class);
+                .isExactlyInstanceOf(ConversionException.class);
     }
 
     @Test
@@ -206,11 +222,11 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
-    void payloadAsWithTypeReferenceThrowsNullPointerExceptionForNullConverter() {
+    void payloadAsWithTypeReferenceThrowsConversionExceptionForNullConverter() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs(BYTE_ARRAY_TYPE_REF, null))
-                .isExactlyInstanceOf(NullPointerException.class);
+                .isExactlyInstanceOf(ConversionException.class);
     }
 
     @Test
@@ -270,11 +286,11 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
-    void payloadAsWithTypeThrowsNullPointerExceptionForNullConverter() {
+    void payloadAsWithTypeThrowsConversionExceptionForNullConverter() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs((Type) byte[].class, null))
-                .isExactlyInstanceOf(NullPointerException.class);
+                .isExactlyInstanceOf(ConversionException.class);
     }
 
     @Test
@@ -320,6 +336,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        //noinspection unchecked
         validateMessageSpecifics(testSubject, (M) result);
     }
 
@@ -341,6 +358,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        //noinspection unchecked
         validateMessageSpecifics(testSubject, (M) result);
     }
 
@@ -362,6 +380,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        //noinspection unchecked
         validateMessageSpecifics(testSubject, (M) result);
     }
 }

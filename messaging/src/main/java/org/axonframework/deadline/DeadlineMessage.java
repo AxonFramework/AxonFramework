@@ -44,24 +44,30 @@ public interface DeadlineMessage<P> extends EventMessage<P> {
      *
      * @return The name of the {@link DeadlineMessage deadline}.
      */
+    @Nonnull
     String getDeadlineName();
 
     @Override
+    @Nonnull
     DeadlineMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     DeadlineMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData);
 
     @Override
+    @Nonnull
     default <T> DeadlineMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
+    @Nonnull
     default <T> DeadlineMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
+    @Nonnull
     <T> DeadlineMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

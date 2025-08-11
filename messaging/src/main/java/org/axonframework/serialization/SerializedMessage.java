@@ -94,6 +94,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
+    @Nullable
     public P payload() {
         try {
             return payload.getObject();
@@ -103,12 +104,14 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
+    @Nullable
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
         // This class will be removed/replaced by the ConversionAwareMessage, so skipping implementation
         return null;
     }
 
     @Override
+    @Nonnull
     public MetaData metaData() {
         try {
             return metaData.getObject();
@@ -118,6 +121,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
+    @Nonnull
     public Class<P> payloadType() {
         return payload.getType();
     }
@@ -131,11 +135,13 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
+    @Nonnull
     public SerializedMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         return (SerializedMessage<P>) super.withMetaData(metaData);
     }
 
     @Override
+    @Nonnull
     public SerializedMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         return (SerializedMessage<P>) super.andMetaData(metaData);
     }
@@ -157,6 +163,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
+    @Nonnull
     public <T> Message<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         // This class will be removed/replaced by the ConversionAwareMessage, so skipping implementation
         return null;
@@ -179,5 +186,4 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     public boolean isMetaDataDeserialized() {
         return metaData.isDeserialized();
     }
-
 }
