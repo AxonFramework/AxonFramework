@@ -85,22 +85,25 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
+    @Nonnull
     public String identifier() {
         return responseMessage.identifier();
     }
 
-    @Nonnull
     @Override
+    @Nonnull
     public MessageType type() {
         return responseMessage.type();
     }
 
     @Override
+    @Nonnull
     public MetaData metaData() {
         return responseMessage.metaData();
     }
 
     @Override
+    @Nullable
     public R payload() {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
@@ -113,6 +116,7 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
+    @Nullable
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
@@ -125,21 +129,25 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
+    @Nonnull
     public Class<R> payloadType() {
         return expectedResponseType.responseMessagePayloadType();
     }
 
     @Override
+    @Nonnull
     public QueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new ConvertingResponseMessage<>(expectedResponseType, responseMessage.withMetaData(metaData));
     }
 
     @Override
+    @Nonnull
     public QueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new ConvertingResponseMessage<>(expectedResponseType, responseMessage.andMetaData(additionalMetaData));
     }
 
     @Override
+    @Nonnull
     public <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         return responseMessage.withConvertedPayload(type, converter);
     }

@@ -20,8 +20,10 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedObjectHolder;
@@ -40,7 +42,7 @@ import java.util.Objects;
  * <p>
  * This {@code Message} implementation is "conversion aware," as it maintains <b>any</b> conversion results from
  * {@link #payloadAs(Type, Converter)} and {@link #withConvertedPayload(Type, Converter)} (either invoked with a
- * {@link Class}, {@link org.axonframework.common.TypeReference}, or {@link Type}), together with the hash of the given
+ * {@link Class}, {@link TypeReference}, or {@link Type}), together with the hash of the given
  * {@link Converter}. In doing so, this {@code Message} optimizes subsequent {@code payloadAs/withConvertedPayload}
  * invocations for the same type-and-converter combination.
  *
@@ -153,7 +155,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         this.payload = payload;
         this.payloadType = declaredPayloadType;
         this.metaData = MetaData.from(metaData);
-        this.convertedPayloads = new ConversionCache();
+        this.convertedPayloads = new ConversionCache(payload);
     }
 
     private GenericMessage(@Nonnull GenericMessage<P> original,
@@ -162,7 +164,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         this.payload = original.payload();
         this.payloadType = original.payloadType();
         this.metaData = metaData;
-        this.convertedPayloads = new ConversionCache();
+        this.convertedPayloads = new ConversionCache(payload);
     }
 
     /**
@@ -187,34 +189,40 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public MetaData metaData() {
-        return this.metaData;
-    }
-
-    @Override
+    @Nullable
     public P payload() {
         return this.payload;
     }
 
     @Override
+    @Nullable
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
-        //noinspection rawtypes
-        if (type instanceof Class clazz && payloadType().isAssignableFrom(clazz)) {
+        //noinspection rawtypes,unchecked
+        if (type instanceof Class clazz && clazz.isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (T) payload();
         }
-        Objects.requireNonNull(
-                converter, "Cannot convert payload to [" + type.getTypeName() + "] with null Converter."
-        );
-        return convertedPayloads.convertIfAbsent(type, converter, payload());
+
+        if (converter == null) {
+            throw new ConversionException("Cannot convert " + payloadType() + " to " + type + " without a converter.");
+        }
+        return convertedPayloads.convertIfAbsent(type, converter);
     }
 
     @Override
+    @Nonnull
     public Class<P> payloadType() {
         return this.payloadType;
     }
 
     @Override
+    @Nonnull
+    public MetaData metaData() {
+        return this.metaData;
+    }
+
+    @Override
+    @Nonnull
     protected Message<P> withMetaData(MetaData metaData) {
         return new GenericMessage<>(this, metaData);
     }
@@ -237,11 +245,12 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
+    @Nonnull
     public <T> Message<T> withConvertedPayload(@Nonnull Type type,
                                                @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
         //noinspection unchecked
-        return payloadType().isAssignableFrom(convertedPayload.getClass())
+        return ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())
                 ? (Message<T>) this
                 : new GenericMessage<>(identifier(), type(), convertedPayload, metaData());
     }

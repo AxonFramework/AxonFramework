@@ -17,6 +17,8 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
@@ -46,7 +48,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * @param payload The payload of type {@code P} for this {@link CommandMessage}.
      */
     public GenericCommandMessage(@Nonnull MessageType type,
-                                 @Nonnull P payload) {
+                                 @Nullable P payload) {
         this(type, payload, MetaData.emptyInstance());
     }
 
@@ -58,7 +60,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * @param metaData The metadata for this {@link CommandMessage}.
      */
     public GenericCommandMessage(@Nonnull MessageType type,
-                                 @Nonnull P payload,
+                                 @Nullable P payload,
                                  @Nonnull Map<String, String> metaData) {
         this(new GenericMessage<>(type, payload, metaData));
     }
@@ -82,27 +84,30 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
     }
 
     @Override
+    @Nonnull
     public CommandMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericCommandMessage<>(delegate().withMetaData(metaData));
     }
 
     @Override
+    @Nonnull
     public CommandMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericCommandMessage<>(delegate().andMetaData(metaData));
     }
 
     @Override
+    @Nonnull
     public <T> CommandMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         T convertedPayload = payloadAs(type, converter);
-        if (payloadType().isAssignableFrom(convertedPayload.getClass())) {
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
             return (CommandMessage<T>) this;
         }
         Message<P> delegate = delegate();
-        return new GenericCommandMessage<>(new GenericMessage<T>(delegate.identifier(),
-                                                                 delegate.type(),
-                                                                 convertedPayload,
-                                                                 delegate.metaData()));
+        return new GenericCommandMessage<>(new GenericMessage<>(delegate.identifier(),
+                                                                delegate.type(),
+                                                                convertedPayload,
+                                                                delegate.metaData()));
     }
 
     @Override

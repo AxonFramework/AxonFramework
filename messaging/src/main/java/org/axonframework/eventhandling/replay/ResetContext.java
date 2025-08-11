@@ -36,21 +36,26 @@ import java.util.Map;
 public interface ResetContext<P> extends Message<P> {
 
     @Override
+    @Nonnull
     ResetContext<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     ResetContext<P> andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     default <T> ResetContext<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
+    @Nonnull
     default <T> ResetContext<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
+    @Nonnull
     <T> ResetContext<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

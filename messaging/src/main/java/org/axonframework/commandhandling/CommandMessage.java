@@ -36,21 +36,26 @@ import java.util.Map;
 public interface CommandMessage<P> extends Message<P> {
 
     @Override
+    @Nonnull
     CommandMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     CommandMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     default <T> CommandMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
+    @Nonnull
     default <T> CommandMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
+    @Nonnull
     <T> CommandMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }
