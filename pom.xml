@@ -71,15 +71,15 @@
             ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
         <!-- Axon Server -->
-        <axonserver-connector-java.version>2025.1.1</axonserver-connector-java.version>
+        <axonserver-connector-java.version>2025.2.0-EAP</axonserver-connector-java.version>
         <!-- Caching -->
         <ehcache.version>3.10.8</ehcache.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
         <!-- Database -->
         <c3p0.version>0.9.1.2</c3p0.version>
-        <hikari.version>7.0.0</hikari.version>
+        <hikari.version>7.0.1</hikari.version>
         <hsqldb.version>2.7.2</hsqldb.version>
-        <hibernate-core.version>7.0.9.Final</hibernate-core.version>
+        <hibernate-core.version>7.1.0.Final</hibernate-core.version>
         <mysql-connector-java.version>9.4.0</mysql-connector-java.version>
         <postgresql.version>42.7.7</postgresql.version>
         <!-- Jakarta -->
@@ -113,7 +113,7 @@
         <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version>
-        <jobrunr.version>8.0.1</jobrunr.version>
+        <jobrunr.version>8.0.2</jobrunr.version>
         <quartz.version>2.5.0</quartz.version>
         <!-- Spring -->
         <spring.version>6.2.9</spring.version>
@@ -126,7 +126,7 @@
         <junit.jupiter.version>5.13.4</junit.jupiter.version>
         <mockito.version>5.18.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
-        <assertj.version>3.27.3</assertj.version>
+        <assertj.version>3.27.4</assertj.version>
         <!-- Validation -->
         <hibernate-validator.version>9.0.1.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
