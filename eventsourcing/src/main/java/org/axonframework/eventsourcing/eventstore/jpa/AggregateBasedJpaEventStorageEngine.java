@@ -43,6 +43,7 @@ import org.axonframework.eventsourcing.eventstore.StreamSpliterator;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventstreaming.EventCriterion;
 import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -56,6 +57,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
@@ -81,6 +83,7 @@ import static org.axonframework.eventsourcing.eventstore.AggregateBasedEventStor
  * that allow quick finding of events for a specific aggregates in the correct order.
  *
  * @author Mateusz Nowak
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
@@ -253,34 +256,32 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         });
     }
 
-    private void entityManagerPersistEvents(
-            AggregateSequencer aggregateSequencer,
-            List<TaggedEventMessage<?>> events
-    ) {
-        var entityManager = entityManager();
-        events.stream()
-              .map(taggedEvent -> mapToEntry(taggedEvent, aggregateSequencer, converter))
-              .forEach(entityManager::persist);
+    private void entityManagerPersistEvents(AggregateSequencer aggregateSequencer,
+                                            List<TaggedEventMessage<?>> events) {
+        try (EntityManager entityManager = entityManager()) {
+            events.stream()
+                  .map(taggedEvent -> mapToEntry(taggedEvent, aggregateSequencer, converter))
+                  .forEach(entityManager::persist);
+        }
     }
 
     private static AggregateBasedEventEntry mapToEntry(TaggedEventMessage<?> taggedEvent,
                                                        AggregateSequencer aggregateSequencer,
                                                        Converter converter) {
-        String aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
-        String aggregateType = resolveAggregateType(taggedEvent.tags());
         EventMessage<?> event = taggedEvent.event();
-        boolean isAggregateEvent =
-                aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty();
-        return new AggregateBasedEventEntry(event.identifier(),
-                                            event.type().name(),
-                                            event.type().version(),
-                                            event.payloadAs(byte[].class, converter),
-                                            converter.convert(event.metaData(), byte[].class),
-                                            event.timestamp(),
-                                            aggregateType,
-                                            isAggregateEvent ? aggregateIdentifier : event.identifier(),
-                                            isAggregateEvent ? aggregateSequencer.incrementAndGetSequenceOf(
-                                                    aggregateIdentifier) : 0L);
+        Set<Tag> tags = taggedEvent.tags();
+        String aggregateIdentifier = resolveAggregateIdentifier(tags);
+        return new AggregateBasedEventEntry(
+                event.identifier(),
+                event.type().name(),
+                event.type().version(),
+                event.payloadAs(byte[].class, converter),
+                converter.convert(event.metaData(), byte[].class),
+                event.timestamp(),
+                resolveAggregateType(tags),
+                resolveAggregateIdentifier(tags),
+                aggregateIdentifier != null ? aggregateSequencer.incrementAndGetSequenceOf(aggregateIdentifier) : null
+        );
     }
 
     @Override
@@ -311,10 +312,13 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         AtomicReference<AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
         var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         long firstSequenceNumber = condition.start();
+        //noinspection DataFlowIssue
         StreamSpliterator<? extends AggregateBasedEventEntry> entrySpliterator = new StreamSpliterator<>(
                 lastEntry -> transactionManager.fetchInTransaction(() -> queryEventsBy(
                         aggregateIdentifier,
-                        lastEntry == null ? firstSequenceNumber : lastEntry.aggregateSequenceNumber() + 1
+                        lastEntry != null && lastEntry.aggregateSequenceNumber() != null
+                                ? lastEntry.aggregateSequenceNumber() + 1
+                                : firstSequenceNumber
                 )),
                 finalBatchPredicate
         );
@@ -322,10 +326,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         MessageStream<EventMessage<?>> source =
                 MessageStream.fromStream(StreamSupport.stream(entrySpliterator, false),
                                          this::convertToEventMessage,
-                                         event -> setMarkerAndBuildContext(event.aggregateIdentifier(),
-                                                                           event.aggregateSequenceNumber(),
-                                                                           event.aggregateType(),
-                                                                           markerReference))
+                                         entry -> setMarkerAndBuildContext(entry, markerReference))
                              // Defaults the marker when the aggregate stream was empty
                              .whenComplete(() -> markerReference.compareAndSet(
                                      null, new AggregateBasedConsistencyMarker(aggregateIdentifier, 0)
@@ -344,12 +345,13 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         }
     }
 
-    private static Context setMarkerAndBuildContext(String aggregateIdentifier,
-                                                    long sequenceNumber,
-                                                    String aggregateType,
+    private static Context setMarkerAndBuildContext(AggregateBasedEventEntry entry,
                                                     AtomicReference<AggregateBasedConsistencyMarker> markerReference) {
-        markerReference.set(new AggregateBasedConsistencyMarker(aggregateIdentifier, sequenceNumber));
-        return buildContext(aggregateIdentifier, sequenceNumber, aggregateType);
+        String aggregateId = Objects.requireNonNullElse(entry.aggregateIdentifier(), entry.aggregateIdentifier());
+        String aggregateType = entry.aggregateType();
+        Long aggregateSeqNo = Objects.requireNonNullElse(entry.aggregateSequenceNumber(), 0L);
+        markerReference.set(new AggregateBasedConsistencyMarker(aggregateId, aggregateSeqNo));
+        return buildContext(aggregateId, aggregateSeqNo, aggregateType);
     }
 
     private static ConsistencyMarker combineAggregateMarkers(Stream<AggregateSource> resultStream) {
@@ -452,10 +454,10 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     private static Context buildTrackedContext(@Nonnull TokenAndEvent tokenAndEvent) {
-        var context = Context.empty();
-        context = buildContext(tokenAndEvent.event().aggregateIdentifier(),
-                               tokenAndEvent.event().aggregateSequenceNumber(),
-                               tokenAndEvent.event().aggregateType());
+        AggregateBasedEventEntry entry = tokenAndEvent.event();
+        Context context = buildContext(Objects.requireNonNullElse(entry.aggregateIdentifier(), entry.identifier()),
+                                       Objects.requireNonNullElse(entry.aggregateSequenceNumber(), 0L),
+                                       entry.aggregateType());
         return context.withResource(TrackingToken.RESOURCE_KEY, tokenAndEvent.token);
     }
 
