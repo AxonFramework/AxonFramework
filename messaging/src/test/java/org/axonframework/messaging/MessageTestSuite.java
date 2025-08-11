@@ -275,6 +275,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        //noinspection unchecked
         validateMessageSpecifics(testSubject, (M) result);
     }
 
@@ -296,6 +297,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        //noinspection unchecked
         validateMessageSpecifics(testSubject, (M) result);
     }
 
@@ -317,6 +319,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        //noinspection unchecked
         validateMessageSpecifics(testSubject, (M) result);
     }
 }
