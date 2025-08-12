@@ -71,6 +71,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
 
     /**
      * Constructs a {@code GenericCommandMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
+     * Optionally, a {@code routingKey} and/or a {@code priority} may be passed.
      *
      * @param type       The {@link MessageType type} for this {@link CommandMessage}.
      * @param payload    The payload of type {@code P} for this {@link CommandMessage}.
@@ -112,7 +113,8 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * <p>
      * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
-     * {@code GenericCommandMessage}.
+     * {@code GenericCommandMessage}.<br/>
+     * Optionally, a {@code routingKey} and/or a {@code priority} may be passed.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
