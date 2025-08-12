@@ -75,7 +75,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     private static final Logger logger = LoggerFactory.getLogger(AxonServerCommandBusConnector.class);
 
     private final AxonServerConnection connection;
-    private final AtomicReference<CommandBusConnector.Handler> incomingHandler = new AtomicReference<>();
+    private CommandBusConnector.Handler incomingHandler;
     private final Map<QualifiedName, Registration> subscriptions = new ConcurrentHashMap<>();
 
     /**
@@ -204,7 +204,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         logger.info("Received incoming command [{}]", command.getName());
         try {
             CompletableFuture<CommandResponse> result = new CompletableFuture<>();
-            incomingHandler.get().handle(convertToCommandMessage(command),
+            incomingHandler.handle(convertToCommandMessage(command),
                                          new FutureResultCallback(result, command));
             return result;
         } catch (Exception e) {
@@ -269,7 +269,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
     @Override
     public void onIncomingCommand(@Nonnull CommandBusConnector.Handler handler) {
-        this.incomingHandler.set(handler);
+        this.incomingHandler = handler;
     }
 
     private class FutureResultCallback implements ResultCallback {

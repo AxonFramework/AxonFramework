@@ -27,15 +27,6 @@ import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
-
-import java.lang.reflect.Field;
-
-import java.util.concurrent.TimeUnit;
-
-import java.util.concurrent.TimeoutException;
-
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -46,10 +37,13 @@ import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -316,7 +310,7 @@ class AxonServerCommandBusConnectorTest {
         testSubject.onIncomingCommand(handler);
 
         // Assert
-        assertThat(getIncomingHandler(testSubject).get()).isSameAs(handler);
+        assertThat(getIncomingHandler(testSubject)).isSameAs(handler);
     }
 
     // Helpers
@@ -355,11 +349,11 @@ class AxonServerCommandBusConnectorTest {
     }
 
     @SuppressWarnings("unchecked")
-    private AtomicReference<CommandBusConnector.Handler> getIncomingHandler(AxonServerCommandBusConnector instance){
+    private CommandBusConnector.Handler getIncomingHandler(AxonServerCommandBusConnector instance){
         try {
             Field field = instance.getClass().getDeclaredField("incomingHandler");
             field.setAccessible(true);
-            return (AtomicReference<CommandBusConnector.Handler>) field.get(instance);
+            return (CommandBusConnector.Handler) field.get(instance);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
