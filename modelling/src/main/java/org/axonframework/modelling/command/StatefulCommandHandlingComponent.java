@@ -108,7 +108,6 @@ public class StatefulCommandHandlingComponent implements
         return handlingComponent.supportedCommands();
     }
 
-
     @Override
     public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);

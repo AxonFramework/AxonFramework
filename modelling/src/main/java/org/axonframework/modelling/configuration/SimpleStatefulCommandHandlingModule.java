@@ -59,14 +59,12 @@ class SimpleStatefulCommandHandlingModule
         StatefulCommandHandlingModule.CommandHandlerPhase
 {
 
-    private final String moduleName;
     private final String statefulCommandHandlingComponentName;
     private final Map<QualifiedName, ComponentBuilder<StatefulCommandHandler>> handlerBuilders;
     private final List<ComponentBuilder<CommandHandlingComponent>> handlingComponentBuilders;
 
     SimpleStatefulCommandHandlingModule(@Nonnull String moduleName) {
-        super(moduleName);
-        this.moduleName = requireNonNull(moduleName, "The module name cannot be null.");
+        super(requireNonNull(moduleName, "The module name cannot be null."));
         this.statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
         this.handlerBuilders = new HashMap<>();
         this.handlingComponentBuilders = new ArrayList<>();
