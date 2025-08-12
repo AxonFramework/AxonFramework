@@ -19,7 +19,9 @@ package org.axonframework.modelling.stateful;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.configuration.SingleComponentModule;
 import org.axonframework.modelling.configuration.EntityModule;
+import org.axonframework.modelling.configuration.StatefulComponentBuilder;
 
 import java.util.List;
 
@@ -32,6 +34,15 @@ public interface Stateful<M extends Module> extends ModuleBuilder<M> {
 
     static <M extends Module> EntitiesPhase<M> module(ModuleBuilder<M> moduleBuilder) {
         return new StatefulDelegatingModule<M>(moduleBuilder);
+    }
+
+    static <C> EntitiesPhase<SingleComponentModule<C>> module(
+            String name, Class<C> componentClazz,
+            StatefulComponentBuilder<C> moduleBuilder
+    ) {
+        return new StatefulDelegatingModule<SingleComponentModule<C>>(
+                new SingleComponentModule<>(name, componentClazz, moduleBuilder)
+        );
     }
 
     interface EntitiesPhase<M extends Module> {
