@@ -28,11 +28,11 @@ import jakarta.annotation.Nullable;
  * component.
  *
  * @param <C> The type of component to be decorated.
- * @param <D> The type of decorated component.
+ * @param <D> The type of decorated component, which must be the same or a subclass of {@code C}.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface ComponentDecorator<C, D> {
+public interface ComponentDecorator<C, D extends C> {
 
     /**
      * Decorates the given {@code delegate} into a mutated or replaced instance of type {@code D}, which <b>must be</b>
@@ -53,7 +53,6 @@ public interface ComponentDecorator<C, D> {
      * @param name     The name of the component to be decorated.
      * @param delegate The delegate of type {@code C} to be decorated.
      * @return A decorated component of type {@code C}, typically based on the given {@code delegate}.
-     * @throws ClassCastException When this decorator does not return a subclass of {@code C}.
      */
     D decorate(@Nonnull Configuration config,
                @Nullable String name,
