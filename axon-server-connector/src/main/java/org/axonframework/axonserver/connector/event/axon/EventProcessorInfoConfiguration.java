@@ -20,11 +20,13 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.processor.EventProcessorControlService;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.EventProcessor;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -101,5 +103,10 @@ public class EventProcessorInfoConfiguration implements Module {
 //            lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, eventProcessorControlService::get);
 //        }
         return null;
+    }
+
+    @Override
+    public Module componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+        return this;
     }
 }

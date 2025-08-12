@@ -18,6 +18,8 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.function.Consumer;
+
 /**
  * Interface describing a module of Axon Framework's configuration API.
  * <p>
@@ -52,4 +54,6 @@ public interface Module {
      * @return The fully initialized {@link Configuration} instance from {@code this Module} specifically.
      */
     Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry);
+
+    Module componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction);
 }
