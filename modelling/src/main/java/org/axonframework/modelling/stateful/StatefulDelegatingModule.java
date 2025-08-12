@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StatefulDelegatingModule<M extends Module> extends DelegatingModule<M>
-        implements Stateful.EntitiesPhase<M> {
+        implements Stateful<M>, Stateful.EntitiesPhase<M> {
 
     private final List<EntityModule<?, ?>> entityModules = new ArrayList<>();
 
@@ -40,15 +40,15 @@ public class StatefulDelegatingModule<M extends Module> extends DelegatingModule
     }
 
     @Override
-    public M withEntities(@Nonnull EntityModule<?, ?>... entityModules) {
+    public Stateful<M> withEntities(@Nonnull EntityModule<?, ?>... entityModules) {
         this.entityModules.addAll(List.of(entityModules));
-        return delegate;
+        return this;
     }
 
     @Override
-    public M withEntities(@Nonnull List<EntityModule<?, ?>> entityModules) {
+    public Stateful<M> withEntities(@Nonnull List<EntityModule<?, ?>> entityModules) {
         this.entityModules.addAll(entityModules);
-        return delegate;
+        return this;
     }
 
     @Override
@@ -60,7 +60,7 @@ public class StatefulDelegatingModule<M extends Module> extends DelegatingModule
     }
 
     private void registerStateManager() {
-        componentRegistry(cr -> cr.registerComponent(StateManager.class, config ->
+        componentRegistry(cr -> cr.registerIfNotPresent(StateManager.class, config ->
                 SimpleStateManager.named("StateManager[" + name() + "]")));
     }
 

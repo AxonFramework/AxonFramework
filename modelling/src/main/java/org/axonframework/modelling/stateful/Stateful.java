@@ -23,7 +23,7 @@ import org.axonframework.modelling.configuration.EntityModule;
 
 import java.util.List;
 
-public interface Stateful {
+public interface Stateful<M extends Module> extends ModuleBuilder<M> {
 
     static <M extends Module> EntitiesPhase<M> module(M module) {
         return new StatefulDelegatingModule<M>(module);
@@ -35,8 +35,8 @@ public interface Stateful {
 
     interface EntitiesPhase<M extends Module> {
 
-        M withEntities(@Nonnull EntityModule<?, ?>... entityModules); // todo: at least one!
+        Stateful<M> withEntities(@Nonnull EntityModule<?, ?>... entityModules); // todo: at least one!
 
-        M withEntities(@Nonnull List<EntityModule<?, ?>> entityModules);
+        Stateful<M> withEntities(@Nonnull List<EntityModule<?, ?>> entityModules);
     }
 }
