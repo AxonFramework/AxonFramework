@@ -18,7 +18,6 @@ package org.axonframework.modelling.configuration;
 
 import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.stateful.Stateful;
@@ -47,9 +46,9 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                                       .loader(c -> (id, context) -> null)
                                       .persister(c -> (id, entity, context) -> null)
                                       .build();
-        Stateful<StatefulCommandHandlingModule> statefulCommandHandlingModule =
+        Stateful<CommandHandlingModule> statefulCommandHandlingModule =
                 Stateful.module(
-                        StatefulCommandHandlingModule
+                        CommandHandlingModule
                                 .named("test")
                                 .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
                                                          new QualifiedName(String.class),

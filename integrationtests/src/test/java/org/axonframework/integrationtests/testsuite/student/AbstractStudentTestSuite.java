@@ -39,7 +39,7 @@ import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.EntityModule;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.stateful.Stateful;
 import org.axonframework.serialization.Converter;
 import org.axonframework.test.server.AxonServerContainer;
@@ -75,7 +75,7 @@ public abstract class AbstractStudentTestSuite {
             .withDevMode(true);
     protected CommandGateway commandGateway;
     protected StateManager stateManager;
-    private StatefulCommandHandlingModule.CommandHandlerPhase statefulCommandHandlingModule;
+    private CommandHandlingModule.CommandHandlerPhase statefulCommandHandlingModule;
     private EventSourcedEntityModule<String, Course> courseEntity;
     private EventSourcedEntityModule<String, Student> studentEntity;
     private AxonConfiguration startedConfiguration;
@@ -113,7 +113,7 @@ public abstract class AbstractStudentTestSuite {
                 .criteriaResolver(this::courseCriteriaResolver)
                 .build();
 
-        statefulCommandHandlingModule = StatefulCommandHandlingModule.named("student-course-module")
+        statefulCommandHandlingModule = CommandHandlingModule.named("student-course-module")
                                                                      .commandHandlers();
     }
 
@@ -127,11 +127,11 @@ public abstract class AbstractStudentTestSuite {
     /**
      * Test suite implementations can invoke this method to register additional command handlers.
      *
-     * @param handlerConfigurer The command handler phase of the {@link StatefulCommandHandlingModule}, allowing for
+     * @param handlerConfigurer The command handler phase of the {@link CommandHandlingModule}, allowing for
      *                          command handler registration.
      */
     protected void registerCommandHandlers(
-            Consumer<StatefulCommandHandlingModule.CommandHandlerPhase> handlerConfigurer
+            Consumer<CommandHandlingModule.CommandHandlerPhase> handlerConfigurer
     ) {
         statefulCommandHandlingModule.commandHandlers(handlerConfigurer);
     }
@@ -166,7 +166,7 @@ public abstract class AbstractStudentTestSuite {
     /**
      * Test suites can override this method to register additional entities.
      *
-     * @param entityModules The entity phase of the {@link StatefulCommandHandlingModule}, allowing for additional
+     * @param entityModules The entity phase of the {@link CommandHandlingModule}, allowing for additional
      *                      entities to be registered.
      */
     protected void registerAdditionalEntities(List<EntityModule<?, ?>> entityModules) {

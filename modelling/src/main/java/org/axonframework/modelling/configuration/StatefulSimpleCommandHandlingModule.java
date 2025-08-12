@@ -26,7 +26,6 @@ import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
-import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.StatefulCommandHandler;
@@ -41,7 +40,7 @@ import static java.util.Objects.requireNonNull;
 import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
 
 /**
- * Simple implementation of the {@link StatefulCommandHandlingModule}. Registers the
+ * Simple implementation of the {@link CommandHandlingModule}. Registers the
  * {@link HierarchicalStateManagerConfigurationEnhancer} enhancer to the module so that message handlers get access to
  * entities via defining parameters, such as entitiy classes with {@link InjectEntity} or the {@link StateManager}
  * itself.
@@ -52,18 +51,18 @@ import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SimpleStatefulCommandHandlingModule
-        extends BaseModule<SimpleStatefulCommandHandlingModule>
-        implements StatefulCommandHandlingModule,
-        StatefulCommandHandlingModule.SetupPhase,
-        StatefulCommandHandlingModule.CommandHandlerPhase
+class StatefulSimpleCommandHandlingModule
+        extends BaseModule<StatefulSimpleCommandHandlingModule>
+        implements CommandHandlingModule,
+        CommandHandlingModule.SetupPhase,
+        CommandHandlingModule.CommandHandlerPhase
 {
 
     private final String statefulCommandHandlingComponentName;
     private final Map<QualifiedName, ComponentBuilder<StatefulCommandHandler>> handlerBuilders;
     private final List<ComponentBuilder<CommandHandlingComponent>> handlingComponentBuilders;
 
-    SimpleStatefulCommandHandlingModule(@Nonnull String moduleName) {
+    StatefulSimpleCommandHandlingModule(@Nonnull String moduleName) {
         super(requireNonNull(moduleName, "The module name cannot be null."));
         this.statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
         this.handlerBuilders = new HashMap<>();
@@ -94,7 +93,7 @@ class SimpleStatefulCommandHandlingModule
     }
 
     @Override
-    public StatefulCommandHandlingModule build() {
+    public CommandHandlingModule build() {
         registerStatefulCommandHandlingComponent();
         return this;
     }

@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.Snapshotter;
@@ -32,7 +31,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.stateful.Stateful;
 import org.junit.jupiter.api.*;
@@ -91,9 +90,9 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                         .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(id -> null))
                                         .criteriaResolver(c -> (event, ctx) -> EventCriteria.havingAnyTag())
                                         .build();
-        Stateful<StatefulCommandHandlingModule> statefulCommandHandlingModule = Stateful.module(
-                StatefulCommandHandlingModule.named("test")
-                                             .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
+        Stateful<CommandHandlingModule> statefulCommandHandlingModule = Stateful.module(
+                CommandHandlingModule.named("test")
+                                     .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
                                                      new QualifiedName(String.class),
                                                      (command, stateManager, context) -> MessageStream.empty().cast()
                                              ))

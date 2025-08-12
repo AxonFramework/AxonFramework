@@ -20,7 +20,7 @@ import org.axonframework.configuration.Module;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutablePerson;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.stateful.Stateful;
 
@@ -33,8 +33,8 @@ public class MutableReflectionEntityModelAdministrationTest extends AbstractAdmi
     @Override
     Module getModule() {
         return Stateful.module(
-                StatefulCommandHandlingModule.named("MutableReflectionEntityModelAdministrationTest")
-                                             .commandHandlers()
+                CommandHandlingModule.named("MutableReflectionEntityModelAdministrationTest")
+                                     .commandHandlers()
         ).withEntities(EventSourcedEntityModule.annotated(PersonIdentifier.class, MutablePerson.class));
     }
 }

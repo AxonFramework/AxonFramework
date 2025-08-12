@@ -28,14 +28,13 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
-import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.stateful.Stateful;
 
 import java.util.Objects;
@@ -124,7 +123,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      *                      {@code this ModellingConfigurer}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
-    public EventSourcingConfigurer registerStatefulModule(Stateful<StatefulCommandHandlingModule> moduleBuilder) {
+    public EventSourcingConfigurer registerStatefulModule(Stateful<CommandHandlingModule> moduleBuilder) {
         return modelling(modellingConfigurer -> modellingConfigurer.registerStatefulModule(moduleBuilder));
     }
 
