@@ -27,6 +27,7 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.modelling.stateful.Stateful;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -95,14 +96,12 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are
      * {@code Modules} registered with the resulting {@link StatefulCommandHandlingModule} itself.
      *
-     * @param moduleBuilder The builder returning a stateful command handling module to register with
+     * @param statefulModule The builder returning a stateful module to register with
      *                      {@code this ModellingConfigurer}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
-    public ModellingConfigurer registerStatefulCommandHandlingModule(
-            ModuleBuilder<StatefulCommandHandlingModule> moduleBuilder
-    ) {
-        delegate.componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));
+    public ModellingConfigurer registerStatefulModule(Stateful<? extends Module> statefulModule) {
+        delegate.componentRegistry(cr -> cr.registerModule(statefulModule.build()));
         return this;
     }
 

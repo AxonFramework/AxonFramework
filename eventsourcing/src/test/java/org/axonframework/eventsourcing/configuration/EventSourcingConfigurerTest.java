@@ -82,7 +82,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     }
 
     @Test
-    void registerStatefulCommandHandlingModuleAddsAModuleConfiguration() {
+    void registerStatefulModuleAddsAModuleConfiguration() {
         EventSourcedEntityModule<String, Object> testEntityBuilder =
                 EventSourcedEntityModule.declarative(String.class, Object.class)
                                         .messagingModel((c, b) -> EntityMetamodel.forEntityType(Object.class)
@@ -91,7 +91,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                         .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(id -> null))
                                         .criteriaResolver(c -> (event, ctx) -> EventCriteria.havingAnyTag())
                                         .build();
-        ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule = Stateful.module(
+        Stateful<StatefulCommandHandlingModule> statefulCommandHandlingModule = Stateful.module(
                 StatefulCommandHandlingModule.named("test")
                                              .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
                                                      new QualifiedName(String.class),
@@ -100,7 +100,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
         ).withEntities(testEntityBuilder);
 
         List<Configuration> moduleConfigurations =
-                testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
+                testSubject.registerStatefulModule(statefulCommandHandlingModule)
                            .build()
                            .getModuleConfigurations();
 

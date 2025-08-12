@@ -36,6 +36,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.stateful.Stateful;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -123,12 +124,8 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      *                      {@code this ModellingConfigurer}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
-    public EventSourcingConfigurer registerStatefulCommandHandlingModule(
-            ModuleBuilder<StatefulCommandHandlingModule> moduleBuilder
-    ) {
-        return modelling(modellingConfigurer -> modellingConfigurer.registerStatefulCommandHandlingModule(
-                moduleBuilder
-        ));
+    public EventSourcingConfigurer registerStatefulModule(Stateful<StatefulCommandHandlingModule> moduleBuilder) {
+        return modelling(modellingConfigurer -> modellingConfigurer.registerStatefulModule(moduleBuilder));
     }
 
     /**

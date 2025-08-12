@@ -151,7 +151,7 @@ public abstract class AbstractStudentTestSuite {
                 .componentRegistry(cr -> {
                     cr.registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration);
                 })
-                .registerStatefulCommandHandlingModule(
+                .registerStatefulModule(
                         Stateful.module(
                                 statefulCommandHandlingModule
                         ).withEntities(studentEntity, courseEntity)

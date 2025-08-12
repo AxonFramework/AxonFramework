@@ -23,6 +23,7 @@ import org.axonframework.modelling.configuration.EntityModule;
 
 import java.util.List;
 
+// todo: rename to StatefulModule ?
 public interface Stateful<M extends Module> extends ModuleBuilder<M> {
 
     static <M extends Module> EntitiesPhase<M> module(M module) {
