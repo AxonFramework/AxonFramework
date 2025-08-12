@@ -31,7 +31,6 @@ import org.axonframework.serialization.Serializer;
 
 import java.lang.reflect.Type;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Generic implementation of the {@link Message} interface containing the {@link #payload() payload} and
@@ -42,9 +41,10 @@ import java.util.Objects;
  * <p>
  * This {@code Message} implementation is "conversion aware," as it maintains <b>any</b> conversion results from
  * {@link #payloadAs(Type, Converter)} and {@link #withConvertedPayload(Type, Converter)} (either invoked with a
- * {@link Class}, {@link TypeReference}, or {@link Type}), together with the hash of the given
- * {@link Converter}. In doing so, this {@code Message} optimizes subsequent {@code payloadAs/withConvertedPayload}
- * invocations for the same type-and-converter combination.
+ * {@link Class}, {@link TypeReference}, or {@link Type}), together with the hash of the given {@link Converter}. In
+ * doing so, this {@code Message} optimizes subsequent {@code payloadAs/withConvertedPayload} invocations for the same
+ * type-and-converter combination. If this optimization should be disabled, the {@code "AXON_CONVERSION_CACHE_ENABLED"}
+ * system property can be set to {@code false}.
  *
  * @param <P> The type of {@link #payload() payload} contained in this {@link Message}.
  * @author Allard Buijze

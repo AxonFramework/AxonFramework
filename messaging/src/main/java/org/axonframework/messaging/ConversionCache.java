@@ -43,7 +43,7 @@ class ConversionCache {
     // Replacement value to allow null values in the map
     private static final Object NULL = new Object();
 
-    private final ConcurrentHashMap<Target, Object> conversionCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Target, Object> conversionCache;
     private final Object original;
 
     /**
@@ -54,6 +54,7 @@ class ConversionCache {
      */
     public ConversionCache(@Nullable Object original) {
         this.original = original;
+        this.conversionCache = conversionEnabled ? new ConcurrentHashMap<>() : null;
     }
 
     /**
