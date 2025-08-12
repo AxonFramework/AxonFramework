@@ -34,7 +34,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
-import org.axonframework.modelling.configuration.CommandHandlingModule;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.stateful.Stateful;
 
 import java.util.Objects;

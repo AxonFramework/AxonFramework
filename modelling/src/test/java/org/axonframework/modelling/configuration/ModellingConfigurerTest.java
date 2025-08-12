@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.configuration;
 
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.MessageStream;
@@ -52,7 +53,7 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                                 .named("test")
                                 .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
                                                          new QualifiedName(String.class),
-                                                         (command, stateManager, context) -> MessageStream.empty().cast()
+                                                         (command, context) -> MessageStream.empty().cast()
                                                  )
                                 )
                 ).withEntities(testEntityBuilder);

@@ -26,7 +26,7 @@ import org.axonframework.modelling.configuration.StatefulComponentBuilder;
 import java.util.List;
 
 // todo: rename to StatefulModule ?
-public interface Stateful<M extends Module> extends ModuleBuilder<M> {
+public interface Stateful<M extends Module> extends ModuleBuilder<M>, Module {
 
     static <M extends Module> EntitiesPhase<M> module(M module) {
         return new StatefulDelegatingModule<M>(module);

@@ -31,7 +31,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.configuration.CommandHandlingModule;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.stateful.Stateful;
 import org.junit.jupiter.api.*;
@@ -94,7 +94,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                 CommandHandlingModule.named("test")
                                      .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
                                                      new QualifiedName(String.class),
-                                                     (command, stateManager, context) -> MessageStream.empty().cast()
+                                                     (command, context) -> MessageStream.empty().cast()
                                              ))
         ).withEntities(testEntityBuilder);
 

@@ -19,6 +19,7 @@ package org.axonframework.modelling.configuration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlingComponent;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentBuilder;
@@ -83,7 +84,7 @@ class StatefulCommandHandlingModuleTest {
                                                 .commandHandlers()
                                                 .commandHandler(
                                                         new QualifiedName(Integer.class),
-                                                        (command, state, context) -> MessageStream.just(null))
+                                                        (command, context) -> MessageStream.just(null))
                                 )
                                 .withEntities(entityModule)
                                 .build()
@@ -122,8 +123,7 @@ class StatefulCommandHandlingModuleTest {
                           .build()
                           .build(ModellingConfigurer.create().build(), new StubLifecycleRegistry());
 
-        Optional<StatefulCommandHandlingComponent> optionalHandlingComponent = resultConfig.getOptionalComponent(
-                StatefulCommandHandlingComponent.class, "StatefulCommandHandlingComponent[test-subject]");
+        Optional<CommandHandlingComponent> optionalHandlingComponent = resultConfig.getOptionalComponent(CommandHandlingComponent.class);
         assertTrue(optionalHandlingComponent.isPresent());
         assertTrue(optionalHandlingComponent.get().supportedCommands().contains(new QualifiedName(String.class)));
     }
@@ -157,21 +157,21 @@ class StatefulCommandHandlingModuleTest {
     void commandHandlerThrowsNullPointerExceptionForNullCommandNameWithStatefulCommandHandler() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
-                     () -> commandHandlerPhase.commandHandler(null, (cmd, state, context) -> MessageStream.just(null)));
+                     () -> commandHandlerPhase.commandHandler(null, (cmd, context) -> MessageStream.just(null)));
     }
 
     @Test
     void commandHandlerThrowsNullPointerExceptionForNullStatefulCommandHandler() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
-                     () -> commandHandlerPhase.commandHandler(COMMAND_NAME, (StatefulCommandHandler) null));
+                     () -> commandHandlerPhase.commandHandler(COMMAND_NAME, (CommandHandler) null));
     }
 
     @Test
     void commandHandlerThrowsNullPointerExceptionForNullCommandNameWithCommandHandlerBuilder() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandler(
-                null, c -> (cmd, state, context) -> null
+                null, c -> (cmd, context) -> null
         ));
     }
 
@@ -179,7 +179,7 @@ class StatefulCommandHandlingModuleTest {
     void commandHandlerThrowsNullPointerExceptionForNullCommandHandlerBuilder() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandler(
-                COMMAND_NAME, (ComponentBuilder<StatefulCommandHandler>) null
+                COMMAND_NAME, (ComponentBuilder<CommandHandler>) null
         ));
     }
 
