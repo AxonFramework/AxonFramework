@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class ResultDeserializingCommandGatewayTest {
+class ConvertingCommandGatewayTest {
 
     private static final String HELLO_MESSAGE = "Hello, world!";
     private static final byte[] HELLO_BYTES = HELLO_MESSAGE.getBytes(StandardCharsets.UTF_8);

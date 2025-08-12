@@ -16,11 +16,18 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import org.axonframework.util.ExecutorServiceFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class DistributedCommandBusConfigurationTest {
 
@@ -52,6 +59,16 @@ class DistributedCommandBusConfigurationTest {
         assertThrows(IllegalArgumentException.class, () -> {
             testSubject.withNumberOfThreads(invalidNumberOfThreads);
         });
+    }
+
+    @Test
+    void executorServiceFactoryUsesGivenExecutorService() {
+        var myThreadPoolExecutor = Executors.newSingleThreadExecutor();
+        testSubject.withExecutorService(myThreadPoolExecutor);
+        ExecutorService executorService = testSubject.executorServiceFactory().createExecutorService(
+                mock(DistributedCommandBusConfiguration.class),mock(
+                BlockingQueue.class));
+        assertSame(myThreadPoolExecutor,executorService);
     }
 
 }
