@@ -436,10 +436,20 @@ API removes aggregate-specific methods and snapshot functionality in favor of th
 #### JPA based Event Storage
 
 If you've chosen a JPA-based event storage solution in pre-Axon-Framework-5, that means you need to switch from the
-`JpaEventStorageEngine` to the `AggregateBasedJpaEventStorageEngine`. Any changes to the API are described
-shortly [here](#generic-eventstorageengine-changes), expect for the construction. Instead of using the builder-pattern
-for all fields, the builder pattern is now restricted to the non-required fields, like, for example, the gap cleaning
-timeout.
+`JpaEventStorageEngine` to the `AggregateBasedJpaEventStorageEngine`. Any changes to the `EventStorageEngine` API are
+described shortly [here](#generic-eventstorageengine-changes).
+
+We have introduced an entirely new JPA entry for the `AggregateBasedJpaEventStorageEngine`, called the
+`AggregateBasedJpaEntry`. This entry has numerous difference compared to the `DomainEventEntry` used by the
+`JpaEventStorageEngine`. For one, the layering of the `DomainEventEntry`, which had four abstract classes and two
+interface (marked for removal [here](#removed-classes)), will not return for the `AggregateBasedJpaEntry`. Furthermore,
+next to the class name, resolution in a table rename, several columns have been renamed. Please see
+the [Stored Format Changes](#stored-format-changes) section for more details on the actual changes.
+
+Besides the entry, the construction of the storage engine changed slightly as well.
+The previously used builder-pattern now only remains for the customizable fields, whereas the necessary fields are
+simple required parameters of the constructor of the `AggregateBasedJpaEventStorageEngine`. The customizable fields (
+like gap timeouts and batch size) can be found in the `AggregateBasedJpaEventStorageEngineConfiguration`.
 
 ## Event Processors
 
@@ -1207,6 +1217,26 @@ Minor API Changes
 
 Stored Format Changes
 =====================
+
+## Events
+
+The JPA `org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry` is replaced entirely for the `org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry`.
+This thus changes the default table name from `domain_event_entry` to `aggregate_based_event_entry`.
+
+Besides the entry and table rename, several columns have been renamed compared to the `DomainEventEntry`, being:
+1. `DomainEventEntry#eventIdentifier` (inherited from `AbstractEventEntry`) is now called `AggregateBasedEventEntry#identifier`.
+2. `DomainEventEntry#payloadType` (inherited from `AbstractEventEntry`) is now called `AggregateBasedEventEntry#type`.
+3. `DomainEventEntry#payloadRevision` (inherited from `AbstractEventEntry`) is now called `AggregateBasedEventEntry#version`.
+4. `DomainEventEntry#timeStamp` (inherited from `AbstractEventEntry`) is now called `AggregateBasedEventEntry#timestamp`.
+5. `DomainEventEntry#type` (inherited from `AbstractDomainEventEntry`) is now called `AggregateBasedEventEntry#aggregateType`.
+6. `DomainEventEntry#sequenceNumber` (inherited from `AbstractDomainEventEntry`) is now called `AggregateBasedEventEntry#aggregateSequenceNumber`.
+
+Furthermore, some of the expectations placed on the fields have adjusted, being:
+1. The `payloadRevision`, renamed to `version`, is **not** optional anymore.
+2. The `payload` field no longer has a max column length of 10_000.
+3. The `metaData` field no longer has a max column length of 10_000.
+4. The `aggregateIdentifier` **is** optional right now. 
+5. The `sequenceNumber`, renamed to `aggregateSequenceNumber`, is **not** optional anymore.
 
 ## Dead Letters
 
