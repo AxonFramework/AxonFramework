@@ -20,8 +20,10 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedObjectHolder;
@@ -29,7 +31,6 @@ import org.axonframework.serialization.Serializer;
 
 import java.lang.reflect.Type;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Generic implementation of the {@link Message} interface containing the {@link #payload() payload} and
@@ -37,6 +38,13 @@ import java.util.Objects;
  * <p>
  * If a {@link GenericMessage} is created while a {@link LegacyUnitOfWork} is active it copies over the correlation data
  * of the {@code UnitOfWork} to the created message.
+ * <p>
+ * This {@code Message} implementation is "conversion aware," as it maintains <b>any</b> conversion results from
+ * {@link #payloadAs(Type, Converter)} and {@link #withConvertedPayload(Type, Converter)} (either invoked with a
+ * {@link Class}, {@link TypeReference}, or {@link Type}), together with the hash of the given {@link Converter}. In
+ * doing so, this {@code Message} optimizes subsequent {@code payloadAs/withConvertedPayload} invocations for the same
+ * type-and-converter combination. If this optimization should be disabled, the {@code "AXON_CONVERSION_CACHE_ENABLED"}
+ * system property can be set to {@code false}.
  *
  * @param <P> The type of {@link #payload() payload} contained in this {@link Message}.
  * @author Allard Buijze
@@ -50,6 +58,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     private final MetaData metaData;
 
     private transient volatile SerializedObjectHolder serializedObjectHolder;
+    private final ConversionCache convertedPayloads;
 
     /**
      * Constructs a {@code GenericMessage} for the given {@code type} and {@code payload}.
@@ -108,7 +117,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * {@code metaData}, intended to reconstruct another {@link Message}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
-     * of Work. If you in tend to construct a new {@link GenericMessage}, please use
+     * of Work. If you in tend to construct a new {@code GenericMessage}, please use
      * {@link #GenericMessage(MessageType, Object)} instead.
      *
      * @param identifier The identifier of this {@link Message}.
@@ -124,11 +133,11 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     }
 
     /**
-     * Constructs a {@link GenericMessage} for the given {@code identifier}, {@code type}, {@code payload}, and
+     * Constructs a {@code GenericMessage} for the given {@code identifier}, {@code type}, {@code payload}, and
      * {@code metaData}, intended to reconstruct another {@link Message}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
-     * of Work. If you in tend to construct a new {@link GenericMessage}, please use
+     * of Work. If you in tend to construct a new {@code GenericMessage}, please use
      * {@link #GenericMessage(MessageType, Object)} instead.
      *
      * @param identifier          The identifier of this {@link Message}.
@@ -146,6 +155,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         this.payload = payload;
         this.payloadType = declaredPayloadType;
         this.metaData = MetaData.from(metaData);
+        this.convertedPayloads = new ConversionCache(payload);
     }
 
     private GenericMessage(@Nonnull GenericMessage<P> original,
@@ -154,6 +164,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         this.payload = original.payload();
         this.payloadType = original.payloadType();
         this.metaData = metaData;
+        this.convertedPayloads = new ConversionCache(payload);
     }
 
     /**
@@ -186,12 +197,16 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     @Override
     @Nullable
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
-        //noinspection unchecked,rawtypes
-        return type instanceof Class clazz && clazz.isAssignableFrom(payloadType())
-                ? (T) payload()
-                : Objects.requireNonNull(converter,
-                                         "Cannot convert payload to [" + type.getTypeName() + "] with null Converter.")
-                         .convert(payload(), type);
+        //noinspection rawtypes,unchecked
+        if (type instanceof Class clazz && clazz.isAssignableFrom(payloadType())) {
+            //noinspection unchecked
+            return (T) payload();
+        }
+
+        if (converter == null) {
+            throw new ConversionException("Cannot convert " + payloadType() + " to " + type + " without a converter.");
+        }
+        return convertedPayloads.convertIfAbsent(type, converter);
     }
 
     @Override

@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.serialization.ChainingContentTypeConverter;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
@@ -65,14 +66,14 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     @Test
     void payloadAsWithClassAssignableFromPayloadTypeInvokesPayloadDirectly() {
         String testPayload = STRING_PAYLOAD;
-        Converter testConverter = spy(CONVERTER);
+        Converter spiedConverter = spy(CONVERTER);
 
         M testSubject = buildMessage(testPayload);
 
-        String result = testSubject.payloadAs(String.class, testConverter);
+        String result = testSubject.payloadAs(String.class, spiedConverter);
 
         assertThat(testPayload).isEqualTo(result);
-        verifyNoInteractions(testConverter);
+        verifyNoInteractions(spiedConverter);
     }
 
     @Test
@@ -87,11 +88,58 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
-    void payloadAsWithClassThrowsNullPointerExceptionForNullConverter() {
+    void secondPayloadAsWithClassInvocationReusesPreviousConversionResult() {
+        String testPayload = STRING_PAYLOAD;
+        Converter spiedConverter = spy(CONVERTER);
+
+        M testSubject = buildMessage(testPayload);
+
+        byte[] firstResult = testSubject.payloadAs(byte[].class, spiedConverter);
+        byte[] secondResult = testSubject.payloadAs(byte[].class, spiedConverter);
+
+        assertThat(testPayload.getBytes()).isEqualTo(firstResult);
+        assertThat(firstResult).isEqualTo(secondResult);
+        verify(spiedConverter, times(1)).convert(any(), (Type) any());
+    }
+
+    @Test
+    void secondPayloadAsWithClassInvocationAndNullResultReusesPreviousConversionResult() {
+        Converter spiedConverter = spy(CONVERTER);
+        when(spiedConverter.convert(any(), (Type) any())).thenReturn(null);
+
+        M testSubject = buildMessage(STRING_PAYLOAD);
+
+        byte[] firstResult = testSubject.payloadAs(byte[].class, spiedConverter);
+        byte[] secondResult = testSubject.payloadAs(byte[].class, spiedConverter);
+
+        assertThat(firstResult).isNull();
+        assertThat(secondResult).isNull();
+        verify(spiedConverter, times(1)).convert(any(), (Type) any());
+    }
+
+    @Test
+    void payloadAsWithSameClassButDifferentConverterDoesConvertAgain() {
+        String testPayload = STRING_PAYLOAD;
+        Converter firstConverter = spy(CONVERTER);
+        Converter secondConverter = spy(new ChainingContentTypeConverter());
+
+        M testSubject = buildMessage(testPayload);
+
+        byte[] firstResult = testSubject.payloadAs(byte[].class, firstConverter);
+        byte[] secondResult = testSubject.payloadAs(byte[].class, secondConverter);
+
+        assertThat(testPayload.getBytes()).isEqualTo(firstResult);
+        assertThat(firstResult).isEqualTo(secondResult);
+        verify(firstConverter).convert(any(), (Type) any());
+        verify(secondConverter).convert(any(), (Type) any());
+    }
+
+    @Test
+    void payloadAsWithClassThrowsConversionExceptionForNullConverter() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs(byte[].class, null))
-                .isExactlyInstanceOf(NullPointerException.class);
+                .isExactlyInstanceOf(ConversionException.class);
     }
 
     @Test
@@ -106,24 +154,56 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
-    void payloadAsWithTypeReferenceThrowsNullPointerExceptionForNullConverter() {
+    void secondPayloadAsWithTypeReferenceInvocationReusesPreviousConversionResult() {
+        String testPayload = STRING_PAYLOAD;
+        Converter spiedConverter = spy(CONVERTER);
+
+        M testSubject = buildMessage(testPayload);
+
+        byte[] firstResult = testSubject.payloadAs(BYTE_ARRAY_TYPE_REF, spiedConverter);
+        byte[] secondResult = testSubject.payloadAs(BYTE_ARRAY_TYPE_REF, spiedConverter);
+
+        assertThat(testPayload.getBytes()).isEqualTo(firstResult);
+        assertThat(firstResult).isEqualTo(secondResult);
+        verify(spiedConverter, times(1)).convert(any(), (Type) any());
+    }
+
+    @Test
+    void payloadAsWithTypeReferenceButDifferentConverterDoesConvertAgain() {
+        String testPayload = STRING_PAYLOAD;
+        Converter firstConverter = spy(CONVERTER);
+        Converter secondConverter = spy(new ChainingContentTypeConverter());
+
+        M testSubject = buildMessage(testPayload);
+
+        byte[] firstResult = testSubject.payloadAs(BYTE_ARRAY_TYPE_REF, firstConverter);
+        byte[] secondResult = testSubject.payloadAs(BYTE_ARRAY_TYPE_REF, secondConverter);
+
+        assertThat(testPayload.getBytes()).isEqualTo(firstResult);
+        assertThat(firstResult).isEqualTo(secondResult);
+        verify(firstConverter).convert(any(), (Type) any());
+        verify(secondConverter).convert(any(), (Type) any());
+    }
+
+    @Test
+    void payloadAsWithTypeReferenceThrowsConversionExceptionForNullConverter() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs(BYTE_ARRAY_TYPE_REF, null))
-                .isExactlyInstanceOf(NullPointerException.class);
+                .isExactlyInstanceOf(ConversionException.class);
     }
 
     @Test
     void payloadAsWithTypeInstanceOfClassAndAssignableFromPayloadTypeInvokesPayloadDirectly() {
         String testPayload = STRING_PAYLOAD;
-        Converter testConverter = spy(CONVERTER);
+        Converter spiedConverter = spy(CONVERTER);
 
         M testSubject = buildMessage(testPayload);
 
-        String result = testSubject.payloadAs((Type) String.class, testConverter);
+        String result = testSubject.payloadAs((Type) String.class, spiedConverter);
 
         assertThat(testPayload).isEqualTo(result);
-        verifyNoInteractions(testConverter);
+        verifyNoInteractions(spiedConverter);
     }
 
     @Test
@@ -138,11 +218,43 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     }
 
     @Test
-    void payloadAsWithTypeThrowsNullPointerExceptionForNullConverter() {
+    void secondPayloadAsWithTypeInvocationReusesPreviousConversionResult() {
+        String testPayload = STRING_PAYLOAD;
+        Converter spiedConverter = spy(CONVERTER);
+
+        M testSubject = buildMessage(testPayload);
+
+        byte[] firstResult = testSubject.payloadAs((Type) byte[].class, spiedConverter);
+        byte[] secondResult = testSubject.payloadAs((Type) byte[].class, spiedConverter);
+
+        assertThat(testPayload.getBytes()).isEqualTo(firstResult);
+        assertThat(firstResult).isEqualTo(secondResult);
+        verify(spiedConverter, times(1)).convert(any(), (Type) any());
+    }
+
+    @Test
+    void payloadAsWithTypeButDifferentConverterDoesConvertAgain() {
+        String testPayload = STRING_PAYLOAD;
+        Converter firstConverter = spy(CONVERTER);
+        Converter secondConverter = spy(new ChainingContentTypeConverter());
+
+        M testSubject = buildMessage(testPayload);
+
+        byte[] firstResult = testSubject.payloadAs((Type) byte[].class, firstConverter);
+        byte[] secondResult = testSubject.payloadAs((Type) byte[].class, secondConverter);
+
+        assertThat(testPayload.getBytes()).isEqualTo(firstResult);
+        assertThat(firstResult).isEqualTo(secondResult);
+        verify(firstConverter).convert(any(), (Type) any());
+        verify(secondConverter).convert(any(), (Type) any());
+    }
+
+    @Test
+    void payloadAsWithTypeThrowsConversionExceptionForNullConverter() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
         assertThatThrownBy(() -> testSubject.payloadAs((Type) byte[].class, null))
-                .isExactlyInstanceOf(NullPointerException.class);
+                .isExactlyInstanceOf(ConversionException.class);
     }
 
     @Test
@@ -163,6 +275,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        //noinspection unchecked
         validateMessageSpecifics(testSubject, (M) result);
     }
 
@@ -184,6 +297,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        //noinspection unchecked
         validateMessageSpecifics(testSubject, (M) result);
     }
 
@@ -205,6 +319,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
         assertThat(testSubject.metaData()).isEqualTo(result.metaData());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
+        //noinspection unchecked
         validateMessageSpecifics(testSubject, (M) result);
     }
 }
