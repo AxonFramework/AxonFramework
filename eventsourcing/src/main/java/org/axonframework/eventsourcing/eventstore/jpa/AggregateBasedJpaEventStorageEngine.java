@@ -663,7 +663,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                     batchSize,
                     finalAggregateBatchPredicate,
                     lowestGlobalSequence,
-                    tokenGapsHandling
+                    configurationOverride.apply(tokenGapsHandling)
             );
         }
     }

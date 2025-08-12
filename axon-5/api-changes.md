@@ -406,6 +406,41 @@ public void streamingEvents(
 }
 ```
 
+### Event Storage
+
+#### Generic `EventStorageEngine` changes
+
+The `EventStorageEngine` aligns with the changes made to the `EventStore` and `StreamableMessageSource` to service both
+interfaces correctly.
+
+As such, it's API now uses asynchronous operations throughout - all methods now return
+`CompletableFuture` objects instead of blocking calls. Furthermore, event appending requires an `AppendCondition` and
+uses
+`TaggedEventMessage` objects, with operations wrapped in an `AppendTransaction` that must be explicitly committed or
+rolled back for better transactional control. The `TaggedEventMessage` wraps an `EventMessage` and a set of `Tags` that
+are important labels of the `EventMessage`.
+
+Event retrieval is consolidated into two primary methods: `source()` for finite streams and `stream()` for infinite
+streams. Both use condition objects (the aforementioned `SourcingCondition` in [appending events](#appending-events) and
+`StreamingCondition` in [streaming events](#streaming-events)) to specify filtering and positioning
+logic, replacing direct parameter-based methods. Token creation is streamlined with `firstToken()`, `latestToken()`, and
+`tokenAt()` methods that all return futures.
+
+Although the chance is slim users are hit with the API change on the `EventStorageEngine` itself, as we recommend event
+reading and writing through higher level APIs, if you are hit, we recommend a manual transition. Both when directly
+using the  `EventStorageEngine` or with a manual implementation of the old `EventStorageEngine`.
+During such a migration, you'll need to handle async operations with `CompletableFutures`, replace direct append calls
+with transactional ones using conditions, and convert aggregate-specific reads to condition-based sourcing calls. The
+API removes aggregate-specific methods and snapshot functionality in favor of the more generic condition-based approach.
+
+#### JPA based Event Storage
+
+If you've chosen a JPA-based event storage solution in pre-Axon-Framework-5, that means you need to switch from the
+`JpaEventStorageEngine` to the `AggregateBasedJpaEventStorageEngine`. Any changes to the API are described
+shortly [here](#generic-eventstorageengine-changes), expect for the construction. Instead of using the builder-pattern
+for all fields, the builder pattern is now restricted to the non-required fields, like, for example, the gap cleaning
+timeout.
+
 ## Event Processors
 
 ### TrackingEventProcessor Removal
@@ -1273,6 +1308,16 @@ This section contains five tables:
 | org.axonframework.lifecycle.ShutdownHandler                                              | [Lifecycle management](#component-lifecycle-management) is now only done lazy, eliminating the need for concrete component scanning.           |
 | org.axonframework.eventhandling.TrackingEventProcessor                                   | Removed in favor of `PooledStreamingEventProcessor` (see [Event Processors](#event-processors)).                                               |
 | org.axonframework.eventhandling.TrackingEventProcessorConfiguration                      | Removed along with `TrackingEventProcessor` (see [Event Processors](#event-processors)).                                                       |
+| org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine                     | Replaced in favor of the `AggregateBasedJpaEventStorageEngine`                                                                                 |
+| org.axonframework.eventhandling.EventData                                                | Removed in favor of the `EventMessage` carrying all required data to map from stored to read formats.                                          |
+| org.axonframework.eventhandling.AbstractEventEntry                                       | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.DomainEventData                                          | Removed in favor of the `EventMessage` carrying all required data to map from stored to read formats.                                          |
+| org.axonframework.eventhandling.AbstractDomainEventEntry                                 | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.GenericDomainEventEntry                                  | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.AbstractSequencedDomainEventEntry                        | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry                          | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.TrackedEventData                                         | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
+| org.axonframework.eventhandling.TrackedDomainEventData                                   | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 
 ### Marked for removal Classes
 

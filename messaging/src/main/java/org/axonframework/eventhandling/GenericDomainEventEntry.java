@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ package org.axonframework.eventhandling;
  * implementations to reconstruct an event or snapshot from the underlying storage for example.
  *
  * @author Rene de Waele
+ * @deprecated Will be removed entirely in favor of the {@link org.axonframework.eventhandling.EventMessage}.
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class GenericDomainEventEntry<T> extends AbstractDomainEventEntry<T> {
 
     /**
