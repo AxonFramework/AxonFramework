@@ -1238,6 +1238,21 @@ Furthermore, some of the expectations placed on the fields have adjusted, being:
 4. The `aggregateIdentifier` **is** optional right now. 
 5. The `sequenceNumber`, renamed to `aggregateSequenceNumber`, is **not** optional anymore.
 
+Lastly, the sequence generator for the global index (resulting in the event's position in the event store) has been
+specified in more detail for the `AggregateBasedEventEntry`. The `DomainEventEntry` had a simple `@GeneratedValue`. With
+the upgrade from Hibernate 5 to Hibernate 6, this caused issues, as the default sequence generator configuration
+changed. Notable changes were switching to an automated generator type, using a unique sequence generator per table and
+a default allocation size of 50.
+
+The automated generator type selection is not ideal for Axon Framework. Hence, this is fixed to a sequence-based
+generator.
+The 'generator-per-table' is desired and as such specified for the `AggregateBasedEventEntry` under the sequence name
+`aggregate-based-event-global-index-sequence`. The default allocation size of 50 is far from desired, however. This
+introduces large amounts of gaps, which will slow down event streaming to event processors. Hence, the allocation size
+is fixed to 1 to minimize the amount of gaps. Although this enforces a round trip to the database to retrieve the
+`AggregateBasedEventEntry#globalIndex` for **every** event that is being appended, this outweighs the concerns on
+consuming events through the `EventStorageEngine#stream(StreamingCondition)` method tremendously.
+
 ## Dead Letters
 
 1. The JPA `org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry` has renamed the `messageType` column to

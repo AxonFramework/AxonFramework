@@ -22,9 +22,11 @@ import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Lob;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
@@ -48,7 +50,15 @@ public class AggregateBasedEventEntry {
 
     // Deliberate field ordering for column ordering
     @Id
-    @GeneratedValue
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "aggregate-based-event-global-index-generator"
+    )
+    @SequenceGenerator(
+            name = "aggregate-based-event-global-index-generator",
+            sequenceName = "aggregate-based-event-global-index-sequence",
+            allocationSize = 1
+    )
     private long globalIndex;
     private String aggregateType;
     private String aggregateIdentifier;
