@@ -449,7 +449,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         return new GenericEventMessage<>(event.identifier(),
                                          new MessageType(event.type(), event.version()),
                                          event.payload(),
-                                         converter.convert(event.metadata(), METADATA_MAP_TYPE_REF.getType()),
+                                         converter.convert(event.metaData(), METADATA_MAP_TYPE_REF.getType()),
                                          event.timestamp());
     }
 
