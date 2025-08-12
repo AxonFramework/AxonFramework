@@ -56,6 +56,11 @@ class GenericMessageTest extends MessageTestSuite<Message<?>> {
     }
 
     @Override
+    protected Message<?> buildDefaultMessage() {
+        return new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+    }
+
+    @Override
     protected <P> Message<?> buildMessage(@Nullable P payload) {
         return new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
@@ -65,21 +70,6 @@ class GenericMessageTest extends MessageTestSuite<Message<?>> {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.clear(CurrentUnitOfWork.get());
         }
-    }
-
-    @Test
-    void containsDataAsExpected() {
-        String testIdentifier = "testIdentifier";
-        MessageType testType = new MessageType("message");
-        String testPayload = "payload";
-        MetaData testMetaData = MetaData.emptyInstance();
-
-        Message<String> testSubject = new GenericMessage<>(testIdentifier, testType, testPayload, testMetaData);
-
-        assertEquals(testIdentifier, testSubject.identifier());
-        assertEquals(testType, testSubject.type());
-        assertEquals(testPayload, testSubject.payload());
-        assertEquals(testMetaData, testSubject.metaData());
     }
 
     @Test
