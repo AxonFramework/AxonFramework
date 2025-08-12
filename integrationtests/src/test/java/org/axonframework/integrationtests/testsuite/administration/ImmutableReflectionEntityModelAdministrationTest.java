@@ -22,6 +22,7 @@ import org.axonframework.integrationtests.testsuite.administration.common.Person
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutablePerson;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.stateful.Stateful;
 
 /**
  * Runs the administration test suite using as many reflection components of the {@link EntityMetamodel} and
@@ -31,10 +32,7 @@ public class ImmutableReflectionEntityModelAdministrationTest extends AbstractAd
 
     @Override
     Module getModule() {
-        return StatefulCommandHandlingModule.named("ImmutableReflectionEntityModelAdministrationTest")
-                                            .entities()
-                                            .entity(EventSourcedEntityModule
-                                                            .annotated(PersonIdentifier.class, ImmutablePerson.class))
-                                            .build();
+        return Stateful.module(StatefulCommandHandlingModule.named("ImmutableReflectionEntityModelAdministrationTest").commandHandlers())
+                .withEntities(EventSourcedEntityModule.annotated(PersonIdentifier.class, ImmutablePerson.class));
     }
 }

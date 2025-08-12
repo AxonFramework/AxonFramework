@@ -17,28 +17,26 @@
 package org.axonframework.modelling.stateful;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.Module;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.modelling.configuration.EntityModule;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
-import static java.util.Objects.requireNonNull;
+public interface Stateful {
 
-public class EntitiesConfigurer {
-
-    private final Map<String, EntityModule<?, ?>> entityModules;
-
-    public EntitiesConfigurer() {
-        this.entityModules = new HashMap<>();
+    static <M extends Module> EntitiesPhase<M> module(M module) {
+        return new StatefulDelegatingModule<M>(module);
     }
 
-    public <I, E> EntitiesConfigurer entity(@Nonnull EntityModule<I, E> entityModule) {
-        requireNonNull(entityModule, "The entity module cannot be null.");
-        entityModules.put(entityModule.entityName(), entityModule);
-        return this;
+    static <M extends Module> EntitiesPhase<M> module(ModuleBuilder<M> moduleBuilder) {
+        return new StatefulDelegatingModule<M>(moduleBuilder);
     }
 
-    public Map<String, EntityModule<?, ?>> entityModules() {
-        return Map.copyOf(entityModules);
+    interface EntitiesPhase<M extends Module> {
+
+        M withEntities(@Nonnull EntityModule<?, ?>... entityModules); // todo: at least one!
+
+        M withEntities(@Nonnull List<EntityModule<?, ?>> entityModules);
     }
 }

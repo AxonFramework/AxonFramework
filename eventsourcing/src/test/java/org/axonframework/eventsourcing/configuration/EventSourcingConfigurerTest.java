@@ -34,6 +34,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.stateful.Stateful;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -90,13 +91,13 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                         .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(id -> null))
                                         .criteriaResolver(c -> (event, ctx) -> EventCriteria.havingAnyTag())
                                         .build();
-        ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
+        ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule = Stateful.module(
                 StatefulCommandHandlingModule.named("test")
-                                             .entities(entityPhase -> entityPhase.entity(testEntityBuilder))
                                              .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
                                                      new QualifiedName(String.class),
                                                      (command, stateManager, context) -> MessageStream.empty().cast()
-                                             ));
+                                             ))
+        ).withEntities(testEntityBuilder);
 
         List<Configuration> moduleConfigurations =
                 testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)

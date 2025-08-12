@@ -46,6 +46,7 @@ import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
+import org.axonframework.modelling.stateful.Stateful;
 import org.axonframework.serialization.Converter;
 
 import java.util.Objects;
@@ -79,7 +80,9 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // SalaryInformation is the singular child-model of Employee
         EntityMetamodel<MutableSalaryInformation> salaryInformationMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableSalaryInformation.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableSalaryInformation.class, converter, typeResolver))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableSalaryInformation.class,
+                                                                            converter,
+                                                                            typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -92,7 +95,9 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // Employee is a concrete entity type
         EntityMetamodel<MutableEmployee> employeeMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableEmployee.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableEmployee.class, converter, typeResolver))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableEmployee.class,
+                                                                            converter,
+                                                                            typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
                                         ((command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -123,10 +128,12 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                                       return null;
                                   })
                                   .eventTargetMatcher((o, eventMessage, ctx) -> {
-                                     if(eventMessage.type().name().equals(TaskCompleted.class.getName())) {
-                                         TaskCompleted taskCompleted = converter.convert(eventMessage.payload(), TaskCompleted.class);
-                                         Objects.requireNonNull(taskCompleted, "TaskCompleted event payload cannot be null");
-                                         return o.getTaskId().equals(taskCompleted.taskId());
+                                      if (eventMessage.type().name().equals(TaskCompleted.class.getName())) {
+                                          TaskCompleted taskCompleted = converter.convert(eventMessage.payload(),
+                                                                                          TaskCompleted.class);
+                                          Objects.requireNonNull(taskCompleted,
+                                                                 "TaskCompleted event payload cannot be null");
+                                          return o.getTaskId().equals(taskCompleted.taskId());
                                       }
                                       return false;
                                   })
@@ -145,7 +152,9 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
         // Customer is a concrete entity type
         EntityMetamodel<MutableCustomer> customerMetamodel = ConcreteEntityMetamodel
                 .forEntityClass(MutableCustomer.class)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableCustomer.class, converter, typeResolver))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableCustomer.class,
+                                                                            converter,
+                                                                            typeResolver))
                 .instanceCommandHandler(
                         typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
                         ((command, entity, context) -> {
@@ -160,7 +169,9 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .forPolymorphicEntityType(MutablePerson.class)
                 .addConcreteType(employeeMetamodel)
                 .addConcreteType(customerMetamodel)
-                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutablePerson.class, converter, typeResolver))
+                .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutablePerson.class,
+                                                                            converter,
+                                                                            typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
@@ -192,11 +203,10 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                     throw new IllegalArgumentException(
                             format("Unknown command type: %s", message.payloadType().getName()));
                 });
-        return StatefulCommandHandlingModule
-                .named("MutableBuilderEntityModelAdministrationTest")
-                .entities()
-                .entity(personEntityModule)
-                .commandHandlers()
-                .build();
+        return Stateful.module(
+                StatefulCommandHandlingModule
+                        .named("MutableBuilderEntityModelAdministrationTest")
+                        .commandHandlers()
+        ).withEntities(personEntityModule);
     }
 }

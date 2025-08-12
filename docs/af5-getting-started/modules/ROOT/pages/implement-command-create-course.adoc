@@ -340,7 +340,7 @@ Expected  |  Actual
          <|> io.axoniq.demo.university.faculty.events.CourseCreated
 ----
 
-Do you remember that we haven't used any state inside the *Stateful* command handling component?
+Do you remember that we haven't used any state inside the *StatefulDelegatingModule* command handling component?
 Now we are definitely going to do that, because the system decision what to do with the command will be based on what happened in the system before—the state derived from the historical events.
 
 === Validate the Command against the state

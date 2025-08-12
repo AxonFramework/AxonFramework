@@ -29,6 +29,7 @@ import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.Repository;
+import org.axonframework.modelling.stateful.Stateful;
 import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
@@ -49,13 +50,11 @@ class StatefulCommandHandlingModuleTest {
 
     private StatefulCommandHandlingModule.SetupPhase setupPhase;
     private StatefulCommandHandlingModule.CommandHandlerPhase commandHandlerPhase;
-    private StatefulCommandHandlingModule.EntityPhase entityPhase;
 
     @BeforeEach
     void setUp() {
         setupPhase = StatefulCommandHandlingModule.named("test-subject");
         commandHandlerPhase = setupPhase.commandHandlers();
-        entityPhase = setupPhase.entities();
     }
 
     @Test
@@ -76,18 +75,19 @@ class StatefulCommandHandlingModuleTest {
                                               .build())
                                       .entityIdResolver(config -> (message, context) -> "1");
 
-        StubLifecycleRegistry lifecycleRegistry = new StubLifecycleRegistry();
         AxonConfiguration configuration = ModellingConfigurer
                 .create()
-                .componentRegistry(cr -> {
-                    cr.registerModule(setupPhase
-                                              .entities()
-                                              .entity(entityModule)
-                                              .commandHandlers()
-                                              .commandHandler(new QualifiedName(Integer.class),
-                                                              (command, state, context) -> MessageStream.just(null))
-                                              .build());
-                })
+                .componentRegistry(cr -> cr.registerModule(
+                        Stateful.module(
+                                        setupPhase
+                                                .commandHandlers()
+                                                .commandHandler(
+                                                        new QualifiedName(Integer.class),
+                                                        (command, state, context) -> MessageStream.just(null))
+                                )
+                                .withEntities(entityModule)
+                                .build()
+                ))
                 .start();
 
         Configuration resultConfig = configuration.getModuleConfiguration("test-subject").orElseThrow();
@@ -97,7 +97,7 @@ class StatefulCommandHandlingModuleTest {
 
         assertNotNull(optionalStateManager.get().repository(String.class, String.class));
         assertNotNull(resultConfig.getModuleConfiguration("SimpleStateBasedEntityModule<String, String>").orElseThrow()
-                                   .getComponent(Repository.class, "String#String"));
+                                  .getComponent(Repository.class, "String#String"));
 
         MockComponentDescriptor descriptor = new MockComponentDescriptor();
         resultConfig.getComponent(CommandBus.class).describeTo(descriptor);
@@ -200,17 +200,5 @@ class StatefulCommandHandlingModuleTest {
     void commandHandlingThrowsNullPointerExceptionForNullCommandHandlerPhaseConsumer() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandlers(null));
-    }
-
-    @Test
-    void entityThrowsNullPointerExceptionForNullEntityBuilder() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> entityPhase.entity(null));
-    }
-
-    @Test
-    void entityThrowsNullPointerExceptionForNullEntityPhaseConsumer() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> entityPhase.entities(null));
     }
 }

@@ -17,31 +17,45 @@
 package org.axonframework.modelling.stateful;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.configuration.ModuleDecorator;
-import org.axonframework.modelling.configuration.EntityModule;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
-public class StatefulModuleDecorator implements ModuleDecorator {
+public class DelegatingModule<T extends Module> implements Module, ModuleBuilder<T> {
 
+    protected final T delegate;
 
-    class EntitiesConfigurer {
+    public DelegatingModule(@Nonnull T delegate) {
+        this.delegate = Objects.requireNonNull(delegate, "delegate may not be null");
+    }
 
-        public <I, E> StatefulCommandHandlingModule.EntityPhase entity(@Nonnull EntityModule<I, E> entityModule) {
-
-        }
+    public DelegatingModule(@Nonnull ModuleBuilder<T> delegate) {
+        this.delegate = Objects.requireNonNull(delegate, "delegate may not be null").build();
     }
 
     @Override
-    public Module decorate(@Nonnull Configuration config, @Nullable String name, @Nonnull Module delegate) {
-        return null;
+    public String name() {
+        return delegate.name();
+    }
+
+    @Override
+    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+        return delegate.build(parent, lifecycleRegistry);
+    }
+
+    @Override
+    public T componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+        //noinspection unchecked
+        return (T) delegate.componentRegistry(registryAction);
+    }
+
+    @Override
+    public T build() {
+        return delegate;
     }
 }
-

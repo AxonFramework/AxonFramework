@@ -32,10 +32,11 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.SimpleEntityEvolvingComponent;
 import org.axonframework.modelling.annotation.InjectEntity;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.configuration.EntityModule;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -49,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
     @Override
-    protected void registerAdditionalEntities(StatefulCommandHandlingModule.EntityPhase entityConfigurer) {
+    protected void registerAdditionalEntities(List<EntityModule<?, ?>> entityModules) {
         EventSourcedEntityModule<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentSlice =
                 EventSourcedEntityModule
                         .declarative(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
@@ -78,7 +79,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                         ))
                         .build();
 
-        entityConfigurer.entity(mentorAssignmentSlice);
+        entityModules.add(mentorAssignmentSlice);
     }
 
     @Test

@@ -113,27 +113,6 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
                     .accept(commandHandlerPhase);
             return commandHandlerPhase;
         }
-
-        /**
-         * Initiates the entity configuration phase for this module.
-         *
-         * @return The entity phase of this module, for a fluent API.
-         */
-        EntityPhase entities();
-
-        /**
-         * Initiates the entity configuration phase for this module, as well as performing the given
-         * {@code configurationLambda} within this phase.
-         *
-         * @param configurationLambda A consumer of the entity phase, performing entity configuration right away.
-         * @return The setup phase of this module, for a fluent API.
-         */
-        default EntityPhase entities(@Nonnull Consumer<EntityPhase> configurationLambda) {
-            EntityPhase entityPhase = entities();
-            requireNonNull(configurationLambda, "The entity configuration lambda cannot be null.")
-                    .accept(entityPhase);
-            return entityPhase;
-        }
     }
 
     /**
@@ -252,24 +231,5 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
                     c.getComponent(ParameterResolverFactory.class)
             ));
         }
-    }
-
-    /**
-     * The entity phase of the stateful command handling module, where {@link EntityModule entity modules} can be
-     * registered. The entities defined in the registered modules will be available in the
-     * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
-     */
-    interface EntityPhase extends SetupPhase, ModuleBuilder<StatefulCommandHandlingModule> {
-
-        /**
-         * Registers the given {@code entityModule} with this module. This will make the entity available in the
-         * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
-         *
-         * @param entityModule The entity module to register with this module.
-         * @param <I>          The type of identifier used to identify the entity that's being built.
-         * @param <E>          The type of the entity being built.
-         * @return The entity phase of this module, for a fluent API.
-         */
-        <I, E> EntityPhase entity(@Nonnull EntityModule<I, E> entityModule);
     }
 }

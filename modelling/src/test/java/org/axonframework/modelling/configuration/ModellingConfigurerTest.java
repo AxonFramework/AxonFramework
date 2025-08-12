@@ -21,6 +21,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.stateful.Stateful;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -47,12 +48,15 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                                       .persister(c -> (id, entity, context) -> null)
                                       .build();
         ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
-                StatefulCommandHandlingModule.named("test")
-                                             .entities(entityPhase -> entityPhase.entity(testEntityBuilder))
-                                             .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
-                                                     new QualifiedName(String.class),
-                                                     (command, stateManager, context) -> MessageStream.empty().cast()
-                                             ));
+                Stateful.module(
+                        StatefulCommandHandlingModule
+                                .named("test")
+                                .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
+                                                         new QualifiedName(String.class),
+                                                         (command, stateManager, context) -> MessageStream.empty().cast()
+                                                 )
+                                )
+                ).withEntities(testEntityBuilder);
 
         List<Configuration> moduleConfigurations =
                 testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)

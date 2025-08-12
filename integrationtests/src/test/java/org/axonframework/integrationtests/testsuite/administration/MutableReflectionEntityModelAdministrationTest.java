@@ -22,19 +22,19 @@ import org.axonframework.integrationtests.testsuite.administration.common.Person
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutablePerson;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.stateful.Stateful;
 
 /**
- * Runs the administration test suite using as many reflection components of the {@link EntityMetamodel} and
- * related classes as possible. As reflection-based components are added, this test may change to use more of them.
+ * Runs the administration test suite using as many reflection components of the {@link EntityMetamodel} and related
+ * classes as possible. As reflection-based components are added, this test may change to use more of them.
  */
 public class MutableReflectionEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
     @Override
     Module getModule() {
-        return StatefulCommandHandlingModule.named("MutableReflectionEntityModelAdministrationTest")
-                                            .entities()
-                                            .entity(EventSourcedEntityModule.annotated(PersonIdentifier.class,
-                                                                                       MutablePerson.class))
-                                            .build();
+        return Stateful.module(
+                StatefulCommandHandlingModule.named("MutableReflectionEntityModelAdministrationTest")
+                                             .commandHandlers()
+        ).withEntities(EventSourcedEntityModule.annotated(PersonIdentifier.class, MutablePerson.class));
     }
 }

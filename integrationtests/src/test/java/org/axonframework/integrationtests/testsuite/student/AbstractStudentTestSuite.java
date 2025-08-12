@@ -38,7 +38,9 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.configuration.EntityModule;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.stateful.Stateful;
 import org.axonframework.serialization.Converter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
@@ -46,6 +48,7 @@ import org.junit.jupiter.api.*;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -111,10 +114,6 @@ public abstract class AbstractStudentTestSuite {
                 .build();
 
         statefulCommandHandlingModule = StatefulCommandHandlingModule.named("student-course-module")
-                                                                     .entities()
-                                                                     .entity(studentEntity)
-                                                                     .entity(courseEntity)
-                                                                     .entities(this::registerAdditionalEntities)
                                                                      .commandHandlers();
     }
 
@@ -145,12 +144,18 @@ public abstract class AbstractStudentTestSuite {
         axonServerConfiguration.setServers(
                 container.getHost() + ":" + container.getGrpcPort()
         );
+        List<EntityModule<?, ?>> entities = List.of(studentEntity, courseEntity);
+        registerAdditionalEntities(entities);
         startedConfiguration = EventSourcingConfigurer
                 .create()
                 .componentRegistry(cr -> {
                     cr.registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration);
                 })
-                .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
+                .registerStatefulCommandHandlingModule(
+                        Stateful.module(
+                                statefulCommandHandlingModule
+                        ).withEntities(studentEntity, courseEntity)
+                )
                 .start();
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);
 
@@ -161,10 +166,10 @@ public abstract class AbstractStudentTestSuite {
     /**
      * Test suites can override this method to register additional entities.
      *
-     * @param entityConfigurer The entity phase of the {@link StatefulCommandHandlingModule}, allowing for additional
-     *                         entities to be registered.
+     * @param entityModules The entity phase of the {@link StatefulCommandHandlingModule}, allowing for additional
+     *                      entities to be registered.
      */
-    protected void registerAdditionalEntities(StatefulCommandHandlingModule.EntityPhase entityConfigurer) {
+    protected void registerAdditionalEntities(List<EntityModule<?, ?>> entityModules) {
         // Do nothing by default.
     }
 
@@ -174,7 +179,7 @@ public abstract class AbstractStudentTestSuite {
      */
     protected EntityEvolver<Course> courseEvolver(Configuration config) {
         return (course, event, context) -> {
-            if(event.type().name().equals(StudentEnrolledEvent.class.getName())) {
+            if (event.type().name().equals(StudentEnrolledEvent.class.getName())) {
                 // Convert the payload to the expected type
                 Converter converter = config.getComponent(Converter.class);
                 StudentEnrolledEvent convert = converter.convert(event.payload(), StudentEnrolledEvent.class);
@@ -206,8 +211,10 @@ public abstract class AbstractStudentTestSuite {
      * {@link AnnotationBasedEntityEvolvingComponent} to use the annotations placed.
      */
     protected EntityEvolver<Student> studentEvolver(Configuration config) {
-        return new AnnotationBasedEntityEvolvingComponent<>(Student.class, config.getComponent(Converter.class), config.getComponent(
-                MessageTypeResolver.class));
+        return new AnnotationBasedEntityEvolvingComponent<>(Student.class,
+                                                            config.getComponent(Converter.class),
+                                                            config.getComponent(
+                                                                    MessageTypeResolver.class));
     }
 
     protected void changeStudentName(String studentId, String name) {
