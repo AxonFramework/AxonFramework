@@ -33,7 +33,6 @@ import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.utils.TestSerializer;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
@@ -62,6 +61,7 @@ import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
@@ -261,7 +261,7 @@ class DefaultConfigurerTest {
                                        .configureTransactionManager(c -> new EntityManagerTransactionManager(
                                                entityManager
                                        ))
-                                       .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(configuration -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration();
 
         config.start();
@@ -305,7 +305,7 @@ class DefaultConfigurerTest {
                                                                                               .build()
                                                        )
                                        )
-                                       .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(c -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration();
 
         config.start();
@@ -324,7 +324,7 @@ class DefaultConfigurerTest {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
-                                       .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(c -> JacksonSerializer.defaultSerializer())
                                        .configureCommandBus(c -> new InterceptingCommandBus(
                                                new SimpleCommandBus(Runnable::run),
                                                List.of(new TransactionManagingInterceptor<>(c.getComponent(
@@ -383,7 +383,7 @@ class DefaultConfigurerTest {
                                                                               .parameterResolverFactory(c.parameterResolverFactory())
                                                                               .build())
                                        )
-                                       .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(c -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration();
 
         config.start();
@@ -469,7 +469,7 @@ class DefaultConfigurerTest {
     void configuredSnapshotterDefaultsToAggregateSnapshotter() {
         Snapshotter defaultSnapshotter = LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
                                                                 .configureSerializer(
-                                                                        configuration -> TestSerializer.xStreamSerializer()
+                                                                        configuration -> JacksonSerializer.defaultSerializer()
                                                                 )
                                                                 .configureAggregate(StubAggregate.class)
                                                                 .buildConfiguration().snapshotter();
@@ -481,7 +481,7 @@ class DefaultConfigurerTest {
     void defaultSnapshotterDefaultsToNoOpWhenNoAggregatesAreKnown() {
         Snapshotter defaultSnapshotter =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
-                                       .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(configuration -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration().snapshotter();
 
         assertFalse(defaultSnapshotter instanceof AggregateSnapshotter);
@@ -558,7 +558,7 @@ class DefaultConfigurerTest {
                                                config -> QuartzDeadlineManager.builder()
                                                                               .scheduler(mockScheduler)
                                                                               .scopeAwareProvider(config.scopeAwareProvider())
-                                                                              .serializer(TestSerializer.xStreamSerializer())
+                                                                              .serializer(JacksonSerializer.defaultSerializer())
                                                                               .build()
                                        )
                                        .buildConfiguration().deadlineManager();

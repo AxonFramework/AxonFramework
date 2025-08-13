@@ -18,9 +18,9 @@ package org.axonframework.axonserver.connector.util;
 
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
-import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
  */
 class GrpcMetaDataConverterTest {
 
-    private final Serializer serializer = spy(TestSerializer.xStreamSerializer());
+    private final Serializer serializer = spy(JacksonSerializer.defaultSerializer());
     private final GrpcMetaDataConverter testSubject = new GrpcMetaDataConverter(serializer);
 
     @Test

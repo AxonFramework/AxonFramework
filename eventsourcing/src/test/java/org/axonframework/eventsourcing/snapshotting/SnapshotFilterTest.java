@@ -19,8 +19,8 @@ package org.axonframework.eventsourcing.snapshotting;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
-import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -39,7 +39,7 @@ class SnapshotFilterTest {
     private static final DomainEventData<?> MOCK_SNAPSHOT_DATA = mock(DomainEventData.class);
     private static final SnapshotEventEntry TEST_SNAPSHOT_DATA = new SnapshotEventEntry(new GenericDomainEventMessage<>(
             "some-type", "some-aggregate-id", 0, new MessageType("snapshot"), "some-payload"
-    ), TestSerializer.xStreamSerializer());
+    ), JacksonSerializer.defaultSerializer());
 
     @Test
     void allowAllReturnsTrue() {

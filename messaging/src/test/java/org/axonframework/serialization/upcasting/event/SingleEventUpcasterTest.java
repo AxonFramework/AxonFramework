@@ -50,7 +50,7 @@ import static org.mockito.Mockito.*;
  */
 class SingleEventUpcasterTest {
 
-    private final Serializer serializer = TestSerializer.XSTREAM.getSerializer();
+    private final Serializer serializer = TestSerializer.JACKSON.getSerializer();
 
     @Test
     void upcastsKnownType() {

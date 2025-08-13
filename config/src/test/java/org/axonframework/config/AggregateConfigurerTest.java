@@ -16,7 +16,6 @@
 
 package org.axonframework.config;
 
-import com.thoughtworks.xstream.XStream;
 import jakarta.persistence.EntityManager;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -50,8 +49,7 @@ import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.CompactDriver;
-import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -59,7 +57,6 @@ import org.mockito.*;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.config.utils.TestSerializer.xStreamSerializer;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -151,7 +148,8 @@ public class AggregateConfigurerTest {
                 TestAggregateWithRevision.class.getName(), "some-aggregate-id", 0,
                 new MessageType("snapshot"), new TestAggregateWithRevision()
         );
-        DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, xStreamSerializer());
+        DomainEventData<byte[]> testDomainEventData =
+                new SnapshotEventEntry(snapshotEvent, JacksonSerializer.defaultSerializer());
 
         AggregateConfigurer<TestAggregateWithRevision> revisionAggregateConfigurerTestSubject =
                 new AggregateConfigurer<>(TestAggregateWithRevision.class);
@@ -335,7 +333,8 @@ public class AggregateConfigurerTest {
                 new MessageType("snapshot"), new TestAggregate()
         );
 
-        DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, xStreamSerializer());
+        DomainEventData<byte[]> testDomainEventData =
+                new SnapshotEventEntry(snapshotEvent, JacksonSerializer.defaultSerializer());
 
         AggregateConfigurer<TestAggregate> revisionAggregateConfigurerTestSubject =
                 new AggregateConfigurer<>(TestAggregate.class);
@@ -354,10 +353,7 @@ public class AggregateConfigurerTest {
                 TestAggregate.class.getSimpleName(), "some-aggregate-id", 0,
                 new MessageType("snapshot"), new TestAggregate()
         );
-        Serializer serializer = XStreamSerializer.builder()
-                                                 .xStream(new XStream(new CompactDriver()))
-                                                 .revisionResolver(revisionResolver)
-                                                 .build();
+        Serializer serializer = JacksonSerializer.defaultSerializer();
 
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, serializer);
 

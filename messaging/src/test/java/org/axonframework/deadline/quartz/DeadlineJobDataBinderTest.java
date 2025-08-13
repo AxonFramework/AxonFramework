@@ -68,11 +68,6 @@ class DeadlineJobDataBinderTest {
     public static Stream<Arguments> serializerImplementationAndAssertionSpecifics() {
         return Stream.of(
                 Arguments.arguments(
-                        spy(TestSerializer.XSTREAM.getSerializer()),
-                        (Function<Class, String>) clazz -> clazz.getSimpleName().toLowerCase(),
-                        (Predicate<Object>) Objects::isNull
-                ),
-                Arguments.arguments(
                         spy(JacksonSerializer.builder().build()),
                         (Function<Class, String>) Class::getName,
                         (Predicate<Object>) Objects::isNull

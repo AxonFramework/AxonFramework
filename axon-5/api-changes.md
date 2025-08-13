@@ -1340,6 +1340,7 @@ This section contains five tables:
 | org.axonframework.modelling.command.inspection.AbstractChildEntityDefinition                           | org.axonframework.modelling.entity.annotation.AbstractEntityChildModelDefinition | No                             |
 | org.axonframework.axonserver.connector.ServerConnectorConfigurerModule                                 | org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer      | No                             |
 | org.axonframework.serialization.CannotConvertBetweenTypesException                                     | org.axonframework.serialization.ConversionException                              | No                             |
+| org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                            | No                             |
 
 ### Removed Classes
 
@@ -1391,6 +1392,14 @@ This section contains five tables:
 | org.axonframework.axonserver.connector.event.axon.QueryResult                            | Removed in favor of `EventCriteria` use.                                                                                                       |
 | org.axonframework.axonserver.connector.event.axon.QueryResultStream                      | Removed in favor of `EventCriteria` use.                                                                                                       |
 | org.axonframework.axonserver.connector.event.axon.QueryResultStreamAdapter               | Removed in favor of `EventCriteria` use.                                                                                                       |
+| org.axonframework.serialization.xml.XStreamSerializer                                    | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.AbstractXStreamSerializer                                | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.CompactDriver                                        | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.Dom4JToByteArrayConverter                            | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.InputStreamToDom4jConverter                          | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.InputStreamToXomConverter                            | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.XomToStringConverter                                 | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| SerializerProperties.SerializerType#XSTREAM                                              | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
 
 ### Marked for removal Classes
 

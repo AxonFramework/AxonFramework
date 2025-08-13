@@ -16,7 +16,6 @@
 
 package org.axonframework.axonserver.connector.query;
 
-import com.thoughtworks.xstream.XStream;
 import io.axoniq.axonserver.connector.ErrorCategory;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.grpc.ErrorMessage;
@@ -32,13 +31,13 @@ import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
-import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.reactivestreams.Publisher;
@@ -84,9 +83,7 @@ class QueryProcessingTaskIntegrationTest {
                                                         .build();
         localSegment = SimpleQueryBus.builder().build();
         responseHandler = new CachingReplyChannel<>();
-        Serializer serializer = XStreamSerializer.builder()
-                                                 .xStream(new XStream())
-                                                 .build();
+        Serializer serializer = JacksonSerializer.defaultSerializer();
         AxonServerConfiguration config = AxonServerConfiguration.builder()
                                                                 .clientId(CLIENT_ID)
                                                                 .componentName(COMPONENT_NAME)
