@@ -29,13 +29,13 @@ import java.util.function.Predicate;
 import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
 /**
- * Utility class for handling various operations related to the Legacy Aggregate-based Event Storage Engine.
+ * Utility class for handling various operations related to the Aggregate-based Event Storage Engine.
  *
  * @author Mateusz Nowak
  * @author Allard Buijze
  * @since 5.0.0
  */
-public class LegacyAggregateBasedEventStorageEngineUtils {
+public class AggregateBasedEventStorageEngineUtils {
 
     /**
      * Validates the tags associated with a list of event messages. Ensures that no event has more than one tag, as the
@@ -187,7 +187,7 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         }
     }
 
-    private LegacyAggregateBasedEventStorageEngineUtils() {
+    private AggregateBasedEventStorageEngineUtils() {
         // Utility class
     }
 }

@@ -37,7 +37,7 @@ import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
@@ -59,7 +59,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.*;
+import static org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils.*;
 
 /**
  * Event Storage Engine implementation that uses the aggregate-oriented APIs of Axon Server, allowing it to interact
@@ -143,12 +143,9 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
 
             private Throwable translateConflictException(Throwable e) {
                 Predicate<Throwable> isConflictException = (ex) -> ex instanceof StatusRuntimeException sre
-                        && Objects.equals(
-                        sre.getStatus().getCode(),
-                        Status.OUT_OF_RANGE.getCode());
-                return LegacyAggregateBasedEventStorageEngineUtils.translateConflictException(consistencyMarker,
-                                                                                              e,
-                                                                                              isConflictException);
+                        && Objects.equals(sre.getStatus().getCode(), Status.OUT_OF_RANGE.getCode());
+                return AggregateBasedEventStorageEngineUtils
+                        .translateConflictException(consistencyMarker, e, isConflictException);
             }
 
             @Override
