@@ -52,10 +52,10 @@ public class AggregateBasedEventEntry {
     @Id
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
-            generator = "aggregate-based-event-global-index-generator"
+            generator = "globalIndexGenerator"
     )
     @SequenceGenerator(
-            name = "aggregate-based-event-global-index-generator",
+            name = "globalIndexGenerator",
             sequenceName = "aggregate-based-event-global-index-sequence",
             allocationSize = 1
     )
