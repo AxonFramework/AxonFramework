@@ -52,7 +52,7 @@ import java.util.function.UnaryOperator;
  * <pre>{@code
  * EventHandlingComponent baseComponent = new SimpleEventHandlingComponent();
  * EventHandlingComponent component = new DefaultEventHandlingComponentBuilder(baseComponent)
- *     .sequencingPolicy(event -> Optional.of(event.aggregateIdentifier()))
+ *     .sequencingPolicy(event -> Optional.of(event.identifier()))
  *     .handles(new QualifiedName("example", "OrderPlaced"), orderEventHandler)
  *     .handles(new QualifiedName("example", "OrderShipped"), shippingEventHandler)
  *     .decorated(component -> new DecoratingEventHandlingComponent(component))
@@ -66,7 +66,7 @@ public class DefaultEventHandlingComponentBuilder
         implements EventHandlingComponentBuilder.SequencingPolicyPhase,
         EventHandlingComponentBuilder.RequiredEventHandlerPhase,
         EventHandlingComponentBuilder.AdditionalEventHandlerPhase,
-        EventHandlingComponentBuilder.Complete {
+        EventHandlingComponentBuilder.CompletePhase {
 
     private EventHandlingComponent component;
 
@@ -93,6 +93,7 @@ public class DefaultEventHandlingComponentBuilder
     }
 
     @Override
+    @Nonnull
     public EventHandlingComponentBuilder.AdditionalEventHandlerPhase handles(
             @Nonnull QualifiedName name,
             @Nonnull EventHandler eventHandler
@@ -101,6 +102,7 @@ public class DefaultEventHandlingComponentBuilder
         return this;
     }
 
+    @Nonnull
     @Override
     public EventHandlingComponentBuilder.AdditionalEventHandlerPhase handles(
             @Nonnull Set<QualifiedName> names,
@@ -110,14 +112,16 @@ public class DefaultEventHandlingComponentBuilder
         return this;
     }
 
+    @Nonnull
     @Override
-    public EventHandlingComponentBuilder.Complete decorated(
+    public EventHandlingComponentBuilder.CompletePhase decorated(
             @Nonnull UnaryOperator<EventHandlingComponent> decorator
     ) {
         this.component = Objects.requireNonNull(decorator, "Decorator may not be null").apply(component);
         return this;
     }
 
+    @Nonnull
     @Override
     public EventHandlingComponent build() {
         return component;

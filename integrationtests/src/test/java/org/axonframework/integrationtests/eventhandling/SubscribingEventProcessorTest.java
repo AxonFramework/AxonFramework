@@ -20,15 +20,15 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.DomainEventTestUtils;
 import org.axonframework.eventhandling.EventHandlingComponent;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
@@ -38,7 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 
-import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
+import static org.axonframework.eventhandling.EventTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SubscribingEventProcessorTest {
@@ -85,7 +85,7 @@ class SubscribingEventProcessorTest {
         // given
         CountDownLatch countDownLatch = new CountDownLatch(2);
         var eventHandlingComponent = new SimpleEventHandlingComponent();
-        eventHandlingComponent.subscribe(DomainEventTestUtils.TYPE.qualifiedName(), (event, context) -> {
+        eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (event, context) -> {
             countDownLatch.countDown();
             return MessageStream.empty();
         });
@@ -97,7 +97,8 @@ class SubscribingEventProcessorTest {
         testSubject.start();
 
         // then
-        eventBus.publish(createDomainEvents(2));
+        List<EventMessage<Integer>> events = createEvents(2);
+        eventBus.publish(events);
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
     }
 
@@ -106,7 +107,7 @@ class SubscribingEventProcessorTest {
     void subscribingEventProcessorIsTraced() {
         // given
         var eventHandlingComponent = new SimpleEventHandlingComponent();
-        eventHandlingComponent.subscribe(DomainEventTestUtils.TYPE.qualifiedName(), (event, context) -> {
+        eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (event, context) -> {
             spanFactory.verifySpanActive("EventProcessor.process", event);
             return MessageStream.empty();
         });
@@ -116,7 +117,7 @@ class SubscribingEventProcessorTest {
         testSubject.start();
 
         // then
-        List<DomainEventMessage<?>> events = createDomainEvents(2);
+        List<EventMessage<Integer>> events = createEvents(2);
         eventBus.publish(events);
         events.forEach(e -> spanFactory.verifySpanCompleted("EventProcessor.process", e));
     }
@@ -124,7 +125,7 @@ class SubscribingEventProcessorTest {
     @Test
     void startTransactionManager() throws Exception {
         testSubject.start();
-        eventBus.publish(createDomainEvents(1));
+        eventBus.publish(createEvents(1));
 
         assertTrue(transactionManager.started, "Expected Transaction to be started");
     }

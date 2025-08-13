@@ -71,6 +71,7 @@ public interface EventHandlingComponentsConfigurer {
          * @param handlingComponentBuilder The annotated component builder.
          * @return The additional component phase for further configuration.
          */
+        @Nonnull
         default AdditionalComponentPhase annotated(@Nonnull ComponentBuilder<Object> handlingComponentBuilder) {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return declarative(c -> new AnnotatedEventHandlingComponent<>(
@@ -91,6 +92,7 @@ public interface EventHandlingComponentsConfigurer {
          * @param decorator Function to decorate each component.
          * @return This phase for further decoration or finalization.
          */
+        @Nonnull
         CompletePhase decorated(
                 @Nonnull BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
         );
@@ -100,6 +102,7 @@ public interface EventHandlingComponentsConfigurer {
          *
          * @return The immutable list of configured components.
          */
+        @Nonnull
         List<ComponentBuilder<EventHandlingComponent>> toList();
 
         /**
@@ -108,6 +111,7 @@ public interface EventHandlingComponentsConfigurer {
          * @param configuration The framework configuration.
          * @return The list of built event handling components.
          */
+        @Nonnull
         default List<EventHandlingComponent> build(Configuration configuration) {
             return toList().stream()
                     .map(builder -> builder.build(configuration))

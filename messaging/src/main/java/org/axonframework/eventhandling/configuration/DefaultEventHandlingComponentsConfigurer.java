@@ -62,6 +62,7 @@ public class DefaultEventHandlingComponentsConfigurer
         return this;
     }
 
+    @Nonnull
     @Override
     public EventHandlingComponentsConfigurer.CompletePhase decorated(
             @Nonnull BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
@@ -78,6 +79,7 @@ public class DefaultEventHandlingComponentsConfigurer
         return this;
     }
 
+    @Nonnull
     @Override
     public List<ComponentBuilder<EventHandlingComponent>> toList() {
         return List.copyOf(componentBuilders);

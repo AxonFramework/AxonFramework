@@ -224,6 +224,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
         return this;
     }
 
+
     public MessagingConfigurer eventProcessing(@Nonnull Consumer<EventProcessingConfigurer> configurerTask) {
         Objects.requireNonNull(configurerTask, "The configurerTask may not be null");
         configurerTask.accept(eventProcessing);

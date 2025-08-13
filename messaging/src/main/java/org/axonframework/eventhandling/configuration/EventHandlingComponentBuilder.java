@@ -50,6 +50,7 @@ public interface EventHandlingComponentBuilder {
          * @param sequencingPolicy The {@link SequencingPolicy} for event sequencing.
          * @return The next builder phase for event handler registration.
          */
+        @Nonnull
         RequiredEventHandlerPhase sequencingPolicy(@Nonnull SequencingPolicy sequencingPolicy);
 
         /**
@@ -58,8 +59,10 @@ public interface EventHandlingComponentBuilder {
          * @param sequencingPolicy Function to extract sequence identifiers from events.
          * @return The next builder phase for event handler registration.
          */
+        @Nonnull
         default RequiredEventHandlerPhase sequenceIdentifier(
-                @Nonnull Function<EventMessage<?>, Object> sequencingPolicy) {
+                @Nonnull Function<EventMessage<?>, Object> sequencingPolicy
+        ) {
             return sequencingPolicy(event -> Optional.of(sequencingPolicy.apply(event)));
         }
     }
@@ -76,6 +79,7 @@ public interface EventHandlingComponentBuilder {
          * @param eventHandler The handler for the event type.
          * @return The next builder phase for additional handlers or completion.
          */
+        @Nonnull
         AdditionalEventHandlerPhase handles(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler);
 
         /**
@@ -85,13 +89,14 @@ public interface EventHandlingComponentBuilder {
          * @param eventHandler The handler for the event types.
          * @return The next builder phase for additional handlers or completion.
          */
+        @Nonnull
         AdditionalEventHandlerPhase handles(@Nonnull Set<QualifiedName> names, @Nonnull EventHandler eventHandler);
     }
 
     /**
      * Builder phase allowing additional event handler registration.
      */
-    interface AdditionalEventHandlerPhase extends Complete {
+    interface AdditionalEventHandlerPhase extends CompletePhase {
 
         /**
          * Registers an additional event handler for a specific event type.
@@ -100,6 +105,7 @@ public interface EventHandlingComponentBuilder {
          * @param eventHandler The handler for the event type.
          * @return This builder phase for further handler registration.
          */
+        @Nonnull
         AdditionalEventHandlerPhase handles(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler);
 
         /**
@@ -109,13 +115,14 @@ public interface EventHandlingComponentBuilder {
          * @param eventHandler The handler for the event types.
          * @return This builder phase for further handler registration.
          */
+        @Nonnull
         AdditionalEventHandlerPhase handles(@Nonnull Set<QualifiedName> names, @Nonnull EventHandler eventHandler);
     }
 
     /**
      * Final builder phase allowing decoration and component building.
      */
-    interface Complete {
+    interface CompletePhase {
 
         /**
          * Applies a decorator to enhance the component with additional functionality.
@@ -123,13 +130,15 @@ public interface EventHandlingComponentBuilder {
          * @param decorator Function to decorate the component.
          * @return This builder phase for further decoration or building.
          */
-        Complete decorated(@Nonnull UnaryOperator<EventHandlingComponent> decorator);
+        @Nonnull
+        CompletePhase decorated(@Nonnull UnaryOperator<EventHandlingComponent> decorator);
 
         /**
          * Builds and returns the configured {@link EventHandlingComponent}.
          *
          * @return The configured event handling component.
          */
+        @Nonnull
         EventHandlingComponent build();
     }
 }
