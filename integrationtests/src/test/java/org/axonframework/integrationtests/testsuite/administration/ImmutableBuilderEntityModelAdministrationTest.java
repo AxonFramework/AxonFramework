@@ -215,10 +215,11 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                     throw new IllegalArgumentException(
                             format("Unknown command type: %s", message.payloadType().getName()));
                 });
-        return Stateful.module(
-                               CommandHandlingModule
-                                       .named("ImmutableBuilderEntityModelAdministrationTest")
-                                       .commandHandlers()
-                       ).withEntities(personEntityModule);
+        Stateful<CommandHandlingModule> module = Stateful.module(
+                CommandHandlingModule
+                        .named("ImmutableBuilderEntityModelAdministrationTest")
+                        .commandHandlers()
+        ).withEntities(personEntityModule);
+        return module;
     }
 }
