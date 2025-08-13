@@ -1318,6 +1318,14 @@ This section contains five tables:
 | org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry                          | Replaced by `...`                                                                                                                              |
 | org.axonframework.eventhandling.TrackedEventData                                         | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.eventhandling.TrackedDomainEventData                                   | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
+| org.axonframework.axonserver.connector.event.axon.AxonServerEventStore                   | Removed in favor of the `AxonServerEventStorageEngine`                                                                                         |
+| org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory            | Removed in favor of the `AxonServerEventStorageEngineFactory`                                                                                  |
+| org.axonframework.axonserver.connector.event.axon.EventBuffer                            | Removed in favor of the `AxonServerMessageStream`, `SourcingEventMessageStream`, and `StreamingEventMessageStream`                             |
+| org.axonframework.axonserver.connector.event.axon.GrpcBackedDomainEventData              | Removed as mapping is done to an `EventMessage` directly.                                                                                      |
+| org.axonframework.axonserver.connector.event.axon.GrpcMetaDataAwareSerializer            | See [here](#metadata-with-string-values).                                                                                                      |
+| org.axonframework.axonserver.connector.event.axon.QueryResult                            | Removed in favor of `EventCriteria` use.                                                                                                       |
+| org.axonframework.axonserver.connector.event.axon.QueryResultStream                      | Removed in favor of `EventCriteria` use.                                                                                                       |
+| org.axonframework.axonserver.connector.event.axon.QueryResultStreamAdapter               | Removed in favor of `EventCriteria` use.                                                                                                       |
 
 ### Marked for removal Classes
 
