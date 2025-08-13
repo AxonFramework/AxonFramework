@@ -42,10 +42,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class SimpleEventHandlingComponentBuilderTest {
+class DefaultEventHandlingComponentBuilderTest {
 
     private static final StubProcessingContext STUB_PROCESSING_CONTEXT = new StubProcessingContext();
-    private final EventHandlingComponentBuilder.SequencingPolicyPhase builder = SimpleEventHandlingComponent.builder();
+    private final EventHandlingComponentBuilder.SequencingPolicyPhase builder = new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent());
 
     @Nested
     class SequencingPolicyTest {
