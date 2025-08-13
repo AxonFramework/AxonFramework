@@ -61,7 +61,7 @@ import java.util.function.UnaryOperator;
  * <pre>{@code
  * MessagingConfigurer.create()
  *     .eventProcessing(eventProcessing -> eventProcessing
- *         .defaults(config -> config.bufferSize(512))
+ *         .defaults(config -> config.unitOfWorkFactory(new SimpleUnitOfWorkFactory()))
  *         .pooledStreaming(pooledStreaming ->
  *             pooledStreaming.processor("calendar-processor", components -> components.declarative(cfg -> weekStartedEventHandler))
  *                        .processor("astrologers-week-symbol-processor", components -> components.declarative(cfg -> weekSymbolProclaimedEventHandler)))
