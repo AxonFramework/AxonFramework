@@ -34,7 +34,7 @@ import java.util.stream.IntStream;
 @Deprecated
 public abstract class DomainEventTestUtils {
 
-    public static final MessageType TYPE = new MessageType("event");
+    private static final MessageType TYPE = new MessageType("event");
     public static final String PAYLOAD = "payload";
     public static final String AGGREGATE = "aggregate";
     private static final String AGGREGATE_TYPE = "aggregateType";

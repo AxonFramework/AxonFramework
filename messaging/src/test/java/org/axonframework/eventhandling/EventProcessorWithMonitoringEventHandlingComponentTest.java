@@ -22,6 +22,8 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -35,16 +37,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvent;
-import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EventProcessorWithMonitoringEventHandlingComponentTest {
 
     @Test
     void expectCallbackForAllMessages() throws Exception {
-        List<DomainEventMessage<?>> events = createDomainEvents(2);
-        Set<DomainEventMessage<?>> pending = new HashSet<>(events);
+        List<EventMessage<Integer>> events = EventTestUtils.createEvents(2);
+        Set<EventMessage<Integer>> pending = new HashSet<>(events);
         MessageMonitor<EventMessage<?>> messageMonitor = (message) -> new MessageMonitor.MonitorCallback() {
             @Override
             public void reportSuccess() {
@@ -66,7 +66,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         };
 
         EventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
-        eventHandlingComponent.subscribe(DomainEventTestUtils.TYPE.qualifiedName(), (e, c) -> MessageStream.empty());
+        eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (e, c) -> MessageStream.empty());
 
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
@@ -77,7 +77,10 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
                     @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain interceptorChain)
                     throws Exception {
-                unitOfWork.transformMessage(m -> createDomainEvent());
+                unitOfWork.transformMessage(m -> new GenericEventMessage<>(
+                        new MessageType(new QualifiedName(Integer.class)),
+                        123
+                ));
                 return interceptorChain.proceedSync(
                         context);
             }
@@ -87,7 +90,10 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
                     @Nonnull M message,
                     @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain<M, R> interceptorChain) {
-                var event = createDomainEvent();
+                var event = new GenericEventMessage<>(
+                        new MessageType(new QualifiedName(Integer.class)),
+                        123
+                );
                 //noinspection unchecked
                 return interceptorChain.proceed((M) event,
                                                 context);
