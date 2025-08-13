@@ -88,7 +88,7 @@ public class EventProcessingConfigurer {
      * directly but instead access it through
      * {@link org.axonframework.configuration.MessagingConfigurer#eventProcessing(java.util.function.Consumer)}.
      *
-     * @param name The name of this event processing module.
+     * @param parent The {@code MessagingConfigurer} to enhance with configuration of event processing components.
      */
     @Internal
     public EventProcessingConfigurer(@Nonnull MessagingConfigurer parent) {

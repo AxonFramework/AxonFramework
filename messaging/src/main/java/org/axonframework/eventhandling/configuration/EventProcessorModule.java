@@ -63,24 +63,26 @@ import java.util.function.Function;
 public interface EventProcessorModule extends Module {
 
     /**
-     * Creates a subscribing event processor module with the given name.
+     * Creates a {@link SubscribingEventProcessorModule} with the given name.
      *
      * @param processorName The processor name.
      * @return A builder phase to configure the subscribing event processor.
      */
     static EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> subscribing(
-            String processorName) {
+            @Nonnull String processorName
+    ) {
         return new SubscribingEventProcessorModule(processorName);
     }
 
     /**
-     * Creates a pooled streaming event processor module with the given name.
+     * Creates a {@link PooledStreamingEventProcessorModule} with the given name.
      *
      * @param processorName The processor name.
      * @return A builder phase to configure the pooled streaming event processor.
      */
     static EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> pooledStreaming(
-            String processorName) {
+            @Nonnull String processorName
+    ) {
         return new PooledStreamingEventProcessorModule(processorName);
     }
 

@@ -45,8 +45,6 @@ public class DefaultEventHandlingComponentsConfigurer
 
     /**
      * Creates a new empty configurer instance.
-     *
-     * @since 5.0.0
      */
     public DefaultEventHandlingComponentsConfigurer() {
         // Default constructor for empty configuration
