@@ -207,6 +207,6 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 StatefulCommandHandlingModule
                         .named("MutableBuilderEntityModelAdministrationTest")
                         .commandHandlers()
-        ).withEntities(personEntityModule);
+        ).withEntities(personEntityModule).build();
     }
 }

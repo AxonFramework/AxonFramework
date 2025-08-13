@@ -33,8 +33,9 @@ public class MutableReflectionEntityModelAdministrationTest extends AbstractAdmi
     @Override
     Module getModule() {
         return Stateful.module(
-                StatefulCommandHandlingModule.named("MutableReflectionEntityModelAdministrationTest")
-                                             .commandHandlers()
-        ).withEntities(EventSourcedEntityModule.annotated(PersonIdentifier.class, MutablePerson.class));
+                               StatefulCommandHandlingModule.named("MutableReflectionEntityModelAdministrationTest")
+                                                            .commandHandlers()
+                       ).withEntities(EventSourcedEntityModule.annotated(PersonIdentifier.class, MutablePerson.class))
+                       .build();
     }
 }

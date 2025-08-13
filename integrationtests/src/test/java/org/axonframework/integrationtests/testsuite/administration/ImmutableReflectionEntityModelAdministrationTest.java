@@ -33,6 +33,7 @@ public class ImmutableReflectionEntityModelAdministrationTest extends AbstractAd
     @Override
     Module getModule() {
         return Stateful.module(StatefulCommandHandlingModule.named("ImmutableReflectionEntityModelAdministrationTest").commandHandlers())
-                .withEntities(EventSourcedEntityModule.annotated(PersonIdentifier.class, ImmutablePerson.class));
+                .withEntities(EventSourcedEntityModule.annotated(PersonIdentifier.class, ImmutablePerson.class))
+                .build();
     }
 }

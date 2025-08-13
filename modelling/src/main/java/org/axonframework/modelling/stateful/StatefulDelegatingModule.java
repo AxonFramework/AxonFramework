@@ -26,17 +26,17 @@ import org.axonframework.modelling.configuration.EntityModule;
 import java.util.ArrayList;
 import java.util.List;
 
-public class StatefulDelegatingModule<M extends Module> extends DelegatingModule<M>
-        implements Stateful<M>, Stateful.EntitiesPhase<M> {
+public class StatefulDelegatingModule<M extends Module> implements Stateful<M>, Stateful.EntitiesPhase<M> {
 
     private final List<EntityModule<?, ?>> entityModules = new ArrayList<>();
+    private final M delegate;
 
     public StatefulDelegatingModule(@Nonnull M delegate) {
-        super(delegate);
+        this.delegate = delegate;
     }
 
     public StatefulDelegatingModule(@Nonnull ModuleBuilder<M> delegate) {
-        super(delegate);
+        this.delegate = delegate.build();
     }
 
     @Override
@@ -53,18 +53,17 @@ public class StatefulDelegatingModule<M extends Module> extends DelegatingModule
 
     @Override
     public M build() {
-        var built = super.build();
         registerStateManager();
         registerEntityModules();
-        return built;
+        return delegate;
     }
 
     private void registerStateManager() {
-        componentRegistry(cr -> cr.registerIfNotPresent(StateManager.class, config ->
-                SimpleStateManager.named("StateManager[" + name() + "]")));
+        delegate.componentRegistry(cr -> cr.registerIfNotPresent(StateManager.class, config ->
+                SimpleStateManager.named("StateManager[" + delegate.name() + "]")));
     }
 
     private void registerEntityModules() {
-        componentRegistry(cr -> entityModules.forEach(cr::registerModule));
+        delegate.componentRegistry(cr -> entityModules.forEach(cr::registerModule));
     }
 }
