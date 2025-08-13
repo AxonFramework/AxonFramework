@@ -18,6 +18,7 @@ package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.BaseModule;
@@ -81,7 +82,7 @@ class SimpleStatefulCommandHandlingModule
 
     @Override
     public CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
-                                              @Nonnull ComponentBuilder<StatefulCommandHandler> commandHandlerBuilder) {
+                                              @Nonnull ComponentBuilder<CommandHandler> commandHandlerBuilder) {
         handlerBuilders.put(requireNonNull(commandName, "The command name cannot be null."),
                             requireNonNull(commandHandlerBuilder, "The command handler builder cannot be null."));
         return this;
