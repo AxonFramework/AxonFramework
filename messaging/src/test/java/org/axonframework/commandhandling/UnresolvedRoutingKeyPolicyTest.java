@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 

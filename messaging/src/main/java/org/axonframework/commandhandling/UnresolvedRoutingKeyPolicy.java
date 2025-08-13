@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.messaging.retry.RetryScheduler;
 
 import java.util.function.Function;
