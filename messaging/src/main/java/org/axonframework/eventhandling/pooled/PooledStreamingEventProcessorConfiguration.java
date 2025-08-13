@@ -105,11 +105,20 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             eventMessage).reportIgnored();
 
 
+    /**
+     * Constructs a new {@link PooledStreamingEventProcessorConfiguration} with default values.
+     */
     public PooledStreamingEventProcessorConfiguration() {
     }
 
-    public PooledStreamingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration configuration) {
-        super(configuration);
+    /**
+     * Constructs a new {@link PooledStreamingEventProcessorConfiguration} copying properties from the given
+     * configuration.
+     *
+     * @param base The {@link EventProcessorConfiguration} to copy properties from.
+     */
+    public PooledStreamingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
+        super(base);
     }
 
     @Override
@@ -391,6 +400,20 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     /**
+     * Sets the handler, that is invoked when the event is ignored by all {@link WorkPackage}s this {@link Coordinator}
+     * controls. Defaults to a no-op.
+     *
+     * @param ignoredMessageHandler The handler, that is invoked when the event is ignored by all * {@link WorkPackage}s
+     *                              this {@link Coordinator} controls.
+     * @return The current Builder instance, for fluent interfacing.
+     */
+    public PooledStreamingEventProcessorConfiguration ignoredMessageHandler(
+            Consumer<? super EventMessage<?>> ignoredMessageHandler) {
+        this.ignoredMessageHandler = ignoredMessageHandler;
+        return this;
+    }
+
+    /**
      * Sets the function to build the {@link EventCriteria} used to filter events when opening the event source. The
      * function receives the set of supported event types from the assigned EventHandlingComponent.
      * <p>
@@ -432,65 +455,129 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         return true;
     }
 
+    /**
+     * Returns the {@link StreamableEventSource} used to track events.
+     *
+     * @return The {@link StreamableEventSource} for this processor.
+     */
     public StreamableEventSource<? extends EventMessage<?>> eventSource() {
         return eventSource;
     }
 
+    /**
+     * Returns the {@link TokenStore} used to store and fetch event tokens.
+     *
+     * @return The {@link TokenStore} for tracking progress.
+     */
     public TokenStore tokenStore() {
         return tokenStore;
     }
 
+    /**
+     * Returns the builder function for the coordinator's {@link ScheduledExecutorService}.
+     *
+     * @return The coordinator executor builder function.
+     */
     public Function<String, ScheduledExecutorService> coordinatorExecutorBuilder() {
         return coordinatorExecutorBuilder;
     }
 
+    /**
+     * Returns the builder function for the worker's {@link ScheduledExecutorService}.
+     *
+     * @return The worker executor builder function.
+     */
     public Function<String, ScheduledExecutorService> workerExecutorBuilder() {
         return workerExecutorBuilder;
     }
 
+    /**
+     * Returns the initial segment count used on startup.
+     *
+     * @return The initial segment count.
+     */
     public int initialSegmentCount() {
         return initialSegmentCount;
     }
 
+    /**
+     * Returns the function used to generate initial {@link TrackingToken}s.
+     *
+     * @return The initial token generation function.
+     */
     public Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken() {
         return initialToken;
     }
 
+    /**
+     * Returns the token claim interval in milliseconds.
+     *
+     * @return The token claim interval.
+     */
     public long tokenClaimInterval() {
         return tokenClaimInterval;
     }
 
+    /**
+     * Returns the {@link MaxSegmentProvider} defining maximum claimable segments.
+     *
+     * @return The {@link MaxSegmentProvider} for this processor.
+     */
     public MaxSegmentProvider maxSegmentProvider() {
         return maxSegmentProvider;
     }
 
+    /**
+     * Returns the claim extension threshold in milliseconds.
+     *
+     * @return The claim extension threshold.
+     */
     public long claimExtensionThreshold() {
         return claimExtensionThreshold;
     }
 
+    /**
+     * Returns the number of events processed in a single transaction.
+     *
+     * @return The batch size.
+     */
     public int batchSize() {
         return batchSize;
     }
 
+    /**
+     * Returns the {@link Clock} used for time-dependent operations.
+     *
+     * @return The {@link Clock} for this processor.
+     */
     public Clock clock() {
         return clock;
     }
 
+    /**
+     * Returns whether the coordinator extends claims for work packages.
+     *
+     * @return {@code true} if coordinator extends claims, {@code false} otherwise.
+     */
     public boolean coordinatorExtendsClaims() {
         return coordinatorExtendsClaims;
     }
 
+    /**
+     * Returns the function to build {@link EventCriteria} from supported event types.
+     *
+     * @return The event criteria provider function.
+     */
     public Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider() {
         return eventCriteriaProvider;
     }
 
+    /**
+     * Returns the handler for ignored messages.
+     *
+     * @return The ignored message handler.
+     */
     public Consumer<? super EventMessage<?>> ignoredMessageHandler() {
         return ignoredMessageHandler;
-    }
-
-    public PooledStreamingEventProcessorConfiguration ignoredMessageHandler(
-            Consumer<? super EventMessage<?>> ignoredMessageHandler) {
-        this.ignoredMessageHandler = ignoredMessageHandler;
-        return this;
     }
 }

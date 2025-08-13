@@ -46,10 +46,18 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     private SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
 
+    /**
+     * Constructs a new {@link SubscribingEventProcessorConfiguration} with default values.
+     */
     public SubscribingEventProcessorConfiguration() {
         super();
     }
 
+    /**
+     * Constructs a new {@link SubscribingEventProcessorConfiguration} copying properties from the given configuration.
+     *
+     * @param base The {@link EventProcessorConfiguration} to copy properties from.
+     */
     public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         super(base);
     }

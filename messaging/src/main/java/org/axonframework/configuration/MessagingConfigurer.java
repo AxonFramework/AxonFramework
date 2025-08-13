@@ -225,6 +225,14 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
 
+    /**
+     * Delegates given {@code configurerTask} to the {@link EventProcessingConfigurer}.
+     * <p>
+     * Use this operation to configure defaults and register {@link org.axonframework.eventhandling.EventProcessor}s.
+     *
+     * @param configurerTask Lambda consuming the {@link EventProcessingConfigurer}.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
     public MessagingConfigurer eventProcessing(@Nonnull Consumer<EventProcessingConfigurer> configurerTask) {
         Objects.requireNonNull(configurerTask, "The configurerTask may not be null");
         configurerTask.accept(eventProcessing);

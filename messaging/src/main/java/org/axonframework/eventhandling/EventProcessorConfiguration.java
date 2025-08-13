@@ -58,10 +58,18 @@ public class EventProcessorConfiguration {
     private List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory();
 
+    /**
+     * Constructs a new {@link EventProcessorConfiguration} with default values.
+     */
     public EventProcessorConfiguration() {
         super();
     }
 
+    /**
+     * Constructs a new {@link EventProcessorConfiguration} copying properties from the given configuration.
+     *
+     * @param base The {@link EventProcessorConfiguration} to copy properties from.
+     */
     public EventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         Objects.requireNonNull(base, "Base configuration may not be null");
         assertNonNull(base, "Base configuration may not be null");
@@ -125,7 +133,7 @@ public class EventProcessorConfiguration {
 
     /**
      * A {@link UnitOfWorkFactory} that spawns {@link org.axonframework.messaging.unitofwork.UnitOfWork} used to process
-     * an events batch.
+     * an event batch.
      *
      * @param unitOfWorkFactory A {@link UnitOfWorkFactory} that spawns
      *                          {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
@@ -174,14 +182,29 @@ public class EventProcessorConfiguration {
         return spanFactory;
     }
 
+    /**
+     * Returns the list of {@link MessageHandlerInterceptor}s applied to event processing.
+     *
+     * @return The list of interceptors for this {@link EventProcessor} implementation.
+     */
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors() {
         return interceptors;
     }
 
+    /**
+     * Returns the {@link UnitOfWorkFactory} used to create {@link UnitOfWork} instances for event processing.
+     *
+     * @return The {@link UnitOfWorkFactory} for this {@link EventProcessor} implementation.
+     */
     public UnitOfWorkFactory unitOfWorkFactory() {
         return unitOfWorkFactory;
     }
 
+    /**
+     * Returns whether this configuration is for a streaming event processor.
+     *
+     * @return {@code false} for basic configuration, {@code true} for streaming configurations.
+     */
     public boolean streaming() {
         return false;
     }

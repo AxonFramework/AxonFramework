@@ -50,13 +50,6 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     private final SequencingPolicy sequencingPolicy;
     private final EventHandlingComponent delegate;
 
-    /**
-     * Creates a new {@link SequenceOverridingEventHandlingComponent} that uses the given {@code sequencingPolicy} to
-     * override sequence identification while delegating all other operations to the {@code delegate} component.
-     *
-     * @param sequencingPolicy The policy to use for determining sequence identifiers for events.
-     * @param delegate         The underlying event handling component to delegate operations to.
-     */
 
     public SequenceOverridingEventHandlingComponent(@Nonnull SequencingPolicy sequencingPolicy,
                                                     @Nonnull EventHandlingComponent delegate) {
