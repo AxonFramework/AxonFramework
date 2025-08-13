@@ -441,6 +441,26 @@ shortly [here](#generic-eventstorageengine-changes), expect for the construction
 for all fields, the builder pattern is now restricted to the non-required fields, like, for example, the gap cleaning
 timeout.
 
+#### Axon Server based Event Storage
+
+The `AxonServerEventStore` has been removed entirely, in favor of two new `EventStorageEngine` implementations dedicated
+to Axon Server.
+These are:
+
+1. The `AggregateBasedAxonServerEventStorageEngine` - mandatory for aggregate-based event store formats.
+2. The `AxonServerEventStorageEngine` - mandatory for DCB-based event store formats.
+
+As was the case for Axon Framework 4, whenever the `axon-server-connector` is on the classpath, Axon Framework will
+default to Axon Server for commands, events, and queries. To disable this default, the `axon-server-connector` can once
+more be excluded, or it can be disabled in the `AxonServerConfiguration`. Whenever Axon Server is present, Axon
+Framework will assume you want a DCB-based event store. As such, it will construct an `AxonServerEventStorageEngine` by
+default.
+
+For green field projects this suffices. For those migrating, be mindful that the stored format of Axon Server needs to
+align with DCB for it to work with the `AxonServerEventStorageEngine`!
+If the stored format still relies on the aggregate-based format, be sure to configure the
+`AggregateBasedAxonServerEventStorageEngine` instead.
+
 ## Event Processors
 
 ### TrackingEventProcessor Removal
