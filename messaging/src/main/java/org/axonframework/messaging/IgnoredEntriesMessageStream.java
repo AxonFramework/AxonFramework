@@ -52,6 +52,6 @@ class IgnoredEntriesMessageStream<M extends Message<?>>
 
     @Override
     public Optional<Entry<Message<M>>> peek() {
-        return delegate().peek().flatMap(r -> Optional.empty());
+        return Optional.empty();
     }
 }
