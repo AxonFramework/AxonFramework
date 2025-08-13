@@ -89,6 +89,7 @@ import static org.axonframework.config.EventProcessingConfigurer.PooledStreaming
  * @author Milan Savic
  * @since 4.0
  */
+// TODO #3098 - Remove the class and other related to legacy configuration approach
 @Deprecated(since = "5.0.0", forRemoval = true)
 public class EventProcessingModule
         implements ModuleConfiguration, EventProcessingConfiguration, EventProcessingConfigurer {

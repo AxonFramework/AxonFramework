@@ -42,6 +42,7 @@ import java.util.function.Function;
  * @author Milan Savic
  * @since 4.0
  */
+// TODO #3098 - Remove the class and other related to legacy configuration approach
 @Deprecated(since = "5.0.0", forRemoval = true)
 public interface EventProcessingConfiguration {
 
