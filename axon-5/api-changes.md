@@ -1400,6 +1400,7 @@ This section contains five tables:
 | org.axonframework.serialization.xml.InputStreamToXomConverter                            | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
 | org.axonframework.serialization.xml.XomToStringConverter                                 | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
 | SerializerProperties.SerializerType#XSTREAM                                              | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.eventsourcing.eventstore.EqualRevisionPredicate                        | Removed due to removal of the `DomainEventData`.                                                                                               |
 
 ### Marked for removal Classes
 
