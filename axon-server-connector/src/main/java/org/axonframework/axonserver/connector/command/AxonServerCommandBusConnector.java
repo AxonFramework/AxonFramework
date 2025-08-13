@@ -55,9 +55,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.axonserver.connector.MetaDataConverter.convertFromGrpcMetaDataValues;
+import static org.axonframework.axonserver.connector.MetaDataConverter.convertMetaDataValuesToGrpc;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.createProcessingInstruction;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -108,7 +107,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
         MessageType messageType = new MessageType(commandResponse.getPayload().getType(),
                                                   commandResponse.getPayload().getRevision());
-        Map<String, String> metadata = convertFromGrpcMetaDataValues(commandResponse.getMetaDataMap());
+        Map<String, String> metadata = convertMetaDataValuesToGrpc(commandResponse.getMetaDataMap());
         return CompletableFuture.completedFuture(new GenericCommandResultMessage<>(new GenericMessage<>(
                 commandResponse.getMessageIdentifier(),
                 messageType,
@@ -144,7 +143,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         return builder
                 .setMessageIdentifier(command.getIdentifier())
                 .setName(command.type().name())
-                .putAllMetaData(MetaDataConverter.convertToGrpcMetaDataValues(command.getMetaData()))
+                .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(command.getMetaData()))
                 .setPayload(SerializedObject.newBuilder()
                                             .setData(ByteString.copyFrom(payloadAsBytes))
                                             .setType(command.type().name())
@@ -224,7 +223,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
                         command.getMessageIdentifier(),
                         new MessageType(commandPayload.getType(), commandPayload.getRevision()),
                         commandPayload.getData().toByteArray(),
-                        convertFromGrpcMetaDataValues(command.getMetaDataMap())
+                        convertMetaDataValuesToGrpc(command.getMetaDataMap())
                 ),
                 routingKey,
                 priority
@@ -242,7 +241,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         CommandResponse.Builder responseBuilder = CommandResponse
                 .newBuilder()
                 .setMessageIdentifier(messageId)
-                .putAllMetaData(MetaDataConverter.convertToGrpcMetaDataValues(resultMessage.getMetaData()))
+                .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(resultMessage.getMetaData()))
                 .setRequestIdentifier(command.getMessageIdentifier());
         if (!(resultMessage.getPayload() instanceof byte[] payloadAsBytes)) {
             throw new IllegalArgumentException(

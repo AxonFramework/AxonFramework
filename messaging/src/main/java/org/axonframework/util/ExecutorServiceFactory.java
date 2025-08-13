@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 
 /**
- * A Functional Interface towards a {@link BiFunction} which ingests both an {@link DistributedCommandBusConfiguration}
+ * A Functional Interface towards a {@link BiFunction} which ingests both a Configuration
  * and a {@link BlockingQueue} of {@link Runnable}, and outputs an {@link ExecutorService}. Provides a means to allow
  * configuration of the used ExecutorService in, for example, the {@link DistributedCommandBus}, but maintaining the
  * option for the framework to provide a BlockingQueue which is tailored towards message prioritization when building
@@ -33,7 +33,7 @@ import java.util.function.BiFunction;
  * Before 5.0.0 this class was specific for the AxonServer configuration, but it has been generalized to allow other
  * configurations to provide their own ExecutorService implementations as well.
  *
- * @param <C> The type of {@link DistributedCommandBusConfiguration} to use for the ExecutorService.
+ * @param <C> The type of Configuration to use for the ExecutorService.
  * @author Steven van Beelen
  * @since 5.0.0
  */
@@ -43,7 +43,7 @@ public interface ExecutorServiceFactory<C> {
     /**
      * Creates an {@link ExecutorService} based on the given {@code configuration} and {@code queue}.
      *
-     * @param configuration The {@link DistributedCommandBusConfiguration} to use for the ExecutorService.
+     * @param configuration The Configuration to use for the ExecutorService.
      * @param queue         The {@link BlockingQueue} to use for the ExecutorService.
      * @return an {@link ExecutorService}based on the given {@code configuration} and {@code queue}.
      */
