@@ -17,22 +17,15 @@
 package org.axonframework.modelling.configuration;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
-import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.DefaultMessagingConfigurer;
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.utils.EventTestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -60,7 +53,7 @@ class StatelessCommandHandlingModuleTest {
 
     @BeforeEach
     void setUp() {
-        configurer = DefaultMessagingConfigurer.create();
+        configurer = MessagingConfigurer.create();
     }
 
     @Nested

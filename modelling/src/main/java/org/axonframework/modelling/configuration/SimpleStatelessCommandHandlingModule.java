@@ -96,7 +96,7 @@ class SimpleStatelessCommandHandlingModule
     private ComponentDefinition<CommandHandlingComponent> getStatelessCommandHandlingComponentComponentDefinition() {
         return ofTypeAndName(CommandHandlingComponent.class, commandHandlingComponentName)
                 .withBuilder(c -> {
-                    CommandHandlingComponent commandHandlingComponent = SimpleCommandHandlingComponent.create(
+                    SimpleCommandHandlingComponent commandHandlingComponent = SimpleCommandHandlingComponent.create(
                             commandHandlingComponentName
                     );
                     

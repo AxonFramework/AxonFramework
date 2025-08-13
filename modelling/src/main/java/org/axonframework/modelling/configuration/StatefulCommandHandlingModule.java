@@ -149,7 +149,7 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
      * {@link ComponentBuilder builder} of the stateful command handler can be registered through the
      * {@link #commandHandler(QualifiedName, ComponentBuilder)} method.
      */
-    interface CommandHandlerPhase extends SetupPhase, ModuleBuilder<StatefulCommandHandlingModule> {
+    interface CommandHandlerPhase extends SetupPhase, BaseCommandHandlerPhase<CommandHandlerPhase>, ModuleBuilder<StatefulCommandHandlingModule> {
 
         /**
          * Registers the given {@code commandHandler} for the given qualified {@code commandName} within this module.
@@ -162,9 +162,10 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
          * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
          *
          * @param commandName    The qualified name of the command the given {@code commandHandler} can handle.
-         * @param commandHandler The stateful command handler to register with this module.
+         * @param commandHandler The command handler to register with this module.
          * @return The command handler phase of this builder, for a fluent API.
          */
+        @Override
         default CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
                                                    @Nonnull CommandHandler commandHandler) {
             requireNonNull(commandHandler, "The command handler cannot be null.");
@@ -209,49 +210,6 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
                 @Nonnull QualifiedName commandName,
                 @Nonnull ComponentBuilder<StatefulCommandHandler> commandHandlerBuilder
         );
-
-        /**
-         * Registers the given {@code handlingComponentBuilder} within this module.
-         * <p>
-         * Use this command handler registration method when the command handling component in question does not require
-         * entities or receives entities through another mechanism.
-         * <p>
-         * Once this module is finalized, the resulting {@link CommandHandlingComponent} from the
-         * {@code handlingComponentBuilder} will be subscribed with the
-         * {@link org.axonframework.commandhandling.CommandBus} of the
-         * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
-         *
-         * @param handlingComponentBuilder A builder of a {@link CommandHandlingComponent}. Provides the
-         *                                 {@link Configuration} to retrieve components from to use during construction
-         *                                 of the command handling component.
-         * @return The command handler phase of this builder, for a fluent API.
-         */
-        CommandHandlerPhase commandHandlingComponent(
-                @Nonnull ComponentBuilder<CommandHandlingComponent> handlingComponentBuilder
-        );
-
-        /**
-         * Registers the given {@code handlingComponentBuilder} as an {@link AnnotatedCommandHandlingComponent} within
-         * this module.
-         * <p>
-         * This will scan the given {@code handlingComponentBuilder} for methods annotated with {@link CommandHandler}
-         * and register them as command handlers for the {@link org.axonframework.commandhandling.CommandBus} of the
-         * {@link org.axonframework.configuration.ApplicationConfigurer}.
-         *
-         * @param handlingComponentBuilder A builder of a {@link CommandHandlingComponent}. Provides the
-         *                                 {@link Configuration} to retrieve components from to use during construction
-         *                                 of the command handling component.
-         * @return The command handler phase of this builder, for a fluent API.
-         */
-        default CommandHandlerPhase annotatedCommandHandlingComponent(
-                @Nonnull ComponentBuilder<Object> handlingComponentBuilder
-        ) {
-            requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
-            return commandHandlingComponent(c -> new AnnotatedCommandHandlingComponent<>(
-                    handlingComponentBuilder.build(c),
-                    c.getComponent(ParameterResolverFactory.class)
-            ));
-        }
     }
 
     /**
