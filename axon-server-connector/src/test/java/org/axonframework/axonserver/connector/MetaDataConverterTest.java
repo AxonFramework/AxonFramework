@@ -34,7 +34,7 @@ class MetaDataConverterTest {
         Map<String, String> source = new HashMap<>();
 
         // When
-        Map<String, MetaDataValue> result = MetaDataConverter.convertToGrpcMetaDataValues(source);
+        Map<String, MetaDataValue> result = MetaDataConverter.convertGrpcToMetaDataValues(source);
 
         // Then
         assertNotNull(result);
@@ -51,7 +51,7 @@ class MetaDataConverterTest {
         );
 
         // When
-        Map<String, MetaDataValue> result = MetaDataConverter.convertToGrpcMetaDataValues(source);
+        Map<String, MetaDataValue> result = MetaDataConverter.convertGrpcToMetaDataValues(source);
 
         // Then
         assertNotNull(result);
@@ -71,7 +71,7 @@ class MetaDataConverterTest {
         Map<String, MetaDataValue> source = new HashMap<>();
 
         // When
-        Map<String, String> result = MetaDataConverter.convertFromGrpcMetaDataValues(source);
+        Map<String, String> result = MetaDataConverter.convertMetaDataValuesToGrpc(source);
 
         // Then
         assertNotNull(result);
@@ -98,7 +98,7 @@ class MetaDataConverterTest {
         );
 
         // When
-        Map<String, String> result = MetaDataConverter.convertFromGrpcMetaDataValues(source);
+        Map<String, String> result = MetaDataConverter.convertMetaDataValuesToGrpc(source);
 
         // Then
         assertNotNull(result);
