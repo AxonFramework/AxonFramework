@@ -12,7 +12,7 @@ When the library does not cover the specific question you have, take the followi
 - Drop a questions on AxonIQ's forum: https://discuss.axoniq.io/
 - Or place a new question on StackOverflow, using the `axon` tag.
 
-## Reporting a bug, feature or enhancement
+## Reporting a bug, feature, enhancement, or documentation change
 
 Prior to filing an issue, please verify that it's not already reported by someone else.
 After that's done, your issue will typically fall under one of the following options:
@@ -20,6 +20,7 @@ After that's done, your issue will typically fall under one of the following opt
 1. It's a `bug`
 2. It's a `feature` request
 3. It's an `enhancement` request
+4. It's a `documentation` change
 
 It is recommended that for either of the three you use one of the prepared issue template.
 You can find all three of them [here](https://github.com/AxonFramework/issues/new/choose). 
