@@ -39,7 +39,10 @@ import java.util.Map;
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
+ * TODO #3602 remove
+ * @deprecated By shifting from the {@link Serializer} to the {@link Converter}, this exception becomes obsolete.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class SerializedMessage<P> extends AbstractMessage<P> {
 
     private final LazyDeserializingObject<P> payload;
