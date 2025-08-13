@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -127,12 +129,21 @@ class SubscribingEventProcessorModuleTest {
             var configurer = MessagingConfigurer.create();
             RecordingEventHandlingComponent component1 = simpleRecordingTestComponent();
             RecordingEventHandlingComponent component2 = simpleRecordingTestComponent();
+            var component3HandledPayload = new AtomicReference<String>();
+            var component3 = new Object() {
+                @EventHandler
+                public void handle(String event) {
+                    component3HandledPayload.set(event);
+                }
+            };
             configurer.eventProcessing(
                     ep -> ep.subscribing(
                             sp -> sp.defaults(d -> d.messageSource(eventBus))
                                     .defaultProcessor("test-processor",
                                                       components -> components.declarative(cfg -> component1)
-                                                                              .declarative(cfg -> component2))
+                                                                              .declarative(cfg -> component2)
+                                                                              .annotated(cfg -> component3)
+                                    )
                     )
             );
             var configuration = configurer.build();
@@ -143,10 +154,11 @@ class SubscribingEventProcessorModuleTest {
             eventBus.publish(sampleEvent);
 
             // then
-            await().atMost(Duration.ofMillis(200))
+            await().atMost(Duration.ofMillis(500))
                    .untilAsserted(() -> {
                        assertThat(component1.handled(sampleEvent)).isTrue();
                        assertThat(component2.handled(sampleEvent)).isTrue();
+                       assertThat(component3HandledPayload.get()).isEqualTo(sampleEvent.payload());
                    });
 
             // cleanup

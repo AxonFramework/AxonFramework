@@ -38,11 +38,11 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * <p>
  * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
  * {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
- * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name} and
- * {@link EventHandlingComponent} are <b>hard requirements</b> and as such should be provided.
+ * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory} and the {@link UnitOfWorkFactory}
+ * defaults to the {@link org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory}
  *
- * @author Rene de Waele
- * @since 3.0
+ * @author Mateusz Nowak
+ * @since 5.0.0
  */
 public class EventProcessorConfiguration {
 

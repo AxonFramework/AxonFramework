@@ -34,9 +34,12 @@ import java.util.stream.Collectors;
  * them. Each event handling component is wrapped in a {@link SequencingEventHandlingComponent} to ensure proper
  * sequencing where required.
  * <p>
- * Key responsibilities include: - Distributing event messages to the associated {@link EventHandlingComponent}
- * instances. - Ensuring event handling sequencing policies are respected when applicable. - Determining support for
- * specific event types across the managed components.
+ * Key responsibilities include:
+ * <ul>
+ * <li>Distributing event messages to the associated {@link EventHandlingComponent} instances. </li>
+ * <li>Ensuring event handling sequencing policies are respected when applicable.</li>
+ * <li>Determining support for specific event types across the managed components.</li>
+ * </ul>
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -53,7 +56,6 @@ public class ProcessorEventHandlingComponents {
      *
      * @param components The list of {@link EventHandlingComponent}s to be used for event processing. Must not be null
      *                   and is transformed into a list of {@link SequencingEventHandlingComponent}s if necessary.
-     * @param decorator  A decorator function that applies additional processing logic to each component.
      */
     public ProcessorEventHandlingComponents(@Nonnull List<EventHandlingComponent> components) {
         Objects.requireNonNull(components, "Components may not be null");
@@ -92,8 +94,9 @@ public class ProcessorEventHandlingComponents {
     }
 
     @Nonnull
-    private MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
-                                                      @Nonnull ProcessingContext context
+    private MessageStream.Empty<Message<Void>> handle(
+            @Nonnull EventMessage<?> event,
+            @Nonnull ProcessingContext context
     ) {
         MessageStream<Message<Void>> result = MessageStream.empty();
         for (var component : components) {

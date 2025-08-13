@@ -38,6 +38,7 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 5.0.0
  */
+// TODO #3595 - The MessageMonitor should align with the new async-native API.
 public class MonitoringEventHandlingComponent extends DelegatingEventHandlingComponent {
 
     private final Logger logger = LoggerFactory.getLogger(MonitoringEventHandlingComponent.class);

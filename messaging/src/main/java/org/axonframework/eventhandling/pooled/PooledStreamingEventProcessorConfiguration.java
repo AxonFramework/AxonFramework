@@ -72,8 +72,6 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * </ul>
  * The following fields of this configuration are <b>hard requirements</b> and as such should be provided:
  * <ul>
- *     <li>The name of this {@link EventProcessor}.</li>
- *     <li>An {@link EventHandlerInvoker} which will be given the events handled by this processor</li>
  *     <li>A {@link StreamableEventSource} used to retrieve events.</li>
  *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
  *     <li>A {@link ScheduledExecutorService} to coordinate events and segment operations.</li>

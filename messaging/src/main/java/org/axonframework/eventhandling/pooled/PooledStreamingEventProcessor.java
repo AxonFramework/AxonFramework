@@ -17,12 +17,14 @@
 package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessingException;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ProcessorEventHandlingComponents;
@@ -96,6 +98,24 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
 
+    /**
+     * Instantiate a {@code PooledStreamingEventProcessor} with given {@code name}, {@code eventHandlingComponents} and
+     * based on the fields contained in the {@link PooledStreamingEventProcessorConfiguration}.
+     * <p>
+     * Will assert the following for their presence in the configuration, prior to constructing this processor:
+     * <ul>
+     *     <li>A {@link StreamableEventSource}.</li>
+     *     <li>A {@link TokenStore}.</li>
+     *     <li>A {@link UnitOfWorkFactory}.</li>
+     *     <li>A {@link ScheduledExecutorService} for coordination.</li>
+     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
+     * </ul>
+     * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
+     *
+     * @param name A {@link String} defining this {@link EventProcessor} instance.
+     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
+     * @param customization The function that allows to customize default {@link PooledStreamingEventProcessorConfiguration} used to configure a {@code PooledStreamingEventProcessor} instance.
+     */
     public PooledStreamingEventProcessor(
             @Nonnull String name,
             @Nonnull List<EventHandlingComponent> eventHandlingComponents,
@@ -109,6 +129,24 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
         );
     }
 
+    /**
+     * Instantiate a {@code PooledStreamingEventProcessor} with given {@code name}, {@code eventHandlingComponents} and
+     * based on the fields contained in the {@link PooledStreamingEventProcessorConfiguration}.
+     * <p>
+     * Will assert the following for their presence in the configuration, prior to constructing this processor:
+     * <ul>
+     *     <li>A {@link StreamableEventSource}.</li>
+     *     <li>A {@link TokenStore}.</li>
+     *     <li>A {@link UnitOfWorkFactory}.</li>
+     *     <li>A {@link ScheduledExecutorService} for coordination.</li>
+     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
+     * </ul>
+     * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
+     *
+     * @param name A {@link String} defining this {@link EventProcessor} instance.
+     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
+     * @param configuration The {@link PooledStreamingEventProcessorConfiguration} used to configure a {@code PooledStreamingEventProcessor} instance.
+     */
     public PooledStreamingEventProcessor(
             @Nonnull String name,
             @Nonnull List<EventHandlingComponent> eventHandlingComponents,

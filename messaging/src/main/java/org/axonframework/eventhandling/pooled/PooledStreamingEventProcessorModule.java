@@ -28,6 +28,7 @@ import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
+import org.axonframework.eventhandling.SequenceCachingEventHandlingComponent;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
@@ -159,7 +160,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                         configuration.messageMonitor(),
                         new InterceptingEventHandlingComponent(
                                 configuration.interceptors(),
-                                c
+                                new SequenceCachingEventHandlingComponent(c)
                         )
                 )
         );

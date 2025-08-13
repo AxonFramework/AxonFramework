@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Abstract implementation of an EventHandlingComponent that delegates calls to a given delegate.
+ * Abstract implementation of an {@link EventHandlingComponent} that delegates calls to a given delegate.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak

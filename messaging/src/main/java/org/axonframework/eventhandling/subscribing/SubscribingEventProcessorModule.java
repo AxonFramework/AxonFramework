@@ -27,6 +27,7 @@ import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
+import org.axonframework.eventhandling.SequenceCachingEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
@@ -134,7 +135,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                         configuration.messageMonitor(),
                         new InterceptingEventHandlingComponent(
                                 configuration.interceptors(),
-                                c
+                                new SequenceCachingEventHandlingComponent(c)
                         )
                 )
         );

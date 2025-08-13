@@ -18,8 +18,6 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -37,9 +35,12 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * {@link EventProcessorSpanFactory} is defaulted to a {@link DefaultEventProcessorSpanFactory} backed by a
  * {@link org.axonframework.tracing.NoOpSpanFactory}, the {@link MessageMonitor} defaults to a
  * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a {@link DirectEventProcessingStrategy}
- * and the {@link TransactionManager} defaults to the {@link NoTransactionManager#INSTANCE}. The Event Processor
- * {@code name}, {@link EventHandlerInvoker} and {@link SubscribableMessageSource} are <b>hard requirements</b> and as
- * such should be provided.
+ * and the {@link UnitOfWorkFactory} defaults to the
+ * {@link org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory}. The Event Processor
+ * {@link SubscribableMessageSource} is <b>hard requirements</b> and as such should be provided.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
  */
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
@@ -137,10 +138,20 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         assertNonNull(messageSource, "The SubscribableMessageSource is a hard requirement and should be provided");
     }
 
+    /**
+     * Returns the {@link SubscribableMessageSource} to which this processor subscribes.
+     *
+     * @return The {@link SubscribableMessageSource} for receiving events.
+     */
     public SubscribableMessageSource<? extends EventMessage<?>> messageSource() {
         return messageSource;
     }
 
+    /**
+     * Returns the {@link EventProcessingStrategy} determining how events are processed.
+     *
+     * @return The {@link EventProcessingStrategy} for this processor.
+     */
     public EventProcessingStrategy processingStrategy() {
         return processingStrategy;
     }

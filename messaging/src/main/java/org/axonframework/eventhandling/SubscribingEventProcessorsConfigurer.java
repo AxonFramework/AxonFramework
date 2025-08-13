@@ -35,31 +35,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
-/**
- * A configuration module for managing multiple {@link org.axonframework.eventhandling.SubscribingEventProcessor}
- * instances within an application.
- * <p>
- * The {@code SubscribingEventProcessorsModule} provides a centralized way to configure and register multiple
- * subscribing event processors. It acts as a container module that manages individual
- * {@link SubscribingEventProcessorModule} instances, allowing you to set shared defaults that apply to all processors
- * while enabling processor-specific customizations.
- * <p>
- * The main purpose is to simplify the configuration of multiple event processors by providing shared configuration
- * capabilities such as default {@link org.axonframework.messaging.SubscribableMessageSource} and processor settings
- * that apply to all processors unless explicitly overridden.
- * <p>
- * The module automatically configures default components:
- * <ul>
- * <li>Automatically wires available {@link org.axonframework.messaging.SubscribableMessageSource} components to all processors</li>
- * <li>Applies shared customizations through the {@link #defaults(BiFunction)} and {@link #defaults(UnaryOperator)} methods</li>
- * </ul>
- * <p>
- * This module is typically accessed through {@link EventProcessingConfigurer#subscribing(UnaryOperator)}
- * rather than being instantiated directly.
- *
- * @author Mateusz Nowak
- * @since 5.0.0
- */
 
 public class SubscribingEventProcessorsConfigurer {
 

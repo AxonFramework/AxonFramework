@@ -61,11 +61,6 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
         this.resourceKey = Context.ResourceKey.withLabel("sequenceIdentifiersCache");
     }
 
-    @Override
-    public EventHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names, @Nonnull EventHandler eventHandler) {
-        return super.subscribe(names, eventHandler);
-    }
-
     @Nonnull
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
