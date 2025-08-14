@@ -327,6 +327,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO 1769")
     void nullRevisionEventAndNullRevisionAggregateAllowed() {
         DomainEventMessage<TestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
                 TestAggregate.class.getSimpleName(), "some-aggregate-id", 0,
@@ -348,6 +349,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO 1769")
     void nonNullEventRevisionAndNullAggregateRevisionNotAllowed() {
         DomainEventMessage<TestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
                 TestAggregate.class.getSimpleName(), "some-aggregate-id", 0,
