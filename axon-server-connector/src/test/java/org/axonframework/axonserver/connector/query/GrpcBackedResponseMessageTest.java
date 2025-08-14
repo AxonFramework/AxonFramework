@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.query;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.messaging.IllegalPayloadAccessException;
@@ -219,7 +220,8 @@ class GrpcBackedResponseMessageTest {
         private final String queryModelId;
         private final int someFilterValue;
 
-        private TestQueryResponse(String queryModelId, int someFilterValue) {
+        private TestQueryResponse(@JsonProperty("queryModelId") String queryModelId,
+                                  @JsonProperty("someFilterValue") int someFilterValue) {
             this.queryModelId = queryModelId;
             this.someFilterValue = someFilterValue;
         }

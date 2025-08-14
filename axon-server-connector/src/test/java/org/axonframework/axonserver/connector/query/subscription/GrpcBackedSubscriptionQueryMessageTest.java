@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.query.subscription;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.messaging.MessageType;
@@ -222,13 +223,13 @@ class GrpcBackedSubscriptionQueryMessageTest {
         assertTrue(resultMetaData.containsKey(additionalMetaData.keySet().iterator().next()));
     }
 
-    @SuppressWarnings("ClassCanBeRecord")
     private static class TestQuery {
 
         private final String queryModelId;
         private final int someFilterValue;
 
-        private TestQuery(String queryModelId, int someFilterValue) {
+        private TestQuery(@JsonProperty("queryModelId") String queryModelId,
+                          @JsonProperty("someFilterValue") int someFilterValue) {
             this.queryModelId = queryModelId;
             this.someFilterValue = someFilterValue;
         }

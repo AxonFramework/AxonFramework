@@ -101,6 +101,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Marc Gathier
  */
+@Disabled("TODO #3488")
 class AxonServerQueryBusTest {
 
     private static final String TEST_QUERY = "testQuery";

@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.query;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
@@ -281,18 +282,22 @@ class StreamingQueryEndToEndTest {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class FluxQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ListQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ErrorFluxQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class HandlerErrorFluxQuery {
 
     }

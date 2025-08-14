@@ -16,6 +16,7 @@
 
 package org.axonframework.serialization.upcasting.event;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventEntry;
@@ -32,7 +33,6 @@ import org.axonframework.serialization.TestSerializer;
 import org.axonframework.serialization.upcasting.Upcaster;
 import org.axonframework.utils.StubDomainEvent;
 import org.axonframework.utils.TestDomainEventEntry;
-import org.dom4j.Document;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -141,7 +141,7 @@ class SingleEventUpcasterTest {
     private static class StubEventUpcaster extends SingleEventUpcaster {
 
         private final SerializedType targetType = new SimpleSerializedType(StubDomainEvent.class.getName(), null);
-        private final Class<Document> expectedType = Document.class;
+        private final Class<ObjectNode> expectedType = ObjectNode.class;
         private final String newNameValue;
 
         private StubEventUpcaster(String newNameValue) {
@@ -155,9 +155,9 @@ class SingleEventUpcasterTest {
 
         @Override
         protected IntermediateEventRepresentation doUpcast(IntermediateEventRepresentation ir) {
-            return ir.upcastPayload(new SimpleSerializedType(targetType.getName(), "1"), expectedType, doc -> {
-                doc.getRootElement().element("name").setText(newNameValue);
-                return doc;
+            return ir.upcastPayload(new SimpleSerializedType(targetType.getName(), "1"), expectedType, eventPayload -> {
+                eventPayload.put("name", newNameValue);
+                return eventPayload;
             });
         }
     }

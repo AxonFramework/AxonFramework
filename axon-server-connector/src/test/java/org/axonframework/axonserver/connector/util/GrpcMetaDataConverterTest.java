@@ -16,6 +16,9 @@
 
 package org.axonframework.axonserver.connector.util;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import org.axonframework.serialization.Revision;
@@ -208,7 +211,7 @@ class GrpcMetaDataConverterTest {
 
         private final String testField;
 
-        private TestObject(String testField) {
+        private TestObject(@JsonProperty("testField") String testField) {
             this.testField = testField;
         }
 

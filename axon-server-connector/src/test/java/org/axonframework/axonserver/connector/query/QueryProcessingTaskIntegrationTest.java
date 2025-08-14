@@ -16,6 +16,8 @@
 
 package org.axonframework.axonserver.connector.query;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.axoniq.axonserver.connector.ErrorCategory;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.grpc.ErrorMessage;
@@ -849,11 +851,12 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class MultipleInstanceQuery {
 
         private final int numberOfResults;
 
-        private MultipleInstanceQuery(int numberOfResults) {
+        private MultipleInstanceQuery(@JsonProperty("numberOfResults") int numberOfResults) {
             this.numberOfResults = numberOfResults;
         }
 
@@ -862,11 +865,12 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class FluxQuery {
 
         private final int numberOfResults;
 
-        private FluxQuery(int numberOfResults) {
+        private FluxQuery(@JsonProperty("numberOfResults") int numberOfResults) {
             this.numberOfResults = numberOfResults;
         }
 
@@ -875,11 +879,12 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ListQuery {
 
         private final int numberOfResults;
 
-        private ListQuery(int numberOfResults) {
+        private ListQuery(@JsonProperty("numberOfResults") int numberOfResults) {
             this.numberOfResults = numberOfResults;
         }
 
@@ -888,22 +893,27 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ErrorFluxQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ErrorAfterAWhileFluxQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ThrowingExceptionFluxQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ThrowingExceptionListQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class InstanceQuery {
 
     }

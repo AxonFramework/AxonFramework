@@ -226,6 +226,6 @@ class QuartzEventSchedulerTest {
     }
 
     private EventMessage<Object> buildTestEvent() {
-        return new GenericEventMessage<>(new MessageType("message"), new Object());
+        return new GenericEventMessage<>(new MessageType("message"), "test-event");
     }
 }
