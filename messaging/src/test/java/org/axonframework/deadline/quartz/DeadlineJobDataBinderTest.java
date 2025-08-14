@@ -40,7 +40,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.*;
-import static org.axonframework.messaging.Headers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
