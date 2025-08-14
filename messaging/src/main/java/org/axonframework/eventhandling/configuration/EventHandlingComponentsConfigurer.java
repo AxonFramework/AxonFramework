@@ -44,16 +44,22 @@ import static java.util.Objects.requireNonNull;
 public interface EventHandlingComponentsConfigurer {
 
     /**
-     * Initial phase for specifying event handling components.
+     * Initial phase for specifying event handling components. At least one component must be configured.
      */
     interface RequiredComponentPhase extends ComponentsPhase<AdditionalComponentPhase> {
 
     }
 
+    /**
+     * Additional phase for specifying optional event handling components.
+     */
     interface AdditionalComponentPhase extends ComponentsPhase<AdditionalComponentPhase>, CompletePhase {
 
     }
 
+    /**
+     * Phase that allows configuring event handling components.
+     */
     interface ComponentsPhase<T> {
 
         /**

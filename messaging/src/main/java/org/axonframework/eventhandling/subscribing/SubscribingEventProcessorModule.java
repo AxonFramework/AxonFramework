@@ -141,26 +141,17 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         );
     }
 
-
-    public SubscribingEventProcessorModule configure(
-            @Nonnull ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder
-    ) {
-        this.configurationBuilder = configurationBuilder;
-        return this;
-    }
-
     @Override
     public SubscribingEventProcessorModule customized(
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> instanceCustomization
     ) {
-        return configure(
-                cfg -> {
-                    var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg,
-                                                                                       defaultEventProcessorsConfiguration(
-                                                                                               cfg));
-                    return instanceCustomization.apply(cfg, typeCustomization);
-                }
-        );
+        this.configurationBuilder = cfg -> {
+            var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg,
+                                                                               defaultEventProcessorsConfiguration(
+                                                                                       cfg));
+            return instanceCustomization.apply(cfg, typeCustomization);
+        };
+        return this;
     }
 
     @Override

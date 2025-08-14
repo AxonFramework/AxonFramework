@@ -116,8 +116,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         }
 
         var eventHandlingComponents = eventHandlingComponentBuilders.stream()
-                                              .map(c -> c.build(parent))
-                                              .toList();
+                                                                    .map(c -> c.build(parent))
+                                                                    .toList();
         List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
                 .stream()
                 .map(c -> withDefaultDecoration(c, configuration))
@@ -166,23 +166,16 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         );
     }
 
-    private PooledStreamingEventProcessorModule configure(
-            @Nonnull ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder
-    ) {
-        this.configurationBuilder = configurationBuilder;
-        return this;
-    }
-
     @Override
     public PooledStreamingEventProcessorModule customized(
             @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> instanceCustomization
     ) {
-        return configure(
-                cfg -> {
-                    var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg, defaultEventProcessorsConfiguration(cfg));
-                    return instanceCustomization.apply(cfg, typeCustomization);
-                }
-        );
+        this.configurationBuilder = cfg -> {
+            var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg,
+                                                                               defaultEventProcessorsConfiguration(cfg));
+            return instanceCustomization.apply(cfg, typeCustomization);
+        };
+        return this;
     }
 
     private static PooledStreamingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {

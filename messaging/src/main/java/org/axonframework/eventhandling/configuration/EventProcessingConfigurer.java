@@ -97,6 +97,12 @@ public class EventProcessingConfigurer {
         this.subscribingEventProcessors = new SubscribingEventProcessorsConfigurer(this);
     }
 
+    /**
+     * Builds the configurer, registering the necessary modules and customizations.
+     * <p>
+     * This method is typically called by the {@link org.axonframework.configuration.MessagingConfigurer} during
+     * application startup to finalize the configuration of event processors.
+     */
     public void build() {
         componentRegistry(
                 cr -> cr.registerComponent(
@@ -194,9 +200,16 @@ public class EventProcessingConfigurer {
         return this;
     }
 
-    public EventProcessingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
-        Objects.requireNonNull(registryAction, "registryAction may not be null");
-        parent.componentRegistry(registryAction);
+    /**
+     * Executes the given {@code componentRegistrar} on the component registry associated with the
+     * {@code MessagingConfigurer}, which is the parent of this configurer.
+     *
+     * @param componentRegistrar The actions to take on the component registry.
+     * @return This {@code EventProcessingConfigurer} for a fluent API.
+     */
+    public EventProcessingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+        Objects.requireNonNull(componentRegistrar, "componentRegistrar may not be null");
+        parent.componentRegistry(componentRegistrar);
         return this;
     }
 }
