@@ -22,7 +22,6 @@ import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
@@ -44,7 +43,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * A configuration module for configuring and registering a single {@link SubscribingEventProcessor} component.
@@ -75,7 +74,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
     private final String processorName;
     private List<ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
-    private ComponentBuilder<SubscribingEventProcessorConfiguration> configurationBuilder;
+    private ComponentBuilder<SubscribingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
 
     /**
      * Constructs a module with the given processor name.
@@ -92,30 +91,27 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
     @Override
     public SubscribingEventProcessorModule build() {
+        registerCustomizedConfiguration();
+        registerEventHandlingComponents();
+        registerEventProcessor();
         return this;
     }
 
-    @Override
-    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        var configuration = configurationBuilder.build(parent);
+    private void registerCustomizedConfiguration() {
+        componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition.ofType(SubscribingEventProcessorConfiguration.class)
+                                   .withBuilder(cfg -> customizedProcessorConfigurationBuilder.build(cfg))
+        ));
+    }
 
-        var eventHandlingComponents = eventHandlingComponentBuilders.stream()
-                                                                    .map(c -> c.build(parent))
-                                                                    .toList();
-        List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
-                .stream()
-                .map(c -> withDefaultDecoration(c, configuration))
-                .collect(Collectors.toUnmodifiableList());
-
-        var processor = new SubscribingEventProcessor(
-                processorName,
-                decoratedEventHandlingComponents,
-                configuration
-        );
-
+    private void registerEventProcessor() {
         var processorComponentDefinition = ComponentDefinition
                 .ofTypeAndName(SubscribingEventProcessor.class, processorName)
-                .withInstance(processor)
+                .withBuilder(cfg -> new SubscribingEventProcessor(
+                        processorName,
+                        getEventHandlingComponents(cfg),
+                        cfg.getComponent(SubscribingEventProcessorConfiguration.class)
+                ))
                 .onStart(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
                     component.start();
                     return FutureUtils.emptyCompletedFuture();
@@ -124,8 +120,36 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                 });
 
         componentRegistry(cr -> cr.registerComponent(processorComponentDefinition));
+    }
 
-        return super.build(parent, lifecycleRegistry);
+    private void registerEventHandlingComponents() {
+        for (int i = 0; i < eventHandlingComponentBuilders.size(); i++) {
+            var componentBuilder = eventHandlingComponentBuilders.get(i);
+            var componentName = processorEventHandlingComponentName(i);
+            componentRegistry(
+                    cr -> cr.registerComponent(
+                            EventHandlingComponent.class,
+                            componentName,
+                            cfg -> {
+                                var component = componentBuilder.build(cfg);
+                                var configuration = cfg.getComponent(SubscribingEventProcessorConfiguration.class);
+                                return withDefaultDecoration(component, configuration);
+                            }));
+        }
+    }
+
+    private List<EventHandlingComponent> getEventHandlingComponents(Configuration configuration) {
+        return IntStream.range(0, eventHandlingComponentBuilders.size())
+                        .mapToObj(i -> {
+                            String componentName = processorEventHandlingComponentName(i);
+                            return configuration.getComponent(EventHandlingComponent.class, componentName);
+                        })
+                        .toList();
+    }
+
+    @Nonnull
+    private String processorEventHandlingComponentName(int index) {
+        return "EventHandlingComponents[" + processorName + "][" + index + "]";
     }
 
     // TODO #3098 - Move it somewhere else! Like a decorator if certain enhancer applied.
@@ -150,7 +174,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     public SubscribingEventProcessorModule customized(
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> instanceCustomization
     ) {
-        this.configurationBuilder = cfg -> {
+        this.customizedProcessorConfigurationBuilder = cfg -> {
             var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg,
                                                                                defaultEventProcessorsConfiguration(
                                                                                        cfg));
@@ -161,7 +185,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
     @Override
     public SubscribingEventProcessorModule notCustomized() {
-        if (configurationBuilder == null) {
+        if (customizedProcessorConfigurationBuilder == null) {
             customized((cfg, config) -> config);
         }
         return this;

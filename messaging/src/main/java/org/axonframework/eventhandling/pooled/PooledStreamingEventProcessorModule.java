@@ -23,7 +23,6 @@ import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
@@ -74,9 +73,11 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>,
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
+    private static final int EXECUTORS_SHUTDOWN_PHASE = 0;
+
     private final String processorName;
     private List<ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
-    private ComponentBuilder<PooledStreamingEventProcessorConfiguration> configurationBuilder;
+    private ComponentBuilder<PooledStreamingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
 
     /**
      * Constructs a module with the given processor name.
@@ -104,7 +105,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                 ComponentDefinition
                         .ofType(PooledStreamingEventProcessorConfiguration.class)
                         .withBuilder(cfg -> {
-                            var configuration = configurationBuilder.build(cfg);
+                            var configuration = customizedProcessorConfigurationBuilder.build(cfg);
                             configuration.workerExecutor(
                                     Optional.ofNullable(configuration.workerExecutor())
                                             .orElseGet(() -> defaultExecutor(4, "WorkPackage[" + processorName + "]"))
@@ -114,10 +115,10 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                             .orElseGet(() -> defaultExecutor(1, "Coordinator[" + processorName + "]"))
                             );
                             return configuration;
-                        }).onShutdown(0, (cfg, component) -> {
+                        }).onShutdown(EXECUTORS_SHUTDOWN_PHASE, (cfg, component) -> {
                             component.workerExecutor().shutdown();
                             return FutureUtils.emptyCompletedFuture();
-                        }).onShutdown(0, (cfg, component) -> {
+                        }).onShutdown(EXECUTORS_SHUTDOWN_PHASE, (cfg, component) -> {
                             component.coordinatorExecutor().shutdown();
                             return FutureUtils.emptyCompletedFuture();
                         })
@@ -198,7 +199,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     public PooledStreamingEventProcessorModule customized(
             @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> instanceCustomization
     ) {
-        this.configurationBuilder = cfg -> {
+        this.customizedProcessorConfigurationBuilder = cfg -> {
             var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg,
                                                                                defaultEventProcessorsConfiguration(cfg));
             return instanceCustomization.apply(cfg, typeCustomization);
@@ -229,7 +230,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     @Override
     public PooledStreamingEventProcessorModule notCustomized() {
-        if (configurationBuilder == null) {
+        if (customizedProcessorConfigurationBuilder == null) {
             customized((cfg, config) -> config);
         }
         return this;
