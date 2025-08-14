@@ -90,7 +90,6 @@ public class SubscribingEventProcessorsConfigurer {
         componentRegistry(
                 cr -> cr.registerComponent(
                         SubscribingEventProcessorModule.Customization.class,
-                        "subscribingEventProcessorCustomization",
                         cfg ->
                                 SubscribingEventProcessorModule.Customization.noOp().andThen(
                                         (axonConfig, processorConfig) -> {

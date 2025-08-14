@@ -18,10 +18,11 @@ package org.axonframework.eventhandling.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.EventProcessorConfiguration;
+import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
@@ -62,7 +63,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  *          from the {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the
  *          {@link StreamableEventSource#firstToken() head} at the moment of initialization is reached.</li>
  *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
- *     <li>The {@link MaxSegmentProvider} (used by {@link #maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
+ *     <li>The {@link MaxSegmentProvider} (used by {@link PooledStreamingEventProcessor#maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
  *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
  *     <li>The {@code batchSize} defaults to {@code 1}.</li>
  *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
@@ -76,6 +77,9 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  *     <li>A {@link ScheduledExecutorService} to coordinate events and segment operations.</li>
  *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
  * </ul>
+ *
+ * @since 5.0.0
+ * @author Mateusz Nowak
  */
 public class PooledStreamingEventProcessorConfiguration extends EventProcessorConfiguration {
 
@@ -100,7 +104,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
     private Consumer<? super EventMessage<?>> ignoredMessageHandler = eventMessage -> messageMonitor.onMessageIngested(
             eventMessage).reportIgnored();
-
 
     /**
      * Constructs a new {@link PooledStreamingEventProcessorConfiguration} with default values.
@@ -170,9 +173,9 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * Sets the {@link TokenStore} used to store and fetch event tokens that enable this {@link EventProcessor} to track
      * its progress.
      *
-     * @param tokenStore the {@link TokenStore} used to store and fetch event tokens that enable this
-     *                   {@link EventProcessor} to track its progress
-     * @return The current instance, for fluent interfacing
+     * @param tokenStore The {@link TokenStore} used to store and fetch event tokens that enable this
+     *                   {@link EventProcessor} to track its progress.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration tokenStore(@Nonnull TokenStore tokenStore) {
         assertNonNull(tokenStore, "TokenStore may not be null");
@@ -184,9 +187,9 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * Specifies the {@link ScheduledExecutorService} used by the coordinator of this
      * {@link PooledStreamingEventProcessor}.
      *
-     * @param coordinatorExecutor the {@link ScheduledExecutorService} to be used by the coordinator of this
-     *                            {@link PooledStreamingEventProcessor}
-     * @return The current instance, for fluent interfacing
+     * @param coordinatorExecutor The {@link ScheduledExecutorService} to be used by the coordinator of this
+     *                            {@link PooledStreamingEventProcessor}.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration coordinatorExecutor(
             @Nonnull ScheduledExecutorService coordinatorExecutor) {
@@ -199,9 +202,9 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
      * {@link PooledStreamingEventProcessor}.
      *
-     * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by
-     *                       this {@link PooledStreamingEventProcessor}
-     * @return The current instance, for fluent interfacing
+     * @param workerExecutor The {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by
+     *                       this {@link PooledStreamingEventProcessor}.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration workerExecutor(
             @Nonnull ScheduledExecutorService workerExecutor) {
@@ -215,9 +218,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * stored in the configured {@link TokenStore} upon start up of this {@link StreamingEventProcessor}. The given
      * value should at least be {@code 1}. Defaults to {@code 16}.
      *
-     * @param initialSegmentCount an {@code int} specifying the initial segment count used to create segments on start
-     *                            up
-     * @return The current instance, for fluent interfacing
+     * @param initialSegmentCount The {@code int} specifying the initial segment count used to create segments on startup.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration initialSegmentCount(int initialSegmentCount) {
         assertStrictPositive(initialSegmentCount, "The initial segment count should be a higher valuer than zero");
@@ -235,9 +237,9 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the
      * {@link StreamableEventSource#firstToken() head} at the moment of initialization is reached.
      *
-     * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
-     *                     {@link StreamableEventSource}
-     * @return The current instance, for fluent interfacing
+     * @param initialToken The {@link Function} generating the initial {@link TrackingToken} based on a given
+     *                     {@link StreamableEventSource}.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration initialToken(
             @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken
@@ -251,9 +253,9 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * Specifies the time in milliseconds the processor's coordinator should wait after a failed attempt to claim any
      * segments for processing. Generally, this means all segments are claimed. Defaults to {@code 5000} milliseconds.
      *
-     * @param tokenClaimInterval the time in milliseconds the processor's coordinator should wait after a failed attempt
-     *                           to claim any segments for processing
-     * @return The current instance, for fluent interfacing
+     * @param tokenClaimInterval The time in milliseconds the processor's coordinator should wait after a failed attempt
+     *                           to claim any segments for processing.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration tokenClaimInterval(long tokenClaimInterval) {
         assertStrictPositive(tokenClaimInterval, "Token claim interval should be a higher valuer than zero");
@@ -284,8 +286,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         assertNonNull(maxSegmentProvider,
                       "The max segment provider may not be null. "
                               + "Provide a lambda of type (processorName: String) -> maxSegmentsToClaim");
-//            assertStrictPositive(maxSegmentProvider.getMaxSegments(name),
-//                                 "Max claimed segments should be a higher valuer than zero");
         this.maxSegmentProvider = maxSegmentProvider;
         return this;
     }
@@ -295,7 +295,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * {@link TrackingToken}. The threshold will only be met in absence of regular event processing, since that updates
      * the {@code TrackingToken} automatically. Defaults to {@code 5000} milliseconds.
      *
-     * @param claimExtensionThreshold a time in milliseconds the work packages of this processor should extend the claim
+     * @param claimExtensionThreshold The time in milliseconds the work packages of this processor should extend the claim
      *                                on a {@link TrackingToken}.
      * @return The current instance, for fluent interfacing
      */
@@ -314,8 +314,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * Increasing this value with increase the processing speed dramatically, but requires certainty that the operations
      * performed during event handling can be rolled back.
      *
-     * @param batchSize the number of events to be processed inside a single transaction
-     * @return The current instance, for fluent interfacing
+     * @param batchSize The number of events to be processed inside a single transaction.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration batchSize(int batchSize) {
         assertStrictPositive(batchSize, "The batch size should be a higher valuer than zero");
@@ -329,8 +329,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * {@link TrackingToken} claims or when to unmark a {@link Segment} as "unclaimable". Defaults to
      * {@link GenericEventMessage#clock}.
      *
-     * @param clock the {@link Clock} used for time dependent operation by this {@link EventProcessor}
-     * @return The current instance, for fluent interfacing
+     * @param clock The {@link Clock} used for time dependent operation by this {@link EventProcessor}.
+     * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration clock(@Nonnull Clock clock) {
         assertNonNull(clock, "Clock may not be null");
@@ -545,5 +545,23 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      */
     public Consumer<? super EventMessage<?>> ignoredMessageHandler() {
         return ignoredMessageHandler;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        super.describeTo(descriptor);
+        descriptor.describeProperty("eventSource", eventSource);
+        descriptor.describeProperty("tokenStore", tokenStore);
+        descriptor.describeProperty("coordinatorExecutor", coordinatorExecutor);
+        descriptor.describeProperty("workerExecutor", workerExecutor);
+        descriptor.describeProperty("initialSegmentCount", initialSegmentCount);
+        descriptor.describeProperty("initialToken", initialToken);
+        descriptor.describeProperty("tokenClaimInterval", tokenClaimInterval);
+        descriptor.describeProperty("maxSegmentProvider", maxSegmentProvider);
+        descriptor.describeProperty("claimExtensionThreshold", claimExtensionThreshold);
+        descriptor.describeProperty("batchSize", batchSize);
+        descriptor.describeProperty("clock", clock);
+        descriptor.describeProperty("coordinatorExtendsClaims", coordinatorExtendsClaims);
+        descriptor.describeProperty("eventCriteriaProvider", eventCriteriaProvider);
     }
 }

@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.configuration;
 
 
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.EventProcessorConfiguration;
 
 import java.util.function.BiFunction;
 

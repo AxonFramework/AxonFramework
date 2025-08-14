@@ -72,13 +72,13 @@ public class PooledStreamingEventProcessorsConfigurer {
     private final List<ModuleBuilder<PooledStreamingEventProcessorModule>> moduleBuilders = new ArrayList<>();
 
     /**
-     * Constructs a new pooled streaming event processors module with the given name.
+     * Constructs a new pooled streaming event processors configurer.
      * <p>
-     * This constructor is marked as {@link Internal} because the module is typically created and managed by the
+     * This constructor is marked as {@link Internal} because the configurer is typically created and managed by the
      * {@link EventProcessingConfigurer}. Users should not instantiate this class directly but instead access it through
      * {@link EventProcessingConfigurer#pooledStreaming(UnaryOperator)}.
      *
-     * @param name The name of this pooled streaming event processors module.
+     * @param parent The parent {@link EventProcessingConfigurer} that manages this configurer.
      */
     @Internal
     public PooledStreamingEventProcessorsConfigurer(@Nonnull EventProcessingConfigurer parent) {
@@ -97,7 +97,6 @@ public class PooledStreamingEventProcessorsConfigurer {
         componentRegistry(
                 cr -> cr.registerComponent(
                         PooledStreamingEventProcessorModule.Customization.class,
-                        "pooledStreamingEventProcessorCustomization",
                         cfg ->
                                 PooledStreamingEventProcessorModule.Customization.noOp().andThen(
                                         (axonConfig, processorConfig) -> {
@@ -118,7 +117,7 @@ public class PooledStreamingEventProcessorsConfigurer {
 
     /**
      * Configures default settings that will be applied to all {@link PooledStreamingEventProcessor} instances managed
-     * by this module.
+     * by this configurer.
      * <p>
      * This method allows you to specify configurations that should be shared across all pooled streaming event
      * processors. The provided function receives both the Axon {@link Configuration} and the processor configuration,
@@ -130,7 +129,7 @@ public class PooledStreamingEventProcessorsConfigurer {
      * @param configureDefaults A function that receives the Axon configuration and processor configuration, returning a
      *                          modified {@link PooledStreamingEventProcessorConfiguration} with the desired defaults
      *                          applied.
-     * @return This module instance for method chaining.
+     * @return This configurer instance for method chaining.
      */
     @Nonnull
     public PooledStreamingEventProcessorsConfigurer defaults(
@@ -143,7 +142,7 @@ public class PooledStreamingEventProcessorsConfigurer {
 
     /**
      * Configures default settings that will be applied to all {@link PooledStreamingEventProcessor} instances managed
-     * by this module.
+     * by this configurer.
      * <p>
      * This is a simplified version of {@link #defaults(BiFunction)} that provides only the processor configuration for
      * modification, without access to the Axon {@link Configuration}. Use this when your default configurations don't
@@ -151,7 +150,7 @@ public class PooledStreamingEventProcessorsConfigurer {
      *
      * @param configureDefaults A function that modifies the {@link PooledStreamingEventProcessorConfiguration} with
      *                          desired defaults.
-     * @return This module instance for method chaining.
+     * @return This configurer instance for method chaining.
      */
     @Nonnull
     public PooledStreamingEventProcessorsConfigurer defaults(

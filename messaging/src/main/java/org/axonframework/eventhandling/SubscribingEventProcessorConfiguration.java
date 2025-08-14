@@ -18,6 +18,8 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -86,9 +88,9 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * Sets the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
      * implementation will subscribe itself to receive {@link EventMessage}s.
      *
-     * @param messageSource the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this
+     * @param messageSource The {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this
      *                      {@link EventProcessor} implementation will subscribe itself to receive
-     *                      {@link EventMessage}s
+     *                      {@link EventMessage}s.
      * @return The current instance, for fluent interfacing.
      */
     public SubscribingEventProcessorConfiguration messageSource(
@@ -102,8 +104,8 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * Sets the {@link EventProcessingStrategy} determining whether events are processed directly or asynchronously.
      * Defaults to a {@link DirectEventProcessingStrategy}.
      *
-     * @param processingStrategy the {@link EventProcessingStrategy} determining whether events are processed directly
-     *                           or asynchronously
+     * @param processingStrategy The {@link EventProcessingStrategy} determining whether events are processed directly
+     *                           or asynchronously.
      * @return The current instance, for fluent interfacing.
      */
     public SubscribingEventProcessorConfiguration processingStrategy(
@@ -130,7 +132,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * Validates whether the fields contained in this Builder are set accordingly.
      *
      * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-     *                                    specifications
+     *                                    specifications.
      */
     @Override
     protected void validate() throws AxonConfigurationException {
@@ -154,5 +156,12 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      */
     public EventProcessingStrategy processingStrategy() {
         return processingStrategy;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        super.describeTo(descriptor);
+        descriptor.describeProperty("messageSource", messageSource);
+        descriptor.describeProperty("processingStrategy", processingStrategy);
     }
 }

@@ -23,7 +23,6 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
-import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 

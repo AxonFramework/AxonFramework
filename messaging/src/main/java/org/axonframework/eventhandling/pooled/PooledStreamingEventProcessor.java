@@ -34,6 +34,7 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.Message;
@@ -89,6 +90,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     private final PooledStreamingEventProcessorConfiguration configuration;
     private final StreamableEventSource<? extends EventMessage<?>> eventSource;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
+    private final EventCriteria eventCriteria;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final TokenStore tokenStore;
     private final ScheduledExecutorService workerExecutor;
@@ -168,7 +170,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
         );
         this.workerExecutor = configuration.workerExecutor();
         var supportedEvents = this.eventHandlingComponents.supportedEvents();
-        var eventCriteria = Objects.requireNonNull(
+        this.eventCriteria = Objects.requireNonNull(
                 configuration.eventCriteriaProvider().apply(supportedEvents),
                 "EventCriteriaProvider function must not return null"
         );
@@ -372,7 +374,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        WorkPackage.BatchProcessor batchProcessor = this::processWithErrorHandling;
+        WorkPackage.BatchProcessor batchProcessor = (events, context) -> processWithErrorHandling(events, context);
         var batchSize = configuration.batchSize();
         var claimExtensionThreshold = configuration.claimExtensionThreshold();
         var clock = configuration.clock();
@@ -447,6 +449,9 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("mode", "pooled");
-        // TODO: Other properties!
+        descriptor.describeProperty("eventHandlingComponents", eventHandlingComponents);
+        descriptor.describeProperty("eventCriteria", eventCriteria);
+        descriptor.describeProperty("configuration", configuration);
+        descriptor.describeProperty("processingStatus", processingStatus);
     }
 }

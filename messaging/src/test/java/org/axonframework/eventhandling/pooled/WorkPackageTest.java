@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -543,7 +544,7 @@ class WorkPackageTest {
         private final List<ContextMessage> processedEvents = new ArrayList<>();
 
         @Override
-        public MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context) {
+        public MessageStream.Empty<Message<Void>> process(@Nonnull List<? extends EventMessage<?>> events, ProcessingContext context) {
             if (batchProcessorPredicate.test(events, TrackingToken.fromContext(context).orElse(null))) {
                 processedEvents.addAll(events.stream().map(m -> new ContextMessage(m, context)).toList());
             }

@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.eventhandling.*;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -44,7 +47,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class EventProcessorConfiguration {
+public class EventProcessorConfiguration implements DescribableComponent {
 
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
 
@@ -207,5 +210,14 @@ public class EventProcessorConfiguration {
      */
     public boolean streaming() {
         return false;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("errorHandler", errorHandler);
+        descriptor.describeProperty("messageMonitor", messageMonitor);
+        descriptor.describeProperty("spanFactory", spanFactory);
+        descriptor.describeProperty("interceptors", interceptors);
+        descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
     }
 }

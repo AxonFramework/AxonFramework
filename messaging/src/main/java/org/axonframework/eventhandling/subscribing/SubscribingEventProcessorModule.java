@@ -24,7 +24,7 @@ import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.EventProcessorConfiguration;
+import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SequenceCachingEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
@@ -112,11 +112,11 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                         getEventHandlingComponents(cfg),
                         cfg.getComponent(SubscribingEventProcessorConfiguration.class)
                 ))
-                .onStart(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
-                    component.start();
+                .onStart(Phase.INBOUND_EVENT_CONNECTORS, (cfg, processor) -> {
+                    processor.start();
                     return FutureUtils.emptyCompletedFuture();
-                }).onShutdown(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
-                    return component.shutdownAsync();
+                }).onShutdown(Phase.INBOUND_EVENT_CONNECTORS, (cfg, processor) -> {
+                    return processor.shutdownAsync();
                 });
 
         componentRegistry(cr -> cr.registerComponent(processorComponentDefinition));
@@ -202,8 +202,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     private static SubscribingEventProcessorModule.Customization typeSpecificCustomizationOrNoOp(
             Configuration cfg
     ) {
-        return cfg.getOptionalComponent(SubscribingEventProcessorModule.Customization.class,
-                                        "subscribingEventProcessorCustomization")
+        return cfg.getOptionalComponent(SubscribingEventProcessorModule.Customization.class)
                   .orElseGet(SubscribingEventProcessorModule.Customization::noOp);
     }
 

@@ -17,11 +17,8 @@
 package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.Module;
-import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.EventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
@@ -29,7 +26,6 @@ import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModul
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 
-import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 

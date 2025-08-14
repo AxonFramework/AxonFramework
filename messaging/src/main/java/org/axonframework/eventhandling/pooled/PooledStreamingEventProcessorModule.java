@@ -25,7 +25,7 @@ import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.EventProcessorConfiguration;
+import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SequenceCachingEventHandlingComponent;
 import org.axonframework.eventhandling.TracingEventHandlingComponent;
@@ -115,11 +115,11 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                             .orElseGet(() -> defaultExecutor(1, "Coordinator[" + processorName + "]"))
                             );
                             return configuration;
-                        }).onShutdown(EXECUTORS_SHUTDOWN_PHASE, (cfg, component) -> {
-                            component.workerExecutor().shutdown();
+                        }).onShutdown(EXECUTORS_SHUTDOWN_PHASE, (cfg, processor) -> {
+                            processor.workerExecutor().shutdown();
                             return FutureUtils.emptyCompletedFuture();
-                        }).onShutdown(EXECUTORS_SHUTDOWN_PHASE, (cfg, component) -> {
-                            component.coordinatorExecutor().shutdown();
+                        }).onShutdown(EXECUTORS_SHUTDOWN_PHASE, (cfg, processor) -> {
+                            processor.coordinatorExecutor().shutdown();
                             return FutureUtils.emptyCompletedFuture();
                         })
         ));
@@ -207,18 +207,17 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         return this;
     }
 
+    private static PooledStreamingEventProcessorModule.Customization typeSpecificCustomizationOrNoOp(
+            Configuration cfg
+    ) {
+        return cfg.getOptionalComponent(PooledStreamingEventProcessorModule.Customization.class)
+                  .orElseGet(PooledStreamingEventProcessorModule.Customization::noOp);
+    }
+
     private static PooledStreamingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
         return new PooledStreamingEventProcessorConfiguration(
                 parentSharedCustomizationOrDefault(cfg).apply(cfg, new EventProcessorConfiguration())
         );
-    }
-
-    private static PooledStreamingEventProcessorModule.Customization typeSpecificCustomizationOrNoOp(
-            Configuration cfg
-    ) {
-        return cfg.getOptionalComponent(PooledStreamingEventProcessorModule.Customization.class,
-                                        "pooledStreamingEventProcessorCustomization")
-                  .orElseGet(PooledStreamingEventProcessorModule.Customization::noOp);
     }
 
     private static EventProcessorCustomization parentSharedCustomizationOrDefault(

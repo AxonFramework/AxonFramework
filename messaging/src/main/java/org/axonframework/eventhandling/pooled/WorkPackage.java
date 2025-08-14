@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventMessage;
@@ -541,7 +542,7 @@ class WorkPackage {
          * @param context The processing context in which the event messages are processed.
          * @return A stream of messages resulting from the processing of the event messages.
          */
-        MessageStream.Empty<Message<Void>> process(List<? extends EventMessage<?>> events, ProcessingContext context);
+        MessageStream.Empty<Message<Void>> process(@Nonnull List<? extends EventMessage<?>> events, ProcessingContext context);
     }
 
     /**

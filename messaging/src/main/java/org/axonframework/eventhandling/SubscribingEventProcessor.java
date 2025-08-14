@@ -211,5 +211,7 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("mode", "subscribing");
+        descriptor.describeProperty("eventHandlingComponents", eventHandlingComponents);
+        descriptor.describeProperty("configuration", configuration);
     }
 }
