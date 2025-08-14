@@ -69,7 +69,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
                 c -> (command, state, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context, c);
                     EnrollStudentToCourseCommand payload =
-                            command.payloadAs(c.getComponent(Converter.class), EnrollStudentToCourseCommand.class);
+                            command.payloadAs(EnrollStudentToCourseCommand.class, c.getComponent(Converter.class));
                     Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
                     Course course = state.loadEntity(Course.class, payload.courseId(), context).join();
 

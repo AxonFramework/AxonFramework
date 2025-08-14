@@ -63,7 +63,7 @@ public class PayloadConvertingCommandBusConnector<T> extends WrappedCommandBusCo
     @Override
     public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                                @Nullable ProcessingContext processingContext) {
-        CommandMessage<?> serializedCommand = command.withConvertedPayload(p -> converter.convert(p, targetType));
+        CommandMessage<?> serializedCommand = command.withConvertedPayload(targetType, converter);
         return delegate.dispatch(serializedCommand, processingContext);
     }
 
@@ -89,11 +89,11 @@ public class PayloadConvertingCommandBusConnector<T> extends WrappedCommandBusCo
 
         @Override
         public void onSuccess(Message<?> resultMessage) {
-            if (resultMessage == null || resultMessage.getPayload() == null) {
+            if (resultMessage == null || resultMessage.payload() == null) {
                 callback.onSuccess(resultMessage);
                 return;
             }
-            callback.onSuccess(resultMessage.withConvertedPayload(c -> converter.convert(c, targetType)));
+            callback.onSuccess(resultMessage.withConvertedPayload(targetType, converter));
         }
 
         @Override

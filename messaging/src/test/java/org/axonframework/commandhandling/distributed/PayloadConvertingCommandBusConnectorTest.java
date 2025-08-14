@@ -16,11 +16,6 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import java.util.concurrent.CompletableFuture;
-
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -32,6 +27,12 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
+
+import java.lang.reflect.Type;
+import java.util.concurrent.CompletableFuture;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class PayloadConvertingCommandBusConnectorTest {
 
@@ -74,7 +75,7 @@ class PayloadConvertingCommandBusConnectorTest {
         CommandMessage<String> originalCommand = new GenericCommandMessage<>(COMMAND_TYPE, ORIGINAL_PAYLOAD);
         ProcessingContext context = mock(ProcessingContext.class);
 
-        when(mockConverter.convert(ORIGINAL_PAYLOAD, byte[].class)).thenReturn(CONVERTED_PAYLOAD);
+        when(mockConverter.convert(ORIGINAL_PAYLOAD, (Type) byte[].class)).thenReturn(CONVERTED_PAYLOAD);
         when(mockDelegate.dispatch(any(CommandMessage.class), eq(context)))
                 .thenReturn(CompletableFuture.completedFuture(mock(CommandResultMessage.class)));
 
@@ -87,9 +88,9 @@ class PayloadConvertingCommandBusConnectorTest {
         verify(mockDelegate).dispatch(commandCaptor.capture(), eq(context));
 
         CommandMessage<?> capturedCommand = commandCaptor.getValue();
-        assertArrayEquals(CONVERTED_PAYLOAD, (byte[]) capturedCommand.getPayload());
+        assertArrayEquals(CONVERTED_PAYLOAD, (byte[]) capturedCommand.payload());
         assertEquals(originalCommand.type(), capturedCommand.type());
-        assertEquals(originalCommand.getMetaData(), capturedCommand.getMetaData());
+        assertEquals(originalCommand.metaData(), capturedCommand.metaData());
     }
 
     @Test
@@ -98,7 +99,8 @@ class PayloadConvertingCommandBusConnectorTest {
         CommandBusConnector.Handler originalHandler = mock(CommandBusConnector.Handler.class);
         testSubject.onIncomingCommand(originalHandler);
 
-        ArgumentCaptor<CommandBusConnector.Handler> handlerCaptor = ArgumentCaptor.forClass(CommandBusConnector.Handler.class);
+        ArgumentCaptor<CommandBusConnector.Handler> handlerCaptor =
+                ArgumentCaptor.forClass(CommandBusConnector.Handler.class);
         verify(mockDelegate).onIncomingCommand(handlerCaptor.capture());
 
         CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_TYPE, ORIGINAL_PAYLOAD);
@@ -106,14 +108,15 @@ class PayloadConvertingCommandBusConnectorTest {
 
         handlerCaptor.getValue().handle(testCommand, originalCallback);
 
-        ArgumentCaptor<CommandBusConnector.ResultCallback> callbackCaptor = ArgumentCaptor.forClass(CommandBusConnector.ResultCallback.class);
+        ArgumentCaptor<CommandBusConnector.ResultCallback> callbackCaptor =
+                ArgumentCaptor.forClass(CommandBusConnector.ResultCallback.class);
         verify(originalHandler).handle(eq(testCommand), callbackCaptor.capture());
 
         CommandBusConnector.ResultCallback convertingCallback = callbackCaptor.getValue();
 
         // When
         Message<String> resultMessage = new GenericMessage<>(COMMAND_TYPE, ORIGINAL_PAYLOAD);
-        when(mockConverter.convert(ORIGINAL_PAYLOAD, byte[].class)).thenReturn(CONVERTED_PAYLOAD);
+        when(mockConverter.convert(ORIGINAL_PAYLOAD, (Type) byte[].class)).thenReturn(CONVERTED_PAYLOAD);
 
         convertingCallback.onSuccess(resultMessage);
 
@@ -122,9 +125,9 @@ class PayloadConvertingCommandBusConnectorTest {
         verify(originalCallback).onSuccess(messageCaptor.capture());
 
         Message<?> convertedMessage = messageCaptor.getValue();
-        assertArrayEquals(CONVERTED_PAYLOAD, (byte[]) convertedMessage.getPayload());
+        assertArrayEquals(CONVERTED_PAYLOAD, (byte[]) convertedMessage.payload());
         assertEquals(resultMessage.type(), convertedMessage.type());
-        assertEquals(resultMessage.getMetaData(), convertedMessage.getMetaData());
+        assertEquals(resultMessage.metaData(), convertedMessage.metaData());
     }
 
     @Test
@@ -201,7 +204,7 @@ class PayloadConvertingCommandBusConnectorTest {
         verify(mockDelegate).dispatch(commandCaptor.capture(), any());
 
         CommandMessage<?> capturedCommand = commandCaptor.getValue();
-        assertEquals(originalMetaData, capturedCommand.getMetaData());
+        assertEquals(originalMetaData, capturedCommand.metaData());
     }
 
 }

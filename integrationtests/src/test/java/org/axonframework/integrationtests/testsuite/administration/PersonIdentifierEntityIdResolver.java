@@ -62,7 +62,7 @@ class PersonIdentifierEntityIdResolver implements EntityIdResolver<PersonIdentif
                                               "Unknown command type: %s",
                                               message.type().name())));
         PersonCommand personCommand = config.getComponent(Converter.class)
-                                            .convert(message.getPayload(), clazz);
+                                            .convert(message.payload(), clazz);
         return Objects.requireNonNull(personCommand).identifier();
     }
 }

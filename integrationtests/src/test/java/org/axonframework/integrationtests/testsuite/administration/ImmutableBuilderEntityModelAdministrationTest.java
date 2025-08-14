@@ -70,7 +70,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
                                                                                                    configuration);
-                                            entity.handle(command.payloadAs(converter, CompleteTaskCommand.class),
+                                            entity.handle(command.payloadAs(CompleteTaskCommand.class, converter),
                                                           eventAppender);
                                             return MessageStream.empty().cast();
                                         })
@@ -84,7 +84,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
                                                                                                    configuration);
-                                            entity.handle(command.payloadAs(converter, GiveRaise.class), eventAppender);
+                                            entity.handle(command.payloadAs(GiveRaise.class, converter), eventAppender);
                                             return MessageStream.empty().cast();
                                         })
                 .build();
@@ -95,17 +95,18 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableEmployee.class, converter, typeResolver))
                 .creationalCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
                                           ((command, context) -> {
-                                              EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                                     configuration);
-                                              ImmutableEmployee.handle(command.payload(converter, CreateEmployee.class),
-                                                                       eventAppender);
+                                              EventAppender eventAppender =
+                                                      EventAppender.forContext(context, configuration);
+                                              ImmutableEmployee.handle(
+                                                      command.payloadAs(CreateEmployee.class, converter), eventAppender
+                                              );
                                               return MessageStream.empty().cast();
                                           }))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(AssignTaskCommand.class).qualifiedName(),
                                         ((command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
                                                                                                    configuration);
-                                            entity.handle(command.payloadAs(converter, AssignTaskCommand.class), eventAppender);
+                                            entity.handle(command.payloadAs(AssignTaskCommand.class, converter), eventAppender);
                                             return MessageStream.empty().cast();
                                         }))
                 .addChild(EntityChildMetamodel
@@ -116,7 +117,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                   .commandTargetResolver((candidates, commandMessage, ctx) -> {
                                       if (commandMessage.type().name().equals(CompleteTaskCommand.class.getName())) {
                                           var completeTaskCommand =
-                                                  commandMessage.payloadAs(converter, CompleteTaskCommand.class);
+                                                  commandMessage.payloadAs(CompleteTaskCommand.class, converter);
                                           return candidates.stream()
                                                            .filter(task -> task.getTaskId()
                                                                                .equals(completeTaskCommand.taskId()))
@@ -155,7 +156,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                               EventAppender eventAppender = EventAppender.forContext(context,
                                                                                                      configuration);
                                               ImmutableCustomer.handle(
-                                                      command.payloadAs(converter, CreateCustomer.class), eventAppender
+                                                      command.payloadAs(CreateCustomer.class, converter), eventAppender
                                               );
                                               return MessageStream.empty().cast();
                                           }))
@@ -170,7 +171,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context,
                                                                                                    configuration);
-                                            entity.handle(command.payloadAs(converter, ChangeEmailAddress.class),
+                                            entity.handle(command.payloadAs(ChangeEmailAddress.class, converter),
                                                           eventAppender);
                                             return MessageStream.empty().cast();
                                         })

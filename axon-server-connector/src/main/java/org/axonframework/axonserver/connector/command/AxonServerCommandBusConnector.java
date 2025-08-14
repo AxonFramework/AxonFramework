@@ -27,8 +27,8 @@ import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.axonserver.connector.MetaDataConverter;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.MetaDataConverter;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
@@ -130,10 +130,12 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     private Command buildOutgoingCommand(CommandMessage<?> command) {
-        Object payload = command.getPayload();
+        Object payload = command.payload();
         if (!(payload instanceof byte[] payloadAsBytes)) {
             throw new IllegalArgumentException(
-                    "Payload must be of type byte[] for AxonServerConnector, but was: " + payload.getClass().getName()+", consider using a Converter-based CommandBusConnector"
+                    "Payload must be of type byte[] for AxonServerConnector, but was: "
+                            + command.payloadType().getName()
+                            + ", consider using a Converter-based CommandBusConnector"
             );
         }
         Command.Builder builder = Command.newBuilder();
@@ -141,9 +143,9 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         addPriority(builder, command);
 
         return builder
-                .setMessageIdentifier(command.getIdentifier())
+                .setMessageIdentifier(command.identifier())
                 .setName(command.type().name())
-                .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(command.getMetaData()))
+                .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(command.metaData()))
                 .setPayload(SerializedObject.newBuilder()
                                             .setData(ByteString.copyFrom(payloadAsBytes))
                                             .setType(command.type().name())
@@ -237,16 +239,16 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
                                   .build();
         }
 
-        String messageId = getOrDefault(resultMessage.getIdentifier(), UUID.randomUUID().toString());
+        String messageId = getOrDefault(resultMessage.identifier(), UUID.randomUUID().toString());
         CommandResponse.Builder responseBuilder = CommandResponse
                 .newBuilder()
                 .setMessageIdentifier(messageId)
-                .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(resultMessage.getMetaData()))
+                .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(resultMessage.metaData()))
                 .setRequestIdentifier(command.getMessageIdentifier());
-        if (!(resultMessage.getPayload() instanceof byte[] payloadAsBytes)) {
+        if (!(resultMessage.payload() instanceof byte[] payloadAsBytes)) {
             throw new IllegalArgumentException(
-                    "Payload must be of type byte[] for AxonServerConnector, but was: %s, consider using a Converter-based CommandBusConnector".formatted(
-                            resultMessage.getPayload().getClass().getName())
+                    "Payload must be of type byte[] for AxonServerConnector, but was: %s, consider using a Converter-based CommandBusConnector".
+                            formatted(resultMessage.payloadType().getName())
             );
         }
         return responseBuilder.setPayload(SerializedObject.newBuilder()

@@ -16,13 +16,8 @@
 
 package org.axonframework.integrationtests.axonserverconnector;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.grpc.ManagedChannelBuilder;
-
-import java.util.concurrent.TimeUnit;
-
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
@@ -52,6 +47,9 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 class MessagePriorityIntegrationTest {
@@ -94,7 +92,7 @@ class MessagePriorityIntegrationTest {
         );
 
         CommandPriorityCalculator commandPriorityCalculator =
-                command -> Objects.equals(command.getPayload().getClass(), PriorityMessage.class) ? PRIORITY : REGULAR;
+                command -> Objects.equals(command.payloadType(), PriorityMessage.class) ? PRIORITY : REGULAR;
 
         var commandBusConfig = new DistributedCommandBusConfiguration().withLoadFactor(1);
         commandBus = new DistributedCommandBus(localCommandBus, serializingConnector, commandBusConfig);
@@ -158,7 +156,8 @@ class MessagePriorityIntegrationTest {
                     command = new RegularMessage(Integer.toString(i));
                 }
                 commandGateway.send(command, null).onSuccess((resultMessage) -> {
-                    if (resultMessage.getPayload().toString().equals("regular")) {
+                    //noinspection DataFlowIssue
+                    if (resultMessage.payload().toString().equals("regular")) {
                         handlingOrder.add(Handled.regular());
                     } else {
                         handlingOrder.add(Handled.priority());
@@ -167,7 +166,6 @@ class MessagePriorityIntegrationTest {
                     finishedGate.countDown();
                 });
                 logger.info("Iteration {}: command {} sent", i, command);
-
             }
             processingGate.countDown();
         });

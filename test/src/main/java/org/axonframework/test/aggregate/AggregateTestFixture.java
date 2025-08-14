@@ -227,7 +227,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 getParameterResolverFactory(),
                 getHandlerDefinition(),
                 new ClassBasedMessageTypeResolver(),
-                new PassThroughConverter()
+                PassThroughConverter.INSTANCE
         ));
         return this;
     }

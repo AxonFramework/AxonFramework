@@ -127,7 +127,7 @@ public interface CommandGateway {
      */
     default void sendAndWait(@Nonnull Object command) {
         try {
-            return send(command, null).getResultMessage().get();
+            send(command, null).getResultMessage().get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CommandExecutionException("Thread interrupted while waiting for result", e);

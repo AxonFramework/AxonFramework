@@ -24,12 +24,12 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
@@ -62,7 +62,9 @@ class AnnotatedCommandHandlingComponentTest {
         annotatedCommandHandler = new MyCommandHandler();
         ParameterResolverFactory parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
 
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, parameterResolverFactory, new PassThroughConverter());
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
+                                                              parameterResolverFactory,
+                                                              PassThroughConverter.INSTANCE);
 
         when(commandBus.subscribe(any(QualifiedName.class), any())).thenReturn(commandBus);
         when(commandBus.subscribe(anySet(), any())).thenReturn(commandBus);
@@ -155,7 +157,7 @@ class AnnotatedCommandHandlingComponentTest {
         annotatedCommandHandler = new MyInterceptingCommandHandler(withoutInterceptor,
                                                                    withInterceptor,
                                                                    new ArrayList<>());
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, new PassThroughConverter());
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, PassThroughConverter.INSTANCE);
 
         Object result = testSubject.handle(testCommandMessage, mock(ProcessingContext.class))
                                    .first()
@@ -180,7 +182,7 @@ class AnnotatedCommandHandlingComponentTest {
         annotatedCommandHandler = new MyInterceptingCommandHandler(new ArrayList<>(),
                                                                    new ArrayList<>(),
                                                                    interceptedExceptions);
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, new PassThroughConverter());
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, PassThroughConverter.INSTANCE);
 
         try {
             testSubject.handle(testCommandMessage, mock(ProcessingContext.class));
