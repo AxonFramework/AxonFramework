@@ -73,7 +73,7 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
 
         var cachedSequenceId = cache.get(eventIdentifier);
         if (cachedSequenceId.isPresent()) {
-            return cachedSequenceId;
+            return cachedSequenceId.get();
         }
 
         Object sequenceIdentifier = super.sequenceIdentifierFor(event, context);
