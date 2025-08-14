@@ -37,7 +37,8 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
- * A configuration configurer for managing multiple {@link PooledStreamingEventProcessor} instances within an application.
+ * A configuration configurer for managing multiple {@link PooledStreamingEventProcessor} instances within an
+ * application.
  * <p>
  * The {@code PooledStreamingEventProcessorsModule} provides a centralized way to configure and register multiple pooled
  * streaming event processors. It acts as a container that manages individual
@@ -87,8 +88,8 @@ public class PooledStreamingEventProcessorsConfigurer {
     /**
      * Builds and registers all configured pooled streaming event processors.
      * <p>
-     * This method is typically called automatically by the framework during configuration building.
-     * It registers default components and all configured processor modules.
+     * This method is typically called automatically by the framework during configuration building. It registers
+     * default components and all configured processor modules.
      */
     @Internal
     public void build() {
@@ -164,10 +165,10 @@ public class PooledStreamingEventProcessorsConfigurer {
     }
 
     /**
-     * Registers a pooled streaming event processor with the specified name and event handling components.
-     * The processor will use the default pooled streaming event processor configuration.
+     * Registers a pooled streaming event processor with the specified name and event handling components. The processor
+     * will use the default pooled streaming event processor configuration.
      *
-     * @param name                         The unique name for the processor.
+     * @param name                           The unique name for the processor.
      * @param eventHandlingComponentsBuilder Function to configure the event handling components.
      * @return This configurer instance for method chaining.
      */
@@ -180,11 +181,13 @@ public class PooledStreamingEventProcessorsConfigurer {
                 () -> EventProcessorModule.pooledStreaming(name)
                                           .eventHandlingComponents(eventHandlingComponentsBuilder)
                                           .notCustomized()
+                                          .build()
         );
         return this;
     }
 
-    /** Registers a pooled streaming event processor with custom module configuration.
+    /**
+     * Registers a pooled streaming event processor with custom module configuration.
      *
      * @param name             The unique name for the processor.
      * @param moduleCustomizer Function to customize the processor module configuration.
@@ -196,7 +199,7 @@ public class PooledStreamingEventProcessorsConfigurer {
             @Nonnull Function<EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>, PooledStreamingEventProcessorModule> moduleCustomizer
     ) {
         processor(
-                () -> moduleCustomizer.apply(EventProcessorModule.pooledStreaming(name))
+                () -> moduleCustomizer.apply(EventProcessorModule.pooledStreaming(name)).build()
         );
         return this;
     }

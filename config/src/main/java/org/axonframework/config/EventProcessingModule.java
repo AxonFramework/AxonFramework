@@ -913,24 +913,19 @@ public class EventProcessingModule
             StreamableMessageSource<TrackedEventMessage<?>> messageSource,
             PooledStreamingProcessorConfiguration processorConfiguration
     ) {
+        ScheduledExecutorService coordinatorExecutor = defaultExecutor(1, "Coordinator[" + name + "]");
+        config.onShutdown(coordinatorExecutor::shutdown);
+        ScheduledExecutorService workerExecutor = defaultExecutor(4, "WorkPackage[" + name + "]");
+        config.onShutdown(workerExecutor::shutdown);
+
         var processorConfig = new PooledStreamingEventProcessorConfiguration()
                 .errorHandler(errorHandler(name))
                 .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
                 .eventSource(new LegacyStreamableEventSource<>(messageSource))
                 .tokenStore(tokenStore(name))
                 .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
-                .coordinatorExecutor(processorName -> {
-                    ScheduledExecutorService coordinatorExecutor =
-                            defaultExecutor(1, "Coordinator[" + processorName + "]");
-                    config.onShutdown(coordinatorExecutor::shutdown);
-                    return coordinatorExecutor;
-                })
-                .workerExecutor(processorName -> {
-                    ScheduledExecutorService workerExecutor =
-                            defaultExecutor(4, "WorkPackage[" + processorName + "]");
-                    config.onShutdown(workerExecutor::shutdown);
-                    return workerExecutor;
-                })
+                .coordinatorExecutor(coordinatorExecutor)
+                .workerExecutor(workerExecutor)
                 .spanFactory(config.getComponent(EventProcessorSpanFactory.class));
 
         var customized = pooledStreamingProcessorConfig(CONFIGURED_DEFAULT_PSEP_CONFIG)

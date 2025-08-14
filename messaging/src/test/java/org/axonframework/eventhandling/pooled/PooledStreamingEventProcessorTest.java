@@ -126,8 +126,8 @@ class PooledStreamingEventProcessorTest {
                 .eventSource(stubMessageSource)
                 .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                 .tokenStore(tokenStore)
-                .coordinatorExecutor(ignored -> coordinatorExecutor)
-                .workerExecutor(ignored -> workerExecutor)
+                .coordinatorExecutor(coordinatorExecutor)
+                .workerExecutor(workerExecutor)
                 .initialSegmentCount(8)
                 .claimExtensionThreshold(500);
         var customizedConfiguration = configOverride.apply(testDefaultConfiguration);

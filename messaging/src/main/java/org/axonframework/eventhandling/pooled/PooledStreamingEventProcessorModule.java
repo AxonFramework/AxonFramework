@@ -40,11 +40,12 @@ import org.axonframework.lifecycle.Phase;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * A configuration module for configuring and registering a single {@link PooledStreamingEventProcessor} component.
@@ -91,47 +92,46 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     }
 
     @Override
-    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        var configuration = configurationBuilder.build(parent);
+    public PooledStreamingEventProcessorModule build() {
+        registerCustomizedConfiguration();
+        registerEventHandlingComponents();
+        registerEventProcessor();
+        return this;
+    }
 
-        // TODO #3098 - Clean-up this part.
-        if (configuration.workerExecutorBuilder() == null) {
-            Function<String, ScheduledExecutorService> workerExecutorBuilder = processorName -> {
-                ScheduledExecutorService workerExecutor =
-                        defaultExecutor(4, "WorkPackage[" + processorName + "]");
-                lifecycleRegistry.onShutdown(workerExecutor::shutdown);
-                return workerExecutor;
-            };
-            configuration.workerExecutor(workerExecutorBuilder);
-        }
+    private void registerCustomizedConfiguration() {
+        componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition
+                        .ofType(PooledStreamingEventProcessorConfiguration.class)
+                        .withBuilder(cfg -> {
+                            var configuration = configurationBuilder.build(cfg);
+                            configuration.workerExecutor(
+                                    Optional.ofNullable(configuration.workerExecutor())
+                                            .orElseGet(() -> defaultExecutor(4, "WorkPackage[" + processorName + "]"))
+                            );
+                            configuration.coordinatorExecutor(
+                                    Optional.ofNullable(configuration.coordinatorExecutor())
+                                            .orElseGet(() -> defaultExecutor(1, "Coordinator[" + processorName + "]"))
+                            );
+                            return configuration;
+                        }).onShutdown(0, (cfg, component) -> {
+                            component.workerExecutor().shutdown();
+                            return FutureUtils.emptyCompletedFuture();
+                        }).onShutdown(0, (cfg, component) -> {
+                            component.coordinatorExecutor().shutdown();
+                            return FutureUtils.emptyCompletedFuture();
+                        })
+        ));
+    }
 
-        if (configuration.coordinatorExecutorBuilder() == null) {
-            Function<String, ScheduledExecutorService> coordinatorExecutorBuilder = processorName -> {
-                ScheduledExecutorService coordinatorExecutor =
-                        defaultExecutor(1, "Coordinator[" + processorName + "]");
-                lifecycleRegistry.onShutdown(coordinatorExecutor::shutdown);
-                return coordinatorExecutor;
-            };
-            configuration.coordinatorExecutor(coordinatorExecutorBuilder);
-        }
-
-        var eventHandlingComponents = eventHandlingComponentBuilders.stream()
-                                                                    .map(c -> c.build(parent))
-                                                                    .toList();
-        List<EventHandlingComponent> decoratedEventHandlingComponents = eventHandlingComponents
-                .stream()
-                .map(c -> withDefaultDecoration(c, configuration))
-                .collect(Collectors.toUnmodifiableList());
-
-        var processor = new PooledStreamingEventProcessor(
-                processorName,
-                decoratedEventHandlingComponents,
-                configuration
-        );
-
+    private void registerEventProcessor() {
         var processorComponentDefinition = ComponentDefinition
                 .ofTypeAndName(PooledStreamingEventProcessor.class, processorName)
-                .withBuilder(c -> processor)
+                .withBuilder(cfg -> new PooledStreamingEventProcessor(
+                        processorName,
+                        getEventHandlingComponents(cfg),
+                        cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                ))
                 .onStart(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
                     component.start();
                     return FutureUtils.emptyCompletedFuture();
@@ -140,8 +140,36 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                 });
 
         componentRegistry(cr -> cr.registerComponent(processorComponentDefinition));
+    }
 
-        return super.build(parent, lifecycleRegistry);
+    private void registerEventHandlingComponents() {
+        for (int i = 0; i < eventHandlingComponentBuilders.size(); i++) {
+            var componentBuilder = eventHandlingComponentBuilders.get(i);
+            var componentName = processorEventHandlingComponentName(i);
+            componentRegistry(
+                    cr -> cr.registerComponent(
+                            EventHandlingComponent.class,
+                            componentName,
+                            cfg -> {
+                                var component = componentBuilder.build(cfg);
+                                var configuration = cfg.getComponent(PooledStreamingEventProcessorConfiguration.class);
+                                return withDefaultDecoration(component, configuration);
+                            }));
+        }
+    }
+
+    private List<EventHandlingComponent> getEventHandlingComponents(Configuration configuration) {
+        return IntStream.range(0, eventHandlingComponentBuilders.size())
+                        .mapToObj(i -> {
+                            String componentName = processorEventHandlingComponentName(i);
+                            return configuration.getComponent(EventHandlingComponent.class, componentName);
+                        })
+                        .toList();
+    }
+
+    @Nonnull
+    private String processorEventHandlingComponentName(int index) {
+        return "EventHandlingComponents[" + processorName + "][" + index + "]";
     }
 
     private static ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {
@@ -214,11 +242,6 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         Objects.requireNonNull(configurerTask, "configurerTask may not be null");
         var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer();
         this.eventHandlingComponentBuilders = configurerTask.apply(componentsConfigurer).toList();
-        return this;
-    }
-
-    @Override
-    public PooledStreamingEventProcessorModule build() {
         return this;
     }
 

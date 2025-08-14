@@ -166,7 +166,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
                 this.eventHandlingComponents,
                 configuration.errorHandler()
         );
-        this.workerExecutor = configuration.workerExecutorBuilder().apply(name);
+        this.workerExecutor = configuration.workerExecutor();
         var supportedEvents = this.eventHandlingComponents.supportedEvents();
         var eventCriteria = Objects.requireNonNull(
                 configuration.eventCriteriaProvider().apply(supportedEvents),
@@ -178,7 +178,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
                                       .eventSource(eventSource)
                                       .tokenStore(tokenStore)
                                       .unitOfWorkFactory(unitOfWorkFactory)
-                                      .executorService(configuration.coordinatorExecutorBuilder().apply(name))
+                                      .executorService(configuration.coordinatorExecutor())
                                       .workPackageFactory(this::spawnWorker)
                                       .onMessageIgnored(configuration.ignoredMessageHandler())
                                       .processingStatusUpdater(this::statusUpdater)

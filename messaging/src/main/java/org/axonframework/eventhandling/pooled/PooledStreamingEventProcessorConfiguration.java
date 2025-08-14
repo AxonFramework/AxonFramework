@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.pooled;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.ErrorHandler;
-import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorConfiguration;
@@ -85,8 +84,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
 
     private StreamableEventSource<? extends EventMessage<?>> eventSource;
     private TokenStore tokenStore;
-    private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder;
-    private Function<String, ScheduledExecutorService> workerExecutorBuilder;
+    private ScheduledExecutorService coordinatorExecutor;
+    private ScheduledExecutorService workerExecutor;
     private int initialSegmentCount = 16;
     private Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken =
             es -> es.firstToken().thenApply(ReplayToken::createReplayToken);
@@ -192,23 +191,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     public PooledStreamingEventProcessorConfiguration coordinatorExecutor(
             @Nonnull ScheduledExecutorService coordinatorExecutor) {
         assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
-        this.coordinatorExecutorBuilder = ignored -> coordinatorExecutor;
-        return this;
-    }
-
-    /**
-     * Specifies a builder to construct a {@link ScheduledExecutorService} used by the coordinator of this
-     * {@link PooledStreamingEventProcessor}.
-     *
-     * @param coordinatorExecutorBuilder a builder function to construct a {@link ScheduledExecutorService}, providing
-     *                                   the {@link PooledStreamingEventProcessor}
-     * @return The current instance, for fluent interfacing
-     */
-    public PooledStreamingEventProcessorConfiguration coordinatorExecutor(
-            @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder) {
-        assertNonNull(coordinatorExecutorBuilder,
-                      "The Coordinator's ScheduledExecutorService builder may not be null");
-        this.coordinatorExecutorBuilder = coordinatorExecutorBuilder;
+        this.coordinatorExecutor = coordinatorExecutor;
         return this;
     }
 
@@ -223,22 +206,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     public PooledStreamingEventProcessorConfiguration workerExecutor(
             @Nonnull ScheduledExecutorService workerExecutor) {
         assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
-        this.workerExecutorBuilder = ignored -> workerExecutor;
-        return this;
-    }
-
-    /**
-     * Specifies a builder to construct a {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s
-     * created by this {@link PooledStreamingEventProcessor}.
-     *
-     * @param workerExecutorBuilder a builder function to construct a {@link ScheduledExecutorService}, providing the
-     *                              {@link PooledStreamingEventProcessor}
-     * @return The current instance, for fluent interfacing
-     */
-    public PooledStreamingEventProcessorConfiguration workerExecutor(
-            @Nonnull Function<String, ScheduledExecutorService> workerExecutorBuilder) {
-        assertNonNull(workerExecutorBuilder, "The Worker's ScheduledExecutorService builder may not be null");
-        this.workerExecutorBuilder = workerExecutorBuilder;
+        this.workerExecutor = workerExecutor;
         return this;
     }
 
@@ -439,11 +407,11 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
         assertNonNull(unitOfWorkFactory, "The UnitOfWorkFactory is a hard requirement and should be provided");
         assertNonNull(
-                coordinatorExecutorBuilder,
+                coordinatorExecutor,
                 "The Coordinator ScheduledExecutorService is a hard requirement and should be provided"
         );
         assertNonNull(
-                workerExecutorBuilder,
+                workerExecutor,
                 "The Worker ScheduledExecutorService is a hard requirement and should be provided"
         );
     }
@@ -472,21 +440,21 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     /**
-     * Returns the builder function for the coordinator's {@link ScheduledExecutorService}.
+     * Returns the coordinator's {@link ScheduledExecutorService}.
      *
-     * @return The coordinator executor builder function.
+     * @return The coordinator executor.
      */
-    public Function<String, ScheduledExecutorService> coordinatorExecutorBuilder() {
-        return coordinatorExecutorBuilder;
+    public ScheduledExecutorService coordinatorExecutor() {
+        return coordinatorExecutor;
     }
 
     /**
-     * Returns the builder function for the worker's {@link ScheduledExecutorService}.
+     * Returns the worker's {@link ScheduledExecutorService}.
      *
-     * @return The worker executor builder function.
+     * @return The worker executor.
      */
-    public Function<String, ScheduledExecutorService> workerExecutorBuilder() {
-        return workerExecutorBuilder;
+    public ScheduledExecutorService workerExecutor() {
+        return workerExecutor;
     }
 
     /**

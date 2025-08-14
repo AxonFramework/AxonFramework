@@ -37,10 +37,9 @@ import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -473,16 +472,8 @@ class PooledStreamingEventProcessorModuleTest {
                     .pooledStreaming(processorName)
                     .eventHandlingComponents((components) -> components.declarative(cfg -> component))
                     .customized((cfg, processorConfig) -> processorConfig
-                            .coordinatorExecutor(name -> {
-                                var executor = java.util.concurrent.Executors.newScheduledThreadPool(1);
-                                customCoordinator.set(executor);
-                                return executor;
-                            })
-                            .workerExecutor(name -> {
-                                var executor = java.util.concurrent.Executors.newScheduledThreadPool(2);
-                                customWorker.set(executor);
-                                return executor;
-                            }));
+                            .coordinatorExecutor(customCoordinator.updateAndGet(e -> Executors.newScheduledThreadPool(1)))
+                            .workerExecutor(customWorker.updateAndGet(e -> Executors.newScheduledThreadPool(2))));
 
             // then
             var configurer = MessagingConfigurer.create();

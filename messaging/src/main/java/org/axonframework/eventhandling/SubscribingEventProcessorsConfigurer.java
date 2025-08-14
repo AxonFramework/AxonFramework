@@ -38,10 +38,10 @@ import java.util.function.UnaryOperator;
 /**
  * A configuration configurer for managing multiple {@link SubscribingEventProcessor} instances within an application.
  * <p>
- * The {@code SubscribingEventProcessorsConfigurer} provides a centralized way to configure and register multiple subscribing
- * event processors. It acts as a container that manages individual
- * {@link SubscribingEventProcessorModule} instances, allowing you to set shared defaults that apply to all
- * processors while enabling processor-specific customizations.
+ * The {@code SubscribingEventProcessorsConfigurer} provides a centralized way to configure and register multiple
+ * subscribing event processors. It acts as a container that manages individual {@link SubscribingEventProcessorModule}
+ * instances, allowing you to set shared defaults that apply to all processors while enabling processor-specific
+ * customizations.
  * <p>
  * The main purpose is to simplify the configuration of multiple event processors by providing shared configuration
  * capabilities such as default {@link SubscribableMessageSource}, and processor settings that apply to all processors
@@ -69,8 +69,7 @@ public class SubscribingEventProcessorsConfigurer {
      * Constructs a new subscribing event processors configurer.
      * <p>
      * This constructor is marked as {@link Internal} because the configurer is typically created and managed by the
-     * {@link EventProcessingConfigurer}. Users should not instantiate this
-     * class directly but instead access it through
+     * {@link EventProcessingConfigurer}. Users should not instantiate this class directly but instead access it through
      * {@link EventProcessingConfigurer#subscribing(UnaryOperator)}.
      *
      * @param parent The parent {@link EventProcessingConfigurer} that manages this configurer.
@@ -83,8 +82,8 @@ public class SubscribingEventProcessorsConfigurer {
     /**
      * Builds and registers all configured subscribing event processors.
      * <p>
-     * This method is typically called automatically by the framework during configuration building.
-     * It registers default components and all configured processor modules.
+     * This method is typically called automatically by the framework during configuration building. It registers
+     * default components and all configured processor modules.
      */
     @Internal
     public void build() {
@@ -157,10 +156,10 @@ public class SubscribingEventProcessorsConfigurer {
     }
 
     /**
-     * Registers a subscribing event processor with the specified name and event handling components.
-     * The processor will use the default subscribing event processor configuration.
+     * Registers a subscribing event processor with the specified name and event handling components. The processor will
+     * use the default subscribing event processor configuration.
      *
-     * @param name                         The unique name for the processor.
+     * @param name                           The unique name for the processor.
      * @param eventHandlingComponentsBuilder Function to configure the event handling components.
      * @return This configurer instance for method chaining.
      */
@@ -173,6 +172,7 @@ public class SubscribingEventProcessorsConfigurer {
                 () -> EventProcessorModule.subscribing(name)
                                           .eventHandlingComponents(eventHandlingComponentsBuilder)
                                           .notCustomized()
+                                          .build()
         );
         return this;
     }
@@ -190,7 +190,7 @@ public class SubscribingEventProcessorsConfigurer {
             @Nonnull Function<EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration>, SubscribingEventProcessorModule> moduleCustomizer
     ) {
         processor(
-                () -> moduleCustomizer.apply(EventProcessorModule.subscribing(name))
+                () -> moduleCustomizer.apply(EventProcessorModule.subscribing(name)).build()
         );
         return this;
     }

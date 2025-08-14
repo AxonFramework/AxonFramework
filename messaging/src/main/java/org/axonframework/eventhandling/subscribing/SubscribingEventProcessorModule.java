@@ -91,6 +91,11 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
     @Override
+    public SubscribingEventProcessorModule build() {
+        return this;
+    }
+
+    @Override
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         var configuration = configurationBuilder.build(parent);
 
@@ -110,7 +115,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
         var processorComponentDefinition = ComponentDefinition
                 .ofTypeAndName(SubscribingEventProcessor.class, processorName)
-                .withBuilder(c -> processor)
+                .withInstance(processor)
                 .onStart(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
                     component.start();
                     return FutureUtils.emptyCompletedFuture();
@@ -192,11 +197,6 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         Objects.requireNonNull(configurerTask, "configurerTask may not be null");
         var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer();
         this.eventHandlingComponentBuilders = configurerTask.apply(componentsConfigurer).toList();
-        return this;
-    }
-
-    @Override
-    public SubscribingEventProcessorModule build() {
         return this;
     }
 

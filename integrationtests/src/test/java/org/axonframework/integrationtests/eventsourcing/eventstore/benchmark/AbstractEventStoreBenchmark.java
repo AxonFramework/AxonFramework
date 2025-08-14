@@ -113,8 +113,8 @@ public abstract class AbstractEventStoreBenchmark {
                 cfg -> cfg.eventSource(new LegacyStreamableEventSource<>(eventStore))
                         .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
                         .tokenStore(new InMemoryTokenStore())
-                        .coordinatorExecutor(ignored -> coordinatorExecutor)
-                        .workerExecutor(ignored -> workerExecutor)
+                        .coordinatorExecutor(coordinatorExecutor)
+                        .workerExecutor(workerExecutor)
         );
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }

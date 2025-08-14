@@ -196,8 +196,8 @@ public abstract class DeadLetteringEventIntegrationTest {
                 .eventSource(eventSource)
                 .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager))
                 .tokenStore(new InMemoryTokenStore())
-                .coordinatorExecutor(ignored -> Executors.newSingleThreadScheduledExecutor())
-                .workerExecutor(ignored -> Executors.newSingleThreadScheduledExecutor())
+                .coordinatorExecutor(Executors.newSingleThreadScheduledExecutor())
+                .workerExecutor(Executors.newSingleThreadScheduledExecutor())
                 .initialSegmentCount(1)
                 .claimExtensionThreshold(1000);
         var eventHandlingComponent = new TracingEventHandlingComponent(
