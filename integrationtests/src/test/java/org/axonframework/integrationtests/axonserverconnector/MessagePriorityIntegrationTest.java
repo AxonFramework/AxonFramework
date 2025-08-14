@@ -187,11 +187,6 @@ class MessagePriorityIntegrationTest {
         dispatcher.join(1000);
     }
 
-    @Test
-    void smokeTest() {
-
-    }
-
     private static class Handled {
 
         private final boolean priority;
