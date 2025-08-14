@@ -1363,6 +1363,7 @@ This section contains five tables:
 | org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry                          | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry                                                            |
 | org.axonframework.eventhandling.TrackedEventData                                         | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.eventhandling.TrackedDomainEventData                                   | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
+| org.axonframework.messaging.Headers                                                      | Removed due to lack of use and foreseen use.                                                                                                   |
 
 ### Marked for removal Classes
 

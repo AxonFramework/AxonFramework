@@ -278,6 +278,13 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                         enhancerClass.getSimpleName());
             return this;
         }
+        if (logger.isInfoEnabled()) {
+            logger.info(
+                    "Configuration Enhancer [{}] has been disabled. "
+                            + "Ensure components set by this enhancer are not mandatory in this application.",
+                    enhancerClass
+            );
+        }
         this.disabledEnhancers.add(enhancerClass);
         return this;
     }
