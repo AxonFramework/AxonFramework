@@ -214,8 +214,7 @@ public class AxonServerEventScheduler implements EventScheduler {
         MetaData metadata;
         String requestId = null;
         if (event instanceof EventMessage<?>) {
-            serializedPayload = ((EventMessage<?>) event)
-                    .serializePayload(serializer, byte[].class);
+            serializedPayload = serializer.serialize(((EventMessage<?>) event).payload(), byte[].class);
             metadata = ((EventMessage<?>) event).metaData();
             requestId = ((EventMessage<?>) event).identifier();
         } else {
