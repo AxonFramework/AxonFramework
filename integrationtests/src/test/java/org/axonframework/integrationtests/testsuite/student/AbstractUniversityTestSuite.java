@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
@@ -47,23 +48,25 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Sets up the basics for the testsuite of the Student/Mentor/Course model.
+ * Sets up the basics for the testsuite of the University domain with Student/Mentor/Course entities.
  * <p>
  * Can be customized by overriding the relevant methods. By default, uses a mix of different available options to
  * validate the different ways of setting up the event sourcing repository.
  * <p>
  * When using this test suite, be sure to invoke {@link #startApp()} when the test is all set.
  *
+ * @author Mateusz Nowak
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
+ *
+ * @since 5.0.0
  */
 @Testcontainers
-public abstract class AbstractStudentTestSuite {
+public abstract class AbstractUniversityTestSuite {
 
     protected static final GenericCommandResultMessage<String> SUCCESSFUL_COMMAND_RESULT =
             new GenericCommandResultMessage<>(new MessageType("empty"), "successful");
@@ -72,9 +75,8 @@ public abstract class AbstractStudentTestSuite {
             .withDevMode(true);
     protected CommandGateway commandGateway;
     protected StateManager stateManager;
-    private StatefulCommandHandlingModule.CommandHandlerPhase statefulCommandHandlingModule;
-    private EventSourcedEntityModule<String, Course> courseEntity;
-    private EventSourcedEntityModule<String, Student> studentEntity;
+    protected EventSourcedEntityModule<String, Course> courseEntity;
+    protected EventSourcedEntityModule<String, Student> studentEntity;
     private AxonConfiguration startedConfiguration;
 
     @BeforeAll
@@ -109,13 +111,6 @@ public abstract class AbstractStudentTestSuite {
                 .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(Course::new))
                 .criteriaResolver(this::courseCriteriaResolver)
                 .build();
-
-        statefulCommandHandlingModule = StatefulCommandHandlingModule.named("student-course-module")
-                                                                     .entities()
-                                                                     .entity(studentEntity)
-                                                                     .entity(courseEntity)
-                                                                     .entities(this::registerAdditionalEntities)
-                                                                     .commandHandlers();
     }
 
     @AfterEach
@@ -123,18 +118,6 @@ public abstract class AbstractStudentTestSuite {
         if (startedConfiguration != null) {
             startedConfiguration.shutdown();
         }
-    }
-
-    /**
-     * Test suite implementations can invoke this method to register additional command handlers.
-     *
-     * @param handlerConfigurer The command handler phase of the {@link StatefulCommandHandlingModule}, allowing for
-     *                          command handler registration.
-     */
-    protected void registerCommandHandlers(
-            Consumer<StatefulCommandHandlingModule.CommandHandlerPhase> handlerConfigurer
-    ) {
-        statefulCommandHandlingModule.commandHandlers(handlerConfigurer);
     }
 
     /**
@@ -150,12 +133,16 @@ public abstract class AbstractStudentTestSuite {
                 .componentRegistry(cr -> {
                     cr.registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration);
                 })
-                .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
+                .componentRegistry(cr -> cr.registerEnhancer(testSuiteConfigurationEnhancer()))
                 .start();
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);
 
         Configuration moduleConfig = startedConfiguration.getModuleConfigurations().getFirst();
         stateManager = moduleConfig.getComponent(StateManager.class);
+    }
+
+    protected ConfigurationEnhancer testSuiteConfigurationEnhancer(){
+        return config -> {};
     }
 
     /**

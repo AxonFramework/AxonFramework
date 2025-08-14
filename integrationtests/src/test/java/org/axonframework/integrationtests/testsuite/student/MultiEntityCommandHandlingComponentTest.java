@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
+class MultiEntityCommandHandlingComponentTest extends AbstractStatefulCommandHandlingUniversityTestSuite {
 
     @Test
     void canCombineModelsInAnnotatedCommandHandlerViaStateManagerParameter() {

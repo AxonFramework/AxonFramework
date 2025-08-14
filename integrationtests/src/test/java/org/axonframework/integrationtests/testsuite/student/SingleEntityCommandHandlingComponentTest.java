@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
+class SingleEntityCommandHandlingComponentTest extends AbstractStatefulCommandHandlingUniversityTestSuite {
 
     @Test
     void canHandleCommandThatTargetsOneEntityUsingStateManager() {

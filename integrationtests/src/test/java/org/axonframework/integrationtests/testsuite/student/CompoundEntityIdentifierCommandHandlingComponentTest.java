@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStudentTestSuite {
+class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStatefulCommandHandlingUniversityTestSuite {
 
     @Override
     protected void registerAdditionalEntities(StatefulCommandHandlingModule.EntityPhase entityConfigurer) {
