@@ -192,7 +192,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration coordinatorExecutor(
-            @Nonnull ScheduledExecutorService coordinatorExecutor) {
+            @Nonnull ScheduledExecutorService coordinatorExecutor
+    ) {
         assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
         this.coordinatorExecutor = coordinatorExecutor;
         return this;
@@ -207,7 +208,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration workerExecutor(
-            @Nonnull ScheduledExecutorService workerExecutor) {
+            @Nonnull ScheduledExecutorService workerExecutor
+    ) {
         assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
         this.workerExecutor = workerExecutor;
         return this;
